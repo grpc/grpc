@@ -28,13 +28,6 @@
       if lib.name in expect_libs:
         for group in groups:
           out += lib.get(group, [])
-    # Add cronet-related files manually since they're not in BUILD.yaml.
-    if "grpc++" in expect_libs:
-      if "public_headers" in groups:
-        out += ["include/grpcpp/security/cronet_credentials.h",
-                "include/grpcpp/security/cronet_credentials_impl.h"]
-      if "src" in groups:
-        out += ["src/cpp/client/cronet_credentials.cc"]
     return sorted(out)
 
   def filter_grpcpp(files):
@@ -74,6 +67,7 @@
 
   def grpcpp_private_headers(libs, filegroups):
     out = grpc_lib_files(libs, ("grpc++",), ("headers",))
+    excl_files = grpc_private_headers(libs)
 
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
     excl_files = grpcpp_proto_files(filegroups)
@@ -128,30 +122,20 @@
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
 
-  def modify_podspec_version_string(pod_version, grpc_version):
-    # Append -preX when it is a pre-release
-    if len(str(grpc_version).split('-')) > 1:
-      return pod_version + '-' + str(grpc_version).split('-')[-1]
-    else:
-      return pod_version
-
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-C++'
     # TODO (mxyan): use version that match gRPC version when pod is stabilized
-    # version = '${settings.version}'
-    version = '${modify_podspec_version_string('0.0.9', settings.version)}'
+    version = '${settings.version}'
     s.version  = version
     s.summary  = 'gRPC C++ library'
     s.homepage = 'https://grpc.io'
     s.license  = 'Apache License, Version 2.0'
     s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-    grpc_version = '${settings.version}'
-
     s.source = {
       :git => 'https://github.com/grpc/grpc.git',
-      :tag => "v#{grpc_version}",
+      :tag => "v#{version}",
     }
 
     s.ios.deployment_target = '7.0'
@@ -201,11 +185,11 @@
     s.subspec 'Implementation' do |ss|
       ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'gRPC-Core', grpc_version
+      ss.dependency 'gRPC-Core', version
 
-      ss.source_files = ${ruby_multiline_list(grpcpp_private_files(libs, filegroups), 22)}
+      ss.source_files = ${ruby_multiline_list(grpcpp_private_files(libs, filegroups) + grpc_private_headers(libs), 22)}
 
-      ss.private_header_files = ${ruby_multiline_list(grpcpp_private_headers(libs, filegroups), 30)}
+      ss.private_header_files = ${ruby_multiline_list(grpcpp_private_headers(libs, filegroups) + grpc_private_headers(libs), 30)}
     end
 
     s.subspec 'Protobuf' do |ss|
@@ -213,6 +197,24 @@
       ss.dependency "#{s.name}/Interface", version
 
       ss.source_files = ${ruby_multiline_list(grpcpp_proto_files(filegroups), 22)}
+    end
+
+    s.subspec 'Cronet-Interface' do |ss|
+      ss.header_mappings_dir = 'include/grpcpp'
+      ss.public_header_files = "include/grpcpp/security/cronet_credentials.h",
+                               "include/grpcpp/security/cronet_credentials_impl.h"
+      ss.source_files = "include/grpcpp/security/cronet_credentials.h",
+                        "include/grpcpp/security/cronet_credentials_impl.h"
+    end
+
+    s.subspec 'Cronet-Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.dependency "#{s.name}/Cronet-Interface", version
+      ss.dependency "#{s.name}/Implementation", version
+
+      ss.dependency 'gRPC-Core/Cronet-Implementation', version
+
+      ss.source_files = "src/cpp/client/cronet_credentials.cc"
     end
 
     s.prepare_command = <<-END_OF_COMMAND

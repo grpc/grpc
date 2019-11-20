@@ -35,7 +35,7 @@
 namespace grpc_core {
 namespace {
 
-typedef SliceHashTable<UniquePtr<char>> TestHashTable;
+typedef SliceHashTable<grpc_core::UniquePtr<char>> TestHashTable;
 
 struct TestEntry {
   const char* key;
@@ -46,7 +46,7 @@ void CheckValues(const std::vector<TestEntry>& input,
                  const TestHashTable& table) {
   for (const TestEntry& expected : input) {
     grpc_slice key = grpc_slice_from_static_string(expected.key);
-    const UniquePtr<char>* actual = table.Get(key);
+    const grpc_core::UniquePtr<char>* actual = table.Get(key);
     ASSERT_NE(actual, nullptr);
     EXPECT_STREQ(expected.value, actual->get());
     grpc_slice_unref(key);
@@ -63,7 +63,7 @@ void PopulateEntries(const std::vector<TestEntry>& input,
                      TestHashTable::Entry* output) {
   for (size_t i = 0; i < input.size(); ++i) {
     output[i].key = grpc_slice_from_copied_string(input[i].key);
-    output[i].value = UniquePtr<char>(gpr_strdup(input[i].value));
+    output[i].value = grpc_core::UniquePtr<char>(gpr_strdup(input[i].value));
   }
 }
 
@@ -123,11 +123,13 @@ TEST(SliceHashTable, Basic) {
   CheckNonExistentValue("XX", *table);
 }
 
-int StringCmp(const UniquePtr<char>& a, const UniquePtr<char>& b) {
+int StringCmp(const grpc_core::UniquePtr<char>& a,
+              const grpc_core::UniquePtr<char>& b) {
   return strcmp(a.get(), b.get());
 }
 
-int PointerCmp(const UniquePtr<char>& a, const UniquePtr<char>& b) {
+int PointerCmp(const grpc_core::UniquePtr<char>& a,
+               const grpc_core::UniquePtr<char>& b) {
   return GPR_ICMP(a.get(), b.get());
 }
 

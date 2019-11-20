@@ -382,9 +382,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     gpr_asprintf(&socket_name, "%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            grpc_core::UniquePtr<char>(),
-            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)),
-            grpc_core::UniquePtr<char>(socket_name));
+            "", t->peer_string, socket_name);
+    // TODO(veblush): Remove this once gpr_asprintf is replaced by
+    // absl::StrFormat
+    gpr_free(socket_name);
   }
   return enable_bdp;
 }
@@ -805,7 +806,7 @@ static void set_write_state(grpc_chttp2_transport* t,
    * to be closed after all writes finish (for example, if we received a go-away
    * from peer while we had some pending writes) */
   if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
-    GRPC_CLOSURE_LIST_SCHED(&t->run_after_write);
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &t->run_after_write);
     if (t->close_transport_on_writes_finished != nullptr) {
       grpc_error* err = t->close_transport_on_writes_finished;
       t->close_transport_on_writes_finished = nullptr;
@@ -1032,7 +1033,7 @@ static void write_action_end_locked(void* tp, grpc_error* error) {
       // write finishes, or the callbacks will be invoked when the stream is
       // closed.
       if (!closed) {
-        GRPC_CLOSURE_LIST_SCHED(&t->run_after_write);
+        grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &t->run_after_write);
       }
       t->combiner->FinallyRun(
           GRPC_CLOSURE_INIT(&t->write_action_begin_locked,
@@ -1672,7 +1673,7 @@ static void cancel_pings(grpc_chttp2_transport* t, grpc_error* error) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   for (size_t j = 0; j < GRPC_CHTTP2_PCL_COUNT; j++) {
     grpc_closure_list_fail_all(&pq->lists[j], GRPC_ERROR_REF(error));
-    GRPC_CLOSURE_LIST_SCHED(&pq->lists[j]);
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &pq->lists[j]);
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1758,7 +1759,8 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
     gpr_free(from);
     return;
   }
-  GRPC_CLOSURE_LIST_SCHED(&pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
+  grpc_core::ExecCtx::RunList(DEBUG_LOCATION,
+                              &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS);
   }
@@ -1835,7 +1837,7 @@ static void perform_transport_op_locked(void* stream_op,
     close_transport_locked(t, op->disconnect_with_error);
   }
 
-  GRPC_CLOSURE_RUN(op->on_consumed, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "transport_op");
 }

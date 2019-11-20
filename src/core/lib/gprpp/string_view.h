@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <string>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -109,6 +110,15 @@ class StringView final {
   void clear() {
     ptr_ = nullptr;
     size_ = 0;
+  }
+
+  // Converts to `std::basic_string`.
+  template <typename Allocator>
+  explicit operator std::basic_string<char, std::char_traits<char>, Allocator>()
+      const {
+    if (data() == nullptr) return {};
+    return std::basic_string<char, std::char_traits<char>, Allocator>(data(),
+                                                                      size());
   }
 
  private:

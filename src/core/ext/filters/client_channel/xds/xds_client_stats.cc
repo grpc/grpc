@@ -90,7 +90,7 @@ XdsClientStats::LocalityStats::GetSnapshotAndReset() {
       const char* metric_name = p.first.get();
       LoadMetric& metric_value = p.second;
       snapshot.load_metric_stats.emplace(
-          UniquePtr<char>(gpr_strdup(metric_name)),
+          grpc_core::UniquePtr<char>(gpr_strdup(metric_name)),
           metric_value.GetSnapshotAndReset());
     }
   }
@@ -178,12 +178,14 @@ void XdsClientStats::PruneLocalityStats() {
   }
 }
 
-void XdsClientStats::AddCallDropped(const UniquePtr<char>& category) {
+void XdsClientStats::AddCallDropped(
+    const grpc_core::UniquePtr<char>& category) {
   total_dropped_requests_.FetchAdd(1, MemoryOrder::RELAXED);
   MutexLock lock(&dropped_requests_mu_);
   auto iter = dropped_requests_.find(category);
   if (iter == dropped_requests_.end()) {
-    dropped_requests_.emplace(UniquePtr<char>(gpr_strdup(category.get())), 1);
+    dropped_requests_.emplace(
+        grpc_core::UniquePtr<char>(gpr_strdup(category.get())), 1);
   } else {
     ++iter->second;
   }

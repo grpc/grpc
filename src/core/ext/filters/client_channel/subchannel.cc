@@ -293,8 +293,8 @@ void SubchannelCall::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
   } else {
     channelz_subchannel->RecordCallFailed();
   }
-  GRPC_CLOSURE_RUN(call->original_recv_trailing_metadata_,
-                   GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, call->original_recv_trailing_metadata_,
+               GRPC_ERROR_REF(error));
 }
 
 void SubchannelCall::IncrementRefCount() {
@@ -404,7 +404,8 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
 class Subchannel::HealthWatcherMap::HealthWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  HealthWatcher(Subchannel* c, UniquePtr<char> health_check_service_name,
+  HealthWatcher(Subchannel* c,
+                grpc_core::UniquePtr<char> health_check_service_name,
                 grpc_connectivity_state subchannel_state)
       : subchannel_(c),
         health_check_service_name_(std::move(health_check_service_name)),
@@ -489,7 +490,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   }
 
   Subchannel* subchannel_;
-  UniquePtr<char> health_check_service_name_;
+  grpc_core::UniquePtr<char> health_check_service_name_;
   OrphanablePtr<HealthCheckClient> health_check_client_;
   grpc_connectivity_state state_;
   ConnectivityStateWatcherList watcher_list_;
@@ -501,7 +502,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 
 void Subchannel::HealthWatcherMap::AddWatcherLocked(
     Subchannel* subchannel, grpc_connectivity_state initial_state,
-    UniquePtr<char> health_check_service_name,
+    grpc_core::UniquePtr<char> health_check_service_name,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
   // If the health check service name is not already present in the map,
   // add it.
@@ -786,7 +787,7 @@ grpc_connectivity_state Subchannel::CheckConnectivityState(
 
 void Subchannel::WatchConnectivityState(
     grpc_connectivity_state initial_state,
-    UniquePtr<char> health_check_service_name,
+    grpc_core::UniquePtr<char> health_check_service_name,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
   MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();

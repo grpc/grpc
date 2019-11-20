@@ -287,7 +287,7 @@ static void run_test(const char* response_payload,
   state.response_payload_length = response_payload_length;
 
   /* poll server until sending out the response */
-  grpc_core::UniquePtr<grpc_core::Thread> thdptr(
+  std::unique_ptr<grpc_core::Thread> thdptr(
       poll_server_until_read_done(&test_server, &ev));
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));

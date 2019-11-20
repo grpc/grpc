@@ -316,7 +316,7 @@ void SubchannelData<SubchannelListType,
       new Watcher(this, subchannel_list()->Ref(DEBUG_LOCATION, "Watcher"));
   subchannel_->WatchConnectivityState(
       connectivity_state_,
-      UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface>(
+      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
           pending_watcher_));
 }
 

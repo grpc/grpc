@@ -420,9 +420,9 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
-  static grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> Create(
+  static std::unique_ptr<grpc_core::Resolver::ResultHandler> Create(
       ArgsStruct* args) {
-    return grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+    return std::unique_ptr<grpc_core::Resolver::ResultHandler>(
         new ResultHandler(args));
   }
 
@@ -453,9 +453,9 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 
 class CheckingResultHandler : public ResultHandler {
  public:
-  static grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> Create(
+  static std::unique_ptr<grpc_core::Resolver::ResultHandler> Create(
       ArgsStruct* args) {
-    return grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+    return std::unique_ptr<grpc_core::Resolver::ResultHandler>(
         new CheckingResultHandler(args));
   }
 
@@ -540,8 +540,8 @@ void StartResolvingLocked(void* arg, grpc_error* /*unused*/) {
 }
 
 void RunResolvesRelevantRecordsTest(
-    grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> (
-        *CreateResultHandler)(ArgsStruct* args)) {
+    std::unique_ptr<grpc_core::Resolver::ResultHandler> (*CreateResultHandler)(
+        ArgsStruct* args)) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -554,7 +554,7 @@ void RunResolvesRelevantRecordsTest(
   gpr_log(GPR_DEBUG,
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           FLAGS_inject_broken_nameserver_list.c_str());
-  grpc_core::UniquePtr<grpc::testing::FakeNonResponsiveDNSServer>
+  std::unique_ptr<grpc::testing::FakeNonResponsiveDNSServer>
       fake_non_responsive_dns_server;
   if (FLAGS_inject_broken_nameserver_list == "True") {
     g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();

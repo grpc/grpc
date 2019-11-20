@@ -242,7 +242,7 @@ class Subchannel {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      UniquePtr<char> health_check_service_name,
+      grpc_core::UniquePtr<char> health_check_service_name,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
@@ -311,7 +311,7 @@ class Subchannel {
    public:
     void AddWatcherLocked(
         Subchannel* subchannel, grpc_connectivity_state initial_state,
-        UniquePtr<char> health_check_service_name,
+        grpc_core::UniquePtr<char> health_check_service_name,
         OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const char* health_check_service_name,
                              ConnectivityStateWatcherInterface* watcher);

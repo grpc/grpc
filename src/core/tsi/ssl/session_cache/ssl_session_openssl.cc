@@ -65,7 +65,7 @@ class OpenSslCachedSession : public SslCachedSession {
 
 }  // namespace
 
-grpc_core::UniquePtr<SslCachedSession> SslCachedSession::Create(
+std::unique_ptr<SslCachedSession> SslCachedSession::Create(
     SslSessionPtr session) {
   return grpc_core::MakeUnique<OpenSslCachedSession>(std::move(session));
 }

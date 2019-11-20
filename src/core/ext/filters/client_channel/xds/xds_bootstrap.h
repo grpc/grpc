@@ -60,7 +60,7 @@ class XdsBootstrap {
 
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error reading the file.
-  static UniquePtr<XdsBootstrap> ReadFromFile(grpc_error** error);
+  static std::unique_ptr<XdsBootstrap> ReadFromFile(grpc_error** error);
 
   // Do not instantiate directly -- use ReadFromFile() above instead.
   XdsBootstrap(grpc_slice contents, grpc_error** error);
@@ -92,7 +92,7 @@ class XdsBootstrap {
 
   const char* server_uri_ = nullptr;
   InlinedVector<ChannelCreds, 1> channel_creds_;
-  UniquePtr<Node> node_;
+  std::unique_ptr<Node> node_;
 };
 
 }  // namespace grpc_core

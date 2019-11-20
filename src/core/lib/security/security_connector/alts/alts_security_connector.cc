@@ -203,6 +203,13 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
     gpr_log(GPR_ERROR, "Mismatch of local and peer rpc protocol versions.");
     return nullptr;
   }
+  /* Validate ALTS Context. */
+  const tsi_peer_property* alts_context_prop =
+      tsi_peer_get_property_by_name(peer, TSI_ALTS_CONTEXT);
+  if (alts_context_prop == nullptr) {
+    gpr_log(GPR_ERROR, "Missing alts context property.");
+    return nullptr;
+  }
   /* Create auth context. */
   auto ctx = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
@@ -218,6 +225,12 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
           tsi_prop->value.data, tsi_prop->value.length);
       GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
                      ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 1);
+    }
+    /* Add alts context to auth context. */
+    if (strcmp(tsi_prop->name, TSI_ALTS_CONTEXT) == 0) {
+      grpc_auth_context_add_property(ctx.get(), TSI_ALTS_CONTEXT,
+                                     tsi_prop->value.data,
+                                     tsi_prop->value.length);
     }
   }
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {

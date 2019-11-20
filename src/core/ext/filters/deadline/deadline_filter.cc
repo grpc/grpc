@@ -133,8 +133,9 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(arg);
   cancel_timer_if_needed(deadline_state);
   // Invoke the original callback.
-  GRPC_CLOSURE_RUN(deadline_state->original_recv_trailing_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          deadline_state->original_recv_trailing_metadata_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 // Inject our own recv_trailing_metadata_ready callback into op.
@@ -290,8 +291,9 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   start_timer_if_needed(elem, calld->recv_initial_metadata->deadline);
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->next_recv_initial_metadata_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 // Method for starting a call op for server filter.

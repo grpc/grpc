@@ -86,7 +86,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
     GPR_ASSERT(server_uri != nullptr);
     const TargetAuthorityTable* target_authority_table =
         FindTargetAuthorityTableInArgs(args);
-    UniquePtr<char> authority;
+    grpc_core::UniquePtr<char> authority;
     if (target_authority_table != nullptr) {
       // Find the authority for the target.
       const char* target_uri_str =
@@ -98,7 +98,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
         const grpc_slice key = grpc_slice_from_static_string(
             target_uri->path[0] == '/' ? target_uri->path + 1
                                        : target_uri->path);
-        const UniquePtr<char>* value = target_authority_table->Get(key);
+        const grpc_core::UniquePtr<char>* value =
+            target_authority_table->Get(key);
         if (value != nullptr) authority.reset(gpr_strdup(value->get()));
         grpc_slice_unref_internal(key);
       }
@@ -158,7 +159,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args) {
     return nullptr;
   }
   // Add channel arg containing the server URI.
-  UniquePtr<char> canonical_target =
+  grpc_core::UniquePtr<char> canonical_target =
       ResolverRegistry::AddDefaultPrefixIfNeeded(target);
   grpc_arg arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());

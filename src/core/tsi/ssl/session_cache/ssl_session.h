@@ -57,7 +57,7 @@ class SslCachedSession {
   SslCachedSession& operator=(const SslCachedSession&) = delete;
 
   /// Create single cached instance of \a session.
-  static grpc_core::UniquePtr<SslCachedSession> Create(SslSessionPtr session);
+  static std::unique_ptr<SslCachedSession> Create(SslSessionPtr session);
 
   virtual ~SslCachedSession() = default;
 

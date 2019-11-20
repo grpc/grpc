@@ -30,11 +30,10 @@
 namespace grpc_core {
 namespace channelz {
 
-SubchannelNode::SubchannelNode(const char* target_address,
+SubchannelNode::SubchannelNode(std::string target_address,
                                size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kSubchannel,
-               UniquePtr<char>(gpr_strdup(target_address))),
-      target_(UniquePtr<char>(gpr_strdup(target_address))),
+    : BaseNode(EntityType::kSubchannel, target_address),
+      target_(std::move(target_address)),
       trace_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}
@@ -76,8 +75,8 @@ grpc_json* SubchannelNode::RenderJson() {
   json = data;
   json_iterator = nullptr;
   PopulateConnectivityState(json);
-  GPR_ASSERT(target_.get() != nullptr);
-  grpc_json_create_child(nullptr, json, "target", target_.get(),
+  GPR_ASSERT(!target_.empty());
+  grpc_json_create_child(nullptr, json, "target", target_.c_str(),
                          GRPC_JSON_STRING, false);
   // fill in the channel trace if applicable
   grpc_json* trace_json = trace_.RenderJson();
@@ -102,7 +101,8 @@ grpc_json* SubchannelNode::RenderJson() {
     grpc_json* sibling_iterator = grpc_json_add_number_string_child(
         json_iterator, nullptr, "socketId", child_socket->uuid());
     grpc_json_create_child(sibling_iterator, json_iterator, "name",
-                           child_socket->name(), GRPC_JSON_STRING, false);
+                           child_socket->name().c_str(), GRPC_JSON_STRING,
+                           false);
   }
   return top_level_json;
 }

@@ -1009,9 +1009,6 @@ Server::Server(
 Server::~Server() {
   {
     grpc::internal::ReleasableMutexLock lock(&mu_);
-    if (callback_cq_ != nullptr) {
-      callback_cq_->Shutdown();
-    }
     if (started_ && !shutdown_) {
       lock.Unlock();
       Shutdown();
@@ -1019,6 +1016,10 @@ Server::~Server() {
       // Shutdown the completion queues
       for (const auto& value : sync_req_mgrs_) {
         value->Shutdown();
+      }
+      if (callback_cq_ != nullptr) {
+        callback_cq_->Shutdown();
+        callback_cq_ = nullptr;
       }
     }
   }
@@ -1313,6 +1314,13 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     grpc::internal::MutexLock cblock(&callback_reqs_mu_);
     callback_reqs_done_cv_.WaitUntil(
         &callback_reqs_mu_, [this] { return callback_reqs_outstanding_ == 0; });
+  }
+
+  // Shutdown the callback CQ. The CQ is owned by its own shutdown tag, so it
+  // will delete itself at true shutdown.
+  if (callback_cq_ != nullptr) {
+    callback_cq_->Shutdown();
+    callback_cq_ = nullptr;
   }
 
   // Drain the shutdown queue (if the previous call to AsyncNext() timed out

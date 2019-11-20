@@ -60,7 +60,7 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  UniquePtr<char> server_name_;
+  grpc_core::UniquePtr<char> server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;

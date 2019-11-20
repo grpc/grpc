@@ -59,7 +59,7 @@ struct grpc_ares_request {
   /** closure to call when the request completes */
   grpc_closure* on_done;
   /** the pointer to receive the resolved addresses */
-  grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses_out;
+  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
   /** the pointer to receive the service config in JSON */
   char** service_config_json_out;
   /** the evernt driver used by this request */
@@ -452,7 +452,7 @@ error_cleanup:
 
 static bool inner_resolve_as_ip_literal_locked(
     const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     grpc_core::UniquePtr<char>* host, grpc_core::UniquePtr<char>* port,
     grpc_core::UniquePtr<char>* hostport) {
   grpc_core::SplitHostPort(name, host, port);
@@ -489,7 +489,7 @@ static bool inner_resolve_as_ip_literal_locked(
 
 static bool resolve_as_ip_literal_locked(
     const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs) {
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
   grpc_core::UniquePtr<char> host;
   grpc_core::UniquePtr<char> port;
   grpc_core::UniquePtr<char> hostport;
@@ -521,7 +521,7 @@ static bool target_matches_localhost(const char* name) {
 #ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY
 static bool inner_maybe_resolve_localhost_manually_locked(
     const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     grpc_core::UniquePtr<char>* host, grpc_core::UniquePtr<char>* port) {
   grpc_core::SplitHostPort(name, host, port);
   if (*host == nullptr) {
@@ -571,7 +571,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
 
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
     const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs) {
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
   grpc_core::UniquePtr<char> host;
   grpc_core::UniquePtr<char> port;
   return inner_maybe_resolve_localhost_manually_locked(name, default_port,
@@ -580,7 +580,7 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 #else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
     const char* /*name*/, const char* /*default_port*/,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* /*addrs*/) {
+    std::unique_ptr<grpc_core::ServerAddressList>* /*addrs*/) {
   return false;
 }
 #endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
@@ -588,8 +588,8 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
+    char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner) {
   grpc_ares_request* r =
       static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
@@ -631,8 +631,8 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
 grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
+    char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
 static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
@@ -678,7 +678,7 @@ typedef struct grpc_resolve_address_ares_request {
   /** the pointer to receive the resolved addresses */
   grpc_resolved_addresses** addrs_out;
   /** currently resolving addresses */
-  grpc_core::UniquePtr<ServerAddressList> addresses;
+  std::unique_ptr<ServerAddressList> addresses;
   /** closure to call when the resolve_address_ares request completes */
   grpc_closure* on_resolve_address_done;
   /** a closure wrapping on_resolve_address_done, which should be invoked when

@@ -23,7 +23,6 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
     name = "api_fuzzer",
     size = "enormous",
-    timeout = "eternal",
     srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
     language = "C++",

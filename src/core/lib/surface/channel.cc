@@ -202,11 +202,11 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   const intptr_t channelz_parent_uuid =
       grpc_core::channelz::GetParentUuidFromArgs(*args);
   // Create the channelz node.
+  const char* target = grpc_channel_stack_builder_get_target(builder);
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
       grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
-          grpc_core::UniquePtr<char>(
-              gpr_strdup(grpc_channel_stack_builder_get_target(builder))),
-          channel_tracer_max_memory, channelz_parent_uuid);
+          target != nullptr ? target : "", channel_tracer_max_memory,
+          channelz_parent_uuid);
   channelz_node->AddTraceEvent(
       grpc_core::channelz::ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("Channel created"));

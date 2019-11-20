@@ -95,7 +95,7 @@ class TestLite(setuptools.Command):
         import tests
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests'])
-        runner = tests.Runner()
+        runner = tests.Runner(dedicated_threads=True)
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
             sys.exit('Test failure')

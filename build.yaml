@@ -599,6 +599,7 @@ filegroups:
   uses:
   - gpr_base_headers
   - grpc_base_headers
+  - grpc_client_channel
   - grpc_health_upb
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
@@ -5433,6 +5434,20 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: pollset_windows_starvation_test.cc
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  src:
+  - test/core/iomgr/pollset_windows_starvation_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - windows
 - name: port_sharing_end2end_test
   gtest: true
   build: test

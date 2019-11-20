@@ -244,7 +244,7 @@ class XdsClient::ChannelState::LrsCallState
   grpc_closure on_status_received_;
 
   // Load reporting state.
-  UniquePtr<char> cluster_name_;
+  grpc_core::UniquePtr<char> cluster_name_;
   grpc_millis load_reporting_interval_ = 0;
   OrphanablePtr<Reporter> reporter_;
 };
@@ -1124,7 +1124,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked(
   // This anonymous lambda is a hack to avoid the usage of goto.
   [&]() {
     // Parse the response.
-    UniquePtr<char> new_cluster_name;
+    grpc_core::UniquePtr<char> new_cluster_name;
     grpc_millis new_load_reporting_interval;
     grpc_error* parse_error = XdsLrsResponseDecodeAndParse(
         response_slice, &new_cluster_name, &new_load_reporting_interval);
@@ -1240,18 +1240,18 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 namespace {
 
-UniquePtr<char> GenerateBuildVersionString() {
+grpc_core::UniquePtr<char> GenerateBuildVersionString() {
   char* build_version_str;
   gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
                GPR_PLATFORM_STRING);
-  return UniquePtr<char>(build_version_str);
+  return grpc_core::UniquePtr<char>(build_version_str);
 }
 
 }  // namespace
 
 XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      StringView server_name,
-                     UniquePtr<ServiceConfigWatcherInterface> watcher,
+                     std::unique_ptr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : build_version_(GenerateBuildVersionString()),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
@@ -1289,8 +1289,8 @@ void XdsClient::Orphan() {
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
 }
 
-void XdsClient::WatchClusterData(StringView cluster,
-                                 UniquePtr<ClusterWatcherInterface> watcher) {
+void XdsClient::WatchClusterData(
+    StringView cluster, std::unique_ptr<ClusterWatcherInterface> watcher) {
   ClusterWatcherInterface* w = watcher.get();
   cluster_state_.cluster_watchers[w] = std::move(watcher);
   // TODO(juanlishen): Start CDS call if not already started and return
@@ -1312,8 +1312,8 @@ void XdsClient::CancelClusterDataWatch(StringView cluster,
   }
 }
 
-void XdsClient::WatchEndpointData(StringView /*cluster*/,
-                                  UniquePtr<EndpointWatcherInterface> watcher) {
+void XdsClient::WatchEndpointData(
+    StringView /*cluster*/, std::unique_ptr<EndpointWatcherInterface> watcher) {
   EndpointWatcherInterface* w = watcher.get();
   cluster_state_.endpoint_watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher

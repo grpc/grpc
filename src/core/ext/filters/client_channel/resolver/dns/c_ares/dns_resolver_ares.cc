@@ -108,7 +108,7 @@ class AresDnsResolver : public Resolver {
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
-  UniquePtr<ServerAddressList> addresses_;
+  std::unique_ptr<ServerAddressList> addresses_;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
   // has shutdown been initiated

@@ -15,6 +15,7 @@
 cdef class AioChannel:
     def __cinit__(self, bytes target):
         self.channel = grpc_insecure_channel_create(<char *>target, NULL, NULL)
+        self.cq = CallbackCompletionQueue()
         self._target = target
 
     def __repr__(self):

@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
@@ -85,7 +86,7 @@ intptr_t GetParentUuidFromArgs(const grpc_channel_args& args) {
 // BaseNode
 //
 
-BaseNode::BaseNode(EntityType type, UniquePtr<char> name)
+BaseNode::BaseNode(EntityType type, std::string name)
     : type_(type), uuid_(-1), name_(std::move(name)) {
   // The registry will set uuid_ under its lock.
   ChannelzRegistry::Register(this);
@@ -180,11 +181,11 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
 // ChannelNode
 //
 
-ChannelNode::ChannelNode(UniquePtr<char> target,
-                         size_t channel_tracer_max_nodes, intptr_t parent_uuid)
+ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
+                         intptr_t parent_uuid)
     : BaseNode(parent_uuid == 0 ? EntityType::kTopLevelChannel
                                 : EntityType::kInternalChannel,
-               UniquePtr<char>(gpr_strdup(target.get()))),
+               target),
       target_(std::move(target)),
       trace_(channel_tracer_max_nodes),
       parent_uuid_(parent_uuid) {}
@@ -239,8 +240,8 @@ grpc_json* ChannelNode::RenderJson() {
     json = data;
   }
   // populate the target.
-  GPR_ASSERT(target_.get() != nullptr);
-  grpc_json_create_child(nullptr, json, "target", target_.get(),
+  GPR_ASSERT(!target_.empty());
+  grpc_json_create_child(nullptr, json, "target", target_.c_str(),
                          GRPC_JSON_STRING, false);
   // fill in the channel trace if applicable
   grpc_json* trace_json = trace_.RenderJson();
@@ -316,8 +317,7 @@ void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
 //
 
 ServerNode::ServerNode(grpc_server* /*server*/, size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer, /* name */ nullptr),
-      trace_(channel_tracer_max_nodes) {}
+    : BaseNode(EntityType::kServer, ""), trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
 
@@ -363,7 +363,8 @@ char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
       json_iterator = grpc_json_add_number_string_child(
           socket_ref_json, nullptr, "socketId", it->first);
       grpc_json_create_child(json_iterator, socket_ref_json, "name",
-                             it->second->name(), GRPC_JSON_STRING, false);
+                             it->second->name().c_str(), GRPC_JSON_STRING,
+                             false);
     }
   }
   if (sockets_rendered == child_sockets_.size()) {
@@ -416,7 +417,8 @@ grpc_json* ServerNode::RenderJson() {
       grpc_json* sibling_iterator = grpc_json_add_number_string_child(
           json_iterator, nullptr, "socketId", it.first);
       grpc_json_create_child(sibling_iterator, json_iterator, "name",
-                             it.second->name(), GRPC_JSON_STRING, false);
+                             it.second->name().c_str(), GRPC_JSON_STRING,
+                             false);
     }
   }
   return top_level_json;
@@ -441,8 +443,8 @@ void PopulateSocketAddressJson(grpc_json* json, const char* name,
                            (strcmp(uri->scheme, "ipv6") == 0))) {
     const char* host_port = uri->path;
     if (*host_port == '/') ++host_port;
-    UniquePtr<char> host;
-    UniquePtr<char> port;
+    grpc_core::UniquePtr<char> host;
+    grpc_core::UniquePtr<char> port;
     GPR_ASSERT(SplitHostPort(host_port, &host, &port));
     int port_num = -1;
     if (port != nullptr) {
@@ -479,33 +481,32 @@ void PopulateSocketAddressJson(grpc_json* json, const char* name,
 
 }  // namespace
 
-SocketNode::SocketNode(UniquePtr<char> local, UniquePtr<char> remote,
-                       UniquePtr<char> name)
+SocketNode::SocketNode(std::string local, std::string remote, std::string name)
     : BaseNode(EntityType::kSocket, std::move(name)),
       local_(std::move(local)),
       remote_(std::move(remote)) {}
 
 void SocketNode::RecordStreamStartedFromLocal() {
-  gpr_atm_no_barrier_fetch_add(&streams_started_, static_cast<gpr_atm>(1));
-  gpr_atm_no_barrier_store(&last_local_stream_created_cycle_,
-                           gpr_get_cycle_counter());
+  streams_started_.FetchAdd(1, MemoryOrder::RELAXED);
+  last_local_stream_created_cycle_.Store(gpr_get_cycle_counter(),
+                                         MemoryOrder::RELAXED);
 }
 
 void SocketNode::RecordStreamStartedFromRemote() {
-  gpr_atm_no_barrier_fetch_add(&streams_started_, static_cast<gpr_atm>(1));
-  gpr_atm_no_barrier_store(&last_remote_stream_created_cycle_,
-                           gpr_get_cycle_counter());
+  streams_started_.FetchAdd(1, MemoryOrder::RELAXED);
+  last_remote_stream_created_cycle_.Store(gpr_get_cycle_counter(),
+                                          MemoryOrder::RELAXED);
 }
 
 void SocketNode::RecordMessagesSent(uint32_t num_sent) {
-  gpr_atm_no_barrier_fetch_add(&messages_sent_, static_cast<gpr_atm>(num_sent));
-  gpr_atm_no_barrier_store(&last_message_sent_cycle_, gpr_get_cycle_counter());
+  messages_sent_.FetchAdd(num_sent, MemoryOrder::RELAXED);
+  last_message_sent_cycle_.Store(gpr_get_cycle_counter(), MemoryOrder::RELAXED);
 }
 
 void SocketNode::RecordMessageReceived() {
-  gpr_atm_no_barrier_fetch_add(&messages_received_, static_cast<gpr_atm>(1));
-  gpr_atm_no_barrier_store(&last_message_received_cycle_,
-                           gpr_get_cycle_counter());
+  messages_received_.FetchAdd(1, MemoryOrder::RELAXED);
+  last_message_received_cycle_.Store(gpr_get_cycle_counter(),
+                                     MemoryOrder::RELAXED);
 }
 
 grpc_json* SocketNode::RenderJson() {
@@ -520,11 +521,11 @@ grpc_json* SocketNode::RenderJson() {
   json_iterator = nullptr;
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
                                                     "socketId", uuid());
-  json_iterator = grpc_json_create_child(json_iterator, json, "name", name(),
-                                         GRPC_JSON_STRING, false);
+  json_iterator = grpc_json_create_child(
+      json_iterator, json, "name", name().c_str(), GRPC_JSON_STRING, false);
   json = top_level_json;
-  PopulateSocketAddressJson(json, "remote", remote_.get());
-  PopulateSocketAddressJson(json, "local", local_.get());
+  PopulateSocketAddressJson(json, "remote", remote_.c_str());
+  PopulateSocketAddressJson(json, "local", local_.c_str());
   // reset json iterators to top level object
   json = top_level_json;
   json_iterator = nullptr;
@@ -534,12 +535,12 @@ grpc_json* SocketNode::RenderJson() {
   json = data;
   json_iterator = nullptr;
   gpr_timespec ts;
-  gpr_atm streams_started = gpr_atm_no_barrier_load(&streams_started_);
+  int64_t streams_started = streams_started_.Load(MemoryOrder::RELAXED);
   if (streams_started != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "streamsStarted", streams_started);
     gpr_cycle_counter last_local_stream_created_cycle =
-        gpr_atm_no_barrier_load(&last_local_stream_created_cycle_);
+        last_local_stream_created_cycle_.Load(MemoryOrder::RELAXED);
     if (last_local_stream_created_cycle != 0) {
       ts = gpr_convert_clock_type(
           gpr_cycle_counter_to_time(last_local_stream_created_cycle),
@@ -549,7 +550,7 @@ grpc_json* SocketNode::RenderJson() {
           gpr_format_timespec(ts), GRPC_JSON_STRING, true);
     }
     gpr_cycle_counter last_remote_stream_created_cycle =
-        gpr_atm_no_barrier_load(&last_remote_stream_created_cycle_);
+        last_remote_stream_created_cycle_.Load(MemoryOrder::RELAXED);
     if (last_remote_stream_created_cycle != 0) {
       ts = gpr_convert_clock_type(
           gpr_cycle_counter_to_time(last_remote_stream_created_cycle),
@@ -559,41 +560,41 @@ grpc_json* SocketNode::RenderJson() {
           gpr_format_timespec(ts), GRPC_JSON_STRING, true);
     }
   }
-  gpr_atm streams_succeeded = gpr_atm_no_barrier_load(&streams_succeeded_);
+  int64_t streams_succeeded = streams_succeeded_.Load(MemoryOrder::RELAXED);
   if (streams_succeeded != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "streamsSucceeded", streams_succeeded);
   }
-  gpr_atm streams_failed = gpr_atm_no_barrier_load(&streams_failed_);
+  int64_t streams_failed = streams_failed_.Load(MemoryOrder::RELAXED);
   if (streams_failed) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "streamsFailed", streams_failed);
   }
-  gpr_atm messages_sent = gpr_atm_no_barrier_load(&messages_sent_);
+  int64_t messages_sent = messages_sent_.Load(MemoryOrder::RELAXED);
   if (messages_sent != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "messagesSent", messages_sent);
     ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(
-            gpr_atm_no_barrier_load(&last_message_sent_cycle_)),
+            last_message_sent_cycle_.Load(MemoryOrder::RELAXED)),
         GPR_CLOCK_REALTIME);
     json_iterator =
         grpc_json_create_child(json_iterator, json, "lastMessageSentTimestamp",
                                gpr_format_timespec(ts), GRPC_JSON_STRING, true);
   }
-  gpr_atm messages_received = gpr_atm_no_barrier_load(&messages_received_);
+  int64_t messages_received = messages_received_.Load(MemoryOrder::RELAXED);
   if (messages_received != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "messagesReceived", messages_received);
     ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(
-            gpr_atm_no_barrier_load(&last_message_received_cycle_)),
+            last_message_received_cycle_.Load(MemoryOrder::RELAXED)),
         GPR_CLOCK_REALTIME);
     json_iterator = grpc_json_create_child(
         json_iterator, json, "lastMessageReceivedTimestamp",
         gpr_format_timespec(ts), GRPC_JSON_STRING, true);
   }
-  gpr_atm keepalives_sent = gpr_atm_no_barrier_load(&keepalives_sent_);
+  int64_t keepalives_sent = keepalives_sent_.Load(MemoryOrder::RELAXED);
   if (keepalives_sent != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "keepAlivesSent", keepalives_sent);
@@ -605,8 +606,7 @@ grpc_json* SocketNode::RenderJson() {
 // ListenSocketNode
 //
 
-ListenSocketNode::ListenSocketNode(UniquePtr<char> local_addr,
-                                   UniquePtr<char> name)
+ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
     : BaseNode(EntityType::kSocket, std::move(name)),
       local_addr_(std::move(local_addr)) {}
 
@@ -622,10 +622,10 @@ grpc_json* ListenSocketNode::RenderJson() {
   json_iterator = nullptr;
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
                                                     "socketId", uuid());
-  json_iterator = grpc_json_create_child(json_iterator, json, "name", name(),
-                                         GRPC_JSON_STRING, false);
+  json_iterator = grpc_json_create_child(
+      json_iterator, json, "name", name().c_str(), GRPC_JSON_STRING, false);
   json = top_level_json;
-  PopulateSocketAddressJson(json, "local", local_addr_.get());
+  PopulateSocketAddressJson(json, "local", local_addr_.c_str());
 
   return top_level_json;
 }
