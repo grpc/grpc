@@ -30,8 +30,10 @@ class TestSyncTlsCredentialReload
       ::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
     struct ::grpc_impl::experimental::TlsKeyMaterialsConfig::PemKeyCertPair
         pem_key_cert_pair = {test_server1_key, test_server1_cert};
-    arg->set_pem_root_certs(test_root_cert);
-    arg->add_pem_key_cert_pair(pem_key_cert_pair);
+    //arg->set_pem_root_certs(test_root_cert);
+    //arg->add_pem_key_cert_pair(pem_key_cert_pair);
+    std::vector<struct ::grpc_impl::experimental::TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list = {pem_key_cert_pair};
+    arg->set_key_materials(test_root_cert, pem_key_cert_pair_list);
     arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
     return 0;
   }

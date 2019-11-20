@@ -46,7 +46,7 @@ struct grpc_tls_key_materials_config
     pem_root_certs_ = std::move(pem_root_certs);
   }
   void add_pem_key_cert_pair(grpc_core::PemKeyCertPair pem_key_cert_pair) {
-    pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
+    pem_key_cert_pair_list_.push_back(std::move(pem_key_cert_pair));
   }
   void set_key_materials(grpc_core::UniquePtr<char> pem_root_certs,
                          PemKeyCertPairList pem_key_cert_pair_list);
