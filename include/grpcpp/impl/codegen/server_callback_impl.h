@@ -437,13 +437,13 @@ class ServerBidiReactor : public internal::ServerReactor {
 
   grpc::internal::Mutex stream_mu_;
   std::atomic<ServerCallbackReaderWriter<Request, Response>*> stream_;
-  bool send_initial_metadata_wanted_ = false;
-  bool write_and_finish_wanted_ = false;
-  bool finish_wanted_ = false;
-  Request* read_wanted_ = nullptr;
-  const Response* write_wanted_ = nullptr;
-  ::grpc::WriteOptions write_options_wanted_;
-  ::grpc::Status status_wanted_;
+  bool send_initial_metadata_wanted_ /* GUARDED_BY(stream_mu_) */ = false;
+  bool write_and_finish_wanted_ /* GUARDED_BY(stream_mu_) */ = false;
+  bool finish_wanted_ /* GUARDED_BY(stream_mu_) */ = false;
+  Request* read_wanted_ /* GUARDED_BY(stream_mu_) */ = nullptr;
+  const Response* write_wanted_ /* GUARDED_BY(stream_mu_) */ = nullptr;
+  ::grpc::WriteOptions write_options_wanted_ /* GUARDED_BY(stream_mu_) */;
+  ::grpc::Status status_wanted_ /* GUARDED_BY(stream_mu_) */;
 };
 
 /// \a ServerReadReactor is the interface for a client-streaming RPC.
@@ -528,10 +528,10 @@ class ServerReadReactor : public internal::ServerReactor {
 
   grpc::internal::Mutex reader_mu_;
   std::atomic<ServerCallbackReader<Request>*> reader_;
-  bool send_initial_metadata_wanted_ = false;
-  bool finish_wanted_ = false;
-  Request* read_wanted_ = nullptr;
-  ::grpc::Status status_wanted_;
+  bool send_initial_metadata_wanted_ /* GUARDED_BY(reader_mu_) */ = false;
+  bool finish_wanted_ /* GUARDED_BY(reader_mu_) */ = false;
+  Request* read_wanted_ /* GUARDED_BY(reader_mu_) */ = nullptr;
+  ::grpc::Status status_wanted_ /* GUARDED_BY(reader_mu_) */;
 };
 
 /// \a ServerWriteReactor is the interface for a server-streaming RPC.
@@ -651,12 +651,12 @@ class ServerWriteReactor : public internal::ServerReactor {
 
   grpc::internal::Mutex writer_mu_;
   std::atomic<ServerCallbackWriter<Response>*> writer_;
-  bool send_initial_metadata_wanted_ = false;
-  bool write_and_finish_wanted_ = false;
-  bool finish_wanted_ = false;
-  const Response* write_wanted_ = nullptr;
-  ::grpc::WriteOptions write_options_wanted_;
-  ::grpc::Status status_wanted_;
+  bool send_initial_metadata_wanted_ /* GUARDED_BY(writer_mu_) */ = false;
+  bool write_and_finish_wanted_ /* GUARDED_BY(writer_mu_) */ = false;
+  bool finish_wanted_ /* GUARDED_BY(writer_mu_) */ = false;
+  const Response* write_wanted_ /* GUARDED_BY(writer_mu_) */ = nullptr;
+  ::grpc::WriteOptions write_options_wanted_ /* GUARDED_BY(writer_mu_) */;
+  ::grpc::Status status_wanted_ /* GUARDED_BY(writer_mu_) */;
 };
 
 class ServerUnaryReactor : public internal::ServerReactor {
@@ -718,9 +718,9 @@ class ServerUnaryReactor : public internal::ServerReactor {
 
   grpc::internal::Mutex call_mu_;
   std::atomic<ServerCallbackUnary*> call_;
-  bool send_initial_metadata_wanted_ = false;
-  bool finish_wanted_ = false;
-  ::grpc::Status status_wanted_;
+  bool send_initial_metadata_wanted_ /* GUARDED_BY(writer_mu_) */ = false;
+  bool finish_wanted_ /* GUARDED_BY(writer_mu_) */ = false;
+  ::grpc::Status status_wanted_ /* GUARDED_BY(writer_mu_) */;
 };
 
 }  // namespace experimental
