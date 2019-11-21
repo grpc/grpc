@@ -83,7 +83,7 @@ void TlsCredentialReloadArg::set_pem_root_certs(
 }
 
 void TlsCredentialReloadArg::add_pem_key_cert_pair(
-    TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair) {
+    const TlsKeyMaterialsConfig::PemKeyCertPair& pem_key_cert_pair) {
   grpc_ssl_pem_key_cert_pair* ssl_pair =
       (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
           sizeof(grpc_ssl_pem_key_cert_pair));
@@ -95,7 +95,7 @@ void TlsCredentialReloadArg::add_pem_key_cert_pair(
 }
 
 void TlsCredentialReloadArg::set_key_materials(
-    grpc::string pem_root_certs,
+    const grpc::string& pem_root_certs,
     std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list) {
   if (c_arg_->key_materials_config == nullptr) {
     c_arg_->key_materials_config = grpc_tls_key_materials_config_create();
