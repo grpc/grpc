@@ -61,33 +61,20 @@ static void TestAsyncTlsServerAuthorizationCheckCallback(
 class TestAsyncTlsServerAuthorizationCheck
     : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
  public:
-  TestAsyncTlsServerAuthorizationCheck(SpiffeThreadList* thread_list) {
-  
-  }
-
-  ~TestAsyncTlsServerAuthorizationCheck() override {
-    //if (server_authz_check_thread_ != nullptr) {
-    //  server_authz_check_thread_->join();
-    //}
-    //if (thread_started_) {
-    //  server_authz_check_thread_.join();
-    //}
-  }
+  TestAsyncTlsServerAuthorizationCheck(SpiffeThreadList* thread_list)
+      : thread_list_(thread_list) {}
 
   // Async implementation.
   int Schedule(
       ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
     GPR_ASSERT(arg != nullptr);
-    //server_authz_check_thread_ = std::unique_ptr<std::thread>(
-    //    new std::thread(TestAsyncTlsServerAuthorizationCheckCallback, arg));
-    thread_started_ = true;
-    server_authz_check_thread_ = std::thread(TestAsyncTlsServerAuthorizationCheckCallback, arg);
+    server_authz_check_thread_ =
+        std::thread(TestAsyncTlsServerAuthorizationCheckCallback, arg);
+    thread_list_->add_thread(std::move(server_authz_check_thread_));
     return 1;
   }
 
  private:
-  //std::unique_ptr<std::thread> server_authz_check_thread_ = nullptr;
-  bool thread_started_ = false;
   std::thread server_authz_check_thread_;
   SpiffeThreadList* thread_list_;
 };
@@ -105,7 +92,8 @@ class TestAsyncTlsServerAuthorizationCheck
  *  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY for both the
  *  client and the server. **/
 std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
-CreateTestTlsCredentialsOptions(bool is_client, bool is_async, SpiffeThreadList* thread_list) {
+CreateTestTlsCredentialsOptions(bool is_client, bool is_async,
+                                SpiffeThreadList* thread_list) {
   /** Create a credential reload config that is configured using the
    *  TestSyncTlsCredentialReload class. **/
   std::shared_ptr<TestSyncTlsCredentialReload> credential_reload_interface(
@@ -122,7 +110,7 @@ CreateTestTlsCredentialsOptions(bool is_client, bool is_async, SpiffeThreadList*
   if (is_client) {
     if (is_async) {
       std::shared_ptr<TestAsyncTlsServerAuthorizationCheck> async_interface(
-          new TestAsyncTlsServerAuthorizationCheck());
+          new TestAsyncTlsServerAuthorizationCheck(thread_list));
       test_server_authorization_check_config = std::make_shared<
           ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
           async_interface);
