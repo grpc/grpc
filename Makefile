@@ -5685,6 +5685,7 @@ LIBGRPC++_SRC = \
     src/cpp/server/health/health_check_service.cc \
     src/cpp/server/health/health_check_service_server_builder_option.cc \
     src/cpp/server/server_builder.cc \
+    src/cpp/server/server_callback.cc \
     src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
@@ -6138,6 +6139,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_handlers.h \
     include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_context_impl.h \
@@ -6610,6 +6612,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_handlers.h \
     include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_context_impl.h \
@@ -6789,6 +6792,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_handlers.h \
     include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_context_impl.h \
@@ -6913,6 +6917,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/server/health/health_check_service.cc \
     src/cpp/server/health/health_check_service_server_builder_option.cc \
     src/cpp/server/server_builder.cc \
+    src/cpp/server/server_callback.cc \
     src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
@@ -7366,6 +7371,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_handlers.h \
     include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_context_impl.h \

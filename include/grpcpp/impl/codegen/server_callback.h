@@ -23,20 +23,18 @@
 
 namespace grpc {
 namespace experimental {
-template <class Request, class Response>
-using ServerReadReactor =
-    ::grpc_impl::experimental::ServerReadReactor<Request, Response>;
+template <class Request>
+using ServerReadReactor = ::grpc_impl::experimental::ServerReadReactor<Request>;
 
-template <class Request, class Response>
+template <class Response>
 using ServerWriteReactor =
-    ::grpc_impl::experimental::ServerWriteReactor<Request, Response>;
+    ::grpc_impl::experimental::ServerWriteReactor<Response>;
 
 template <class Request, class Response>
 using ServerBidiReactor =
     ::grpc_impl::experimental::ServerBidiReactor<Request, Response>;
 
-typedef ::grpc_impl::experimental::ServerCallbackRpcController
-    ServerCallbackRpcController;
+using ServerUnaryReactor = ::grpc_impl::experimental::ServerUnaryReactor;
 
 }  // namespace experimental
 }  // namespace grpc
