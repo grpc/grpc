@@ -33,10 +33,11 @@
 
 namespace grpc_core {
 
-enum AdsResourceType {
-  CDS,
-  EDS,
-};
+constexpr char kRdsTypeUrl[] =
+    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
+constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
+constexpr char kEdsTypeUrl[] =
+    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
 struct CdsUpdate {
   // The name to use in the EDS request.
@@ -162,32 +163,42 @@ using EdsUpdateMap =
     std::map<std::unique_ptr<char> /*eds_service_name*/, EdsUpdate, StringLess>;
 
 struct VersionState {
-  std::unique_ptr<char> version_info;
-  std::unique_ptr<char> nonce;
+  std::string version_info;
+  std::string nonce;
 };
+
+// Creates a CDS request querying \a cluster_names.
+grpc_slice XdsUnknownTypeNackRequestCreateAndEncode(const std::string& type_url,
+                                                    const std::string& nonce,
+                                                    grpc_error* error);
 
 // Creates a CDS request querying \a cluster_names.
 grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
-                                        const VersionState& cds_version,
+                                        const std::string& version,
+                                        const std::string& nonce,
                                         grpc_error* error);
 
 // Creates an EDS request querying \a eds_service_names.
 grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
-                                        const VersionState& eds_version,
+                                        const std::string& version,
+                                        const std::string& nonce,
                                         grpc_error* error);
 
-// Parses the ADS response and outputs update for either CDS or EDS. If there
-// is any error, the output update is invalid. Ignore the update for unexpected
-// names.
+// Parses the ADS response and outputs update for either CDS or EDS.
+// If the response can't be parsed at the top level, \a type_url will point to
+// an empty string; otherwise, \a type_url and \a nonce will point to the
+// received data. If the response still can't be accepted (due to unsupported \a
+// type_url, invalid resource content, and etc), \a version will point to an
+// empty string; otherwise, \a version will point to the received version.
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
     const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    VersionState* new_version, AdsResourceType* ads_type);
+    std::string* version, std::string* nonce, std::string* type_url);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,

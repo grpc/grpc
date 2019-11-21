@@ -50,14 +50,6 @@
 
 namespace grpc_core {
 
-namespace {
-
-constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
-constexpr char kEdsTypeUrl[] =
-    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
-
-}  // namespace
-
 bool XdsPriorityListUpdate::operator==(
     const XdsPriorityListUpdate& other) const {
   if (priorities_.size() != other.priorities_.size()) return false;
@@ -204,19 +196,51 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
 
 }  // namespace
 
+grpc_slice XdsUnknownTypeNackRequestCreateAndEncode(const std::string& type_url,
+                                                    const std::string& nonce,
+                                                    grpc_error* error) {
+  upb::Arena arena;
+  // Create a request.
+  envoy_api_v2_DiscoveryRequest* request =
+      envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  // Set type_url.
+  envoy_api_v2_DiscoveryRequest_set_type_url(
+      request, upb_strview_makez(type_url.c_str()));
+  // Set nonce.
+  envoy_api_v2_DiscoveryRequest_set_response_nonce(
+      request, upb_strview_makez(nonce.c_str()));
+  // Set error_detail.
+  grpc_slice error_description_slice;
+  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                &error_description_slice));
+  upb_strview error_description_strview =
+      upb_strview_make(reinterpret_cast<const char*>(
+                           GPR_SLICE_START_PTR(error_description_slice)),
+                       GPR_SLICE_LENGTH(error_description_slice));
+  google_rpc_Status* error_detail =
+      envoy_api_v2_DiscoveryRequest_mutable_error_detail(request, arena.ptr());
+  google_rpc_Status_set_message(error_detail, error_description_strview);
+  // Encode the request.
+  size_t output_length;
+  char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
+                                                         &output_length);
+  return grpc_slice_from_copied_buffer(output, output_length);
+}
+
 grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
-                                        const VersionState& cds_version,
+                                        const std::string& version,
+                                        const std::string& nonce,
                                         grpc_error* error) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
   // Set version_info.
-  if (cds_version.version_info != nullptr) {
+  if (!version.version_info.empty()) {
     envoy_api_v2_DiscoveryRequest_set_version_info(
-        request, upb_strview_makez(cds_version.version_info.get()));
+        request, upb_strview_makez(version.version_info.c_str()));
   }
   // Populate node.
   if (build_version != nullptr) {
@@ -234,9 +258,9 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
                                              upb_strview_makez(kCdsTypeUrl));
   // Set nonce.
-  if (cds_version.nonce != nullptr) {
+  if (!version.nonce.empty()) {
     envoy_api_v2_DiscoveryRequest_set_response_nonce(
-        request, upb_strview_makez(cds_version.version_info.get()));
+        request, upb_strview_makez(version.version_info.c_str()));
   }
   // Set error_detail if it's a NACK.
   if (error != GRPC_ERROR_NONE) {
@@ -262,16 +286,17 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
 grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
-                                        const VersionState& eds_version,
+                                        const std::string& version,
+                                        const std::string& nonce,
                                         grpc_error* error) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
   // Set version_info.
-  if (eds_version.version_info != nullptr) {
+  if (!version.empty()) {
     envoy_api_v2_DiscoveryRequest_set_version_info(
-        request, upb_strview_makez(eds_version.version_info.get()));
+        request, upb_strview_makez(version.c_str()));
   }
   // Populate node.
   if (build_version != nullptr) {
@@ -290,9 +315,9 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
                                              upb_strview_makez(kEdsTypeUrl));
   // Set nonce.
-  if (eds_version.version_info != nullptr) {
+  if (!eds_nonce.empty()) {
     envoy_api_v2_DiscoveryRequest_set_response_nonce(
-        request, upb_strview_makez(eds_version.version_info.get()));
+        request, upb_strview_makez(eds_nonce.c_str()));
   }
   // Set error_detail if it's a NACK.
   if (error != GRPC_ERROR_NONE) {
@@ -370,7 +395,8 @@ grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
     upb_strview service_name =
         envoy_api_v2_Cluster_EdsClusterConfig_service_name(eds_cluster_config);
     if (service_name.size != 0) {
-      cds_update.eds_service_name = StringCopy(service_name);
+      cds_update.eds_service_name =
+          std::string(service_name.data, service_name.size);
     }
     // Check the LB policy.
     if (envoy_api_v2_Cluster_lb_policy(cluster) !=
@@ -388,7 +414,7 @@ grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
       }
       // FIXME: If we only use this field to enable/disable load reporting, we
       // are violating the proto?
-      cds_update.lrs_load_reporting_server_name.reset(gpr_strdup(""));
+      cds_update.lrs_load_reporting_server_name = "";
     }
     upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
     cds_update_map->emplace(StringCopy(cluster_name), std::move(cds_update));
@@ -590,7 +616,7 @@ grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
     const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    VersionState* new_version, AdsResourceType* ads_type) {
+    std::string* version, std::string* nonce, std::string* ads_type) {
   upb::Arena arena;
   // Decode the response.
   const envoy_api_v2_DiscoveryResponse* response =
@@ -598,16 +624,21 @@ grpc_error* XdsAdsResponseDecodeAndParse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
   if (response == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode response.");
+    *ads_type = UNPARSABLE;
+    return GRPC_ERROR_NONE;
   }
   // Record version_info and nonce.
   upb_strview version_info =
       envoy_api_v2_DiscoveryResponse_version_info(response);
-  new_version->version_info = StringCopy(version_info);
+  version->version_info = StringCopy(version_info);
   upb_strview nonce = envoy_api_v2_DiscoveryResponse_nonce(response);
-  new_version->nonce = StringCopy(nonce);
+  version->nonce = StringCopy(nonce);
   // Check the type_url of the response.
   upb_strview type_url = envoy_api_v2_DiscoveryResponse_type_url(response);
+  if (upb_strview_eql(type_url, upb_strview_makez(kRdsTypeUrl))) {
+    *ads_type = RDS;
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported response type.");
+  }
   if (upb_strview_eql(type_url, upb_strview_makez(kCdsTypeUrl))) {
     *ads_type = CDS;
     return CdsResponseParse(response, cds_update_map, arena.ptr());
@@ -615,8 +646,6 @@ grpc_error* XdsAdsResponseDecodeAndParse(
     *ads_type = EDS;
     return EdsResponsedParse(response, expected_eds_service_names,
                              eds_update_map, arena.ptr());
-  } else {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported response type.");
   }
 }
 
