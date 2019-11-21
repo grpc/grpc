@@ -102,8 +102,11 @@ class TlsCredentialReloadArg {
    * **/
   void set_cb_user_data(void* cb_user_data);
   void set_pem_root_certs(const grpc::string& pem_root_certs);
-  void add_pem_key_cert_pair(TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair);
-  void set_key_materials(grpc::string pem_root_certs, std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list);
+  void add_pem_key_cert_pair(
+      TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair);
+  void set_key_materials(grpc::string pem_root_certs,
+                         std::vector<TlsKeyMaterialsConfig::PemKeyCertPair>
+                             pem_key_cert_pair_list);
   void set_key_materials_config(
       const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);

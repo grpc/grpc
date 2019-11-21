@@ -280,9 +280,9 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
 
 // Builds TLS Credentials given TLS options.
 std::shared_ptr<ChannelCredentials> TlsCredentials(
-    const TlsCredentialsOptions& options) {
+    std::shared_ptr<TlsCredentialsOptions> options) {
   return WrapChannelCredentials(
-      grpc_tls_spiffe_credentials_create(options.c_credentials_options()));
+      grpc_tls_spiffe_credentials_create(options->c_credentials_options()));
 }
 
 }  // namespace experimental

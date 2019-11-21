@@ -97,23 +97,25 @@ void TlsCredentialReloadArg::add_pem_key_cert_pair(
 void TlsCredentialReloadArg::set_key_materials(
     grpc::string pem_root_certs,
     std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list) {
-  //GPR_ASSERT(c_arg_->key_materials_config != nullptr);
   if (c_arg_->key_materials_config == nullptr) {
     c_arg_->key_materials_config = grpc_tls_key_materials_config_create();
   }
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> c_pem_key_cert_pair_list;
+  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
+      c_pem_key_cert_pair_list;
   for (const auto& key_cert_pair : pem_key_cert_pair_list) {
-    grpc_ssl_pem_key_cert_pair* ssl_pair = (grpc_ssl_pem_key_cert_pair*)gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair));
+    grpc_ssl_pem_key_cert_pair* ssl_pair =
+        (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
+            sizeof(grpc_ssl_pem_key_cert_pair));
     ssl_pair->private_key = gpr_strdup(key_cert_pair.private_key.c_str());
     ssl_pair->cert_chain = gpr_strdup(key_cert_pair.cert_chain.c_str());
-    //ssl_pair->private_key = key_cert_pair.private_key.c_str();
-    //ssl_pair->cert_chain = key_cert_pair.cert_chain.c_str();
-    ::grpc_core::PemKeyCertPair c_pem_key_cert_pair = ::grpc_core::PemKeyCertPair(ssl_pair);
+    ::grpc_core::PemKeyCertPair c_pem_key_cert_pair =
+        ::grpc_core::PemKeyCertPair(ssl_pair);
     c_pem_key_cert_pair_list.emplace_back(std::move(c_pem_key_cert_pair));
-    //c_pem_key_cert_pair_list.emplace_back(c_pem_key_cert_pair);
   }
-  ::grpc_core::UniquePtr<char> c_pem_root_certs(gpr_strdup(pem_root_certs.c_str()));
-  c_arg_->key_materials_config->set_key_materials(std::move(c_pem_root_certs), c_pem_key_cert_pair_list);
+  ::grpc_core::UniquePtr<char> c_pem_root_certs(
+      gpr_strdup(pem_root_certs.c_str()));
+  c_arg_->key_materials_config->set_key_materials(std::move(c_pem_root_certs),
+                                                  c_pem_key_cert_pair_list);
 }
 
 void TlsCredentialReloadArg::set_key_materials_config(

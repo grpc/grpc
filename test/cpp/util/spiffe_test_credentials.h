@@ -19,23 +19,16 @@
 #ifndef GRPC_TEST_CPP_UTIL_SPIFFE_TEST_CREDENTIALS_H
 #define GRPC_TEST_CPP_UTIL_SPIFFE_TEST_CREDENTIALS_H
 
-#include <memory>
-
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
+#include <memory>
+#include <vector>
 #include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
 
 const char kSpiffeCredentialsType[] = "spiffe";
-
-std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials();
-
-std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials();
-
-std::shared_ptr<grpc_impl::ChannelCredentials>
-SpiffeAsyncTestChannelCredentials();
 
 /** This method creates a TlsCredentialsOptions instance with no key materials,
  *  whose credential reload config is configured using the
@@ -54,9 +47,8 @@ CreateTestTlsCredentialsOptions(bool is_client, bool is_async);
 
 class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
  public:
-  SpiffeCredentialTypeProvider() {
-    channel_options = CreateTestTlsCredentialsOptions(true, false);
-    server_options = CreateTestTlsCredentialsOptions(false, false);
+  SpiffeCredentialTypeProvider(bool server_authz_async) {
+    server_authz_async_ = server_authz_async;
   }
 
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
@@ -66,31 +58,24 @@ class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
      *  override, the test sets the target name to localhost:port_number,
      *  yielding a mismatched with the example key materials. **/
     args->SetSslTargetNameOverride("foo.test.google.fr");
-    return TlsCredentials(*channel_options);
+    std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
+        channel_options =
+            CreateTestTlsCredentialsOptions(true, server_authz_async_);
+    active_options_.push_back(channel_options);
+    return TlsCredentials(channel_options);
   }
   std::shared_ptr<ServerCredentials> GetServerCredentials() override {
-    return TlsServerCredentials(*server_options);
+    std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
+        server_options =
+            CreateTestTlsCredentialsOptions(false, server_authz_async_);
+    active_options_.push_back(server_options);
+    return TlsServerCredentials(server_options);
   }
 
  private:
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> channel_options;
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> server_options;
-};
-
-class SpiffeAsyncCredentialTypeProvider : public CredentialTypeProvider {
- public:
-  std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      ChannelArguments* args) override {
-    /** Overriding the ssl target name is necessary for the key materials
-     *  provisioned in the example to be valid for this target; without the
-     *  override, the test sets the target name to localhost:port_number,
-     *  yielding a mismatched with the example key materials. **/
-    args->SetSslTargetNameOverride("foo.test.google.fr");
-    return SpiffeAsyncTestChannelCredentials();
-  }
-  std::shared_ptr<ServerCredentials> GetServerCredentials() override {
-    return SpiffeTestServerCredentials();
-  }
+  std::vector<std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>>
+      active_options_;
+  bool server_authz_async_ = false;
 };
 
 }  // namespace testing

@@ -30,9 +30,9 @@ class TestSyncTlsCredentialReload
       ::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
     struct ::grpc_impl::experimental::TlsKeyMaterialsConfig::PemKeyCertPair
         pem_key_cert_pair = {test_server1_key, test_server1_cert};
-    //arg->set_pem_root_certs(test_root_cert);
-    //arg->add_pem_key_cert_pair(pem_key_cert_pair);
-    std::vector<struct ::grpc_impl::experimental::TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list = {pem_key_cert_pair};
+    std::vector<
+        struct ::grpc_impl::experimental::TlsKeyMaterialsConfig::PemKeyCertPair>
+        pem_key_cert_pair_list = {pem_key_cert_pair};
     arg->set_key_materials(test_root_cert, pem_key_cert_pair_list);
     arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
     return 0;
@@ -127,25 +127,12 @@ CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
   /** Create a TlsCredentialsOptions instance with an empty key materials
    *  config, and the credential reload and server authorization check configs
    *  are set based upon the ... **/
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options(new ::grpc_impl::experimental::TlsCredentialsOptions(
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options(
+      new ::grpc_impl::experimental::TlsCredentialsOptions(
           GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
           /** key materials config **/ nullptr, test_credential_reload_config,
           test_server_authorization_check_config));
   return options;
-}
-
-std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials() {
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options = CreateTestTlsCredentialsOptions(true, false);
-  return TlsCredentials(*options);
-}
-
-std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials() {
-  return TlsServerCredentials(*CreateTestTlsCredentialsOptions(false, false));
-}
-
-std::shared_ptr<grpc_impl::ChannelCredentials>
-SpiffeAsyncTestChannelCredentials() {
-  return TlsCredentials(*CreateTestTlsCredentialsOptions(true, true));
 }
 
 }  // namespace testing
