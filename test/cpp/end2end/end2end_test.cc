@@ -2223,7 +2223,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
     /** Add Spiffe credentials with asynchronous server authz. **/
     credentials_provider->AddSecureType(
         kSpiffeCredentialsType,
-        std::unique_ptr<SpiffeAsyncCredentialTypeProvider>(
+        std::unique_ptr<SpiffeCredentialTypeProvider>(
             new SpiffeCredentialTypeProvider(/** server_authz_async **/ true)));
     credentials_types = credentials_provider->GetSecureCredentialsTypeList();
   }
