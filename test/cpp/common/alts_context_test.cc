@@ -16,8 +16,7 @@
  *
  */
 
-#include "include/grpcpp/alts_context.h"
-
+#include <grpcpp/alts_context.h>
 #include <grpcpp/security/auth_context.h>
 #include <gtest/gtest.h>
 

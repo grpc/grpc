@@ -19,15 +19,18 @@
 #ifndef GRPCPP_ALTS_CONTEXT_H
 #define GRPCPP_ALTS_CONTEXT_H
 
-#include <grpcpp/security/auth_context.h>
-
-#include "src/core/lib/security/context/security_context.h"
-#include "src/proto/grpc/gcp/altscontext.pb.h"
+#include <grpcpp/impl/codegen/security/auth_context.h>
+#include <memory>
 
 namespace grpc {
+
+namespace gcp {
+class AltsContext;
+}  // namespace gcp
+
 // GetAltsContextFromAuthContext helps to get the AltsContext from AuthContext.
 // Please make sure the underlying protocol is ALTS before calling this
-// function, otherwise a nullptr will be returned.
+// function. Otherwise a nullptr will be returned.
 std::unique_ptr<gcp::AltsContext> GetAltsContextFromAuthContext(
     const AuthContext& auth_context);
 
