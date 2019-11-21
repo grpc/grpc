@@ -76,11 +76,16 @@ set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
 set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
 
-set(gRPC_GFLAGS_PROVIDER "module" CACHE STRING "Provider of gflags library")
-set_property(CACHE gRPC_GFLAGS_PROVIDER PROPERTY STRINGS "module" "package")
+if(gRPC_BUILD_TESTS)
+  set(gRPC_GFLAGS_PROVIDER "module" CACHE STRING "Provider of gflags library")
+  set_property(CACHE gRPC_GFLAGS_PROVIDER PROPERTY STRINGS "module" "package")
 
-set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
-set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
+  set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
+  set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
+else()
+  set(gRPC_GFLAGS_PROVIDER "none")
+  set(gRPC_BENCHMARK_PROVIDER "none")
+endif()
 
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
