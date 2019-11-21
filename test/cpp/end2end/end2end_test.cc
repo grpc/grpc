@@ -34,6 +34,7 @@
 
 #include <mutex>
 #include <thread>
+#include <iostream>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/env.h"
@@ -427,11 +428,14 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
                     bool with_binary_metadata) {
+  std::cout << "********Entering send rpc" << std::endl;
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello hello hello hello");
+  std::cout << "**********message set" << std::endl;
 
   for (int i = 0; i < num_rpcs; ++i) {
+    std::cout << "*********** i=" << i << std::endl;
     ClientContext context;
     if (with_binary_metadata) {
       char bytes[8] = {'\0', '\1', '\2', '\3',
@@ -439,7 +443,9 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
       context.AddMetadata("custom-bin", grpc::string(bytes, 8));
     }
     context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    std::cout << "****done prep" << std::endl;
     Status s = stub->Echo(&context, request, &response);
+    std::cout << "******done echo" << std::endl;
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
   }
@@ -841,8 +847,11 @@ TEST_P(End2endTest, ReconnectChannel) {
   }
 #endif  // GRPC_POSIX_SOCKET
   ResetStub();
+  std::cout << "*******************Done first reset stub" << std::endl;
   SendRpc(stub_.get(), 1, false);
+  std::cout << "*******************Done first send rpc" << std::endl;
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
+  std::cout << "*******************Done restart server." << std::endl;
   // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
   // reconnect the channel.
   gpr_sleep_until(gpr_time_add(
@@ -850,7 +859,9 @@ TEST_P(End2endTest, ReconnectChannel) {
       gpr_time_from_millis(
           300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
           GPR_TIMESPAN)));
+  std::cout << "*************Done sleep" << std::endl;
   SendRpc(stub_.get(), 1, false);
+  std::cout << "***********Done final send rpc" << std::endl;
 }
 
 TEST_P(End2endTest, RequestStreamOneRequest) {
@@ -2222,7 +2233,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                         /** server_authz_async **/ false)));
     /** Add Spiffe credentials with asynchronous server authz. **/
     credentials_provider->AddSecureType(
-        kSpiffeCredentialsType,
+        kSpiffeAsyncCredentialsType,
         std::unique_ptr<SpiffeCredentialTypeProvider>(
             new SpiffeCredentialTypeProvider(/** server_authz_async **/ true)));
     credentials_types = credentials_provider->GetSecureCredentialsTypeList();

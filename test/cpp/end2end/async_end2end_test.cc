@@ -1846,10 +1846,10 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
       std::unique_ptr<SpiffeCredentialTypeProvider>(
           new SpiffeCredentialTypeProvider(/** server_authz_async **/ false)));
   /** Add Spiffe credentials with asynchronous server authz. **/
-  credentials_provider->AddSecureType(
-      kSpiffeCredentialsType,
-      std::unique_ptr<SpiffeCredentialTypeProvider>(
-          new SpiffeCredentialTypeProvider(/** server_authz_async **/ true)));
+  //credentials_provider->AddSecureType(
+  //    kSpiffeCredentialsType,
+  //    std::unique_ptr<SpiffeCredentialTypeProvider>(
+  //        new SpiffeCredentialTypeProvider(/** server_authz_async **/ true)));
 
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
