@@ -33,7 +33,6 @@ namespace testing {
 const int kServerDefaultResponseStreamsToSend = 3;
 const char* const kServerResponseStreamsToSend = "server_responses_to_send";
 const char* const kServerTryCancelRequest = "server_try_cancel";
-const char* const kServerUseCancelCallback = "server_use_cancel_callback";
 const char* const kDebugInfoTrailerKey = "debug-info-bin";
 const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
 const char* const kServerUseCoalescingApi = "server_use_coalescing_api";
@@ -46,13 +45,6 @@ typedef enum {
   CANCEL_DURING_PROCESSING,
   CANCEL_AFTER_PROCESSING
 } ServerTryCancelRequestPhase;
-
-typedef enum {
-  DO_NOT_USE_CALLBACK = 0,
-  MAYBE_USE_CALLBACK_EARLY_CANCEL,
-  MAYBE_USE_CALLBACK_LATE_CANCEL,
-  MAYBE_USE_CALLBACK_NO_CANCEL,
-} ServerUseCancelCallback;
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
@@ -98,23 +90,24 @@ class CallbackTestServiceImpl
   explicit CallbackTestServiceImpl(const grpc::string& host)
       : signal_client_(false), host_(new grpc::string(host)) {}
 
-  void Echo(ServerContext* context, const EchoRequest* request,
-            EchoResponse* response,
-            experimental::ServerCallbackRpcController* controller) override;
+  experimental::ServerUnaryReactor* Echo(
+      experimental::CallbackServerContext* context, const EchoRequest* request,
+      EchoResponse* response) override;
 
-  void CheckClientInitialMetadata(
-      ServerContext* context, const SimpleRequest* request,
-      SimpleResponse* response,
-      experimental::ServerCallbackRpcController* controller) override;
+  experimental::ServerUnaryReactor* CheckClientInitialMetadata(
+      experimental::CallbackServerContext* context, const SimpleRequest*,
+      SimpleResponse*) override;
 
-  experimental::ServerReadReactor<EchoRequest, EchoResponse>* RequestStream()
-      override;
+  experimental::ServerReadReactor<EchoRequest>* RequestStream(
+      experimental::CallbackServerContext* context,
+      EchoResponse* response) override;
 
-  experimental::ServerWriteReactor<EchoRequest, EchoResponse>* ResponseStream()
-      override;
+  experimental::ServerWriteReactor<EchoResponse>* ResponseStream(
+      experimental::CallbackServerContext* context,
+      const EchoRequest* request) override;
 
-  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream()
-      override;
+  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
+      experimental::CallbackServerContext* context) override;
 
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {
@@ -123,15 +116,6 @@ class CallbackTestServiceImpl
   }
 
  private:
-  struct CancelState {
-    std::atomic_bool callback_invoked{false};
-  };
-  void EchoNonDelayed(ServerContext* context, const EchoRequest* request,
-                      EchoResponse* response,
-                      experimental::ServerCallbackRpcController* controller,
-                      CancelState* cancel_state);
-
-  Alarm alarm_;
   bool signal_client_;
   std::mutex mu_;
   std::unique_ptr<grpc::string> host_;
