@@ -108,6 +108,21 @@ grpc_get_tsi_client_certificate_request_type(
   }
 }
 
+tsi_server_verification_option
+grpc_get_tsi_server_verification_option(
+    grpc_ssl_server_verification_option server_verification_option) {
+  switch (server_verification_option) {
+    case GRPC_SSL_SERVER_VERIFICATION:
+      return TSI_SERVER_VERIFICATION;
+
+    case GRPC_SSL_SKIP_SERVER_VERIFICATION:
+      return TSI_SKIP_SERVER_VERIFICATION;
+
+    default:
+      return TSI_SERVER_VERIFICATION;
+  }
+}
+
 grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   /* Check the ALPN if ALPN is supported. */
@@ -321,6 +336,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   }
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.session_cache = ssl_session_cache;
+  options.server_verification_option = TSI_SERVER_VERIFICATION;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);

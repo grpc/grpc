@@ -55,6 +55,12 @@ typedef enum {
   TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
 } tsi_client_certificate_request_type;
 
+typedef enum {
+  // Default option
+  TSI_SERVER_VERIFICATION,
+  TSI_SKIP_SERVER_VERIFICATION,
+} tsi_server_verification_option;
+
 const char* tsi_result_to_string(tsi_result result);
 
 /* --- tsi tracing --- */

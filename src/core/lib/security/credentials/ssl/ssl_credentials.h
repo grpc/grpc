@@ -28,6 +28,10 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
  public:
   grpc_ssl_credentials(const char* pem_root_certs,
                        grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+                       const verify_peer_options* verify_options);
+
+  grpc_ssl_credentials(const char* pem_root_certs,
+                       grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
                        const grpc_ssl_verify_peer_options* verify_options,
       grpc_ssl_server_verification_option server_verification_option);
 

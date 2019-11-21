@@ -105,7 +105,8 @@ class grpc_ssl_channel_security_connector final
     }
     options.cipher_suites = grpc_get_ssl_cipher_suites();
     options.session_cache = ssl_session_cache;
-    options.server_verification_option = config->server_verification_option;
+    options.server_verification_option =
+        grpc_get_tsi_server_verification_option(config->server_verification_option);
     const tsi_result result =
         tsi_create_ssl_client_handshaker_factory_with_options(
             &options, &client_handshaker_factory_);

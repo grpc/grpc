@@ -20,7 +20,6 @@
 #define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/grpc_security.h>
 
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -146,7 +145,7 @@ struct tsi_ssl_client_handshaker_options {
   tsi_ssl_session_cache* session_cache;
 
   /* Server verification option */
-  grpc_ssl_server_verification_option server_verification_option;
+  tsi_server_verification_option server_verification_option;
 
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
@@ -156,7 +155,7 @@ struct tsi_ssl_client_handshaker_options {
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
         session_cache(nullptr),
-        server_verification_option(GRPC_SSL_SERVER_VERIFICATION) {}
+        server_verification_option(TSI_SERVER_VERIFICATION) {}
 };
 
 /* Creates a client handshaker factory.

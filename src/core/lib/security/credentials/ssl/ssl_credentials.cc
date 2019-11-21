@@ -46,6 +46,25 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
 
 grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const verify_peer_options* verify_options)
+    : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
+  if (verify_options) {
+    grpc_ssl_verify_peer_options options{};
+    options.verify_peer_callback = verify_options->verify_peer_callback;
+    options.verify_peer_callback_userdata = verify_options->verify_peer_callback_userdata;
+    options.verify_peer_destruct = verify_options->verify_peer_destruct;
+    options.peer_cert_request_type = GRPC_SSL_PEER_LEAF_CERTIFICATE;
+
+    build_config(pem_root_certs, pem_key_cert_pair, &options,
+                 GRPC_SSL_SERVER_VERIFICATION);
+  } else {
+    build_config(pem_root_certs, pem_key_cert_pair, nullptr,
+                 GRPC_SSL_SERVER_VERIFICATION);
+  }
+}
+
+grpc_ssl_credentials::grpc_ssl_credentials(
+    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options,
     grpc_ssl_server_verification_option server_verification_option)
     : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
@@ -136,8 +155,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
 
   return grpc_core::New<grpc_ssl_credentials>(
       pem_root_certs, pem_key_cert_pair,
-      reinterpret_cast<const grpc_ssl_verify_peer_options*>(verify_options),
-      GRPC_SSL_SERVER_VERIFICATION);
+      reinterpret_cast<const verify_peer_options*>(verify_options));
 }
 
 grpc_channel_credentials* grpc_ssl_credentials_create_ex(
