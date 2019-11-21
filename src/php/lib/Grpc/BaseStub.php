@@ -34,13 +34,6 @@ class BaseStub
     private $update_metadata;
 
     /**
-     * invalidate default roots.pem, before set a different default cert after the first time
-     */
-    public function invalidateDefaultRootsPem()
-    {
-        ChannelCredentials::invalidateDefaultRootsPem();
-    }
-    /**
      * @param string  $hostname
      * @param array   $opts
      *  - 'update_metadata': (optional) a callback function which takes in a
