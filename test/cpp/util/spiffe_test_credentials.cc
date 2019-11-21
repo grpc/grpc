@@ -68,9 +68,9 @@ class TestAsyncTlsServerAuthorizationCheck
   int Schedule(
       ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
     GPR_ASSERT(arg != nullptr);
+    thread_list_->add_thread(std::move(server_authz_check_thread_));
     server_authz_check_thread_ =
         std::thread(TestAsyncTlsServerAuthorizationCheckCallback, arg);
-    thread_list_->add_thread(std::move(server_authz_check_thread_));
     return 1;
   }
 
