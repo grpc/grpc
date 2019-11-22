@@ -36,6 +36,6 @@ make boringssl_prefix_symbols
 
 [ -f symbol_prefix_include/boringssl_prefix_symbols.h ] || { echo "Failed to build boringssl_prefix_symbols.sh" ; exit 1 ; }
 
-gzip -c symbol_prefix_include/boringssl_prefix_symbols.h | base64 > /output/boringssl_prefix_symbols.h.gz.base64
+gzip -c symbol_prefix_include/boringssl_prefix_symbols.h | base64 > /output/boringssl_prefix_symbols.h.gz.b64
 
 exit 0

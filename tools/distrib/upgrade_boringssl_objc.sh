@@ -22,7 +22,7 @@ cd "$(dirname $0)"
 cd ../../third_party/boringssl
 
 BORINGSSL_COMMIT=$(git rev-parse HEAD)
-BORINGSSL_PREFIX_HEADERS_DIR=src/objective-c/boringssl_prefix_headers
+BORINGSSL_PREFIX_HEADERS_DIR=src/boringssl
 
 # Do the following in grpc root directory
 cd ../..
