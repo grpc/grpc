@@ -30,7 +30,6 @@ cd ../..
 docker build tools/dockerfile/grpc_objc/generate_boringssl_prefix_header -t grpc/boringssl_prefix_header
 mkdir -p $BORINGSSL_PREFIX_HEADERS_DIR
 docker run -it --rm -v $(pwd)/$BORINGSSL_PREFIX_HEADERS_DIR:/output grpc/boringssl_prefix_header $BORINGSSL_COMMIT
-git add $BORINGSSL_PREFIX_HEADERS_DIR/boringssl_prefix_symbols-$BORINGSSL_COMMIT.h
 
 # Increase the minor version by 1
 POD_VER=$(cat templates/src/objective-c/BoringSSL-GRPC.podspec.template | grep 'version = ' | perl -pe '($_)=/([0-9]+([.][0-9]+)+)/')

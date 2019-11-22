@@ -95,6 +95,7 @@ DerivedData
 *.pbobjc.*
 *.pbrpc.*
 src/objective-c/**/Build
+src/objective-c/boringssl_prefix_headers
 
 # Cocoapods artifacts
 Pods/
