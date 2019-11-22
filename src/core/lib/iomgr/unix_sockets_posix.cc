@@ -61,8 +61,23 @@ grpc_error* grpc_resolve_unix_domain_address(const char* name,
   un = reinterpret_cast<struct sockaddr_un*>((*addrs)->addrs->addr);
   un->sun_family = AF_UNIX;
   strncpy(un->sun_path, name, sizeof(un->sun_path));
+#ifdef GRPC_HAVE_ABSTRACT_UNIX_SOCKET
+  if (un->sun_path[0] == '@') {
+    // the address length of an abstract unix socket is calculated differently from
+    // pathname sockets. Effectively what it means for us is that we *must not*
+    // take a string terminating null byte into account. See `man 7 unix` for more
+    // details.
+    (*addrs)->addrs->len =
+      static_cast<socklen_t>(sizeof(un->sun_family) + strlen(un->sun_path));
+    un->sun_path[0] = '\0';
+  } else {
+    (*addrs)->addrs->len =
+      static_cast<socklen_t>(strlen(un->sun_path) + sizeof(un->sun_family) + 1);
+  }
+#else
   (*addrs)->addrs->len =
       static_cast<socklen_t>(strlen(un->sun_path) + sizeof(un->sun_family) + 1);
+#endif
   return GRPC_ERROR_NONE;
 }
 
@@ -83,6 +98,13 @@ void grpc_unlink_if_unix_domain_socket(
       const_cast<char*>(resolved_addr->addr));
   struct stat st;
 
+#ifdef GRPC_HAVE_ABSTRACT_UNIX_SOCKET
+  // there is nothing to unlink for an abstract unix socket
+  if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
+    return;
+  }
+#endif
+
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
     unlink(un->sun_path);
   }
@@ -97,7 +119,16 @@ char* grpc_sockaddr_to_uri_unix_if_possible(
   }
 
   char* result;
+#ifdef GRPC_HAVE_ABSTRACT_UNIX_SOCKET
+  // if this is an abstract unix socket, return it with the '@' in the name again
+  if (((struct sockaddr_un*)addr)->sun_path[0] == '\0' && ((struct sockaddr_un*)addr)->sun_path[1] != '\0') {
+    gpr_asprintf(&result, "unix:@%s", ((struct sockaddr_un*)addr)->sun_path + 1);
+  } else {
+    gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un*)addr)->sun_path);
+  }
+#else
   gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un*)addr)->sun_path);
+#endif
   return result;
 }
 

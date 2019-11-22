@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -56,7 +58,20 @@ bool grpc_parse_unix(const grpc_uri* uri,
   if (path_len == maxlen) return false;
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, uri->path);
+#ifdef GRPC_HAVE_ABSTRACT_UNIX_SOCKET
+  if (un->sun_path[0] == '@') {
+    // the address length of an abstract unix socket is calculated differently from
+    // pathname sockets. Effectively what it means for us is that we *must not*
+    // take a string terminating null byte into account. See `man 7 unix` for more
+    // details.
+    resolved_addr->len = static_cast<socklen_t>(sizeof(un->sun_family) + path_len);
+    un->sun_path[0] = '\0';
+  } else {
+    resolved_addr->len = static_cast<socklen_t>(sizeof(*un));
+  }
+#else
   resolved_addr->len = static_cast<socklen_t>(sizeof(*un));
+#endif
   return true;
 }
 
