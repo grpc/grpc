@@ -23,22 +23,28 @@
 
 #include "src/core/ext/filters/client_channel/proxy_mapper.h"
 
-void grpc_proxy_mapper_registry_init();
-void grpc_proxy_mapper_registry_shutdown();
+namespace grpc_core {
 
-/// Registers a new proxy mapper.  Takes ownership.
-/// If \a at_start is true, the new mapper will be at the beginning of
-/// the list.  Otherwise, it will be added to the end.
-void grpc_proxy_mapper_register(bool at_start, grpc_proxy_mapper* mapper);
+class ProxyMapperRegistry {
+ public:
+  static void Init();
+  static void Shutdown();
 
-bool grpc_proxy_mappers_map_name(const char* server_uri,
-                                 const grpc_channel_args* args,
-                                 char** name_to_resolve,
-                                 grpc_channel_args** new_args);
+  /// Registers a new proxy mapper.
+  /// If \a at_start is true, the new mapper will be at the beginning of
+  /// the list.  Otherwise, it will be added to the end.
+  static void Register(bool at_start,
+                       std::unique_ptr<ProxyMapperInterface> mapper);
 
-bool grpc_proxy_mappers_map_address(const grpc_resolved_address* address,
-                                    const grpc_channel_args* args,
-                                    grpc_resolved_address** new_address,
-                                    grpc_channel_args** new_args);
+  static bool MapName(const char* server_uri, const grpc_channel_args* args,
+                      char** name_to_resolve, grpc_channel_args** new_args);
+
+  static bool MapAddress(const grpc_resolved_address& address,
+                         const grpc_channel_args* args,
+                         grpc_resolved_address** new_address,
+                         grpc_channel_args** new_args);
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H */

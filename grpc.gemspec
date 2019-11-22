@@ -147,7 +147,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/local_subchannel_pool.h )
   s.files += %w( src/core/ext/filters/client_channel/parse_address.cc )
   s.files += %w( src/core/ext/filters/client_channel/parse_address.h )
-  s.files += %w( src/core/ext/filters/client_channel/proxy_mapper.cc )
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper.h )
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper_registry.cc )
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper_registry.h )
