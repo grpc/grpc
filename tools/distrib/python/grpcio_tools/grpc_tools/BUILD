@@ -3,6 +3,8 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:cython_library.bzl", "pyx_library")
 
+NON_BAZEL_ROOT = "../"
+
 cc_library(
     # TODO: Better name?
     name = "protoc_lib",
@@ -13,12 +15,14 @@ cc_library(
       # I really wish there were a disaggregated target to use here.
       "//src/compiler:grpc_plugin_support",
     ],
+    includes = [NON_BAZEL_ROOT],
 )
 
 pyx_library(
     name = "cyprotoc",
     srcs = ["_protoc_compiler.pyx"],
     deps = [":protoc_lib"],
+    includes = [NON_BAZEL_ROOT],
 )
 
 py_library(
@@ -27,12 +31,12 @@ py_library(
     deps = [":cyprotoc"],
     # TODO: Think about whether we should include well-known protos.
     srcs_version = "PY2AND3",
-    imports = ["../"],
+    imports = [NON_BAZEL_ROOT],
 )
 
 py_test(
   name = "protoc_test",
   srcs = ["protoc_test.py"],
   deps = ["//tools/distrib/python/grpcio_tools/grpc_tools:grpc_tools"],
-  python_version = "PY2",
+  python_version = "PY3",
 )
