@@ -224,7 +224,7 @@
       EOF
 
       # Grab prefix header from Github repo
-      base64 -D | gunzip > include/openssl/boringssl_prefix_symbols.h <<EOF
+      base64 -D <<EOF | gunzip > include/openssl/boringssl_prefix_symbols.h
       % for line in open("src/objective-c/boringssl_prefix_headers/boringssl_prefix_symbols.h.gz.base64", "r").readlines():
         ${line}\
       % endfor

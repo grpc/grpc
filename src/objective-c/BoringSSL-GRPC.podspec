@@ -1623,7 +1623,7 @@ Pod::Spec.new do |s|
     EOF
 
     # Grab prefix header from Github repo
-    base64 -D | gunzip > include/openssl/boringssl_prefix_symbols.h <<EOF
+    base64 -D <<EOF | gunzip > include/openssl/boringssl_prefix_symbols.h
       H4sICIwn110AA2JvcmluZ3NzbF9wcmVmaXhfc3ltYm9scy5oAK2dXXPbRpa/7/dTqP57s1s1tWvJ
       cSZzSUt0zI0taUg6G+8NCiRBCWOSYABQtvPp/9147ZdzGvgduCo1kwh4ngM2Gv2GRvd///fVbXb+
       nqdPz+XVf2z/8+rm1fUvf7v6NcueDsnV4rT9r3/77/9W/1w9JvkxLYo0O12V2dWlSP52tVXg366O
