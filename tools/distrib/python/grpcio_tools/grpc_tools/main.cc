@@ -17,7 +17,8 @@
 
 #include "src/compiler/python_generator.h"
 
-#include "grpc_tools/main.h"
+// TODO: Make this include agnostic to build system.
+#include "tools/distrib/python/grpcio_tools/grpc_tools/main.h"
 
 int protoc_main(int argc, char* argv[]) {
   google::protobuf::compiler::CommandLineInterface cli;

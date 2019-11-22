@@ -14,7 +14,8 @@
 
 from libc cimport stdlib
 
-cdef extern from "grpc_tools/main.h":
+# TODO: Make this build system agnostic.
+cdef extern from "tools/distrib/python/grpcio_tools/grpc_tools/main.h":
   int protoc_main(int argc, char *argv[])
 
 def run_main(list args not None):
