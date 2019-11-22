@@ -169,7 +169,8 @@ static void test_alts_peer_to_auth_context_success() {
                  GRPC_SLICE_LENGTH(serialized_peer_versions),
                  &peer.properties[2]) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_SECURITY_LEVEL_PEER_PROPERTY, TSI_ALTS_SECURITY_LEVEL,
+                 TSI_SECURITY_LEVEL_PEER_PROPERTY,
+                 tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
                  &peer.properties[3]) == TSI_OK);
   char test_ctx[] = "test serialized context";
   grpc_slice serialized_alts_ctx = grpc_slice_from_copied_string(test_ctx);

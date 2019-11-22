@@ -178,13 +178,11 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
     gpr_log(GPR_ERROR, "Invalid or missing certificate type property.");
     return nullptr;
   }
-  /* Validate security level. */
+  /* Check if security level exists. */
   const tsi_peer_property* security_level_prop =
       tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
-  if (security_level_prop == nullptr ||
-      strncmp(security_level_prop->value.data, TSI_ALTS_SECURITY_LEVEL,
-              security_level_prop->value.length) != 0) {
-    gpr_log(GPR_ERROR, "Invalid or missing security level property.");
+  if (security_level_prop == nullptr) {
+    gpr_log(GPR_ERROR, "Missing security level property.");
     return nullptr;
   }
   /* Validate RPC protocol versions. */
@@ -224,8 +222,6 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_ALTS_TRANSPORT_SECURITY_TYPE);
-  grpc_auth_context_add_cstring_property(
-      ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL, TSI_ALTS_SECURITY_LEVEL);
   size_t i = 0;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* tsi_prop = &peer->properties[i];
@@ -240,6 +236,12 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
     /* Add alts context to auth context. */
     if (strcmp(tsi_prop->name, TSI_ALTS_CONTEXT) == 0) {
       grpc_auth_context_add_property(ctx.get(), TSI_ALTS_CONTEXT,
+                                     tsi_prop->value.data,
+                                     tsi_prop->value.length);
+    }
+    /* Add security level to auth context. */
+    if (strcmp(tsi_prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL,
                                      tsi_prop->value.data,
                                      tsi_prop->value.length);
     }

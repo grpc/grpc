@@ -84,15 +84,23 @@ const char* grpc_get_ssl_cipher_suites(void) {
   return cipher_suites;
 }
 
-grpc_security_level grpc_security_level_string_to_enum(
+grpc_security_level grpc_tsi_security_level_string_to_enum(
     const char* security_level) {
-  if (strcmp(security_level, "TSI_SECURITY_NONE") == 0) {
-    return GRPC_SECURITY_NONE;
-  } else if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
+  if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
     return GRPC_INTEGRITY_ONLY;
   } else if (strcmp(security_level, "TSI_PRIVACY_AND_INTEGRITY") == 0) {
     return GRPC_PRIVACY_AND_INTEGRITY;
   }
+  return GRPC_SECURITY_NONE;
+}
+
+const char* grpc_security_level_to_string(grpc_security_level security_level) {
+  if (security_level == GRPC_PRIVACY_AND_INTEGRITY) {
+    return "GRPC_PRIVACY_AND_INTEGRITY";
+  } else if (security_level == GRPC_INTEGRITY_ONLY) {
+    return "GRPC_INTEGRITY_ONLY";
+  }
+  return "GRPC_SECURITY_NONE";
 }
 
 bool grpc_check_security_level(grpc_security_level channel_level,

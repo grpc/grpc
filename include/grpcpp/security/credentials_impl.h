@@ -115,7 +115,8 @@ class CallCredentials : private grpc::GrpcLibraryCodegen {
 
   /// Set security level of a call credential. This API will lower security
   /// level of a channel needed to transfer the call credential, and should be
-  /// used with caution.
+  /// used with caution. Default security level of a call credential is
+  /// GRPC_PRIVACY_AND_INTEGRITY.
   virtual void SetSecurityLevel(grpc_security_level security_level) = 0;
 
   /// Apply this instance's credentials to \a call.

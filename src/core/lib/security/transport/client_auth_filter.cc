@@ -271,12 +271,19 @@ static void send_security_metadata(grpc_call_element* elem,
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       chand->auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  grpc_security_level channel_security_level =
+      grpc_tsi_security_level_string_to_enum(prop->value);
+  grpc_security_level call_cred_security_level = calld->creds->security_level();
   int is_security_level_ok =
-      (prop != nullptr) &&
-      grpc_check_security_level(grpc_security_level_string_to_enum(prop->value),
-                                calld->creds->security_level());
+      (prop != nullptr) && grpc_check_security_level(channel_security_level,
+                                                     call_cred_security_level);
   if (!is_security_level_ok) {
-    /* Skip sending metadata altoghether. */
+    gpr_log(GPR_ERROR,
+            "Established channel's security level: %s is lower than call "
+            "credential's security level: %s. Will skip sending metadata.",
+            grpc_security_level_to_string(channel_security_level),
+            grpc_security_level_to_string(call_cred_security_level));
+    /* Skip sending metadata altogether. */
     grpc_call_next_op(elem, batch);
     return;
   }

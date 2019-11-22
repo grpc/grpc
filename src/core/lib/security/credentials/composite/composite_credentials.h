@@ -95,10 +95,9 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   const CallCredentialsList& inner() const { return inner_; }
 
  private:
-  grpc_security_level security_level_;
   void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
                      bool is_composite);
-
+  grpc_security_level security_level_;
   CallCredentialsList inner_;
 };
 
