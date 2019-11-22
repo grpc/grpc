@@ -1633,7 +1633,7 @@ Pod::Spec.new do |s|
     # /src/boringssl/boringssl_prefix_symbols.h.gz.b64. Here we decode the content and inject
     # the header to correcty location in BoringSSL.
     base64 -D <<EOF | gunzip > include/openssl/boringssl_prefix_symbols.h
-      H4sICHlU2F0AA2JvcmluZ3NzbF9wcmVmaXhfc3ltYm9scy5oAK2dXXPbRpa/7/dTqP57s1s1tWvJ
+      H4sICH9e2F0AA2JvcmluZ3NzbF9wcmVmaXhfc3ltYm9scy5oAK2dXXPbRpa/7/dTqP57s1s1tWvJ
       cSZzSUt0zI0taUg6G+8NCiRBCWOSYABQtvPp/9147ZdzGvgduCo1kwh4ngM2Gv2GRvd///fVbXb+
       nqdPz+XVf2z/8+rm1fUvf7v6NcueDsnV4rT9r3/77/9W/1w9JvkxLYo0O12V2dWlSP52tVXg366O
       2S7dq/+PT7v/zvKrXVqUebq5lMlV+ZwWV0W2L7/GeXK1Vwfj03ftOl/yc1YkV1/T8vlK/Vn/f3Yp
