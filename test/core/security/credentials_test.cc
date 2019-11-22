@@ -1441,12 +1441,14 @@ static void test_get_well_known_google_credentials_file_path(void) {
   char* path;
   char* home = gpr_getenv("HOME");
   bool restore_home_env = false;
-#if defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV))
+#if defined(GRPC_BAZEL_BUILD) && \
+    (defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV))
   // when running under bazel with locally, the HOME variable is not set
   // so we set it to some fake value
   restore_home_env = true;
   gpr_setenv("HOME", "/fake/home/for/bazel");
-#endif /* defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)) */
+#endif /* defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || \
+          defined(GPR_LINUX_ENV)) */
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path != nullptr);
   gpr_free(path);
