@@ -558,6 +558,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/load_file.h )
   s.files += %w( src/core/lib/iomgr/lockfree_event.cc )
   s.files += %w( src/core/lib/iomgr/lockfree_event.h )
+  s.files += %w( src/core/lib/iomgr/logical_thread.cc )
+  s.files += %w( src/core/lib/iomgr/logical_thread.h )
   s.files += %w( src/core/lib/iomgr/nameser.h )
   s.files += %w( src/core/lib/iomgr/polling_entity.cc )
   s.files += %w( src/core/lib/iomgr/polling_entity.h )

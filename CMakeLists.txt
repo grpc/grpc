@@ -1166,6 +1166,7 @@ add_library(grpc
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -1640,6 +1641,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2070,6 +2072,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2414,6 +2417,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2734,6 +2738,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -3393,6 +3398,7 @@ add_library(grpc++
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -4659,6 +4665,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc

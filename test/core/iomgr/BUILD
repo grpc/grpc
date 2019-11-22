@@ -135,6 +135,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "logical_thread_test",
+    srcs = ["logical_thread_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    language = "C++",
+    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+      "gtest",
+    ],
+)
+
+grpc_cc_test(
     name = "mpmcqueue_test",
     srcs = ["mpmcqueue_test.cc"],
     language = "C++",
