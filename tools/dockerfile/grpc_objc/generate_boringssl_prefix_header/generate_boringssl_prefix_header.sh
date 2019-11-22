@@ -22,8 +22,8 @@ mkdir build
 cd build
 cmake ..
 
-# gcc crashes on docker when using -j with too many cores. Limiting to 2 seems to be fine.
-make -j2
+# gcc crashes on docker when using -j with too many cores. Limiting to 4 seems to be fine.
+make -j4
 
 [ -f ssl/libssl.a ] || { echo "Failed to build libssl.a" ; exit 1 ; }
 [ -f crypto/libcrypto.a ] || { echo "Failed to build libcrypto.a" ; exit 1 ; }

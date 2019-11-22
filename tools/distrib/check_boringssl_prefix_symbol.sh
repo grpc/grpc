@@ -13,17 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-# Check if the current BoringSSL version's corresponding prefix header is uploaded to GCS.
+# Check if the current BoringSSL prefix symbols is up to date
 set -e
 
 cd "$(dirname $0)"
-cd ../../third_party/boringssl
 
-BORINGSSL_COMMIT=$(git rev-parse HEAD)
+BORINGSSL_COMMIT=$(cd ../../third_party/boringssl ; git rev-parse HEAD)
 
-curl -f -L https://storage.googleapis.com/grpc_boringssl_prefix_headers/boringssl_prefix_symbols-$BORINGSSL_COMMIT.h > /dev/null
+mkdir -p ./output
 
-[ $? == 0 ] || { echo "Cannot find prefix header of current BoringSSL commit ($BORINGSSL_COMMIT) on GCS." ; echo "Generate with tools/distrib/upgrade_boringssl_objc.sh" ; exit 1 ; }
+docker build ../dockerfile/grpc_objc/generate_boringssl_prefix_header -t grpc/boringssl_prefix_header
+docker run -it --rm -v $(pwd)/output:/output grpc/boringssl_prefix_header $BORINGSSL_COMMIT
 
-exit 0
+diff ../../src/boringssl/boringssl_prefix_symbols.h.gz.b64 output/boringssl_prefix_symbols.h.gz.b64
+
+result=$?
+
+rm -rf ./output
+
+exit $result
