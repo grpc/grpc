@@ -273,7 +273,8 @@ static void send_security_metadata(grpc_call_element* elem,
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
     gpr_log(GPR_ERROR,
-            "Missing auth property for security level. Will skip sending metadata.");
+            "Missing auth property for security level. Will skip sending "
+            "metadata.");
     /* Skip sending metadata altogether. */
     grpc_call_next_op(elem, batch);
     return;
