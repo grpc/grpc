@@ -68,7 +68,7 @@ tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type);
 
-/* Map tsi_security_level string to its enum. */
+/* Map tsi_security_level string to grpc_security_level enum. */
 grpc_security_level grpc_tsi_security_level_string_to_enum(
     const char* security_level);
 
