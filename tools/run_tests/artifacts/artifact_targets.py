@@ -412,14 +412,12 @@ def targets():
         PythonArtifact('windows', 'x86', 'Python35_32bits'),
         PythonArtifact('windows', 'x86', 'Python36_32bits'),
         PythonArtifact('windows', 'x86', 'Python37_32bits'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('windows', 'x86', 'Python38_32bits'),
+        PythonArtifact('windows', 'x86', 'Python38_32bits'),
         PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('windows', 'x64', 'Python38'),
+        PythonArtifact('windows', 'x64', 'Python38'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
         PHPArtifact('linux', 'x64')
