@@ -24,20 +24,29 @@ namespace grpc_core {
 
 DebugOnlyTraceFlag grpc_logical_thread_trace(false, "logical_thread");
 
-void LogicalThread::Run(const DebugLocation& location, grpc_closure* closure,
-                        grpc_error* error) {
-  (void)location;
+struct CallbackWrapper {
 #ifndef NDEBUG
-  closure->file_initiated = location.file();
-  closure->line_initiated = location.line();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
-    gpr_log(GPR_INFO,
-            "LogicalThread::Run() %p Scheduling closure %p: created: [%s:%d], "
-            "scheduled [%s:%d]",
-            this, closure, closure->file_created, closure->line_created,
-            location.file(), location.line());
-  }
+  CallbackWrapper(std::function<void()> cb, const grpc_core::DebugLocation& loc)
+      : callback(std::move(cb)), location(loc) {}
+#else
+  explicit CallbackWrapper(std::function<void()> cb)
+      : callback(std::move(cb)) {}
 #endif
+
+  MultiProducerSingleConsumerQueue::Node mpscq_node;
+  const std::function<void()> callback;
+#ifndef NDEBUG
+  const DebugLocation location;
+#endif
+};
+
+void LogicalThread::Run(std::function<void()> callback,
+                        const grpc_core::DebugLocation& location) {
+  (void)location;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+    gpr_log(GPR_INFO, "LogicalThread::Run() %p Scheduling callback [%s:%d]",
+            this, location.file(), location.line());
+  }
   const size_t prev_size = size_.FetchAdd(1);
   if (prev_size == 0) {
     // There is no other closure executing right now on this logical thread.
@@ -45,24 +54,29 @@ void LogicalThread::Run(const DebugLocation& location, grpc_closure* closure,
     if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
       gpr_log(GPR_INFO, "	Executing immediately");
     }
-    closure->cb(closure->cb_arg, error);
-    GRPC_ERROR_UNREF(error);
-    // Loan this thread to the logical thread and drain the queue
+    callback();
+    // Loan this thread to the logical thread and drain the queue.
     DrainQueue();
   } else {
+#ifndef NDEBUG
+    CallbackWrapper* cb_wrapper =
+        new CallbackWrapper(std::move(callback), location);
+#else
+    CallbackWrapper* cb_wrapper = new CallbackWrapper(std::move(callback));
+#endif
     // There already are closures executing on this logical thread. Simply add
-    // this closure to the list.
+    // this closure to the queue.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
-      gpr_log(GPR_INFO, "	Schedule on list");
+      gpr_log(GPR_INFO, "	Scheduling on queue : item %p", cb_wrapper);
     }
-    closure->error_data.error = error;
-    queue_.Push(closure->next_data.mpscq_node.get());
+    queue_.Push(
+        reinterpret_cast<MultiProducerSingleConsumerQueue::Node*>(cb_wrapper));
   }
 }
 
 // The thread that calls this loans itself to the logical thread so as to
-// execute all the scheduled closures. This is called from within
-// LogicalThread::Run() after executing a closure immediately, and hence size_
+// execute all the scheduled callback. This is called from within
+// LogicalThread::Run() after executing a callback immediately, and hence size_
 // is atleast 1.
 void LogicalThread::DrainQueue() {
   while (true) {
@@ -78,29 +92,30 @@ void LogicalThread::DrainQueue() {
       }
       break;
     }
-    // There is atleast one closure on the queue. Pop the closure from the queue
-    // and execute it.
-    grpc_closure* closure = nullptr;
+    // There is atleast one callback on the queue. Pop the callback from the
+    // queue and execute it.
+    CallbackWrapper* cb_wrapper = nullptr;
     bool empty_unused;
-    while ((closure = reinterpret_cast<grpc_closure*>(
+    while ((cb_wrapper = reinterpret_cast<CallbackWrapper*>(
                 queue_.PopAndCheckEnd(&empty_unused))) == nullptr) {
       // This can happen either due to a race condition within the mpscq
       // implementation or because of a race with Run()
       if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+        // TODO(yashykt) : The combiner mechanism offloads execution to the
+        // executor at this point. Figure out if we should replicate that
+        // behavior here.
         gpr_log(GPR_INFO, "	Queue returned nullptr, trying again");
       }
     }
 #ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
       gpr_log(GPR_INFO,
-              "	Running closure %p: created: [%s:%d], scheduled [%s:%d]",
-              closure, closure->file_created, closure->line_created,
-              closure->file_initiated, closure->line_initiated);
+              "	Running item %p : callback scheduled at [%s:%d]", cb_wrapper,
+              cb_wrapper->location.file(), cb_wrapper->location.line());
     }
 #endif
-    grpc_error* closure_error = closure->error_data.error;
-    closure->cb(closure->cb_arg, closure_error);
-    GRPC_ERROR_UNREF(closure_error);
+    cb_wrapper->callback();
+    delete cb_wrapper;
   }
 }
 }  // namespace grpc_core

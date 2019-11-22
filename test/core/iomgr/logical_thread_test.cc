@@ -32,17 +32,11 @@ TEST(LogicalThreadTest, NoOp) {
   auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
 }
 
-void set_event_to_true(void* value, grpc_error* /*error*/) {
-  gpr_event_set(static_cast<gpr_event*>(value), (void*)1);
-}
-
 TEST(LogicalThreadTest, ExecuteOne) {
   auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
   gpr_event done;
   gpr_event_init(&done);
-  lock->Run(DEBUG_LOCATION,
-            GRPC_CLOSURE_CREATE(set_event_to_true, &done, nullptr),
-            GRPC_ERROR_NONE);
+  lock->Run([&done]() { gpr_event_set(&done, (void*)1); }, DEBUG_LOCATION);
   GPR_ASSERT(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
              nullptr);
 }
@@ -58,13 +52,6 @@ typedef struct {
   size_t value;
 } ex_args;
 
-void check_one(void* a, grpc_error* /*error*/) {
-  ex_args* args = static_cast<ex_args*>(a);
-  GPR_ASSERT(*args->ctr == args->value - 1);
-  *args->ctr = args->value;
-  gpr_free(a);
-}
-
 void execute_many_loop(void* a) {
   thd_args* args = static_cast<thd_args*>(a);
   size_t n = 1;
@@ -73,16 +60,19 @@ void execute_many_loop(void* a) {
       ex_args* c = static_cast<ex_args*>(gpr_malloc(sizeof(*c)));
       c->ctr = &args->ctr;
       c->value = n++;
-      args->lock->Run(DEBUG_LOCATION,
-                      GRPC_CLOSURE_CREATE(check_one, c, nullptr),
-                      GRPC_ERROR_NONE);
+      args->lock->Run(
+          [c]() {
+            GPR_ASSERT(*c->ctr == c->value - 1);
+            *c->ctr = c->value;
+            gpr_free(c);
+          },
+          DEBUG_LOCATION);
     }
     // sleep for a little bit, to test other threads picking up the load
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   }
-  args->lock->Run(DEBUG_LOCATION,
-                  GRPC_CLOSURE_CREATE(set_event_to_true, &args->done, nullptr),
-                  GRPC_ERROR_NONE);
+  args->lock->Run([args]() { gpr_event_set(&args->done, (void*)1); },
+                  DEBUG_LOCATION);
 }
 
 TEST(LogicalThreadTest, ExecuteMany) {

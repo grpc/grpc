@@ -18,12 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/closure.h"
 
 #ifndef GRPC_CORE_LIB_IOMGR_LOGICAL_THREAD_H
 #define GRPC_CORE_LIB_IOMGR_LOGICAL_THREAD_H
@@ -31,14 +32,14 @@
 namespace grpc_core {
 extern DebugOnlyTraceFlag grpc_logical_thread_trace;
 
-// LogicalThread is a mechanism to schedule closures in a synchronized manner.
-// All closures scheduled on a LogicalThread instance will be executed serially
-// in a borrowed thread. The basic algorithm on scheduling closures is as
-// follows - 1) If there are no (zero) closures scheduled on the logical thread
+// LogicalThread is a mechanism to schedule callbacks in a synchronized manner.
+// All callbacks scheduled on a LogicalThread instance will be executed serially
+// in a borrowed thread. The API provides a FIFO guarantee to the execution of
+// callbacks scheduled on the thread.
 class LogicalThread : public RefCounted<LogicalThread> {
  public:
-  void Run(const DebugLocation& location, grpc_closure* closure,
-           grpc_error* error);
+  void Run(std::function<void()> callback,
+           const grpc_core::DebugLocation& location);
 
  private:
   void DrainQueue();

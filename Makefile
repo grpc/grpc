@@ -1256,6 +1256,7 @@ interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
 json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
+logical_thread_test: $(BINDIR)/$(CONFIG)/logical_thread_test
 message_allocator_end2end_test: $(BINDIR)/$(CONFIG)/message_allocator_end2end_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
@@ -1726,6 +1727,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
+  $(BINDIR)/$(CONFIG)/logical_thread_test \
   $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
@@ -1898,6 +1900,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
+  $(BINDIR)/$(CONFIG)/logical_thread_test \
   $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
@@ -2410,6 +2413,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test || ( echo test inproc_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
+	$(E) "[RUN]     Testing logical_thread_test"
+	$(Q) $(BINDIR)/$(CONFIG)/logical_thread_test || ( echo test logical_thread_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_allocator_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_allocator_end2end_test || ( echo test message_allocator_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
@@ -18218,6 +18223,49 @@ deps_json_run_localhost: $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
+endif
+endif
+
+
+LOGICAL_THREAD_TEST_SRC = \
+    test/core/iomgr/logical_thread_test.cc \
+
+LOGICAL_THREAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LOGICAL_THREAD_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/logical_thread_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/logical_thread_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/logical_thread_test: $(PROTOBUF_DEP) $(LOGICAL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(LOGICAL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/logical_thread_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/logical_thread_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_logical_thread_test: $(LOGICAL_THREAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LOGICAL_THREAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
