@@ -520,6 +520,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    shard_count = 10,
 )
 
 grpc_cc_test(
