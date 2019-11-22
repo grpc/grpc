@@ -563,7 +563,8 @@ grpc_error* EdsResponsedParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Can't parse cluster_load_assignment.");
     }
-    // Check the cluster name.
+    // Check the cluster name (which actually means eds_service_name). Ignore
+    // unexpected names.
     upb_strview cluster_name = envoy_api_v2_ClusterLoadAssignment_cluster_name(
         cluster_load_assignment);
     StringView cluster_name_strview(cluster_name.data, cluster_name.size);
@@ -616,37 +617,44 @@ grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
     const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    std::string* version, std::string* nonce, std::string* ads_type) {
+    std::string* version, std::string* nonce, std::string* type_url) {
   upb::Arena arena;
   // Decode the response.
   const envoy_api_v2_DiscoveryResponse* response =
       envoy_api_v2_DiscoveryResponse_parse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+  // If decoding fails, output an empty type_url.
   if (response == nullptr) {
-    *ads_type = UNPARSABLE;
+    *type_url = "";
     return GRPC_ERROR_NONE;
   }
-  // Record version_info and nonce.
-  upb_strview version_info =
-      envoy_api_v2_DiscoveryResponse_version_info(response);
-  version->version_info = StringCopy(version_info);
-  upb_strview nonce = envoy_api_v2_DiscoveryResponse_nonce(response);
-  version->nonce = StringCopy(nonce);
-  // Check the type_url of the response.
-  upb_strview type_url = envoy_api_v2_DiscoveryResponse_type_url(response);
-  if (upb_strview_eql(type_url, upb_strview_makez(kRdsTypeUrl))) {
-    *ads_type = RDS;
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported response type.");
+  // Record the type_url and nonce of the response.
+  upb_strview type_url_strview =
+      envoy_api_v2_DiscoveryResponse_type_url(response);
+  *type_url = std::string(type_url_strview.data, type_url_strview.size);
+  upb_strview nonce_strview = envoy_api_v2_DiscoveryResponse_nonce(response);
+  *nonce = std::string(nonce_strview.data, nonce_strview.size);
+  // Parse the response according to the resource type.
+  grpc_error* error;
+  if (*type_url == kCdsTypeUrl) {
+    error = CdsResponseParse(response, cds_update_map, arena.ptr());
+  } else if (*type_url == kEdsTypeUrl) {
+    error = EdsResponsedParse(response, expected_eds_service_names,
+                              eds_update_map, arena.ptr());
+  } else {
+    error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported ADS resource type");
   }
-  if (upb_strview_eql(type_url, upb_strview_makez(kCdsTypeUrl))) {
-    *ads_type = CDS;
-    return CdsResponseParse(response, cds_update_map, arena.ptr());
-  } else if (upb_strview_eql(type_url, upb_strview_makez(kEdsTypeUrl))) {
-    *ads_type = EDS;
-    return EdsResponsedParse(response, expected_eds_service_names,
-                             eds_update_map, arena.ptr());
+  //
+  if (error != GRPC_ERROR_NONE) {
+    *version = "";
+  } else {
+    upb_strview version_info =
+        envoy_api_v2_DiscoveryResponse_version_info(response);
+    *version = std::string(version_info.data, version_info.size);
   }
+  return error;
 }
 
 namespace {
@@ -733,19 +741,18 @@ grpc_slice XdsLrsRequestCreateAndEncode(
   // Get the snapshots.
   std::map<StringView, grpc_core::InlinedVector<XdsClientStats::Snapshot, 1>>
       snapshot_map;
-  bool all_zero = true;
   for (auto& p : client_stats_map) {
     const StringView& cluster_name = p.first;
     for (auto* client_stats : p.second) {
       XdsClientStats::Snapshot snapshot = client_stats->GetSnapshotAndReset();
       // Prune unused locality stats.
       client_stats->PruneLocalityStats();
-      if (!snapshot.IsAllZero()) all_zero = false;
+      if (snapshot.IsAllZero()) continue;
       snapshot_map[cluster_name].emplace_back(std::move(snapshot));
     }
   }
   // When all the counts are zero, return empty slice.
-  if (all_zero) return grpc_empty_slice();
+  if (snapshot_map.empty()) return grpc_empty_slice();
   // Create a request.
   envoy_service_load_stats_v2_LoadStatsRequest* request =
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());

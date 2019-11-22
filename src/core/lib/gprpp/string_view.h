@@ -124,10 +124,6 @@ class StringView final {
                                                                       size());
   }
 
-  bool operator<(const StringView& other) const {
-    return StringViewCmp(*this, other) < 0;
-  }
-
  private:
   const char* ptr_;
   size_t size_;
@@ -139,6 +135,10 @@ inline bool operator==(StringView lhs, StringView rhs) {
 }
 
 inline bool operator!=(StringView lhs, StringView rhs) { return !(lhs == rhs); }
+
+inline bool operator<(StringView lhs, StringView rhs) {
+  return StringViewCmp(lhs, rhs) < 0;
+}
 
 #endif  // GRPC_USE_ABSL
 

@@ -152,7 +152,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
 
-    void OnNewResourceNameWatched(const std::string& type_url);
+    void OnResourceNamesChanged(const std::string& type_url);
     void OnWatcherRemoved();
 
    private:

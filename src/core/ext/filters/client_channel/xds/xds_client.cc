@@ -127,19 +127,19 @@ class XdsClient::ChannelState::AdsCallState
 
   bool AdsCallNeeded() const;
 
-  // Does not own \a error.
-  void SendMessageLocked(const std::string &type_url,
-                         const std::string &nonce_for_unknown_type,
-                         grpc_error *error, bool is_first_message);
+  // Takes ownership of \a error.
+  void SendMessageLocked(const std::string& type_url,
+                         const std::string& nonce_for_unknown_type,
+                         grpc_error* error, bool is_first_message);
 
  private:
   struct BufferedRequest {
     std::string nonce;
     grpc_error* error;
 
+    // Takes ownership of \a error.
     BufferedRequest(std::string nonce, grpc_error* error)
-        : nonce(std::move(nonce)), error(GRPC_ERROR_REF(error)) {}
-    ~BufferedRequest() { GRPC_ERROR_UNREF(error); }
+        : nonce(std::move(nonce)), error(error) {}
   };
 
   void AcceptCdsUpdate(CdsUpdateMap cds_update_map, std::string new_version);
@@ -196,6 +196,7 @@ class XdsClient::ChannelState::LrsCallState
   void Orphan() override;
 
   void MaybeStartReportingLocked();
+  bool ShouldSendLoadReports(const StringView& cluster_name) const;
 
   RetryableCall<LrsCallState>* parent() { return parent_.get(); }
   ChannelState* chand() const { return parent_->chand(); }
@@ -429,7 +430,7 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
   grpc_client_channel_stop_connectivity_watch(client_channel_elem, watcher_);
 }
 
-void XdsClient::ChannelState::OnNewResourceNameWatched(
+void XdsClient::ChannelState::OnResourceNamesChanged(
     const std::string& type_url) {
   if (ads_calld_ == nullptr) {
     // FIXME: Honor backoff.
@@ -677,12 +678,13 @@ bool XdsClient::ChannelState::AdsCallState::AdsCallNeeded() const {
   return !xds_client()->endpoint_map_.empty();
 }
 
-void XdsClient::ChannelState::AdsCallState::SendMessageLocked(const std::string &type_url,
-                                                              const std::string &nonce_for_unknown_type,
-                                                              grpc_error *error, bool is_first_message) {
+void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
+    const std::string& type_url, const std::string& nonce_for_unknown_type,
+    grpc_error* error, bool is_first_message) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
-    buffered_request_map_[type_url].reset(new BufferedRequest(nonce_for_unknown_type, error));
+    buffered_request_map_[type_url].reset(
+        new BufferedRequest(nonce_for_unknown_type, error));
     return;
   }
   grpc_slice request_payload_slice;
@@ -696,12 +698,13 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(const std::string 
         cds_version_state_.version_info, cds_version_state_.nonce, error);
   } else if (type_url == kEdsTypeUrl) {
     request_payload_slice = XdsEdsRequestCreateAndEncode(
-            xds_client()->EdsServiceNames(), node, build_version,
-            eds_version_state_.version_info, eds_version_state_.nonce, error);
+        xds_client()->EdsServiceNames(), node, build_version,
+        eds_version_state_.version_info, eds_version_state_.nonce, error);
   } else {
-    request_payload_slice =
-        XdsUnknownTypeNackRequestCreateAndEncode(type_url, nonce_for_unknown_type, error);
+    request_payload_slice = XdsUnknownTypeNackRequestCreateAndEncode(
+        type_url, nonce_for_unknown_type, error);
   }
+  GRPC_ERROR_UNREF(error);
   // Create message payload.
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -722,7 +725,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(const std::string 
   }
 }
 
-void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(CdsUpdateMap cds_update_map, std::string new_version) {
+void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
+    CdsUpdateMap cds_update_map, std::string new_version) {
   for (auto& p : cds_update_map) {
     const char* cluster_name = p.first.get();
     CdsUpdate& cds_update = p.second;
@@ -757,7 +761,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(CdsUpdateMap cds_upd
   cds_version_state_.version_info = std::move(new_version);
 }
 
-void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(EdsUpdateMap eds_update_map, std::string new_version) {
+void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
+    EdsUpdateMap eds_update_map, std::string new_version) {
   for (auto& p : eds_update_map) {
     const char* eds_service_name = p.first.get();
     EdsUpdate& eds_update = p.second;
@@ -857,19 +862,23 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
   //  constantly asked to send CDS messages. We need to fix this if we are
   //  seeing EDS starved due to frequent CDS requests.
   auto& buffered_request_map = self->buffered_request_map_;
-  if (buffered_request_map.find(kCdsTypeUrl) != buffered_request_map.end()) {
-    auto& buffered_request = buffered_request_map[kCdsTypeUrl];
-    self->SendMessageLocked(kCdsTypeUrl, "",
-                            buffered_request->error, false);
-    buffered_request.reset();
-  } else if (buffered_request_map.find(kEdsTypeUrl) !=
-             buffered_request_map.end()) {
-    auto& buffered_request = buffered_request_map[kEdsTypeUrl];
-    self->SendMessageLocked(kEdsTypeUrl, "",
-                            buffered_request->error, false);
-    buffered_request.reset();
-  } else {
-    auto iter = buffered_request_map.begin();
+  // TODO(juanlishen): Simplify the code when adding LDS/RDS.
+  auto iter = buffered_request_map.find(kCdsTypeUrl);
+  if (iter != buffered_request_map.end()) {
+    auto& buffered_request = iter->second;
+    self->SendMessageLocked(kCdsTypeUrl, "", buffered_request->error, false);
+    buffered_request_map.erase(iter);
+    return;
+  }
+  iter = buffered_request_map.find(kEdsTypeUrl);
+  if (iter != buffered_request_map.end()) {
+    auto& buffered_request = iter->second;
+    self->SendMessageLocked(kCdsTypeUrl, "", buffered_request->error, false);
+    buffered_request_map.erase(iter);
+    return;
+  }
+  if (!buffered_request_map.empty()) {
+    iter = buffered_request_map.begin();
     auto& type_url = iter->first;
     auto& buffered_request = iter->second;
     self->SendMessageLocked(type_url, buffered_request->nonce,
@@ -918,10 +927,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   std::string version;
   std::string nonce;
   std::string type_url;
-  // FIXME: 1. If decoding fails, we don't know whether it's CDS or not, then
-  // which kind should we NACK? This can be solved when separate streams are
-  // used. 2. If decoding fails, We don't know the new nonce to NACK. Is using
-  // the previous nonce OK in this case?
+  // Note that XdsAdsResponseDecodeAndParse() also validate the response.
   grpc_error* parse_error = XdsAdsResponseDecodeAndParse(
       response_slice, xds_client->EdsServiceNames(), &cds_update_map,
       &eds_update_map, &version, &nonce, &type_url);
@@ -943,9 +949,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
           GPR_ERROR,
           "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
           xds_client, grpc_error_string(parse_error));
-      GPR_ASSERT(parse_error != GRPC_ERROR_NONE);
       ads_calld->SendMessageLocked(type_url, nonce, parse_error, false);
-      GRPC_ERROR_UNREF(parse_error);
       return;
     }
     ads_calld->seen_response_ = true;
@@ -1267,6 +1271,14 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
 }
 
+bool XdsClient::ChannelState::LrsCallState::ShouldSendLoadReports(
+    const StringView& cluster_name) const {
+  // Only send load reports for the clusters that are asked for by the LRS
+  // server.
+  std::string cluster_name_string(cluster_name.data(), cluster_name.size());
+  return cluster_names_.find(cluster_name_string) != cluster_names_.end();
+}
+
 void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
     void* arg, grpc_error* error) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
@@ -1497,7 +1509,7 @@ void XdsClient::WatchClusterData(
   if (cluster_state.seen_update) {
     w->OnClusterChanged(cluster_state.update);
   }
-  if (new_name) chand_->OnNewResourceNameWatched(CDS);
+  if (new_name) chand_->OnResourceNamesChanged(kCdsTypeUrl);
 }
 
 void XdsClient::CancelClusterDataWatch(StringView cluster_name,
@@ -1507,7 +1519,12 @@ void XdsClient::CancelClusterDataWatch(StringView cluster_name,
   if (it != cluster_state.watchers.end()) {
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
-      cluster_map_.erase(cluster_name);
+      // Sending CDS requests with no cluster names will cause Envoy-style
+      // wildcard behavior. To avoid that, don't make the cluster_map_ empty.
+      if (cluster_map_.size() > 1) {
+        cluster_map_.erase(cluster_name);
+        chand_->OnResourceNamesChanged(kCdsTypeUrl);
+      }
     }
   }
   chand_->OnWatcherRemoved();
@@ -1526,7 +1543,7 @@ void XdsClient::WatchEndpointData(
   if (!endpoint_state.update.priority_list_update.empty()) {
     w->OnEndpointChanged(endpoint_state.update);
   }
-  if (new_name) chand_->OnNewResourceNameWatched(EDS);
+  if (new_name) chand_->OnResourceNamesChanged(kEdsTypeUrl);
 }
 
 void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
@@ -1537,6 +1554,7 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
     endpoint_state.watchers.erase(it);
     if (endpoint_state.watchers.empty()) {
       endpoint_map_.erase(eds_service_name);
+      chand_->OnResourceNamesChanged(kEdsTypeUrl);
     }
   }
   chand_->OnWatcherRemoved();
@@ -1600,10 +1618,12 @@ std::set<StringView> XdsClient::EdsServiceNames() const {
 std::map<StringView, std::set<XdsClientStats*>> XdsClient::ClientStatsMap()
     const {
   std::map<StringView, std::set<XdsClientStats*>> client_stats_map;
-  for (const auto& p : cluster_map_) {
+  for (const auto& p : endpoint_map_) {
     const StringView& cluster_name = p.first;
     const auto& client_stats = p.second.client_stats;
-    client_stats_map.emplace(cluster_name, client_stats);
+    if (chand_->lrs_calld()->ShouldSendLoadReports(cluster_name)) {
+      client_stats_map.emplace(cluster_name, client_stats);
+    }
   }
   return client_stats_map;
 }
