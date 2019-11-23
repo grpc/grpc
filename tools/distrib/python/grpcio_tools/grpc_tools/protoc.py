@@ -19,7 +19,6 @@ import sys
 
 from grpc_tools import _protoc_compiler
 
-
 def main(command_arguments):
     """Run the protocol buffer compiler with the given command-line arguments.
 

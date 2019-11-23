@@ -3,6 +3,8 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:cython_library.bzl", "pyx_library")
 
+# TODO: Move this build file up a directory to ensure that this
+# points to '.', not a directory above the package root.
 NON_BAZEL_ROOT = "../"
 
 cc_library(
@@ -38,5 +40,6 @@ py_test(
   name = "protoc_test",
   srcs = ["protoc_test.py"],
   deps = ["//tools/distrib/python/grpcio_tools/grpc_tools:grpc_tools"],
+  data = ["simple.proto"],
   python_version = "PY3",
 )

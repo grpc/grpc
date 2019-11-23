@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+message SimpleMessage {
+  string msg = 1;
+  oneof personal_or_business {
+    bool personal = 2;
+    bool business = 3;
+  };
+};
+
+message SimpleMessageRequest {
+  SimpleMessage simple_msg = 1;
+};
+
+message SimpleMessageResponse {
+  bool understood = 1;
+};
+
+service SimpleMessageService {
+  rpc Tell(SimpleMessageRequest) returns (SimpleMessageResponse);
+};
