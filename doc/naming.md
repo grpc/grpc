@@ -41,6 +41,12 @@ Most gRPC implementations support the following URI schemes:
     three slashes, two prior to the path and another to begin the
     absolute path).
 
+- `unix:@abstract_unix_socket` -- Abstract Unix domain sockets (Linux systems only)
+  - `@abstract_unix_socket` is the name of an abstract unix domain socket
+  - The name has no connection with filesystem pathnames.
+  - It is somewhat limited in regards to what abstract unix domain sockets can be
+    in the sense that `abstract_unix_socket` must be a URI compatible string.
+
 The following schemes are supported by the gRPC C-core implementation,
 but may not be supported in other languages:
 
