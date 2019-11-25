@@ -635,7 +635,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX)
     add_dependencies(buildtests_cxx alts_concurrent_connectivity_test)
   endif()
-  add_dependencies(buildtests_cxx alts_context_test)
   add_dependencies(buildtests_cxx alts_counter_test)
   add_dependencies(buildtests_cxx alts_crypt_test)
   add_dependencies(buildtests_cxx alts_crypter_test)
@@ -10006,46 +10005,6 @@ if(_gRPC_PLATFORM_LINUX)
 
 
 endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(alts_context_test
-  test/cpp/common/alts_context_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(alts_context_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(alts_context_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++_alts
-  grpc++
-  grpc
-  gpr
-  grpc++_test_config
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
 endif()
 if(gRPC_BUILD_TESTS)
 

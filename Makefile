@@ -1154,7 +1154,6 @@ uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
 alarm_test: $(BINDIR)/$(CONFIG)/alarm_test
 alts_concurrent_connectivity_test: $(BINDIR)/$(CONFIG)/alts_concurrent_connectivity_test
-alts_context_test: $(BINDIR)/$(CONFIG)/alts_context_test
 alts_counter_test: $(BINDIR)/$(CONFIG)/alts_counter_test
 alts_crypt_test: $(BINDIR)/$(CONFIG)/alts_crypt_test
 alts_crypter_test: $(BINDIR)/$(CONFIG)/alts_crypter_test
@@ -1635,7 +1634,6 @@ ifeq ($(EMBED_OPENSSL),true)
 buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_test \
   $(BINDIR)/$(CONFIG)/alts_concurrent_connectivity_test \
-  $(BINDIR)/$(CONFIG)/alts_context_test \
   $(BINDIR)/$(CONFIG)/alts_counter_test \
   $(BINDIR)/$(CONFIG)/alts_crypt_test \
   $(BINDIR)/$(CONFIG)/alts_crypter_test \
@@ -1808,7 +1806,6 @@ else
 buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_test \
   $(BINDIR)/$(CONFIG)/alts_concurrent_connectivity_test \
-  $(BINDIR)/$(CONFIG)/alts_context_test \
   $(BINDIR)/$(CONFIG)/alts_counter_test \
   $(BINDIR)/$(CONFIG)/alts_crypt_test \
   $(BINDIR)/$(CONFIG)/alts_crypter_test \
@@ -2247,8 +2244,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alts_concurrent_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alts_concurrent_connectivity_test || ( echo test alts_concurrent_connectivity_test failed ; exit 1 )
-	$(E) "[RUN]     Testing alts_context_test"
-	$(Q) $(BINDIR)/$(CONFIG)/alts_context_test || ( echo test alts_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alts_counter_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alts_counter_test || ( echo test alts_counter_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alts_crypt_test"
@@ -13939,49 +13934,6 @@ endif
 endif
 $(OBJDIR)/$(CONFIG)/test/core/tsi/alts/fake_handshaker/fake_handshaker_server.o: $(GENDIR)/test/core/tsi/alts/fake_handshaker/handshaker.pb.cc $(GENDIR)/test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.cc $(GENDIR)/test/core/tsi/alts/fake_handshaker/transport_security_common.pb.cc $(GENDIR)/test/core/tsi/alts/fake_handshaker/transport_security_common.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.o: $(GENDIR)/test/core/tsi/alts/fake_handshaker/handshaker.pb.cc $(GENDIR)/test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.cc $(GENDIR)/test/core/tsi/alts/fake_handshaker/transport_security_common.pb.cc $(GENDIR)/test/core/tsi/alts/fake_handshaker/transport_security_common.grpc.pb.cc
-
-
-ALTS_CONTEXT_TEST_SRC = \
-    test/cpp/common/alts_context_test.cc \
-
-ALTS_CONTEXT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_CONTEXT_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/alts_context_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
-
-$(BINDIR)/$(CONFIG)/alts_context_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/alts_context_test: $(PROTOBUF_DEP) $(ALTS_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_context_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/common/alts_context_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-
-deps_alts_context_test: $(ALTS_CONTEXT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(ALTS_CONTEXT_TEST_OBJS:.o=.dep)
-endif
-endif
 
 
 ALTS_COUNTER_TEST_SRC = \

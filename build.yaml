@@ -3950,19 +3950,6 @@ targets:
   - grpc++_test_config
   platforms:
   - linux
-- name: alts_context_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/common/alts_context_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++_alts
-  - grpc++
-  - grpc
-  - gpr
-  - grpc++_test_config
 - name: alts_counter_test
   build: test
   language: c++
