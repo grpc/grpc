@@ -457,7 +457,7 @@ class ClientCallbackReaderWriterImpl
                      reactor_->OnReadInitialMetadataDone(ok);
                      MaybeFinish();
                    },
-                   &start_ops_);
+                   &start_ops_, /*can_inline=*/false);
     if (!start_corked_) {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
@@ -473,7 +473,7 @@ class ClientCallbackReaderWriterImpl
                      reactor_->OnWriteDone(ok);
                      MaybeFinish();
                    },
-                   &write_ops_);
+                   &write_ops_, /*can_inline=*/false);
     write_ops_.set_core_cq_tag(&write_tag_);
 
     read_tag_.Set(call_.call(),
@@ -481,7 +481,7 @@ class ClientCallbackReaderWriterImpl
                     reactor_->OnReadDone(ok);
                     MaybeFinish();
                   },
-                  &read_ops_);
+                  &read_ops_, /*can_inline=*/false);
     read_ops_.set_core_cq_tag(&read_tag_);
     if (read_ops_at_start_) {
       call_.PerformOps(&read_ops_);
@@ -496,7 +496,7 @@ class ClientCallbackReaderWriterImpl
     }
 
     finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_);
+                    &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -544,7 +544,7 @@ class ClientCallbackReaderWriterImpl
                            reactor_->OnWritesDoneDone(ok);
                            MaybeFinish();
                          },
-                         &writes_done_ops_);
+                         &writes_done_ops_, /*can_inline=*/false);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
@@ -668,7 +668,7 @@ class ClientCallbackReaderImpl
                      reactor_->OnReadInitialMetadataDone(ok);
                      MaybeFinish();
                    },
-                   &start_ops_);
+                   &start_ops_, /*can_inline=*/false);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
@@ -681,14 +681,14 @@ class ClientCallbackReaderImpl
                     reactor_->OnReadDone(ok);
                     MaybeFinish();
                   },
-                  &read_ops_);
+                  &read_ops_, /*can_inline=*/false);
     read_ops_.set_core_cq_tag(&read_tag_);
     if (read_ops_at_start_) {
       call_.PerformOps(&read_ops_);
     }
 
     finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_);
+                    &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -808,7 +808,7 @@ class ClientCallbackWriterImpl
                      reactor_->OnReadInitialMetadataDone(ok);
                      MaybeFinish();
                    },
-                   &start_ops_);
+                   &start_ops_, /*can_inline=*/false);
     if (!start_corked_) {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
@@ -824,7 +824,7 @@ class ClientCallbackWriterImpl
                      reactor_->OnWriteDone(ok);
                      MaybeFinish();
                    },
-                   &write_ops_);
+                   &write_ops_, /*can_inline=*/false);
     write_ops_.set_core_cq_tag(&write_tag_);
 
     if (write_ops_at_start_) {
@@ -836,7 +836,7 @@ class ClientCallbackWriterImpl
     }
 
     finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_);
+                    &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -874,7 +874,7 @@ class ClientCallbackWriterImpl
                            reactor_->OnWritesDoneDone(ok);
                            MaybeFinish();
                          },
-                         &writes_done_ops_);
+                         &writes_done_ops_, /*can_inline=*/false);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
@@ -983,7 +983,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
                      reactor_->OnReadInitialMetadataDone(ok);
                      MaybeFinish();
                    },
-                   &start_ops_);
+                   &start_ops_, /*can_inline=*/false);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
@@ -991,7 +991,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
     call_.PerformOps(&start_ops_);
 
     finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_);
+                    &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);

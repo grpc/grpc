@@ -47,7 +47,7 @@ test --test_env=GRPC_VERBOSITY=debug
 # Set flags for uploading to BES in order to view results in the Bazel Build
 # Results UI.
 build --bes_backend=grpcs://buildeventservice.googleapis.com
-build --bes_timeout=60s
+build --bes_timeout=600s
 build --bes_results_url="https://source.cloud.google.com/results/invocations/"
 build --project_id=grpc-testing
 

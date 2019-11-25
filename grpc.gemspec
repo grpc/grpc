@@ -113,7 +113,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/client_channel_factory.cc )
   s.files += %w( src/core/ext/filters/client_channel/client_channel_factory.h )
   s.files += %w( src/core/ext/filters/client_channel/client_channel_plugin.cc )
-  s.files += %w( src/core/ext/filters/client_channel/connector.cc )
   s.files += %w( src/core/ext/filters/client_channel/connector.h )
   s.files += %w( src/core/ext/filters/client_channel/global_subchannel_pool.cc )
   s.files += %w( src/core/ext/filters/client_channel/global_subchannel_pool.h )

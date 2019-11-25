@@ -76,11 +76,16 @@ set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
 set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
 
-set(gRPC_GFLAGS_PROVIDER "module" CACHE STRING "Provider of gflags library")
-set_property(CACHE gRPC_GFLAGS_PROVIDER PROPERTY STRINGS "module" "package")
+if(gRPC_BUILD_TESTS)
+  set(gRPC_GFLAGS_PROVIDER "module" CACHE STRING "Provider of gflags library")
+  set_property(CACHE gRPC_GFLAGS_PROVIDER PROPERTY STRINGS "module" "package")
 
-set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
-set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
+  set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
+  set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
+else()
+  set(gRPC_GFLAGS_PROVIDER "none")
+  set(gRPC_BENCHMARK_PROVIDER "none")
+endif()
 
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
@@ -1366,7 +1371,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -1772,7 +1776,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -2170,7 +2173,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -2514,7 +2516,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -2869,7 +2870,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -3291,6 +3291,7 @@ add_library(grpc++
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
@@ -3307,7 +3308,6 @@ add_library(grpc++
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -3783,6 +3783,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_handlers.h
   include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
@@ -4273,6 +4274,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_handlers.h
   include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
@@ -4469,6 +4471,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_handlers.h
   include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
@@ -4553,6 +4556,7 @@ add_library(grpc++_unsecure
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
@@ -4569,7 +4573,6 @@ add_library(grpc++_unsecure
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -5044,6 +5047,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_handlers.h
   include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
