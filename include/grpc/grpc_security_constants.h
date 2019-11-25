@@ -116,7 +116,7 @@ typedef enum {
   GRPC_SSL_SKIP_HOSTNAME_VERIFICATION,
   /** Performs hostname name verification, but skips server certificate
      verification */
-  GRPC_SSL_SKIP_SERVER_CERTIFCATE_VERIFICATION,
+  GRPC_SSL_SKIP_SERVER_CERTIFICATE_VERIFICATION,
   /** Skips both server certificate and hostname verification */
   GRPC_SSL_SKIP_ALL_SERVER_VERIFICATION
 } grpc_ssl_server_verification_option;
