@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,16 +53,13 @@ time pip install --user virtualenv
 time pip install --user --upgrade Mako six tox setuptools twisted pyyaml pyjwt cryptography requests
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
-# Install Python 3.7
+# Install Python 3.7 and Python 3.8
 time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
-download_hash=$(md5sum python-3.7.0-macosx10.9.pkg | awk '{print $1}')
-if [[ download_hash != 'ae0717a02efea3b0eb34aadc680dc498' ]]; then echo "Incorrect hash!"; exit 1; fi
-time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
-
-# Install Python 3.8
 time curl -O https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
-download_hash=$(md5sum python-3.8.0-macosx10.9.pkg | awk '{print $1}')
-if [[ download_hash != 'f5f9ae9f416170c6355cab7256bb75b5' ]]; then echo "Incorrect hash!"; exit 1; fi
+echo "ae0717a02efea3b0eb34aadc680dc498 python-3.7.0-macosx10.9.pkg" > python_intaller_checksum.md5
+echo "f5f9ae9f416170c6355cab7256bb75b5 python-3.8.0-macosx10.9.pkg" >> python_intaller_checksum.md5
+md5sum -c python_installer_checksum.md5
+time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
 time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
 
 # set xcode version for Obj-C tests
