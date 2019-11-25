@@ -58,7 +58,9 @@ typedef enum {
 typedef enum {
   // Default option
   TSI_SERVER_VERIFICATION,
-  TSI_SKIP_SERVER_VERIFICATION,
+  TSI_SKIP_HOSTNAME_VERIFICATION,
+  TSI_SKIP_SERVER_CERTIFCATE_VERIFICATION,
+  TSI_SKIP_ALL_SERVER_VERIFICATION,
 } tsi_server_verification_option;
 
 const char* tsi_result_to_string(tsi_result result);
