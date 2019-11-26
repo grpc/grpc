@@ -93,9 +93,9 @@ void LogicalThread::DrainQueue() {
     }
 #ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
-      gpr_log(GPR_INFO, "	 Running item %p : callback scheduled at [%s:%d]",
-              cb_wrapper, cb_wrapper->location.file(),
-              cb_wrapper->location.line());
+      gpr_log(GPR_INFO,
+              "	 Running item %p : callback scheduled at [%s:%d]", cb_wrapper,
+              cb_wrapper->location.file(), cb_wrapper->location.line());
     }
 #endif
     cb_wrapper->callback();
