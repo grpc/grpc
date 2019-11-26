@@ -1879,6 +1879,17 @@ libs:
   - grpc++_codegen_proto
   - grpc++_codegen_base_src
   secure: check
+- name: grpc++_alts
+  build: all
+  language: c++
+  public_headers:
+  - include/grpcpp/alts_context.h
+  - include/grpcpp/impl/codegen/security/auth_context.h
+  src:
+  - src/cpp/common/alts_context.cc
+  deps:
+  - grpc++
+  baselib: true
 - name: grpc++_core_stats
   build: private
   language: c++
@@ -3904,6 +3915,19 @@ targets:
   - grpc++_test_config
   platforms:
   - linux
+- name: alts_context_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/common/alts_context_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++_alts
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
 - name: alts_counter_test
   build: test
   language: c++
