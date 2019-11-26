@@ -2,8 +2,8 @@
 # Install Python 3.8 for x64 and x86 in order to build wheels on Windows.
 
 Set-StrictMode -Version 2
-Set-PSDebug -Trace 1
-$ErrorActionPreference = 'Stop'
+Set-PSDebug -Trace 2
+# $ErrorActionPreference = 'Stop'
 
 # Avoid "Could not create SSL/TLS secure channel"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -36,7 +36,7 @@ function Install-Python {
     }
 
     # Validates Python
-    $PythonBinary = "$PythonInstallPath/python.exe"
+    $PythonBinary = "$PythonInstallPath\python.exe"
     while ($true) {
         & $PythonBinary -c 'print(42)'
         if ($?) {
