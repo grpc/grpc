@@ -289,7 +289,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (first_picked_port_ > 0) {
       grpc_recycle_unused_port(first_picked_port_);
     }
-    DestroySpiffeThreadList(spiffe_thread_list_);
+    DestroySpiffeThreadList(spiffe_thread_list_, &spiffe_mutex_);
   }
 
   void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
@@ -417,6 +417,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     DummyInterceptor::Reset();
+    DestroySpiffeThreadList(spiffe_thread_list_, &spiffe_mutex_);
   }
 
   bool do_not_test_{false};

@@ -30,7 +30,8 @@ void* CreateSpiffeThreadList(const grpc::string& credential_type) {
   return nullptr;
 }
 
-void DestroySpiffeThreadList(void* thread_list) {
+void DestroySpiffeThreadList(void* thread_list, std::mutex* mu) {
+  mu->lock();
   if (thread_list == nullptr) {
     return;
   }
@@ -38,6 +39,7 @@ void DestroySpiffeThreadList(void* thread_list) {
       reinterpret_cast<SpiffeThreadList*>(thread_list);
   delete spiffe_thread_list;
   thread_list = nullptr;
+  mu->unlock();
 }
 
 class TestSyncTlsCredentialReload

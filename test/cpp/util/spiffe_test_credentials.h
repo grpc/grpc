@@ -52,7 +52,7 @@ class SpiffeThreadList {
 /** Helper functions for SetUp and TearDown. **/
 void* CreateSpiffeThreadList(const grpc::string& credential_type);
 
-void DestroySpiffeThreadList(void* thread_list);
+void DestroySpiffeThreadList(void* thread_list, std::mutex* mu);
 
 /** This method creates a TlsCredentialsOptions instance with no key materials,
  *  whose credential reload config is configured using the
