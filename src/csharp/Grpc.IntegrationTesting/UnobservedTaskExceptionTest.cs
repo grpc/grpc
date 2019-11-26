@@ -22,6 +22,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 using Grpc.Testing;
 using NUnit.Framework;
@@ -68,10 +69,10 @@ namespace Grpc.IntegrationTesting
             // Create a streaming response call, then cancel it without reading all the responses
             // and check that no unobserved task exceptions have been thrown.
 
-            int unobservedTaskExceptionCounter = 0;
+            var unobservedTaskExceptionCounter = new AtomicCounter();
 
             TaskScheduler.UnobservedTaskException += (sender, e) => {
-                unobservedTaskExceptionCounter++;
+                unobservedTaskExceptionCounter.Increment();
                 Console.WriteLine("Detected unobserved task exception: " + e.Exception);
             };
 
@@ -93,7 +94,7 @@ namespace Grpc.IntegrationTesting
                 GC.Collect();
             }
 
-            Assert.AreEqual(0, unobservedTaskExceptionCounter);
+            Assert.AreEqual(0, unobservedTaskExceptionCounter.Count);
         }
     }
 }
