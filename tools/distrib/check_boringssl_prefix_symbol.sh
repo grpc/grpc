@@ -17,18 +17,23 @@
 set -e
 
 cd "$(dirname $0)"
+cd ../../third_party/boringssl
 
-BORINGSSL_COMMIT=$(cd ../../third_party/boringssl ; git rev-parse HEAD)
+BORINGSSL_COMMIT=$(git rev-parse HEAD)
 
-mkdir -p ./output
+mkdir -p ./build
+cd build
+cmake ..
+make -j4
+go run ../util/read_symbols.go ssl/libssl.a > ./symbols.txt
+go run ../util/read_symbols.go crypto/libcrypto.a >> ./symbols.txt
 
-docker build ../dockerfile/grpc_objc/generate_boringssl_prefix_header -t grpc/boringssl_prefix_header
-docker run -it --rm -v $(pwd)/output:/output grpc/boringssl_prefix_header $BORINGSSL_COMMIT
+cmake .. -DBORINGSSL_PREFIX=GRPC -DBORINGSSL_PREFIX_SYMBOLS=symbols.txt
+make boringssl_prefix_symbols
+gzip -c symbol_prefix_include/boringssl_prefix_symbols.h | base64 > boringssl_prefix_symbols.h.gz.b64
 
-diff ../../src/boringssl/boringssl_prefix_symbols.h.gz.b64 output/boringssl_prefix_symbols.h.gz.b64
+diff ../../../src/boringssl/boringssl_prefix_symbols.h.gz.b64 boringssl_prefix_symbols.h.gz.b64
 
 result=$?
-
-rm -rf ./output
 
 exit $result
