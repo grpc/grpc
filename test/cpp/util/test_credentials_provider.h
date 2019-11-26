@@ -20,6 +20,7 @@
 #define GRPC_TEST_CPP_UTIL_TEST_CREDENTIALS_PROVIDER_H
 
 #include <memory>
+#include <mutex>
 
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
@@ -68,6 +69,18 @@ class CredentialsProvider {
 
   // Provide a list of secure credentials type.
   virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
+
+  void SetThreadInfo(void* thread_list, std::mutex* mutex) {
+    thread_list_ = thread_list;
+    mutex_ = mutex;
+  }
+
+ protected:
+  // Provide a list of threads to be used to create a credential, and a mutex
+  // for adding to the list. E.g. to perform an async server authorization
+  // check for SPIFFE.
+  void* thread_list_;
+  std::mutex* mutex_;
 };
 
 // Get the current provider. Create a default one if not set.

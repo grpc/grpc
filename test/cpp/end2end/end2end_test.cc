@@ -256,8 +256,14 @@ void TestScenario::Log() const {
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void SetUpTestCase() {
+    grpc_init();
+  }
+
+  static void TearDownTestCase() {
+    grpc_shutdown();
+  }
+
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
@@ -272,6 +278,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       do_not_test_ = true;
       return;
     }
+    spiffe_thread_list_ = CreateSpiffeThreadList(GetParam().credentials_type);
   }
 
   void TearDown() override {
@@ -282,6 +289,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (first_picked_port_ > 0) {
       grpc_recycle_unused_port(first_picked_port_);
     }
+    DestroySpiffeThreadList(spiffe_thread_list_);
   }
 
   void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
@@ -351,6 +359,9 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
+    if (GetParam().credentials_type == kSpiffeCredentialsType) {
+      GetCredentialsProvider()->SetThreadInfo(spiffe_thread_list_, &spiffe_mutex_);
+    }
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     if (!user_agent_prefix_.empty()) {
@@ -423,6 +434,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   TestServiceImplDupPkg dup_pkg_service_;
   grpc::string user_agent_prefix_;
   int first_picked_port_;
+  void* spiffe_thread_list_ = nullptr;
+  std::mutex spiffe_mutex_;
 };
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,

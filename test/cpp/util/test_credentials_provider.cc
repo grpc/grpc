@@ -32,6 +32,7 @@
 #include <grpcpp/security/server_credentials.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/cpp/util/spiffe_test_credentials.h"
 
 DEFINE_string(tls_cert_file, "", "The TLS cert file used when --use_tls=true");
 DEFINE_string(tls_key_file, "", "The TLS key file used when --use_tls=true");
@@ -80,6 +81,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       added_secure_type_providers_[it - added_secure_type_names_.begin()] =
           std::move(type_provider);
     }
+    if (type == grpc::testing::kSpiffeCredentialsType) {
+      has_spiffe_credentials = true;
+    }
   }
 
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
@@ -102,6 +106,15 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       if (it == added_secure_type_names_.end()) {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
         return nullptr;
+      }
+      if (has_spiffe_credentials &&
+          type == grpc::testing::kSpiffeCredentialsType) {
+        SpiffeCredentialTypeProvider* spiffe_provider =
+            reinterpret_cast<SpiffeCredentialTypeProvider*>(
+                added_secure_type_providers_[it -
+                                             added_secure_type_names_.begin()]
+                    .get());
+        return spiffe_provider->GetSpiffeChannelCredentials(args, thread_list_, mutex_);
       }
       return added_secure_type_providers_[it - added_secure_type_names_.begin()]
           ->GetChannelCredentials(args);
@@ -136,7 +149,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
         return nullptr;
       }
-      return added_secure_type_providers_[it - added_secure_type_names_.begin()]
+      added_secure_type_providers_[it - added_secure_type_names_.begin()]
           ->GetServerCredentials();
     }
   }
@@ -158,6 +171,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       added_secure_type_providers_;
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
+  bool has_spiffe_credentials = false;
 };
 
 CredentialsProvider* g_provider = nullptr;

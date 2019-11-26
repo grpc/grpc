@@ -258,6 +258,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port_;
+    //spiffe_thread_list_ = CreateSpiffeThreadList(GetParam().credentials_type);
 
     // Setup server
     BuildAndStartServer();
@@ -272,6 +273,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ;
     stub_.reset();
     grpc_recycle_unused_port(port_);
+    //DestroySpiffeThreadList(spiffe_thread_list_);
   }
 
   void BuildAndStartServer() {
@@ -296,6 +298,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void ResetStub() {
     ChannelArguments args;
+    //if (GetParam().credentials_type == kSpiffeCredentialsType) {
+    //  GetCredentialsProvider()->SetThreadList(spiffe_thread_list_);
+    //}
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
@@ -345,6 +350,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   HealthCheck health_check_;
   std::ostringstream server_address_;
   int port_;
+  void* spiffe_thread_list_ = nullptr;
 };
 
 TEST_P(AsyncEnd2endTest, SimpleRpc) {
@@ -1841,10 +1847,10 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
 
   CredentialsProvider* credentials_provider = GetCredentialsProvider();
   /** Add Spiffe credentials with asynchronous server authz. **/
-  credentials_provider->AddSecureType(
-      kSpiffeCredentialsType,
-      std::unique_ptr<SpiffeCredentialTypeProvider>(
-          new SpiffeCredentialTypeProvider(/** server_authz_async **/ true)));
+  //credentials_provider->AddSecureType(
+  //    kSpiffeCredentialsType,
+  //    std::unique_ptr<SpiffeCredentialTypeProvider>(
+  //        new SpiffeCredentialTypeProvider(/** server_authz_async **/ true)));
 
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
