@@ -2,8 +2,6 @@
 # Install Python 3.8 for x64 and x86 in order to build wheels on Windows.
 
 Set-StrictMode -Version 2
-Set-PSDebug -Trace 2
-# $ErrorActionPreference = 'Stop'
 
 # Avoid "Could not create SSL/TLS secure channel"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -52,10 +50,13 @@ function Install-Python {
     Write-Host "Python $PythonVersion installed by $PythonInstaller at $PythonInstallPath."
 }
 
+# NOTE(lidiz) Even though the default install folder for Python 32 bit is using
+# "bit", but seems there is a hack in "grpc_build_artifacts.bat" that renames
+# all "32bit" into "32bits".
 $Python38x86Config = @{
     PythonVersion = "3.8.0"
     PythonInstaller = "python-3.8.0.exe"
-    PythonInstallPath = "C:\Python38_32bit"
+    PythonInstallPath = "C:\Python38_32bits"
     PythonInstallerHash = "412a649d36626d33b8ca5593cf18318c"
 }
 Install-Python @Python38x86Config

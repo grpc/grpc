@@ -36,7 +36,7 @@ powershell -File src\csharp\install_dotnet_sdk.ps1
 set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
 
 @rem Install Python 3.8.0
-powershell -File tools\internal_ci\helper_scripts/install_python38.ps1
+powershell -File tools\internal_ci\helper_scripts\install_python38.ps1
 
 @rem Newest version of Go is required to be able to build boringssl with cmake
 @rem TODO(jtattermusch): try to eliminate the dependency on Go
