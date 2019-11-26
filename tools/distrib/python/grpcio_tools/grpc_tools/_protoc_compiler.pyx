@@ -16,9 +16,14 @@ from libc cimport stdlib
 
 cdef extern from "grpc_tools/main.h":
   int protoc_main(int argc, char *argv[])
+  int protoc_in_memory(char* protobuf_path, char* include_path) except +
 
 def run_main(list args not None):
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
   for i in range(len(args)):
     argv[i] = args[i]
   return protoc_main(len(args), argv)
+
+def run_protoc_in_memory(bytes protobuf_path, bytes include_path):
+  import sys; sys.stdout.write("cython run_protoc_in_memory\n"); sys.stdout.flush()
+  return protoc_in_memory(protobuf_path, include_path)

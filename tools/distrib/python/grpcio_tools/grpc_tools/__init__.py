@@ -19,6 +19,7 @@ from .protoc import main
 
 # TODO: Get this thing to just give me the code via an FD.
 # TODO: Figure out what to do about STDOUT pollution.
+# TODO: Search sys.path to figure out project_root automatically?
 def import_protos(proto_path, project_root):
     proto_basename = os.path.basename(proto_path)
     proto_name, _ = os.path.splitext(proto_basename)

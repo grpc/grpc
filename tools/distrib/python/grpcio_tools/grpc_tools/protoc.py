@@ -29,6 +29,9 @@ def main(command_arguments):
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
 
+def run_protoc_in_memory(protobuf_path, include_path):
+  return _protoc_compiler.run_protoc_in_memory(protobuf_path.encode('ascii'), include_path.encode('ascii'))
+
 
 if __name__ == '__main__':
     proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
