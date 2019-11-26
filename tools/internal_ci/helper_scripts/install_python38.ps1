@@ -33,9 +33,20 @@ function Install-Python {
         throw "The Python installation exited with error!"
     }
 
-    # Validates Python
+    # Validates Python binary
+    # NOTE(lidiz) Even if the install command finishes in the script, that
+    # doesn't mean the Python installation is finished. If using "ps" to check
+    # for running processes, you might see ongoing installers at this point.
+    # So, we needs this "hack" to reliably validate that the Python binary is
+    # functioning properly.
+    $ValidationStartTime = Get-Date
+    $EarlyExitDDL = $ValidationStartTime.addminutes(5)
     $PythonBinary = "$PythonInstallPath\python.exe"
-    while ($true) {
+    While ($True) {
+        $CurrentTime = Get-Date
+        if ($CurrentTime -ge $EarlyExitDDL) {
+            throw "Invalid Python installation! Timeout!"
+        }
         & $PythonBinary -c 'print(42)'
         if ($?) {
             Write-Host "Python binary works properly."
