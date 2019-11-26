@@ -14,12 +14,32 @@
 
 licenses(["notice"])  # Apache v2
 
-proto_library(
-    name = "alts_handshaker_proto",
-    srcs = [
-        "altscontext.proto",
-        "handshaker.proto",
-        "transport_security_common.proto",
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+
+grpc_package(
+    name = "src/proto/grpc/gcp",
+    visibility = "public",
+)
+
+# It is a known issue that for some Linux distributions built using musl, the
+# names(major and minor, more specifically) defined in
+# transport_security_common.proto has a conflict with system macro defined in
+# sysmacros.h. Thus if your system uses musl and depends on this library, it
+# MAY have problems.
+# Future reference:
+# https://www.openwall.com/lists/musl/2019/06/14/4 and
+# discussions in PR: https://github.com/grpc/grpc/pull/21196
+grpc_proto_library(
+    name = "transport_security_common_proto",
+    srcs = ["transport_security_common.proto"],
+    has_services = False,
+)
+
+grpc_proto_library(
+    name = "altscontext_proto",
+    srcs = ["altscontext.proto"],
+    has_services = False,
+    deps = [
+        "transport_security_common_proto",
     ],
-    visibility = ["//visibility:public"],
 )
