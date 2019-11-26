@@ -429,6 +429,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_alts",
+    srcs = [
+        "src/cpp/common/alts_context.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/alts_context.h",
+    ],
+    language = "c++",
+    standalone = True,
+    deps = [
+        "grpc++",
+        "//src/proto/grpc/gcp:alts_handshaker_cc_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_csharp_ext",
     srcs = [
         "src/csharp/ext/grpc_csharp_ext.c",
@@ -1021,7 +1037,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
-        "src/core/ext/filters/client_channel/connector.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",

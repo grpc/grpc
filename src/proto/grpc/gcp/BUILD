@@ -23,3 +23,11 @@ proto_library(
     ],
     visibility = ["//visibility:public"],
 )
+
+cc_proto_library(
+    name = "alts_handshaker_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "alts_handshaker_proto",
+    ],
+)
