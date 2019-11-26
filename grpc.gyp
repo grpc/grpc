@@ -1750,6 +1750,18 @@
       ],
     },
     {
+      'target_name': 'grpc++_alts',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+      ],
+      'sources': [
+        'src/proto/grpc/gcp/altscontext.proto',
+        'src/proto/grpc/gcp/transport_security_common.proto',
+        'src/cpp/common/alts_context.cc',
+      ],
+    },
+    {
       'target_name': 'grpc++_core_stats',
       'type': 'static_library',
       'dependencies': [
