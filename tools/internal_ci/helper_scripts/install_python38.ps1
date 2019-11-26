@@ -2,6 +2,7 @@
 # Install Python 3.8 for x64 and x86 in order to build wheels on Windows.
 
 Set-StrictMode -Version 2
+Set-PSDebug -Trace 1
 $ErrorActionPreference = 'Stop'
 
 # Avoid "Could not create SSL/TLS secure channel"
@@ -33,6 +34,21 @@ function Install-Python {
     if (-Not $?) {
         throw "The Python installation exited with error!"
     }
+
+    # Validates Python
+    $PythonBinary = "$PythonInstallPath/python.exe"
+    while ($true) {
+        & $PythonBinary -c 'print(42)'
+        if ($?) {
+            Write-Host "Python binary works properly."
+            break
+        }
+        Start-Sleep -Seconds 1
+    }
+
+    # Installs pip
+    & $PythonBinary -m ensurepip --user
+
     Write-Host "Python $PythonVersion installed by $PythonInstaller at $PythonInstallPath."
 }
 
@@ -51,4 +67,3 @@ $Python38x64Config = @{
     PythonInstallerHash = "29ea87f24c32f5e924b7d63f8a08ee8d"
 }
 Install-Python @Python38x64Config
-

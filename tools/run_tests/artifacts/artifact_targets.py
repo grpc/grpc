@@ -173,7 +173,7 @@ class PythonArtifact:
             if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
             else:
-                environ['EXT_COMPILER'] = 'msvc'
+                environ['EXT_COMPILER'] = 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\cl.exe'
             # For some reason, the batch script %random% always runs with the same
             # seed.  We create a random temp-dir here
             dir = ''.join(
