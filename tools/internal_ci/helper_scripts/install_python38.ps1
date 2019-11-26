@@ -50,13 +50,10 @@ function Install-Python {
     Write-Host "Python $PythonVersion installed by $PythonInstaller at $PythonInstallPath."
 }
 
-# NOTE(lidiz) Even though the default install folder for Python 32 bit is using
-# "bit", but seems there is a hack in "grpc_build_artifacts.bat" that renames
-# all "32bit" into "32bits".
 $Python38x86Config = @{
     PythonVersion = "3.8.0"
     PythonInstaller = "python-3.8.0.exe"
-    PythonInstallPath = "C:\Python38_32bits"
+    PythonInstallPath = "C:\Python38_32bit"
     PythonInstallerHash = "412a649d36626d33b8ca5593cf18318c"
 }
 Install-Python @Python38x86Config
