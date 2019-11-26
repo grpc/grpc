@@ -32,6 +32,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/gprpp/optional.h"
 
 namespace grpc_core {
 
@@ -175,8 +176,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         watchers;
     // The latest data seen from CDS.
-    CdsUpdate update;
-    bool seen_update = false;
+    Optional<CdsUpdate> update;
   };
 
   struct EndpointState {
@@ -215,7 +215,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
 
-  grpc_core::UniquePtr<char> server_name_;
+  std::string server_name_;
   std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
   // TODO(juanlishen): Once we implement LDS support, this will no
   // longer be needed.

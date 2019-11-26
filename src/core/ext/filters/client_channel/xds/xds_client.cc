@@ -125,11 +125,9 @@ class XdsClient::ChannelState::AdsCallState
   XdsClient* xds_client() const { return chand()->xds_client(); }
   bool seen_response() const { return seen_response_; }
 
-  bool AdsCallNeeded() const;
-
   // Takes ownership of \a error.
   void SendMessageLocked(const std::string& type_url,
-                         const std::string& nonce_for_unknown_type,
+                         std::string nonce,
                          grpc_error* error, bool is_first_message);
 
  private:
@@ -177,12 +175,12 @@ class XdsClient::ChannelState::AdsCallState
   grpc_slice status_details_;
   grpc_closure on_status_received_;
 
-  // Version states.
-  VersionState cds_version_state_;
-  VersionState eds_version_state_;
+  // Version info.
+  std::string cds_version_;
+  std::string eds_version_;
 
   // Buffered requests.
-  std::map<std::string, std::unique_ptr<BufferedRequest>> buffered_request_map_;
+  std::map<std::string /*type_url*/, std::unique_ptr<BufferedRequest>> buffered_request_map_;
 };
 
 // Contains an LRS call to the xds server.
@@ -437,19 +435,18 @@ void XdsClient::ChannelState::OnResourceNamesChanged(
     ads_calld_.reset(new RetryableCall<AdsCallState>(
         Ref(DEBUG_LOCATION, "ChannelState+ads")));
   } else {
-    // FIXME: What's nonce for? It can be empty only if "the client has not yet
-    // accepted an update in this xDS stream".
-    //  https://github.com/envoyproxy/envoy/blob/b9f798dd1dec86d3ed067c449e3c3a49c57984b1/api/envoy/api/v2/discovery.proto#L46
-    // If the last response was ACKed, we have to set the nonce in the new
-    // response. I guess we should use the nonce from the last response. But if
-    // the last response was NACKed, we are not required to include the nonce. I
-    // don't understand what it's used for.
     ads_calld()->SendMessageLocked(type_url, "", nullptr, false);
   }
 }
 
 void XdsClient::ChannelState::OnWatcherRemoved() {
-  if (!ads_calld()->AdsCallNeeded()) ads_calld_.reset();
+  // Keep the ADS call if there are watcher(s).
+  for (const auto& p : xds_client()->cluster_map_) {
+    const ClusterState& cluster_state = p.second;
+    if (!cluster_state.watchers.empty()) return;
+  }
+  if (!xds_client()->endpoint_map_.empty()) return;
+  ads_calld_.reset();
 }
 
 //
@@ -565,8 +562,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  GPR_ASSERT(xds_client()->server_name_ != nullptr);
-  GPR_ASSERT(*xds_client()->server_name_.get() != '\0');
+  GPR_ASSERT(!xds_client()->server_name_.empty());
   // Create a call with the specified method name.
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
@@ -669,22 +665,13 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
   // corresponding unref happens in on_status_received_ instead of here.
 }
 
-bool XdsClient::ChannelState::AdsCallState::AdsCallNeeded() const {
-  // ADS call is needed when there are watcher(s).
-  for (const auto& p : xds_client()->cluster_map_) {
-    const ClusterState& cluster_state = p.second;
-    if (!cluster_state.watchers.empty()) return true;
-  }
-  return !xds_client()->endpoint_map_.empty();
-}
-
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
-    const std::string& type_url, const std::string& nonce_for_unknown_type,
+    const std::string& type_url, std::string nonce,
     grpc_error* error, bool is_first_message) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
     buffered_request_map_[type_url].reset(
-        new BufferedRequest(nonce_for_unknown_type, error));
+        new BufferedRequest(std::move(nonce), error));
     return;
   }
   grpc_slice request_payload_slice;
@@ -695,16 +682,15 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   if (type_url == kCdsTypeUrl) {
     request_payload_slice = XdsCdsRequestCreateAndEncode(
         xds_client()->WatchedClusterNames(), node, build_version,
-        cds_version_state_.version_info, cds_version_state_.nonce, error);
+        cds_version_, nonce, error);
   } else if (type_url == kEdsTypeUrl) {
     request_payload_slice = XdsEdsRequestCreateAndEncode(
         xds_client()->EdsServiceNames(), node, build_version,
-        eds_version_state_.version_info, eds_version_state_.nonce, error);
+        eds_version_, nonce, error);
   } else {
-    request_payload_slice = XdsUnknownTypeNackRequestCreateAndEncode(
-        type_url, nonce_for_unknown_type, error);
+    request_payload_slice = XdsUnsupportedTypeNackRequestCreateAndEncode(
+        type_url, nonce, error);
   }
-  GRPC_ERROR_UNREF(error);
   // Create message payload.
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -728,7 +714,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     CdsUpdateMap cds_update_map, std::string new_version) {
   for (auto& p : cds_update_map) {
-    const char* cluster_name = p.first.get();
+    const char* cluster_name = p.first.c_str();
     CdsUpdate& cds_update = p.second;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
@@ -736,14 +722,14 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
               "eds_service_name=%s, "
               "lrs_load_reporting_server_name=%s",
               xds_client(), cluster_name, cds_update.eds_service_name.c_str(),
-              cds_update.lrs_load_reporting_server_name.c_str());
+              cds_update.lrs_load_reporting_server_name.value().c_str());
     }
     ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
     // Ignore identical update.
-    const CdsUpdate& prev_update = cluster_state.update;
+    const CdsUpdate& prev_update = cluster_state.update.value();
     if (cds_update.eds_service_name == prev_update.eds_service_name &&
-        cds_update.lrs_load_reporting_server_name ==
-            prev_update.lrs_load_reporting_server_name) {
+        cds_update.lrs_load_reporting_server_name.value() ==
+            prev_update.lrs_load_reporting_server_name.value()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
         gpr_log(GPR_INFO,
                 "[xds_client %p] CDS update identical to current, ignoring.",
@@ -752,19 +738,19 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
       continue;
     }
     // Update the cluster state.
-    cluster_state.update = std::move(cds_update);
+    cluster_state.update.set(cds_update);
     // Notify all watchers.
     for (const auto& p : cluster_state.watchers) {
-      p.first->OnClusterChanged(cluster_state.update);
+      p.first->OnClusterChanged(cluster_state.update.value());
     }
   }
-  cds_version_state_.version_info = std::move(new_version);
+  cds_version_ = std::move(new_version);
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     EdsUpdateMap eds_update_map, std::string new_version) {
   for (auto& p : eds_update_map) {
-    const char* eds_service_name = p.first.get();
+    const char* eds_service_name = p.first.c_str();
     EdsUpdate& eds_update = p.second;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
@@ -811,7 +797,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
             eds_update.drop_config->drop_category_list()[i];
         gpr_log(GPR_INFO,
                 "[xds_client %p] Drop category %s has drop rate %d per million",
-                xds_client(), drop_category.name.get(),
+                xds_client(), drop_category.name.c_str(),
                 drop_category.parts_per_million);
       }
     }
@@ -839,7 +825,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
       p.first->OnEndpointChanged(endpoint_state.update);
     }
   }
-  eds_version_state_.version_info = std::move(new_version);
+  eds_version_ = std::move(new_version);
 }
 
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
@@ -857,33 +843,17 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
   // of sending only the most recent list
   //  of resource names for each resource type (no matter how many times that
   //  resource type has been requested to send while the current message sending
-  //  is still pending). But its disadvantage is that CDS requests are always
-  //  prioritized over EDS, so the EDS requests may be starved in case we are
-  //  constantly asked to send CDS messages. We need to fix this if we are
-  //  seeing EDS starved due to frequent CDS requests.
-  auto& buffered_request_map = self->buffered_request_map_;
-  // TODO(juanlishen): Simplify the code when adding LDS/RDS.
-  auto iter = buffered_request_map.find(kCdsTypeUrl);
-  if (iter != buffered_request_map.end()) {
-    auto& buffered_request = iter->second;
-    self->SendMessageLocked(kCdsTypeUrl, "", buffered_request->error, false);
-    buffered_request_map.erase(iter);
-    return;
-  }
-  iter = buffered_request_map.find(kEdsTypeUrl);
-  if (iter != buffered_request_map.end()) {
-    auto& buffered_request = iter->second;
-    self->SendMessageLocked(kCdsTypeUrl, "", buffered_request->error, false);
-    buffered_request_map.erase(iter);
-    return;
-  }
-  if (!buffered_request_map.empty()) {
-    iter = buffered_request_map.begin();
-    auto& type_url = iter->first;
-    auto& buffered_request = iter->second;
-    self->SendMessageLocked(type_url, buffered_request->nonce,
-                            buffered_request->error, false);
-    buffered_request_map.erase(iter);
+  //  is still pending). But its disadvantage is that we send the requests in fixed order of resource types. We need to fix this if we are
+  //  seeing some resource type(s) starved due to frequent requests of other resource type(s).
+  for (auto& p : self->buffered_request_map_) {
+    const std::string& type_url = p.first;
+    std::unique_ptr<BufferedRequest>& buffered_request = p.second;
+    if (buffered_request != nullptr) {
+      self->SendMessageLocked(type_url, std::move(buffered_request->nonce), buffered_request->error,
+                              false);
+      buffered_request.reset();
+      return;
+    }
   }
 }
 
@@ -932,26 +902,21 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
       response_slice, xds_client->EdsServiceNames(), &cds_update_map,
       &eds_update_map, &version, &nonce, &type_url);
   grpc_slice_unref_internal(response_slice);
-  // This anonymous lambda is a hack to avoid the usage of goto.
-  [&]() {
-    // If the type_url is unparsable, ignore it.
-    if (type_url.empty()) return;
-    // Update nonce.
-    if (type_url == kCdsTypeUrl) {
-      ads_calld->cds_version_state_.nonce = nonce;
-    } else if (type_url == kEdsTypeUrl) {
-      ads_calld->eds_version_state_.nonce = nonce;
-    }
-    // If the update can't be accepted, NACK it with the received type_url and
-    // nonce.
-    if (version.empty()) {
-      gpr_log(
-          GPR_ERROR,
-          "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
-          xds_client, grpc_error_string(parse_error));
-      ads_calld->SendMessageLocked(type_url, nonce, parse_error, false);
-      return;
-    }
+  if (type_url.empty()) {
+    // Ignore unparsable response.
+    gpr_log(
+        GPR_ERROR,
+        "[xds_client %p] No type_url found. error=%s",
+        xds_client, grpc_error_string(parse_error));
+    GRPC_ERROR_UNREF(parse_error);
+  } else if (parse_error != GRPC_ERROR_NONE) {
+    // NACK unacceptable update.
+    gpr_log(
+        GPR_ERROR,
+        "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
+        xds_client, grpc_error_string(parse_error));
+    ads_calld->SendMessageLocked(type_url, std::move(nonce), parse_error, false);
+  } else {
     ads_calld->seen_response_ = true;
     // Accept the (CDS or EDS) response.
     if (type_url == kCdsTypeUrl) {
@@ -960,16 +925,16 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
       ads_calld->AcceptEdsUpdate(std::move(eds_update_map), std::move(version));
     }
     // ACK the update.
-    ads_calld->SendMessageLocked(type_url, nonce, nullptr, false);
+    ads_calld->SendMessageLocked(type_url, std::move(nonce), nullptr, false);
     // Start load reporting if needed.
     LrsCallState* lrs_calld = ads_calld->chand()->lrs_calld_->calld();
     if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
-    if (xds_client->shutting_down_) {
-      ads_calld->Unref(DEBUG_LOCATION,
-                       "ADS+OnResponseReceivedLocked+xds_shutdown");
-      return;
-    }
-  }();
+  }
+  if (xds_client->shutting_down_) {
+    ads_calld->Unref(DEBUG_LOCATION,
+                     "ADS+OnResponseReceivedLocked+xds_shutdown");
+    return;
+  }
   // Keep listening for updates.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -1138,8 +1103,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  GPR_ASSERT(xds_client()->server_name_ != nullptr);
-  GPR_ASSERT(*xds_client()->server_name_.get() != '\0');
+  GPR_ASSERT(!xds_client()->server_name_.empty());
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xds_client()->interested_parties_,
@@ -1148,7 +1112,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
   grpc_slice request_payload_slice = XdsLrsRequestCreateAndEncode(
-      xds_client()->server_name_.get(), xds_client()->bootstrap_->node(),
+      xds_client()->server_name_, xds_client()->bootstrap_->node(),
       xds_client()->build_version_.get());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -1275,8 +1239,7 @@ bool XdsClient::ChannelState::LrsCallState::ShouldSendLoadReports(
     const StringView& cluster_name) const {
   // Only send load reports for the clusters that are asked for by the LRS
   // server.
-  std::string cluster_name_string(cluster_name.data(), cluster_name.size());
-  return cluster_names_.find(cluster_name_string) != cluster_names_.end();
+  return cluster_names_.find(std::string(cluster_name)) != cluster_names_.end();
 }
 
 void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
@@ -1466,7 +1429,7 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
-      server_name_(StringViewToCString(server_name)),
+      server_name_(server_name),
       service_config_watcher_(std::move(watcher)) {
   if (*error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1506,8 +1469,8 @@ void XdsClient::WatchClusterData(
   cluster_state.watchers[w] = std::move(watcher);
   // If we've already received an CDS update, notify the new watcher
   // immediately.
-  if (cluster_state.seen_update) {
-    w->OnClusterChanged(cluster_state.update);
+  if (cluster_state.update.has_value()) {
+    w->OnClusterChanged(cluster_state.update.value());
   }
   if (new_name) chand_->OnResourceNamesChanged(kCdsTypeUrl);
 }
@@ -1660,7 +1623,7 @@ void XdsClient::NotifyOnServiceConfig(void* arg, grpc_error* error) {
                "    } }\n"
                "  ]\n"
                "}",
-               self->server_name_.get());
+               self->server_name_.c_str());
   RefCountedPtr<ServiceConfig> service_config =
       ServiceConfig::Create(json, &error);
   gpr_free(json);

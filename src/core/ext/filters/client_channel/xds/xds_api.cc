@@ -85,8 +85,7 @@ bool XdsPriorityListUpdate::Contains(
   return false;
 }
 
-bool XdsDropConfig::ShouldDrop(
-    const grpc_core::UniquePtr<char>** category_name) const {
+bool XdsDropConfig::ShouldDrop(const std::string** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
@@ -196,9 +195,8 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
 
 }  // namespace
 
-grpc_slice XdsUnknownTypeNackRequestCreateAndEncode(const std::string& type_url,
-                                                    const std::string& nonce,
-                                                    grpc_error* error) {
+grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
+    const std::string& type_url, const std::string& nonce, grpc_error* error) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -220,6 +218,7 @@ grpc_slice XdsUnknownTypeNackRequestCreateAndEncode(const std::string& type_url,
   google_rpc_Status* error_detail =
       envoy_api_v2_DiscoveryRequest_mutable_error_detail(request, arena.ptr());
   google_rpc_Status_set_message(error_detail, error_description_strview);
+    GRPC_ERROR_UNREF(error);
   // Encode the request.
   size_t output_length;
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
@@ -227,7 +226,7 @@ grpc_slice XdsUnknownTypeNackRequestCreateAndEncode(const std::string& type_url,
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
+grpc_slice XdsCdsRequestCreateAndEncode(const std::set<StringView>& cluster_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
                                         const std::string& version,
@@ -238,9 +237,9 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
   // Set version_info.
-  if (!version.version_info.empty()) {
+  if (!version.empty()) {
     envoy_api_v2_DiscoveryRequest_set_version_info(
-        request, upb_strview_makez(version.version_info.c_str()));
+        request, upb_strview_makez(version.c_str()));
   }
   // Populate node.
   if (build_version != nullptr) {
@@ -258,9 +257,9 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
                                              upb_strview_makez(kCdsTypeUrl));
   // Set nonce.
-  if (!version.nonce.empty()) {
+  if (!nonce.empty()) {
     envoy_api_v2_DiscoveryRequest_set_response_nonce(
-        request, upb_strview_makez(version.version_info.c_str()));
+        request, upb_strview_makez(nonce.c_str()));
   }
   // Set error_detail if it's a NACK.
   if (error != GRPC_ERROR_NONE) {
@@ -275,6 +274,7 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
         envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
                                                            arena.ptr());
     google_rpc_Status_set_message(error_detail, error_description_strview);
+    GRPC_ERROR_UNREF(error);
   }
   // Encode the request.
   size_t output_length;
@@ -283,7 +283,7 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
+grpc_slice XdsEdsRequestCreateAndEncode(const std::set<StringView>& eds_service_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
                                         const std::string& version,
@@ -315,9 +315,9 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
                                              upb_strview_makez(kEdsTypeUrl));
   // Set nonce.
-  if (!eds_nonce.empty()) {
+  if (!nonce.empty()) {
     envoy_api_v2_DiscoveryRequest_set_response_nonce(
-        request, upb_strview_makez(eds_nonce.c_str()));
+        request, upb_strview_makez(nonce.c_str()));
   }
   // Set error_detail if it's a NACK.
   if (error != GRPC_ERROR_NONE) {
@@ -332,6 +332,7 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
         envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
                                                            arena.ptr());
     google_rpc_Status_set_message(error_detail, error_description_strview);
+    GRPC_ERROR_UNREF(error);
   }
   // Encode the request.
   size_t output_length;
@@ -339,17 +340,6 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
                                                          &output_length);
   return grpc_slice_from_copied_buffer(output, output_length);
 }
-
-namespace {
-
-std::unique_ptr<char> StringCopy(const upb_strview& strview) {
-  char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
-  memcpy(str, strview.data, strview.size);
-  str[strview.size] = '\0';
-  return std::unique_ptr<char>(str);
-}
-
-}  // namespace
 
 grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
                              CdsUpdateMap* cds_update_map, upb_arena* arena) {
@@ -412,12 +402,11 @@ grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "ConfigSource is not self.");
       }
-      // FIXME: If we only use this field to enable/disable load reporting, we
-      // are violating the proto?
-      cds_update.lrs_load_reporting_server_name = "";
+      cds_update.lrs_load_reporting_server_name.set("");
     }
     upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
-    cds_update_map->emplace(StringCopy(cluster_name), std::move(cds_update));
+    cds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),
+                            std::move(cds_update));
   }
   return GRPC_ERROR_NONE;
 }
@@ -475,10 +464,12 @@ grpc_error* LocalityParse(
   // Parse locality name.
   const envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
+  upb_strview region = envoy_api_v2_core_Locality_region(locality);
+  upb_strview zone = envoy_api_v2_core_Locality_region(locality);
+  upb_strview sub_zone = envoy_api_v2_core_Locality_sub_zone(locality);
   output_locality->name = MakeRefCounted<XdsLocalityName>(
-      StringCopy(envoy_api_v2_core_Locality_region(locality)),
-      StringCopy(envoy_api_v2_core_Locality_zone(locality)),
-      StringCopy(envoy_api_v2_core_Locality_sub_zone(locality)));
+      std::string(region.data, region.size), std::string(zone.data, zone.size),
+      std::string(sub_zone.data, sub_zone.size));
   // Parse the addresses.
   size_t size;
   const envoy_api_v2_endpoint_LbEndpoint* const* lb_endpoints =
@@ -529,7 +520,8 @@ grpc_error* DropParseAndAppend(
   // Cap numerator to 1000000.
   numerator = GPR_MIN(numerator, 1000000);
   if (numerator == 1000000) *drop_all = true;
-  drop_config->AddCategory(StringCopy(category), numerator);
+  drop_config->AddCategory(std::string(category.data, category.size),
+                           numerator);
   return GRPC_ERROR_NONE;
 }
 
@@ -606,7 +598,7 @@ grpc_error* EdsResponsedParse(
           "EDS response doesn't contain any valid "
           "locality but doesn't require to drop all calls.");
     }
-    eds_update_map->emplace(StringCopy(cluster_name), std::move(eds_update));
+    eds_update_map->emplace(cluster_name_strview, std::move(eds_update));
   }
   return GRPC_ERROR_NONE;
 }
@@ -624,37 +616,30 @@ grpc_error* XdsAdsResponseDecodeAndParse(
       envoy_api_v2_DiscoveryResponse_parse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
-  // If decoding fails, output an empty type_url.
+  // If decoding fails, output an empty type_url and return.
   if (response == nullptr) {
     *type_url = "";
-    return GRPC_ERROR_NONE;
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode the whole response.");
   }
-  // Record the type_url and nonce of the response.
+  // Record the type_url, the version_info, and the nonce of the response.
   upb_strview type_url_strview =
       envoy_api_v2_DiscoveryResponse_type_url(response);
   *type_url = std::string(type_url_strview.data, type_url_strview.size);
+  upb_strview version_info =
+      envoy_api_v2_DiscoveryResponse_version_info(response);
+  *version = std::string(version_info.data, version_info.size);
   upb_strview nonce_strview = envoy_api_v2_DiscoveryResponse_nonce(response);
   *nonce = std::string(nonce_strview.data, nonce_strview.size);
   // Parse the response according to the resource type.
-  grpc_error* error;
   if (*type_url == kCdsTypeUrl) {
-    error = CdsResponseParse(response, cds_update_map, arena.ptr());
+    return CdsResponseParse(response, cds_update_map, arena.ptr());
   } else if (*type_url == kEdsTypeUrl) {
-    error = EdsResponsedParse(response, expected_eds_service_names,
+    return EdsResponsedParse(response, expected_eds_service_names,
                               eds_update_map, arena.ptr());
   } else {
-    error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported ADS resource type");
+    return
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported ADS resource type.");
   }
-  //
-  if (error != GRPC_ERROR_NONE) {
-    *version = "";
-  } else {
-    upb_strview version_info =
-        envoy_api_v2_DiscoveryResponse_version_info(response);
-    *version = std::string(version_info.data, version_info.size);
-  }
-  return error;
 }
 
 namespace {
@@ -670,7 +655,7 @@ grpc_slice LrsRequestEncode(
 
 }  // namespace
 
-grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+grpc_slice XdsLrsRequestCreateAndEncode(const std::string& server_name,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version) {
   upb::Arena arena;
@@ -689,7 +674,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
           request, arena.ptr());
   // Set the cluster name.
   envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
-      cluster_stats, upb_strview_makez(server_name));
+      cluster_stats, upb_strview_makez(server_name.c_str()));
   return LrsRequestEncode(request, arena.ptr());
 }
 
@@ -718,7 +703,7 @@ void LocalityStatsPopulate(
       output, snapshot.total_issued_requests);
   // Add load metric stats.
   for (auto& p : snapshot.load_metric_stats) {
-    const char* metric_name = p.first.get();
+    const char* metric_name = p.first.c_str();
     const XdsClientStats::LocalityStats::LoadMetric::Snapshot& metric_value =
         p.second;
     envoy_api_v2_endpoint_EndpointLoadMetricStats* load_metric =
@@ -778,7 +763,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(
       }
       // Add dropped requests.
       for (auto& p : snapshot.dropped_requests) {
-        const char* category = p.first.get();
+        const char* category = p.first.c_str();
         const uint64_t count = p.second;
         envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
             envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(
