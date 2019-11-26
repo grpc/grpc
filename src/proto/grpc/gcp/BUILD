@@ -14,6 +14,13 @@
 
 licenses(["notice"])  # Apache v2
 
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+
+grpc_package(
+    name = "src/proto/grpc/gcp",
+    visibility = "public",
+)
+
 proto_library(
     name = "alts_handshaker_proto",
     srcs = [
@@ -22,4 +29,19 @@ proto_library(
         "transport_security_common.proto",
     ],
     visibility = ["//visibility:public"],
+)
+
+grpc_proto_library(
+    name = "transport_security_common_proto",
+    srcs = ["transport_security_common.proto"],
+    has_services = False,
+)
+
+grpc_proto_library(
+    name = "altscontext_proto",
+    srcs = ["altscontext.proto"],
+    has_services = False,
+    deps = [
+        "transport_security_common_proto",
+    ],
 )
