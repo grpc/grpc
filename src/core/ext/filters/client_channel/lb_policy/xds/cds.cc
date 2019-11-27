@@ -119,9 +119,9 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
   }
   // Construct config for child policy.
   char* lrs_str = nullptr;
-  if (cluster_data.lrs_load_reporting_server_name != nullptr) {
+  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
     gpr_asprintf(&lrs_str, "    \"lrsLoadReportingServerName\": \"%s\",\n",
-                 cluster_data.lrs_load_reporting_server_name.get());
+                 cluster_data.lrs_load_reporting_server_name.value().c_str());
   }
   char* json_str;
   gpr_asprintf(&json_str,
