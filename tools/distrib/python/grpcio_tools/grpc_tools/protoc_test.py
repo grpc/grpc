@@ -22,17 +22,10 @@ class ProtocTest(unittest.TestCase):
 
     def test_protoc_in_memory(self):
         from grpc_tools import protoc
-        import os
-        original_dir = os.getcwd()
-        # TODO: Completely get rid of this chdir stuff.
-        os.chdir(os.path.join(original_dir, "tools/distrib/python/grpcio_tools/"))
-        protos, = protoc.get_protos("grpc_tools/simple.proto", "")
-        os.chdir(original_dir)
-        # print("Protos: {}".format(vars(protos)))
+        proto_path = "tools/distrib/python/grpcio_tools/"
+        protos, = protoc.get_protos("grpc_tools/simple.proto", proto_path)
         print(protos.SimpleMessageRequest)
-        os.chdir(os.path.join(original_dir, "tools/distrib/python/grpcio_tools/"))
-        services, = protoc.get_services("grpc_tools/simple.proto", "")
-        os.chdir(original_dir)
+        services, = protoc.get_services("grpc_tools/simple.proto", proto_path)
         print("Services: {}".format(dir(services)))
 
 

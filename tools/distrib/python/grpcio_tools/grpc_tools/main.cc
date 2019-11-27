@@ -96,7 +96,6 @@ class ErrorCollectorImpl : public ::google::protobuf::compiler::MultiFileErrorCo
                      errors_(errors),
                      warnings_(warnings) {}
 
-  // implements ErrorCollector ---------------------------------------
   void AddError(const std::string& filename, int line, int column,
                 const std::string& message) {
     errors_->emplace_back(filename, line, column, message);
@@ -114,6 +113,7 @@ private:
 
 } // end namespace detail
 
+// TODO: Handle multiple include paths.
 static int generate_code(::google::protobuf::compiler::CodeGenerator* code_generator,
                          char* protobuf_path,
                          char* include_path,
@@ -121,14 +121,11 @@ static int generate_code(::google::protobuf::compiler::CodeGenerator* code_gener
                          std::vector<ProtocError>* errors,
                          std::vector<ProtocWarning>* warnings)
 {
-  std::string protobuf_filename(protobuf_path);
   std::unique_ptr<detail::ErrorCollectorImpl> error_collector(new detail::ErrorCollectorImpl(errors, warnings));
   std::unique_ptr<::google::protobuf::compiler::DiskSourceTree> source_tree(new ::google::protobuf::compiler::DiskSourceTree());
-  // NOTE: This is equivalent to "--proto_path=."
-  source_tree->MapPath("", ".");
-  // TODO: Figure out more advanced virtual path mapping.
+  source_tree->MapPath("", include_path);
   ::google::protobuf::compiler::Importer importer(source_tree.get(), error_collector.get());
-  const ::google::protobuf::FileDescriptor* parsed_file = importer.Import(protobuf_filename);
+  const ::google::protobuf::FileDescriptor* parsed_file = importer.Import(protobuf_path);
   if (parsed_file == nullptr) {
     return 1;
   }
@@ -158,5 +155,4 @@ int protoc_get_services(char* protobuf_path,
   grpc_python_generator::GeneratorConfiguration grpc_py_config;
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
   return generate_code(&grpc_py_generator, protobuf_path, include_path, files_out, errors, warnings);
-  return 0;
 }
