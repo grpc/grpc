@@ -130,6 +130,12 @@ namespace Grpc.Core.Internal
             return result;
         }
 
+        // for testing only
+        public int TestOnly_GetSliceCount()
+        {
+            return (int) Native.grpcsharp_slice_buffer_slice_count(this).ToUInt64();
+        }
+
         private void EnsureBufferSpace(int sizeHint)
         {
             GrpcPreconditions.CheckArgument(sizeHint >= 0);
