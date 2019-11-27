@@ -106,6 +106,23 @@ static NSString * const kHostAddress = @"localhost:50051";
 }
 
 - (void)execRequest {
+  void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
+    // TODO(makdharma): Remove boilerplate by consolidating into one log function.
+    if (response.name.length) {
+      NSString *str =[NSString stringWithFormat:@"%@\nFound feature called %@ at %@.", self.outputLabel.text, response.location, response.name];
+      self.outputLabel.text = str;
+      NSLog(@"Found feature called %@ at %@.", response.name, response.location);
+    } else if (response) {
+      NSString *str =[NSString stringWithFormat:@"%@\nFound no features at %@",  self.outputLabel.text,response.location];
+      self.outputLabel.text = str;
+      NSLog(@"Found no features at %@", response.location);
+    } else {
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
+      NSLog(@"RPC error: %@", error);
+    }
+  };
+
   RTGPoint *point = [RTGPoint message];
   point.latitude = 409146138;
   point.longitude = -746188906;
@@ -115,7 +132,7 @@ static NSString * const kHostAddress = @"localhost:50051";
                                                  callOptions:nil];
   [call start];
   call = [_service getFeatureWithMessage:[RTGPoint message]
-                         responseHandler:self
+                         responseHandler:[[GRPCUnaryResponseHandler alloc] initWithResponseHandler:handler responseDispatchQueue:nil]
                              callOptions:nil];
   [call start];
 
