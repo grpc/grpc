@@ -68,7 +68,7 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
  * not to have a feature.
  */
-@interface GetFeatureViewController : UIViewController<GRPCProtoResponseHandler>
+@interface GetFeatureViewController : UIViewController
 
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
@@ -76,33 +76,6 @@ static NSString * const kHostAddress = @"localhost:50051";
 
 @implementation GetFeatureViewController {
   RTGRouteGuide *_service;
-}
-
-- (dispatch_queue_t)dispatchQueue {
-  return dispatch_get_main_queue();
-}
-
-- (void)didReceiveProtoMessage:(GPBMessage *)message {
-  RTGFeature *response = (RTGFeature *)message;
-
-  // TODO(makdharma): Remove boilerplate by consolidating into one log function.
-  if (response.name.length != 0) {
-    NSString *str =[NSString stringWithFormat:@"%@\nFound feature called %@ at %@.", self.outputLabel.text, response.location, response.name];
-    self.outputLabel.text = str;
-    NSLog(@"Found feature called %@ at %@.", response.name, response.location);
-  } else if (response) {
-    NSString *str =[NSString stringWithFormat:@"%@\nFound no features at %@",  self.outputLabel.text,response.location];
-    self.outputLabel.text = str;
-    NSLog(@"Found no features at %@", response.location);
-  }
-}
-
-- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  if (error) {
-    NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
-    self.outputLabel.text = str;
-    NSLog(@"RPC error: %@", error);
-  }
 }
 
 - (void)execRequest {
