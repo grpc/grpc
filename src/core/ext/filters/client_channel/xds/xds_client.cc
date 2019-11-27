@@ -903,6 +903,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   grpc_error* parse_error = XdsAdsResponseDecodeAndParse(
       response_slice, xds_client->EdsServiceNames(), &cds_update_map,
       &eds_update_map, &version, &nonce, &type_url);
+  gpr_log(GPR_ERROR, "=== afrer parse");
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
     // Ignore unparsable response.
@@ -927,8 +928,11 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
     // ACK the update.
     ads_calld->SendMessageLocked(type_url, std::move(nonce), nullptr, false);
     // Start load reporting if needed.
-    LrsCallState* lrs_calld = ads_calld->chand()->lrs_calld_->calld();
-    if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+    auto& lrs_call = ads_calld->chand()->lrs_calld_;
+    if (lrs_call != nullptr) {
+      LrsCallState* lrs_calld = lrs_call->calld();
+      if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+    }
   }
   if (xds_client->shutting_down_) {
     ads_calld->Unref(DEBUG_LOCATION,

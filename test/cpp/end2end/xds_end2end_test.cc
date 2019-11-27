@@ -392,6 +392,10 @@ class AdsServiceImpl : public AdsService {
         DiscoveryResponse response;
         response.set_type_url(kCdsTypeUrl);
         Cluster cluster;
+        cluster.set_type(envoy::api::v2::Cluster::EDS);
+        cluster.mutable_eds_cluster_config()
+            ->mutable_eds_config()
+            ->mutable_ads();
         if (enable_load_reporting_) {
           cluster.mutable_lrs_server()->mutable_self();
         }

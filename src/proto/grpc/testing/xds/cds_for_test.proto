@@ -27,11 +27,21 @@ syntax = "proto3";
 
 package envoy.api.v2;
 
+// Aggregated Discovery Service (ADS) options. This is currently empty, but when
+// set in :ref:`ConfigSource <envoy_api_msg_core.ConfigSource>` can be used to
+// specify that ADS is to be used.
+message AggregatedConfigSource {
+}
+
 message SelfConfigSource {
 }
 
 message ConfigSource {
   oneof config_source_specifier {
+    // When set, ADS will be used to fetch resources. The ADS API configuration
+    // source in the bootstrap configuration is used.
+    AggregatedConfigSource ads = 3;
+
     // [#not-implemented-hide:]
     // When set, the client will access the resources from the same server it got the
     // ConfigSource from, although not necessarily from the same stream. This is similar to the

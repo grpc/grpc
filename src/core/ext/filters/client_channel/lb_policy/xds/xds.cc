@@ -96,7 +96,9 @@ class ParsedXdsConfig : public LoadBalancingPolicy::Config {
     return fallback_policy_;
   }
 
-  const char* eds_service_name() const { return eds_service_name_.c_str(); };
+  const char* eds_service_name() const {
+    return eds_service_name_.empty() ? nullptr : eds_service_name_.c_str();
+  };
 
   const char* lrs_load_reporting_server_name() const {
     return lrs_load_reporting_server_name_.get();
@@ -1875,7 +1877,8 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       return MakeRefCounted<ParsedXdsConfig>(
-          std::move(child_policy), std::move(fallback_policy), eds_service_name,
+          std::move(child_policy), std::move(fallback_policy),
+          eds_service_name == nullptr ? "" : eds_service_name,
           grpc_core::UniquePtr<char>(
               gpr_strdup(lrs_load_reporting_server_name)));
     } else {
