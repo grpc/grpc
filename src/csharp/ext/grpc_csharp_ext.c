@@ -1244,7 +1244,11 @@ GPR_EXPORT void* GPR_CALLTYPE grpcsharp_slice_buffer_adjust_tail_space(
   }
 
   if (buffer->count == 0) {
-    return NULL;
+    // when sending messages, C-core requires that there
+    // is at least one slice, even for empty payload.
+    // TODO(jtattermusch): this fix can be removed once
+    // https://github.com/grpc/grpc/issues/21299 is fixed.
+    grpc_slice_buffer_add_indexed(buffer, grpc_empty_slice());
   }
   grpc_slice* last_slice = &(buffer->slices[buffer->count - 1]);
   return GRPC_SLICE_END_PTR(*last_slice) - requested_tail_space;

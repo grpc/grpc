@@ -33,6 +33,21 @@ namespace Grpc.Core.Internal.Tests
             {
                 sliceBuffer.Complete();
                 CollectionAssert.AreEqual(new byte[0], sliceBuffer.ToByteArray());
+                Assert.AreEqual(1, sliceBuffer.TestOnly_GetSliceCount());
+            }
+        }
+
+        [TestCase]
+        public void SliceBuffer_CompleteWithEmptyPayload()
+        {
+            using (var sliceBuffer = SliceBufferSafeHandle.Create())
+            {
+                var destSpan = sliceBuffer.GetSpan(0);
+                Assert.IsTrue(destSpan.Length > 0);  // some non-zero size memory is made available
+                sliceBuffer.Advance(0);
+                sliceBuffer.Complete();
+                CollectionAssert.AreEqual(new byte[0], sliceBuffer.ToByteArray());
+                Assert.AreEqual(1, sliceBuffer.TestOnly_GetSliceCount());
             }
         }
 
