@@ -42,6 +42,8 @@ def _import_modules_from_files(files):
     anchor_package = ".".join(os.path.normpath(os.path.dirname(filename.decode('ascii'))).split(os.sep))
     module_name = "{}.{}".format(anchor_package, proto_name)
     if module_name not in sys.modules:
+      # TODO: The imp module is apparently deprecated. Figure out how to migrate
+      # over.
       module = imp.new_module(module_name)
       six.exec_(code, module.__dict__)
       sys.modules[module_name] = module

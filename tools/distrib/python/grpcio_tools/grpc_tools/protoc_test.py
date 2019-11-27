@@ -5,62 +5,80 @@ from __future__ import division
 from __future__ import print_function
 
 import unittest
-import grpc_tools
 
+import multiprocessing
+import functools
+
+def _wrap_in_subprocess(error_queue, fn):
+    @functools.wraps(fn)
+    def _wrapped():
+        try:
+            fn()
+        except Exception as e:
+            error_queue.put(e)
+            raise
+    return _wrapped
+
+def _run_in_subprocess(test_case):
+    error_queue = multiprocessing.Queue()
+    wrapped_case = _wrap_in_subprocess(error_queue, test_case)
+    proc = multiprocessing.Process(target=wrapped_case)
+    proc.start()
+    proc.join()
+    if not error_queue.empty():
+        raise error_queue.get()
+
+def _test_import_protos():
+    from grpc_tools import protoc
+    proto_path = "tools/distrib/python/grpcio_tools/"
+    protos = protoc.get_protos("grpc_tools/simple.proto", proto_path)
+    assert protos.SimpleMessage is not None
+
+
+def _test_import_services():
+    from grpc_tools import protoc
+    proto_path = "tools/distrib/python/grpcio_tools/"
+    # TODO: Should we make this step optional if you only want to import
+    # services?
+    protos = protoc.get_protos("grpc_tools/simple.proto", proto_path)
+    services = protoc.get_services("grpc_tools/simple.proto", proto_path)
+    assert services.SimpleMessageServiceStub is not None
+
+
+def _test_proto_module_imported_once():
+    from grpc_tools import protoc
+    proto_path = "tools/distrib/python/grpcio_tools/"
+    protos = protoc.get_protos("grpc_tools/simple.proto", proto_path)
+    services = protoc.get_services("grpc_tools/simple.proto", proto_path)
+    complicated_protos = protoc.get_protos("grpc_tools/complicated.proto", proto_path)
+    assert (complicated_protos.grpc__tools_dot_simplest__pb2.SimplestMessage is
+            protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2.SimplestMessage)
+
+
+def _test_static_dynamic_combo():
+    from grpc_tools import complicated_pb2
+    from grpc_tools import protoc
+    proto_path = "tools/distrib/python/grpcio_tools/"
+    protos = protoc.get_protos("grpc_tools/simple.proto", proto_path)
+    assert (complicated_pb2.grpc__tools_dot_simplest__pb2.SimplestMessage is
+            protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2.SimplestMessage)
 
 
 class ProtocTest(unittest.TestCase):
 
-    # def test_import_protos(self):
-    #     protos, services = grpc_tools.import_protos("grpc_tools/simple.proto", "tools/distrib/python/grpcio_tools/")
-    #     print(dir(protos))
-    #     print(dir(services))
-
-    # # TODO: Ensure that we don't pollute STDOUT by invoking protoc.
-    # def test_stdout_pollution(self):
-    #     pass
-
-    # def test_protoc_in_memory(self):
-    #     from grpc_tools import protoc
-    #     proto_path = "tools/distrib/python/grpcio_tools/"
-    #     protos = protoc.get_protos("grpc_tools/simple.proto", proto_path)
-    #     print(protos.SimpleMessageRequest)
-    #     services = protoc.get_services("grpc_tools/simple.proto", proto_path)
-    #     print(services.SimpleMessageServiceServicer)
-    #     complicated_protos = protoc.get_protos("grpc_tools/complicated.proto", proto_path)
-    #     print(complicated_protos.ComplicatedMessage)
-    #     print(dir(complicated_protos.grpc__tools_dot_simplest__pb2))
-    #     print(dir(protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2))
-    #     print("simplest is simplest: {}".format(complicated_protos.grpc__tools_dot_simplest__pb2.SimplestMessage is protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2.SimplesMessage))
-
     # TODO: Test error messages.
 
-    # TODO: These test cases have to run in different processes to be truly
-    # independent of one another.
-
     def test_import_protos(self):
-        from grpc_tools import protoc
-        proto_path = "tools/distrib/python/grpcio_tools/"
-        protos = protoc.get_protos("grpc_tools/simple.proto", proto_path)
-        self.assertIsNotNone(protos.SimpleMessage)
+        _run_in_subprocess(_test_import_protos)
 
     def test_import_services(self):
-        from grpc_tools import protoc
-        proto_path = "tools/distrib/python/grpcio_tools/"
-        # TODO: Should we make this step optional if you only want to import
-        # services?
-        protos = protoc.get_protos("grpc_tools/simple.proto", proto_path)
-        services = protoc.get_services("grpc_tools/simple.proto", proto_path)
-        self.assertIsNotNone(services.SimpleMessageServiceStub)
+        _run_in_subprocess(_test_import_services)
 
     def test_proto_module_imported_once(self):
-        from grpc_tools import protoc
-        proto_path = "tools/distrib/python/grpcio_tools/"
-        protos = protoc.get_protos("grpc_tools/simple.proto", proto_path)
-        services = protoc.get_services("grpc_tools/simple.proto", proto_path)
-        complicated_protos = protoc.get_protos("grpc_tools/complicated.proto", proto_path)
-        self.assertIs(complicated_protos.grpc__tools_dot_simplest__pb2.SimplestMessage,
-                      protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2.SimplestMessage)
+        _run_in_subprocess(_test_proto_module_imported_once)
+
+    def test_static_dynamic_combo(self):
+        _run_in_subprocess(_test_static_dynamic_combo)
 
 
 if __name__ == '__main__':
