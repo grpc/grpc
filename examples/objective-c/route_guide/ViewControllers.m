@@ -259,6 +259,8 @@ static NSString *const kHostAddress = @"localhost:50051";
         }
       };
 
+  // We can use unary response handler here because, despite the requests being a stream, the
+  // response of the RPC is unary.
   GRPCStreamingProtoCall *call =
       [_service recordRouteWithResponseHandler:[[GRPCUnaryResponseHandler alloc]
                                                    initWithResponseHandler:handler
