@@ -21,16 +21,14 @@ class ProtocTest(unittest.TestCase):
     #     pass
 
     def test_protoc_in_memory(self):
-        print("Running test_protoc_in_memory")
         from grpc_tools import protoc
         import os
         original_dir = os.getcwd()
         # TODO: Completely get rid of this chdir stuff.
         os.chdir(os.path.join(original_dir, "tools/distrib/python/grpcio_tools/"))
-        protoc.run_protoc_in_memory("grpc_tools/simple.proto", "")
+        files = protoc.run_protoc_in_memory("grpc_tools/simple.proto", "")
         os.chdir(original_dir)
-        import sys; sys.stdout.flush()
-        print("Got to end of test.")
+        print("Files: {}".format(files))
 
 
 if __name__ == '__main__':

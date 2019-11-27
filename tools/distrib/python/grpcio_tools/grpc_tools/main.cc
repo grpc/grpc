@@ -57,12 +57,14 @@ namespace detail {
 // TODO: Separate declarations and definitions.
 class GeneratorContextImpl : public ::google::protobuf::compiler::GeneratorContext {
 public:
-  GeneratorContextImpl(const std::vector<const ::google::protobuf::FileDescriptor*>& parsed_files) :
-    parsed_files_(parsed_files){}
+  GeneratorContextImpl(const std::vector<const ::google::protobuf::FileDescriptor*>& parsed_files,
+                       std::map<std::string, std::string>* files_out) :
+    parsed_files_(parsed_files),
+    files_(files_out){}
 
   ::google::protobuf::io::ZeroCopyOutputStream* Open(const std::string& filename) {
     // TODO(rbellevi): Learn not to dream impossible dreams. :(
-    auto [iter, _] = files_.emplace(filename, "");
+    auto [iter, _] = files_->emplace(filename, "");
     return new ::google::protobuf::io::StringOutputStream(&(iter->second));
   }
 
@@ -81,59 +83,60 @@ public:
     *output = parsed_files_;
   }
 
-  // TODO: Figure out a method with less copying.
-  std::map<std::string, std::string>
-  GetFiles() const {
-    return files_;
-  }
-
 private:
-  std::map<std::string, std::string> files_;
+  std::map<std::string, std::string>* files_;
   const std::vector<const ::google::protobuf::FileDescriptor*>& parsed_files_;
 };
 
+// TODO: Write a bunch of tests for exception propagation.
 class ErrorCollectorImpl : public ::google::protobuf::compiler::MultiFileErrorCollector {
  public:
-  ErrorCollectorImpl() {}
-  ~ErrorCollectorImpl() {}
+  ErrorCollectorImpl(std::vector<ProtocError>* errors,
+                     std::vector<ProtocWarning>* warnings) :
+                     errors_(errors),
+                     warnings_(warnings) {}
 
   // implements ErrorCollector ---------------------------------------
   void AddError(const std::string& filename, int line, int column,
                 const std::string& message) {
-    // TODO: Implement.
+    errors_->emplace_back(filename, line, column, message);
   }
 
   void AddWarning(const std::string& filename, int line, int column,
                   const std::string& message) {
-    // TODO: Implement.
+    warnings_->emplace_back(filename, line, column, message);
   }
+
+private:
+  std::vector<ProtocError>* errors_;
+  std::vector<ProtocWarning>* warnings_;
 };
 
 } // end namespace detail
 
-#include <iostream>
-
-int protoc_in_memory(char* protobuf_path, char* include_path) {
+int protoc_in_memory(char* protobuf_path,
+                     char* include_path,
+                     std::map<std::string, std::string>* files_out,
+                     std::vector<ProtocError>* errors,
+                     std::vector<ProtocWarning>* warnings)
+{
   std::cout << "C++ protoc_in_memory" << std::endl << std::flush;
   // TODO: Create parsed_files.
   std::string protobuf_filename(protobuf_path);
-  std::unique_ptr<detail::ErrorCollectorImpl> error_collector(new detail::ErrorCollectorImpl());
+  std::unique_ptr<detail::ErrorCollectorImpl> error_collector(new detail::ErrorCollectorImpl(errors, warnings));
   std::unique_ptr<::google::protobuf::compiler::DiskSourceTree> source_tree(new ::google::protobuf::compiler::DiskSourceTree());
   // NOTE: This is equivalent to "--proto_path=."
   source_tree->MapPath("", ".");
   // TODO: Figure out more advanced virtual path mapping.
   ::google::protobuf::compiler::Importer importer(source_tree.get(), error_collector.get());
   const ::google::protobuf::FileDescriptor* parsed_file = importer.Import(protobuf_filename);
-  detail::GeneratorContextImpl generator_context({parsed_file});
+  if (parsed_file == nullptr) {
+    return 1;
+  }
+  detail::GeneratorContextImpl generator_context({parsed_file}, files_out);
   std::string error;
   ::google::protobuf::compiler::python::Generator python_generator;
   python_generator.Generate(parsed_file, "", &generator_context, &error);
-  for (const auto& [filename, contents] : generator_context.GetFiles()) {
-    std::cout << "# File: " << filename << std::endl;
-    std::cout << contents << std::endl;
-    std::cout << std::endl;
-  }
-  std::cout << std::flush;
   // TODO: Come up with a better error reporting mechanism than this.
   return 0;
 }
