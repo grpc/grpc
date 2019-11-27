@@ -128,7 +128,7 @@ static NSString * const kHostAddress = @"localhost:50051";
   point.longitude = -746188906;
 
   GRPCUnaryProtoCall *call = [_service getFeatureWithMessage:point
-                                             responseHandler:self
+                                             responseHandler:[[GRPCUnaryResponseHandler alloc] initWithResponseHandler:handler responseDispatchQueue:nil]
                                                  callOptions:nil];
   [call start];
   call = [_service getFeatureWithMessage:[RTGPoint message]
