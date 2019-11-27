@@ -73,6 +73,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * A convenience class of objects that act as response handlers of calls. Issues
  * response to a single handler when the response is completed.
+ *
+ * The object is stateful and should not be reused for multiple calls. If multiple calls share the
+ * same response handling logic, create separate GRPCUnaryResponseHandler objects for each call.
  */
 @interface GRPCUnaryResponseHandler<ResponseType> : NSObject<GRPCProtoResponseHandler>
 
