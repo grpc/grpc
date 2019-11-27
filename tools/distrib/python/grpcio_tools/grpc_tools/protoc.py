@@ -17,6 +17,10 @@
 import pkg_resources
 import sys
 
+# TODO: Figure out how to add this dependency to setuptools.
+import six
+import imp
+
 from grpc_tools import _protoc_compiler
 
 def main(command_arguments):
@@ -29,8 +33,16 @@ def main(command_arguments):
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
 
-def run_protoc_in_memory(protobuf_path, include_path):
-  return _protoc_compiler.run_protoc_in_memory(protobuf_path.encode('ascii'), include_path.encode('ascii'))
+def get_protos(protobuf_path, include_path):
+  files = _protoc_compiler.get_protos(protobuf_path.encode('ascii'), include_path.encode('ascii'))
+  modules = []
+  # TODO: Ensure pointer equality between two invocations of this function.
+  for filename, code in six.iteritems(files):
+    module = imp.new_module(filename.decode('ascii'))
+    six.exec_(code, module.__dict__)
+    modules.append(module)
+  return tuple(modules)
+
 
 
 if __name__ == '__main__':

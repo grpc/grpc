@@ -73,7 +73,7 @@ cdef _c_protoc_error_to_protoc_error(cProtocError c_protoc_error):
 cdef _c_protoc_warning_to_protoc_warning(cProtocWarning c_protoc_warning):
     return ProtocWarning(c_protoc_warning.filename, c_protoc_warning.line, c_protoc_warning.column, c_protoc_warning.message)
 
-def run_protoc_in_memory(bytes protobuf_path, bytes include_path):
+def get_protos(bytes protobuf_path, bytes include_path):
   cdef map[string, string] files
   cdef vector[cProtocError] errors
   # NOTE: Abbreviated name used to shadowing of the module name.

@@ -30,7 +30,10 @@ pyx_library(
 py_library(
     name = "grpc_tools",
     srcs = ["__init__.py", "protoc.py"],
-    deps = [":cyprotoc"],
+    deps = [
+      ":cyprotoc",
+      "@six_archive//:six",
+    ],
     # TODO: Think about whether we should include well-known protos.
     srcs_version = "PY2AND3",
     imports = [NON_BAZEL_ROOT],

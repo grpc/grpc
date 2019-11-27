@@ -26,9 +26,10 @@ class ProtocTest(unittest.TestCase):
         original_dir = os.getcwd()
         # TODO: Completely get rid of this chdir stuff.
         os.chdir(os.path.join(original_dir, "tools/distrib/python/grpcio_tools/"))
-        files = protoc.run_protoc_in_memory("grpc_tools/simple.proto", "")
+        protos, = protoc.get_protos("grpc_tools/simple.proto", "")
         os.chdir(original_dir)
-        print("Files: {}".format(files))
+        # print("Protos: {}".format(vars(protos)))
+        print(protos.SimpleMessageRequest)
 
 
 if __name__ == '__main__':
