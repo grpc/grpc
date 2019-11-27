@@ -11,4 +11,12 @@ RUN apt-get install -y g++-multilib
 # generated ruby package can run on CentOS 6 with GLIBC 2.12
 RUN sed -i 's/__GLIBC_MINOR__\t23/__GLIBC_MINOR__\t12/' /usr/include/features.h
 
+# Use posix pthread for mingw so that C++ standard library for thread could be
+# available such as std::thread, std::mutex, so on.
+# https://sourceware.org/pthreads-win32/
+RUN printf "1\n" | update-alternatives --config x86_64-w64-mingw32-gcc && \
+    printf "1\n" | update-alternatives --config x86_64-w64-mingw32-g++ && \
+    printf "1\n" | update-alternatives --config i686-w64-mingw32-gcc && \
+    printf "1\n" | update-alternatives --config i686-w64-mingw32-g++
+
 CMD bash
