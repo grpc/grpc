@@ -158,31 +158,27 @@ struct EdsUpdate {
 using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 
 // Creates a request to nack an unsupported resource type.
-  // Takes ownership of \a error.
+// Takes ownership of \a error.
 grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
     const std::string& type_url, const std::string& nonce, grpc_error* error);
 
 // Creates a CDS request querying \a cluster_names.
-  // Takes ownership of \a error.
-grpc_slice XdsCdsRequestCreateAndEncode(const std::set<StringView>& cluster_names,
-                                        const XdsBootstrap::Node* node,
-                                        const char* build_version,
-                                        const std::string& version,
-                                        const std::string& nonce,
-                                        grpc_error* error);
+// Takes ownership of \a error.
+grpc_slice XdsCdsRequestCreateAndEncode(
+    const std::set<StringView>& cluster_names, const XdsBootstrap::Node* node,
+    const char* build_version, const std::string& version,
+    const std::string& nonce, grpc_error* error);
 
 // Creates an EDS request querying \a eds_service_names.
-  // Takes ownership of \a error.
-grpc_slice XdsEdsRequestCreateAndEncode(const std::set<StringView>& eds_service_names,
-                                        const XdsBootstrap::Node* node,
-                                        const char* build_version,
-                                        const std::string& version,
-                                        const std::string& nonce,
-                                        grpc_error* error);
+// Takes ownership of \a error.
+grpc_slice XdsEdsRequestCreateAndEncode(
+    const std::set<StringView>& eds_service_names,
+    const XdsBootstrap::Node* node, const char* build_version,
+    const std::string& version, const std::string& nonce, grpc_error* error);
 
-// Parses the ADS response and outputs the validated update for either CDS or EDS.
-// If the response can't be parsed at the top level, \a type_url will point to
-// an empty string; otherwise, it will point to the received data.
+// Parses the ADS response and outputs the validated update for either CDS or
+// EDS. If the response can't be parsed at the top level, \a type_url will point
+// to an empty string; otherwise, it will point to the received data.
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
     const std::set<StringView>& expected_eds_service_names,

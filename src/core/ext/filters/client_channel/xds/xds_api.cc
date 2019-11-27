@@ -218,7 +218,7 @@ grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
   google_rpc_Status* error_detail =
       envoy_api_v2_DiscoveryRequest_mutable_error_detail(request, arena.ptr());
   google_rpc_Status_set_message(error_detail, error_description_strview);
-    GRPC_ERROR_UNREF(error);
+  GRPC_ERROR_UNREF(error);
   // Encode the request.
   size_t output_length;
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
@@ -226,12 +226,10 @@ grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_slice XdsCdsRequestCreateAndEncode(const std::set<StringView>& cluster_names,
-                                        const XdsBootstrap::Node* node,
-                                        const char* build_version,
-                                        const std::string& version,
-                                        const std::string& nonce,
-                                        grpc_error* error) {
+grpc_slice XdsCdsRequestCreateAndEncode(
+    const std::set<StringView>& cluster_names, const XdsBootstrap::Node* node,
+    const char* build_version, const std::string& version,
+    const std::string& nonce, grpc_error* error) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -283,12 +281,10 @@ grpc_slice XdsCdsRequestCreateAndEncode(const std::set<StringView>& cluster_name
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_slice XdsEdsRequestCreateAndEncode(const std::set<StringView>& eds_service_names,
-                                        const XdsBootstrap::Node* node,
-                                        const char* build_version,
-                                        const std::string& version,
-                                        const std::string& nonce,
-                                        grpc_error* error) {
+grpc_slice XdsEdsRequestCreateAndEncode(
+    const std::set<StringView>& eds_service_names,
+    const XdsBootstrap::Node* node, const char* build_version,
+    const std::string& version, const std::string& nonce, grpc_error* error) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -619,7 +615,8 @@ grpc_error* XdsAdsResponseDecodeAndParse(
   // If decoding fails, output an empty type_url and return.
   if (response == nullptr) {
     *type_url = "";
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode the whole response.");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Can't decode the whole response.");
   }
   // Record the type_url, the version_info, and the nonce of the response.
   upb_strview type_url_strview =
@@ -635,10 +632,10 @@ grpc_error* XdsAdsResponseDecodeAndParse(
     return CdsResponseParse(response, cds_update_map, arena.ptr());
   } else if (*type_url == kEdsTypeUrl) {
     return EdsResponsedParse(response, expected_eds_service_names,
-                              eds_update_map, arena.ptr());
+                             eds_update_map, arena.ptr());
   } else {
-    return
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported ADS resource type.");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Unsupported ADS resource type.");
   }
 }
 

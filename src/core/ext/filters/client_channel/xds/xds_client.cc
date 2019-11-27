@@ -126,8 +126,7 @@ class XdsClient::ChannelState::AdsCallState
   bool seen_response() const { return seen_response_; }
 
   // Takes ownership of \a error.
-  void SendMessageLocked(const std::string& type_url,
-                         std::string nonce,
+  void SendMessageLocked(const std::string& type_url, std::string nonce,
                          grpc_error* error, bool is_first_message);
 
  private:
@@ -180,7 +179,8 @@ class XdsClient::ChannelState::AdsCallState
   std::string eds_version_;
 
   // Buffered requests.
-  std::map<std::string /*type_url*/, std::unique_ptr<BufferedRequest>> buffered_request_map_;
+  std::map<std::string /*type_url*/, std::unique_ptr<BufferedRequest>>
+      buffered_request_map_;
 };
 
 // Contains an LRS call to the xds server.
@@ -666,8 +666,8 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
 }
 
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
-    const std::string& type_url, std::string nonce,
-    grpc_error* error, bool is_first_message) {
+    const std::string& type_url, std::string nonce, grpc_error* error,
+    bool is_first_message) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
     buffered_request_map_[type_url].reset(
@@ -680,16 +680,16 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   const char* build_version =
       is_first_message ? xds_client()->build_version_.get() : nullptr;
   if (type_url == kCdsTypeUrl) {
-    request_payload_slice = XdsCdsRequestCreateAndEncode(
-        xds_client()->WatchedClusterNames(), node, build_version,
-        cds_version_, nonce, error);
+    request_payload_slice =
+        XdsCdsRequestCreateAndEncode(xds_client()->WatchedClusterNames(), node,
+                                     build_version, cds_version_, nonce, error);
   } else if (type_url == kEdsTypeUrl) {
-    request_payload_slice = XdsEdsRequestCreateAndEncode(
-        xds_client()->EdsServiceNames(), node, build_version,
-        eds_version_, nonce, error);
+    request_payload_slice =
+        XdsEdsRequestCreateAndEncode(xds_client()->EdsServiceNames(), node,
+                                     build_version, eds_version_, nonce, error);
   } else {
-    request_payload_slice = XdsUnsupportedTypeNackRequestCreateAndEncode(
-        type_url, nonce, error);
+    request_payload_slice =
+        XdsUnsupportedTypeNackRequestCreateAndEncode(type_url, nonce, error);
   }
   // Create message payload.
   send_message_payload_ =
@@ -843,14 +843,16 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
   // of sending only the most recent list
   //  of resource names for each resource type (no matter how many times that
   //  resource type has been requested to send while the current message sending
-  //  is still pending). But its disadvantage is that we send the requests in fixed order of resource types. We need to fix this if we are
-  //  seeing some resource type(s) starved due to frequent requests of other resource type(s).
+  //  is still pending). But its disadvantage is that we send the requests in
+  //  fixed order of resource types. We need to fix this if we are seeing some
+  //  resource type(s) starved due to frequent requests of other resource
+  //  type(s).
   for (auto& p : self->buffered_request_map_) {
     const std::string& type_url = p.first;
     std::unique_ptr<BufferedRequest>& buffered_request = p.second;
     if (buffered_request != nullptr) {
-      self->SendMessageLocked(type_url, std::move(buffered_request->nonce), buffered_request->error,
-                              false);
+      self->SendMessageLocked(type_url, std::move(buffered_request->nonce),
+                              buffered_request->error, false);
       buffered_request.reset();
       return;
     }
@@ -904,18 +906,16 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
     // Ignore unparsable response.
-    gpr_log(
-        GPR_ERROR,
-        "[xds_client %p] No type_url found. error=%s",
-        xds_client, grpc_error_string(parse_error));
+    gpr_log(GPR_ERROR, "[xds_client %p] No type_url found. error=%s",
+            xds_client, grpc_error_string(parse_error));
     GRPC_ERROR_UNREF(parse_error);
   } else if (parse_error != GRPC_ERROR_NONE) {
     // NACK unacceptable update.
-    gpr_log(
-        GPR_ERROR,
-        "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
-        xds_client, grpc_error_string(parse_error));
-    ads_calld->SendMessageLocked(type_url, std::move(nonce), parse_error, false);
+    gpr_log(GPR_ERROR,
+            "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
+            xds_client, grpc_error_string(parse_error));
+    ads_calld->SendMessageLocked(type_url, std::move(nonce), parse_error,
+                                 false);
   } else {
     ads_calld->seen_response_ = true;
     // Accept the (CDS or EDS) response.
