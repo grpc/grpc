@@ -33,7 +33,8 @@ cdef extern from "grpc_tools/main.h":
     string message
 
   int protoc_main(int argc, char *argv[])
-  int protoc_in_memory(char* protobuf_path, char* include_path, map[string, string]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
+  int protoc_get_protos(char* protobuf_path, char* include_path, map[string, string]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
+  int protoc_get_services(char* protobuf_path, char* include_path, map[string, string]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
 
 def run_main(list args not None):
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
@@ -78,7 +79,25 @@ def get_protos(bytes protobuf_path, bytes include_path):
   cdef vector[cProtocError] errors
   # NOTE: Abbreviated name used to shadowing of the module name.
   cdef vector[cProtocWarning] wrnings
-  return_value = protoc_in_memory(protobuf_path, include_path, &files, &errors, &wrnings)
+  return_value = protoc_get_protos(protobuf_path, include_path, &files, &errors, &wrnings)
+  for warning in wrnings:
+      warnings.warn(_c_protoc_warning_to_protoc_warning(warning))
+  if return_value != 0:
+    if errors.size() != 0:
+       py_errors = [_c_protoc_error_to_protoc_error(c_error) for c_error in errors]
+       # TODO: Come up with a good system for printing multiple errors from
+       # protoc.
+       raise Exception(py_errors)
+    raise Exception("An unknown error occurred while compiling {}".format(protobuf_path))
+
+  return files
+
+def get_services(bytes protobuf_path, bytes include_path):
+  cdef map[string, string] files
+  cdef vector[cProtocError] errors
+  # NOTE: Abbreviated name used to shadowing of the module name.
+  cdef vector[cProtocWarning] wrnings
+  return_value = protoc_get_services(protobuf_path, include_path, &files, &errors, &wrnings)
   for warning in wrnings:
       warnings.warn(_c_protoc_warning_to_protoc_warning(warning))
   if return_value != 0:

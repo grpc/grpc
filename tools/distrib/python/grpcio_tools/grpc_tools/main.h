@@ -33,7 +33,13 @@ struct ProtocError {
 
 typedef ProtocError ProtocWarning;
 
-int protoc_in_memory(char* protobuf_path,
+int protoc_get_protos(char* protobuf_path,
+                     char* include_path,
+                     std::map<std::string, std::string>* files_out,
+                     std::vector<ProtocError>* errors,
+                     std::vector<ProtocWarning>* warnings);
+
+int protoc_get_services(char* protobuf_path,
                      char* include_path,
                      std::map<std::string, std::string>* files_out,
                      std::vector<ProtocError>* errors,

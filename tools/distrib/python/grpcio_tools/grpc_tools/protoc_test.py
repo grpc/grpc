@@ -30,6 +30,10 @@ class ProtocTest(unittest.TestCase):
         os.chdir(original_dir)
         # print("Protos: {}".format(vars(protos)))
         print(protos.SimpleMessageRequest)
+        os.chdir(os.path.join(original_dir, "tools/distrib/python/grpcio_tools/"))
+        services, = protoc.get_services("grpc_tools/simple.proto", "")
+        os.chdir(original_dir)
+        print("Services: {}".format(dir(services)))
 
 
 if __name__ == '__main__':
