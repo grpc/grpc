@@ -206,7 +206,7 @@ static NSString * const kHostAddress = @"localhost:50051";
  * database with a variable delay in between. Prints the statistics when they are sent from the
  * server.
  */
-@interface RecordRouteViewController : UIViewController<GRPCProtoResponseHandler>
+@interface RecordRouteViewController : UIViewController
 
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
@@ -214,10 +214,6 @@ static NSString * const kHostAddress = @"localhost:50051";
 
 @implementation RecordRouteViewController {
   RTGRouteGuide *_service;
-}
-
-- (dispatch_queue_t)dispatchQueue {
-  return dispatch_get_main_queue();
 }
 
 - (void)execRequest {
@@ -234,7 +230,27 @@ static NSString * const kHostAddress = @"localhost:50051";
     return;
   }
 
-  GRPCStreamingProtoCall *call = [_service recordRouteWithResponseHandler:self
+  void (^handler)(RTGRouteSummary *response, NSError *error) = ^(RTGRouteSummary *response, NSError *error) {
+    if (response) {
+      NSString *str =[NSString stringWithFormat:
+                      @"%@\nFinished trip with %i points\nPassed %i features\n"
+                      "Travelled %i meters\nIt took %i seconds",
+                      self.outputLabel.text, response.pointCount, response.featureCount,
+                      response.distance, response.elapsedTime];
+      self.outputLabel.text = str;
+      NSLog(@"Finished trip with %i points", response.pointCount);
+      NSLog(@"Passed %i features", response.featureCount);
+      NSLog(@"Travelled %i meters", response.distance);
+      NSLog(@"It took %i seconds", response.elapsedTime);
+    } else {
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
+      NSLog(@"RPC error: %@", error);
+    }
+  };
+
+  GRPCStreamingProtoCall *call = [_service recordRouteWithResponseHandler:[[GRPCUnaryResponseHandler alloc] initWithResponseHandler:handler
+                                                                                                              responseDispatchQueue:nil]
                                                               callOptions:nil];
   [call start];
   for (id feature in features) {
@@ -247,31 +263,6 @@ static NSString * const kHostAddress = @"localhost:50051";
     [call writeMessage:location];
   }
   [call finish];
-}
-
-- (void)didReceiveProtoMessage:(GPBMessage *)message {
-  RTGRouteSummary *response = (RTGRouteSummary *)message;
-
-  if (response) {
-    NSString *str =[NSString stringWithFormat:
-                    @"%@\nFinished trip with %i points\nPassed %i features\n"
-                    "Travelled %i meters\nIt took %i seconds",
-                    self.outputLabel.text, response.pointCount, response.featureCount,
-                    response.distance, response.elapsedTime];
-    self.outputLabel.text = str;
-    NSLog(@"Finished trip with %i points", response.pointCount);
-    NSLog(@"Passed %i features", response.featureCount);
-    NSLog(@"Travelled %i meters", response.distance);
-    NSLog(@"It took %i seconds", response.elapsedTime);
-  }
-}
-
-- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  if (error) {
-    NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
-    self.outputLabel.text = str;
-    NSLog(@"RPC error: %@", error);
-  }
 }
 
 - (void)viewDidLoad {
