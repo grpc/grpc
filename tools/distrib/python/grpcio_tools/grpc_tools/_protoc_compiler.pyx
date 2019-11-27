@@ -17,6 +17,8 @@ from libcpp.map cimport map
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 
+from cython.operator cimport dereference
+
 import warnings
 
 cdef extern from "grpc_tools/main.h":
@@ -74,22 +76,24 @@ cdef _c_protoc_error_to_protoc_error(cProtocError c_protoc_error):
 cdef _c_protoc_warning_to_protoc_warning(cProtocWarning c_protoc_warning):
     return ProtocWarning(c_protoc_warning.filename, c_protoc_warning.line, c_protoc_warning.column, c_protoc_warning.message)
 
-def get_protos(bytes protobuf_path, bytes include_path):
-  cdef map[string, string] files
-  cdef vector[cProtocError] errors
-  # NOTE: Abbreviated name used to shadowing of the module name.
-  cdef vector[cProtocWarning] wrnings
-  return_value = protoc_get_protos(protobuf_path, include_path, &files, &errors, &wrnings)
-  for warning in wrnings:
+cdef _handle_errors(int rc, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings, bytes protobuf_path):
+  for warning in dereference(wrnings):
       warnings.warn(_c_protoc_warning_to_protoc_warning(warning))
-  if return_value != 0:
-    if errors.size() != 0:
-       py_errors = [_c_protoc_error_to_protoc_error(c_error) for c_error in errors]
+  if rc != 0:
+    if dereference(errors).size() != 0:
+       py_errors = [_c_protoc_error_to_protoc_error(c_error) for c_error in dereference(errors)]
        # TODO: Come up with a good system for printing multiple errors from
        # protoc.
        raise Exception(py_errors)
     raise Exception("An unknown error occurred while compiling {}".format(protobuf_path))
 
+def get_protos(bytes protobuf_path, bytes include_path):
+  cdef map[string, string] files
+  cdef vector[cProtocError] errors
+  # NOTE: Abbreviated name used to shadowing of the module name.
+  cdef vector[cProtocWarning] wrnings
+  rc = protoc_get_protos(protobuf_path, include_path, &files, &errors, &wrnings)
+  _handle_errors(rc, &errors, &wrnings, protobuf_path)
   return files
 
 def get_services(bytes protobuf_path, bytes include_path):
@@ -97,16 +101,7 @@ def get_services(bytes protobuf_path, bytes include_path):
   cdef vector[cProtocError] errors
   # NOTE: Abbreviated name used to shadowing of the module name.
   cdef vector[cProtocWarning] wrnings
-  return_value = protoc_get_services(protobuf_path, include_path, &files, &errors, &wrnings)
-  for warning in wrnings:
-      warnings.warn(_c_protoc_warning_to_protoc_warning(warning))
-  if return_value != 0:
-    if errors.size() != 0:
-       py_errors = [_c_protoc_error_to_protoc_error(c_error) for c_error in errors]
-       # TODO: Come up with a good system for printing multiple errors from
-       # protoc.
-       raise Exception(py_errors)
-    raise Exception("An unknown error occurred while compiling {}".format(protobuf_path))
-
+  rc = protoc_get_services(protobuf_path, include_path, &files, &errors, &wrnings)
+  _handle_errors(rc, &errors, &wrnings, protobuf_path)
   return files
 

@@ -114,14 +114,13 @@ private:
 
 } // end namespace detail
 
-int protoc_get_protos(char* protobuf_path,
-                     char* include_path,
-                     std::map<std::string, std::string>* files_out,
-                     std::vector<ProtocError>* errors,
-                     std::vector<ProtocWarning>* warnings)
+static int generate_code(::google::protobuf::compiler::CodeGenerator* code_generator,
+                         char* protobuf_path,
+                         char* include_path,
+                         std::map<std::string, std::string>* files_out,
+                         std::vector<ProtocError>* errors,
+                         std::vector<ProtocWarning>* warnings)
 {
-  std::cout << "C++ protoc_in_memory" << std::endl << std::flush;
-  // TODO: Create parsed_files.
   std::string protobuf_filename(protobuf_path);
   std::unique_ptr<detail::ErrorCollectorImpl> error_collector(new detail::ErrorCollectorImpl(errors, warnings));
   std::unique_ptr<::google::protobuf::compiler::DiskSourceTree> source_tree(new ::google::protobuf::compiler::DiskSourceTree());
@@ -137,8 +136,17 @@ int protoc_get_protos(char* protobuf_path,
   std::string error;
   ::google::protobuf::compiler::python::Generator python_generator;
   python_generator.Generate(parsed_file, "", &generator_context, &error);
-  // TODO: Come up with a better error reporting mechanism than this.
   return 0;
+}
+
+int protoc_get_protos(char* protobuf_path,
+                     char* include_path,
+                     std::map<std::string, std::string>* files_out,
+                     std::vector<ProtocError>* errors,
+                     std::vector<ProtocWarning>* warnings)
+{
+  ::google::protobuf::compiler::python::Generator python_generator;
+  return generate_code(&python_generator, protobuf_path, include_path, files_out, errors, warnings);
 }
 
 int protoc_get_services(char* protobuf_path,
@@ -147,23 +155,8 @@ int protoc_get_services(char* protobuf_path,
                      std::vector<ProtocError>* errors,
                      std::vector<ProtocWarning>* warnings)
 {
-  // TODO: Create parsed_files.
-  std::string protobuf_filename(protobuf_path);
-  std::unique_ptr<detail::ErrorCollectorImpl> error_collector(new detail::ErrorCollectorImpl(errors, warnings));
-  std::unique_ptr<::google::protobuf::compiler::DiskSourceTree> source_tree(new ::google::protobuf::compiler::DiskSourceTree());
-  // NOTE: This is equivalent to "--proto_path=."
-  source_tree->MapPath("", ".");
-  // TODO: Figure out more advanced virtual path mapping.
-  ::google::protobuf::compiler::Importer importer(source_tree.get(), error_collector.get());
-  const ::google::protobuf::FileDescriptor* parsed_file = importer.Import(protobuf_filename);
-  if (parsed_file == nullptr) {
-    return 1;
-  }
-  detail::GeneratorContextImpl generator_context({parsed_file}, files_out);
-  std::string error;
   grpc_python_generator::GeneratorConfiguration grpc_py_config;
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
-  grpc_py_generator.Generate(parsed_file, "", &generator_context, &error);
-  // TODO: Come up with a better error reporting mechanism than this.
+  return generate_code(&grpc_py_generator, protobuf_path, include_path, files_out, errors, warnings);
   return 0;
 }

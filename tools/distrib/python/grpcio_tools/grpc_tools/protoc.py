@@ -34,8 +34,7 @@ def main(command_arguments):
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
 
-def get_protos(protobuf_path, include_path):
-  files = _protoc_compiler.get_protos(protobuf_path.encode('ascii'), include_path.encode('ascii'))
+def _import_modules_from_files(files):
   modules = []
   # TODO: Ensure pointer equality between two invocations of this function.
   for filename, code in six.iteritems(files):
@@ -51,20 +50,13 @@ def get_protos(protobuf_path, include_path):
     sys.modules[module_name] = module
   return tuple(modules)
 
+def get_protos(protobuf_path, include_path):
+  files = _protoc_compiler.get_protos(protobuf_path.encode('ascii'), include_path.encode('ascii'))
+  return _import_modules_from_files(files)
+
 def get_services(protobuf_path, include_path):
   files = _protoc_compiler.get_services(protobuf_path.encode('ascii'), include_path.encode('ascii'))
-  modules = []
-  # TODO: Ensure pointer equality between two invocations of this function.
-  for filename, code in six.iteritems(files):
-    base_name = os.path.basename(filename.decode('ascii'))
-    proto_name, _ = os.path.splitext(base_name)
-    anchor_package = ".".join(os.path.normpath(os.path.dirname(filename.decode('ascii'))).split(os.sep))
-    module_name = "{}.{}".format(anchor_package, proto_name)
-    module = imp.new_module(module_name)
-    six.exec_(code, module.__dict__)
-    modules.append(module)
-    sys.modules[module_name] = module
-  return tuple(modules)
+  return _import_modules_from_files(files)
 
 
 if __name__ == '__main__':
