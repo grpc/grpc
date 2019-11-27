@@ -13,8 +13,8 @@
 # limitations under the License.
 
 from libc cimport stdlib
-from libcpp.map cimport map
 from libcpp.vector cimport vector
+from libcpp.utility cimport pair
 from libcpp.string cimport string
 
 from cython.operator cimport dereference
@@ -35,8 +35,8 @@ cdef extern from "grpc_tools/main.h":
     string message
 
   int protoc_main(int argc, char *argv[])
-  int protoc_get_protos(char* protobuf_path, char* include_path, map[string, string]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
-  int protoc_get_services(char* protobuf_path, char* include_path, map[string, string]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
+  int protoc_get_protos(char* protobuf_path, char* include_path, vector[pair[string, string]]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
+  int protoc_get_services(char* protobuf_path, char* include_path, vector[pair[string, string]]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
 
 def run_main(list args not None):
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
@@ -88,7 +88,7 @@ cdef _handle_errors(int rc, vector[cProtocError]* errors, vector[cProtocWarning]
     raise Exception("An unknown error occurred while compiling {}".format(protobuf_path))
 
 def get_protos(bytes protobuf_path, bytes include_path):
-  cdef map[string, string] files
+  cdef vector[pair[string, string]] files
   cdef vector[cProtocError] errors
   # NOTE: Abbreviated name used to shadowing of the module name.
   cdef vector[cProtocWarning] wrnings
@@ -97,7 +97,7 @@ def get_protos(bytes protobuf_path, bytes include_path):
   return files
 
 def get_services(bytes protobuf_path, bytes include_path):
-  cdef map[string, string] files
+  cdef vector[pair[string, string]] files
   cdef vector[cProtocError] errors
   # NOTE: Abbreviated name used to shadowing of the module name.
   cdef vector[cProtocWarning] wrnings

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package grpc_tools.simpler;
+
+import "grpc_tools/simplest.proto";
+
+message SimplerMessage {
+  int64 do_i_even_exist = 1;
+  grpc_tools.simplest.SimplestMessage simplest_message = 2;
+};
+

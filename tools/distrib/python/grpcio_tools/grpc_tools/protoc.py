@@ -36,27 +36,27 @@ def main(command_arguments):
 
 def _import_modules_from_files(files):
   modules = []
-  # TODO: Ensure pointer equality between two invocations of this function.
-  for filename, code in six.iteritems(files):
-    print("Filename {}".format(filename))
+  for filename, code in files:
     base_name = os.path.basename(filename.decode('ascii'))
     proto_name, _ = os.path.splitext(base_name)
     anchor_package = ".".join(os.path.normpath(os.path.dirname(filename.decode('ascii'))).split(os.sep))
     module_name = "{}.{}".format(anchor_package, proto_name)
-    module = imp.new_module(module_name)
-    six.exec_(code, module.__dict__)
-    modules.append(module)
-    print("Inserting module {}".format(module_name))
-    sys.modules[module_name] = module
+    if module_name not in sys.modules:
+      module = imp.new_module(module_name)
+      six.exec_(code, module.__dict__)
+      sys.modules[module_name] = module
+      modules.append(module)
+    else:
+      modules.append(sys.modules[module_name])
   return tuple(modules)
 
 def get_protos(protobuf_path, include_path):
   files = _protoc_compiler.get_protos(protobuf_path.encode('ascii'), include_path.encode('ascii'))
-  return _import_modules_from_files(files)
+  return _import_modules_from_files(files)[-1]
 
 def get_services(protobuf_path, include_path):
   files = _protoc_compiler.get_services(protobuf_path.encode('ascii'), include_path.encode('ascii'))
-  return _import_modules_from_files(files)
+  return _import_modules_from_files(files)[-1]
 
 
 if __name__ == '__main__':

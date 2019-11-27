@@ -1,4 +1,9 @@
+// TODO: Move these proto files to a dedicated directory.
 syntax = "proto3";
+
+package grpc_tools.simple;
+
+import "grpc_tools/simpler.proto";
 
 message SimpleMessage {
   string msg = 1;
@@ -6,6 +11,7 @@ message SimpleMessage {
     bool personal = 2;
     bool business = 3;
   };
+  grpc_tools.simpler.SimplerMessage simpler_message = 4;
 };
 
 message SimpleMessageRequest {

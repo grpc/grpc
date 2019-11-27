@@ -43,6 +43,11 @@ py_test(
   name = "protoc_test",
   srcs = ["protoc_test.py"],
   deps = ["//tools/distrib/python/grpcio_tools/grpc_tools:grpc_tools"],
-  data = ["simple.proto"],
+  data = [
+    "simple.proto",
+    "simpler.proto",
+    "simplest.proto",
+    "complicated.proto",
+  ],
   python_version = "PY3",
 )

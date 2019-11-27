@@ -26,10 +26,14 @@
 #include <google/protobuf/descriptor.h>
 
 // TODO: Clang format.
+#include <algorithm>
 #include <vector>
 #include <map>
 #include <string>
 #include <tuple>
+
+// TODO: Remove.
+#include <iostream>
 
 int protoc_main(int argc, char* argv[]) {
   google::protobuf::compiler::CommandLineInterface cli;
@@ -58,14 +62,13 @@ namespace detail {
 class GeneratorContextImpl : public ::google::protobuf::compiler::GeneratorContext {
 public:
   GeneratorContextImpl(const std::vector<const ::google::protobuf::FileDescriptor*>& parsed_files,
-                       std::map<std::string, std::string>* files_out) :
+                       std::vector<std::pair<std::string, std::string>>* files_out) :
     files_(files_out),
     parsed_files_(parsed_files) {}
 
   ::google::protobuf::io::ZeroCopyOutputStream* Open(const std::string& filename) {
-    // TODO(rbellevi): Learn not to dream impossible dreams. :(
-    auto [iter, _] = files_->emplace(filename, "");
-    return new ::google::protobuf::io::StringOutputStream(&(iter->second));
+    files_->emplace_back(filename, "");
+    return new ::google::protobuf::io::StringOutputStream(&(files_->back().second));
   }
 
   // NOTE: Equivalent to Open, since all files start out empty.
@@ -84,7 +87,7 @@ public:
   }
 
 private:
-  std::map<std::string, std::string>* files_;
+  std::vector<std::pair<std::string, std::string>>* files_;
   const std::vector<const ::google::protobuf::FileDescriptor*>& parsed_files_;
 };
 
@@ -113,11 +116,25 @@ private:
 
 } // end namespace detail
 
+static void calculate_transitive_closure(const ::google::protobuf::FileDescriptor* descriptor,
+                                        std::vector<const ::google::protobuf::FileDescriptor*>* transitive_closure)
+{
+  for (int i = 0; i < descriptor->dependency_count(); ++i) {
+    const ::google::protobuf::FileDescriptor* dependency = descriptor->dependency(i);
+    // NOTE: Probably want an O(1) lookup method for very large transitive
+    // closures.
+    if (std::find(transitive_closure->begin(), transitive_closure->end(), dependency) == transitive_closure->end()) {
+      calculate_transitive_closure(dependency, transitive_closure);
+    }
+  }
+  transitive_closure->push_back(descriptor);
+}
+
 // TODO: Handle multiple include paths.
 static int generate_code(::google::protobuf::compiler::CodeGenerator* code_generator,
                          char* protobuf_path,
                          char* include_path,
-                         std::map<std::string, std::string>* files_out,
+                         std::vector<std::pair<std::string, std::string>>* files_out,
                          std::vector<ProtocError>* errors,
                          std::vector<ProtocWarning>* warnings)
 {
@@ -129,16 +146,21 @@ static int generate_code(::google::protobuf::compiler::CodeGenerator* code_gener
   if (parsed_file == nullptr) {
     return 1;
   }
-  detail::GeneratorContextImpl generator_context({parsed_file}, files_out);
+  // TODO: Figure out if the dependency list is flat or recursive.
+  // TODO: Ensure there's a topological ordering here.
+  std::vector<const ::google::protobuf::FileDescriptor*> transitive_closure;
+  calculate_transitive_closure(parsed_file, &transitive_closure);
+  detail::GeneratorContextImpl generator_context(transitive_closure, files_out);
   std::string error;
-  ::google::protobuf::compiler::python::Generator python_generator;
-  python_generator.Generate(parsed_file, "", &generator_context, &error);
+  for (const auto descriptor : transitive_closure) {
+    code_generator->Generate(descriptor, "", &generator_context, &error);
+  }
   return 0;
 }
 
 int protoc_get_protos(char* protobuf_path,
                      char* include_path,
-                     std::map<std::string, std::string>* files_out,
+                     std::vector<std::pair<std::string, std::string>>* files_out,
                      std::vector<ProtocError>* errors,
                      std::vector<ProtocWarning>* warnings)
 {
@@ -148,7 +170,7 @@ int protoc_get_protos(char* protobuf_path,
 
 int protoc_get_services(char* protobuf_path,
                      char* include_path,
-                     std::map<std::string, std::string>* files_out,
+                     std::vector<std::pair<std::string, std::string>>* files_out,
                      std::vector<ProtocError>* errors,
                      std::vector<ProtocWarning>* warnings)
 {
