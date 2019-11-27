@@ -445,6 +445,7 @@ static void alts_grpc_record_protocol_tests(
 }
 
 int main(int /*argc*/, char** /*argv*/) {
+  grpc_init();
   alts_grpc_record_protocol_tests(
       &test_fixture_integrity_only_no_rekey_no_extra_copy_create);
   alts_grpc_record_protocol_tests(&test_fixture_integrity_only_rekey_create);
@@ -453,6 +454,7 @@ int main(int /*argc*/, char** /*argv*/) {
   alts_grpc_record_protocol_tests(
       &test_fixture_privacy_integrity_no_rekey_create);
   alts_grpc_record_protocol_tests(&test_fixture_privacy_integrity_rekey_create);
+  grpc_shutdown();
 
   return 0;
 }

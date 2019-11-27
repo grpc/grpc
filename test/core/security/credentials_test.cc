@@ -1440,16 +1440,32 @@ static void test_metadata_plugin_failure(void) {
 static void test_get_well_known_google_credentials_file_path(void) {
   char* path;
   char* home = gpr_getenv("HOME");
+  bool restore_home_env = false;
+#if defined(GRPC_BAZEL_BUILD) && \
+    (defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV))
+  // when running under bazel locally, the HOME variable is not set
+  // so we set it to some fake value
+  restore_home_env = true;
+  gpr_setenv("HOME", "/fake/home/for/bazel");
+#endif /* defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || \
+          defined(GPR_LINUX_ENV)) */
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path != nullptr);
   gpr_free(path);
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
+  restore_home_env = true;
   gpr_unsetenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path == nullptr);
-  gpr_setenv("HOME", home);
   gpr_free(path);
 #endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
+  if (restore_home_env) {
+    if (home) {
+      gpr_setenv("HOME", home);
+    } else {
+      gpr_unsetenv("HOME");
+    }
+  }
   gpr_free(home);
 }
 

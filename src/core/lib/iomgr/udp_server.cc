@@ -29,7 +29,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_UDP_SERVER
 
 #include "src/core/lib/iomgr/udp_server.h"
 
