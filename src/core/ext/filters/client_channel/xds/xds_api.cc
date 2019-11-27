@@ -594,7 +594,8 @@ grpc_error* EdsResponsedParse(
           "EDS response doesn't contain any valid "
           "locality but doesn't require to drop all calls.");
     }
-    eds_update_map->emplace(cluster_name_strview, std::move(eds_update));
+    eds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),
+                            std::move(eds_update));
   }
   return GRPC_ERROR_NONE;
 }
