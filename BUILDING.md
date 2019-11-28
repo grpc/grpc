@@ -90,7 +90,8 @@ with something else than `bazel` (e.g. `cmake`).
 # Build from source
 
 In the C++ world, there's no "standard" build system that would work for in all supported use cases and on all supported platforms.
-Therefore, gRPC supports several major build systems, which should satisfy most users.
+Therefore, gRPC supports several major build systems, which should satisfy most users. Depending on your needs
+we recommend building using `bazel` or `cmake`.
 
 ## Building with bazel (recommended)
 
@@ -157,7 +158,8 @@ installed to be able to compile the C/C++ sources.
 
 ## Building with make (on UNIX systems)
 
-NOTE: `make` used to be gRPC's default build system, but we're no longer recommending it. Use should use `bazel` or `cmake` instead.
+NOTE: `make` used to be gRPC's default build system, but we're no longer recommending it. You should use `bazel` or `cmake` instead.
+While still supported, make should only be used inside the gRPC repository (to satisfy some project-internal needs)
 
 From the grpc repository root
 ```sh
