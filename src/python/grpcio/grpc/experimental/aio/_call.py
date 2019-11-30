@@ -15,6 +15,7 @@
 import asyncio
 import enum
 from typing import Callable, Dict, Optional, ClassVar
+from typing import Sequence, Tuple, Text, AnyStr
 
 import grpc
 from grpc import _common
@@ -182,11 +183,23 @@ class Call:
         """
         return self._state is not _RpcState.ONGOING
 
-    async def initial_metadata(self):
-        raise NotImplementedError()
+    async def initial_metadata(self) -> Sequence[Tuple[Text, AnyStr]]:
+        if not self.done():
+            try:
+                await self
+            except (asyncio.CancelledError, AioRpcError):
+                pass
 
-    async def trailing_metadata(self):
-        raise NotImplementedError()
+        return self._initial_metadata
+
+    async def trailing_metadata(self) -> Sequence[Tuple[Text, AnyStr]]:
+        if not self.done():
+            try:
+                await self
+            except (asyncio.CancelledError, AioRpcError):
+                pass
+
+        return self._trailing_metadata
 
     async def code(self) -> grpc.StatusCode:
         """Returns the `grpc.StatusCode` if the RPC is finished,
@@ -236,7 +249,8 @@ class Call:
             raise self._exception
 
         try:
-            buffer_ = yield from self._call.__await__()
+            ops_result = yield from self._call.__await__()
+            initial_metadata, message, code, details, trailing_metadata = ops_result
         except cygrpc.AioRpcError as aio_rpc_error:
             self._state = _RpcState.ABORT
             self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[
@@ -255,8 +269,10 @@ class Call:
             self._exception = cancel_error
             raise
 
-        self._response = _common.deserialize(buffer_,
+        self._response = _common.deserialize(message,
                                              self._response_deserializer)
-        self._code = grpc.StatusCode.OK
+        self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[code]
         self._state = _RpcState.FINISHED
+        self._initial_metadata = initial_metadata
+        self._trailing_metadata = trailing_metadata
         return self._response

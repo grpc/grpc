@@ -73,9 +73,6 @@ class UnaryUnaryMultiCallable:
             metadata, status code, and details.
         """
 
-        if metadata:
-            raise NotImplementedError("TODO: metadata not implemented yet")
-
         if credentials:
             raise NotImplementedError("TODO: credentials not implemented yet")
 
@@ -92,7 +89,7 @@ class UnaryUnaryMultiCallable:
         aio_cancel_status = cygrpc.AioCancelStatus()
         aio_call = asyncio.ensure_future(
             self._channel.unary_unary(self._method, serialized_request, timeout,
-                                      aio_cancel_status),
+                                      metadata, aio_cancel_status),
             loop=self._loop)
         return Call(aio_call, self._response_deserializer, aio_cancel_status)
 

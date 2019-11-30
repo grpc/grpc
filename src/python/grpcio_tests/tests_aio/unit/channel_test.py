@@ -25,6 +25,17 @@ from tests_aio.unit._test_base import AioTestBase
 _UNARY_CALL_METHOD = '/grpc.testing.TestService/UnaryCall'
 _EMPTY_CALL_METHOD = '/grpc.testing.TestService/EmptyCall'
 
+_INVOCATION_METADATA = (
+    (
+        'initial-md-key',
+        'initial-md-value',
+    ),
+    (
+        'trailing-md-key-bin',
+        b'\x00\x02',
+    ),
+)
+
 
 class TestChannel(AioTestBase):
 
@@ -111,6 +122,22 @@ class TestChannel(AioTestBase):
             self.assertIs(type(response), messages_pb2.SimpleResponse)
 
             await channel.close()
+
+        self.loop.run_until_complete(coro())
+
+    def test_unary_unary_metadata(self):
+
+        async def coro():
+            server_target, _ = await start_test_server()  # pylint: disable=unused-variable
+
+            async with aio.insecure_channel(server_target) as channel:
+                hi = channel.unary_unary(
+                    _UNARY_CALL_METHOD,
+                    request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                    response_deserializer=messages_pb2.SimpleResponse.FromString)
+                call = hi(messages_pb2.SimpleRequest(), metadata=_INVOCATION_METADATA)
+                self.assertIsNotNone(await call.initial_metadata())
+                self.assertIsNotNone(await call.trailing_metadata())
 
         self.loop.run_until_complete(coro())
 
