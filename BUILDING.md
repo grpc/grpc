@@ -116,7 +116,7 @@ $ bazel test --config=dbg //test/...
 NOTE: If you are gRPC maintainer and you have access to our test cluster, you should use the our [gRPC's Remote Execution environment](tools/remote_build/README.md)
 to get significant improvement to the build and test speed (and a bunch of other very useful features).
 
-## cmake: Linux/Unix, Using Make
+## CMake: Linux/Unix, Using Make
 
 Run from grpc directory after cloning the repo with --recursive or updating submodules.
 ```
