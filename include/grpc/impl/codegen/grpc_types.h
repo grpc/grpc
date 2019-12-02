@@ -726,6 +726,10 @@ typedef struct grpc_experimental_completion_queue_functor {
       operation succeeded (non-zero) or failed (zero) */
   void (*functor_run)(struct grpc_experimental_completion_queue_functor*, int);
 
+  /** The inlineable member specifies whether this functor can be run inline.
+      This should only be used for trivial internally-defined functors. */
+  int inlineable;
+
   /** The following fields are not API. They are meant for internal use. */
   int internal_success;
   struct grpc_experimental_completion_queue_functor* internal_next;

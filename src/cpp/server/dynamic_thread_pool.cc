@@ -18,8 +18,6 @@
 
 #include "src/cpp/server/dynamic_thread_pool.h"
 
-#include <mutex>
-
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/sync.h>
 

@@ -189,10 +189,12 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None):
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
+    # NOTE: these attributes won't be used for the poller-specific versions of a test
+    # automatically, you need to set them explicitly (if applicable)
     args = {
         "srcs": srcs,
         "args": args,
@@ -204,6 +206,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
+        "shard_count": shard_count,
     }
     if uses_polling:
         # the vanilla version of the test should run on platforms that only
@@ -234,6 +237,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 tags = (tags + ["no_windows", "no_mac"]),
                 exec_compatible_with = exec_compatible_with,
                 exec_properties = exec_properties,
+                shard_count = shard_count,
             )
     else:
         # the test behavior doesn't depend on polling, just generate the test

@@ -37,5 +37,7 @@ ABORT_SUCCESS_QUERY = requests_pb2.Up(first_up_field=43)
 ABORT_NO_STATUS_RESPONSE = services_pb2.Down(first_down_field=50)
 ABORT_SUCCESS_RESPONSE = services_pb2.Down(first_down_field=51)
 ABORT_FAILURE_RESPONSE = services_pb2.Down(first_down_field=52)
+STREAM_STREAM_MUTATING_REQUEST = requests_pb2.Top(first_top_field=24601)
+STREAM_STREAM_MUTATING_COUNT = 2
 
 INFINITE_REQUEST_STREAM_TIMEOUT = 0.2

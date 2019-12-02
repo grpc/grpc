@@ -46,6 +46,16 @@ class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
         $this->assertNull($channel_credentials);
     }
 
+    public function testDefaultRootsPem()
+    {
+        Grpc\ChannelCredentials::setDefaultRootsPem("Pem-Content-Not-Verified");
+        $this->assertTrue(Grpc\ChannelCredentials::isDefaultRootsPemSet());
+        Grpc\ChannelCredentials::invalidateDefaultRootsPem();
+        $this->assertFalse(Grpc\ChannelCredentials::isDefaultRootsPemSet());
+        Grpc\ChannelCredentials::setDefaultRootsPem("Content-Not-Verified");
+        $this->assertTrue(Grpc\ChannelCredentials::isDefaultRootsPemSet());
+    }
+
     /**
      * @expectedException InvalidArgumentException
      */

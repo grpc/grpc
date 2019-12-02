@@ -406,8 +406,7 @@ def targets():
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('macos', 'x64', 'python3.8'),
+        PythonArtifact('macos', 'x64', 'python3.8'),
         PythonArtifact('windows', 'x86', 'Python27_32bits'),
         PythonArtifact('windows', 'x86', 'Python35_32bits'),
         PythonArtifact('windows', 'x86', 'Python36_32bits'),
