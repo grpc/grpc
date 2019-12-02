@@ -143,7 +143,7 @@ you will be able to browse and build the code.
 > cmake --build . --config Release
 ```
 
-## Building with cmake: Windows, Using Ninja (faster build, supports boringssl's assembly optimizations).
+## Building with CMake: Windows, Using Ninja (faster build, supports boringssl's assembly optimizations).
 
 Please note that when using Ninja, you will still need Visual C++ (part of Visual Studio)
 installed to be able to compile the C/C++ sources.
