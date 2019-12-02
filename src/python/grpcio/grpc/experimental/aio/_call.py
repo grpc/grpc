@@ -250,7 +250,6 @@ class Call:
 
         try:
             ops_result = yield from self._call.__await__()
-            initial_metadata, message, code, details, trailing_metadata = ops_result
         except cygrpc.AioRpcError as aio_rpc_error:
             self._state = _RpcState.ABORT
             self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[
@@ -269,10 +268,11 @@ class Call:
             self._exception = cancel_error
             raise
 
-        self._response = _common.deserialize(message,
+        self._response = _common.deserialize(ops_result.message,
                                              self._response_deserializer)
-        self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[code]
+        self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[ops_result.code]
+        self._details = ops_result.details
         self._state = _RpcState.FINISHED
-        self._initial_metadata = initial_metadata
-        self._trailing_metadata = trailing_metadata
+        self._initial_metadata = ops_result.initial_metadata
+        self._trailing_metadata = ops_result.trailing_metadata
         return self._response

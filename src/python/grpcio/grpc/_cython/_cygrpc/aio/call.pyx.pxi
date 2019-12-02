@@ -13,10 +13,16 @@
 # limitations under the License.
 
 cimport cpython
+
+from collections import namedtuple
+
 import grpc
 
 _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
+
+UnaryUnaryOpsResult = namedtuple('UnaryUnaryOpsResult',
+                                 ['initial_metadata', 'message', 'code', 'details', 'trailing_metadata'])
 
 
 cdef class _AioCall:
@@ -139,11 +145,12 @@ cdef class _AioCall:
             self._destroy_grpc_call()
 
         if receive_status_on_client_operation.code() == StatusCode.ok:
-            return receive_initial_metadata_operation.initial_metadata(), \
-                   receive_message_operation.message(), \
-                   receive_status_on_client_operation.code(), \
-                   receive_status_on_client_operation.details(), \
-                   receive_status_on_client_operation.trailing_metadata()
+            return UnaryUnaryOpsResult(
+                initial_metadata=receive_initial_metadata_operation.initial_metadata(),
+                message=receive_message_operation.message(),
+                code=receive_status_on_client_operation.code(),
+                details=receive_status_on_client_operation.details(),
+                trailing_metadata=receive_status_on_client_operation.trailing_metadata())
 
         raise AioRpcError(
             receive_initial_metadata_operation.initial_metadata(),

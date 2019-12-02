@@ -143,7 +143,7 @@ class TestCall(AioTestBase):
                     response_deserializer=messages_pb2.SimpleResponse.FromString
                 )
                 call = hi(messages_pb2.SimpleRequest())
-                self.assertEqual(await call.details(), None)
+                self.assertEqual(await call.details(), '')
 
         self.loop.run_until_complete(coro())
 
