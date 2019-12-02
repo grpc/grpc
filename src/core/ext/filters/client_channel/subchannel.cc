@@ -627,7 +627,7 @@ Subchannel::Subchannel(SubchannelKey* key,
   GetAddressFromSubchannelAddressArg(args, addr);
   grpc_resolved_address* new_address = nullptr;
   grpc_channel_args* new_args = nullptr;
-  if (grpc_proxy_mappers_map_address(addr, args, &new_address, &new_args)) {
+  if (ProxyMapperRegistry::MapAddress(*addr, args, &new_address, &new_args)) {
     GPR_ASSERT(new_address != nullptr);
     gpr_free(addr);
     addr = new_address;
