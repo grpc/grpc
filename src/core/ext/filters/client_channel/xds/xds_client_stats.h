@@ -56,9 +56,9 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
            sub_zone_ == other.sub_zone_;
   }
 
-  const char* region() const { return region_.c_str(); }
-  const char* zone() const { return zone_.c_str(); }
-  const char* sub_zone() const { return sub_zone_.c_str(); }
+  const std::string& region() const { return region_; }
+  const std::string& zone() const { return zone_; }
+  const std::string& sub_zone() const { return sub_zone_; }
 
   const char* AsHumanReadableString() {
     if (human_readable_string_ == nullptr) {

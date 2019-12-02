@@ -688,7 +688,7 @@ void LocalityStatsPopulate(
       envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(output,
                                                                    arena);
   envoy_api_v2_core_Locality_set_sub_zone(
-      locality, upb_strview_makez(input.first->sub_zone()));
+      locality, upb_strview_makez(input.first->sub_zone().c_str()));
   // Set total counts.
   const XdsClientStats::LocalityStats::Snapshot& snapshot = input.second;
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(

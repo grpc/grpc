@@ -79,7 +79,7 @@ class ParsedXdsConfig : public LoadBalancingPolicy::Config {
   ParsedXdsConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
                   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy,
                   std::string eds_service_name,
-                  grpc_core::UniquePtr<char> lrs_load_reporting_server_name)
+                  Optional<std::string> lrs_load_reporting_server_name)
       : child_policy_(std::move(child_policy)),
         fallback_policy_(std::move(fallback_policy)),
         eds_service_name_(std::move(eds_service_name)),
@@ -101,14 +101,16 @@ class ParsedXdsConfig : public LoadBalancingPolicy::Config {
   };
 
   const char* lrs_load_reporting_server_name() const {
-    return lrs_load_reporting_server_name_.get();
+    return lrs_load_reporting_server_name_.has_value()
+               ? lrs_load_reporting_server_name_.value().c_str()
+               : nullptr;
   };
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
   std::string eds_service_name_;
-  grpc_core::UniquePtr<char> lrs_load_reporting_server_name_;
+  Optional<std::string> lrs_load_reporting_server_name_;
 };
 
 class XdsLb : public LoadBalancingPolicy {
@@ -1876,11 +1878,13 @@ class XdsFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (error_list.empty()) {
+      Optional<std::string> optional_lrs_load_reporting_server_name;
+      optional_lrs_load_reporting_server_name.set(
+          std::string(lrs_load_reporting_server_name));
       return MakeRefCounted<ParsedXdsConfig>(
           std::move(child_policy), std::move(fallback_policy),
           eds_service_name == nullptr ? "" : eds_service_name,
-          grpc_core::UniquePtr<char>(
-              gpr_strdup(lrs_load_reporting_server_name)));
+          std::move(optional_lrs_load_reporting_server_name));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Xds Parser", &error_list);
       return nullptr;

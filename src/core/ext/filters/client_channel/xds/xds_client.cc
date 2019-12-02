@@ -126,7 +126,8 @@ class XdsClient::ChannelState::AdsCallState
   bool seen_response() const { return seen_response_; }
 
   // Takes ownership of \a error.
-  void SendMessageLocked(const std::string& type_url, std::string nonce,
+  void SendMessageLocked(const std::string& type_url,
+                         const std::string& nonce_for_unsupported_type,
                          grpc_error* error, bool is_first_message);
 
  private:
@@ -174,9 +175,9 @@ class XdsClient::ChannelState::AdsCallState
   grpc_slice status_details_;
   grpc_closure on_status_received_;
 
-  // Version info.
-  std::string cds_version_;
-  std::string eds_version_;
+  // Version state.
+  VersionState cds_version_;
+  VersionState eds_version_;
 
   // Buffered requests.
   std::map<std::string /*type_url*/, std::unique_ptr<BufferedRequest>>
@@ -666,12 +667,12 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
 }
 
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
-    const std::string& type_url, std::string nonce, grpc_error* error,
-    bool is_first_message) {
+    const std::string& type_url, const std::string& nonce_for_unsupported_type,
+    grpc_error* error, bool is_first_message) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
     buffered_request_map_[type_url].reset(
-        new BufferedRequest(std::move(nonce), error));
+        new BufferedRequest(nonce_for_unsupported_type, error));
     return;
   }
   grpc_slice request_payload_slice;
@@ -680,16 +681,16 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   const char* build_version =
       is_first_message ? xds_client()->build_version_.get() : nullptr;
   if (type_url == kCdsTypeUrl) {
-    request_payload_slice =
-        XdsCdsRequestCreateAndEncode(xds_client()->WatchedClusterNames(), node,
-                                     build_version, cds_version_, nonce, error);
+    request_payload_slice = XdsCdsRequestCreateAndEncode(
+        xds_client()->WatchedClusterNames(), node, build_version,
+        cds_version_.version_info, cds_version_.nonce, error);
   } else if (type_url == kEdsTypeUrl) {
-    request_payload_slice =
-        XdsEdsRequestCreateAndEncode(xds_client()->EdsServiceNames(), node,
-                                     build_version, eds_version_, nonce, error);
+    request_payload_slice = XdsEdsRequestCreateAndEncode(
+        xds_client()->EdsServiceNames(), node, build_version,
+        eds_version_.version_info, eds_version_.nonce, error);
   } else {
-    request_payload_slice =
-        XdsUnsupportedTypeNackRequestCreateAndEncode(type_url, nonce, error);
+    request_payload_slice = XdsUnsupportedTypeNackRequestCreateAndEncode(
+        type_url, nonce_for_unsupported_type, error);
   }
   // Create message payload.
   send_message_payload_ =
@@ -738,13 +739,13 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
       continue;
     }
     // Update the cluster state.
-    cluster_state.update.set(cds_update);
+    cluster_state.update.set(std::move(cds_update));
     // Notify all watchers.
     for (const auto& p : cluster_state.watchers) {
       p.first->OnClusterChanged(cluster_state.update.value());
     }
   }
-  cds_version_ = std::move(new_version);
+  cds_version_.version_info = std::move(new_version);
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
@@ -825,7 +826,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
       p.first->OnEndpointChanged(endpoint_state.update);
     }
   }
-  eds_version_ = std::move(new_version);
+  eds_version_.version_info = std::move(new_version);
 }
 
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
@@ -910,28 +911,39 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
     gpr_log(GPR_ERROR, "[xds_client %p] No type_url found. error=%s",
             xds_client, grpc_error_string(parse_error));
     GRPC_ERROR_UNREF(parse_error);
-  } else if (parse_error != GRPC_ERROR_NONE) {
-    // NACK unacceptable update.
-    gpr_log(GPR_ERROR,
-            "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
-            xds_client, grpc_error_string(parse_error));
-    ads_calld->SendMessageLocked(type_url, std::move(nonce), parse_error,
-                                 false);
   } else {
-    ads_calld->seen_response_ = true;
-    // Accept the (CDS or EDS) response.
+    // Update nonce.
     if (type_url == kCdsTypeUrl) {
-      ads_calld->AcceptCdsUpdate(std::move(cds_update_map), std::move(version));
+      ads_calld->cds_version_.nonce = nonce;
     } else if (type_url == kEdsTypeUrl) {
-      ads_calld->AcceptEdsUpdate(std::move(eds_update_map), std::move(version));
+      ads_calld->eds_version_.nonce = nonce;
     }
-    // ACK the update.
-    ads_calld->SendMessageLocked(type_url, std::move(nonce), nullptr, false);
-    // Start load reporting if needed.
-    auto& lrs_call = ads_calld->chand()->lrs_calld_;
-    if (lrs_call != nullptr) {
-      LrsCallState* lrs_calld = lrs_call->calld();
-      if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+    // NACK or ACK the response.
+    if (parse_error != GRPC_ERROR_NONE) {
+      // NACK unacceptable update.
+      gpr_log(
+          GPR_ERROR,
+          "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
+          xds_client, grpc_error_string(parse_error));
+      ads_calld->SendMessageLocked(type_url, nonce, parse_error, false);
+    } else {
+      ads_calld->seen_response_ = true;
+      // Accept the (CDS or EDS) response.
+      if (type_url == kCdsTypeUrl) {
+        ads_calld->AcceptCdsUpdate(std::move(cds_update_map),
+                                   std::move(version));
+      } else if (type_url == kEdsTypeUrl) {
+        ads_calld->AcceptEdsUpdate(std::move(eds_update_map),
+                                   std::move(version));
+      }
+      // ACK the update.
+      ads_calld->SendMessageLocked(type_url, nonce, nullptr, false);
+      // Start load reporting if needed.
+      auto& lrs_call = ads_calld->chand()->lrs_calld_;
+      if (lrs_call != nullptr) {
+        LrsCallState* lrs_calld = lrs_call->calld();
+        if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+      }
     }
   }
   if (xds_client->shutting_down_) {

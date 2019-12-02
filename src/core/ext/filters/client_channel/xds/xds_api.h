@@ -38,6 +38,11 @@ constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
+struct VersionState {
+  std::string version_info;
+  std::string nonce;
+};
+
 struct CdsUpdate {
   // The name to use in the EDS request.
   // If empty, the cluster name will be used.
