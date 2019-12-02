@@ -40,7 +40,7 @@ If your project is using cmake, there are several ways to add gRPC dependency.
 - via cmake's `ExternalProject_Add` using a technique called "superbuild". [Example](../../examples/cpp/helloworld/cmake_externalproject/CMakeLists.txt)
 - add gRPC source tree to your project (preferably as a git submodule) and add it to your cmake project with `add_subdirectory`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
 
-If your project is not using cmake (e.g. you're using `make` directly), you can first install gRPC C++ using cmake,
+If your project is not using CMake (e.g. you're using `make` directly), you can first install gRPC C++ using CMake,
 and have your non-CMake project rely on the `pkgconfig` files which are provided by gRPC installation. [Example](../../test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh)
 
 ## make
