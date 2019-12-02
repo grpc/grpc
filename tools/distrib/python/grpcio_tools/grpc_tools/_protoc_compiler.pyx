@@ -35,8 +35,8 @@ cdef extern from "grpc_tools/main.h":
     string message
 
   int protoc_main(int argc, char *argv[])
-  int protoc_get_protos(char* protobuf_path, char* include_path, vector[pair[string, string]]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
-  int protoc_get_services(char* protobuf_path, char* include_path, vector[pair[string, string]]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
+  int protoc_get_protos(char* protobuf_path, vector[string]* include_path, vector[pair[string, string]]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
+  int protoc_get_services(char* protobuf_path, vector[string]* include_path, vector[pair[string, string]]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) except +
 
 def run_main(list args not None):
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
@@ -54,8 +54,8 @@ class ProtocError(Exception):
     def __repr__(self):
         return "ProtocError(filename=\"{}\", line={}, column={}, message=\"{}\")".format(self.filename, self.line, self.column, self.message)
 
-    # TODO: Maybe come up with something better than this
-    __str__ = __repr__
+    def __str__(self):
+        return "{}:{}:{} error: {}".format(self.filename.decode("ascii"), self.line, self.column, self.message.decode("ascii"))
 
 class ProtocWarning(Warning):
     def __init__(self, filename, line, column, message):
@@ -69,6 +69,20 @@ class ProtocWarning(Warning):
 
     # TODO: Maybe come up with something better than this
     __str__ = __repr__
+
+
+class ProtocErrors(Exception):
+    def __init__(self, errors):
+        self._errors = errors
+
+    def errors(self):
+        return self._errors
+
+    def __repr__(self):
+        return "ProtocErrors[{}]".join(repr(err) for err in self._errors)
+
+    def __str__(self):
+        return "\n".join(str(err) for err in self._errors)
 
 cdef _c_protoc_error_to_protoc_error(cProtocError c_protoc_error):
     return ProtocError(c_protoc_error.filename, c_protoc_error.line, c_protoc_error.column, c_protoc_error.message)
@@ -84,24 +98,26 @@ cdef _handle_errors(int rc, vector[cProtocError]* errors, vector[cProtocWarning]
        py_errors = [_c_protoc_error_to_protoc_error(c_error) for c_error in dereference(errors)]
        # TODO: Come up with a good system for printing multiple errors from
        # protoc.
-       raise Exception(py_errors)
+       raise ProtocErrors(py_errors)
     raise Exception("An unknown error occurred while compiling {}".format(protobuf_path))
 
-def get_protos(bytes protobuf_path, bytes include_path):
+def get_protos(bytes protobuf_path, list include_paths):
+  cdef vector[string] c_include_paths = include_paths
   cdef vector[pair[string, string]] files
   cdef vector[cProtocError] errors
-  # NOTE: Abbreviated name used to shadowing of the module name.
+  # NOTE: Abbreviated name used to avoid shadowing of the module name.
   cdef vector[cProtocWarning] wrnings
-  rc = protoc_get_protos(protobuf_path, include_path, &files, &errors, &wrnings)
+  rc = protoc_get_protos(protobuf_path, &c_include_paths, &files, &errors, &wrnings)
   _handle_errors(rc, &errors, &wrnings, protobuf_path)
   return files
 
-def get_services(bytes protobuf_path, bytes include_path):
+def get_services(bytes protobuf_path, list include_paths):
+  cdef vector[string] c_include_paths = include_paths
   cdef vector[pair[string, string]] files
   cdef vector[cProtocError] errors
-  # NOTE: Abbreviated name used to shadowing of the module name.
+  # NOTE: Abbreviated name used to avoid shadowing of the module name.
   cdef vector[cProtocWarning] wrnings
-  rc = protoc_get_services(protobuf_path, include_path, &files, &errors, &wrnings)
+  rc = protoc_get_services(protobuf_path, &c_include_paths, &files, &errors, &wrnings)
   _handle_errors(rc, &errors, &wrnings, protobuf_path)
   return files
 

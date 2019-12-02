@@ -40,13 +40,13 @@ typedef ProtocError ProtocWarning;
 
 // TODO: Create Alias for files_out type?
 int protoc_get_protos(char* protobuf_path,
-                     char* include_path,
+                     const std::vector<std::string>* include_paths,
                      std::vector<std::pair<std::string, std::string>>* files_out,
                      std::vector<ProtocError>* errors,
                      std::vector<ProtocWarning>* warnings);
 
 int protoc_get_services(char* protobuf_path,
-                     char* include_path,
+                     const std::vector<std::string>* include_paths,
                      std::vector<std::pair<std::string, std::string>>* files_out,
                      std::vector<ProtocError>* errors,
                      std::vector<ProtocWarning>* warnings);

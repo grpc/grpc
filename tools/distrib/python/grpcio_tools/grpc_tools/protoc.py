@@ -52,13 +52,26 @@ def _import_modules_from_files(files):
       modules.append(sys.modules[module_name])
   return tuple(modules)
 
-def get_protos(protobuf_path, include_path):
-  files = _protoc_compiler.get_protos(protobuf_path.encode('ascii'), include_path.encode('ascii'))
+# TODO: Investigate making this even more of a no-op in the case that we have
+# truly already imported the module.
+def get_protos(protobuf_path, include_paths=None):
+  if include_paths is None:
+    include_paths = sys.path
+  files = _protoc_compiler.get_protos(protobuf_path.encode('ascii'), [include_path.encode('ascii') for include_path in include_paths])
   return _import_modules_from_files(files)[-1]
 
-def get_services(protobuf_path, include_path):
-  files = _protoc_compiler.get_services(protobuf_path.encode('ascii'), include_path.encode('ascii'))
+def get_services(protobuf_path, include_paths=None):
+  # NOTE: This call to get_protos is a no-op in the case it has already been
+  # called.
+  get_protos(protobuf_path, include_paths)
+  if include_paths is None:
+    include_paths = sys.path
+  files = _protoc_compiler.get_services(protobuf_path.encode('ascii'), [include_path.encode('ascii') for include_path in include_paths])
   return _import_modules_from_files(files)[-1]
+
+def get_protos_and_services(protobuf_path, include_paths=None):
+  return (get_protos(protobuf_path, include_paths=include_paths),
+          get_services(protobuf_path, include_paths=include_paths))
 
 
 if __name__ == '__main__':

@@ -96,6 +96,7 @@ py_test(
     "simpler.proto",
     "simplest.proto",
     "complicated.proto",
+    "flawed.proto",
   ],
   python_version = "PY3",
 )

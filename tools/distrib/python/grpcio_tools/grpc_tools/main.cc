@@ -133,14 +133,16 @@ static void calculate_transitive_closure(const ::google::protobuf::FileDescripto
 // TODO: Handle multiple include paths.
 static int generate_code(::google::protobuf::compiler::CodeGenerator* code_generator,
                          char* protobuf_path,
-                         char* include_path,
+                         const std::vector<std::string>* include_paths,
                          std::vector<std::pair<std::string, std::string>>* files_out,
                          std::vector<ProtocError>* errors,
                          std::vector<ProtocWarning>* warnings)
 {
   std::unique_ptr<detail::ErrorCollectorImpl> error_collector(new detail::ErrorCollectorImpl(errors, warnings));
   std::unique_ptr<::google::protobuf::compiler::DiskSourceTree> source_tree(new ::google::protobuf::compiler::DiskSourceTree());
-  source_tree->MapPath("", include_path);
+  for (const auto& include_path : *include_paths) {
+    source_tree->MapPath("", include_path);
+  }
   ::google::protobuf::compiler::Importer importer(source_tree.get(), error_collector.get());
   const ::google::protobuf::FileDescriptor* parsed_file = importer.Import(protobuf_path);
   if (parsed_file == nullptr) {
@@ -159,22 +161,22 @@ static int generate_code(::google::protobuf::compiler::CodeGenerator* code_gener
 }
 
 int protoc_get_protos(char* protobuf_path,
-                     char* include_path,
+                     const std::vector<std::string>* include_paths,
                      std::vector<std::pair<std::string, std::string>>* files_out,
                      std::vector<ProtocError>* errors,
                      std::vector<ProtocWarning>* warnings)
 {
   ::google::protobuf::compiler::python::Generator python_generator;
-  return generate_code(&python_generator, protobuf_path, include_path, files_out, errors, warnings);
+  return generate_code(&python_generator, protobuf_path, include_paths, files_out, errors, warnings);
 }
 
 int protoc_get_services(char* protobuf_path,
-                     char* include_path,
+                     const std::vector<std::string>* include_paths,
                      std::vector<std::pair<std::string, std::string>>* files_out,
                      std::vector<ProtocError>* errors,
                      std::vector<ProtocWarning>* warnings)
 {
   grpc_python_generator::GeneratorConfiguration grpc_py_config;
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
-  return generate_code(&grpc_py_generator, protobuf_path, include_path, files_out, errors, warnings);
+  return generate_code(&grpc_py_generator, protobuf_path, include_paths, files_out, errors, warnings);
 }
