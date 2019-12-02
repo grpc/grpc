@@ -35,9 +35,6 @@ python -m pip install google-api-python-client
 powershell -File src\csharp\install_dotnet_sdk.ps1
 set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
 
-@rem Install Python 3.8.0
-powershell -File tools\internal_ci\helper_scripts\install_python38.ps1
-
 @rem Newest version of Go is required to be able to build boringssl with cmake
 @rem TODO(jtattermusch): try to eliminate the dependency on Go
 choco install golang -y --version 1.13.1 --limit-output
