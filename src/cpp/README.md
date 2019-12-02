@@ -38,7 +38,7 @@ support for crosscompiling and can be used for targeting Android platform.
 If your project is using cmake, there are several ways to add gRPC dependency.
 - install gRPC via cmake first and then locate it with `find_package(gRPC CONFIG)`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
 - via cmake's `ExternalProject_Add` using a technique called "superbuild". [Example](../../examples/cpp/helloworld/cmake_externalproject/CMakeLists.txt)
-- add gRPC source tree to your project (preferably as a git submodule) and add it to your cmake project with `add_subdirectory`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
+- add gRPC source tree to your project (preferably as a git submodule) and add it to your CMake project with `add_subdirectory`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
 
 If your project is not using CMake (e.g. you're using `make` directly), you can first install gRPC C++ using CMake,
 and have your non-CMake project rely on the `pkgconfig` files which are provided by gRPC installation. [Example](../../test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh)
