@@ -43,17 +43,6 @@ TEST(LogicalThreadTest, ExecuteOne) {
               nullptr);
 }
 
-struct ThreadArgs {
-  size_t counter;
-  grpc_core::RefCountedPtr<grpc_core::LogicalThread> lock;
-  gpr_event done;
-};
-
-struct ExecutionArgs {
-  size_t* counter;
-  size_t value;
-};
-
 class TestThread {
  public:
   explicit TestThread(grpc_core::RefCountedPtr<grpc_core::LogicalThread> lock)
@@ -75,6 +64,10 @@ class TestThread {
     size_t n = 1;
     for (size_t i = 0; i < 10; i++) {
       for (size_t j = 0; j < 10000; j++) {
+        struct ExecutionArgs {
+          size_t* counter;
+          size_t value;
+        };
         ExecutionArgs* c = new ExecutionArgs;
         c->counter = &self->counter_;
         c->value = n++;

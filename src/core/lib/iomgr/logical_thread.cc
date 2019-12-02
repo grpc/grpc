@@ -75,7 +75,7 @@ void LogicalThread::DrainQueue() {
     GPR_DEBUG_ASSERT(prev_size >= 1);
     if (prev_size == 1) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
-        gpr_log(GPR_INFO, "	Queue Drained");
+        gpr_log(GPR_INFO, "  Queue Drained");
       }
       break;
     }
@@ -88,16 +88,14 @@ void LogicalThread::DrainQueue() {
       // This can happen either due to a race condition within the mpscq
       // implementation or because of a race with Run()
       if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
-        gpr_log(GPR_INFO, "	 Queue returned nullptr, trying again");
+        gpr_log(GPR_INFO, "  Queue returned nullptr, trying again");
       }
     }
-#ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
-      gpr_log(GPR_INFO,
-              "	 Running item %p : callback scheduled at [%s:%d]", cb_wrapper,
-              cb_wrapper->location.file(), cb_wrapper->location.line());
+      gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
+              cb_wrapper, cb_wrapper->location.file(),
+              cb_wrapper->location.line());
     }
-#endif
     cb_wrapper->callback();
     delete cb_wrapper;
   }
