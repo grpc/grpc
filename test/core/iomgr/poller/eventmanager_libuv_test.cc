@@ -21,12 +21,16 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
+#include <gtest/gtest.h>
 
 #include "test/core/util/test_config.h"
 
 using grpc::experimental::LibuvEventManager;
 
-static void test_manager_allocation() {
+namespace grpc_core {
+namespace {
+
+TEST(LibuvEventManager, Allocation) {
   for (int i = 0; i < 10; i++) {
     LibuvEventManager* em = new LibuvEventManager(i);
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1));
@@ -34,7 +38,7 @@ static void test_manager_allocation() {
   }
 }
 
-static void test_shutdown_ref() {
+TEST(LibuvEventManager, ShutdownRef) {
   for (int i = 0; i < 10; i++) {
     LibuvEventManager* em = new LibuvEventManager(i);
     for (int j = 0; j < i; j++) {
@@ -48,11 +52,30 @@ static void test_shutdown_ref() {
   }
 }
 
+TEST(LibuvEventManager, ShutdownRefAsync) {
+  for (int i = 0; i < 10; i++) {
+    LibuvEventManager* em = new LibuvEventManager(i);
+    for (int j = 0; j < i; j++) {
+      em->ShutdownRef();
+    }
+    grpc_core::Thread deleter("deleter", [em](void*) { delete em; }, nullptr);
+    deleter.Start();
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1));
+    for (int j = 0; j < i; j++) {
+      em->ShutdownUnref();
+    }
+    deleter.Join();
+  }
+}
+
+}  // namespace
+}  // namespace grpc_core
+
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  test_manager_allocation();
-  test_shutdown_ref();
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  int retval = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return retval;
 }

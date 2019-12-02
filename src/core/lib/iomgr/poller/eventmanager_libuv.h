@@ -64,16 +64,16 @@ class LibuvEventManager {
 
  private:
   // Function run by the worker threads.
-  static void RunWorkerLoop(void* manager);
+  void RunWorkerLoop();
 
   // Whether the EventManager has been shut down.
   bool ShouldStop();
 
   const Options options_;
   // Whether the EventManager workers should be stopped.
-  grpc_core::Atomic<int> should_stop_;
+  grpc_core::Atomic<bool> should_stop_ = false;
   // A refcount preventing the EventManager from shutdown.
-  grpc_core::Atomic<int> shutdown_refcount_;
+  grpc_core::Atomic<int> shutdown_refcount_ = 0;
   // Worker threads of the EventManager.
   std::vector<grpc_core::Thread> workers_;
 };

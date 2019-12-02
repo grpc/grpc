@@ -27,14 +27,15 @@ grpc::experimental::LibuvEventManager::Options::Options(int num_workers)
     : num_workers_(num_workers) {}
 
 grpc::experimental::LibuvEventManager::LibuvEventManager(const Options& options)
-    : options_(options), should_stop_(0), shutdown_refcount_(0) {
+    : options_(options) {
   int num_workers = options_.num_workers();
+  // Number of workers can't be 0 if we do not accept thread donation.
   // TODO(guantaol): replaces the hard-coded number with a flag.
-  if (num_workers < 0) num_workers = 32;
+  if (num_workers <= 0) num_workers = 32;
 
   for (int i = 0; i < num_workers; i++) {
     workers_.emplace_back(options_.thread_name_prefix().c_str(),
-                          &grpc::experimental::LibuvEventManager::RunWorkerLoop,
+                          [](void* em) { static_cast<LibuvEventManager*>(em)->RunWorkerLoop(); },
                           this);
     workers_.back().Start();
   }
@@ -42,15 +43,15 @@ grpc::experimental::LibuvEventManager::LibuvEventManager(const Options& options)
 
 grpc::experimental::LibuvEventManager::~LibuvEventManager() {
   Shutdown();
-  for (auto it = workers_.begin(); it != workers_.end(); it++) {
-    it->Join();
+  for (auto& th : workers_) {
+    th.Join();
   }
 }
 
-void grpc::experimental::LibuvEventManager::RunWorkerLoop(void* manager) {
-  LibuvEventManager* event_manager = static_cast<LibuvEventManager*>(manager);
+void grpc::experimental::LibuvEventManager::RunWorkerLoop() {
   while (true) {
-    if (event_manager->ShouldStop()) return;
+    // TODO(guantaol): extend the worker loop with real work.
+    if (ShouldStop()) return;
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                  gpr_time_from_micros(10, GPR_TIMESPAN)));
   }
@@ -65,7 +66,7 @@ void grpc::experimental::LibuvEventManager::Shutdown() {
     return;  // Already shut down.
   while (shutdown_refcount_.Load(grpc_core::MemoryOrder::ACQUIRE) > 0)
     ;
-  should_stop_.Store(1, grpc_core::MemoryOrder::RELEASE);
+  should_stop_.Store(true, grpc_core::MemoryOrder::RELEASE);
 }
 
 void grpc::experimental::LibuvEventManager::ShutdownRef() {

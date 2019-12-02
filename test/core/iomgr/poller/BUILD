@@ -25,6 +25,9 @@ grpc_package(
 grpc_cc_test(
     name = "eventmanager_libuv_test",
     srcs = ["eventmanager_libuv_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [

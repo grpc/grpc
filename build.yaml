@@ -2596,16 +2596,6 @@ targets:
   - uv
   platforms:
   - linux
-- name: eventmanager_libuv_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/poller/eventmanager_libuv_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
 - name: fake_resolver_test
   build: test
   language: c
@@ -4925,6 +4915,17 @@ targets:
   deps:
   - grpc++_error_details
   - grpc++
+- name: eventmanager_libuv_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/iomgr/poller/eventmanager_libuv_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
 - name: exception_test
   gtest: true
   build: test
