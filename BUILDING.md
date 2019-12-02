@@ -128,7 +128,7 @@ $ make
 
 If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
 
-## Building with cmake: Windows, Using Visual Studio 2015 or 2017 (can only build with OPENSSL_NO_ASM).
+## Building with CMake: Windows, Using Visual Studio 2015 or 2017 (can only build with OPENSSL_NO_ASM).
 
 When using the "Visual Studio" generator,
 cmake will generate a solution (`grpc.sln`) that contains a VS project for 
