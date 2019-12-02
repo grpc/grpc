@@ -28,7 +28,7 @@ function Install-Python {
     Write-Host "Python installer $PythonInstallerPath validated."
 
     # Installs Python
-    & $PythonInstallerPath /passive InstallAllUsers=1 PrependPath=1 Include_test=0 TargetDir=$PythonInstallPath
+    & $PythonInstallerPath /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 TargetDir=$PythonInstallPath
     if (-Not $?) {
         throw "The Python installation exited with error!"
     }
