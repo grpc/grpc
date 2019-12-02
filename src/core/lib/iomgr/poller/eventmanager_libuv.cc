@@ -34,9 +34,10 @@ grpc::experimental::LibuvEventManager::LibuvEventManager(const Options& options)
   if (num_workers <= 0) num_workers = 32;
 
   for (int i = 0; i < num_workers; i++) {
-    workers_.emplace_back(options_.thread_name_prefix().c_str(),
-                          [](void* em) { static_cast<LibuvEventManager*>(em)->RunWorkerLoop(); },
-                          this);
+    workers_.emplace_back(
+        options_.thread_name_prefix().c_str(),
+        [](void* em) { static_cast<LibuvEventManager*>(em)->RunWorkerLoop(); },
+        this);
     workers_.back().Start();
   }
 }
