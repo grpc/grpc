@@ -107,10 +107,8 @@ class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
 
-namespace experimental {
 class ServerContextBase;
 class CallbackServerContext;
-}  // namespace experimental
 
 /// Options for \a ClientContext::FromServerContext specifying which traits from
 /// the \a ServerContext to propagate (copy) from it into a new \a
@@ -202,7 +200,7 @@ class ClientContext {
       const grpc_impl::ServerContext& server_context,
       PropagationOptions options = PropagationOptions());
   static std::unique_ptr<ClientContext> FromCallbackServerContext(
-      const grpc_impl::experimental::CallbackServerContext& server_context,
+      const grpc_impl::CallbackServerContext& server_context,
       PropagationOptions options = PropagationOptions());
 
   /// Add the (\a meta_key, \a meta_value) pair to the metadata associated with
@@ -484,7 +482,7 @@ class ClientContext {
   void SendCancelToInterceptors();
 
   static std::unique_ptr<ClientContext> FromInternalServerContext(
-      const grpc_impl::experimental::ServerContextBase& server_context,
+      const grpc_impl::ServerContextBase& server_context,
       PropagationOptions options);
 
   bool initial_metadata_received_;

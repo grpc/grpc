@@ -93,10 +93,10 @@ namespace experimental {
 /// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
 /// ByteBuffer arguments.
 using ServerGenericBidiReactor =
-    ::grpc_impl::experimental::ServerBidiReactor<ByteBuffer, ByteBuffer>;
+    ::grpc_impl::ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
 class GenericCallbackServerContext final
-    : public ::grpc_impl::experimental::CallbackServerContext {
+    : public ::grpc_impl::CallbackServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
@@ -108,7 +108,7 @@ class GenericCallbackServerContext final
   void Clear() {
     method_.clear();
     host_.clear();
-    ::grpc_impl::experimental::CallbackServerContext::Clear();
+    ::grpc_impl::CallbackServerContext::Clear();
   }
 
   grpc::string method_;
@@ -143,7 +143,7 @@ class CallbackGenericService {
   Handler() {
     return new ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer,
                                                           ByteBuffer>(
-        [this](::grpc_impl::experimental::CallbackServerContext* ctx) {
+        [this](::grpc_impl::CallbackServerContext* ctx) {
           return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
         });
   }
