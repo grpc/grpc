@@ -692,6 +692,7 @@ filegroups:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/logical_thread.cc
+  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -873,6 +874,7 @@ filegroups:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/logical_thread.h
   - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -2594,6 +2596,16 @@ targets:
   - uv
   platforms:
   - linux
+- name: eventmanager_libuv_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/poller/eventmanager_libuv_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
 - name: fake_resolver_test
   build: test
   language: c

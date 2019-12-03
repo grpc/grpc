@@ -1308,6 +1308,8 @@ src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/logical_thread.cc \
 src/core/lib/iomgr/logical_thread.h \
 src/core/lib/iomgr/nameser.h \
+src/core/lib/iomgr/poller/eventmanager_libuv.cc \
+src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
