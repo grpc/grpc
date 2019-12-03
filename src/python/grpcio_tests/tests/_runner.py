@@ -15,7 +15,6 @@
 from __future__ import absolute_import
 
 import collections
-import multiprocessing
 import os
 import select
 import signal

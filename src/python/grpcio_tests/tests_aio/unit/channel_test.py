@@ -14,6 +14,7 @@
 """Tests behavior of the grpc.aio.Channel class."""
 
 import logging
+import threading
 import unittest
 
 import grpc

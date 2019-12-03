@@ -727,13 +727,17 @@ class PythonLanguage(object):
                 self.args.iomgr_platform]) as tests_json_file:
             tests_json = json.load(tests_json_file)
         environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+        # NOTE(lidiz) Fork handlers is not designed for non-native IO manager.
+        # It has a side-effect that overrides threading settings in C-Core.
+        if args.iomgr_platform != 'native':
+            environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
         return [
             self.config.job_spec(
                 config.run,
                 timeout_seconds=5 * 60,
                 environ=dict(
-                    list(environment.items()) + [(
-                        'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
+                    GRPC_PYTHON_TESTRUNNER_FILTER=str(suite_name),
+                    **environment),
                 shortname='%s.%s.%s' %
                 (config.name, self._TEST_FOLDER[self.args.iomgr_platform],
                  suite_name),
