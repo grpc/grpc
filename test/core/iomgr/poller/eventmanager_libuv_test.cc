@@ -58,7 +58,9 @@ TEST(LibuvEventManager, ShutdownRefAsync) {
     for (int j = 0; j < i; j++) {
       em->ShutdownRef();
     }
-    grpc_core::Thread deleter("deleter", [em](void*) { delete em; }, nullptr);
+    grpc_core::Thread deleter(
+        "deleter", [](void* em) { delete static_cast<LibuvEventManager*>(em); },
+        em);
     deleter.Start();
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1));
     for (int j = 0; j < i; j++) {
