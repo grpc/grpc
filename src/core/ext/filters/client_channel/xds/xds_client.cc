@@ -432,7 +432,6 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
 void XdsClient::ChannelState::OnResourceNamesChanged(
     const std::string& type_url) {
   if (ads_calld_ == nullptr) {
-    // FIXME: Honor backoff.
     ads_calld_.reset(new RetryableCall<AdsCallState>(
         Ref(DEBUG_LOCATION, "ChannelState+ads")));
   } else {
