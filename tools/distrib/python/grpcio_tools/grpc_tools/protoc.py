@@ -22,6 +22,10 @@ import six
 import imp
 import os
 
+import importlib
+import importlib.machinery
+import sys
+
 from grpc_tools import _protoc_compiler
 
 def main(command_arguments):
@@ -33,6 +37,16 @@ def main(command_arguments):
   """
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
+
+def _module_name_to_proto_file(module_name):
+  components = module_name.split(".")
+  proto_name = components[-1][:-1*len("_pb2")]
+  return os.path.sep.join(components[:-1] + [proto_name + ".proto"])
+
+def _proto_file_to_module_name(proto_file):
+  components = proto_file.split(os.path.sep)
+  proto_base_name = os.path.splitext(components[-1])[0]
+  return os.path.sep.join(components[:-1] + [proto_base_name + "_pb2"])
 
 def _import_modules_from_files(files):
   modules = []
@@ -55,10 +69,13 @@ def _import_modules_from_files(files):
 # TODO: Investigate making this even more of a no-op in the case that we have
 # truly already imported the module.
 def get_protos(protobuf_path, include_paths=None):
-  if include_paths is None:
-    include_paths = sys.path
-  files = _protoc_compiler.get_protos(protobuf_path.encode('ascii'), [include_path.encode('ascii') for include_path in include_paths])
-  return _import_modules_from_files(files)[-1]
+  original_sys_path = sys.path
+  if include_paths is not None:
+    sys.path = sys.path + include_paths
+  module_name = _proto_file_to_module_name(protobuf_path)
+  module = importlib.import_module(module_name)
+  sys.path = original_sys_path
+  return module
 
 def get_services(protobuf_path, include_paths=None):
   # NOTE: This call to get_protos is a no-op in the case it has already been
@@ -73,6 +90,55 @@ def get_protos_and_services(protobuf_path, include_paths=None):
   return (get_protos(protobuf_path, include_paths=include_paths),
           get_services(protobuf_path, include_paths=include_paths))
 
+
+
+_proto_code_cache = {}
+
+# TODO: Cache generated code per-process. Check it first to see if it's already
+# been generated and, instead, just instantiate using that.
+class ProtoLoader(importlib.abc.Loader):
+  def __init__(self, module_name, protobuf_path, proto_root):
+    self._module_name = module_name
+    self._protobuf_path = protobuf_path
+    self._proto_root = proto_root
+
+  def create_module(self, spec):
+    return None
+
+  def _generated_file_to_module_name(self, filepath):
+    components = filepath.split("/")
+    return ".".join(components[:-1] + [os.path.splitext(components[-1])[0]])
+
+  def exec_module(self, module):
+    assert module.__name__ == self._module_name
+    code = None
+    if self._module_name in _proto_code_cache:
+      code = _proto_code_cache[self._module_name]
+      six.exec_(code, module.__dict__)
+    else:
+      files = _protoc_compiler.get_protos(self._protobuf_path.encode('ascii'), [path.encode('ascii') for path in sys.path])
+      for f in files[:-1]:
+        module_name = self._generated_file_to_module_name(f[0].decode('ascii'))
+        if module_name not in sys.modules:
+          if module_name not in _proto_code_cache:
+            _proto_code_cache[module_name] = f[1]
+          importlib.import_module(module_name)
+      six.exec_(files[-1][1], module.__dict__)
+
+class ProtoFinder(importlib.abc.MetaPathFinder):
+  def find_spec(self, fullname, path, target=None):
+    filepath = _module_name_to_proto_file(fullname)
+    for search_path in sys.path:
+      try:
+        prospective_path = os.path.join(search_path, filepath)
+        os.stat(prospective_path)
+      except FileNotFoundError:
+        continue
+      else:
+        # TODO: Use a stdlib helper function to construct this.
+        return importlib.machinery.ModuleSpec(fullname, ProtoLoader(fullname, filepath, search_path))
+
+sys.meta_path.append(ProtoFinder())
 
 if __name__ == '__main__':
     proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')

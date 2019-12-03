@@ -92,36 +92,50 @@ def _test_syntax_errors():
         assert "flawed.proto" in error_str
         assert "3:23" in error_str
         assert "7:23" in error_str
-        print(error_str)
     else:
         assert False, "Compile error expected. None occurred."
+
+# TODO: Test warnings.
 
 
 class ProtocTest(unittest.TestCase):
 
-    def test_import_protos(self):
-        _run_in_subprocess(_test_import_protos)
+    # def test_import_protos(self):
+    #     _run_in_subprocess(_test_import_protos)
 
-    def test_import_services(self):
-        _run_in_subprocess(_test_import_services)
+    # def test_import_services(self):
+    #     _run_in_subprocess(_test_import_services)
 
-    def test_import_implicit_include_path(self):
-        _run_in_subprocess(_test_import_implicit_include)
+    # def test_import_implicit_include_path(self):
+    #     _run_in_subprocess(_test_import_implicit_include)
 
-    def test_import_services_without_protos(self):
-        _run_in_subprocess(_test_import_services_without_protos)
+    # def test_import_services_without_protos(self):
+    #     _run_in_subprocess(_test_import_services_without_protos)
 
-    def test_proto_module_imported_once(self):
-        _run_in_subprocess(_test_proto_module_imported_once)
+    # def test_proto_module_imported_once(self):
+    #     _run_in_subprocess(_test_proto_module_imported_once)
 
-    def test_static_dynamic_combo(self):
-        _run_in_subprocess(_test_static_dynamic_combo)
+    # def test_static_dynamic_combo(self):
+    #     _run_in_subprocess(_test_static_dynamic_combo)
 
-    def test_combined_import(self):
-        _run_in_subprocess(_test_combined_import)
+    # def test_combined_import(self):
+    #     _run_in_subprocess(_test_combined_import)
 
-    def test_syntax_errors(self):
-        _run_in_subprocess(_test_syntax_errors)
+    # def test_syntax_errors(self):
+    #     _run_in_subprocess(_test_syntax_errors)
+
+    # # TODO: Write test to ensure the right module loader is used.
+    # def test_importlib_protos(self):
+    #     import sys
+    #     import grpc_tools.protoc
+    #     from grpc_tools import simple_pb2
+    #     self.assertIsNotNone(simple_pb2.SimpleMessage)
+
+    def test_importlib_protos_wrapper(self):
+        from grpc_tools import protoc
+        proto_path = "tools/distrib/python/grpcio_tools/"
+        protos = protoc.get_protos("grpc_tools/simple.proto", [proto_path])
+        assert protos.SimpleMessage is not None
 
 if __name__ == '__main__':
     unittest.main()

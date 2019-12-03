@@ -130,7 +130,6 @@ static void calculate_transitive_closure(const ::google::protobuf::FileDescripto
   transitive_closure->push_back(descriptor);
 }
 
-// TODO: Handle multiple include paths.
 static int generate_code(::google::protobuf::compiler::CodeGenerator* code_generator,
                          char* protobuf_path,
                          const std::vector<std::string>* include_paths,
@@ -148,8 +147,6 @@ static int generate_code(::google::protobuf::compiler::CodeGenerator* code_gener
   if (parsed_file == nullptr) {
     return 1;
   }
-  // TODO: Figure out if the dependency list is flat or recursive.
-  // TODO: Ensure there's a topological ordering here.
   std::vector<const ::google::protobuf::FileDescriptor*> transitive_closure;
   calculate_transitive_closure(parsed_file, &transitive_closure);
   detail::GeneratorContextImpl generator_context(transitive_closure, files_out);
