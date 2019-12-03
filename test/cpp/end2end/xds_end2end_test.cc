@@ -373,6 +373,46 @@ class AdsServiceImpl : public AdsService {
   AdsServiceImpl(bool enable_load_reporting)
       : enable_load_reporting_(enable_load_reporting) {}
 
+  bool WaitForResourceType(const char* expected_type, DiscoveryRequest* request,
+                           Stream* stream) {
+    while (request->type_url() != expected_type) {
+      if (!stream->Read(request)) return false;
+    }
+    return true;
+  }
+
+  bool HandleCdsRequest(DiscoveryRequest* request, Stream* stream) {
+    gpr_log(GPR_INFO, "ADS[%p]: received CDS request '%s'", this,
+            request->DebugString().c_str());
+    DiscoveryResponse response;
+    response.set_type_url(kCdsTypeUrl);
+    for (size_t i = 0; i < request->resource_names().size(); ++i) {
+      Cluster cluster;
+      cluster.set_name(request->resource_names(i));
+      cluster.set_type(envoy::api::v2::Cluster::EDS);
+      cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_ads();
+      if (enable_load_reporting_) {
+        cluster.mutable_lrs_server()->mutable_self();
+      }
+      response.add_resources()->PackFrom(cluster);
+    }
+    stream->Write(response);
+    return WaitForResourceType(kEdsTypeUrl, request, stream);
+  }
+
+  void HandleEdsRequest(Stream* stream) {
+    IncreaseRequestCount();
+    // Send response.
+    std::vector<ResponseDelayPair> responses_and_delays;
+    {
+      grpc_core::MutexLock lock(&ads_mu_);
+      responses_and_delays = responses_and_delays_;
+    }
+    for (const auto& response_and_delay : responses_and_delays) {
+      SendResponse(stream, response_and_delay.first, response_and_delay.second);
+    }
+  }
+
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
     gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
@@ -387,35 +427,13 @@ class AdsServiceImpl : public AdsService {
       // Read request.
       DiscoveryRequest request;
       if (!stream->Read(&request)) return;
-      // FIXME: Record CDS request number.
+      // If the current request is for CDS, reply to the CDS request and wait
+      // for an EDS request.
       if (request.type_url() == kCdsTypeUrl) {
-        DiscoveryResponse response;
-        response.set_type_url(kCdsTypeUrl);
-        Cluster cluster;
-        cluster.set_name(request.resource_names(0));
-        cluster.set_type(envoy::api::v2::Cluster::EDS);
-        cluster.mutable_eds_cluster_config()
-            ->mutable_eds_config()
-            ->mutable_ads();
-        if (enable_load_reporting_) {
-          cluster.mutable_lrs_server()->mutable_self();
-        }
-        response.add_resources()->PackFrom(cluster);
-        stream->Write(response);
-        if (!stream->Read(&request)) return;
+        if (!HandleCdsRequest(&request, stream)) return;
       }
-      IncreaseRequestCount();
-      gpr_log(GPR_INFO, "ADS[%p]: received initial message '%s'", this,
-              request.DebugString().c_str());
-      // Send response.
-      std::vector<ResponseDelayPair> responses_and_delays;
-      {
-        grpc_core::MutexLock lock(&ads_mu_);
-        responses_and_delays = responses_and_delays_;
-      }
-      for (const auto& response_and_delay : responses_and_delays) {
-        SendResponse(stream, response_and_delay.first,
-                     response_and_delay.second);
+      if (request.type_url() == kEdsTypeUrl) {
+        HandleEdsRequest(stream);
       }
       // Wait until notified done.
       grpc_core::MutexLock lock(&ads_mu_);
