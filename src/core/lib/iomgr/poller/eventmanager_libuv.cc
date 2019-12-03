@@ -27,7 +27,7 @@ grpc::experimental::LibuvEventManager::Options::Options(int num_workers)
     : num_workers_(num_workers) {}
 
 grpc::experimental::LibuvEventManager::LibuvEventManager(const Options& options)
-    : options_(options) {
+    : options_(options), should_stop_(false), shutdown_refcount_(0) {
   int num_workers = options_.num_workers();
   // Number of workers can't be 0 if we do not accept thread donation.
   // TODO(guantaol): replaces the hard-coded number with a flag.

@@ -71,9 +71,9 @@ class LibuvEventManager {
 
   const Options options_;
   // Whether the EventManager workers should be stopped.
-  grpc_core::Atomic<bool> should_stop_ = false;
+  grpc_core::Atomic<bool> should_stop_;
   // A refcount preventing the EventManager from shutdown.
-  grpc_core::Atomic<int> shutdown_refcount_ = 0;
+  grpc_core::Atomic<int> shutdown_refcount_;
   // Worker threads of the EventManager.
   std::vector<grpc_core::Thread> workers_;
 };
