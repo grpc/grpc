@@ -1879,8 +1879,10 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       Optional<std::string> optional_lrs_load_reporting_server_name;
-      optional_lrs_load_reporting_server_name.set(
-          std::string(lrs_load_reporting_server_name));
+      if (lrs_load_reporting_server_name != nullptr) {
+        optional_lrs_load_reporting_server_name.set(
+            std::string(lrs_load_reporting_server_name));
+      }
       return MakeRefCounted<ParsedXdsConfig>(
           std::move(child_policy), std::move(fallback_policy),
           eds_service_name == nullptr ? "" : eds_service_name,

@@ -723,14 +723,18 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
               "eds_service_name=%s, "
               "lrs_load_reporting_server_name=%s",
               xds_client(), cluster_name, cds_update.eds_service_name.c_str(),
-              cds_update.lrs_load_reporting_server_name.value().c_str());
+              cds_update.lrs_load_reporting_server_name.has_value()
+                  ? cds_update.lrs_load_reporting_server_name.value().c_str()
+                  : "(N/A)");
     }
     ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
     // Ignore identical update.
-    const CdsUpdate& prev_update = cluster_state.update.value();
-    if (cds_update.eds_service_name == prev_update.eds_service_name &&
+    if (cluster_state.update.has_value() &&
+        cds_update.eds_service_name ==
+            cluster_state.update.value().eds_service_name &&
         cds_update.lrs_load_reporting_server_name.value() ==
-            prev_update.lrs_load_reporting_server_name.value()) {
+            cluster_state.update.value()
+                .lrs_load_reporting_server_name.value()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
         gpr_log(GPR_INFO,
                 "[xds_client %p] CDS update identical to current, ignoring.",
@@ -904,7 +908,6 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   grpc_error* parse_error = XdsAdsResponseDecodeAndParse(
       response_slice, xds_client->EdsServiceNames(), &cds_update_map,
       &eds_update_map, &version, &nonce, &type_url);
-  gpr_log(GPR_ERROR, "=== afrer parse");
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
     // Ignore unparsable response.

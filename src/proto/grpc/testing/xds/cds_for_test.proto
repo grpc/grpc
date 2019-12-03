@@ -85,6 +85,8 @@ message Cluster {
     ORIGINAL_DST = 4;
   }
 
+  string name = 1;
+
   oneof cluster_discovery_type {
     // The :ref:`service discovery type <arch_overview_service_discovery_types>`
     // to use for resolving the cluster.

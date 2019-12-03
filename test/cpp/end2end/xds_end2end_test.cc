@@ -392,6 +392,7 @@ class AdsServiceImpl : public AdsService {
         DiscoveryResponse response;
         response.set_type_url(kCdsTypeUrl);
         Cluster cluster;
+        cluster.set_name(request.resource_names(0));
         cluster.set_type(envoy::api::v2::Cluster::EDS);
         cluster.mutable_eds_cluster_config()
             ->mutable_eds_config()
@@ -446,7 +447,7 @@ class AdsServiceImpl : public AdsService {
 
   static DiscoveryResponse BuildResponse(const ResponseArgs& args) {
     ClusterLoadAssignment assignment;
-    assignment.set_cluster_name("service name");
+    assignment.set_cluster_name("application_target_name");
     for (const auto& locality : args.locality_list) {
       auto* endpoints = assignment.add_endpoints();
       endpoints->mutable_load_balancing_weight()->set_value(locality.lb_weight);
@@ -713,7 +714,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // If the parent channel is using the fake resolver, we inject the
     // response generator for the parent here, and then SetNextResolution()
     // will inject the xds channel's response generator via the parent's
-    // reponse generator.
+    // response generator.
     //
     // In contrast, if we are using the xds resolver, then the parent
     // channel never uses a response generator, and we inject the xds
