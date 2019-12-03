@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -95,29 +96,84 @@ namespace Grpc.HealthCheck.Tests
             var impl = new HealthServiceImpl();
             var callTask = impl.Watch(new HealthCheckRequest { Service = "" }, writer, context);
 
-            var nextWriteTask = writer.WaitNextAsync();
+            // Calling Watch on a service that doesn't have a value set will initially return ServiceUnknown
+            var nextWriteTask = writer.WrittenMessagesReader.ReadAsync();
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask).Status);
+
+            nextWriteTask = writer.WrittenMessagesReader.ReadAsync();
             impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Serving);
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Serving, (await nextWriteTask).Status);
 
-            nextWriteTask = writer.WaitNextAsync();
+            nextWriteTask = writer.WrittenMessagesReader.ReadAsync();
             impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.NotServing);
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.NotServing, (await nextWriteTask).Status);
 
-            nextWriteTask = writer.WaitNextAsync();
+            nextWriteTask = writer.WrittenMessagesReader.ReadAsync();
             impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Unknown);
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Unknown, (await nextWriteTask).Status);
 
-            nextWriteTask = writer.WaitNextAsync();
+            // Setting status for a different service name will not update Watch results
+            nextWriteTask = writer.WrittenMessagesReader.ReadAsync();
             impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.Serving);
             Assert.IsFalse(nextWriteTask.IsCompleted);
 
-            nextWriteTask = writer.WaitNextAsync();
             impl.ClearStatus("");
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask).Status);
 
             Assert.IsFalse(callTask.IsCompleted);
             cts.Cancel();
             await callTask;
+        }
+
+        [Test]
+        public async Task Watch_ExceedMaximumCapacitySize_DiscardOldValues()
+        {
+            var cts = new CancellationTokenSource();
+            var context = new TestServerCallContext(cts.Token);
+            var writer = new TestResponseStreamWriter();
+
+            var impl = new HealthServiceImpl();
+            var callTask = impl.Watch(new HealthCheckRequest { Service = "" }, writer, context);
+
+            // Write new 10 statuses. Only last 5 statuses will be returned when we read them from watch writer
+            for (var i = 0; i < HealthServiceImpl.MaxStatusBufferSize * 2; i++)
+            {
+                // These statuses aren't "valid" but it is useful for testing to have an incrementing number
+                impl.SetStatus("", (HealthCheckResponse.Types.ServingStatus)i);
+            }
+
+            // Read messages in a background task
+            var statuses = new List<HealthCheckResponse.Types.ServingStatus>();
+            var readStatusesTask = Task.Run(async () => {
+                while (await writer.WrittenMessagesReader.WaitToReadAsync())
+                {
+                    if (writer.WrittenMessagesReader.TryRead(out var response))
+                    {
+                        statuses.Add(response.Status);
+                    }
+                }
+            });
+
+            // Tell server we're done watching and it can write what it has left and then exit
+            cts.Cancel();
+            await callTask;
+
+            // Ensure we've read all the queued statuses
+            writer.Complete();
+            await readStatusesTask;
+
+            // Collection will contain initial written message (ServiceUnknown) plus 5 queued messages
+            Assert.AreEqual(HealthServiceImpl.MaxStatusBufferSize + 1, statuses.Count);
+
+            // Initial written message
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, statuses[0]);
+
+            // Last 5 queued messages
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)5, statuses[1]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)6, statuses[2]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)7, statuses[3]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)8, statuses[4]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)9, statuses[5]);
         }
 #endif
 

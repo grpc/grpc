@@ -15,6 +15,7 @@
 #endregion
 
 #if GRPC_SUPPORT_WATCH
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using Grpc.Core;
@@ -24,24 +25,29 @@ namespace Grpc.HealthCheck.Tests
 {
     internal class TestResponseStreamWriter : IServerStreamWriter<HealthCheckResponse>
     {
-        private TaskCompletionSource<HealthCheckResponse> _tcs;
+        private Channel<HealthCheckResponse> _channel;
+
+        public TestResponseStreamWriter(int maxCapacity = 1)
+        {
+            _channel = System.Threading.Channels.Channel.CreateBounded<HealthCheckResponse>(new BoundedChannelOptions(maxCapacity) {
+                SingleReader = false,
+                SingleWriter = true,
+                FullMode = BoundedChannelFullMode.Wait
+            });
+        }
+
+        public ChannelReader<HealthCheckResponse> WrittenMessagesReader => _channel.Reader;
 
         public WriteOptions WriteOptions { get; set; }
 
-        public Task<HealthCheckResponse> WaitNextAsync()
-        {
-            _tcs = new TaskCompletionSource<HealthCheckResponse>();
-            return _tcs.Task;
-        }
-
         public Task WriteAsync(HealthCheckResponse message)
         {
-            if (_tcs != null)
-            {
-                _tcs.TrySetResult(message);
-            }
+            return _channel.Writer.WriteAsync(message).AsTask();
+        }
 
-            return Task.FromResult<object>(null);
+        public void Complete()
+        {
+            _channel.Writer.Complete();
         }
     }
 }

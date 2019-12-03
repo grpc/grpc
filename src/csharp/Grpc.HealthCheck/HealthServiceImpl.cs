@@ -39,6 +39,9 @@ namespace Grpc.HealthCheck
     /// </summary>
     public class HealthServiceImpl : Grpc.Health.V1.Health.HealthBase
     {
+        // The maximum number of statuses to buffer on the server.
+        internal const int MaxStatusBufferSize = 5;
+
         private readonly object statusLock = new object();
         private readonly Dictionary<string, HealthCheckResponse.Types.ServingStatus> statusMap =
             new Dictionary<string, HealthCheckResponse.Types.ServingStatus>();
@@ -159,8 +162,11 @@ namespace Grpc.HealthCheck
 
             // Channel is used to to marshall multiple callers updating status into a single queue.
             // This is required because IServerStreamWriter is not thread safe.
-            // The channel will buffer up to XXX messages, after which it will drop the oldest messages.
-            Channel<HealthCheckResponse> channel = Channel.CreateBounded<HealthCheckResponse>(new BoundedChannelOptions(capacity: 5) {
+            //
+            // A queue of unwritten statuses could build up if flow control causes responseStream.WriteAsync to await.
+            // When this number is exceeded the server will discard older statuses. The discarded intermediate statues
+            // will never be sent to the client.
+            Channel<HealthCheckResponse> channel = Channel.CreateBounded<HealthCheckResponse>(new BoundedChannelOptions(capacity: MaxStatusBufferSize) {
                 SingleReader = true,
                 SingleWriter = false,
                 FullMode = BoundedChannelFullMode.DropOldest
@@ -199,7 +205,7 @@ namespace Grpc.HealthCheck
                 channel.Writer.Complete();
             });
 
-            // Read messages. WaitToReadyAsync will wait until new messages are available.
+            // Read messages. WaitToReadAsync will wait until new messages are available.
             // Loop will exit when the call is canceled and the writer is marked as complete.
             while (await channel.Reader.WaitToReadAsync())
             {
