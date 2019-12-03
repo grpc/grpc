@@ -95,10 +95,13 @@ namespace grpc {
 class GenericServerContext;
 class ServerInterface;
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
+#endif
 class GenericCallbackServerContext;
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 }  // namespace experimental
-
+#endif
 namespace internal {
 class Call;
 }  // namespace internal
@@ -348,7 +351,11 @@ class ServerContextBase {
   friend class ::grpc_impl::internal::FinishOnlyReactor;
   friend class ::grpc_impl::ClientContext;
   friend class ::grpc::GenericServerContext;
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  friend class ::grpc::GenericCallbackServerContext;
+#else
   friend class ::grpc::experimental::GenericCallbackServerContext;
+#endif
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
