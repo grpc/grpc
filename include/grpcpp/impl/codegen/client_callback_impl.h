@@ -103,8 +103,6 @@ class CallbackUnaryCallImpl {
 };
 }  // namespace internal
 
-namespace experimental {
-
 // Forward declarations
 template <class Request, class Response>
 class ClientBidiReactor;
@@ -404,8 +402,6 @@ inline void ClientCallbackUnary::BindReactor(ClientUnaryReactor* reactor) {
   reactor->BindCall(this);
 }
 
-}  // namespace experimental
-
 namespace internal {
 
 // Forward declare factory classes for friendship
@@ -418,7 +414,7 @@ class ClientCallbackWriterFactory;
 
 template <class Request, class Response>
 class ClientCallbackReaderWriterImpl
-    : public experimental::ClientCallbackReaderWriter<Request, Response> {
+    : public ClientCallbackReaderWriter<Request, Response> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -562,9 +558,9 @@ class ClientCallbackReaderWriterImpl
  private:
   friend class ClientCallbackReaderWriterFactory<Request, Response>;
 
-  ClientCallbackReaderWriterImpl(
-      grpc::internal::Call call, ::grpc_impl::ClientContext* context,
-      experimental::ClientBidiReactor<Request, Response>* reactor)
+  ClientCallbackReaderWriterImpl(grpc::internal::Call call,
+                                 ::grpc_impl::ClientContext* context,
+                                 ClientBidiReactor<Request, Response>* reactor)
       : context_(context),
         call_(call),
         reactor_(reactor),
@@ -574,7 +570,7 @@ class ClientCallbackReaderWriterImpl
 
   ::grpc_impl::ClientContext* const context_;
   grpc::internal::Call call_;
-  experimental::ClientBidiReactor<Request, Response>* const reactor_;
+  ClientBidiReactor<Request, Response>* const reactor_;
 
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpRecvInitialMetadata>
@@ -612,11 +608,10 @@ class ClientCallbackReaderWriterImpl
 template <class Request, class Response>
 class ClientCallbackReaderWriterFactory {
  public:
-  static void Create(
-      ::grpc::ChannelInterface* channel,
-      const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context,
-      experimental::ClientBidiReactor<Request, Response>* reactor) {
+  static void Create(::grpc::ChannelInterface* channel,
+                     const ::grpc::internal::RpcMethod& method,
+                     ::grpc_impl::ClientContext* context,
+                     ClientBidiReactor<Request, Response>* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -629,8 +624,7 @@ class ClientCallbackReaderWriterFactory {
 };
 
 template <class Response>
-class ClientCallbackReaderImpl
-    : public experimental::ClientCallbackReader<Response> {
+class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -716,7 +710,7 @@ class ClientCallbackReaderImpl
   ClientCallbackReaderImpl(::grpc::internal::Call call,
                            ::grpc_impl::ClientContext* context,
                            Request* request,
-                           experimental::ClientReadReactor<Response>* reactor)
+                           ClientReadReactor<Response>* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
@@ -726,7 +720,7 @@ class ClientCallbackReaderImpl
 
   ::grpc_impl::ClientContext* const context_;
   grpc::internal::Call call_;
-  experimental::ClientReadReactor<Response>* const reactor_;
+  ClientReadReactor<Response>* const reactor_;
 
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage,
@@ -757,7 +751,7 @@ class ClientCallbackReaderFactory {
                      const ::grpc::internal::RpcMethod& method,
                      ::grpc_impl::ClientContext* context,
                      const Request* request,
-                     experimental::ClientReadReactor<Response>* reactor) {
+                     ClientReadReactor<Response>* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -769,8 +763,7 @@ class ClientCallbackReaderFactory {
 };
 
 template <class Request>
-class ClientCallbackWriterImpl
-    : public experimental::ClientCallbackWriter<Request> {
+class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -896,7 +889,7 @@ class ClientCallbackWriterImpl
   ClientCallbackWriterImpl(::grpc::internal::Call call,
                            ::grpc_impl::ClientContext* context,
                            Response* response,
-                           experimental::ClientWriteReactor<Request>* reactor)
+                           ClientWriteReactor<Request>* reactor)
       : context_(context),
         call_(call),
         reactor_(reactor),
@@ -908,7 +901,7 @@ class ClientCallbackWriterImpl
 
   ::grpc_impl::ClientContext* const context_;
   grpc::internal::Call call_;
-  experimental::ClientWriteReactor<Request>* const reactor_;
+  ClientWriteReactor<Request>* const reactor_;
 
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpRecvInitialMetadata>
@@ -947,7 +940,7 @@ class ClientCallbackWriterFactory {
   static void Create(::grpc::ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
                      ::grpc_impl::ClientContext* context, Response* response,
-                     experimental::ClientWriteReactor<Request>* reactor) {
+                     ClientWriteReactor<Request>* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -958,7 +951,7 @@ class ClientCallbackWriterFactory {
   }
 };
 
-class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
+class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -1015,8 +1008,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
   template <class Request, class Response>
   ClientCallbackUnaryImpl(::grpc::internal::Call call,
                           ::grpc_impl::ClientContext* context, Request* request,
-                          Response* response,
-                          experimental::ClientUnaryReactor* reactor)
+                          Response* response, ClientUnaryReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
@@ -1028,7 +1020,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
 
   ::grpc_impl::ClientContext* const context_;
   grpc::internal::Call call_;
-  experimental::ClientUnaryReactor* const reactor_;
+  ClientUnaryReactor* const reactor_;
 
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage,
@@ -1055,7 +1047,7 @@ class ClientCallbackUnaryFactory {
                      const ::grpc::internal::RpcMethod& method,
                      ::grpc_impl::ClientContext* context,
                      const Request* request, Response* response,
-                     experimental::ClientUnaryReactor* reactor) {
+                     ClientUnaryReactor* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 

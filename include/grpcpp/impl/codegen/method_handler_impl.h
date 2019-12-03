@@ -345,8 +345,7 @@ template <::grpc::StatusCode code>
 class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
  public:
   template <class T>
-  static void FillOps(::grpc_impl::experimental::ServerContextBase* context,
-                      T* ops) {
+  static void FillOps(::grpc_impl::ServerContextBase* context, T* ops) {
     ::grpc::Status status(code, "");
     if (!context->sent_initial_metadata_) {
       ops->SendInitialMetadata(&context->initial_metadata_,
