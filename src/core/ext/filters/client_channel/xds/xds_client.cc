@@ -1496,6 +1496,7 @@ void XdsClient::WatchClusterData(
 
 void XdsClient::CancelClusterDataWatch(StringView cluster_name,
                                        ClusterWatcherInterface* watcher) {
+  if (shutting_down_) return;
   ClusterState& cluster_state = cluster_map_[cluster_name];
   auto it = cluster_state.watchers.find(watcher);
   if (it != cluster_state.watchers.end()) {
@@ -1530,6 +1531,7 @@ void XdsClient::WatchEndpointData(
 
 void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
                                         EndpointWatcherInterface* watcher) {
+  if (shutting_down_) return;
   EndpointState& endpoint_state = endpoint_map_[eds_service_name];
   auto it = endpoint_state.watchers.find(watcher);
   if (it != endpoint_state.watchers.end()) {
