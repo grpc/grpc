@@ -139,20 +139,22 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
-        // TODO(ctiller): It is currently necessary to shutdown endpoints
-        // before destroying them, even if we know that there are no
-        // pending read/write callbacks.  This should be fixed, at which
-        // point this can be removed.
-        grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_REF(error));
-        grpc_endpoint_destroy(args->endpoint);
-        grpc_channel_args_destroy(args->args);
-        grpc_slice_buffer_destroy_internal(args->read_buffer);
-        gpr_free(args->read_buffer);
+        if (args->endpoint != nullptr) {
+          // TODO(ctiller): It is currently necessary to shutdown endpoints
+          // before destroying them, even if we know that there are no
+          // pending read/write callbacks.  This should be fixed, at which
+          // point this can be removed.
+          grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_REF(error));
+          grpc_endpoint_destroy(args->endpoint);
+          grpc_channel_args_destroy(args->args);
+          grpc_slice_buffer_destroy_internal(args->read_buffer);
+          gpr_free(args->read_buffer);
+        }
       } else {
         error = GRPC_ERROR_REF(error);
       }
       self->result_->Reset();
-    } else {
+    } else if (args->endpoint != nullptr) {
       grpc_endpoint_delete_from_pollset_set(args->endpoint,
                                             self->args_.interested_parties);
       self->result_->transport =
@@ -187,6 +189,11 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
       grpc_chttp2_transport_start_reading(self->result_->transport,
                                           args->read_buffer, nullptr);
       self->result_->channel_args = args->args;
+    } else {
+      // If the handshaking succeeded but there is no endpoint, then the
+      // handshaker may have handed off the connection to some external
+      // code. Just verify that exit_early flag is set.
+      GPR_DEBUG_ASSERT(args->exit_early);
     }
     grpc_closure* notify = self->notify_;
     self->notify_ = nullptr;
