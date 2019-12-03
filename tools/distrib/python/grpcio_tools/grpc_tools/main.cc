@@ -31,9 +31,7 @@
 #include <map>
 #include <string>
 #include <tuple>
-
-// TODO: Remove.
-#include <iostream>
+#include <unordered_set>
 
 int protoc_main(int argc, char* argv[]) {
   google::protobuf::compiler::CommandLineInterface cli;
@@ -114,21 +112,21 @@ private:
   std::vector<ProtocWarning>* warnings_;
 };
 
-} // end namespace detail
-
 static void calculate_transitive_closure(const ::google::protobuf::FileDescriptor* descriptor,
-                                        std::vector<const ::google::protobuf::FileDescriptor*>* transitive_closure)
+                                        std::vector<const ::google::protobuf::FileDescriptor*>* transitive_closure,
+                                        std::unordered_set<const ::google::protobuf::FileDescriptor*>* visited)
 {
   for (int i = 0; i < descriptor->dependency_count(); ++i) {
     const ::google::protobuf::FileDescriptor* dependency = descriptor->dependency(i);
-    // NOTE: Probably want an O(1) lookup method for very large transitive
-    // closures.
-    if (std::find(transitive_closure->begin(), transitive_closure->end(), dependency) == transitive_closure->end()) {
-      calculate_transitive_closure(dependency, transitive_closure);
+    if (std::find(visited->begin(), visited->end(), dependency) == visited->end()) {
+      calculate_transitive_closure(dependency, transitive_closure, visited);
     }
   }
   transitive_closure->push_back(descriptor);
+  visited->insert(descriptor);
 }
+
+} // end namespace detail
 
 static int generate_code(::google::protobuf::compiler::CodeGenerator* code_generator,
                          char* protobuf_path,
@@ -148,7 +146,7 @@ static int generate_code(::google::protobuf::compiler::CodeGenerator* code_gener
     return 1;
   }
   std::vector<const ::google::protobuf::FileDescriptor*> transitive_closure;
-  calculate_transitive_closure(parsed_file, &transitive_closure);
+  ::detail::calculate_transitive_closure(parsed_file, &transitive_closure, {});
   detail::GeneratorContextImpl generator_context(transitive_closure, files_out);
   std::string error;
   for (const auto descriptor : transitive_closure) {
