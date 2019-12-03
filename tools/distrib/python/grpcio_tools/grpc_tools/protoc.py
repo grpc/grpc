@@ -19,9 +19,9 @@ import sys
 
 # TODO: Figure out how to add this dependency to setuptools.
 import six
-import imp
 import os
 
+import contextlib
 import importlib
 import importlib.machinery
 import sys
@@ -38,53 +38,45 @@ def main(command_arguments):
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
 
-def _module_name_to_proto_file(module_name):
+def _module_name_to_proto_file(suffix, module_name):
   components = module_name.split(".")
-  proto_name = components[-1][:-1*len("_pb2")]
+  proto_name = components[-1][:-1*len(suffix)]
   return os.path.sep.join(components[:-1] + [proto_name + ".proto"])
 
-def _proto_file_to_module_name(proto_file):
+def _proto_file_to_module_name(suffix, proto_file):
   components = proto_file.split(os.path.sep)
   proto_base_name = os.path.splitext(components[-1])[0]
-  return os.path.sep.join(components[:-1] + [proto_base_name + "_pb2"])
+  return os.path.sep.join(components[:-1] + [proto_base_name + suffix])
 
-def _import_modules_from_files(files):
-  modules = []
-  for filename, code in files:
-    base_name = os.path.basename(filename.decode('ascii'))
-    proto_name, _ = os.path.splitext(base_name)
-    anchor_package = ".".join(os.path.normpath(os.path.dirname(filename.decode('ascii'))).split(os.sep))
-    module_name = "{}.{}".format(anchor_package, proto_name)
-    if module_name not in sys.modules:
-      # TODO: The imp module is apparently deprecated. Figure out how to migrate
-      # over.
-      module = imp.new_module(module_name)
-      six.exec_(code, module.__dict__)
-      sys.modules[module_name] = module
-      modules.append(module)
-    else:
-      modules.append(sys.modules[module_name])
-  return tuple(modules)
+
+@contextlib.contextmanager
+def _augmented_syspath(new_paths):
+  original_sys_path = sys.path
+  if new_paths is not None:
+    sys.path = sys.path + new_paths
+  try:
+    yield
+  finally:
+    sys.path = original_sys_path
+
 
 # TODO: Investigate making this even more of a no-op in the case that we have
 # truly already imported the module.
 def get_protos(protobuf_path, include_paths=None):
-  original_sys_path = sys.path
-  if include_paths is not None:
-    sys.path = sys.path + include_paths
-  module_name = _proto_file_to_module_name(protobuf_path)
-  module = importlib.import_module(module_name)
-  sys.path = original_sys_path
-  return module
+  with _augmented_syspath(include_paths):
+    # TODO: Pull these strings out to module-level constants.
+    module_name = _proto_file_to_module_name("_pb2", protobuf_path)
+    module = importlib.import_module(module_name)
+    return module
+
 
 def get_services(protobuf_path, include_paths=None):
-  # NOTE: This call to get_protos is a no-op in the case it has already been
-  # called.
   get_protos(protobuf_path, include_paths)
-  if include_paths is None:
-    include_paths = sys.path
-  files = _protoc_compiler.get_services(protobuf_path.encode('ascii'), [include_path.encode('ascii') for include_path in include_paths])
-  return _import_modules_from_files(files)[-1]
+  with _augmented_syspath(include_paths):
+    module_name = _proto_file_to_module_name("_pb2_grpc", protobuf_path)
+    module = importlib.import_module(module_name)
+    return module
+
 
 def get_protos_and_services(protobuf_path, include_paths=None):
   return (get_protos(protobuf_path, include_paths=include_paths),
@@ -94,10 +86,10 @@ def get_protos_and_services(protobuf_path, include_paths=None):
 
 _proto_code_cache = {}
 
-# TODO: Cache generated code per-process. Check it first to see if it's already
-# been generated and, instead, just instantiate using that.
 class ProtoLoader(importlib.abc.Loader):
-  def __init__(self, module_name, protobuf_path, proto_root):
+  def __init__(self, suffix, code_fn, module_name, protobuf_path, proto_root):
+    self._suffix = suffix
+    self._code_fn = code_fn
     self._module_name = module_name
     self._protobuf_path = protobuf_path
     self._proto_root = proto_root
@@ -116,7 +108,7 @@ class ProtoLoader(importlib.abc.Loader):
       code = _proto_code_cache[self._module_name]
       six.exec_(code, module.__dict__)
     else:
-      files = _protoc_compiler.get_protos(self._protobuf_path.encode('ascii'), [path.encode('ascii') for path in sys.path])
+      files = self._code_fn(self._protobuf_path.encode('ascii'), [path.encode('ascii') for path in sys.path])
       for f in files[:-1]:
         module_name = self._generated_file_to_module_name(f[0].decode('ascii'))
         if module_name not in sys.modules:
@@ -125,9 +117,14 @@ class ProtoLoader(importlib.abc.Loader):
           importlib.import_module(module_name)
       six.exec_(files[-1][1], module.__dict__)
 
+
 class ProtoFinder(importlib.abc.MetaPathFinder):
+  def __init__(self, suffix, code_fn):
+    self._suffix = suffix
+    self._code_fn = code_fn
+
   def find_spec(self, fullname, path, target=None):
-    filepath = _module_name_to_proto_file(fullname)
+    filepath = _module_name_to_proto_file(self._suffix, fullname)
     for search_path in sys.path:
       try:
         prospective_path = os.path.join(search_path, filepath)
@@ -136,9 +133,9 @@ class ProtoFinder(importlib.abc.MetaPathFinder):
         continue
       else:
         # TODO: Use a stdlib helper function to construct this.
-        return importlib.machinery.ModuleSpec(fullname, ProtoLoader(fullname, filepath, search_path))
+        return importlib.machinery.ModuleSpec(fullname, ProtoLoader(self._suffix, self._code_fn, fullname, filepath, search_path))
 
-sys.meta_path.append(ProtoFinder())
+sys.meta_path.extend([ProtoFinder("_pb2", _protoc_compiler.get_protos), ProtoFinder("_pb2_grpc", _protoc_compiler.get_services)])
 
 if __name__ == '__main__':
     proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
