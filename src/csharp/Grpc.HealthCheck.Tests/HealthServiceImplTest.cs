@@ -126,6 +126,77 @@ namespace Grpc.HealthCheck.Tests
         }
 
         [Test]
+        public async Task Watch_MultipleWatchesForSameService()
+        {
+            var cts = new CancellationTokenSource();
+            var context = new TestServerCallContext(cts.Token);
+            var writer1 = new TestResponseStreamWriter();
+            var writer2 = new TestResponseStreamWriter();
+
+            var impl = new HealthServiceImpl();
+            var callTask1 = impl.Watch(new HealthCheckRequest { Service = "" }, writer1, context);
+            var callTask2 = impl.Watch(new HealthCheckRequest { Service = "" }, writer2, context);
+
+            // Calling Watch on a service that doesn't have a value set will initially return ServiceUnknown
+            var nextWriteTask1 = writer1.WrittenMessagesReader.ReadAsync();
+            var nextWriteTask2 = writer2.WrittenMessagesReader.ReadAsync();
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask1).Status);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask2).Status);
+
+            nextWriteTask1 = writer1.WrittenMessagesReader.ReadAsync();
+            nextWriteTask2 = writer2.WrittenMessagesReader.ReadAsync();
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Serving);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Serving, (await nextWriteTask1).Status);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Serving, (await nextWriteTask2).Status);
+
+            nextWriteTask1 = writer1.WrittenMessagesReader.ReadAsync();
+            nextWriteTask2 = writer2.WrittenMessagesReader.ReadAsync();
+            impl.ClearStatus("");
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask1).Status);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask2).Status);
+
+            cts.Cancel();
+            await callTask1;
+            await callTask2;
+        }
+
+        [Test]
+        public async Task Watch_MultipleWatchesForDifferentServices()
+        {
+            var cts = new CancellationTokenSource();
+            var context = new TestServerCallContext(cts.Token);
+            var writer1 = new TestResponseStreamWriter();
+            var writer2 = new TestResponseStreamWriter();
+
+            var impl = new HealthServiceImpl();
+            var callTask1 = impl.Watch(new HealthCheckRequest { Service = "One" }, writer1, context);
+            var callTask2 = impl.Watch(new HealthCheckRequest { Service = "Two" }, writer2, context);
+
+            // Calling Watch on a service that doesn't have a value set will initially return ServiceUnknown
+            var nextWriteTask1 = writer1.WrittenMessagesReader.ReadAsync();
+            var nextWriteTask2 = writer2.WrittenMessagesReader.ReadAsync();
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask1).Status);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask2).Status);
+
+            nextWriteTask1 = writer1.WrittenMessagesReader.ReadAsync();
+            nextWriteTask2 = writer2.WrittenMessagesReader.ReadAsync();
+            impl.SetStatus("One", HealthCheckResponse.Types.ServingStatus.Serving);
+            impl.SetStatus("Two", HealthCheckResponse.Types.ServingStatus.NotServing);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Serving, (await nextWriteTask1).Status);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.NotServing, (await nextWriteTask2).Status);
+
+            nextWriteTask1 = writer1.WrittenMessagesReader.ReadAsync();
+            nextWriteTask2 = writer2.WrittenMessagesReader.ReadAsync();
+            impl.ClearAll();
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask1).Status);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask2).Status);
+
+            cts.Cancel();
+            await callTask1;
+            await callTask2;
+        }
+
+        [Test]
         public async Task Watch_ExceedMaximumCapacitySize_DiscardOldValues()
         {
             var cts = new CancellationTokenSource();
