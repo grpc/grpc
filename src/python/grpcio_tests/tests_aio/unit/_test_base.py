@@ -46,14 +46,9 @@ def _get_default_loop(debug=True):
 
 class AioTestBase(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls._loop = _get_default_loop()
-        aio.init_grpc_aio()
-
     @property
     def loop(self):
-        return self._loop
+        return _get_default_loop()
 
     def __getattribute__(self, name):
         """Overrides the loading logic to support coroutine functions."""
@@ -65,3 +60,6 @@ class AioTestBase(unittest.TestCase):
                 return _async_to_sync_decorator(attr, _get_default_loop())
         # For other attributes, let them pass.
         return attr
+
+
+aio.init_grpc_aio()

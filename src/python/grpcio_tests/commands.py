@@ -120,6 +120,8 @@ class TestAio(setuptools.Command):
 
     def run(self):
         self._add_eggs_to_path()
+        from grpc.experimental.aio import init_grpc_aio
+        init_grpc_aio()
 
         import tests
         loader = tests.Loader()
