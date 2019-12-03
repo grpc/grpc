@@ -158,8 +158,7 @@ installed to be able to compile the C/C++ sources.
 
 ## Building with make (on UNIX systems)
 
-NOTE: `make` used to be gRPC's default build system, but we're no longer recommending it. You should use `bazel` or `cmake` instead.
-While still supported, make should only be used inside the gRPC repository (to satisfy some project-internal needs)
+NOTE: `make` used to be gRPC's default build system, but we're no longer recommending it. You should use `bazel` or `cmake` instead. The `Makefile` is only intended for internal usage and is not meant for public consumption.
 
 From the grpc repository root
 ```sh
