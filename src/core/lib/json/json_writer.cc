@@ -28,6 +28,8 @@
 
 namespace grpc_core {
 
+namespace {
+
 /* The idea of the writer is basically symmetrical of the reader. While the
  * reader emits various calls to your code, the writer takes basically the
  * same calls and emit json out of it. It doesn't try to make any check on
@@ -324,6 +326,8 @@ char* JsonWriter::Dump(const grpc_json* json, int indent) {
   writer.OutputChar(0);
   return writer.output_;
 }
+
+}  // namespace
 
 }  // namespace grpc_core
 

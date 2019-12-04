@@ -26,6 +26,8 @@
 
 namespace grpc_core {
 
+namespace {
+
 class JsonReader {
  public:
   static grpc_json* Parse(char* input, size_t size);
@@ -817,6 +819,8 @@ grpc_json* JsonReader::Parse(char* input, size_t size) {
   }
   return json;
 }
+
+}  // namespace
 
 }  // namespace grpc_core
 
