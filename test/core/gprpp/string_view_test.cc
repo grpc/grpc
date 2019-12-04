@@ -104,15 +104,15 @@ TEST(StringViewTest, Cmp) {
   grpc_core::StringView str1(kStr1);
   grpc_core::StringView str2(kStr2);
   grpc_core::StringView str3(kStr3);
-  EXPECT_EQ(grpc_core::StringViewCmp(str1, str1), 0);
-  EXPECT_LT(grpc_core::StringViewCmp(str1, str2), 0);
-  EXPECT_LT(grpc_core::StringViewCmp(str1, str3), 0);
-  EXPECT_EQ(grpc_core::StringViewCmp(str2, str2), 0);
-  EXPECT_GT(grpc_core::StringViewCmp(str2, str1), 0);
-  EXPECT_GT(grpc_core::StringViewCmp(str2, str3), 0);
-  EXPECT_EQ(grpc_core::StringViewCmp(str3, str3), 0);
-  EXPECT_GT(grpc_core::StringViewCmp(str3, str1), 0);
-  EXPECT_LT(grpc_core::StringViewCmp(str3, str2), 0);
+  EXPECT_EQ(str1.compare(str1), 0);
+  EXPECT_LT(str1.compare(str2), 0);
+  EXPECT_LT(str1.compare(str3), 0);
+  EXPECT_EQ(str2.compare(str2), 0);
+  EXPECT_GT(str2.compare(str1), 0);
+  EXPECT_GT(str2.compare(str3), 0);
+  EXPECT_EQ(str3.compare(str3), 0);
+  EXPECT_GT(str3.compare(str1), 0);
+  EXPECT_LT(str3.compare(str2), 0);
 }
 
 TEST(StringViewTest, RemovePrefix) {
