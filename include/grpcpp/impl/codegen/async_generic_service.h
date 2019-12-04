@@ -89,7 +89,9 @@ class AsyncGenericService final {
   grpc_impl::Server* server_;
 };
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
+#endif
 
 /// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
 /// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
@@ -152,7 +154,10 @@ class CallbackGenericService {
 
   grpc_impl::Server* server_{nullptr};
 };
+
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 }  // namespace experimental
+#endif
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H
