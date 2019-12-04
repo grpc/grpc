@@ -111,6 +111,7 @@ class UnimplementedAsyncRequestContext {
 // de-experimentalized fully.
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 using ::grpc::experimental::CallbackGenericService;
+using ::grpc::experimental::CallbackServerContext;
 using ::grpc::experimental::GenericCallbackServerContext;
 #endif
 
@@ -551,9 +552,9 @@ class Server::CallbackRequestBase : public grpc::internal::CompletionQueueTag {
 template <class ServerContextType>
 class Server::CallbackRequest final : public Server::CallbackRequestBase {
  public:
-  static_assert(std::is_base_of<grpc::experimental::CallbackServerContext,
-                                ServerContextType>::value,
-                "ServerContextType must be derived from CallbackServerContext");
+  static_assert(
+      std::is_base_of<grpc::CallbackServerContext, ServerContextType>::value,
+      "ServerContextType must be derived from CallbackServerContext");
 
   // The constructor needs to know the server for this callback request and its
   // index in the server's request count array to allow for proper dynamic
@@ -807,8 +808,8 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 };
 
 template <>
-bool Server::CallbackRequest<grpc::experimental::CallbackServerContext>::
-    FinalizeResult(void** /*tag*/, bool* /*status*/) {
+bool Server::CallbackRequest<grpc::CallbackServerContext>::FinalizeResult(
+    void** /*tag*/, bool* /*status*/) {
   return false;
 }
 
@@ -827,8 +828,8 @@ bool Server::CallbackRequest<
 }
 
 template <>
-const char* Server::CallbackRequest<
-    grpc::experimental::CallbackServerContext>::method_name() const {
+const char* Server::CallbackRequest<grpc::CallbackServerContext>::method_name()
+    const {
   return method_->name();
 }
 
@@ -1140,7 +1141,7 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
         callback_reqs_to_start_.push_back(
-            new CallbackRequest<grpc::experimental::CallbackServerContext>(
+            new CallbackRequest<grpc::CallbackServerContext>(
                 this, method_index, method.get(), method_registration_tag));
       }
       // Enqueue it so that it will be Request'ed later after all request
