@@ -1400,12 +1400,8 @@ src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.cc \
 src/core/lib/json/json.h \
-src/core/lib/json/json_common.h \
 src/core/lib/json/json_reader.cc \
-src/core/lib/json/json_reader.h \
-src/core/lib/json/json_string.cc \
 src/core/lib/json/json_writer.cc \
-src/core/lib/json/json_writer.h \
 src/core/lib/profiling/timers.h \
 src/core/lib/slice/b64.cc \
 src/core/lib/slice/b64.h \

@@ -746,7 +746,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/json/json.cc
   - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_string.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -912,9 +911,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
-  - src/core/lib/json/json_common.h
-  - src/core/lib/json/json_reader.h
-  - src/core/lib/json/json_writer.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_hash_table.h
@@ -3251,37 +3247,6 @@ targets:
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
-- name: json_rewrite
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/json/json_rewrite.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: json_rewrite_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_rewrite_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: json_stream_error_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_stream_error_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
 - name: json_test
   build: test
   language: c
