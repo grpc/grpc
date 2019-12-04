@@ -58,12 +58,15 @@ const char* ConnectivityStateName(grpc_connectivity_state state) {
 class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
-           grpc_connectivity_state state, Combiner* combiner)
+           grpc_connectivity_state state,
+           const RefCountedPtr<LogicalThread>& combiner)
       : watcher_(std::move(watcher)), state_(state) {
     if (combiner != nullptr) {
       combiner->Run(
-          GRPC_CLOSURE_INIT(&closure_, SendNotification, this, nullptr),
-          GRPC_ERROR_NONE);
+          Closure::ToFunction(
+              GRPC_CLOSURE_INIT(&closure_, SendNotification, this, nullptr),
+              GRPC_ERROR_NONE),
+          DEBUG_LOCATION);
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);

@@ -69,7 +69,7 @@ class ResolverRegistry {
   /// \a result_handler is used to return results from the resolver.
   static OrphanablePtr<Resolver> CreateResolver(
       const char* target, const grpc_channel_args* args,
-      grpc_pollset_set* pollset_set, Combiner* combiner,
+      grpc_pollset_set* pollset_set, RefCountedPtr<LogicalThread> combiner,
       std::unique_ptr<Resolver::ResultHandler> result_handler);
 
   /// Returns the default authority to pass from a client for \a target.

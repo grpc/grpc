@@ -40,9 +40,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
@@ -201,9 +201,11 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  r->combiner()->Run(GRPC_CLOSURE_INIT(&r->on_next_resolution_,
-                                       OnNextResolutionLocked, r, nullptr),
-                     GRPC_ERROR_REF(error));
+  r->combiner()->Run(
+      Closure::ToFunction(GRPC_CLOSURE_INIT(&r->on_next_resolution_,
+                                            OnNextResolutionLocked, r, nullptr),
+                          GRPC_ERROR_REF(error)),
+      DEBUG_LOCATION);
 }
 
 void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
@@ -326,8 +328,10 @@ char* ChooseServiceConfig(char* service_config_choice_json,
 void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   r->combiner()->Run(
-      GRPC_CLOSURE_INIT(&r->on_resolved_, OnResolvedLocked, r, nullptr),
-      GRPC_ERROR_REF(error));
+      Closure::ToFunction(
+          GRPC_CLOSURE_INIT(&r->on_resolved_, OnResolvedLocked, r, nullptr),
+          GRPC_ERROR_REF(error)),
+      DEBUG_LOCATION);
 }
 
 void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {

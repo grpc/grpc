@@ -33,8 +33,8 @@ struct CallbackWrapper {
   const DebugLocation location;
 };
 
-void LogicalThread::Run(std::function<void()> callback,
-                        const grpc_core::DebugLocation& location) {
+void LogicalThreadImpl::Run(std::function<void()> callback,
+                            const grpc_core::DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
     gpr_log(GPR_INFO, "LogicalThread::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
@@ -61,11 +61,23 @@ void LogicalThread::Run(std::function<void()> callback,
   }
 }
 
+void LogicalThreadImpl::Orphan() {
+  ExecCtx::Run(DEBUG_LOCATION,
+               GRPC_CLOSURE_CREATE(
+                   [](void* arg, grpc_error* /*error*/) {
+                     LogicalThreadImpl* self =
+                         static_cast<LogicalThreadImpl*>(arg);
+                     delete self;
+                   },
+                   this, nullptr),
+               GRPC_ERROR_NONE);
+}
+
 // The thread that calls this loans itself to the logical thread so as to
 // execute all the scheduled callback. This is called from within
 // LogicalThread::Run() after executing a callback immediately, and hence size_
 // is atleast 1.
-void LogicalThread::DrainQueue() {
+void LogicalThreadImpl::DrainQueue() {
   while (true) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
       gpr_log(GPR_INFO, "LogicalThread::DrainQueue() %p", this);

@@ -31,7 +31,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/string_view.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -311,10 +311,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   struct Args {
     /// The combiner under which all LB policy calls will be run.
     /// Policy does NOT take ownership of the reference to the combiner.
-    // TODO(roth): Once we have a C++-like interface for combiners, this
-    // API should change to take a smart pointer that does pass ownership
-    // of a reference.
-    Combiner* combiner = nullptr;
+    RefCountedPtr<LogicalThread> combiner;
     /// Channel control helper.
     /// Note: LB policies MUST NOT call any method on the helper from
     /// their constructor.
@@ -387,7 +384,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
  protected:
-  Combiner* combiner() const { return combiner_; }
+  RefCountedPtr<LogicalThread> combiner() const { return combiner_; }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
@@ -400,7 +397,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
  private:
   /// Combiner under which LB policy actions take place.
-  Combiner* combiner_;
+  RefCountedPtr<LogicalThread> combiner_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.

@@ -145,7 +145,7 @@ bool ResolverRegistry::IsValidTarget(const char* target) {
 
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     const char* target, const grpc_channel_args* args,
-    grpc_pollset_set* pollset_set, Combiner* combiner,
+    grpc_pollset_set* pollset_set, RefCountedPtr<LogicalThread> combiner,
     std::unique_ptr<Resolver::ResultHandler> result_handler) {
   GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
@@ -156,7 +156,7 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
   resolver_args.uri = uri;
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
-  resolver_args.combiner = combiner;
+  resolver_args.combiner = std::move(combiner);
   resolver_args.result_handler = std::move(result_handler);
   OrphanablePtr<Resolver> resolver =
       factory == nullptr ? nullptr

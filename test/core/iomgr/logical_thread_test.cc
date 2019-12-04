@@ -31,16 +31,20 @@
 
 namespace {
 TEST(LogicalThreadTest, NoOp) {
-  auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+  grpc_core::ExecCtx exec_ctx;
+  { auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>(); }
 }
 
 TEST(LogicalThreadTest, ExecuteOne) {
-  auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
-  gpr_event done;
-  gpr_event_init(&done);
-  lock->Run([&done]() { gpr_event_set(&done, (void*)1); }, DEBUG_LOCATION);
-  EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
-              nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  {
+    auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+    gpr_event done;
+    gpr_event_init(&done);
+    lock->Run([&done]() { gpr_event_set(&done, (void*)1); }, DEBUG_LOCATION);
+    EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
+                nullptr);
+  }
 }
 
 class TestThread {
@@ -93,11 +97,14 @@ class TestThread {
 };
 
 TEST(LogicalThreadTest, ExecuteMany) {
-  auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+  grpc_core::ExecCtx exec_ctx;
   {
-    std::vector<std::unique_ptr<TestThread>> threads;
-    for (size_t i = 0; i < 100; ++i) {
-      threads.push_back(std::unique_ptr<TestThread>(new TestThread(lock)));
+    auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+    {
+      std::vector<std::unique_ptr<TestThread>> threads;
+      for (size_t i = 0; i < 100; ++i) {
+        threads.push_back(std::unique_ptr<TestThread>(new TestThread(lock)));
+      }
     }
   }
 }

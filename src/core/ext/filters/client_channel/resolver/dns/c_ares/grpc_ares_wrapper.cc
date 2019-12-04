@@ -37,7 +37,6 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -350,7 +349,8 @@ done:
 void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     grpc_ares_request* r, const char* dns_server, const char* name,
     const char* default_port, grpc_pollset_set* interested_parties,
-    bool check_grpclb, int query_timeout_ms, grpc_core::Combiner* combiner) {
+    bool check_grpclb, int query_timeout_ms,
+    grpc_core::RefCountedPtr<grpc_core::LogicalThread> combiner) {
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_ares_hostbyname_request* hr = nullptr;
   ares_channel* channel = nullptr;
@@ -590,7 +590,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) {
+    grpc_core::RefCountedPtr<grpc_core::LogicalThread> combiner) {
   grpc_ares_request* r =
       static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
   r->ev_driver = nullptr;
@@ -633,7 +633,8 @@ grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
+    grpc_core::RefCountedPtr<grpc_core::LogicalThread> combiner) =
+    grpc_dns_lookup_ares_locked_impl;
 
 static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
   GPR_ASSERT(r != nullptr);
@@ -674,7 +675,7 @@ void grpc_ares_cleanup(void) {}
 
 typedef struct grpc_resolve_address_ares_request {
   /* combiner that queries and related callbacks run under */
-  grpc_core::Combiner* combiner;
+  grpc_core::RefCountedPtr<grpc_core::LogicalThread> combiner;
   /** the pointer to receive the resolved addresses */
   grpc_resolved_addresses** addrs_out;
   /** currently resolving addresses */
@@ -716,20 +717,20 @@ static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done,
                           GRPC_ERROR_REF(error));
-  GRPC_COMBINER_UNREF(r->combiner, "on_dns_lookup_done_cb");
   delete r;
 }
 
 static void on_dns_lookup_done(void* arg, grpc_error* error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
-  r->combiner->Run(GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked,
-                                     on_dns_lookup_done_locked, r, nullptr),
-                   GRPC_ERROR_REF(error));
+  r->combiner->Run(grpc_core::Closure::ToFunction(
+                       GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked,
+                                         on_dns_lookup_done_locked, r, nullptr),
+                       GRPC_ERROR_REF(error)),
+                   DEBUG_LOCATION);
 }
 
-static void grpc_resolve_address_invoke_dns_lookup_ares_locked(
-    void* arg, grpc_error* /*unused_error*/) {
+static void grpc_resolve_address_invoke_dns_lookup_ares_locked(void* arg) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked, on_dns_lookup_done, r,
@@ -748,16 +749,15 @@ static void grpc_resolve_address_ares_impl(const char* name,
                                            grpc_resolved_addresses** addrs) {
   grpc_resolve_address_ares_request* r =
       new grpc_resolve_address_ares_request();
-  r->combiner = grpc_combiner_create();
+  r->combiner = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
   r->name = name;
   r->default_port = default_port;
   r->interested_parties = interested_parties;
   r->combiner->Run(
-      GRPC_CLOSURE_CREATE(grpc_resolve_address_invoke_dns_lookup_ares_locked, r,
-                          nullptr),
-      GRPC_ERROR_NONE);
+      [r]() { grpc_resolve_address_invoke_dns_lookup_ares_locked(r); },
+      DEBUG_LOCATION);
 }
 
 void (*grpc_resolve_address_ares)(

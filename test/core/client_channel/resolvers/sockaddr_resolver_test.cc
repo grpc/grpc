@@ -24,11 +24,11 @@
 
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 
 #include "test/core/util/test_config.h"
 
-static grpc_core::Combiner* g_combiner;
+static grpc_core::RefCountedPtr<grpc_core::LogicalThread>* g_combiner;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
@@ -46,7 +46,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
-  args.combiner = g_combiner;
+  args.combiner = *g_combiner;
   args.result_handler = grpc_core::MakeUnique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -67,7 +67,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
-  args.combiner = g_combiner;
+  args.combiner = *g_combiner;
   args.result_handler = grpc_core::MakeUnique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -78,31 +78,30 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-
-  g_combiner = grpc_combiner_create();
-
-  grpc_core::ResolverFactory* ipv4 =
-      grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
-  grpc_core::ResolverFactory* ipv6 =
-      grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
-
-  test_fails(ipv4, "ipv4:10.2.1.1");
-  test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
-  test_succeeds(ipv4, "ipv4:10.2.1.1:1234,127.0.0.1:4321");
-  test_fails(ipv4, "ipv4:10.2.1.1:123456");
-  test_fails(ipv4, "ipv4:www.google.com");
-  test_fails(ipv4, "ipv4:[");
-  test_fails(ipv4, "ipv4://8.8.8.8/8.8.8.8:8888");
-
-  test_fails(ipv6, "ipv6:[");
-  test_fails(ipv6, "ipv6:[::]");
-  test_succeeds(ipv6, "ipv6:[::]:1234");
-  test_fails(ipv6, "ipv6:[::]:123456");
-  test_fails(ipv6, "ipv6:www.google.com");
-
   {
     grpc_core::ExecCtx exec_ctx;
-    GRPC_COMBINER_UNREF(g_combiner, "test");
+    auto combiner = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+    g_combiner = &combiner;
+
+    grpc_core::ResolverFactory* ipv4 =
+        grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
+    grpc_core::ResolverFactory* ipv6 =
+        grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
+
+    test_fails(ipv4, "ipv4:10.2.1.1");
+    test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
+    test_succeeds(ipv4, "ipv4:10.2.1.1:1234,127.0.0.1:4321");
+    test_fails(ipv4, "ipv4:10.2.1.1:123456");
+    test_fails(ipv4, "ipv4:www.google.com");
+    test_fails(ipv4, "ipv4:[");
+    test_fails(ipv4, "ipv4://8.8.8.8/8.8.8.8:8888");
+
+    test_fails(ipv6, "ipv6:[");
+    test_fails(ipv6, "ipv6:[::]");
+    test_succeeds(ipv6, "ipv6:[::]:1234");
+    test_fails(ipv6, "ipv6:[::]:123456");
+    test_fails(ipv6, "ipv6:www.google.com");
+    grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_shutdown();
 

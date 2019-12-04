@@ -23,6 +23,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <functional>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -249,6 +250,11 @@ class Closure {
     }
 #endif
     GRPC_ERROR_UNREF(error);
+  }
+
+  static std::function<void()> ToFunction(grpc_closure* closure,
+                                          grpc_error* error) {
+    return [closure, error] { Run(DEBUG_LOCATION, closure, error); };
   }
 };
 }  // namespace grpc_core

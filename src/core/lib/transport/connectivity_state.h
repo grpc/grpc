@@ -29,6 +29,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 
 namespace grpc_core {
 
@@ -70,14 +71,15 @@ class AsyncConnectivityStateWatcherInterface
 
   // If \a combiner is nullptr, then the notification will be scheduled on the
   // ExecCtx.
-  explicit AsyncConnectivityStateWatcherInterface(Combiner* combiner = nullptr)
-      : combiner_(combiner) {}
+  explicit AsyncConnectivityStateWatcherInterface(
+      RefCountedPtr<LogicalThread> combiner = nullptr)
+      : combiner_(std::move(combiner)) {}
 
   // Invoked asynchronously when Notify() is called.
   virtual void OnConnectivityStateChange(grpc_connectivity_state new_state) = 0;
 
  private:
-  Combiner* combiner_;
+  RefCountedPtr<LogicalThread> combiner_;
 };
 
 // Tracks connectivity state.  Maintains a list of watchers that are

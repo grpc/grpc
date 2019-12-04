@@ -24,7 +24,9 @@
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 #ifndef GRPC_CORE_LIB_IOMGR_LOGICAL_THREAD_H
 #define GRPC_CORE_LIB_IOMGR_LOGICAL_THREAD_H
@@ -32,14 +34,12 @@
 namespace grpc_core {
 extern DebugOnlyTraceFlag grpc_logical_thread_trace;
 
-// LogicalThread is a mechanism to schedule callbacks in a synchronized manner.
-// All callbacks scheduled on a LogicalThread instance will be executed serially
-// in a borrowed thread. The API provides a FIFO guarantee to the execution of
-// callbacks scheduled on the thread.
-class LogicalThread : public RefCounted<LogicalThread> {
+class LogicalThreadImpl : public Orphanable {
  public:
   void Run(std::function<void()> callback,
            const grpc_core::DebugLocation& location);
+
+  void Orphan() override;
 
  private:
   void DrainQueue();
@@ -47,6 +47,24 @@ class LogicalThread : public RefCounted<LogicalThread> {
   Atomic<size_t> size_{0};
   MultiProducerSingleConsumerQueue queue_;
 };
+
+// LogicalThread is a mechanism to schedule callbacks in a synchronized manner.
+// All callbacks scheduled on a LogicalThread instance will be executed serially
+// in a borrowed thread. The API provides a FIFO guarantee to the execution of
+// callbacks scheduled on the thread.
+class LogicalThread : public RefCounted<LogicalThread> {
+ public:
+  LogicalThread() { impl_ = MakeOrphanable<LogicalThreadImpl>(); }
+
+  void Run(std::function<void()> callback,
+           const grpc_core::DebugLocation& location) {
+    impl_->Run(callback, location);
+  }
+
+ private:
+  OrphanablePtr<LogicalThreadImpl> impl_;
+};
+
 } /* namespace grpc_core */
 
 #endif /* GRPC_CORE_LIB_IOMGR_LOGICAL_THREAD_H */

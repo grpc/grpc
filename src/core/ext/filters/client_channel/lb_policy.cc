@@ -33,13 +33,12 @@ DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
 
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
-      combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
+      combiner_(std::move(args.combiner)),
       interested_parties_(grpc_pollset_set_create()),
       channel_control_helper_(std::move(args.channel_control_helper)) {}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);
-  GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
 
 void LoadBalancingPolicy::Orphan() {
@@ -106,8 +105,10 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
     exit_idle_called_ = true;
     parent_->Ref().release();  // ref held by closure.
     parent_->combiner()->Run(
-        GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(), nullptr),
-        GRPC_ERROR_NONE);
+        Closure::ToFunction(
+            GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(), nullptr),
+            GRPC_ERROR_NONE),
+        DEBUG_LOCATION);
   }
   PickResult result;
   result.type = PickResult::PICK_QUEUE;

@@ -30,13 +30,11 @@ namespace grpc_core {
 // Resolver
 //
 
-Resolver::Resolver(Combiner* combiner,
+Resolver::Resolver(RefCountedPtr<LogicalThread> combiner,
                    std::unique_ptr<ResultHandler> result_handler)
     : InternallyRefCounted(&grpc_trace_resolver_refcount),
       result_handler_(std::move(result_handler)),
-      combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}
-
-Resolver::~Resolver() { GRPC_COMBINER_UNREF(combiner_, "resolver"); }
+      combiner_(std::move(combiner)) {}
 
 //
 // Resolver::Result

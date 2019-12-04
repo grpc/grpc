@@ -31,7 +31,6 @@
 #include <grpc/support/time.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -67,7 +66,7 @@ struct grpc_ares_ev_driver {
   gpr_refcount refs;
 
   /** combiner to synchronize c-ares and I/O callbacks on */
-  grpc_core::Combiner* combiner;
+  grpc_core::RefCountedPtr<grpc_core::LogicalThread> combiner;
   /** a list of grpc_fd that this event driver is currently using. */
   fd_node* fds;
   /** is this event driver currently working? */
@@ -107,7 +106,6 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver) {
     GRPC_CARES_TRACE_LOG("request:%p destroy ev_driver %p", ev_driver->request,
                          ev_driver);
     GPR_ASSERT(ev_driver->fds == nullptr);
-    GRPC_COMBINER_UNREF(ev_driver->combiner, "free ares event driver");
     ares_destroy(ev_driver->channel);
     grpc_ares_complete_request_locked(ev_driver->request);
     delete ev_driver;
@@ -143,11 +141,11 @@ static void noop_inject_channel_config(ares_channel /*channel*/) {}
 void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
     noop_inject_channel_config;
 
-grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
-                                              grpc_pollset_set* pollset_set,
-                                              int query_timeout_ms,
-                                              grpc_core::Combiner* combiner,
-                                              grpc_ares_request* request) {
+grpc_error* grpc_ares_ev_driver_create_locked(
+    grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
+    int query_timeout_ms,
+    grpc_core::RefCountedPtr<grpc_core::LogicalThread> combiner,
+    grpc_ares_request* request) {
   *ev_driver = new grpc_ares_ev_driver();
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
@@ -164,7 +162,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
     gpr_free(*ev_driver);
     return err;
   }
-  (*ev_driver)->combiner = GRPC_COMBINER_REF(combiner, "ares event driver");
+  (*ev_driver)->combiner = std::move(combiner);
   gpr_ref_init(&(*ev_driver)->refs, 1);
   (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = nullptr;
@@ -234,9 +232,12 @@ static grpc_millis calculate_next_ares_backup_poll_alarm_ms(
 
 static void on_timeout(void* arg, grpc_error* error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
-  driver->combiner->Run(GRPC_CLOSURE_INIT(&driver->on_timeout_locked,
-                                          on_timeout_locked, driver, nullptr),
-                        GRPC_ERROR_REF(error));
+  driver->combiner->Run(
+      grpc_core::Closure::ToFunction(
+          GRPC_CLOSURE_INIT(&driver->on_timeout_locked, on_timeout_locked,
+                            driver, nullptr),
+          GRPC_ERROR_REF(error)),
+      DEBUG_LOCATION);
 }
 
 static void on_timeout_locked(void* arg, grpc_error* error) {
@@ -254,9 +255,11 @@ static void on_timeout_locked(void* arg, grpc_error* error) {
 static void on_ares_backup_poll_alarm(void* arg, grpc_error* error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
   driver->combiner->Run(
-      GRPC_CLOSURE_INIT(&driver->on_ares_backup_poll_alarm_locked,
-                        on_ares_backup_poll_alarm_locked, driver, nullptr),
-      GRPC_ERROR_REF(error));
+      grpc_core::Closure::ToFunction(
+          GRPC_CLOSURE_INIT(&driver->on_ares_backup_poll_alarm_locked,
+                            on_ares_backup_poll_alarm_locked, driver, nullptr),
+          GRPC_ERROR_REF(error)),
+      DEBUG_LOCATION);
 }
 
 /* In case of non-responsive DNS servers, dropped packets, etc., c-ares has
@@ -331,8 +334,11 @@ static void on_readable_locked(void* arg, grpc_error* error) {
 static void on_readable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   fdn->ev_driver->combiner->Run(
-      GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable_locked, fdn, nullptr),
-      GRPC_ERROR_REF(error));
+      grpc_core::Closure::ToFunction(
+          GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable_locked, fdn,
+                            nullptr),
+          GRPC_ERROR_REF(error)),
+      DEBUG_LOCATION);
 }
 
 static void on_writable_locked(void* arg, grpc_error* error) {
@@ -361,8 +367,11 @@ static void on_writable_locked(void* arg, grpc_error* error) {
 static void on_writable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   fdn->ev_driver->combiner->Run(
-      GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable_locked, fdn, nullptr),
-      GRPC_ERROR_REF(error));
+      grpc_core::Closure::ToFunction(
+          GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable_locked, fdn,
+                            nullptr),
+          GRPC_ERROR_REF(error)),
+      DEBUG_LOCATION);
 }
 
 ares_channel* grpc_ares_ev_driver_get_channel_locked(

@@ -27,8 +27,8 @@
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
@@ -87,7 +87,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
   Resolver& operator=(const Resolver&) = delete;
-  virtual ~Resolver();
+  virtual ~Resolver() {}
 
   /// Starts resolving.
   virtual void StartLocked() = 0;
@@ -126,19 +126,19 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // TODO(roth): Once we have a C++-like interface for combiners, this
   // API should change to take a RefCountedPtr<>, so that we always take
   // ownership of a new ref.
-  explicit Resolver(Combiner* combiner,
+  explicit Resolver(RefCountedPtr<LogicalThread> combiner,
                     std::unique_ptr<ResultHandler> result_handler);
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;
 
-  Combiner* combiner() const { return combiner_; }
+  RefCountedPtr<LogicalThread> combiner() const { return combiner_; }
 
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
   std::unique_ptr<ResultHandler> result_handler_;
-  Combiner* combiner_;
+  RefCountedPtr<LogicalThread> combiner_;
 };
 
 }  // namespace grpc_core

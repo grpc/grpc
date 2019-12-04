@@ -36,7 +36,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -81,7 +81,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_core::Combiner* lock;
+  grpc_core::RefCountedPtr<grpc_core::LogicalThread> lock;
   grpc_channel_args* channel_args;
 };
 
@@ -90,7 +90,7 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->lock = grpc_combiner_create();
+  args->lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
   gpr_atm_rel_store(&args->done_atm, 0);
   args->channel_args = nullptr;
 }
@@ -109,7 +109,6 @@ void ArgsFinish(ArgsStruct* args) {
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
-  GRPC_COMBINER_UNREF(args->lock, nullptr);
 }
 
 void PollPollsetUntilRequestDone(ArgsStruct* args) {

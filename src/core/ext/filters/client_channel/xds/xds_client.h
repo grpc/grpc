@@ -72,11 +72,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
-  XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
-            StringView server_name,
+  XdsClient(RefCountedPtr<LogicalThread> combiner,
+            grpc_pollset_set* interested_parties, StringView server_name,
             std::unique_ptr<ServiceConfigWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
-  ~XdsClient();
 
   void Orphan() override;
 
@@ -196,14 +195,14 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
-  grpc_core::UniquePtr<char> build_version_;
+  UniquePtr<char> build_version_;
 
-  Combiner* combiner_;
+  RefCountedPtr<LogicalThread> combiner_;
   grpc_pollset_set* interested_parties_;
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
 
-  grpc_core::UniquePtr<char> server_name_;
+  UniquePtr<char> server_name_;
   std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
   // TODO(juanlishen): Once we implement LDS support, this will no
   // longer be needed.
