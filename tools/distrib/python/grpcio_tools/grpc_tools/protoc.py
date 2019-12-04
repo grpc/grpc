@@ -65,24 +65,24 @@ def _augmented_syspath(new_paths):
 
 # TODO: Investigate making this even more of a no-op in the case that we have
 # truly already imported the module.
-def get_protos(protobuf_path, include_paths=None):
+def _protos(protobuf_path, include_paths=None):
   with _augmented_syspath(include_paths):
     module_name = _proto_file_to_module_name(_PROTO_MODULE_SUFFIX, protobuf_path)
     module = importlib.import_module(module_name)
     return module
 
 
-def get_services(protobuf_path, include_paths=None):
-  get_protos(protobuf_path, include_paths)
+def _services(protobuf_path, include_paths=None):
+  _protos(protobuf_path, include_paths)
   with _augmented_syspath(include_paths):
     module_name = _proto_file_to_module_name(_SERVICE_MODULE_SUFFIX, protobuf_path)
     module = importlib.import_module(module_name)
     return module
 
 
-def get_protos_and_services(protobuf_path, include_paths=None):
-  return (get_protos(protobuf_path, include_paths=include_paths),
-          get_services(protobuf_path, include_paths=include_paths))
+def _protos_and_services(protobuf_path, include_paths=None):
+  return (_protos(protobuf_path, include_paths=include_paths),
+          _services(protobuf_path, include_paths=include_paths))
 
 
 _proto_code_cache = {}

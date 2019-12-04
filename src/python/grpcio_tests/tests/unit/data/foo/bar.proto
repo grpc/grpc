@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package tests.unit.data.foo.bar;
+
+message BarMessage {
+  string a = 1;
+};
+
+service Bar {
+  rpc GetBar(BarMessage) returns (BarMessage);
+};

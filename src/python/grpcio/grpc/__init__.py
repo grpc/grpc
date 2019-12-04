@@ -1982,11 +1982,13 @@ def _default_get_protos_and_services(*args, **kwargs):
 try:
     import grpc_tools
 except ImportError:
-    get_protos = _default_get_protos
-    get_services = _default_get_services
-    get_protos_and_services = _default_get_protos_and_services
+    protos = _default_get_protos
+    services = _default_get_services
+    protos_and_services = _default_get_protos_and_services
 else:
-    from grpc_tools.protoc import get_protos, get_services, get_protos_and_services
+    from grpc_tools.protoc import _protos as protos
+    from grpc_tools.protoc import _services as services
+    from grpc_tools.protoc import _protos_and_services as protos_and_services
 
 ###################################  __all__  #################################
 
@@ -2046,9 +2048,9 @@ __all__ = (
     'secure_channel',
     'intercept_channel',
     'server',
-    'get_protos',
-    'get_services',
-    'get_protos_and_services',
+    'protos',
+    'services',
+    'protos_and_services',
 )
 
 ############################### Extension Shims ################################
