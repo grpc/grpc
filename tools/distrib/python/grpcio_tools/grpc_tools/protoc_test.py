@@ -27,6 +27,7 @@ def _run_in_subprocess(test_case):
     proc.join()
     if not error_queue.empty():
         raise error_queue.get()
+    assert proc.exitcode == 0, "Process exited with code {}".format(proc.exitcode)
 
 def _test_import_protos():
     from grpc_tools import protoc

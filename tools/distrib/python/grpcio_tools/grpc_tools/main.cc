@@ -118,7 +118,7 @@ static void calculate_transitive_closure(const ::google::protobuf::FileDescripto
 {
   for (int i = 0; i < descriptor->dependency_count(); ++i) {
     const ::google::protobuf::FileDescriptor* dependency = descriptor->dependency(i);
-    if (std::find(visited->begin(), visited->end(), dependency) == visited->end()) {
+    if (visited->find(dependency) == visited->end()) {
       calculate_transitive_closure(dependency, transitive_closure, visited);
     }
   }
@@ -146,7 +146,8 @@ static int generate_code(::google::protobuf::compiler::CodeGenerator* code_gener
     return 1;
   }
   std::vector<const ::google::protobuf::FileDescriptor*> transitive_closure;
-  ::detail::calculate_transitive_closure(parsed_file, &transitive_closure, {});
+  std::unordered_set<const ::google::protobuf::FileDescriptor*> visited;
+  ::detail::calculate_transitive_closure(parsed_file, &transitive_closure, &visited);
   detail::GeneratorContextImpl generator_context(transitive_closure, files_out);
   std::string error;
   for (const auto descriptor : transitive_closure) {

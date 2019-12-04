@@ -1967,6 +1967,27 @@ class Compression(enum.IntEnum):
     Gzip = _compression.Gzip
 
 
+def _default_get_protos(*args, **kwargs):
+    raise NotImplementedError("Install the grpcio-tools package to use get_protos.")
+
+
+def _default_get_services(*args, **kwargs):
+    raise NotImplementedError("Install the grpcio-tools package to use get_services.")
+
+
+def _default_get_protos_and_services(*args, **kwargs):
+    raise NotImplementedError("Install the grpcio-tools package to use get_protos_and_services.")
+
+
+try:
+    import grpc_tools
+except ImportError:
+    get_protos = _default_get_protos
+    get_services = _default_get_services
+    get_protos_and_services = _default_get_protos_and_services
+else:
+    from grpc_tools.protoc import get_protos, get_services, get_protos_and_services
+
 ###################################  __all__  #################################
 
 __all__ = (
@@ -2025,6 +2046,9 @@ __all__ = (
     'secure_channel',
     'intercept_channel',
     'server',
+    'get_protos',
+    'get_services',
+    'get_protos_and_services',
 )
 
 ############################### Extension Shims ################################

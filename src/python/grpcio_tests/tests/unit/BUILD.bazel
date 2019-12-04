@@ -89,6 +89,8 @@ py_library(
         srcs = [test_file_name],
         data = [
             "//src/python/grpcio_tests/tests/unit/credentials",
+            # TODO: Filegroup?
+            "//src/python/grpcio_tests/unit:data/foo/bar.proto",
         ],
         imports = ["../../"],
         main = test_file_name,
@@ -109,3 +111,20 @@ py_library(
     )
     for test_file_name in GRPCIO_TESTS_UNIT
 ]
+
+py2and3_test(
+    name = "_dynamic_stubs_test",
+    size = "small",
+    srcs = ["_dynamic_stubs_test.py"],
+    main = "_dynamic_stubs_test.py",
+    imports = ["../../"],
+    data = [
+        "data/foo/bar.proto",
+    ],
+    deps = [
+        "//external:six",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/testing",
+        "//tools/distrib/python/grpcio_tools/grpc_tools",
+    ],
+)

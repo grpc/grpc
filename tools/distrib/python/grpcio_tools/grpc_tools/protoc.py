@@ -49,7 +49,7 @@ def _module_name_to_proto_file(suffix, module_name):
 def _proto_file_to_module_name(suffix, proto_file):
   components = proto_file.split(os.path.sep)
   proto_base_name = os.path.splitext(components[-1])[0]
-  return os.path.sep.join(components[:-1] + [proto_base_name + suffix])
+  return ".".join(components[:-1] + [proto_base_name + suffix])
 
 
 @contextlib.contextmanager
@@ -67,7 +67,6 @@ def _augmented_syspath(new_paths):
 # truly already imported the module.
 def get_protos(protobuf_path, include_paths=None):
   with _augmented_syspath(include_paths):
-    # TODO: Pull these strings out to module-level constants.
     module_name = _proto_file_to_module_name(_PROTO_MODULE_SUFFIX, protobuf_path)
     module = importlib.import_module(module_name)
     return module

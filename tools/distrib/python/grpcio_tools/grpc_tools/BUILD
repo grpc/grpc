@@ -37,6 +37,8 @@ py_library(
     deps = [
       ":cyprotoc",
       "@six_archive//:six",
+      "@com_google_protobuf//:protobuf_python",
+      "//src/python/grpcio/grpc:grpcio",
     ],
     # TODO: Think about whether we should include well-known protos.
     srcs_version = "PY2AND3",
