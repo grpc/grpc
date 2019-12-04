@@ -85,12 +85,15 @@ class GenericStub final {
                    grpc::ByteBuffer* response,
                    std::function<void(grpc::Status)> on_completion);
 
-    /// Setup and start a unary call to a named method \a method using
+    /// Setup a unary call to a named method \a method using
     /// \a context and specifying the \a request and \a response buffers.
-    void UnaryCall(grpc_impl::ClientContext* context,
-                   const grpc::string& method, const grpc::ByteBuffer* request,
-                   grpc::ByteBuffer* response,
-                   grpc_impl::ClientUnaryReactor* reactor);
+    /// Like any other reactor-based RPC, it will not be activated until
+    /// StartCall is invoked on its reactor.
+    void PrepareUnaryCall(grpc_impl::ClientContext* context,
+                          const grpc::string& method,
+                          const grpc::ByteBuffer* request,
+                          grpc::ByteBuffer* response,
+                          grpc_impl::ClientUnaryReactor* reactor);
 
     /// Setup a call to a named method \a method using \a context and tied to
     /// \a reactor . Like any other bidi streaming RPC, it will not be activated

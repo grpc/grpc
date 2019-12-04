@@ -90,4 +90,16 @@ void GenericStub::experimental_type::PrepareBidiStreamingCall(
                                 context, reactor);
 }
 
+void GenericStub::experimental_type::PrepareUnaryCall(
+    grpc::ClientContext* context, const grpc::string& method,
+    const grpc::ByteBuffer* request, grpc::ByteBuffer* response,
+    ClientUnaryReactor* reactor) {
+  internal::ClientCallbackUnaryFactory::Create<grpc::ByteBuffer,
+                                               grpc::ByteBuffer>(
+      stub_->channel_.get(),
+      grpc::internal::RpcMethod(method.c_str(),
+                                grpc::internal::RpcMethod::NORMAL_RPC),
+      context, request, response, reactor);
+}
+
 }  // namespace grpc_impl
