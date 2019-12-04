@@ -19,6 +19,7 @@ def _wrap_in_subprocess(error_queue, fn):
             raise
     return _wrapped
 
+
 def _run_in_subprocess(test_case):
     error_queue = multiprocessing.Queue()
     wrapped_case = _wrap_in_subprocess(error_queue, test_case)
@@ -28,6 +29,7 @@ def _run_in_subprocess(test_case):
     if not error_queue.empty():
         raise error_queue.get()
     assert proc.exitcode == 0, "Process exited with code {}".format(proc.exitcode)
+
 
 def _test_import_protos():
     from grpc_tools import protoc

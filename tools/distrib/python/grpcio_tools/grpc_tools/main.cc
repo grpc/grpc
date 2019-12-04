@@ -51,7 +51,7 @@ int protoc_main(int argc, char* argv[]) {
   return cli.Run(argc, argv);
 }
 
-// TODO: Figure out what Google best practices are for internal namespace like
+// TODO: Figure out what Google best practices are for internal namespaces like
 // this.
 namespace detail {
 
