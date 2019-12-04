@@ -1501,12 +1501,8 @@ void XdsClient::CancelClusterDataWatch(StringView cluster_name,
   if (it != cluster_state.watchers.end()) {
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
-      // Sending CDS requests with no cluster names will cause Envoy-style
-      // wildcard behavior. To avoid that, don't make the cluster_map_ empty.
-      if (cluster_map_.size() > 1) {
-        cluster_map_.erase(cluster_name);
-        chand_->OnResourceNamesChanged(kCdsTypeUrl);
-      }
+      cluster_map_.erase(cluster_name);
+      chand_->OnResourceNamesChanged(kCdsTypeUrl);
     }
   }
   chand_->OnWatcherRemoved();
