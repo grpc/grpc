@@ -52,9 +52,18 @@ if(GRPC_AS_SUBMODULE)
   # After using add_subdirectory, we can now use the grpc targets directly from
   # this build.
   set(_PROTOBUF_LIBPROTOBUF libprotobuf)
-  set(_PROTOBUF_PROTOC $<TARGET_FILE:protoc>)
+  if(CMAKE_CROSSCOMPILING)
+    find_program(_PROTOBUF_PROTOC protoc)
+  else()
+    set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+  endif()
   set(_GRPC_GRPCPP_UNSECURE grpc++_unsecure)
-  set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:grpc_cpp_plugin>)
+  if(CMAKE_CROSSCOMPILING)
+    find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
+  else()
+    set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:grpc_cpp_plugin>)
+  endif()
+
 else()
   # This branch assumes that gRPC and all its dependencies are already installed
   # on this system, so they can be located by find_package().
@@ -66,7 +75,11 @@ else()
   message(STATUS "Using protobuf ${protobuf_VERSION}")
 
   set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
-  set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+  if(CMAKE_CROSSCOMPILING)
+    find_program(_PROTOBUF_PROTOC protoc)
+  else()
+    set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+  endif()
 
   # Find gRPC installation
   # Looks for gRPCConfig.cmake file installed by gRPC's cmake installation.
@@ -74,7 +87,11 @@ else()
   message(STATUS "Using gRPC ${gRPC_VERSION}")
 
   set(_GRPC_GRPCPP_UNSECURE gRPC::grpc++_unsecure)
-  set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
+  if(CMAKE_CROSSCOMPILING)
+    find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
+  else()
+    set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
+  endif()
 endif()
 
 # Proto file
