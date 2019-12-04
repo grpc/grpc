@@ -28,8 +28,6 @@
 #include <grpcpp/support/client_callback_impl.h>
 #include <grpcpp/support/status.h>
 
-#include <functional>
-
 namespace grpc {
 
 typedef ::grpc_impl::ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
@@ -92,15 +90,15 @@ class GenericStub final {
     void UnaryCall(grpc_impl::ClientContext* context,
                    const grpc::string& method, const grpc::ByteBuffer* request,
                    grpc::ByteBuffer* response,
-                   grpc_impl::experimental::ClientUnaryReactor* reactor);
+                   grpc_impl::ClientUnaryReactor* reactor);
 
     /// Setup a call to a named method \a method using \a context and tied to
     /// \a reactor . Like any other bidi streaming RPC, it will not be activated
     /// until StartCall is invoked on its reactor.
     void PrepareBidiStreamingCall(
         grpc_impl::ClientContext* context, const grpc::string& method,
-        grpc_impl::experimental::ClientBidiReactor<grpc::ByteBuffer,
-                                                   grpc::ByteBuffer>* reactor);
+        grpc_impl::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
+            reactor);
 
    private:
     GenericStub* stub_;

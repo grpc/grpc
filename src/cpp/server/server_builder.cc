@@ -101,6 +101,20 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
   return *this;
 }
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
+    grpc::CallbackGenericService* service) {
+  if (generic_service_ || callback_generic_service_) {
+    gpr_log(GPR_ERROR,
+            "Adding multiple generic services is unsupported for now. "
+            "Dropping the service %p",
+            (void*)service);
+  } else {
+    callback_generic_service_ = service;
+  }
+  return *this;
+}
+#else
 ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
     grpc::experimental::CallbackGenericService* service) {
   if (builder_->generic_service_ || builder_->callback_generic_service_) {
@@ -113,6 +127,7 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
   }
   return *builder_;
 }
+#endif
 
 std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(

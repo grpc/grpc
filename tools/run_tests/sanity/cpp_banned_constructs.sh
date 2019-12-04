@@ -29,3 +29,21 @@ egrep -Irn \
     egrep -v include/grpcpp/impl/codegen/sync.h | \
     diff - /dev/null
 
+#
+# Prevent the include of disallowed C++ headers.
+#
+
+egrep -Irn \
+    '^#include (<mutex>|<condition_variable>|<thread>|<ratio>|<filesystem>|<future>|<system_error>)' \
+    include/grpc include/grpcpp src/core src/cpp | \
+    egrep -v include/grpcpp/impl/codegen/sync.h | \
+    diff - /dev/null
+
+#
+# Prevent the include of headers that shouldn't be used in tests.
+#
+
+egrep -Irn \
+    '^#include (<pthread.h>)' \
+    test | \
+    diff - /dev/null

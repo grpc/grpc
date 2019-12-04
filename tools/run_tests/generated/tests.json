@@ -4980,6 +4980,30 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 10, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "logical_thread_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
     "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
@@ -5111,6 +5135,26 @@
       "linux", 
       "mac", 
       "posix", 
+      "windows"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "windows"
+    ], 
+    "cpu_cost": 0.5, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "pollset_windows_starvation_test.cc", 
+    "platforms": [
       "windows"
     ], 
     "uses_polling": true

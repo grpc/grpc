@@ -103,8 +103,6 @@ class CallbackUnaryCallImpl {
 };
 }  // namespace internal
 
-namespace experimental {
-
 // Forward declarations
 template <class Request, class Response>
 class ClientBidiReactor;
@@ -285,18 +283,18 @@ class ClientBidiReactor {
   /// call of OnReadDone or OnDone.
   ///
   /// \param[in] ok Was the initial metadata read successfully? If false, no
-  ///               further read-side operation will succeed.
+  ///               new read/write operation will succeed.
   virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartRead operation completed.
   ///
-  /// \param[in] ok Was it successful? If false, no further read-side operation
+  /// \param[in] ok Was it successful? If false, no new read/write operation
   ///               will succeed.
   virtual void OnReadDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWrite operation completed.
   ///
-  /// \param[in] ok Was it successful? If false, no further write-side operation
+  /// \param[in] ok Was it successful? If false, no new read/write operation
   ///               will succeed.
   virtual void OnWriteDone(bool /*ok*/) {}
 
@@ -404,8 +402,6 @@ inline void ClientCallbackUnary::BindReactor(ClientUnaryReactor* reactor) {
   reactor->BindCall(this);
 }
 
-}  // namespace experimental
-
 namespace internal {
 
 // Forward declare factory classes for friendship
@@ -418,7 +414,7 @@ class ClientCallbackWriterFactory;
 
 template <class Request, class Response>
 class ClientCallbackReaderWriterImpl
-    : public experimental::ClientCallbackReaderWriter<Request, Response> {
+    : public ClientCallbackReaderWriter<Request, Response> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -457,7 +453,7 @@ class ClientCallbackReaderWriterImpl
                      reactor_->OnReadInitialMetadataDone(ok);
                      MaybeFinish();
                    },
-                   &start_ops_);
+                   &start_ops_, /*can_inline=*/false);
     if (!start_corked_) {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
@@ -473,7 +469,7 @@ class ClientCallbackReaderWriterImpl
                      reactor_->OnWriteDone(ok);
                      MaybeFinish();
                    },
-                   &write_ops_);
+                   &write_ops_, /*can_inline=*/false);
     write_ops_.set_core_cq_tag(&write_tag_);
 
     read_tag_.Set(call_.call(),
@@ -481,7 +477,7 @@ class ClientCallbackReaderWriterImpl
                     reactor_->OnReadDone(ok);
                     MaybeFinish();
                   },
-                  &read_ops_);
+                  &read_ops_, /*can_inline=*/false);
     read_ops_.set_core_cq_tag(&read_tag_);
     if (read_ops_at_start_) {
       call_.PerformOps(&read_ops_);
@@ -496,7 +492,7 @@ class ClientCallbackReaderWriterImpl
     }
 
     finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_);
+                    &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -544,7 +540,7 @@ class ClientCallbackReaderWriterImpl
                            reactor_->OnWritesDoneDone(ok);
                            MaybeFinish();
                          },
-                         &writes_done_ops_);
+                         &writes_done_ops_, /*can_inline=*/false);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
@@ -562,9 +558,9 @@ class ClientCallbackReaderWriterImpl
  private:
   friend class ClientCallbackReaderWriterFactory<Request, Response>;
 
-  ClientCallbackReaderWriterImpl(
-      grpc::internal::Call call, ::grpc_impl::ClientContext* context,
-      experimental::ClientBidiReactor<Request, Response>* reactor)
+  ClientCallbackReaderWriterImpl(grpc::internal::Call call,
+                                 ::grpc_impl::ClientContext* context,
+                                 ClientBidiReactor<Request, Response>* reactor)
       : context_(context),
         call_(call),
         reactor_(reactor),
@@ -574,7 +570,7 @@ class ClientCallbackReaderWriterImpl
 
   ::grpc_impl::ClientContext* const context_;
   grpc::internal::Call call_;
-  experimental::ClientBidiReactor<Request, Response>* const reactor_;
+  ClientBidiReactor<Request, Response>* const reactor_;
 
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpRecvInitialMetadata>
@@ -612,11 +608,10 @@ class ClientCallbackReaderWriterImpl
 template <class Request, class Response>
 class ClientCallbackReaderWriterFactory {
  public:
-  static void Create(
-      ::grpc::ChannelInterface* channel,
-      const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context,
-      experimental::ClientBidiReactor<Request, Response>* reactor) {
+  static void Create(::grpc::ChannelInterface* channel,
+                     const ::grpc::internal::RpcMethod& method,
+                     ::grpc_impl::ClientContext* context,
+                     ClientBidiReactor<Request, Response>* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -629,8 +624,7 @@ class ClientCallbackReaderWriterFactory {
 };
 
 template <class Response>
-class ClientCallbackReaderImpl
-    : public experimental::ClientCallbackReader<Response> {
+class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -668,7 +662,7 @@ class ClientCallbackReaderImpl
                      reactor_->OnReadInitialMetadataDone(ok);
                      MaybeFinish();
                    },
-                   &start_ops_);
+                   &start_ops_, /*can_inline=*/false);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
@@ -681,14 +675,14 @@ class ClientCallbackReaderImpl
                     reactor_->OnReadDone(ok);
                     MaybeFinish();
                   },
-                  &read_ops_);
+                  &read_ops_, /*can_inline=*/false);
     read_ops_.set_core_cq_tag(&read_tag_);
     if (read_ops_at_start_) {
       call_.PerformOps(&read_ops_);
     }
 
     finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_);
+                    &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -716,7 +710,7 @@ class ClientCallbackReaderImpl
   ClientCallbackReaderImpl(::grpc::internal::Call call,
                            ::grpc_impl::ClientContext* context,
                            Request* request,
-                           experimental::ClientReadReactor<Response>* reactor)
+                           ClientReadReactor<Response>* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
@@ -726,7 +720,7 @@ class ClientCallbackReaderImpl
 
   ::grpc_impl::ClientContext* const context_;
   grpc::internal::Call call_;
-  experimental::ClientReadReactor<Response>* const reactor_;
+  ClientReadReactor<Response>* const reactor_;
 
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage,
@@ -757,7 +751,7 @@ class ClientCallbackReaderFactory {
                      const ::grpc::internal::RpcMethod& method,
                      ::grpc_impl::ClientContext* context,
                      const Request* request,
-                     experimental::ClientReadReactor<Response>* reactor) {
+                     ClientReadReactor<Response>* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -769,8 +763,7 @@ class ClientCallbackReaderFactory {
 };
 
 template <class Request>
-class ClientCallbackWriterImpl
-    : public experimental::ClientCallbackWriter<Request> {
+class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -808,7 +801,7 @@ class ClientCallbackWriterImpl
                      reactor_->OnReadInitialMetadataDone(ok);
                      MaybeFinish();
                    },
-                   &start_ops_);
+                   &start_ops_, /*can_inline=*/false);
     if (!start_corked_) {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
@@ -824,7 +817,7 @@ class ClientCallbackWriterImpl
                      reactor_->OnWriteDone(ok);
                      MaybeFinish();
                    },
-                   &write_ops_);
+                   &write_ops_, /*can_inline=*/false);
     write_ops_.set_core_cq_tag(&write_tag_);
 
     if (write_ops_at_start_) {
@@ -836,7 +829,7 @@ class ClientCallbackWriterImpl
     }
 
     finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_);
+                    &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -874,7 +867,7 @@ class ClientCallbackWriterImpl
                            reactor_->OnWritesDoneDone(ok);
                            MaybeFinish();
                          },
-                         &writes_done_ops_);
+                         &writes_done_ops_, /*can_inline=*/false);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
@@ -896,7 +889,7 @@ class ClientCallbackWriterImpl
   ClientCallbackWriterImpl(::grpc::internal::Call call,
                            ::grpc_impl::ClientContext* context,
                            Response* response,
-                           experimental::ClientWriteReactor<Request>* reactor)
+                           ClientWriteReactor<Request>* reactor)
       : context_(context),
         call_(call),
         reactor_(reactor),
@@ -908,7 +901,7 @@ class ClientCallbackWriterImpl
 
   ::grpc_impl::ClientContext* const context_;
   grpc::internal::Call call_;
-  experimental::ClientWriteReactor<Request>* const reactor_;
+  ClientWriteReactor<Request>* const reactor_;
 
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpRecvInitialMetadata>
@@ -947,7 +940,7 @@ class ClientCallbackWriterFactory {
   static void Create(::grpc::ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
                      ::grpc_impl::ClientContext* context, Response* response,
-                     experimental::ClientWriteReactor<Request>* reactor) {
+                     ClientWriteReactor<Request>* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -958,7 +951,7 @@ class ClientCallbackWriterFactory {
   }
 };
 
-class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
+class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -983,7 +976,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
                      reactor_->OnReadInitialMetadataDone(ok);
                      MaybeFinish();
                    },
-                   &start_ops_);
+                   &start_ops_, /*can_inline=*/false);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
@@ -991,7 +984,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
     call_.PerformOps(&start_ops_);
 
     finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_);
+                    &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -1015,8 +1008,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
   template <class Request, class Response>
   ClientCallbackUnaryImpl(::grpc::internal::Call call,
                           ::grpc_impl::ClientContext* context, Request* request,
-                          Response* response,
-                          experimental::ClientUnaryReactor* reactor)
+                          Response* response, ClientUnaryReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
@@ -1028,7 +1020,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
 
   ::grpc_impl::ClientContext* const context_;
   grpc::internal::Call call_;
-  experimental::ClientUnaryReactor* const reactor_;
+  ClientUnaryReactor* const reactor_;
 
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage,
@@ -1055,7 +1047,7 @@ class ClientCallbackUnaryFactory {
                      const ::grpc::internal::RpcMethod& method,
                      ::grpc_impl::ClientContext* context,
                      const Request* request, Response* response,
-                     experimental::ClientUnaryReactor* reactor) {
+                     ClientUnaryReactor* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 

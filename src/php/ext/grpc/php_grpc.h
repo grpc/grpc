@@ -68,6 +68,9 @@ ZEND_BEGIN_MODULE_GLOBALS(grpc)
   zend_bool initialized;
   zend_bool enable_fork_support;
   char *poll_strategy;
+  char *grpc_verbosity;
+  char *grpc_trace;
+  char *log_filename;
 ZEND_END_MODULE_GLOBALS(grpc)
 
 ZEND_EXTERN_MODULE_GLOBALS(grpc);

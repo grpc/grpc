@@ -616,7 +616,7 @@ class StsTokenFetcherCredentials
       if (err != GRPC_ERROR_NONE) return cleanup();
       MaybeAddToBody(
           &body_strvec, "actor_token",
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)));
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)));
       MaybeAddToBody(&body_strvec, "actor_token_type", actor_token_type_.get());
     }
     return cleanup();

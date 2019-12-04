@@ -20,7 +20,9 @@
 #define GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H
 
 namespace grpc {
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
+#endif
 
 // NOTE: This is an API for advanced users who need custom allocators.
 // Per rpc struct for the allocator. This is the interface to return to user.
@@ -67,7 +69,25 @@ class MessageAllocator {
   virtual MessageHolder<RequestT, ResponseT>* AllocateMessages() = 0;
 };
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 }  // namespace experimental
+#endif
+
+// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+namespace experimental {
+
+using ::grpc::RpcAllocatorState;
+
+template <typename RequestT, typename ResponseT>
+using MessageHolder = ::grpc::MessageHolder<RequestT, ResponseT>;
+
+template <typename RequestT, typename ResponseT>
+using MessageAllocator = ::grpc::MessageAllocator<RequestT, ResponseT>;
+
+}  // namespace experimental
+#endif
+
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H

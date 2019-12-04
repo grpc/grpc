@@ -49,22 +49,19 @@ test --test_env=GRPC_VERBOSITY=debug
 build --test_tag_filters=-no_linux
 build --build_tag_filters=-no_linux
 
-# Default test timeouts for all RBE tests (sanitizers override these values)
-# TODO(jtattermusch): revisit the non-standard test timeout values
-build --test_timeout=300,450,1200,3600
-
 # address sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:asan --copt=-gmlt
-# TODO(jtattermusch): use more reasonable test timeout
-build:asan --test_timeout=3600
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:asan --test_timeout=60,600,1800,3600
 build:asan --test_tag_filters=-no_linux,-qps_json_driver
 
 # memory sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:msan --copt=-gmlt
-# TODO(jtattermusch): use more reasonable test timeout
-build:msan --test_timeout=3600
+# "moderate" timeout 3x the default, "long" timeout 2x the default
+build:msan --test_timeout=60,900,1800,3600
 # TODO(jtattermusch): revisit the disabled tests
 build:msan --test_tag_filters=-no_linux,-nomsan,-json_run_localhost
 build:msan --cxxopt=--stdlib=libc++
@@ -78,16 +75,18 @@ build:msan --crosstool_top=@rbe_msan//cc:toolchain
 # thread sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:tsan --copt=-gmlt
-# TODO(jtattermusch): use more reasonable test timeout
-build:tsan --test_timeout=3600
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:tsan --test_timeout=60,600,1800,3600
 build:tsan --test_tag_filters=-no_linux,-qps_json_driver
 build:tsan --extra_execution_platforms=@rbe_default//config:platform
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:ubsan --copt=-gmlt
-# TODO(jtattermusch): use more reasonable test timeout
-build:ubsan --test_timeout=3600
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:ubsan --test_timeout=60,600,1800,3600
 # override the config-agnostic crosstool_top
 # how to update the bazel toolchain for ubsan:
 # - check for the latest released version in https://github.com/bazelbuild/bazel-toolchains/tree/master/configs/experimental/ubuntu16_04_clang

@@ -334,6 +334,7 @@ static void test_byte_buffer_copy(void) {
 }
 
 int main(int argc, char** argv) {
+  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   test_read_one_slice();
   test_read_one_slice_malloc();
@@ -347,5 +348,6 @@ int main(int argc, char** argv) {
   test_byte_buffer_from_reader();
   test_byte_buffer_copy();
   test_readall();
+  grpc_shutdown();
   return 0;
 }

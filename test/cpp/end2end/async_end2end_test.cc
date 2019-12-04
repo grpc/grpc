@@ -43,9 +43,9 @@
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV
 
 #include <gtest/gtest.h>
 
@@ -362,14 +362,14 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
     return;
   }
   int poller_slowdown_factor = 1;
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
   grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   if (0 == strcmp(poller.get(), "poll")) {
     poller_slowdown_factor = 2;
   }
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV
   ResetStub();
   SendRpc(1);
   server_->Shutdown();
@@ -1378,7 +1378,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
       // Server will cancel the RPC in a parallel thread while reading the
       // requests from the client. Since the cancellation can happen at anytime,
       // some of the cq results (i.e those until cancellation) might be true but
@@ -1526,7 +1526,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
 
       // Server will cancel the RPC in a parallel thread while writing responses
       // to the client. Since the cancellation can happen at anytime, some of
@@ -1673,7 +1673,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
 
       // Since server is going to cancel the RPC in a parallel thread, some of
       // the cq results (i.e those until the cancellation) might be true. Since

@@ -8,6 +8,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <DefineConstants>$(DefineConstants);GRPC_SUPPORT_WATCH;</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="../Grpc.HealthCheck/Grpc.HealthCheck.csproj" />
     <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
