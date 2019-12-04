@@ -85,8 +85,14 @@ namespace Grpc.Core
         internal void Dispose()
         {
             var withState = disposeAction as Action<object>;
-            if (withState != null) withState(callbackState);
-            else ((Action)disposeAction)();
+            if (withState != null)
+            {
+                withState(callbackState);
+            }
+            else
+            {
+                ((Action)disposeAction)();
+            }
         }
     }
 }
