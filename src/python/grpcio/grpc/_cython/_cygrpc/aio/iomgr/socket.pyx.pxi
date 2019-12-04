@@ -23,7 +23,6 @@ cdef class _AsyncioSocket:
         self._grpc_socket = NULL
         self._grpc_connect_cb = NULL
         self._grpc_read_cb = NULL
-        self._grpc_write_cb = NULL
         self._reader = None
         self._writer = None
         self._task_connect = None
@@ -131,28 +130,22 @@ cdef class _AsyncioSocket:
         self._grpc_read_cb = grpc_read_cb
         self._task_read.add_done_callback(self._read_cb)
         self._read_buffer = buffer_
-
-    async def _async_write(self, bytearray buffer):
-        self._writer.write(buffer)
-        await self._writer.drain()
-
-        self._grpc_write_cb(
-            <grpc_custom_socket*>self._grpc_socket,
-            <grpc_error*>0
-        )
  
     cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb):
-        # For each socket, C-Core guarantees there'll be only one ongoing write
-        self._grpc_write_cb = grpc_write_cb
-
+        """Performs write to network socket in AsyncIO.
+        
+        For each socket, C-Core guarantees there'll be only one ongoing write.
+        When the write is finished, we need to call grpc_write_cb to notify
+        C-Core that the work is done.
+        """
         cdef char* start
-        buffer = bytearray()
+        cdef bytearray outbound_buffer = bytearray()
         for i in range(g_slice_buffer.count):
             start = grpc_slice_buffer_start(g_slice_buffer, i)
             length = grpc_slice_buffer_length(g_slice_buffer, i)
-            buffer.extend(<bytes>start[:length])
+            outbound_buffer.extend(<bytes>start[:length])
 
-        self._writer.write(buffer)
+        self._writer.write(outbound_buffer)
         grpc_write_cb(
             <grpc_custom_socket*>self._grpc_socket,
             <grpc_error*>0

@@ -30,7 +30,6 @@ cdef class _AsyncioSocket:
         
         # Server-side attributes
         grpc_custom_accept_callback _grpc_accept_cb
-        grpc_custom_write_callback _grpc_write_cb
         grpc_custom_socket * _grpc_client_socket
         object _server
         object _py_socket

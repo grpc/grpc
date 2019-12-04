@@ -96,12 +96,14 @@ cdef class _AioCall:
         else:
             # By implementation, grpc_call_cancel always return OK
             grpc_call_cancel(self._grpc_call_wrapper.call, NULL)
-            return AioRpcStatus(
+            status = AioRpcStatus(
                 StatusCode.cancelled,
                 _UNKNOWN_CANCELLATION_DETAILS,
                 None,
                 None,
             )
+            cancellation_future.set_result(status)
+            return status
 
     async def unary_unary(self,
                           bytes method,

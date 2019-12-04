@@ -30,11 +30,10 @@ from tests_aio.unit._test_base import AioTestBase
 _NUM_STREAM_RESPONSES = 5
 _RESPONSE_PAYLOAD_SIZE = 42
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
-# _RESPONSE_INTERVAL_US = test_constants.SHORT_TIMEOUT * 1000 * 1000
-_RESPONSE_INTERVAL_US = 200 * 1000
+_RESPONSE_INTERVAL_US = test_constants.SHORT_TIMEOUT * 1000 * 1000
 
 
-class TestCall(AioTestBase):
+class TestUnaryUnaryCall(AioTestBase):
 
     async def setUp(self):
         self._server_target, self._server = await start_test_server()
@@ -140,6 +139,15 @@ class TestCall(AioTestBase):
             # NOTE(lidiz) The CancelledError is almost always re-created,
             # so we might not want to use it to transmit data.
             # https://github.com/python/cpython/blob/master/Lib/asyncio/tasks.py#L785
+
+
+class TestUnaryStreamCall(AioTestBase):
+
+    async def setUp(self):
+        self._server_target, self._server = await start_test_server()
+
+    async def tearDown(self):
+        await self._server.stop(None)
 
     async def test_cancel_unary_stream(self):
         async with aio.insecure_channel(self._server_target) as channel:

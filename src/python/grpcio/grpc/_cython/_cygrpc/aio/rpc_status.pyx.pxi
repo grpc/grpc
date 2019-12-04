@@ -19,7 +19,7 @@ cdef class AioRpcStatus(Exception):
     # The final status of gRPC is represented by three trailing metadata:
     # `grpc-status`, `grpc-status-message`, abd `grpc-status-details`.
     def __cinit__(self,
-                  int code,
+                  grpc_status_code code,
                   str details,
                   tuple trailing_metadata,
                   str debug_error_string):
@@ -28,7 +28,7 @@ cdef class AioRpcStatus(Exception):
         self._trailing_metadata = trailing_metadata
         self._debug_error_string = debug_error_string
 
-    cpdef int code(self):
+    cpdef grpc_status_code code(self):
         return self._code
 
     cpdef str details(self):

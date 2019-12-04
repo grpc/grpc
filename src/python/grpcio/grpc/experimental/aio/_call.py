@@ -246,7 +246,6 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
 
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
     """
-    _loop: asyncio.AbstractEventLoop
     _request: RequestType
     _deadline: Optional[float]
     _channel: cygrpc.AioChannel
@@ -260,7 +259,6 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
         super().__init__()
-        self._loop = asyncio.get_event_loop()
         self._request = request
         self._deadline = deadline
         self._channel = channel
@@ -330,28 +328,26 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
 
     Returned when an instance of `UnaryStreamMultiCallable` object is called.
     """
-    _loop: asyncio.AbstractEventLoop
     _request: RequestType
     _deadline: Optional[float]
     _channel: cygrpc.AioChannel
     _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
-    _call: AsyncIterable[ResponseType]
+    _aiter: AsyncIterable[ResponseType]
 
     def __init__(self, request: RequestType, deadline: Optional[float],
                  channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
         super().__init__()
-        self._loop = asyncio.get_event_loop()
         self._request = request
         self._deadline = deadline
         self._channel = channel
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._call = self._invoke()
+        self._aiter = self._invoke()
 
     def __del__(self) -> None:
         if not self._status.done():
@@ -406,10 +402,10 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
                                 _LOCAL_CANCELLATION_DETAILS, None, None))
 
     def __aiter__(self) -> AsyncIterable[ResponseType]:
-        return self._call
+        return self._aiter
 
     async def read(self) -> ResponseType:
         if self._status.done():
             await self._raise_rpc_error_if_not_ok()
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
-        return await self._call.__anext__()
+        return await self._aiter.__anext__()
