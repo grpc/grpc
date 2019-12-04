@@ -157,9 +157,6 @@ namespace Grpc.HealthCheck
         {
             string service = request.Service;
 
-            HealthCheckResponse response = GetHealthCheckResponse(service, throwOnNotFound: false);
-            await responseStream.WriteAsync(response);
-
             // Channel is used to to marshall multiple callers updating status into a single queue.
             // This is required because IServerStreamWriter is not thread safe.
             //
@@ -204,6 +201,10 @@ namespace Grpc.HealthCheck
                 // Signal the writer is complete and the watch method can exit.
                 channel.Writer.Complete();
             });
+
+            // Send current status immediately
+            HealthCheckResponse response = GetHealthCheckResponse(service, throwOnNotFound: false);
+            await responseStream.WriteAsync(response);
 
             // Read messages. WaitToReadAsync will wait until new messages are available.
             // Loop will exit when the call is canceled and the writer is marked as complete.
