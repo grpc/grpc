@@ -106,7 +106,7 @@ class UnimplementedAsyncRequestContext {
   GenericServerAsyncReaderWriter generic_stream_;
 };
 
-// TODO(b/142832583): Just for this file, use some contents of the experimental
+// TODO(vjpai): Just for this file, use some contents of the experimental
 // namespace here to make the code easier to read below. Remove this when
 // de-experimentalized fully.
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
