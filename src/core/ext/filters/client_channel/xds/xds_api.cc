@@ -19,6 +19,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <cctype>
+#include <string>
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -38,6 +40,11 @@
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
 #include "envoy/api/v2/endpoint/load_report.upb.h"
+#include "envoy/api/v2/lds.upb.h"
+#include "envoy/api/v2/rds.upb.h"
+#include "envoy/api/v2/route/route.upb.h"
+#include "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h"
+#include "envoy/config/listener/v2/api_listener.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upb.h"
 #include "envoy/type/percent.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -226,6 +233,118 @@ grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
+// FIXME: refactor out the node population and version/nonce setting part.
+grpc_slice XdsLdsRequestCreateAndEncode(const std::string& server_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version,
+                                        const std::string& version,
+                                        const std::string& nonce,
+                                        grpc_error* error) {
+  upb::Arena arena;
+  // Create a request.
+  envoy_api_v2_DiscoveryRequest* request =
+      envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  // Set version_info.
+  if (!version.empty()) {
+    envoy_api_v2_DiscoveryRequest_set_version_info(
+        request, upb_strview_makez(version.c_str()));
+  }
+  // Populate node.
+  if (build_version != nullptr) {
+    envoy_api_v2_core_Node* node_msg =
+        envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
+    PopulateNode(arena.ptr(), node, build_version, node_msg);
+  }
+  // Add resource_name.
+  envoy_api_v2_DiscoveryRequest_add_resource_names(
+      request, upb_strview_make(server_name.data(), server_name.size()),
+      arena.ptr());
+  // Set type_url.
+  envoy_api_v2_DiscoveryRequest_set_type_url(request,
+                                             upb_strview_makez(kLdsTypeUrl));
+  // Set nonce.
+  if (!nonce.empty()) {
+    envoy_api_v2_DiscoveryRequest_set_response_nonce(
+        request, upb_strview_makez(nonce.c_str()));
+  }
+  // Set error_detail if it's a NACK.
+  if (error != GRPC_ERROR_NONE) {
+    grpc_slice error_description_slice;
+    GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                  &error_description_slice));
+    upb_strview error_description_strview =
+        upb_strview_make(reinterpret_cast<const char*>(
+                             GPR_SLICE_START_PTR(error_description_slice)),
+                         GPR_SLICE_LENGTH(error_description_slice));
+    google_rpc_Status* error_detail =
+        envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
+                                                           arena.ptr());
+    google_rpc_Status_set_message(error_detail, error_description_strview);
+    GRPC_ERROR_UNREF(error);
+  }
+  // Encode the request.
+  size_t output_length;
+  char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
+                                                         &output_length);
+  return grpc_slice_from_copied_buffer(output, output_length);
+}
+
+grpc_slice XdsRdsRequestCreateAndEncode(const std::string& route_config_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version,
+                                        const std::string& version,
+                                        const std::string& nonce,
+                                        grpc_error* error) {
+  upb::Arena arena;
+  // Create a request.
+  envoy_api_v2_DiscoveryRequest* request =
+      envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  // Set version_info.
+  if (!version.empty()) {
+    envoy_api_v2_DiscoveryRequest_set_version_info(
+        request, upb_strview_makez(version.c_str()));
+  }
+  // Populate node.
+  if (build_version != nullptr) {
+    envoy_api_v2_core_Node* node_msg =
+        envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
+    PopulateNode(arena.ptr(), node, build_version, node_msg);
+  }
+  // Add resource_name.
+  envoy_api_v2_DiscoveryRequest_add_resource_names(
+      request,
+      upb_strview_make(route_config_name.data(), route_config_name.size()),
+      arena.ptr());
+  // Set type_url.
+  envoy_api_v2_DiscoveryRequest_set_type_url(request,
+                                             upb_strview_makez(kRdsTypeUrl));
+  // Set nonce.
+  if (!nonce.empty()) {
+    envoy_api_v2_DiscoveryRequest_set_response_nonce(
+        request, upb_strview_makez(nonce.c_str()));
+  }
+  // Set error_detail if it's a NACK.
+  if (error != GRPC_ERROR_NONE) {
+    grpc_slice error_description_slice;
+    GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                  &error_description_slice));
+    upb_strview error_description_strview =
+        upb_strview_make(reinterpret_cast<const char*>(
+                             GPR_SLICE_START_PTR(error_description_slice)),
+                         GPR_SLICE_LENGTH(error_description_slice));
+    google_rpc_Status* error_detail =
+        envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
+                                                           arena.ptr());
+    google_rpc_Status_set_message(error_detail, error_description_strview);
+    GRPC_ERROR_UNREF(error);
+  }
+  // Encode the request.
+  size_t output_length;
+  char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
+                                                         &output_length);
+  return grpc_slice_from_copied_buffer(output, output_length);
+}
+
 grpc_slice XdsCdsRequestCreateAndEncode(
     const std::set<StringView>& cluster_names, const XdsBootstrap::Node* node,
     const char* build_version, const std::string& version,
@@ -335,6 +454,248 @@ grpc_slice XdsEdsRequestCreateAndEncode(
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
                                                          &output_length);
   return grpc_slice_from_copied_buffer(output, output_length);
+}
+
+namespace {
+
+// Returns the matched length. Returns 0 if match fails.
+size_t MatchDomain(std::string domain_pattern, std::string expected_host_name) {
+  if (domain_pattern.empty()) return 0;
+  // Normalize the args to lower-case. Domain matching is case-insensitive.
+  std::transform(domain_pattern.begin(), domain_pattern.end(),
+                 domain_pattern.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  std::transform(expected_host_name.begin(), expected_host_name.end(),
+                 expected_host_name.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  // 1. Exact match.
+  if (domain_pattern.find('*') == std::string::npos) {
+    // The matched size is increased by 1 so that exact match is always
+    // preferred. E.g., if there is a suffix match "*ar.foo.com" for host name
+    // "bar.foo.com", its matched length is 11, while the matched length of the
+    // exact match is 12.
+    return domain_pattern == expected_host_name ? domain_pattern.size() + 1 : 0;
+  }
+  // 2. Suffix match or prefix match.
+  if (domain_pattern.size() > 1 &&
+      (domain_pattern[0] == '*' ||
+       domain_pattern[domain_pattern.size() - 1] == '*')) {
+    // Asterisk must match at least one char.
+    if (expected_host_name.size() < domain_pattern.size()) return 0;
+    // Normalize to prefix match.
+    if (domain_pattern[0] == '*') {
+      std::reverse(domain_pattern.begin(), domain_pattern.end());
+      std::reverse(expected_host_name.begin(), expected_host_name.end());
+    }
+    return expected_host_name.compare(0, domain_pattern.size() - 1,
+                                      domain_pattern) == 0
+               ? domain_pattern.size()
+               : 0;
+  }
+  // 3. Universe wildcard match.
+  if (domain_pattern == "*") return 1;
+  // Match fails.
+  return 0;
+}
+
+grpc_error* RouteConfigParse(
+    const envoy_api_v2_RouteConfiguration* route_config,
+    const std::string& expected_server_name, RdsUpdate* rds_update) {
+  // Strip off port from server name, if any.
+  size_t pos = expected_server_name.find(':');
+  std::string expected_host_name = expected_server_name.substr(0, pos);
+  // Get the virtual hosts.
+  size_t size;
+  const envoy_api_v2_route_VirtualHost* const* virtual_hosts =
+      envoy_api_v2_RouteConfiguration_virtual_hosts(route_config, &size);
+  // Find the virtual host with the longest wildcard matched domain name.
+  // FIXME: I'm not sure what the proto
+  // (https://github.com/envoyproxy/data-plane-api/blob/8a1d99a8b2b9e0e70ba59b29e857f2eda610cacd/envoy/api/v2/route/route.proto#L53)
+  // means. It defines a search order and also says that the longest wildcards
+  // match first. If the server name is ABC and we have a prefix pattern AB* and
+  // a suffix pattern *C, which one do we choose? Also, it says "Only a single
+  // virtual host in the entire route configuration can match on ``*``". I don't
+  // understand what it means since it already defines an wildcard matching
+  // order for different matching style. I'm doing something similar to Java,
+  // but looks like Java is not very sure either.
+  const envoy_api_v2_route_VirtualHost* target_virtual_host = nullptr;
+  size_t longest_match = 0;
+  for (size_t i = 0; i < size; ++i) {
+    size_t domain_size;
+    upb_strview const* domains =
+        envoy_api_v2_route_VirtualHost_domains(virtual_hosts[i], &domain_size);
+    for (size_t j = 1; j < domain_size; ++j) {
+      std::string domain_pattern(domains[j].data, domains[j].size);
+      size_t matched_length = MatchDomain(domain_pattern, expected_host_name);
+      if (matched_length > longest_match) {
+        target_virtual_host = virtual_hosts[i];
+        longest_match = matched_length;
+      }
+      if (longest_match == expected_host_name.size()) break;
+    }
+    if (longest_match == expected_host_name.size()) break;
+  }
+  if (target_virtual_host == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No matched virtual host found in the route config.");
+  }
+  // Get the route list from the matched virtual host.
+  const envoy_api_v2_route_Route* const* routes =
+      envoy_api_v2_route_VirtualHost_routes(target_virtual_host, &size);
+  if (size < 1) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No route found in the virtual host.");
+  }
+  // Only look at the last one in the route list (the default route),
+  const envoy_api_v2_route_Route* route = routes[size - 1];
+  // Validate that the match field must have a prefix field which is an empty
+  // string.
+  const envoy_api_v2_route_RouteMatch* match =
+      envoy_api_v2_route_Route_match(route);
+  if (!envoy_api_v2_route_RouteMatch_has_prefix(match)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No prefix field found in RouteMatch.");
+  }
+  const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
+  if (upb_strview_eql(prefix, upb_strview_makez(""))) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Prefix is not empty string.");
+  }
+  if (!envoy_api_v2_route_Route_has_route(route)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No RouteAction found in route.");
+  }
+  const envoy_api_v2_route_RouteAction* route_action =
+      envoy_api_v2_route_Route_route(route);
+  // Get the cluster in the RouteAction.
+  if (!envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No cluster found in RouteAction.");
+  }
+  const upb_strview cluster =
+      envoy_api_v2_route_RouteAction_cluster(route_action);
+  rds_update->cluster_name = std::string(cluster.data, cluster.size);
+  return GRPC_ERROR_NONE;
+}
+
+}  // namespace
+
+grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
+                             const std::string& expected_server_name,
+                             LdsUpdate* lds_update, upb_arena* arena) {
+  // Get the resources from the response.
+  size_t size;
+  const google_protobuf_Any* const* resources =
+      envoy_api_v2_DiscoveryResponse_resources(response, &size);
+  if (size < 1) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "LDS response contains 0 resource.");
+  }
+  for (size_t i = 0; i < size; ++i) {
+    // Check the type_url of the resource.
+    const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
+    if (!upb_strview_eql(type_url, upb_strview_makez(kLdsTypeUrl))) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not LDS.");
+    }
+    // Decode the listener.
+    const upb_strview encoded_listener =
+        google_protobuf_Any_value(resources[i]);
+    const envoy_api_v2_Listener* listener = envoy_api_v2_Listener_parse(
+        encoded_listener.data, encoded_listener.size, arena);
+    if (listener == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode listener.");
+    }
+    // Check listener name. Ignore unexpected listeners.
+    const upb_strview name = envoy_api_v2_Listener_name(listener);
+    const upb_strview expected_name =
+        upb_strview_makez(expected_server_name.c_str());
+    if (!upb_strview_eql(name, expected_name)) continue;
+    // Get api_listener and decode it to http_connection_manager.
+    const envoy_config_listener_v2_ApiListener* api_listener =
+        envoy_api_v2_Listener_api_listener(listener);
+    const upb_strview encoded_api_listener = google_protobuf_Any_value(
+        envoy_config_listener_v2_ApiListener_api_listener(api_listener));
+    const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager*
+        http_connection_manager =
+            envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_parse(
+                encoded_api_listener.data, encoded_api_listener.size, arena);
+    // Found inlined route_config. Parse it to find the cluster_name.
+    if (envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_has_route_config(
+            http_connection_manager)) {
+      const envoy_api_v2_RouteConfiguration* route_config =
+          envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_config(
+              http_connection_manager);
+      RdsUpdate rds_update;
+      grpc_error* error =
+          RouteConfigParse(route_config, expected_server_name, &rds_update);
+      if (error != GRPC_ERROR_NONE) return error;
+      lds_update->rds_update.set(rds_update);
+      const upb_strview route_config_name =
+          envoy_api_v2_RouteConfiguration_name(route_config);
+      lds_update->route_config_name =
+          std::string(route_config_name.data, route_config_name.size);
+      return GRPC_ERROR_NONE;
+    }
+    // Validate that RDS must be used to get the route_config dynamically.
+    if (!envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_has_rds(
+            http_connection_manager)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "HttpConnectionManager neither has inlined route_config nor RDS.");
+    }
+    // Get the route_config_name.
+    const envoy_config_filter_network_http_connection_manager_v2_Rds* rds =
+        envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_rds(
+            http_connection_manager);
+    const upb_strview route_config_name =
+        envoy_config_filter_network_http_connection_manager_v2_Rds_route_config_name(
+            rds);
+    lds_update->route_config_name =
+        std::string(route_config_name.data, route_config_name.size);
+    return GRPC_ERROR_NONE;
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* RdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
+                             const std::string& expected_server_name,
+                             const std::string& expected_route_config_name,
+                             RdsUpdate* rds_update, upb_arena* arena) {
+  // Get the resources from the response.
+  size_t size;
+  const google_protobuf_Any* const* resources =
+      envoy_api_v2_DiscoveryResponse_resources(response, &size);
+  if (size < 1) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "RDS response contains 0 resource.");
+  }
+  for (size_t i = 0; i < size; ++i) {
+    // Check the type_url of the resource.
+    const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
+    if (!upb_strview_eql(type_url, upb_strview_makez(kRdsTypeUrl))) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not RDS.");
+    }
+    // Decode the route_config.
+    const upb_strview encoded_route_config =
+        google_protobuf_Any_value(resources[i]);
+    const envoy_api_v2_RouteConfiguration* route_config =
+        envoy_api_v2_RouteConfiguration_parse(encoded_route_config.data,
+                                              encoded_route_config.size, arena);
+    if (route_config == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
+    }
+    // Check route_config_name. Ignore unexpected route_config.
+    const upb_strview name = envoy_api_v2_RouteConfiguration_name(route_config);
+    const upb_strview expected_name =
+        upb_strview_makez(expected_route_config_name.c_str());
+    if (!upb_strview_eql(name, expected_name)) continue;
+    // Parse the route_config.
+    RdsUpdate local_rds_update;
+    grpc_error* error =
+        RouteConfigParse(route_config, expected_server_name, &local_rds_update);
+    if (error != GRPC_ERROR_NONE) return error;
+    *rds_update = std::move(local_rds_update);
+    return GRPC_ERROR_NONE;
+  }
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
@@ -603,10 +964,12 @@ grpc_error* EdsResponsedParse(
 }  // namespace
 
 grpc_error* XdsAdsResponseDecodeAndParse(
-    const grpc_slice& encoded_response,
+    const grpc_slice& encoded_response, const std::string& expected_server_name,
+    const std::string& expected_route_config_name,
     const std::set<StringView>& expected_eds_service_names,
-    CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    std::string* version, std::string* nonce, std::string* type_url) {
+    LdsUpdate* lds_update, RdsUpdate* rds_update, CdsUpdateMap* cds_update_map,
+    EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
+    std::string* type_url) {
   upb::Arena arena;
   // Decode the response.
   const envoy_api_v2_DiscoveryResponse* response =
@@ -629,7 +992,14 @@ grpc_error* XdsAdsResponseDecodeAndParse(
   upb_strview nonce_strview = envoy_api_v2_DiscoveryResponse_nonce(response);
   *nonce = std::string(nonce_strview.data, nonce_strview.size);
   // Parse the response according to the resource type.
-  if (*type_url == kCdsTypeUrl) {
+  if (*type_url == kLdsTypeUrl) {
+    return LdsResponseParse(response, expected_server_name, lds_update,
+                            arena.ptr());
+  } else if (*type_url == kRdsTypeUrl) {
+    return RdsResponseParse(response, expected_server_name,
+                            expected_route_config_name, rds_update,
+                            arena.ptr());
+  } else if (*type_url == kCdsTypeUrl) {
     return CdsResponseParse(response, cds_update_map, arena.ptr());
   } else if (*type_url == kEdsTypeUrl) {
     return EdsResponsedParse(response, expected_eds_service_names,

@@ -74,12 +74,22 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
   XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
-            StringView server_name,
-            std::unique_ptr<ServiceConfigWatcherInterface> watcher,
-            const grpc_channel_args& channel_args, grpc_error** error);
+            StringView server_name, const grpc_channel_args& channel_args,
+            grpc_error** error);
   ~XdsClient();
 
   void Orphan() override;
+
+  // Start and cancel service config data watch for a server name.
+  // The XdsClient takes ownership of the watcher, but the caller may
+  // keep a raw pointer to the watcher, which may be used only for
+  // cancellation.  (Because the caller does not own the watcher, the
+  // pointer must not be used for any other purpose.)
+  void WatchServiceConfigData(
+      StringView server_name,
+      std::unique_ptr<ServiceConfigWatcherInterface> watcher);
+  void CancelServiceConfigDataWatch(StringView server_name,
+                                    ServiceConfigWatcherInterface* watcher);
 
   // Start and cancel cluster data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
@@ -191,9 +201,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
-  // TODO(juanlishen): Once we implement LDS support, this can be a
-  // normal method instead of a closure callback.
-  static void NotifyOnServiceConfig(void* arg, grpc_error* error);
+  grpc_error* CreateServiceConfig(
+      const std::string& cluster_name,
+      RefCountedPtr<ServiceConfig>* service_config) const;
 
   std::set<StringView> WatchedClusterNames() const;
 
@@ -216,10 +226,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   std::unique_ptr<XdsBootstrap> bootstrap_;
 
   std::string server_name_;
+  std::string route_config_name_;
+  std::string cluster_name_;
+
   std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
-  // TODO(juanlishen): Once we implement LDS support, this will no
-  // longer be needed.
-  grpc_closure service_config_notify_;
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;

@@ -54,9 +54,20 @@ proto_files=( \
   "envoy/api/v2/eds.proto" \
   "envoy/api/v2/endpoint/endpoint.proto" \
   "envoy/api/v2/endpoint/load_report.proto" \
+  "envoy/api/v2/lds.proto" \
+  "envoy/api/v2/listener/listener.proto" \
+  "envoy/api/v2/rds.proto" \
+  "envoy/api/v2/route/route.proto" \
+  "envoy/api/v2/srds.proto" \
+  "envoy/config/listener/v2/api_listener.proto" \
+  "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto" \
+  "envoy/config/filter/accesslog/v2/accesslog.proto" \
   "envoy/service/discovery/v2/ads.proto" \
   "envoy/service/load_stats/v2/lrs.proto" \
   "envoy/type/http.proto" \
+  "envoy/type/matcher/regex.proto" \
+  "envoy/api/v2/listener/udp_listener_config.proto" \
+  "envoy/type/matcher/string.proto" \
   "envoy/type/percent.proto" \
   "envoy/type/range.proto" \
   "gogoproto/gogo.proto" \

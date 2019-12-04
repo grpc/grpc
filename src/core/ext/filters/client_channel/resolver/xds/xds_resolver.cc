@@ -45,7 +45,13 @@ class XdsResolver : public Resolver {
 
   void StartLocked() override;
 
-  void ShutdownLocked() override { xds_client_.reset(); }
+  void ShutdownLocked() override {
+    if (service_config_watcher_ != nullptr) {
+      xds_client_->CancelServiceConfigDataWatch(StringView(server_name_.get()),
+                                                service_config_watcher_);
+    }
+    xds_client_.reset();
+  }
 
  private:
   class ServiceConfigWatcher : public XdsClient::ServiceConfigWatcherInterface {
@@ -64,6 +70,10 @@ class XdsResolver : public Resolver {
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
+  // A pointer to the service config watcher, to be used when cancelling the
+  // watch. Note that this is not owned, so this pointer must never be
+  // derefernced.
+  ServiceConfigWatcher* service_config_watcher_ = nullptr;
 };
 
 void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
@@ -87,9 +97,9 @@ void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
 
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
-  xds_client_ = MakeOrphanable<XdsClient>(
-      combiner(), interested_parties_, StringView(server_name_.get()),
-      MakeUnique<ServiceConfigWatcher>(Ref()), *args_, &error);
+  xds_client_ =
+      MakeOrphanable<XdsClient>(combiner(), interested_parties_,
+                                StringView(server_name_.get()), *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -97,6 +107,11 @@ void XdsResolver::StartLocked() {
             grpc_error_string(error));
     result_handler()->ReturnError(error);
   }
+  // Start watching the service config.
+  auto watcher = MakeUnique<ServiceConfigWatcher>(Ref());
+  service_config_watcher_ = watcher.get();
+  xds_client_->WatchServiceConfigData(StringView(server_name_.get()),
+                                      std::move(watcher));
 }
 
 //
