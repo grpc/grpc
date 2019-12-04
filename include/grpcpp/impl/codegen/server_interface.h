@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_INTERFACE_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call.h>

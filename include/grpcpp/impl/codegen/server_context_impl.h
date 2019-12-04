@@ -24,8 +24,9 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/port_platform.h>
 
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/callback_common.h>

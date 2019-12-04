@@ -23,6 +23,8 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/channel_impl.h>
