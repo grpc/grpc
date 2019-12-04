@@ -24,8 +24,9 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/port_platform.h>
 
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/callback_common.h>
@@ -95,10 +96,13 @@ namespace grpc {
 class GenericServerContext;
 class ServerInterface;
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
+#endif
 class GenericCallbackServerContext;
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 }  // namespace experimental
-
+#endif
 namespace internal {
 class Call;
 }  // namespace internal
@@ -348,7 +352,11 @@ class ServerContextBase {
   friend class ::grpc_impl::internal::FinishOnlyReactor;
   friend class ::grpc_impl::ClientContext;
   friend class ::grpc::GenericServerContext;
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  friend class ::grpc::GenericCallbackServerContext;
+#else
   friend class ::grpc::experimental::GenericCallbackServerContext;
+#endif
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
