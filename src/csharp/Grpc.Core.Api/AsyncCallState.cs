@@ -26,7 +26,7 @@ namespace Grpc.Core
     /// Provides an abstraction over the callback providers
     /// used by AsyncUnaryCall, AsyncDuplexStreamingCall, etc
     /// </summary>
-    internal readonly struct AsyncCallState
+    internal struct AsyncCallState
     {
         readonly object responseHeadersAsync; // Task<Metadata> or Func<object, Task<Metadata>>
         readonly object getStatusFunc; // Func<Status> or Func<object, Status>
