@@ -27,8 +27,8 @@ typedef ::grpc_impl::ServerContext ServerContext;
 
 namespace experimental {
 
-typedef ::grpc_impl::experimental::ServerContextBase ServerContextBase;
-typedef ::grpc_impl::experimental::CallbackServerContext CallbackServerContext;
+typedef ::grpc_impl::ServerContextBase ServerContextBase;
+typedef ::grpc_impl::CallbackServerContext CallbackServerContext;
 
 }  // namespace experimental
 }  // namespace grpc

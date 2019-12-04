@@ -24,6 +24,8 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
@@ -57,9 +59,15 @@ namespace internal {
 class ExternalConnectionAcceptorImpl;
 }  // namespace internal
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
+#endif
 class CallbackGenericService;
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
+}  // namespace experimental
+#endif
 
+namespace experimental {
 // EXPERIMENTAL API:
 // Interface for a grpc server to build transports with connections created out
 // of band.
@@ -265,12 +273,14 @@ class ServerBuilder {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
     /// Register a generic service that uses the callback API.
     /// Matches requests with any :authority
     /// This is mostly useful for writing generic gRPC Proxies where the exact
     /// serialization format is unknown
     ServerBuilder& RegisterCallbackGenericService(
         grpc::experimental::CallbackGenericService* service);
+#endif
 
     enum class ExternalConnectionType {
       FROM_FD = 0  // in the form of a file descriptor
@@ -287,6 +297,15 @@ class ServerBuilder {
    private:
     ServerBuilder* builder_;
   };
+
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  /// Register a generic service that uses the callback API.
+  /// Matches requests with any :authority
+  /// This is mostly useful for writing generic gRPC Proxies where the exact
+  /// serialization format is unknown
+  ServerBuilder& RegisterCallbackGenericService(
+      grpc::CallbackGenericService* service);
+#endif
 
   /// NOTE: The function experimental() is not stable public API. It is a view
   /// to the experimental components of this class. It may be changed or removed
@@ -369,8 +388,13 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
   grpc_resource_quota* resource_quota_;
   grpc::AsyncGenericService* generic_service_{nullptr};
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  grpc::CallbackGenericService* callback_generic_service_{nullptr};
+#else
   grpc::experimental::CallbackGenericService* callback_generic_service_{
       nullptr};
+#endif
+
   struct {
     bool is_set;
     grpc_compression_level level;

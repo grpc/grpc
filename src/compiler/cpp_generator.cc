@@ -144,6 +144,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/client_callback.h",
         "grpcpp/impl/codegen/client_context.h",
         "grpcpp/impl/codegen/completion_queue.h",
+        "grpcpp/impl/codegen/message_allocator.h",
         "grpcpp/impl/codegen/method_handler.h",
         "grpcpp/impl/codegen/proto_utils.h",
         "grpcpp/impl/codegen/rpc_method.h",
@@ -159,17 +160,6 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
     printer->Print(vars, "\n");
-    printer->Print(vars, "namespace grpc_impl {\n");
-    printer->Print(vars, "class CompletionQueue;\n");
-    printer->Print(vars, "class ServerCompletionQueue;\n");
-    printer->Print(vars, "class ServerContext;\n");
-    printer->Print(vars, "}  // namespace grpc_impl\n\n");
-    printer->Print(vars, "namespace grpc {\n");
-    printer->Print(vars, "namespace experimental {\n");
-    printer->Print(vars, "template <typename RequestT, typename ResponseT>\n");
-    printer->Print(vars, "class MessageAllocator;\n");
-    printer->Print(vars, "}  // namespace experimental\n");
-    printer->Print(vars, "}  // namespace grpc\n\n");
 
     vars["message_header_ext"] = params.message_header_extension.empty()
                                      ? kCppGeneratorMessageHeaderExt
@@ -1662,6 +1652,7 @@ grpc::string GetSourceIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/channel_interface.h",
         "grpcpp/impl/codegen/client_unary_call.h",
         "grpcpp/impl/codegen/client_callback.h",
+        "grpcpp/impl/codegen/message_allocator.h",
         "grpcpp/impl/codegen/method_handler.h",
         "grpcpp/impl/codegen/rpc_service_method.h",
         "grpcpp/impl/codegen/server_callback.h",

@@ -136,8 +136,6 @@ class DefaultMessageHolder
 
 }  // namespace internal
 
-namespace experimental {
-
 // Forward declarations
 class ServerUnaryReactor;
 template <class Request>
@@ -723,8 +721,6 @@ class ServerUnaryReactor : public internal::ServerReactor {
   ::grpc::Status status_wanted_ /* GUARDED_BY(writer_mu_) */;
 };
 
-}  // namespace experimental
-
 namespace internal {
 
 template <class Base>
@@ -734,17 +730,15 @@ class FinishOnlyReactor : public Base {
   void OnDone() override { this->~FinishOnlyReactor(); }
 };
 
-using UnimplementedUnaryReactor =
-    FinishOnlyReactor<experimental::ServerUnaryReactor>;
+using UnimplementedUnaryReactor = FinishOnlyReactor<ServerUnaryReactor>;
 template <class Request>
-using UnimplementedReadReactor =
-    FinishOnlyReactor<experimental::ServerReadReactor<Request>>;
+using UnimplementedReadReactor = FinishOnlyReactor<ServerReadReactor<Request>>;
 template <class Response>
 using UnimplementedWriteReactor =
-    FinishOnlyReactor<experimental::ServerWriteReactor<Response>>;
+    FinishOnlyReactor<ServerWriteReactor<Response>>;
 template <class Request, class Response>
 using UnimplementedBidiReactor =
-    FinishOnlyReactor<experimental::ServerBidiReactor<Request, Response>>;
+    FinishOnlyReactor<ServerBidiReactor<Request, Response>>;
 
 }  // namespace internal
 }  // namespace grpc_impl

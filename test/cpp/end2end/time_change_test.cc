@@ -34,7 +34,6 @@
 #include "test/cpp/util/subprocess.h"
 
 #include <gtest/gtest.h>
-#include <pthread.h>
 #include <sys/time.h>
 #include <thread>
 

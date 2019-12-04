@@ -26,6 +26,10 @@
 #include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <ext/spl/spl_exceptions.h>
 #include <zend_exceptions.h>
 
@@ -74,6 +78,12 @@ ZEND_GET_MODULE(grpc)
                      enable_fork_support, zend_grpc_globals, grpc_globals)
    STD_PHP_INI_ENTRY("grpc.poll_strategy", NULL, PHP_INI_SYSTEM, OnUpdateString,
                      poll_strategy, zend_grpc_globals, grpc_globals)
+   STD_PHP_INI_ENTRY("grpc.grpc_verbosity", NULL, PHP_INI_SYSTEM, OnUpdateString,
+                     grpc_verbosity, zend_grpc_globals, grpc_globals)
+   STD_PHP_INI_ENTRY("grpc.grpc_trace", NULL, PHP_INI_SYSTEM, OnUpdateString,
+                     grpc_trace, zend_grpc_globals, grpc_globals)
+   STD_PHP_INI_ENTRY("grpc.log_filename", NULL, PHP_INI_SYSTEM, OnUpdateString,
+                     log_filename, zend_grpc_globals, grpc_globals)
    PHP_INI_END()
 /* }}} */
 
@@ -222,6 +232,55 @@ void apply_ini_settings(TSRMLS_D) {
     strcat(poll_str, GRPC_G(poll_strategy));
     putenv(poll_str);
   }
+
+  if (GRPC_G(grpc_verbosity)) {
+    char *verbosity_str = malloc(sizeof("GRPC_VERBOSITY=") +
+                                 strlen(GRPC_G(grpc_verbosity)));
+    strcpy(verbosity_str, "GRPC_VERBOSITY=");
+    strcat(verbosity_str, GRPC_G(grpc_verbosity));
+    putenv(verbosity_str);
+  }
+
+  if (GRPC_G(grpc_trace)) {
+    char *trace_str = malloc(sizeof("GRPC_TRACE=") +
+                             strlen(GRPC_G(grpc_trace)));
+    strcpy(trace_str, "GRPC_TRACE=");
+    strcat(trace_str, GRPC_G(grpc_trace));
+    putenv(trace_str);
+  }
+}
+
+static void custom_logger(gpr_log_func_args* args) {
+  TSRMLS_FETCH();
+
+  const char* final_slash;
+  const char* display_file;
+  char* prefix;
+  char* final;
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+
+  final_slash = strrchr(args->file, '/');
+  if (final_slash) {
+    display_file = final_slash + 1;
+  } else {
+    display_file = args->file;
+  }
+
+  FILE *fp = fopen(GRPC_G(log_filename), "ab");
+  if (!fp) {
+    return;
+  }
+
+  gpr_asprintf(&prefix, "%s%" PRId64 ".%09" PRId32 " %s:%d]",
+               gpr_log_severity_string(args->severity), now.tv_sec,
+               now.tv_nsec, display_file, args->line);
+
+  gpr_asprintf(&final, "%-60s %s\n", prefix, args->message);
+
+  fprintf(fp, "%s", final);
+  fclose(fp);
+  gpr_free(prefix);
+  gpr_free(final);
 }
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -397,6 +456,9 @@ PHP_MINFO_FUNCTION(grpc) {
 PHP_RINIT_FUNCTION(grpc) {
   if (!GRPC_G(initialized)) {
     apply_ini_settings(TSRMLS_C);
+    if (GRPC_G(log_filename)) {
+      gpr_set_log_function(custom_logger);
+    }
     grpc_init();
     register_fork_handlers();
     grpc_php_init_completion_queue(TSRMLS_C);
@@ -412,6 +474,9 @@ static PHP_GINIT_FUNCTION(grpc) {
   grpc_globals->initialized = 0;
   grpc_globals->enable_fork_support = 0;
   grpc_globals->poll_strategy = NULL;
+  grpc_globals->grpc_verbosity = NULL;
+  grpc_globals->grpc_trace = NULL;
+  grpc_globals->log_filename = NULL;
 }
 /* }}} */
 

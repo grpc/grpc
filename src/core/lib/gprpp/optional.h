@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
 namespace grpc_core {
 
 /* A make-shift alternative for absl::Optional. This can be removed in favor of
