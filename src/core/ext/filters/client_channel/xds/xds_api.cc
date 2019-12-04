@@ -19,8 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
-#include <cctype>
-#include <string>
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -458,8 +456,9 @@ grpc_slice XdsEdsRequestCreateAndEncode(
 
 namespace {
 
-// Returns the matched length. Returns 0 if match fails.
-size_t MatchDomain(std::string domain_pattern, std::string expected_host_name) {
+// Returns the preference for the match (higher value matches take precedence
+// over lower value matches). Returns 0 if match fails.
+size_t DomainMatch(std::string domain_pattern, std::string expected_host_name) {
   if (domain_pattern.empty()) return 0;
   // Normalize the args to lower-case. Domain matching is case-insensitive.
   std::transform(domain_pattern.begin(), domain_pattern.end(),
@@ -476,23 +475,26 @@ size_t MatchDomain(std::string domain_pattern, std::string expected_host_name) {
     // exact match is 12.
     return domain_pattern == expected_host_name ? domain_pattern.size() + 1 : 0;
   }
-  // 2. Suffix match or prefix match.
-  if (domain_pattern.size() > 1 &&
-      (domain_pattern[0] == '*' ||
-       domain_pattern[domain_pattern.size() - 1] == '*')) {
+  // 2. Suffix match.
+  if (domain_pattern.size() > 1 && domain_pattern[0] == '*') {
     // Asterisk must match at least one char.
     if (expected_host_name.size() < domain_pattern.size()) return 0;
-    // Normalize to prefix match.
-    if (domain_pattern[0] == '*') {
-      std::reverse(domain_pattern.begin(), domain_pattern.end());
-      std::reverse(expected_host_name.begin(), expected_host_name.end());
-    }
-    return expected_host_name.compare(0, domain_pattern.size() - 1,
-                                      domain_pattern) == 0
-               ? domain_pattern.size()
-               : 0;
+    StringView pattern_suffix(domain_pattern.c_str() + 1);
+    StringView host_suffix(expected_host_name.c_str() +
+                           expected_host_name.size() - pattern_suffix.size());
+    return pattern_suffix == host_suffix ? domain_pattern.size() : 0;
   }
-  // 3. Universe wildcard match.
+  // 3. Prefix match.
+  if (domain_pattern.size() > 1 &&
+      domain_pattern[domain_pattern.size() - 1] == '*') {
+    // Asterisk must match at least one char.
+    if (expected_host_name.size() < domain_pattern.size()) return 0;
+    StringView pattern_prefix(domain_pattern.c_str(),
+                              domain_pattern.size() - 1);
+    StringView host_prefix(expected_host_name.c_str(), pattern_prefix.size());
+    return pattern_prefix == host_prefix ? domain_pattern.size() : 0;
+  }
+  // 4. Universe wildcard match.
   if (domain_pattern == "*") return 1;
   // Match fails.
   return 0;
@@ -513,27 +515,25 @@ grpc_error* RouteConfigParse(
   // (https://github.com/envoyproxy/data-plane-api/blob/8a1d99a8b2b9e0e70ba59b29e857f2eda610cacd/envoy/api/v2/route/route.proto#L53)
   // means. It defines a search order and also says that the longest wildcards
   // match first. If the server name is ABC and we have a prefix pattern AB* and
-  // a suffix pattern *C, which one do we choose? Also, it says "Only a single
-  // virtual host in the entire route configuration can match on ``*``". I don't
-  // understand what it means since it already defines an wildcard matching
-  // order for different matching style. I'm doing something similar to Java,
-  // but looks like Java is not very sure either.
+  // a suffix pattern *C, which one do we choose? I'm doing something similar to
+  // Java, but looks like Java is not very sure either.
   const envoy_api_v2_route_VirtualHost* target_virtual_host = nullptr;
-  size_t longest_match = 0;
+  size_t largest_match = 0;
+  const size_t exact_match = expected_host_name.size() + 1;
   for (size_t i = 0; i < size; ++i) {
     size_t domain_size;
     upb_strview const* domains =
         envoy_api_v2_route_VirtualHost_domains(virtual_hosts[i], &domain_size);
-    for (size_t j = 1; j < domain_size; ++j) {
+    for (size_t j = 0; j < domain_size; ++j) {
       std::string domain_pattern(domains[j].data, domains[j].size);
-      size_t matched_length = MatchDomain(domain_pattern, expected_host_name);
-      if (matched_length > longest_match) {
+      size_t match = DomainMatch(domain_pattern, expected_host_name);
+      if (match > largest_match) {
         target_virtual_host = virtual_hosts[i];
-        longest_match = matched_length;
+        largest_match = match;
+        if (largest_match == exact_match) break;
       }
-      if (longest_match == expected_host_name.size()) break;
     }
-    if (longest_match == expected_host_name.size()) break;
+    if (largest_match == exact_match) break;
   }
   if (target_virtual_host == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -628,7 +628,7 @@ grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
       grpc_error* error =
           RouteConfigParse(route_config, expected_server_name, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
-      lds_update->rds_update.set(rds_update);
+      lds_update->rds_update.set(std::move(rds_update));
       const upb_strview route_config_name =
           envoy_api_v2_RouteConfiguration_name(route_config);
       lds_update->route_config_name =
@@ -652,7 +652,8 @@ grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
         std::string(route_config_name.data, route_config_name.size);
     return GRPC_ERROR_NONE;
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "No listener found for expected server name.");
 }
 
 grpc_error* RdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
@@ -695,7 +696,8 @@ grpc_error* RdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
     *rds_update = std::move(local_rds_update);
     return GRPC_ERROR_NONE;
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "No route config found for expected name.");
 }
 
 grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,

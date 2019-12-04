@@ -54,7 +54,7 @@ struct RdsUpdate {
 struct LdsUpdate {
   // The name to use in the RDS request.
   std::string route_config_name;
-  // The name to use in the CDS request. Present if LDS the response has it
+  // The name to use in the CDS request. Present if the LDS response has it
   // inlined.
   Optional<RdsUpdate> rds_update;
 };

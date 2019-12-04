@@ -74,22 +74,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
   XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
-            StringView server_name, const grpc_channel_args& channel_args,
-            grpc_error** error);
+            StringView server_name,
+            std::unique_ptr<ServiceConfigWatcherInterface> watcher,
+            const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 
   void Orphan() override;
-
-  // Start and cancel service config data watch for a server name.
-  // The XdsClient takes ownership of the watcher, but the caller may
-  // keep a raw pointer to the watcher, which may be used only for
-  // cancellation.  (Because the caller does not own the watcher, the
-  // pointer must not be used for any other purpose.)
-  void WatchServiceConfigData(
-      StringView server_name,
-      std::unique_ptr<ServiceConfigWatcherInterface> watcher);
-  void CancelServiceConfigDataWatch(StringView server_name,
-                                    ServiceConfigWatcherInterface* watcher);
 
   // Start and cancel cluster data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
@@ -225,15 +215,15 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
 
-  std::string server_name_;
-  std::string route_config_name_;
-  std::string cluster_name_;
+  const std::string server_name_;
 
   std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
+  std::string route_config_name_;
+  std::string cluster_name_;
   // All the received clusters are cached, no matter they are watched or not.
   std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
   // Only the watched EDS service names are stored.

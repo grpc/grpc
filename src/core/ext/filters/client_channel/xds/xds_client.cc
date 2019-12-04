@@ -1548,12 +1548,14 @@ UniquePtr<char> GenerateBuildVersionString() {
 
 XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      StringView server_name,
+                     std::unique_ptr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : build_version_(GenerateBuildVersionString()),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
-      server_name_(server_name) {
+      server_name_(server_name),
+      service_config_watcher_(std::move(watcher)) {
   if (*error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p: failed to read bootstrap file: %s",
@@ -1567,6 +1569,9 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
   }
   chand_ = MakeOrphanable<ChannelState>(
       Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel_args);
+  if (service_config_watcher_ != nullptr) {
+    chand_->OnResourceNamesChanged(kLdsTypeUrl);
+  }
 }
 
 XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
@@ -1575,26 +1580,6 @@ void XdsClient::Orphan() {
   shutting_down_ = true;
   chand_.reset();
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
-}
-
-void XdsClient::WatchServiceConfigData(
-    StringView server_name,
-    std::unique_ptr<ServiceConfigWatcherInterface> watcher) {
-  server_name_ = std::string(server_name);
-  service_config_watcher_ = std::move(watcher);
-  chand_->OnResourceNamesChanged(kLdsTypeUrl);
-}
-
-void XdsClient::CancelServiceConfigDataWatch(
-    StringView server_name, XdsClient::ServiceConfigWatcherInterface* watcher) {
-  if (std::string(server_name) != server_name_ ||
-      service_config_watcher_.get() != watcher) {
-    gpr_log(GPR_ERROR,
-            "[xds_client %p: Attempting to cancel a non-existing watcher %p "
-            "for server name %s",
-            this, watcher, StringViewToCString(server_name).get());
-  }
-  chand_->OnWatcherRemoved();
 }
 
 void XdsClient::WatchClusterData(
