@@ -23,6 +23,8 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/channel_impl.h>
@@ -243,6 +245,13 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   /// service. The service must exist for the lifetime of the Server instance.
   void RegisterAsyncGenericService(grpc::AsyncGenericService* service) override;
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  /// Register a callback-based generic service. This call does not take
+  /// ownership of theservice. The service must exist for the lifetime of the
+  /// Server instance.
+  void RegisterCallbackGenericService(
+      grpc::CallbackGenericService* service) override;
+#else
   /// NOTE: class experimental_registration_type is not part of the public API
   /// of this class
   /// TODO(vjpai): Move these contents to the public API of Server when
@@ -270,6 +279,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   experimental_registration_interface* experimental_registration() override {
     return &experimental_registration_;
   }
+#endif
 
   void PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
                         grpc::internal::Call* call) override;
@@ -318,9 +328,11 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // List of callback requests to start when server actually starts.
   std::list<CallbackRequestBase*> callback_reqs_to_start_;
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
   // For registering experimental callback generic service; remove when that
   // method longer experimental
   experimental_registration_type experimental_registration_{this};
+#endif
 
   // Server status
   grpc::internal::Mutex mu_;
@@ -357,8 +369,12 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   // When appropriate, use a default callback generic service to handle
   // unimplemented methods
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  std::unique_ptr<grpc::CallbackGenericService> unimplemented_service_;
+#else
   std::unique_ptr<grpc::experimental::CallbackGenericService>
       unimplemented_service_;
+#endif
 
   // A special handler for resource exhausted in sync case
   std::unique_ptr<grpc::internal::MethodHandler> resource_exhausted_handler_;

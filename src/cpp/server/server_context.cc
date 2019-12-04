@@ -36,7 +36,6 @@
 #include "src/core/lib/surface/call.h"
 
 namespace grpc_impl {
-namespace experimental {
 
 // CompletionOp
 
@@ -379,5 +378,4 @@ void ServerContextBase::SetLoadReportingCosts(
   }
 }
 
-}  // namespace experimental
 }  // namespace grpc_impl

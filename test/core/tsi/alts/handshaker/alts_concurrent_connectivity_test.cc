@@ -21,7 +21,6 @@
 #include <fcntl.h>
 #include <gmock/gmock.h>
 #include <netinet/in.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>

@@ -77,11 +77,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "gon"
+g_stands_for = "guantao"
 
 core_version = "9.0.0"
 
-version = "1.26.0-dev"
+version = "1.27.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2303,7 +2303,9 @@ grpc_cc_library(
         "absl-base",
         "absl-time",
         "opencensus-trace",
+        "opencensus-trace-context_util",
         "opencensus-stats",
+        "opencensus-context",
     ],
     language = "c++",
     deps = [
