@@ -272,10 +272,9 @@ TlsCredentialsOptions::TlsCredentialsOptions(
     std::shared_ptr<TlsServerAuthorizationCheckConfig>
         server_authorization_check_config)
     : cert_request_type_(cert_request_type),
-      key_materials_config_(std::move(key_materials_config)),
-      credential_reload_config_(std::move(credential_reload_config)),
-      server_authorization_check_config_(
-          std::move(server_authorization_check_config)) {
+      key_materials_config_(key_materials_config),
+      credential_reload_config_(credential_reload_config),
+      server_authorization_check_config_(server_authorization_check_config) {
   c_credentials_options_ = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_cert_request_type(c_credentials_options_,
                                                      cert_request_type_);

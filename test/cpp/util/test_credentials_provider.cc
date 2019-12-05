@@ -109,11 +109,11 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       }
       if (has_spiffe_credentials &&
           type == grpc::testing::kSpiffeCredentialsType) {
+        std::cout << "***********Got into spiffe if statement" << std::endl;
         SpiffeCredentialTypeProvider* spiffe_provider =
-            reinterpret_cast<SpiffeCredentialTypeProvider*>(
-                added_secure_type_providers_[it -
-                                             added_secure_type_names_.begin()]
-                    .get());
+            reinterpret_cast<SpiffeCredentialTypeProvider*>(added_secure_type_providers_[it -added_secure_type_names_.begin()].get());
+        GPR_ASSERT(spiffe_provider != nullptr);
+        std::cout << "*********About to Call GetSpiffeChannelCredentials" << std::endl;
         return spiffe_provider->GetSpiffeChannelCredentials(args, thread_list_, mutex_);
       }
       return added_secure_type_providers_[it - added_secure_type_names_.begin()]

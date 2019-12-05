@@ -79,8 +79,8 @@ class CredentialsProvider {
   // Provide a list of threads to be used to create a credential, and a mutex
   // for adding to the list. E.g. to perform an async server authorization
   // check for SPIFFE.
-  void* thread_list_;
-  std::mutex* mutex_;
+  void* thread_list_ = nullptr;
+  std::mutex* mutex_ = nullptr;
 };
 
 // Get the current provider. Create a default one if not set.
