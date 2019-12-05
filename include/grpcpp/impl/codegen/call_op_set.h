@@ -310,7 +310,12 @@ class CallOpSendMessage {
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
-    if (msg_ == nullptr && !send_buf_.Valid()) return;
+    if (msg_ == nullptr && !send_buf_.Valid()) {
+      // If SendMessage was called, this is an API misuse, since we're
+      // attempting to send an invalid message.
+      GPR_CODEGEN_DEBUG_ASSERT(!send_message_called_);
+      return;
+    }
     if (hijacked_) {
       serializer_ = nullptr;
       return;
@@ -329,6 +334,7 @@ class CallOpSendMessage {
   }
   void FinishOp(bool* status) {
     if (msg_ == nullptr && !send_buf_.Valid()) return;
+    send_message_called_ = false;
     if (hijacked_ && failed_send_) {
       // Hijacking interceptor failed this Op
       *status = false;
@@ -369,6 +375,7 @@ class CallOpSendMessage {
   const void* msg_ = nullptr;  // The original non-serialized message
   bool hijacked_ = false;
   bool failed_send_ = false;
+  bool send_message_called_ = false;
   ByteBuffer send_buf_;
   WriteOptions write_options_;
   std::function<Status(const void*)> serializer_;
@@ -376,6 +383,8 @@ class CallOpSendMessage {
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
+  GPR_CODEGEN_DEBUG_ASSERT(!send_message_called_);
+  send_message_called_ = true;
   write_options_ = options;
   serializer_ = [this](const void* message) {
     bool own_buf;
