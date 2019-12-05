@@ -148,26 +148,26 @@ class Call(_base_call.Call):
     _code: grpc.StatusCode
     _status: Awaitable[cygrpc.AioRpcStatus]
     _initial_metadata: Awaitable[MetadataType]
-    _cancellation_future: asyncio.Future
+    _cancellation: asyncio.Future
 
     def __init__(self) -> None:
         self._loop = asyncio.get_event_loop()
         self._code = None
         self._status = self._loop.create_future()
         self._initial_metadata = self._loop.create_future()
-        self._cancellation_future = self._loop.create_future()
+        self._cancellation = self._loop.create_future()
 
     def cancel(self) -> bool:
-        """Virtual cancellation method.
+        """Placeholder cancellation method.
 
         The implementation of this method needs to pass the cancellation reason
-        into self._cancellation_future, using `set_result` instead of
+        into self._cancellation, using `set_result` instead of
         `set_exception`.
         """
         raise NotImplementedError()
 
     def cancelled(self) -> bool:
-        return self._cancellation_future.done(
+        return self._cancellation.done(
         ) or self._code == grpc.StatusCode.CANCELLED
 
     def done(self) -> bool:
@@ -286,7 +286,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
             self._method,
             serialized_request,
             self._deadline,
-            self._cancellation_future,
+            self._cancellation,
             self._set_initial_metadata,
             self._set_status,
         )
@@ -297,8 +297,8 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
 
     def _cancel(self, status: cygrpc.AioRpcStatus) -> bool:
         """Forwards the application cancellation reasoning."""
-        if not self._status.done() and not self._cancellation_future.done():
-            self._cancellation_future.set_result(status)
+        if not self._status.done() and not self._cancellation.done():
+            self._cancellation.set_result(status)
             self._call.cancel()
             return True
         else:
@@ -363,12 +363,12 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
             self._method,
             serialized_request,
             self._deadline,
-            self._cancellation_future,
+            self._cancellation,
             self._set_initial_metadata,
             self._set_status,
         )
         async for serialized_response in async_gen:
-            if self._cancellation_future.done():
+            if self._cancellation.done():
                 await self._status
             if self._status.done():
                 # Raises pre-maturely if final status received here. Generates
@@ -390,8 +390,8 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         and the client calling "cancel" at the same time, this method respects
         the winner in C-Core.
         """
-        if not self._status.done() and not self._cancellation_future.done():
-            self._cancellation_future.set_result(status)
+        if not self._status.done() and not self._cancellation.done():
+            self._cancellation.set_result(status)
             return True
         else:
             return False

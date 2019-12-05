@@ -55,8 +55,6 @@ class Call(grpc.RpcContext, metaclass=ABCMeta):
     async def initial_metadata(self) -> MetadataType:
         """Accesses the initial metadata sent by the server.
 
-        Coroutine continues once the value is available.
-
         Returns:
           The initial :term:`metadata`.
         """
@@ -64,8 +62,6 @@ class Call(grpc.RpcContext, metaclass=ABCMeta):
     @abstractmethod
     async def trailing_metadata(self) -> MetadataType:
         """Accesses the trailing metadata sent by the server.
-
-        Coroutine continues once the value is available.
 
         Returns:
           The trailing :term:`metadata`.
@@ -75,8 +71,6 @@ class Call(grpc.RpcContext, metaclass=ABCMeta):
     async def code(self) -> grpc.StatusCode:
         """Accesses the status code sent by the server.
 
-        Coroutine continues once the value is available.
-
         Returns:
           The StatusCode value for the RPC.
         """
@@ -84,8 +78,6 @@ class Call(grpc.RpcContext, metaclass=ABCMeta):
     @abstractmethod
     async def details(self) -> Text:
         """Accesses the details sent by the server.
-
-        Coroutine continues once the value is available.
 
         Returns:
           The details string of the RPC.
@@ -122,7 +114,9 @@ class UnaryStreamCall(
     async def read(self) -> ResponseType:
         """Reads one message from the RPC.
 
-        Parallel read operations is not allowed.
+        Concurrent reads in multiple coroutines are not allowed. If you want to
+        perform read in multiple coroutines, you needs synchronization. So, you
+        can start another read after current read is finished.
 
         Returns:
           A response message of the RPC.

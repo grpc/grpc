@@ -23,6 +23,8 @@ cdef class _AsyncioSocket:
         object _task_read
         object _task_connect
         char * _read_buffer
+        # Caches the picked event loop, so we can avoid the 30ns overhead each
+        # time we need access to the event loop.
         object _loop
 
         # Client-side attributes

@@ -18,7 +18,7 @@ cdef class AioRpcStatus(Exception):
     cdef readonly:
         grpc_status_code _code
         str _details
-        # On spec, only client-side status has trailing metadata.
+        # Per the spec, only client-side status has trailing metadata.
         tuple _trailing_metadata
         str _debug_error_string
 

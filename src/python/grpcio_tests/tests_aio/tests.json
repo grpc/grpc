@@ -1,8 +1,8 @@
 [
   "_sanity._sanity_test.AioSanityTest",
   "unit.aio_rpc_error_test.TestAioRpcError",
-  "unit.call_test.TestUnaryUnaryCall",
   "unit.call_test.TestUnaryStreamCall",
+  "unit.call_test.TestUnaryUnaryCall",
   "unit.channel_test.TestChannel",
   "unit.init_test.TestInsecureChannel",
   "unit.server_test.TestServer"

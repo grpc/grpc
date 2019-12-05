@@ -18,6 +18,8 @@ cdef class _AioCall:
         AioChannel _channel
         list _references
         GrpcCallWrapper _grpc_call_wrapper
+        # Caches the picked event loop, so we can avoid the 30ns overhead each
+        # time we need access to the event loop.
         object _loop
 
         # Streaming call only attributes:

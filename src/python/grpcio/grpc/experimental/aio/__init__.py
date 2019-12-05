@@ -11,7 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""gRPC's Asynchronous Python API."""
+"""gRPC's Asynchronous Python API.
+
+gRPC Async API objects may only be used on the thread on which they were
+created. AsyncIO doesn't provide thread safety for most of its APIs.
+"""
 
 import abc
 import six
