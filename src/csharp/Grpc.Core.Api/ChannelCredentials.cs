@@ -30,7 +30,7 @@ namespace Grpc.Core
     /// </summary>
     public abstract class ChannelCredentials
     {
-        static readonly ChannelCredentials InsecureInstance = new InsecureCredentialsImpl();
+        static readonly ChannelCredentials InsecureInstance = new InsecureCredentials();
 
         /// <summary>
         /// Creates a new instance of channel credentials
@@ -74,7 +74,7 @@ namespace Grpc.Core
         /// </summary>
         internal virtual bool IsComposable => false;
 
-        private sealed class InsecureCredentialsImpl : ChannelCredentials
+        private sealed class InsecureCredentials : ChannelCredentials
         {
             public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
             {
@@ -101,7 +101,11 @@ namespace Grpc.Core
             {
                 this.channelCredentials = GrpcPreconditions.CheckNotNull(channelCredentials);
                 this.callCredentials = GrpcPreconditions.CheckNotNull(callCredentials);
-                GrpcPreconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
+
+                if (!channelCredentials.IsComposable)
+                {
+                    throw new ArgumentException(string.Format("{0} credentials can't be used with CallCredentials. Secure credentials like SslCredentials must be used.", channelCredentials.GetType().Name));
+                }
             }
 
             public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)

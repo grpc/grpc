@@ -40,7 +40,8 @@ namespace Grpc.Core.Tests
             Assert.Throws(typeof(ArgumentNullException), () => ChannelCredentials.Create(new FakeChannelCredentials(true), null));
 
             // forbid composing non-composable
-            Assert.Throws(typeof(ArgumentException), () => ChannelCredentials.Create(new FakeChannelCredentials(false), new FakeCallCredentials()));
+            var ex = Assert.Throws(typeof(ArgumentException), () => ChannelCredentials.Create(new FakeChannelCredentials(false), new FakeCallCredentials()));
+            Assert.AreEqual("FakeChannelCredentials credentials can't be used with CallCredentials. Secure credentials like SslCredentials must be used.", ex.Message);
         }
 
         [Test]
