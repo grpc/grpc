@@ -78,7 +78,7 @@ class LibuvEventManager {
   // Worker threads of the EventManager.
   std::vector<grpc_core::Thread> workers_;
   // Mutex and condition variable used for shutdown.
-  grpc_core::Mutex shutddown_mu_;
+  grpc_core::Mutex shutdown_mu_;
   grpc_core::CondVar shutdown_cv_;
 };
 
