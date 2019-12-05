@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc {
@@ -71,11 +72,14 @@ class LibuvEventManager {
 
   const Options options_;
   // Whether the EventManager workers should be stopped.
-  grpc_core::Atomic<bool> should_stop_;
+  grpc_core::Atomic<bool> should_stop_{false};
   // A refcount preventing the EventManager from shutdown.
-  grpc_core::Atomic<int> shutdown_refcount_;
+  grpc_core::Atomic<int> shutdown_refcount_{0};
   // Worker threads of the EventManager.
   std::vector<grpc_core::Thread> workers_;
+  // Mutex and condition variable used for shutdown.
+  grpc_core::Mutex shutddown_mu_;
+  grpc_core::CondVar shutdown_cv_;
 };
 
 }  // namespace experimental

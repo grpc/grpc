@@ -27,7 +27,7 @@ grpc::experimental::LibuvEventManager::Options::Options(int num_workers)
     : num_workers_(num_workers) {}
 
 grpc::experimental::LibuvEventManager::LibuvEventManager(const Options& options)
-    : options_(options), should_stop_(false), shutdown_refcount_(0) {
+    : options_(options) {
   int num_workers = options_.num_workers();
   // Number of workers can't be 0 if we do not accept thread donation.
   // TODO(guantaol): replaces the hard-coded number with a flag.
@@ -65,8 +65,13 @@ bool grpc::experimental::LibuvEventManager::ShouldStop() {
 void grpc::experimental::LibuvEventManager::Shutdown() {
   if (should_stop_.Load(grpc_core::MemoryOrder::ACQUIRE))
     return;  // Already shut down.
-  while (shutdown_refcount_.Load(grpc_core::MemoryOrder::ACQUIRE) > 0)
-    ;
+
+  {
+    grpc_core::MutexLock lock(&shutdown_mu_);
+    while (shutdown_refcount_.Load(grpc_core::MemoryOrder::ACQUIRE) > 0) {
+      shutdown_cv_.Wait(&shutdown_mu_);
+    }
+  }
   should_stop_.Store(true, grpc_core::MemoryOrder::RELEASE);
 }
 
@@ -75,5 +80,8 @@ void grpc::experimental::LibuvEventManager::ShutdownRef() {
 }
 
 void grpc::experimental::LibuvEventManager::ShutdownUnref() {
-  shutdown_refcount_.FetchSub(1, grpc_core::MemoryOrder::RELEASE);
+  if (shutdown_refcount_.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
+    grpc_core::MutexLock lock(&shutdown_mu_);
+    shutdown_cv_.Signal();
+  }
 }
