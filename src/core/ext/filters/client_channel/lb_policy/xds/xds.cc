@@ -744,12 +744,12 @@ void XdsLb::ShutdownLocked() {
   // watcher holds a ref to us.
   xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
                                         endpoint_watcher_);
-  if (config_->lrs_load_reporting_server_name() != nullptr) {
+  if (config_->lrs_load_reporting_server_name().has_value()) {
     // TODO(roth): We should pass the cluster name (in addition to the
     // eds_service_name) when adding the client stats. To do so, we need to
     // first find a way to plumb the cluster name down into this LB policy.
     xds_client()->RemoveClientStats(
-        StringView(config_->lrs_load_reporting_server_name()),
+        StringView(config_->lrs_load_reporting_server_name().value().c_str()),
         StringView(eds_service_name()), &client_stats_);
   }
   xds_client_from_channel_.reset();
