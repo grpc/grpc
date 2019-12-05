@@ -104,7 +104,7 @@ namespace Grpc.Core
 
                 if (!channelCredentials.IsComposable)
                 {
-                    throw new ArgumentException(string.Format("{0} can't be composed with supplied CallCredentials. Secure credentials like SslCredentials must be used.", channelCredentials.GetType().Name));
+                    throw new ArgumentException(string.Format("CallCredentials can't be composed with {0}. CallCredentials must be used with secure channel credentials like SslCredentials.", channelCredentials.GetType().Name));
                 }
             }
 
