@@ -113,12 +113,6 @@ class CallCredentials : private grpc::GrpcLibraryCodegen {
   CallCredentials();
   ~CallCredentials();
 
-  /// Set security level of a call credential. This API will lower security
-  /// level of a channel needed to transfer the call credential, and should be
-  /// used with caution. Default security level of a call credential is
-  /// GRPC_PRIVACY_AND_INTEGRITY.
-  virtual void SetSecurityLevel(grpc_security_level security_level) = 0;
-
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
 
@@ -323,6 +317,10 @@ grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
 /// variable. This environment variable points to the path of a JSON file
 /// comforming to the schema described above.
 grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
+
+std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin,
+    grpc_security_level security_level);
 
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options);

@@ -256,6 +256,20 @@ std::shared_ptr<CallCredentials> StsCredentials(
   return WrapCallCredentials(grpc_sts_credentials_create(&opts, nullptr));
 }
 
+std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin,
+    grpc_security_level security_level) {
+  grpc::GrpcLibraryCodegen init;  // To call grpc_init().
+  const char* type = plugin->GetType();
+  grpc::MetadataCredentialsPluginWrapper* wrapper =
+      new grpc::MetadataCredentialsPluginWrapper(std::move(plugin));
+  grpc_metadata_credentials_plugin c_plugin = {
+      grpc::MetadataCredentialsPluginWrapper::GetMetadata,
+      grpc::MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
+  return WrapCallCredentials(grpc_metadata_credentials_create_with_security_level_from_plugin(
+      c_plugin, security_level, nullptr));
+}
+
 // Builds ALTS Credentials given ALTS specific options
 std::shared_ptr<ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options) {

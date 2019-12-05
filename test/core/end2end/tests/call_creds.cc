@@ -164,7 +164,6 @@ static void request_response_with_payload_and_call_creds(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   switch (mode) {
-    case FAIL:
     case NONE:
       break;
     case OVERRIDE:
@@ -175,6 +174,7 @@ static void request_response_with_payload_and_call_creds(
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
       break;
     case DESTROY:
+    case FAIL:
       GPR_ASSERT(grpc_call_set_credentials(c, nullptr) == GRPC_CALL_OK);
       break;
   }

@@ -242,7 +242,7 @@ static void fake_check_peer(
   }
   prop_name = peer.properties[1].name;
   if (prop_name == nullptr ||
-      strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY)) {
+      strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
     char* msg;
     gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
                  prop_name == nullptr ? "<EMPTY>" : prop_name);
@@ -251,7 +251,7 @@ static void fake_check_peer(
     goto end;
   }
   if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
-              peer.properties[1].value.length)) {
+              peer.properties[1].value.length) != 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid value for security level property.");
     goto end;
@@ -261,9 +261,9 @@ static void fake_check_peer(
   grpc_auth_context_add_cstring_property(
       auth_context->get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
-  grpc_auth_context_add_cstring_property(auth_context->get(),
-                                         GRPC_TRANSPORT_SECURITY_LEVEL,
-                                         TSI_FAKE_SECURITY_LEVEL);
+  grpc_auth_context_add_cstring_property(
+      auth_context->get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+      TSI_FAKE_SECURITY_LEVEL);
 end:
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   tsi_peer_destruct(&peer);

@@ -59,12 +59,11 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
  public:
   grpc_md_only_test_credentials(const char* md_key, const char* md_value,
                                 bool is_async)
-      : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2),
+      : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
+                              GRPC_SECURITY_NONE),
         md_(grpc_mdelem_from_slices(grpc_slice_from_copied_string(md_key),
                                     grpc_slice_from_copied_string(md_value))),
-        is_async_(is_async) {
-    set_security_level(GRPC_SECURITY_NONE);
-  }
+        is_async_(is_async) {}
   ~grpc_md_only_test_credentials() override { GRPC_MDELEM_UNREF(md_); }
 
   bool get_request_metadata(grpc_polling_entity* pollent,

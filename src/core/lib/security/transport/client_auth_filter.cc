@@ -269,12 +269,9 @@ static void send_security_metadata(grpc_call_element* elem,
   /* Check security level of call credential and channel, and do not send
    * metadata if the check fails. */
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      chand->auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL);
+      chand->auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Missing auth property for security level. Will skip sending "
-            "metadata.");
     /* Skip sending metadata altogether. */
     grpc_call_next_op(elem, batch);
     return;
@@ -286,13 +283,14 @@ static void send_security_metadata(grpc_call_element* elem,
       grpc_tsi_security_level_string_to_enum(prop->value),
       call_cred_security_level);
   if (!is_security_level_ok) {
-    gpr_log(GPR_ERROR,
-            "Established channel's security level: %s is lower than call "
-            "credential's security level: %s. Will skip sending metadata.",
-            grpc_security_level_to_string(channel_security_level),
-            grpc_security_level_to_string(call_cred_security_level));
-    /* Skip sending metadata altogether. */
-    grpc_call_next_op(elem, batch);
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "Established channel does not have a sufficient "
+                               "security level to transfer call credential."),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_UNAUTHENTICATED),
+        calld->call_combiner);
     return;
   }
 

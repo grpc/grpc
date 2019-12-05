@@ -227,6 +227,8 @@ struct grpc_call_credentials
  public:
   explicit grpc_call_credentials(const char* type)
       : type_(type), security_level_(GRPC_PRIVACY_AND_INTEGRITY) {}
+  grpc_call_credentials(const char* type, grpc_security_level security_level)
+      : type_(type), security_level_(security_level) {}
 
   virtual ~grpc_call_credentials() = default;
 
@@ -248,19 +250,11 @@ struct grpc_call_credentials
 
   virtual grpc_security_level security_level() { return security_level_; }
 
-  // Set \a security_level_ with a provided security_level. This API will
-  // lower security level of a channel needed to transfer the call credential,
-  // and should be used with caution. Default security level of a call
-  // credential is GRPC_PRIVACY_AND_INTEGRITY.
-  virtual void set_security_level(grpc_security_level security_level) {
-    security_level_ = security_level;
-  }
-
   const char* type() const { return type_; }
 
  private:
   const char* type_;
-  grpc_security_level security_level_;
+  const grpc_security_level security_level_;
 };
 
 /* Metadata-only credentials with the specified key and value where

@@ -88,10 +88,6 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
 
   grpc_security_level security_level() override { return security_level_; }
 
-  void set_security_level(grpc_security_level security_level) override {
-    security_level_ = security_level;
-  }
-
   const CallCredentialsList& inner() const { return inner_; }
 
  private:

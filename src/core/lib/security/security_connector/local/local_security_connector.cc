@@ -60,7 +60,8 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   const tsi_peer_property* prop = &peer->properties[0];
   GPR_ASSERT(prop != nullptr);
   GPR_ASSERT(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0);
-  grpc_auth_context_add_property(ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL,
+  grpc_auth_context_add_property(ctx.get(),
+                                 GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
                                  prop->value.data, prop->value.length);
   return ctx;
 }

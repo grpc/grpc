@@ -241,9 +241,9 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
     }
     /* Add security level to auth context. */
     if (strcmp(tsi_prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL,
-                                     tsi_prop->value.data,
-                                     tsi_prop->value.length);
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+          tsi_prop->value.data, tsi_prop->value.length);
     }
   }
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {

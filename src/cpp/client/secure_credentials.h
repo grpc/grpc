@@ -63,9 +63,6 @@ class SecureCallCredentials final : public CallCredentials {
   }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }
 
-  void SetSecurityLevel(grpc_security_level security_level) override {
-    c_creds_->set_security_level(security_level);
-  }
   bool ApplyToCall(grpc_call* call) override;
   SecureCallCredentials* AsSecureCredentials() override { return this; }
 
