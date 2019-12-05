@@ -1465,8 +1465,8 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   grpc_uri_destroy(uri);
   char* proxy_name = nullptr;
   grpc_channel_args* new_args = nullptr;
-  grpc_proxy_mappers_map_name(server_uri, args->channel_args, &proxy_name,
-                              &new_args);
+  ProxyMapperRegistry::MapName(server_uri, args->channel_args, &proxy_name,
+                               &new_args);
   target_uri_.reset(proxy_name != nullptr ? proxy_name
                                           : gpr_strdup(server_uri));
   channel_args_ = new_args != nullptr

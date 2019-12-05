@@ -80,8 +80,7 @@ void GenericStub::experimental_type::UnaryCall(
 
 void GenericStub::experimental_type::PrepareBidiStreamingCall(
     grpc::ClientContext* context, const grpc::string& method,
-    experimental::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
-        reactor) {
+    ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>* reactor) {
   internal::ClientCallbackReaderWriterFactory<
       grpc::ByteBuffer,
       grpc::ByteBuffer>::Create(stub_->channel_.get(),

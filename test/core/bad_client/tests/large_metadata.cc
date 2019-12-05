@@ -140,7 +140,7 @@ static void server_verifier_sends_too_much_metadata(
 
 int main(int argc, char** argv) {
   int i;
-
+  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
 
   // Test sending more metadata than the server will accept.
@@ -173,5 +173,6 @@ int main(int argc, char** argv) {
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier_sends_too_much_metadata,
                            rst_stream_client_validator,
                            PFX_TOO_MUCH_METADATA_FROM_SERVER_STR, 0);
+  grpc_shutdown();
   return 0;
 }

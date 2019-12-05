@@ -613,21 +613,21 @@ BackOff::Options ParseArgsForBackoffValues(
 
 }  // namespace
 
-Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
+Subchannel::Subchannel(SubchannelKey* key,
+                       OrphanablePtr<SubchannelConnector> connector,
                        const grpc_channel_args* args)
     : key_(key),
-      connector_(connector),
+      connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   gpr_atm_no_barrier_store(&ref_pair_, 1 << INTERNAL_REF_BITS);
-  grpc_connector_ref(connector_);
   pollset_set_ = grpc_pollset_set_create();
   grpc_resolved_address* addr =
       static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(*addr)));
   GetAddressFromSubchannelAddressArg(args, addr);
   grpc_resolved_address* new_address = nullptr;
   grpc_channel_args* new_args = nullptr;
-  if (grpc_proxy_mappers_map_address(addr, args, &new_address, &new_args)) {
+  if (ProxyMapperRegistry::MapAddress(*addr, args, &new_address, &new_args)) {
     GPR_ASSERT(new_address != nullptr);
     gpr_free(addr);
     addr = new_address;
@@ -668,12 +668,12 @@ Subchannel::~Subchannel() {
     channelz_node_->UpdateConnectivityState(GRPC_CHANNEL_SHUTDOWN);
   }
   grpc_channel_args_destroy(args_);
-  grpc_connector_unref(connector_);
+  connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
   delete key_;
 }
 
-Subchannel* Subchannel::Create(grpc_connector* connector,
+Subchannel* Subchannel::Create(OrphanablePtr<SubchannelConnector> connector,
                                const grpc_channel_args* args) {
   SubchannelKey* key = new SubchannelKey(args);
   SubchannelPoolInterface* subchannel_pool =
@@ -684,7 +684,7 @@ Subchannel* Subchannel::Create(grpc_connector* connector,
     delete key;
     return c;
   }
-  c = new Subchannel(key, connector, args);
+  c = new Subchannel(key, std::move(connector), args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
@@ -975,7 +975,7 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
 }
 
 void Subchannel::ContinueConnectingLocked() {
-  grpc_connect_in_args args;
+  SubchannelConnector::Args args;
   args.interested_parties = pollset_set_;
   const grpc_millis min_deadline =
       min_connect_timeout_ms_ + ExecCtx::Get()->Now();
@@ -983,13 +983,13 @@ void Subchannel::ContinueConnectingLocked() {
   args.deadline = std::max(next_attempt_deadline_, min_deadline);
   args.channel_args = args_;
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING);
-  grpc_connector_connect(connector_, &args, &connecting_result_,
-                         &on_connecting_finished_);
+  connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
 }
 
 void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
   auto* c = static_cast<Subchannel*>(arg);
-  grpc_channel_args* delete_channel_args = c->connecting_result_.channel_args;
+  const grpc_channel_args* delete_channel_args =
+      c->connecting_result_.channel_args;
   GRPC_SUBCHANNEL_WEAK_REF(c, "on_connecting_finished");
   {
     MutexLock lock(&c->mu_);
@@ -1042,8 +1042,8 @@ bool Subchannel::PublishTransportLocked() {
     return false;
   }
   RefCountedPtr<channelz::SocketNode> socket =
-      std::move(connecting_result_.socket);
-  connecting_result_.reset();
+      std::move(connecting_result_.socket_node);
+  connecting_result_.Reset();
   if (disconnected_) {
     grpc_channel_stack_destroy(stk);
     gpr_free(stk);
@@ -1075,8 +1075,7 @@ void Subchannel::Disconnect() {
   MutexLock lock(&mu_);
   GPR_ASSERT(!disconnected_);
   disconnected_ = true;
-  grpc_connector_shutdown(connector_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                          "Subchannel disconnected"));
+  connector_.reset();
   connected_subchannel_.reset();
   health_watcher_map_.ShutdownLocked();
 }

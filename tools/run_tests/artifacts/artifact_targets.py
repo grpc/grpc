@@ -406,20 +406,17 @@ def targets():
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('macos', 'x64', 'python3.8'),
-        PythonArtifact('windows', 'x86', 'Python27_32bits'),
-        PythonArtifact('windows', 'x86', 'Python35_32bits'),
-        PythonArtifact('windows', 'x86', 'Python36_32bits'),
-        PythonArtifact('windows', 'x86', 'Python37_32bits'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('windows', 'x86', 'Python38_32bits'),
+        PythonArtifact('macos', 'x64', 'python3.8'),
+        PythonArtifact('windows', 'x86', 'Python27_32bit'),
+        PythonArtifact('windows', 'x86', 'Python35_32bit'),
+        PythonArtifact('windows', 'x86', 'Python36_32bit'),
+        PythonArtifact('windows', 'x86', 'Python37_32bit'),
+        PythonArtifact('windows', 'x86', 'Python38_32bit'),
         PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('windows', 'x64', 'Python38'),
+        PythonArtifact('windows', 'x64', 'Python38'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
         PHPArtifact('linux', 'x64')

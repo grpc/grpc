@@ -20,6 +20,7 @@
 
 #include <algorithm>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include <gtest/gtest.h>
@@ -171,7 +172,9 @@ TEST(BackOffTest, JitterBackOff) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
+  grpc_shutdown();
 }

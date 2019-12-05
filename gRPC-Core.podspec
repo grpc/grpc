@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.26.0-dev'
+  version = '1.27.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -201,7 +201,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel_factory.cc',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/client_channel_plugin.cc',
-                      'src/core/ext/filters/client_channel/connector.cc',
                       'src/core/ext/filters/client_channel/connector.h',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.cc',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
@@ -236,7 +235,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/parse_address.cc',
                       'src/core/ext/filters/client_channel/parse_address.h',
-                      'src/core/ext/filters/client_channel/proxy_mapper.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
@@ -646,6 +644,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.cc',
                       'src/core/lib/iomgr/lockfree_event.h',
+                      'src/core/lib/iomgr/logical_thread.cc',
+                      'src/core/lib/iomgr/logical_thread.h',
                       'src/core/lib/iomgr/nameser.h',
                       'src/core/lib/iomgr/polling_entity.cc',
                       'src/core/lib/iomgr/polling_entity.h',
@@ -739,12 +739,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
                       'src/core/lib/json/json.cc',
                       'src/core/lib/json/json.h',
-                      'src/core/lib/json/json_common.h',
                       'src/core/lib/json/json_reader.cc',
-                      'src/core/lib/json/json_reader.h',
-                      'src/core/lib/json/json_string.cc',
                       'src/core/lib/json/json_writer.cc',
-                      'src/core/lib/json/json_writer.h',
                       'src/core/lib/profiling/basic_timers.cc',
                       'src/core/lib/profiling/stap_timers.cc',
                       'src/core/lib/profiling/timers.h',
@@ -1183,6 +1179,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
+                              'src/core/lib/iomgr/logical_thread.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
@@ -1223,9 +1220,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
                               'src/core/lib/json/json.h',
-                              'src/core/lib/json/json_common.h',
-                              'src/core/lib/json/json_reader.h',
-                              'src/core/lib/json/json_writer.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',

@@ -106,6 +106,15 @@ class UnimplementedAsyncRequestContext {
   GenericServerAsyncReaderWriter generic_stream_;
 };
 
+// TODO(vjpai): Just for this file, use some contents of the experimental
+// namespace here to make the code easier to read below. Remove this when
+// de-experimentalized fully.
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
+using ::grpc::experimental::CallbackGenericService;
+using ::grpc::experimental::CallbackServerContext;
+using ::grpc::experimental::GenericCallbackServerContext;
+#endif
+
 }  // namespace
 
 ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
@@ -543,9 +552,9 @@ class Server::CallbackRequestBase : public grpc::internal::CompletionQueueTag {
 template <class ServerContextType>
 class Server::CallbackRequest final : public Server::CallbackRequestBase {
  public:
-  static_assert(std::is_base_of<grpc::experimental::CallbackServerContext,
-                                ServerContextType>::value,
-                "ServerContextType must be derived from CallbackServerContext");
+  static_assert(
+      std::is_base_of<grpc::CallbackServerContext, ServerContextType>::value,
+      "ServerContextType must be derived from CallbackServerContext");
 
   // The constructor needs to know the server for this callback request and its
   // index in the server's request count array to allow for proper dynamic
@@ -799,14 +808,15 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 };
 
 template <>
-bool Server::CallbackRequest<grpc::experimental::CallbackServerContext>::
-    FinalizeResult(void** /*tag*/, bool* /*status*/) {
+bool Server::CallbackRequest<grpc::CallbackServerContext>::FinalizeResult(
+    void** /*tag*/, bool* /*status*/) {
   return false;
 }
 
 template <>
-bool Server::CallbackRequest<grpc::experimental::GenericCallbackServerContext>::
-    FinalizeResult(void** /*tag*/, bool* status) {
+bool Server::CallbackRequest<
+    grpc::GenericCallbackServerContext>::FinalizeResult(void** /*tag*/,
+                                                        bool* status) {
   if (*status) {
     // TODO(yangg) remove the copy here
     ctx_.method_ = grpc::StringFromCopiedSlice(call_details_->method);
@@ -818,14 +828,14 @@ bool Server::CallbackRequest<grpc::experimental::GenericCallbackServerContext>::
 }
 
 template <>
-const char* Server::CallbackRequest<
-    grpc::experimental::CallbackServerContext>::method_name() const {
+const char* Server::CallbackRequest<grpc::CallbackServerContext>::method_name()
+    const {
   return method_->name();
 }
 
 template <>
 const char* Server::CallbackRequest<
-    grpc::experimental::GenericCallbackServerContext>::method_name() const {
+    grpc::GenericCallbackServerContext>::method_name() const {
   return ctx_.method().c_str();
 }
 
@@ -1131,7 +1141,7 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
         callback_reqs_to_start_.push_back(
-            new CallbackRequest<grpc::experimental::CallbackServerContext>(
+            new CallbackRequest<grpc::CallbackServerContext>(
                 this, method_index, method.get(), method_registration_tag));
       }
       // Enqueue it so that it will be Request'ed later after all request
@@ -1161,7 +1171,7 @@ void Server::RegisterAsyncGenericService(grpc::AsyncGenericService* service) {
 }
 
 void Server::RegisterCallbackGenericService(
-    grpc::experimental::CallbackGenericService* service) {
+    grpc::CallbackGenericService* service) {
   GPR_ASSERT(
       service->server_ == nullptr &&
       "Can only register a callback generic service against one server.");
@@ -1174,7 +1184,7 @@ void Server::RegisterCallbackGenericService(
   // TODO(vjpai): Register these dynamically based on need
   for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
     callback_reqs_to_start_.push_back(
-        new CallbackRequest<grpc::experimental::GenericCallbackServerContext>(
+        new CallbackRequest<grpc::GenericCallbackServerContext>(
             this, method_index, nullptr, nullptr));
   }
 }
@@ -1223,8 +1233,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // service to handle any unimplemented methods using the default reactor
   // creator
   if (!callback_reqs_to_start_.empty() && !has_callback_generic_service_) {
-    unimplemented_service_.reset(
-        new grpc::experimental::CallbackGenericService);
+    unimplemented_service_.reset(new grpc::CallbackGenericService);
     RegisterCallbackGenericService(unimplemented_service_.get());
   }
 
