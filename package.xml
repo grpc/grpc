@@ -636,12 +636,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
