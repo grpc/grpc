@@ -201,17 +201,21 @@ namespace Grpc.HealthCheck.Tests
         {
             var cts = new CancellationTokenSource();
             var context = new TestServerCallContext(cts.Token);
-            var writer = new TestResponseStreamWriter();
+            var writer = new TestResponseStreamWriter(started: false);
 
             var impl = new HealthServiceImpl();
             var callTask = impl.Watch(new HealthCheckRequest { Service = "" }, writer, context);
 
-            // Write new 10 statuses. Only last 5 statuses will be returned when we read them from watch writer
+            // Write new statuses. Only last statuses will be returned when we read them from watch writer
             for (var i = 0; i < HealthServiceImpl.MaxStatusBufferSize * 2; i++)
             {
                 // These statuses aren't "valid" but it is useful for testing to have an incrementing number
-                impl.SetStatus("", (HealthCheckResponse.Types.ServingStatus)i);
+                impl.SetStatus("", (HealthCheckResponse.Types.ServingStatus)i + 10);
             }
+
+            // Start reading responses now that statuses have been queued up
+            // This is to keep the test non-flakey
+            writer.Start();
 
             // Read messages in a background task
             var statuses = new List<HealthCheckResponse.Types.ServingStatus>();
@@ -240,11 +244,11 @@ namespace Grpc.HealthCheck.Tests
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, statuses[0]);
 
             // Last 5 queued messages
-            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)5, statuses[1]);
-            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)6, statuses[2]);
-            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)7, statuses[3]);
-            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)8, statuses[4]);
-            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)9, statuses[5]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)15, statuses[statuses.Count - 5]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)16, statuses[statuses.Count - 4]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)17, statuses[statuses.Count - 3]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)18, statuses[statuses.Count - 2]);
+            Assert.AreEqual((HealthCheckResponse.Types.ServingStatus)19, statuses[statuses.Count - 1]);
         }
 #endif
 
