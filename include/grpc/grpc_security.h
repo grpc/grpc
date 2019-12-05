@@ -435,7 +435,8 @@ typedef struct {
 GRPCAPI grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, void* reserved);
 
-GRPCAPI grpc_call_credentials* grpc_metadata_credentials_create_with_security_level_from_plugin(
+GRPCAPI grpc_call_credentials*
+grpc_metadata_credentials_create_with_security_level_from_plugin(
     grpc_metadata_credentials_plugin plugin, grpc_security_level level,
     void* reserved);
 
