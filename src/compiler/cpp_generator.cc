@@ -672,7 +672,7 @@ void PrintHeaderClientMethodCallbackInterfacesEnd(
   printer->Print("};\n");
   printer->Print(
       "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
-      "typdef experimental_async_interface async_interface;\n"
+      "typedef experimental_async_interface async_interface;\n"
       "#endif\n");
 
   // Declare a function to give the async stub contents. It can't be pure
