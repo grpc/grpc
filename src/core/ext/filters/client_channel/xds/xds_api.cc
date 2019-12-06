@@ -490,8 +490,9 @@ bool DomainMatch(MatchType match_type, std::string domain_pattern,
                               domain_pattern.size() - 1);
     StringView host_prefix(expected_host_name.c_str(), pattern_prefix.size());
     return pattern_prefix == host_prefix;
-  } else
+  } else {
     return match_type == UNIVERSE_MATCH;
+  }
 }
 
 MatchType DomainPatternMatchType(const std::string& domain_pattern) {
@@ -536,6 +537,9 @@ grpc_error* RouteConfigParse(
       // Check the match type first. Skip the pattern if it's not better than
       // current match.
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
+      if (match_type == INVALID_MATCH) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid domain pattern.");
+      }
       if (match_type > best_match_type) continue;
       if (match_type == best_match_type &&
           domain_pattern.size() <= longest_match) {
