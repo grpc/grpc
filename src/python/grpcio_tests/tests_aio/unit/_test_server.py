@@ -21,8 +21,6 @@ from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit.framework.common import test_constants
 
-_US_IN_A_SECOND = 1000 * 1000
-
 
 class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
