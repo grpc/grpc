@@ -131,6 +131,15 @@ class XdsClient::ChannelState::AdsCallState
                          grpc_error* error, bool is_first_message);
 
  private:
+  struct BufferedRequest {
+    std::string nonce;
+    grpc_error* error;
+
+    // Takes ownership of \a error.
+    BufferedRequest(std::string nonce, grpc_error* error)
+        : nonce(std::move(nonce)), error(error) {}
+  };
+
   void AcceptCdsUpdate(CdsUpdateMap cds_update_map, std::string new_version);
   void AcceptEdsUpdate(EdsUpdateMap eds_update_map, std::string new_version);
 
@@ -170,6 +179,10 @@ class XdsClient::ChannelState::AdsCallState
   // Version state.
   VersionState cds_version_;
   VersionState eds_version_;
+
+  // Buffered requests.
+  std::map<std::string /*type_url*/, std::unique_ptr<BufferedRequest>>
+      buffered_request_map_;
 };
 
 // Contains an LRS call to the xds server.
@@ -423,15 +436,14 @@ void XdsClient::ChannelState::OnResourceNamesChanged(
     // Start the ADS call if this is the first request.
     ads_calld_.reset(new RetryableCall<AdsCallState>(
         Ref(DEBUG_LOCATION, "ChannelState+ads")));
-  } else if (ads_calld() == nullptr) {
-    // Buffer the request if the ADS call is in backoff.
-    // FIXME: should we override the ACK/NACK if we have a spontaneous request
-    // before the ACK/NACK is sent?
-    buffered_request_map_[type_url].reset(new BufferedRequest("", nullptr));
-  } else {
-    // Send the message if the ADS call is active.
-    ads_calld()->SendMessageLocked(type_url, "", nullptr, false);
   }
+  // If the ADS call is in backoff state, we don't need to do anything now
+  // because when the call is restarted it will resend all necessary requests.
+  if (ads_calld() == nullptr) return;
+  // Send the message if the ADS call is active.
+  // FIXME: should we override the ACK/NACK if we have a spontaneous request
+  // before the ACK/NACK is sent?
+  ads_calld()->SendMessageLocked(type_url, "", nullptr, false);
 }
 
 void XdsClient::ChannelState::OnWatcherRemoved() {
@@ -665,7 +677,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     grpc_error* error, bool is_first_message) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
-    chand()->buffered_request_map_[type_url].reset(
+    buffered_request_map_[type_url].reset(
         new BufferedRequest(nonce_for_unsupported_type, error));
     return;
   }
@@ -855,7 +867,7 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
   //  fixed order of resource types. We need to fix this if we are seeing some
   //  resource type(s) starved due to frequent requests of other resource
   //  type(s).
-  for (auto& p : self->chand()->buffered_request_map_) {
+  for (auto& p : self->buffered_request_map_) {
     const std::string& type_url = p.first;
     std::unique_ptr<BufferedRequest>& buffered_request = p.second;
     if (buffered_request != nullptr) {
