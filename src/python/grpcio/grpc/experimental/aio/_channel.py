@@ -23,7 +23,7 @@ from ._typing import (DeserializingFunction, MetadataType, SerializingFunction)
 
 
 def _timeout_to_deadline(loop: asyncio.AbstractEventLoop,
-                         timeout: int) -> Optional[int]:
+                         timeout: Optional[float]) -> Optional[float]:
     if timeout is None:
         return None
     return loop.time() + timeout
