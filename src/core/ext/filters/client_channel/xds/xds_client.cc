@@ -143,10 +143,11 @@ class XdsClient::ChannelState::AdsCallState
   void AcceptCdsUpdate(CdsUpdateMap cds_update_map, std::string new_version);
   void AcceptEdsUpdate(EdsUpdateMap eds_update_map, std::string new_version);
 
+  static void OnRequestSent(void* arg, grpc_error* error);
   static void OnRequestSentLocked(void* arg, grpc_error* error);
   static void OnResponseReceived(void* arg, grpc_error* error);
-  static void OnStatusReceived(void* arg, grpc_error* error);
   static void OnResponseReceivedLocked(void* arg, grpc_error* error);
+  static void OnStatusReceived(void* arg, grpc_error* error);
   static void OnStatusReceivedLocked(void* arg, grpc_error* error);
 
   bool IsCurrentCallOnChannel() const;
@@ -597,7 +598,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                                                  nullptr);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: send request message.
-  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSentLocked, this,
+  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
                     grpc_schedule_on_exec_ctx);
   bool initial_message = true;
   if (!xds_client()->cluster_map_.empty()) {
@@ -832,6 +833,15 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     }
   }
   eds_version_.version_info = std::move(new_version);
+}
+
+void XdsClient::ChannelState::AdsCallState::OnRequestSent(void* arg,
+                                                          grpc_error* error) {
+  AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
+  ads_calld->xds_client()->combiner_->Run(
+      GRPC_CLOSURE_INIT(&ads_calld->on_request_sent_, OnRequestSentLocked,
+                        ads_calld, nullptr),
+      GRPC_ERROR_REF(error));
 }
 
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
