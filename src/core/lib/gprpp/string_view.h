@@ -46,9 +46,6 @@ using StringView = absl::string_view;
 
 #else
 
-class StringView;
-inline int StringViewCmp(const StringView lhs, const StringView rhs);
-
 // Provides a light-weight view over a char array or a slice, similar but not
 // identical to absl::string_view.
 //

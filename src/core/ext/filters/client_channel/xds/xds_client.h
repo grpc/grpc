@@ -159,6 +159,15 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    private:
     class StateWatcher;
 
+    struct BufferedRequest {
+      std::string nonce;
+      grpc_error* error;
+
+      // Takes ownership of \a error.
+      BufferedRequest(std::string nonce, grpc_error* error)
+          : nonce(std::move(nonce)), error(error) {}
+    };
+
     // The owning xds client.
     RefCountedPtr<XdsClient> xds_client_;
 
@@ -170,6 +179,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     // The retryable XDS calls.
     OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
+
+    // Buffered requests.
+    std::map<std::string /*type_url*/, std::unique_ptr<BufferedRequest>>
+        buffered_request_map_;
   };
 
   struct ClusterState {

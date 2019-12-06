@@ -38,8 +38,11 @@ constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
+// The version state for each specific ADS resource type.
 struct VersionState {
+  // The version of the latest response that is accepted and used.
   std::string version_info;
+  // The nonce of the latest response.
   std::string nonce;
 };
 
@@ -49,8 +52,8 @@ struct CdsUpdate {
   std::string eds_service_name;
   // The LRS server to use for load reporting.
   // If not set, load reporting will be disabled.
-  // If set to the empty string, will use the same server we obtained
-  // the CDS data from.
+  // If set to the empty string, will use the same server we obtained the CDS
+  // data from.
   Optional<std::string> lrs_load_reporting_server_name;
 };
 
