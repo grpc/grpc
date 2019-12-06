@@ -44,10 +44,10 @@ typedef struct RpcProtocolVersions {
   Versions min_rpc_versions;
 } RpcProtocolVersions;
 
+// AltsContext is wrapper class for grpc_gcp_AltsContext.
+// It should only be instantiated by calling GetAltsContextFromAuthContext.
 class AltsContext {
  public:
-  explicit AltsContext(const AuthContext& auth_context);
-
   AltsContext& operator=(const AltsContext&) = default;
   AltsContext(const AltsContext&) = default;
   AltsContext& operator=(AltsContext&&) = default;
@@ -68,7 +68,16 @@ class AltsContext {
   std::string local_service_account_;
   SecurityLevel security_level_ = SECURITY_NONE;
   RpcProtocolVersions peer_rpc_versions_ = {{0, 0}, {0, 0}};
+  explicit AltsContext(const grpc_gcp_AltsContext* ctx);
+  friend std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
+      const AuthContext& auth_context);
 };
+
+// GetAltsContextFromAuthContext helps to get the AltsContext from AuthContext.
+// Please make sure the underlying protocol is ALTS before calling this
+// function. Otherwise a nullptr will be returned.
+std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
+    const AuthContext& auth_context);
 
 }  // namespace grpc
 

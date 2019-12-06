@@ -23,20 +23,7 @@
 
 namespace grpc {
 
-AltsContext::AltsContext(const AuthContext& auth_context) {
-  std::vector<string_ref> ctx_vector =
-      auth_context.FindPropertyValues(TSI_ALTS_CONTEXT);
-  if (ctx_vector.size() != 1) {
-    gpr_log(GPR_ERROR, "contains zero or more than one ALTS context.");
-    return;
-  }
-  upb::Arena context_arena;
-  grpc_gcp_AltsContext* ctx = grpc_gcp_AltsContext_parse(
-      ctx_vector[0].data(), ctx_vector[0].size(), context_arena.ptr());
-  if (ctx == nullptr) {
-    gpr_log(GPR_ERROR, "fails to parse ALTS context.");
-    return;
-  }
+AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
   upb_strview application_protocol =
       grpc_gcp_AltsContext_application_protocol(ctx);
   application_protocol_ =
@@ -97,6 +84,25 @@ SecurityLevel AltsContext::security_level() const { return security_level_; }
 
 RpcProtocolVersions AltsContext::peer_rpc_versions() const {
   return peer_rpc_versions_;
+}
+
+std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
+    const AuthContext& auth_context) {
+  std::vector<string_ref> ctx_vector =
+      auth_context.FindPropertyValues(TSI_ALTS_CONTEXT);
+  if (ctx_vector.size() != 1) {
+    gpr_log(GPR_ERROR, "contains zero or more than one ALTS context.");
+    return nullptr;
+  }
+  upb::Arena context_arena;
+  grpc_gcp_AltsContext* ctx = grpc_gcp_AltsContext_parse(
+      ctx_vector[0].data(), ctx_vector[0].size(), context_arena.ptr());
+  if (ctx == nullptr) {
+    gpr_log(GPR_ERROR, "fails to parse ALTS context.");
+    return nullptr;
+  }
+  std::unique_ptr<AltsContext> uniq_ctx(new AltsContext(ctx));
+  return uniq_ctx;
 }
 
 }  // namespace grpc

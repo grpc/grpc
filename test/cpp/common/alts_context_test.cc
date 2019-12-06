@@ -30,18 +30,11 @@ using grpc::testing::ToString;
 namespace grpc {
 namespace {
 
-void expect_null_context(const AltsContext& context) {
-  EXPECT_EQ(context.application_protocol(), "");
-  EXPECT_EQ(context.record_protocol(), "");
-  EXPECT_EQ(context.peer_service_account(), "");
-  EXPECT_EQ(context.local_service_account(), "");
-  EXPECT_EQ(context.security_level(), SecurityLevel::SECURITY_NONE);
-}
-
 TEST(AltsContextTest, EmptyAuthContext) {
   SecureAuthContext auth_context(nullptr);
-  AltsContext alts_context(auth_context);
-  expect_null_context(alts_context);
+  std::unique_ptr<AltsContext> alts_context =
+      GetAltsContextFromAuthContext(auth_context);
+  EXPECT_EQ(alts_context.get(), nullptr);
 }
 
 TEST(AltsContextTest, AuthContextWithMoreThanOneAltsContext) {
@@ -51,8 +44,9 @@ TEST(AltsContextTest, AuthContextWithMoreThanOneAltsContext) {
   ctx.reset();
   auth_context.AddProperty(TSI_ALTS_CONTEXT, "context1");
   auth_context.AddProperty(TSI_ALTS_CONTEXT, "context2");
-  AltsContext alts_context(auth_context);
-  expect_null_context(alts_context);
+  std::unique_ptr<AltsContext> alts_context =
+      GetAltsContextFromAuthContext(auth_context);
+  EXPECT_EQ(alts_context.get(), nullptr);
 }
 
 TEST(AltsContextTest, AuthContextWithBadAltsContext) {
@@ -62,8 +56,9 @@ TEST(AltsContextTest, AuthContextWithBadAltsContext) {
   ctx.reset();
   auth_context.AddProperty(TSI_ALTS_CONTEXT,
                            "bad context string serialization");
-  AltsContext alts_context(auth_context);
-  expect_null_context(alts_context);
+  std::unique_ptr<AltsContext> alts_context =
+      GetAltsContextFromAuthContext(auth_context);
+  EXPECT_EQ(alts_context.get(), nullptr);
 }
 
 TEST(AltsContextTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
@@ -95,14 +90,16 @@ TEST(AltsContextTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   EXPECT_NE(serialized_ctx, nullptr);
   auth_context.AddProperty(TSI_ALTS_CONTEXT,
                            string(serialized_ctx, serialized_ctx_length));
-  AltsContext alts_context(auth_context);
-  EXPECT_EQ(expected_ap, alts_context.application_protocol());
-  EXPECT_EQ(expected_rp, alts_context.record_protocol());
-  EXPECT_EQ(expected_peer, alts_context.peer_service_account());
-  EXPECT_EQ(expected_local, alts_context.local_service_account());
-  EXPECT_EQ(expected_sl, alts_context.security_level());
+  std::unique_ptr<AltsContext> alts_context =
+      GetAltsContextFromAuthContext(auth_context);
+  EXPECT_NE(alts_context.get(), nullptr);
+  EXPECT_EQ(expected_ap, alts_context->application_protocol());
+  EXPECT_EQ(expected_rp, alts_context->record_protocol());
+  EXPECT_EQ(expected_peer, alts_context->peer_service_account());
+  EXPECT_EQ(expected_local, alts_context->local_service_account());
+  EXPECT_EQ(expected_sl, alts_context->security_level());
   // all rpc versions should be 0 if not set
-  RpcProtocolVersions rpc_protocol_versions = alts_context.peer_rpc_versions();
+  RpcProtocolVersions rpc_protocol_versions = alts_context->peer_rpc_versions();
   EXPECT_EQ(0, rpc_protocol_versions.max_rpc_versions.major_version);
   EXPECT_EQ(0, rpc_protocol_versions.max_rpc_versions.minor_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_versions.major_version);
@@ -132,13 +129,15 @@ TEST(AltsContextTest, AuthContextWithGoodAltsContext) {
   EXPECT_NE(serialized_ctx, nullptr);
   auth_context.AddProperty(TSI_ALTS_CONTEXT,
                            string(serialized_ctx, serialized_ctx_length));
-  AltsContext alts_context(auth_context);
-  EXPECT_EQ("", alts_context.application_protocol());
-  EXPECT_EQ("", alts_context.record_protocol());
-  EXPECT_EQ("", alts_context.peer_service_account());
-  EXPECT_EQ("", alts_context.local_service_account());
-  EXPECT_EQ(SecurityLevel::SECURITY_NONE, alts_context.security_level());
-  RpcProtocolVersions rpc_protocol_versions = alts_context.peer_rpc_versions();
+  std::unique_ptr<AltsContext> alts_context =
+      GetAltsContextFromAuthContext(auth_context);
+  EXPECT_NE(alts_context.get(), nullptr);
+  EXPECT_EQ("", alts_context->application_protocol());
+  EXPECT_EQ("", alts_context->record_protocol());
+  EXPECT_EQ("", alts_context->peer_service_account());
+  EXPECT_EQ("", alts_context->local_service_account());
+  EXPECT_EQ(SecurityLevel::SECURITY_NONE, alts_context->security_level());
+  RpcProtocolVersions rpc_protocol_versions = alts_context->peer_rpc_versions();
   EXPECT_EQ(10, rpc_protocol_versions.max_rpc_versions.major_version);
   EXPECT_EQ(0, rpc_protocol_versions.max_rpc_versions.minor_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_versions.major_version);
