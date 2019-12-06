@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/tls/spiffe_credentials.h"
+#include "src/core/lib/security/credentials/tls/tls_credentials.h"
 
 #include <cstring>
 
@@ -28,24 +28,23 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/security_connector/tls/spiffe_security_connector.h"
+#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
-#define GRPC_CREDENTIALS_TYPE_SPIFFE "Spiffe"
+#define GRPC_CREDENTIALS_TYPE_TLS "Tls"
 
 namespace {
 
 bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
                                  bool is_client) {
   if (options == nullptr) {
-    gpr_log(GPR_ERROR, "SPIFFE TLS credentials options is nullptr.");
+    gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
   }
   if (options->key_materials_config() == nullptr &&
       options->credential_reload_config() == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "SPIFFE TLS credentials options must specify either key materials or "
-        "credential reload config.");
+    gpr_log(GPR_ERROR,
+            "TLS credentials options must specify either key materials or "
+            "credential reload config.");
     return false;
   }
   if (!is_client && options->server_authorization_check_config() != nullptr) {
@@ -58,15 +57,15 @@ bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
 
 }  // namespace
 
-SpiffeCredentials::SpiffeCredentials(
+TlsCredentials::TlsCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
+    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_TLS),
       options_(std::move(options)) {}
 
-SpiffeCredentials::~SpiffeCredentials() {}
+TlsCredentials::~TlsCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
-SpiffeCredentials::create_security_connector(
+TlsCredentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target_name, const grpc_channel_args* args,
     grpc_channel_args** new_args) {
@@ -84,8 +83,8 @@ SpiffeCredentials::create_security_connector(
           static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
     }
   }
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc = grpc_core::
-      SpiffeChannelSecurityConnector::CreateSpiffeChannelSecurityConnector(
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
+      grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
           this->Ref(), std::move(call_creds), target_name,
           overridden_target_name, ssl_session_cache);
   if (sc == nullptr) {
@@ -97,33 +96,33 @@ SpiffeCredentials::create_security_connector(
   return sc;
 }
 
-SpiffeServerCredentials::SpiffeServerCredentials(
+TlsServerCredentials::TlsServerCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
+    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_TLS),
       options_(std::move(options)) {}
 
-SpiffeServerCredentials::~SpiffeServerCredentials() {}
+TlsServerCredentials::~TlsServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-SpiffeServerCredentials::create_security_connector() {
-  return grpc_core::SpiffeServerSecurityConnector::
-      CreateSpiffeServerSecurityConnector(this->Ref());
+TlsServerCredentials::create_security_connector() {
+  return grpc_core::TlsServerSecurityConnector::
+      CreateTlsServerSecurityConnector(this->Ref());
 }
 
-grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
+grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options) {
   if (!CredentialOptionSanityCheck(options, true /* is_client */)) {
     return nullptr;
   }
-  return new SpiffeCredentials(
+  return new TlsCredentials(
       grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }
 
-grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
+grpc_server_credentials* grpc_tls_server_credentials_create(
     grpc_tls_credentials_options* options) {
   if (!CredentialOptionSanityCheck(options, false /* is_client */)) {
     return nullptr;
   }
-  return new SpiffeServerCredentials(
+  return new TlsServerCredentials(
       grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }

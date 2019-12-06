@@ -4726,7 +4726,7 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "grpc_spiffe_security_connector_test", 
+    "name": "grpc_tls_security_connector_test", 
     "platforms": [
       "linux", 
       "mac", 

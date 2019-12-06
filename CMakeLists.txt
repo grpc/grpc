@@ -746,7 +746,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_fetch_oauth2)
   add_dependencies(buildtests_cxx grpc_linux_system_roots_test)
-  add_dependencies(buildtests_cxx grpc_spiffe_security_connector_test)
+  add_dependencies(buildtests_cxx grpc_tls_security_connector_test)
   add_dependencies(buildtests_cxx grpc_tool_test)
   add_dependencies(buildtests_cxx grpclb_api_test)
   add_dependencies(buildtests_cxx grpclb_end2end_test)
@@ -1306,7 +1306,7 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
-  src/core/lib/security/credentials/tls/spiffe_credentials.cc
+  src/core/lib/security/credentials/tls/tls_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1316,7 +1316,7 @@ add_library(grpc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/ssl_utils_config.cc
-  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
+  src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1821,7 +1821,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
-  src/core/lib/security/credentials/tls/spiffe_credentials.cc
+  src/core/lib/security/credentials/tls/tls_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1831,7 +1831,7 @@ add_library(grpc_cronet
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/ssl_utils_config.cc
-  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
+  src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -13185,13 +13185,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_spiffe_security_connector_test
-  test/core/security/spiffe_security_connector_test.cc
+add_executable(grpc_tls_security_connector_test
+  test/core/security/tls_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_spiffe_security_connector_test
+target_include_directories(grpc_tls_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13208,7 +13208,7 @@ target_include_directories(grpc_spiffe_security_connector_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_spiffe_security_connector_test
+target_link_libraries(grpc_tls_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
