@@ -106,8 +106,6 @@ public class InteropActivity extends AppCompatActivity {
     }
   }
 
-  public static native void configureSslRoots(String path);
-
   public static native boolean doEmpty(String host, int port, boolean useTls);
 
   public static native boolean doLargeUnary(String host, int port, boolean useTls);
