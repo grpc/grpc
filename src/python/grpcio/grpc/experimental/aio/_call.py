@@ -334,6 +334,7 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
     _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
+    _call: asyncio.Task
     _aiter: AsyncIterable[ResponseType]
 
     def __init__(self, request: RequestType, deadline: Optional[float],
@@ -347,7 +348,8 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._aiter = self._invoke()
+        self._call = self._loop.create_task(self._invoke())
+        self._aiter = self._process()
 
     def __del__(self) -> None:
         if not self._status.done():
@@ -359,7 +361,7 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         serialized_request = _common.serialize(self._request,
                                                self._request_serializer)
 
-        async_gen = self._channel.unary_stream(
+        self._aiter = await self._channel.unary_stream(
             self._method,
             serialized_request,
             self._deadline,
@@ -367,7 +369,10 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
             self._set_initial_metadata,
             self._set_status,
         )
-        async for serialized_response in async_gen:
+
+    async def _process(self) -> ResponseType:
+        await self._call
+        async for serialized_response in self._aiter:
             if self._cancellation.done():
                 await self._status
             if self._status.done():
