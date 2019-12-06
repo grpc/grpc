@@ -150,10 +150,10 @@ class ServiceA final {
       // Method A4 trailing comment 1
     };
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    typdef experimental_async_interface async_interface;
+    typedef class experimental_async_interface async_interface;
     #endif
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    virtual class experimental_async_interface* async() { return nullptr; }
+    virtual class experimental_async_interface* async() { return experimental_async(); }
     #endif
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
@@ -917,10 +917,10 @@ class ServiceB final {
       // MethodB1 trailing comment 1
     };
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    typdef experimental_async_interface async_interface;
+    typedef class experimental_async_interface async_interface;
     #endif
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    virtual class experimental_async_interface* async() { return nullptr; }
+    virtual class experimental_async_interface* async() { return experimental_async(); }
     #endif
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
