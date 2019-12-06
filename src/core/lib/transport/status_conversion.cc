@@ -44,7 +44,9 @@ grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
   switch (error) {
     case GRPC_HTTP2_NO_ERROR:
       /* should never be received */
-      return GRPC_STATUS_INTERNAL;
+      /* if received, we should blame upstream and mark as UNAVALABLE to help
+       * application retry automatically */
+      return GRPC_STATUS_UNAVAILABLE;
     case GRPC_HTTP2_CANCEL:
       /* http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
        * exceeded */
