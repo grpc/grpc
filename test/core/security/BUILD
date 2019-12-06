@@ -259,8 +259,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "spiffe_security_connector_test",
-    srcs = ["spiffe_security_connector_test.cc"],
+    name = "tls_security_connector_test",
+    srcs = ["tls_security_connector_test.cc"],
     external_deps = [
         "gtest",
     ],

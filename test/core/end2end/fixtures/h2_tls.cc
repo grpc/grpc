@@ -128,7 +128,7 @@ static int server_authz_check_async(
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(config_user_data);
   ffd->thd_list.push_back(
-      grpc_core::Thread("h2_spiffe_test", &server_authz_check_cb, arg));
+      grpc_core::Thread("h2_tls_test", &server_authz_check_cb, arg));
   ffd->thd_list[ffd->thd_list.size() - 1].Start();
   return 1;
 }
@@ -189,8 +189,8 @@ static int server_cred_reload_sync(void* /*config_user_data*/,
   return 0;
 }
 
-// Create a SPIFFE channel credential.
-static grpc_channel_credentials* create_spiffe_channel_credentials(
+// Create a TLS channel credential.
+static grpc_channel_credentials* create_tls_channel_credentials(
     fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   /* Set credential reload config. */
@@ -205,13 +205,13 @@ static grpc_channel_credentials* create_spiffe_channel_credentials(
           ffd, server_authz_check_async, nullptr, nullptr);
   grpc_tls_credentials_options_set_server_authorization_check_config(
       options, check_config);
-  /* Create SPIFFE channel credentials. */
-  grpc_channel_credentials* creds = grpc_tls_spiffe_credentials_create(options);
+  /* Create TLS channel credentials. */
+  grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
   return creds;
 }
 
-// Create a SPIFFE server credential.
-static grpc_server_credentials* create_spiffe_server_credentials() {
+// Create a TLS server credential.
+static grpc_server_credentials* create_tls_server_credentials() {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   /* Set credential reload config. */
   grpc_tls_credential_reload_config* reload_config =
@@ -222,14 +222,13 @@ static grpc_server_credentials* create_spiffe_server_credentials() {
   /* Set client certificate request type. */
   grpc_tls_credentials_options_set_cert_request_type(
       options, GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-  grpc_server_credentials* creds =
-      grpc_tls_spiffe_server_credentials_create(options);
+  grpc_server_credentials* creds = grpc_tls_server_credentials_create(options);
   return creds;
 }
 
 static void chttp2_init_client(grpc_end2end_test_fixture* f,
                                grpc_channel_args* client_args) {
-  grpc_channel_credentials* ssl_creds = create_spiffe_channel_credentials(
+  grpc_channel_credentials* ssl_creds = create_tls_channel_credentials(
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data));
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
@@ -255,7 +254,7 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 
 static void chttp2_init_server(grpc_end2end_test_fixture* f,
                                grpc_channel_args* server_args) {
-  grpc_server_credentials* ssl_creds = create_spiffe_server_credentials();
+  grpc_server_credentials* ssl_creds = create_tls_server_credentials();
   if (fail_server_auth_check(server_args)) {
     grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
                                               nullptr};
