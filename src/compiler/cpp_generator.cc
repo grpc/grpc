@@ -682,7 +682,7 @@ void PrintHeaderClientMethodCallbackInterfacesEnd(
   // Intentionally include the word "class" to avoid possible shadowing.
   printer->Print(
       "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
-      "virtual class experimental_async_interface* async() { "
+      "virtual async_interface* async() { "
       "return experimental_async(); }\n"
       "#endif\n");
   printer->Print(
@@ -796,7 +796,7 @@ void PrintHeaderClientMethodCallbackEnd(
 
   printer->Print(
       "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
-      "class experimental_async_interface* async() override { "
+      "class async_interface* async() override { "
       "return &async_stub_; }\n"
       "#endif\n"
       "class experimental_async_interface* experimental_async() override { "

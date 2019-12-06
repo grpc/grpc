@@ -153,7 +153,7 @@ class ServiceA final {
     typedef class experimental_async_interface async_interface;
     #endif
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    virtual class experimental_async_interface* async() { return experimental_async(); }
+    virtual async_interface* async() { return experimental_async(); }
     #endif
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
@@ -243,7 +243,7 @@ class ServiceA final {
       Stub* stub_;
     };
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    class experimental_async_interface* async() override { return &async_stub_; }
+    class async_interface* async() override { return &async_stub_; }
     #endif
     class experimental_async_interface* experimental_async() override { return &async_stub_; }
 
@@ -920,7 +920,7 @@ class ServiceB final {
     typedef class experimental_async_interface async_interface;
     #endif
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    virtual class experimental_async_interface* async() { return experimental_async(); }
+    virtual async_interface* async() { return experimental_async(); }
     #endif
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
@@ -959,7 +959,7 @@ class ServiceB final {
       Stub* stub_;
     };
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    class experimental_async_interface* async() override { return &async_stub_; }
+    class async_interface* async() override { return &async_stub_; }
     #endif
     class experimental_async_interface* experimental_async() override { return &async_stub_; }
 
