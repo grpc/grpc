@@ -532,7 +532,8 @@ grpc_error* EdsResponsedParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "EDS response contains 0 resource.");
   }
-  for (size_t i = 0; i < size; ++i) {
+  // FIXME: there is an unexpected second resource which is corrupted.
+  for (size_t i = 0; i < 1; ++i) {
     EdsUpdate eds_update;
     // Check the type_url of the resource.
     upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
