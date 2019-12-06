@@ -217,7 +217,6 @@ grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
   google_rpc_Status* error_detail =
       envoy_api_v2_DiscoveryRequest_mutable_error_detail(request, arena.ptr());
   google_rpc_Status_set_message(error_detail, error_description_strview);
-  GRPC_ERROR_UNREF(error);
   // Encode the request.
   size_t output_length;
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
@@ -271,7 +270,6 @@ grpc_slice XdsCdsRequestCreateAndEncode(
         envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
                                                            arena.ptr());
     google_rpc_Status_set_message(error_detail, error_description_strview);
-    GRPC_ERROR_UNREF(error);
   }
   // Encode the request.
   size_t output_length;
@@ -327,7 +325,6 @@ grpc_slice XdsEdsRequestCreateAndEncode(
         envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
                                                            arena.ptr());
     google_rpc_Status_set_message(error_detail, error_description_strview);
-    GRPC_ERROR_UNREF(error);
   }
   // Encode the request.
   size_t output_length;
