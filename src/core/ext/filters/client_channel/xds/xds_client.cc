@@ -131,24 +131,16 @@ class XdsClient::ChannelState::AdsCallState
                          grpc_error* error, bool is_first_message);
 
  private:
-  struct BufferedRequest {
-    std::string nonce;
-    grpc_error* error;
-
-    // Takes ownership of \a error.
-    BufferedRequest(std::string nonce, grpc_error* error)
-        : nonce(std::move(nonce)), error(error) {}
-  };
-
   void AcceptLdsUpdate(LdsUpdate lds_update, std::string new_version);
   void AcceptRdsUpdate(RdsUpdate rds_update, std::string new_version);
   void AcceptCdsUpdate(CdsUpdateMap cds_update_map, std::string new_version);
   void AcceptEdsUpdate(EdsUpdateMap eds_update_map, std::string new_version);
 
+  static void OnRequestSent(void* arg, grpc_error* error);
   static void OnRequestSentLocked(void* arg, grpc_error* error);
   static void OnResponseReceived(void* arg, grpc_error* error);
-  static void OnStatusReceived(void* arg, grpc_error* error);
   static void OnResponseReceivedLocked(void* arg, grpc_error* error);
+  static void OnStatusReceived(void* arg, grpc_error* error);
   static void OnStatusReceivedLocked(void* arg, grpc_error* error);
 
   bool IsCurrentCallOnChannel() const;
@@ -182,10 +174,6 @@ class XdsClient::ChannelState::AdsCallState
   VersionState rds_version_;
   VersionState cds_version_;
   VersionState eds_version_;
-
-  // Buffered requests.
-  std::map<std::string /*type_url*/, std::unique_ptr<BufferedRequest>>
-      buffered_request_map_;
 };
 
 // Contains an LRS call to the xds server.
@@ -436,9 +424,16 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
 void XdsClient::ChannelState::OnResourceNamesChanged(
     const std::string& type_url) {
   if (ads_calld_ == nullptr) {
+    // Start the ADS call if this is the first request.
     ads_calld_.reset(new RetryableCall<AdsCallState>(
         Ref(DEBUG_LOCATION, "ChannelState+ads")));
+  } else if (ads_calld() == nullptr) {
+    // Buffer the request if the ADS call is in backoff.
+    // FIXME: should we override the ACK/NACK if we have a spontaneous request
+    // before the ACK/NACK is sent?
+    buffered_request_map_[type_url].reset(new BufferedRequest("", nullptr));
   } else {
+    // Send the message if the ADS call is active.
     ads_calld()->SendMessageLocked(type_url, "", nullptr, false);
   }
 }
@@ -599,7 +594,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                                                  nullptr);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: send request message.
-  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSentLocked, this,
+  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
                     grpc_schedule_on_exec_ctx);
   bool initial_message = true;
   if (xds_client()->route_config_name_.empty()) {
@@ -681,7 +676,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     grpc_error* error, bool is_first_message) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
-    buffered_request_map_[type_url].reset(
+    chand()->buffered_request_map_[type_url].reset(
         new BufferedRequest(nonce_for_unsupported_type, error));
     return;
   }
@@ -928,6 +923,15 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
   eds_version_.version_info = std::move(new_version);
 }
 
+void XdsClient::ChannelState::AdsCallState::OnRequestSent(void* arg,
+                                                          grpc_error* error) {
+  AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
+  ads_calld->xds_client()->combiner_->Run(
+      GRPC_CLOSURE_INIT(&ads_calld->on_request_sent_, OnRequestSentLocked,
+                        ads_calld, nullptr),
+      GRPC_ERROR_REF(error));
+}
+
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
     void* arg, grpc_error* error) {
   AdsCallState* self = static_cast<AdsCallState*>(arg);
@@ -947,11 +951,11 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
   //  fixed order of resource types. We need to fix this if we are seeing some
   //  resource type(s) starved due to frequent requests of other resource
   //  type(s).
-  for (auto& p : self->buffered_request_map_) {
+  for (auto& p : self->chand()->buffered_request_map_) {
     const std::string& type_url = p.first;
     std::unique_ptr<BufferedRequest>& buffered_request = p.second;
     if (buffered_request != nullptr) {
-      self->SendMessageLocked(type_url, std::move(buffered_request->nonce),
+      self->SendMessageLocked(type_url, buffered_request->nonce,
                               buffered_request->error, false);
       buffered_request.reset();
       return;
@@ -1604,12 +1608,8 @@ void XdsClient::CancelClusterDataWatch(StringView cluster_name,
   if (it != cluster_state.watchers.end()) {
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
-      // Sending CDS requests with no cluster names will cause Envoy-style
-      // wildcard behavior. To avoid that, don't make the cluster_map_ empty.
-      if (cluster_map_.size() > 1) {
-        cluster_map_.erase(cluster_name);
-        chand_->OnResourceNamesChanged(kCdsTypeUrl);
-      }
+      cluster_map_.erase(cluster_name);
+      chand_->OnResourceNamesChanged(kCdsTypeUrl);
     }
   }
   chand_->OnWatcherRemoved();

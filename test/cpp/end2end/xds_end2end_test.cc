@@ -38,6 +38,7 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/map.h"
@@ -370,46 +371,66 @@ class AdsServiceImpl : public AdsService {
   using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
   using ResponseDelayPair = std::pair<DiscoveryResponse, int>;
 
-  AdsServiceImpl(bool enable_load_reporting)
-      : enable_load_reporting_(enable_load_reporting) {}
-
-  bool WaitForResourceType(const char* expected_type, DiscoveryRequest* request,
-                           Stream* stream) {
-    while (request->type_url() != expected_type) {
-      if (!stream->Read(request)) return false;
+  AdsServiceImpl(bool enable_load_reporting) {
+    grpc_core::Optional<std::string> lrs_load_reporting_server_name;
+    if (enable_load_reporting) {
+      lrs_load_reporting_server_name.set("");
     }
-    return true;
+    cds_update_map_ = {
+        {"" /*any cluster name*/,
+         {"", std::move(lrs_load_reporting_server_name)}},
+    };
   }
 
-  bool HandleCdsRequest(DiscoveryRequest* request, Stream* stream) {
+  void HandleCdsRequest(DiscoveryRequest* request, Stream* stream) {
     gpr_log(GPR_INFO, "ADS[%p]: received CDS request '%s'", this,
             request->DebugString().c_str());
     DiscoveryResponse response;
     response.set_type_url(kCdsTypeUrl);
     for (size_t i = 0; i < request->resource_names().size(); ++i) {
+      grpc_core::CdsUpdate cds_update;
+      {
+        grpc_core::MutexLock lock(&ads_mu_);
+        cds_update = cds_update_map_[""];
+      }
       Cluster cluster;
       cluster.set_name(request->resource_names(i));
       cluster.set_type(envoy::api::v2::Cluster::EDS);
       cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_ads();
-      if (enable_load_reporting_) {
+      if (!cds_update.eds_service_name.empty()) {
+        cluster.mutable_eds_cluster_config()->set_service_name(
+            cds_update.eds_service_name);
+      }
+      cluster.set_lb_policy(envoy::api::v2::Cluster::ROUND_ROBIN);
+      if (cds_update.lrs_load_reporting_server_name.has_value()) {
         cluster.mutable_lrs_server()->mutable_self();
       }
       response.add_resources()->PackFrom(cluster);
     }
     stream->Write(response);
-    return WaitForResourceType(kEdsTypeUrl, request, stream);
   }
 
-  void HandleEdsRequest(Stream* stream) {
+  void HandleEdsRequest(DiscoveryRequest* request, Stream* stream) {
+    gpr_log(GPR_INFO, "ADS[%p]: received EDS request '%s'", this,
+            request->DebugString().c_str());
     IncreaseRequestCount();
-    // Send response.
     std::vector<ResponseDelayPair> responses_and_delays;
     {
       grpc_core::MutexLock lock(&ads_mu_);
       responses_and_delays = responses_and_delays_;
     }
-    for (const auto& response_and_delay : responses_and_delays) {
-      SendResponse(stream, response_and_delay.first, response_and_delay.second);
+    // Send response.
+    for (const auto& p : responses_and_delays) {
+      const DiscoveryResponse& response = p.first;
+      const int delay_ms = p.second;
+      gpr_log(GPR_INFO, "ADS[%p]: sleeping for %d ms...", this, delay_ms);
+      if (delay_ms > 0) {
+        gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
+      }
+      gpr_log(GPR_INFO, "ADS[%p]: Woke up! Sending response '%s'", this,
+              response.DebugString().c_str());
+      IncreaseResponseCount();
+      stream->Write(response);
     }
   }
 
@@ -424,16 +445,16 @@ class AdsServiceImpl : public AdsService {
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
-      // Read request.
+      // Keep servicing requests until the EDS response has been sent back.
       DiscoveryRequest request;
-      if (!stream->Read(&request)) return;
-      // If the current request is for CDS, reply to the CDS request and wait
-      // for an EDS request.
-      if (request.type_url() == kCdsTypeUrl) {
-        if (!HandleCdsRequest(&request, stream)) return;
-      }
-      if (request.type_url() == kEdsTypeUrl) {
-        HandleEdsRequest(stream);
+      while (true) {
+        if (!stream->Read(&request)) return;
+        if (request.type_url() == kCdsTypeUrl) {
+          HandleCdsRequest(&request, stream);
+        } else if (request.type_url() == kEdsTypeUrl) {
+          HandleEdsRequest(&request, stream);
+          break;
+        }
       }
       // Wait until notified done.
       grpc_core::MutexLock lock(&ads_mu_);
@@ -519,23 +540,13 @@ class AdsServiceImpl : public AdsService {
   }
 
  private:
-  void SendResponse(Stream* stream, const DiscoveryResponse& response,
-                    int delay_ms) {
-    gpr_log(GPR_INFO, "ADS[%p]: sleeping for %d ms...", this, delay_ms);
-    if (delay_ms > 0) {
-      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
-    }
-    gpr_log(GPR_INFO, "ADS[%p]: Woke up! Sending response '%s'", this,
-            response.DebugString().c_str());
-    IncreaseResponseCount();
-    stream->Write(response);
-  }
-
-  bool enable_load_reporting_;
   grpc_core::CondVar ads_cond_;
   // Protect the members below.
   grpc_core::Mutex ads_mu_;
   bool ads_done_ = false;
+  // CDS response data.
+  grpc_core::CdsUpdateMap cds_update_map_;
+  // EDS response data.
   std::vector<ResponseDelayPair> responses_and_delays_;
 };
 
@@ -659,7 +670,7 @@ class TestType {
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
-                 int client_load_reporting_interval_seconds)
+                 int client_load_reporting_interval_seconds = 100)
       : server_host_("localhost"),
         num_backends_(num_backends),
         num_balancers_(num_balancers),
@@ -1087,7 +1098,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
 class BasicTest : public XdsEnd2endTest {
  public:
-  BasicTest() : XdsEnd2endTest(4, 1, 0) {}
+  BasicTest() : XdsEnd2endTest(4, 1) {}
 };
 
 // Tests that the balancer sends the correct response to the client, and the
@@ -1485,7 +1496,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
   ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   WaitForBackend(3, false);
   for (size_t i = 0; i < 3; ++i) {
-    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
   // The ADS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
@@ -1509,7 +1520,7 @@ TEST_P(FailoverTest, Failover) {
   WaitForBackend(1, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
-    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
   // The ADS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
@@ -1534,7 +1545,7 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
   WaitForBackend(1, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
-    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
   StartBackend(0);
   WaitForBackend(0);
@@ -1573,7 +1584,7 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   WaitForBackend(2, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 2) continue;
-    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
   // The ADS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
@@ -1602,7 +1613,7 @@ TEST_P(FailoverTest, UpdatePriority) {
   ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 1000);
   WaitForBackend(3, false);
   for (size_t i = 0; i < 3; ++i) {
-    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
   WaitForBackend(1);
   CheckRpcSendOk(kNumRpcs);
@@ -2098,7 +2109,7 @@ TEST_P(FallbackTest, FallbackModeIsExitedAfterChildRready) {
 
 class BalancerUpdateTest : public XdsEnd2endTest {
  public:
-  BalancerUpdateTest() : XdsEnd2endTest(4, 3, 0) {}
+  BalancerUpdateTest() : XdsEnd2endTest(4, 3) {}
 };
 
 // Tests that the old LB call is still used after the balancer address update as

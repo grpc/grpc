@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H
 #define GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpcpp/impl/codegen/async_stream_impl.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
@@ -87,16 +89,18 @@ class AsyncGenericService final {
   grpc_impl::Server* server_;
 };
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
+#endif
 
 /// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
 /// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
 /// ByteBuffer arguments.
 using ServerGenericBidiReactor =
-    ::grpc_impl::experimental::ServerBidiReactor<ByteBuffer, ByteBuffer>;
+    ::grpc_impl::ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
 class GenericCallbackServerContext final
-    : public ::grpc_impl::experimental::CallbackServerContext {
+    : public ::grpc_impl::CallbackServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
@@ -108,7 +112,7 @@ class GenericCallbackServerContext final
   void Clear() {
     method_.clear();
     host_.clear();
-    ::grpc_impl::experimental::CallbackServerContext::Clear();
+    ::grpc_impl::CallbackServerContext::Clear();
   }
 
   grpc::string method_;
@@ -143,14 +147,17 @@ class CallbackGenericService {
   Handler() {
     return new ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer,
                                                           ByteBuffer>(
-        [this](::grpc_impl::experimental::CallbackServerContext* ctx) {
+        [this](::grpc_impl::CallbackServerContext* ctx) {
           return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
         });
   }
 
   grpc_impl::Server* server_{nullptr};
 };
+
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 }  // namespace experimental
+#endif
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H

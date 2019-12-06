@@ -48,7 +48,6 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
-#include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/upb.h"
@@ -943,10 +942,11 @@ grpc_error* EdsResponsedParse(
       continue;
     }
     // Get the endpoints.
+    size_t locality_size;
     const envoy_api_v2_endpoint_LocalityLbEndpoints* const* endpoints =
         envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
-                                                     &size);
-    for (size_t j = 0; j < size; ++j) {
+                                                     &locality_size);
+    for (size_t j = 0; j < locality_size; ++j) {
       XdsPriorityListUpdate::LocalityMap::Locality locality;
       grpc_error* error = LocalityParse(endpoints[j], &locality);
       if (error != GRPC_ERROR_NONE) return error;
@@ -959,11 +959,12 @@ grpc_error* EdsResponsedParse(
     const envoy_api_v2_ClusterLoadAssignment_Policy* policy =
         envoy_api_v2_ClusterLoadAssignment_policy(cluster_load_assignment);
     if (policy != nullptr) {
+      size_t drop_size;
       const envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload* const*
           drop_overload =
-              envoy_api_v2_ClusterLoadAssignment_Policy_drop_overloads(policy,
-                                                                       &size);
-      for (size_t j = 0; j < size; ++j) {
+              envoy_api_v2_ClusterLoadAssignment_Policy_drop_overloads(
+                  policy, &drop_size);
+      for (size_t j = 0; j < drop_size; ++j) {
         grpc_error* error =
             DropParseAndAppend(drop_overload[j], eds_update.drop_config.get(),
                                &eds_update.drop_all);

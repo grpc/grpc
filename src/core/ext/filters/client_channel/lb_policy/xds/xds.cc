@@ -100,10 +100,8 @@ class ParsedXdsConfig : public LoadBalancingPolicy::Config {
     return eds_service_name_.empty() ? nullptr : eds_service_name_.c_str();
   };
 
-  const char* lrs_load_reporting_server_name() const {
-    return lrs_load_reporting_server_name_.has_value()
-               ? lrs_load_reporting_server_name_.value().c_str()
-               : nullptr;
+  const Optional<std::string>& lrs_load_reporting_server_name() const {
+    return lrs_load_reporting_server_name_;
   };
 
  private:
@@ -746,12 +744,12 @@ void XdsLb::ShutdownLocked() {
   // watcher holds a ref to us.
   xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
                                         endpoint_watcher_);
-  if (config_->lrs_load_reporting_server_name() != nullptr) {
+  if (config_->lrs_load_reporting_server_name().has_value()) {
     // TODO(roth): We should pass the cluster name (in addition to the
     // eds_service_name) when adding the client stats. To do so, we need to
     // first find a way to plumb the cluster name down into this LB policy.
     xds_client()->RemoveClientStats(
-        StringView(config_->lrs_load_reporting_server_name()),
+        StringView(config_->lrs_load_reporting_server_name().value().c_str()),
         StringView(eds_service_name()), &client_stats_);
   }
   xds_client_from_channel_.reset();
@@ -837,24 +835,25 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
   // all of the pickers whenever load reporting is enabled or disabled
   // here.
   if (is_initial_update ||
-      (config_->lrs_load_reporting_server_name() == nullptr) !=
-          (old_config->lrs_load_reporting_server_name() == nullptr) ||
-      (config_->lrs_load_reporting_server_name() != nullptr &&
-       old_config->lrs_load_reporting_server_name() != nullptr &&
-       strcmp(config_->lrs_load_reporting_server_name(),
-              old_config->lrs_load_reporting_server_name()) != 0)) {
+      (config_->lrs_load_reporting_server_name().has_value()) !=
+          (old_config->lrs_load_reporting_server_name().has_value()) ||
+      (config_->lrs_load_reporting_server_name().has_value() &&
+       old_config->lrs_load_reporting_server_name().has_value() &&
+       config_->lrs_load_reporting_server_name().value() !=
+           old_config->lrs_load_reporting_server_name().value())) {
     if (old_config != nullptr &&
-        old_config->lrs_load_reporting_server_name() != nullptr) {
+        old_config->lrs_load_reporting_server_name().has_value()) {
       xds_client()->RemoveClientStats(
-          StringView(old_config->lrs_load_reporting_server_name()),
+          StringView(
+              old_config->lrs_load_reporting_server_name().value().c_str()),
           StringView(old_eds_service_name), &client_stats_);
     }
-    if (config_->lrs_load_reporting_server_name() != nullptr) {
+    if (config_->lrs_load_reporting_server_name().has_value()) {
       // TODO(roth): We should pass the cluster name (in addition to the
       // eds_service_name) when adding the client stats. To do so, we need to
       // first find a way to plumb the cluster name down into this LB policy.
       xds_client()->AddClientStats(
-          StringView(config_->lrs_load_reporting_server_name()),
+          StringView(config_->lrs_load_reporting_server_name().value().c_str()),
           StringView(eds_service_name()), &client_stats_);
     }
   }

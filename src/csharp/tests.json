@@ -68,7 +68,8 @@
     "Grpc.IntegrationTesting.InteropClientServerTest",
     "Grpc.IntegrationTesting.MetadataCredentialsTest",
     "Grpc.IntegrationTesting.RunnerClientServerTest",
-    "Grpc.IntegrationTesting.SslCredentialsTest"
+    "Grpc.IntegrationTesting.SslCredentialsTest",
+    "Grpc.IntegrationTesting.UnobservedTaskExceptionTest"
   ],
   "Grpc.Reflection.Tests": [
     "Grpc.Reflection.Tests.ReflectionClientServerTest",

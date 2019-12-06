@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.26.0-dev")
+set(PACKAGE_VERSION       "1.27.0-dev")
 set(gRPC_CORE_VERSION     "9.0.0")
 set(gRPC_CORE_SOVERSION   "9")
-set(gRPC_CPP_VERSION      "1.26.0-dev")
+set(gRPC_CPP_VERSION      "1.27.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.26.0-dev")
+set(gRPC_CSHARP_VERSION   "2.27.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -782,6 +782,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx json_run_localhost)
   endif()
+  add_dependencies(buildtests_cxx logical_thread_test)
   add_dependencies(buildtests_cxx message_allocator_end2end_test)
   add_dependencies(buildtests_cxx metrics_client)
   add_dependencies(buildtests_cxx mock_test)
@@ -1169,6 +1170,7 @@ add_library(grpc
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -1379,7 +1381,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
-  src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -1653,6 +1654,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -1795,7 +1797,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
-  src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -2082,6 +2083,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2192,7 +2194,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
-  src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -2425,6 +2426,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2535,7 +2537,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
-  src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -2744,6 +2745,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2889,7 +2891,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
-  src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -3338,7 +3339,6 @@ add_library(grpc++
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
-  src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -3412,6 +3412,7 @@ add_library(grpc++
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -4603,7 +4604,6 @@ add_library(grpc++_unsecure
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
-  src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -4677,6 +4677,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -13955,6 +13956,42 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(logical_thread_test
+  test/core/iomgr/logical_thread_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(logical_thread_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(logical_thread_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 

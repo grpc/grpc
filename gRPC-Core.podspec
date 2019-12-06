@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.26.0-dev'
+  version = '1.27.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -235,7 +235,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/parse_address.cc',
                       'src/core/ext/filters/client_channel/parse_address.h',
-                      'src/core/ext/filters/client_channel/proxy_mapper.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
@@ -667,6 +666,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.cc',
                       'src/core/lib/iomgr/lockfree_event.h',
+                      'src/core/lib/iomgr/logical_thread.cc',
+                      'src/core/lib/iomgr/logical_thread.h',
                       'src/core/lib/iomgr/nameser.h',
                       'src/core/lib/iomgr/polling_entity.cc',
                       'src/core/lib/iomgr/polling_entity.h',
@@ -1215,6 +1216,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
+                              'src/core/lib/iomgr/logical_thread.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
