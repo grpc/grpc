@@ -796,7 +796,7 @@ void PrintHeaderClientMethodCallbackEnd(
 
   printer->Print(
       "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
-      "class async_interface* async() override { "
+      "async_interface* async() override { "
       "return &async_stub_; }\n"
       "#endif\n"
       "class experimental_async_interface* experimental_async() override { "

@@ -243,7 +243,7 @@ class ServiceA final {
       Stub* stub_;
     };
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    class async_interface* async() override { return &async_stub_; }
+    async_interface* async() override { return &async_stub_; }
     #endif
     class experimental_async_interface* experimental_async() override { return &async_stub_; }
 
@@ -959,7 +959,7 @@ class ServiceB final {
       Stub* stub_;
     };
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    class async_interface* async() override { return &async_stub_; }
+    async_interface* async() override { return &async_stub_; }
     #endif
     class experimental_async_interface* experimental_async() override { return &async_stub_; }
 
