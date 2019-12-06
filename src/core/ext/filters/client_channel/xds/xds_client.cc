@@ -435,6 +435,8 @@ void XdsClient::ChannelState::OnResourceNamesChanged(
     ads_calld_.reset(new RetryableCall<AdsCallState>(
         Ref(DEBUG_LOCATION, "ChannelState+ads")));
   } else {
+    // FIXME: put buffer outside of the call data.
+    if (ads_calld() == nullptr) return;
     ads_calld()->SendMessageLocked(type_url, "", nullptr, false);
   }
 }
