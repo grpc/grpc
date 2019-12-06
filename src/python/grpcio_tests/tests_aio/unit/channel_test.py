@@ -59,7 +59,7 @@ class TestChannel(AioTestBase):
                 response_deserializer=messages_pb2.SimpleResponse.FromString)
             response = await hi(messages_pb2.SimpleRequest())
 
-            self.assertIs(type(response), messages_pb2.SimpleResponse)
+            self.assertIsInstance(response, messages_pb2.SimpleResponse)
 
     async def test_unary_call_times_out(self):
         async with aio.insecure_channel(self._server_target) as channel:
@@ -96,7 +96,7 @@ class TestChannel(AioTestBase):
             response_deserializer=messages_pb2.SimpleResponse.FromString)
         response = await hi(messages_pb2.SimpleRequest())
 
-        self.assertIs(type(response), messages_pb2.SimpleResponse)
+        self.assertIsInstance(response, messages_pb2.SimpleResponse)
 
         await channel.close()
 
@@ -122,6 +122,7 @@ class TestChannel(AioTestBase):
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         self.assertEqual(_NUM_STREAM_RESPONSES, response_cnt)
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
         await channel.close()
 
 

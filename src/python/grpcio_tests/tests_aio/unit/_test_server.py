@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import asyncio
-from time import sleep
 import logging
+import datetime
 
 from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2
@@ -40,7 +40,8 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
         for response_parameters in request.response_parameters:
             if response_parameters.interval_us != 0:
                 await asyncio.sleep(
-                    response_parameters.interval_us / _US_IN_A_SECOND)
+                    datetime.timedelta(microseconds=response_parameters.
+                                       interval_us).total_seconds())
             yield messages_pb2.StreamingOutputCallResponse(
                 payload=messages_pb2.Payload(
                     type=request.response_type,

@@ -147,9 +147,10 @@ class UnaryStreamCall(
     async def read(self) -> ResponseType:
         """Reads one message from the RPC.
 
-        Concurrent reads in multiple coroutines are not allowed. If you want to
-        perform read in multiple coroutines, you needs synchronization. So, you
-        can start another read after current read is finished.
+        For each streaming RPC, concurrent reads in multiple coroutines are not
+        allowed. If you want to perform read in multiple coroutines, you needs
+        synchronization. So, you can start another read after current read is
+        finished.
 
         Returns:
           A response message of the RPC.

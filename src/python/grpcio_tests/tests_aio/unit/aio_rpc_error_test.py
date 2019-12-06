@@ -21,23 +21,28 @@ import grpc
 from grpc.experimental.aio._call import AioRpcError
 from tests_aio.unit._test_base import AioTestBase
 
+_TEST_INITIAL_METADATA = ('initial metadata',)
+_TEST_TRAILING_METADATA = ('trailing metadata',)
+_TEST_DEBUG_ERROR_STRING = '{This is a debug string}'
+
 
 class TestAioRpcError(unittest.TestCase):
-    _TEST_INITIAL_METADATA = ("initial metadata",)
-    _TEST_TRAILING_METADATA = ("trailing metadata",)
 
     def test_attributes(self):
         aio_rpc_error = AioRpcError(
             grpc.StatusCode.CANCELLED,
-            "details",
-            initial_metadata=self._TEST_INITIAL_METADATA,
-            trailing_metadata=self._TEST_TRAILING_METADATA)
+            'details',
+            initial_metadata=_TEST_INITIAL_METADATA,
+            trailing_metadata=_TEST_TRAILING_METADATA,
+            debug_error_string=_TEST_DEBUG_ERROR_STRING)
         self.assertEqual(aio_rpc_error.code(), grpc.StatusCode.CANCELLED)
-        self.assertEqual(aio_rpc_error.details(), "details")
+        self.assertEqual(aio_rpc_error.details(), 'details')
         self.assertEqual(aio_rpc_error.initial_metadata(),
-                         self._TEST_INITIAL_METADATA)
+                         _TEST_INITIAL_METADATA)
         self.assertEqual(aio_rpc_error.trailing_metadata(),
-                         self._TEST_TRAILING_METADATA)
+                         _TEST_TRAILING_METADATA)
+        self.assertEqual(aio_rpc_error.debug_error_string(),
+                         _TEST_DEBUG_ERROR_STRING)
 
 
 if __name__ == '__main__':

@@ -44,6 +44,7 @@ def _get_default_loop(debug=True):
         return loop
 
 
+# NOTE(gnossen) this test class can also be implemented with metaclass.
 class AioTestBase(unittest.TestCase):
 
     @property

@@ -174,12 +174,9 @@ class Call(_base_call.Call):
         return self._status.done()
 
     def add_done_callback(self, unused_callback) -> None:
-        raise NotImplementedError()
+        pass
 
-    def is_active(self) -> bool:
-        return self.done()
-
-    def time_remaining(self) -> float:
+    def time_remaining(self) -> Optional[float]:
         pass
 
     async def initial_metadata(self) -> MetadataType:

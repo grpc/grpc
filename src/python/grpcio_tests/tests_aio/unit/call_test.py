@@ -54,7 +54,7 @@ class TestUnaryUnaryCall(AioTestBase):
             response = await call
 
             self.assertTrue(call.done())
-            self.assertEqual(type(response), messages_pb2.SimpleResponse)
+            self.assertIsInstance(response, messages_pb2.SimpleResponse)
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
             # Response is cached at call object level, reentrance
@@ -81,9 +81,12 @@ class TestUnaryUnaryCall(AioTestBase):
             with self.assertRaises(grpc.RpcError) as exception_context:
                 await call
 
+            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
+                             exception_context.exception.code())
+
             self.assertTrue(call.done())
-            self.assertEqual(await call.code(),
-                             grpc.StatusCode.DEADLINE_EXCEEDED)
+            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, await
+                             call.code())
 
             # Exception is cached at call object level, reentrance
             # returns again the same exception
@@ -138,7 +141,7 @@ class TestUnaryUnaryCall(AioTestBase):
 
             # NOTE(lidiz) The CancelledError is almost always re-created,
             # so we might not want to use it to transmit data.
-            # https://github.com/python/cpython/blob/master/Lib/asyncio/tasks.py#L785
+            # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
 
 
 class TestUnaryStreamCall(AioTestBase):
@@ -272,6 +275,8 @@ class TestUnaryStreamCall(AioTestBase):
             # is received or on its way. It's basically a data race, so our
             # expectation here is do not crash :)
             call.cancel()
+            self.assertIn(await call.code(),
+                          [grpc.StatusCode.OK, grpc.StatusCode.CANCELLED])
 
     async def test_too_many_reads_unary_stream(self):
         """Test cancellation after received all messages."""
@@ -309,9 +314,7 @@ class TestUnaryStreamCall(AioTestBase):
             for _ in range(_NUM_STREAM_RESPONSES):
                 request.response_parameters.append(
                     messages_pb2.ResponseParameters(
-                        size=_RESPONSE_PAYLOAD_SIZE,
-                        interval_us=_RESPONSE_INTERVAL_US,
-                    ))
+                        size=_RESPONSE_PAYLOAD_SIZE,))
 
             # Invokes the actual RPC
             call = stub.StreamingOutputCall(request)

@@ -157,31 +157,33 @@ async def _handle_unary_stream_rpc(object method_handler,
         loop,
     )
 
+    cdef object async_response_generator
+    cdef object response_message
     if inspect.iscoroutinefunction(method_handler.unary_stream):
         # The handler uses reader / writer API, returns None.
         await method_handler.unary_stream(
             request_message,
             servicer_context,
         )
-        return
+    else:
+        # The handler uses async generator API
+        async_response_generator = method_handler.unary_stream(
+            request_message,
+            servicer_context,
+        )
 
-    # The handler uses async generator API
-    cdef object async_response_generator = method_handler.unary_stream(
-        request_message,
-        servicer_context,
-    )
+        # Consumes messages from the generator
+        async for response_message in async_response_generator:
+            await servicer_context.write(response_message)
 
-    # Consumes messages from the generator
-    cdef object response_message
-    async for response_message in async_response_generator:
-        await servicer_context.write(response_message)
-
+    # Sends the final status of this RPC
     cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
         None,
         StatusCode.ok,
         b'',
         _EMPTY_FLAGS,
     )
+
     cdef tuple ops = (op,)
     await callback_start_batch(rpc_state, ops, loop)
 

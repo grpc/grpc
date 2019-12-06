@@ -28,6 +28,7 @@ _BLOCK_FOREVER = '/test/BlockForever'
 _BLOCK_BRIEFLY = '/test/BlockBriefly'
 _UNARY_STREAM_ASYNC_GEN = '/test/UnaryStreamAsyncGen'
 _UNARY_STREAM_READER_WRITER = '/test/UnaryStreamReaderWriter'
+_UNARY_STREAM_EVILLY_MIXED = '/test/UnaryStreamEvillyMixed'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -56,7 +57,12 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
     async def _unary_stream_reader_writer(self, unused_request, context):
         for _ in range(_NUM_STREAM_RESPONSES):
-            context.write(_RESPONSE)
+            await context.write(_RESPONSE)
+
+    async def _unary_stream_evilly_mixed(self, unused_request, context):
+        yield _RESPONSE
+        for _ in range(_NUM_STREAM_RESPONSES - 1):
+            await context.write(_RESPONSE)
 
     def service(self, handler_details):
         self._called.set_result(None)
@@ -72,6 +78,9 @@ class _GenericHandler(grpc.GenericRpcHandler):
         if handler_details.method == _UNARY_STREAM_READER_WRITER:
             return grpc.unary_stream_rpc_method_handler(
                 self._unary_stream_reader_writer)
+        if handler_details.method == _UNARY_STREAM_EVILLY_MIXED:
+            return grpc.unary_stream_rpc_method_handler(
+                self._unary_stream_evilly_mixed)
 
     async def wait_for_call(self):
         await self._called
@@ -105,7 +114,6 @@ class TestServer(AioTestBase):
         async with aio.insecure_channel(self._server_target) as channel:
             unary_stream_call = channel.unary_stream(_UNARY_STREAM_ASYNC_GEN)
             call = unary_stream_call(_REQUEST)
-            await self._generic_handler.wait_for_call()
 
             # Expecting the request message to reach server before retriving
             # any responses.
@@ -122,9 +130,9 @@ class TestServer(AioTestBase):
 
     async def test_unary_stream_reader_writer(self):
         async with aio.insecure_channel(self._server_target) as channel:
-            unary_stream_call = channel.unary_stream(_UNARY_STREAM_ASYNC_GEN)
+            unary_stream_call = channel.unary_stream(
+                _UNARY_STREAM_READER_WRITER)
             call = unary_stream_call(_REQUEST)
-            await self._generic_handler.wait_for_call()
 
             # Expecting the request message to reach server before retriving
             # any responses.
@@ -134,6 +142,29 @@ class TestServer(AioTestBase):
             for _ in range(_NUM_STREAM_RESPONSES):
                 response = await call.read()
                 self.assertEqual(_RESPONSE, response)
+
+            self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_unary_stream_evilly_mixed(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            unary_stream_call = channel.unary_stream(_UNARY_STREAM_EVILLY_MIXED)
+            call = unary_stream_call(_REQUEST)
+
+            # Expecting the request message to reach server before retriving
+            # any responses.
+            await asyncio.wait_for(self._generic_handler.wait_for_call(),
+                                   test_constants.SHORT_TIMEOUT)
+
+            # Uses reader API
+            self.assertEqual(_RESPONSE, await call.read())
+
+            # Uses async generator API
+            response_cnt = 0
+            async for response in call:
+                response_cnt += 1
+                self.assertEqual(_RESPONSE, response)
+
+            self.assertEqual(_NUM_STREAM_RESPONSES - 1, response_cnt)
 
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
@@ -229,5 +260,5 @@ class TestServer(AioTestBase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
