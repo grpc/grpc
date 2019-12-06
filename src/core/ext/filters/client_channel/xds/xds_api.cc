@@ -532,8 +532,7 @@ grpc_error* EdsResponsedParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "EDS response contains 0 resource.");
   }
-  // FIXME: there is an unexpected second resource which is corrupted.
-  for (size_t i = 0; i < 1; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     EdsUpdate eds_update;
     // Check the type_url of the resource.
     upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
@@ -561,10 +560,11 @@ grpc_error* EdsResponsedParse(
       continue;
     }
     // Get the endpoints.
+    size_t locality_size;
     const envoy_api_v2_endpoint_LocalityLbEndpoints* const* endpoints =
         envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
-                                                     &size);
-    for (size_t j = 0; j < size; ++j) {
+                                                     &locality_size);
+    for (size_t j = 0; j < locality_size; ++j) {
       XdsPriorityListUpdate::LocalityMap::Locality locality;
       grpc_error* error = LocalityParse(endpoints[j], &locality);
       if (error != GRPC_ERROR_NONE) return error;
@@ -577,11 +577,12 @@ grpc_error* EdsResponsedParse(
     const envoy_api_v2_ClusterLoadAssignment_Policy* policy =
         envoy_api_v2_ClusterLoadAssignment_policy(cluster_load_assignment);
     if (policy != nullptr) {
+      size_t drop_size;
       const envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload* const*
           drop_overload =
-              envoy_api_v2_ClusterLoadAssignment_Policy_drop_overloads(policy,
-                                                                       &size);
-      for (size_t j = 0; j < size; ++j) {
+              envoy_api_v2_ClusterLoadAssignment_Policy_drop_overloads(
+                  policy, &drop_size);
+      for (size_t j = 0; j < drop_size; ++j) {
         grpc_error* error =
             DropParseAndAppend(drop_overload[j], eds_update.drop_config.get(),
                                &eds_update.drop_all);
