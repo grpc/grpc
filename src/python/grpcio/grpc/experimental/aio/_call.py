@@ -174,10 +174,10 @@ class Call(_base_call.Call):
         return self._status.done()
 
     def add_done_callback(self, unused_callback) -> None:
-        pass
+        raise NotImplementedError()
 
     def time_remaining(self) -> Optional[float]:
-        pass
+        raise NotImplementedError()
 
     async def initial_metadata(self) -> MetadataType:
         return await self._initial_metadata
@@ -238,6 +238,7 @@ class Call(_base_call.Call):
         return self._repr()
 
 
+# pylint: disable=abstract-method
 class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     """Object for managing unary-unary RPC calls.
 
@@ -320,6 +321,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         return response
 
 
+# pylint: disable=abstract-method
 class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
     """Object for managing unary-stream RPC calls.
 
