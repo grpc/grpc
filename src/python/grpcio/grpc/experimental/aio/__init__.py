@@ -23,7 +23,7 @@ import six
 import grpc
 from grpc._cython.cygrpc import init_grpc_aio
 
-from ._base_call import Call, UnaryUnaryCall, UnaryStreamCall
+from ._base_call import RpcContext, Call, UnaryUnaryCall, UnaryStreamCall
 from ._channel import Channel
 from ._channel import UnaryUnaryMultiCallable
 from ._server import server
@@ -48,5 +48,6 @@ def insecure_channel(target, options=None, compression=None):
 
 ###################################  __all__  #################################
 
-__all__ = ('Call', 'UnaryUnaryCall', 'UnaryStreamCall', 'init_grpc_aio',
-           'Channel', 'UnaryUnaryMultiCallable', 'insecure_channel', 'server')
+__all__ = ('RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall',
+           'init_grpc_aio', 'Channel', 'UnaryUnaryMultiCallable',
+           'insecure_channel', 'server')

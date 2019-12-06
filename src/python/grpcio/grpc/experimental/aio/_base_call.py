@@ -19,17 +19,17 @@ RPC, e.g. cancellation.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import AsyncIterable, Awaitable, Generic, Text
+from typing import Any, AsyncIterable, Awaitable, Callable, Generic, Text, Optional
 
 import grpc
 
 from ._typing import MetadataType, RequestType, ResponseType
 
-__all__ = 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
+__all__ = 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
 
-class Call(grpc.RpcContext, metaclass=ABCMeta):
-    """The abstract base class of an RPC on the client-side."""
+class RpcContext(metaclass=ABCMeta):
+    """Provides RPC-related information and action."""
 
     @abstractmethod
     def cancelled(self) -> bool:
@@ -50,6 +50,39 @@ class Call(grpc.RpcContext, metaclass=ABCMeta):
         Returns:
           A bool indicates if the RPC is done.
         """
+
+    @abstractmethod
+    def time_remaining(self) -> Optional[float]:
+        """Describes the length of allowed time remaining for the RPC.
+
+        Returns:
+          A nonnegative float indicating the length of allowed time in seconds
+          remaining for the RPC to complete before it is considered to have
+          timed out, or None if no deadline was specified for the RPC.
+        """
+
+    @abstractmethod
+    def cancel(self) -> bool:
+        """Cancels the RPC.
+
+        Idempotent and has no effect if the RPC has already terminated.
+
+        Returns:
+          A bool indicates if the cancellation is performed or not.
+        """
+
+    @abstractmethod
+    def add_done_callback(self, callback: Callable[[Any], None]) -> None:
+        """Registers a callback to be called on RPC termination.
+
+        Args:
+          callback: A callable object will be called with the context object as
+          its only argument.
+        """
+
+
+class Call(RpcContext, metaclass=ABCMeta):
+    """The abstract base class of an RPC on the client-side."""
 
     @abstractmethod
     async def initial_metadata(self) -> MetadataType:

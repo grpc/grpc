@@ -190,16 +190,15 @@ cdef class _AioCall:
         )
         status_observer(status)
         self._status_received.set()
-        self._destroy_grpc_call()
 
     def _handle_cancellation_from_application(self,
                                               object cancellation_future,
                                               object status_observer):
         def _cancellation_action(finished_future):
-            status = self._cancel_and_create_status(finished_future)
-            status_observer(status)
-            self._status_received.set()
-            self._destroy_grpc_call()
+            if not self._status_received.set():
+                status = self._cancel_and_create_status(finished_future)
+                status_observer(status)
+                self._status_received.set()
 
         cancellation_future.add_done_callback(_cancellation_action)
 

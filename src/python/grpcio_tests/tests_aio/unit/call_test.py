@@ -300,6 +300,31 @@ class TestUnaryStreamCall(AioTestBase):
             with self.assertRaises(asyncio.InvalidStateError):
                 await call.read()
 
+    async def test_unary_stream_async_generator(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+
+            # Prepares the request
+            request = messages_pb2.StreamingOutputCallRequest()
+            for _ in range(_NUM_STREAM_RESPONSES):
+                request.response_parameters.append(
+                    messages_pb2.ResponseParameters(
+                        size=_RESPONSE_PAYLOAD_SIZE,
+                        interval_us=_RESPONSE_INTERVAL_US,
+                    ))
+
+            # Invokes the actual RPC
+            call = stub.StreamingOutputCall(request)
+            self.assertFalse(call.cancelled())
+
+            async for response in call:
+                self.assertIs(
+                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
+                                 len(response.payload.body))
+
+            self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
