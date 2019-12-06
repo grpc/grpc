@@ -579,10 +579,10 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c h2_sockpair_test)
   add_dependencies(buildtests_c h2_sockpair+trace_test)
   add_dependencies(buildtests_c h2_sockpair_1byte_test)
-  add_dependencies(buildtests_c h2_spiffe_test)
   add_dependencies(buildtests_c h2_ssl_test)
   add_dependencies(buildtests_c h2_ssl_cred_reload_test)
   add_dependencies(buildtests_c h2_ssl_proxy_test)
+  add_dependencies(buildtests_c h2_tls_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c h2_uds_test)
   endif()
@@ -17033,34 +17033,6 @@ target_link_libraries(h2_sockpair_1byte_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(h2_spiffe_test
-  test/core/end2end/fixtures/h2_spiffe.cc
-)
-
-target_include_directories(h2_spiffe_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(h2_spiffe_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(h2_ssl_test
   test/core/end2end/fixtures/h2_ssl.cc
 )
@@ -17134,6 +17106,34 @@ target_include_directories(h2_ssl_proxy_test
 )
 
 target_link_libraries(h2_ssl_proxy_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(h2_tls_test
+  test/core/end2end/fixtures/h2_tls.cc
+)
+
+target_include_directories(h2_tls_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(h2_tls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
