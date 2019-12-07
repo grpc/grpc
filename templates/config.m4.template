@@ -38,13 +38,14 @@
     PHP_SUBST(GRPC_SHARED_LIBADD)
   <%
     srcs = []
-    for src in php_config_m4.src:
-      srcs.append(src)
-    for lib in libs:
-      if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
-        for src in lib.src:
-          srcs.append(src)
-    srcs = sorted(srcs)
+    srcs.extend(php_config_m4.src)
+    php_deps = php_config_m4.get('deps', [])
+    lib_maps = {lib.name: lib for lib in libs}
+    for dep in php_deps[:]:
+      php_deps.extend(lib_maps[dep].transitive_deps)
+    for dep in list(set(php_deps) - set(('z',))):
+      srcs.extend(lib_maps[dep].src)
+    srcs = sorted(set(srcs))
   %>
     PHP_NEW_EXTENSION(grpc,
       % for src in srcs:
@@ -54,14 +55,10 @@
       -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
       -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 ${"\\"}
       -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
-
-    PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   <%
     dirs = {}
-    for lib in libs:
-      if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
-        for source in lib.src:
-          dirs[source[:source.rfind('/')]] = 1
+    for src in srcs:
+      dirs[src[:src.rfind('/')]] = 1
     dirs = dirs.keys()
     dirs.sort()
   %>

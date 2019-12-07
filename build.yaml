@@ -6224,10 +6224,8 @@ openssl_fallback:
 php_config_m4:
   deps:
   - grpc
-  - gpr
   - address_sorting
   - boringssl
-  - upb
   - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
@@ -6256,18 +6254,14 @@ php_config_m4:
 python_dependencies:
   deps:
   - grpc
-  - gpr
   - address_sorting
   - ares
   - boringssl
-  - upb
   - z
 ruby_gem:
   deps:
   - grpc
-  - gpr
   - address_sorting
   - ares
   - boringssl
-  - upb
   - z
