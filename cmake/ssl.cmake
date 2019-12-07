@@ -42,8 +42,8 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
 
     add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
     if(TARGET ssl)
-      set(_gRPC_SSL_LIBRARIES ssl)
-      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/include)
+      set(_gRPC_SSL_LIBRARIES ssl crypto)
+      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/src/include)
       if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
         install(TARGETS ssl crypto EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
