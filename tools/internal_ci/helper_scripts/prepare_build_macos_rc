@@ -34,6 +34,9 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
 fi
 
+echo "Check go version:"
+go version
+
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   set +ex  # rvm script is very verbose and exits with errorcode
