@@ -74,7 +74,6 @@
 #define SENDMSG_FLAGS 0
 #endif
 
-#define ZEROCP_SEND_BYTES_THRESHOLD_DEFAULT (1 << 14)  // 16384
 #define ZEROCP_TX_ENABLED_DEFAULT 0
 
 // TCP zero copy sendmsg flag.
@@ -92,20 +91,39 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace grpc_core {
 
-class TcpZcpSendRecord {
+class TcpZerocopySendRecord {
  public:
-  struct OutgoingOffset {
-    size_t slice_idx = 0;
-    size_t byte_idx = 0;
-  };
+  TcpZerocopySendRecord() { grpc_slice_buffer_init(&buf_); }
 
-  TcpZcpSendRecord() { grpc_slice_buffer_init(&buf_); }
-  ~TcpZcpSendRecord() {
+  ~TcpZerocopySendRecord() {
     AssertEmpty();
     grpc_slice_buffer_destroy_internal(&buf_);
   }
-  OutgoingOffset& GetOutgoingOffsets() { return out_offset_; }
-  grpc_slice_buffer* Buffer() { return &buf_; }
+
+  /* Given the slices that we wish to send, and the current offset into the
+     slice buffer (indicating which have already been sent), populate an iovec
+     array that will be used for a zerocopy enabled sendmsg(). */
+  msg_iovlen_type PopulateIovs(size_t* unwind_slice_idx,
+                               size_t* unwind_byte_idx, size_t* sending_length,
+                               iovec* iov);
+
+  /* A sendmsg() may not be able to send the bytes that we requested at this
+     time, returning EAGAIN (possibly due to backpressure). In this case,
+     unwind the offset into the slice buffer so we retry sending these bytes. */
+  void UnwindIfThrottled(size_t unwind_slice_idx, size_t unwind_byte_idx) {
+    out_offset_.byte_idx = unwind_byte_idx;
+    out_offset_.slice_idx = unwind_slice_idx;
+  }
+
+  /* Update the offset into the slice buffer based on how much we wanted to sent
+     vs. what sendmsg() actually sent (which may be lower, possibly due to
+     backpressure). */
+  void UpdateOffsetForBytesSent(size_t sending_length, size_t actually_sent);
+
+  /* Indicates whether all underlying data has been sent or not.  */
+  bool AllSlicesSent() { return out_offset_.slice_idx == buf_.count; }
+
+  /* Reset this structure for a new tcp_write() with zerocopy. */
   void PrepareForSends(grpc_slice_buffer* slices_to_send) {
     AssertEmpty();
     out_offset_.slice_idx = 0;
@@ -113,7 +131,12 @@ class TcpZcpSendRecord {
     grpc_slice_buffer_swap(slices_to_send, &buf_);
     Ref();
   }
+
+  /* References: 1 reference per sendmsg(), and 1 for the tcp_write(). */
   void Ref() { ref_.FetchAdd(1, MemoryOrder::RELAXED); }
+
+  /* Unref: called when we get an error queue notification for a sendmsg(), if a
+     sendmsg() failed or when tcp_write() is done. */
   bool Unref() {
     const intptr_t prior = ref_.FetchSub(1, MemoryOrder::ACQ_REL);
     GPR_DEBUG_ASSERT(prior > 0);
@@ -125,11 +148,21 @@ class TcpZcpSendRecord {
   }
 
  private:
+  struct OutgoingOffset {
+    size_t slice_idx = 0;
+    size_t byte_idx = 0;
+  };
+
   void AssertEmpty() {
     GPR_DEBUG_ASSERT(buf_.count == 0);
     GPR_DEBUG_ASSERT(buf_.length == 0);
     GPR_DEBUG_ASSERT(ref_.Load(MemoryOrder::RELAXED) == 0);
   }
+
+  /* When all sendmsg() calls associated with this tcp_write() have been
+     completed (ie. we have received the notifications for each sequence number
+     for each sendmsg()) and all reference counts have been dropped, drop our
+     reference to the underlying data since we no longer need it. */
   void AllSendsComplete() {
     GPR_DEBUG_ASSERT(ref_.Load(MemoryOrder::RELAXED) == 0);
     grpc_slice_buffer_reset_and_unref_internal(&buf_);
@@ -140,42 +173,69 @@ class TcpZcpSendRecord {
   OutgoingOffset out_offset_;
 };
 
-class TcpZcpSendCtx {
+class TcpZerocopySendCtx {
  public:
   static constexpr int kDefaultMaxSends = 4;
-  TcpZcpSendCtx(int max_sends = kDefaultMaxSends)
-      : max_sends_(max_sends), free_send_records_size_(max_sends) {
-    send_records_ = static_cast<TcpZcpSendRecord*>(
+  static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;  // 16KB
+
+  explicit TcpZerocopySendCtx(
+      int max_sends = kDefaultMaxSends,
+      size_t send_bytes_threshold = kDefaultSendBytesThreshold)
+      : max_sends_(max_sends),
+        free_send_records_size_(max_sends),
+        threshold_bytes_(send_bytes_threshold) {
+    send_records_ = static_cast<TcpZerocopySendRecord*>(
         gpr_malloc(max_sends * sizeof(*send_records_)));
-    free_send_records_ = static_cast<TcpZcpSendRecord**>(
+    free_send_records_ = static_cast<TcpZerocopySendRecord**>(
         gpr_malloc(max_sends * sizeof(*free_send_records_)));
-    if (!send_records_ || !free_send_records_) {
+    if (send_records_ == nullptr || free_send_records_ == nullptr) {
       gpr_free(send_records_);
       gpr_free(free_send_records_);
       gpr_log(GPR_INFO, "Disabling TCP TX zerocopy due to memory pressure.\n");
       memory_limited_ = true;
     } else {
-      for (auto idx = 0; idx < max_sends_; ++idx) {
-        new (send_records_ + idx) TcpZcpSendRecord();
+      for (int idx = 0; idx < max_sends_; ++idx) {
+        new (send_records_ + idx) TcpZerocopySendRecord();
         free_send_records_[idx] = send_records_ + idx;
       }
     }
   }
-  ~TcpZcpSendCtx() {
+
+  ~TcpZerocopySendCtx() {
     if (send_records_) {
-      for (auto idx = 0; idx < max_sends_; ++idx) {
-        send_records_[idx].~TcpZcpSendRecord();
+      for (int idx = 0; idx < max_sends_; ++idx) {
+        send_records_[idx].~TcpZerocopySendRecord();
       }
     }
     gpr_free(send_records_);
     gpr_free(free_send_records_);
   }
-  bool IsMemoryLimited() { return memory_limited_; }
-  void NoteSend(TcpZcpSendRecord* record) {
+
+  /* True if we were unable to allocate the various bookkeeping structures at
+     transport initialization time. If memory limited, we do not zerocopy. */
+  bool memory_limited() { return memory_limited_; }
+
+  /* TCP send zerocopy maintains an implicit sequence number for every
+     successful sendmsg() with zerocopy enabled; the kernel later gives us an
+     error queue notification with this sequence number indicating that the
+     underlying data buffers that we sent can now be released. Once that
+     notification is received, we can release the buffers associated with this
+     zerocopy send record. Here, we associate the sequence number with the data
+     buffers that were sent with the corresponding call to sendmsg(). */
+  void NoteSend(TcpZerocopySendRecord* record) {
     record->Ref();
     AssociateSeqWithSendRecord(last_send_, record);
     ++last_send_;
   }
+
+  /* If sendmsg() actually failed, though, we need to revert the sequence number
+     that we speculatively bumped before calling sendmsg(). Note that we bump
+     this sequence number and perform relevant bookkeeping (see: NoteSend())
+     *before* calling sendmsg() since, if we called it *after* sendmsg(), then
+     there is a possible race with the release notification which could occur on
+     another thread before we do the necessary bookkeeping. Hence, calling
+     NoteSend() *before* sendmsg() and implementing an undo function is needed.
+   */
   void UndoSend() {
     --last_send_;
     if (ReleaseSendRecord(last_send_)->Unref()) {
@@ -183,49 +243,78 @@ class TcpZcpSendCtx {
       GPR_DEBUG_ASSERT(0);
     }
   }
-  void AssociateSeqWithSendRecord(uint32_t seq, TcpZcpSendRecord* record) {
+
+  /* Simply associate this send record (and the underlying sent data buffers)
+     with the implicit sequence number for this zerocopy sendmsg(). */
+  void AssociateSeqWithSendRecord(uint32_t seq, TcpZerocopySendRecord* record) {
     MutexLock guard(&lock_);
     ctx_lookup_.emplace(seq, record);
   }
-  TcpZcpSendRecord* GetSendRecord() {
-    TcpZcpSendRecord* record;
+
+  /* Get a send record for a send that we wish to do with zerocopy. */
+  TcpZerocopySendRecord* GetSendRecord() {
     MutexLock guard(&lock_);
-    record = TryGetSendRecordLocked();
-    return record;
+    return TryGetSendRecordLocked();
   }
-  TcpZcpSendRecord* ReleaseSendRecord(uint32_t seq) {
+
+  /* A given send record corresponds to a single tcp_write() with zerocopy
+     enabled. This can result in several sendmsg() calls to flush all of the
+     data to wire. Each sendmsg() takes a reference on the
+     TcpZerocopySendRecord, and corresponds to a single sequence number.
+     ReleaseSendRecord releases a reference on TcpZerocopySendRecord for a
+     single sequence number. This is called either when we receive the relevant
+     error queue notification (saying that we can discard the underlying
+     buffers for this sendmsg()) is received from the kernel - or, in case
+     sendmsg() was unsuccessful to begin with. */
+  TcpZerocopySendRecord* ReleaseSendRecord(uint32_t seq) {
     MutexLock guard(&lock_);
     return ReleaseSendRecordLocked(seq);
   }
 
-  void PutSendRecord(TcpZcpSendRecord* record) {
+  /* After all the references to a TcpZerocopySendRecord are released, we can
+     add it back to the pool (of size max_sends_). Note that we can only have
+     max_sends_ tcp_write() instances with zerocopy enabled in flight at the
+     same time. */
+  void PutSendRecord(TcpZerocopySendRecord* record) {
     GPR_DEBUG_ASSERT(record >= send_records_ &&
                      record < send_records_ + max_sends_);
     MutexLock guard(&lock_);
     PutSendRecordLocked(record);
   }
+
+  /* Indicate that we are disposing of this zerocopy context. This indicator
+     will prevent new zerocopy writes from being issued. */
   void Shutdown() { shutdown_.Store(true, MemoryOrder::RELEASE); }
+
+  /* Indicates that there are no inflight tcp_write() instances with zerocopy
+   * enabled. */
   bool AllSendRecordsEmpty() {
     MutexLock guard(&lock_);
     return free_send_records_size_ == max_sends_;
   }
-  bool IsEnabled() const { return enabled_; }
-  void SetEnabled(bool en) {
-    GPR_DEBUG_ASSERT(!en || !IsMemoryLimited());
+
+  bool enabled() const { return enabled_; }
+
+  void set_enabled(bool en) {
+    GPR_DEBUG_ASSERT(!en || !memory_limited());
     enabled_ = en;
   }
-  size_t ThresholdBytes() const { return threshold_bytes_; }
-  void SetThresholdBytes(size_t bytes) { threshold_bytes_ = bytes; }
+
+  /* Only use zerocopy if we are sending at least this many bytes. The
+     additional overhead of reading the error queue for notifications means that
+     zerocopy is not useful for small transfers. */
+  size_t threshold_bytes() const { return threshold_bytes_; }
 
  private:
-  TcpZcpSendRecord* ReleaseSendRecordLocked(uint32_t seq) {
+  TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq) {
     auto iter = ctx_lookup_.find(seq);
     GPR_DEBUG_ASSERT(iter != ctx_lookup_.end());
-    TcpZcpSendRecord* record = iter->second;
+    TcpZerocopySendRecord* record = iter->second;
     ctx_lookup_.erase(iter);
     return record;
   }
-  TcpZcpSendRecord* TryGetSendRecordLocked() {
+
+  TcpZerocopySendRecord* TryGetSendRecordLocked() {
     if (shutdown_.Load(MemoryOrder::ACQUIRE)) {
       return nullptr;
     }
@@ -235,29 +324,30 @@ class TcpZcpSendCtx {
     free_send_records_size_--;
     return free_send_records_[free_send_records_size_];
   }
-  void PutSendRecordLocked(TcpZcpSendRecord* record) {
+
+  void PutSendRecordLocked(TcpZerocopySendRecord* record) {
     GPR_DEBUG_ASSERT(free_send_records_size_ < max_sends_);
     free_send_records_[free_send_records_size_] = record;
     free_send_records_size_++;
   }
 
-  TcpZcpSendRecord* send_records_;
-  TcpZcpSendRecord** free_send_records_;
+  TcpZerocopySendRecord* send_records_;
+  TcpZerocopySendRecord** free_send_records_;
   int max_sends_;
   int free_send_records_size_;
   Mutex lock_;
   uint32_t last_send_ = 0;
   Atomic<bool> shutdown_;
   bool enabled_ = false;
-  size_t threshold_bytes_ = ZEROCP_SEND_BYTES_THRESHOLD_DEFAULT;
-  UnorderedMap<uint32_t, TcpZcpSendRecord*> ctx_lookup_;
+  size_t threshold_bytes_ = kDefaultSendBytesThreshold;
+  UnorderedMap<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
   bool memory_limited_ = false;
 };
 
 }  // namespace grpc_core
 
-using grpc_core::TcpZcpSendCtx;
-using grpc_core::TcpZcpSendRecord;
+using grpc_core::TcpZerocopySendCtx;
+using grpc_core::TcpZerocopySendRecord;
 
 namespace {
 struct grpc_tcp {
@@ -322,8 +412,8 @@ struct grpc_tcp {
   bool ts_capable;        /* Cache whether we can set timestamping options */
   gpr_atm stop_error_notification; /* Set to 1 if we do not want to be notified
                                       on errors anymore */
-  TcpZcpSendCtx tcp_zcp_send_ctx;
-  TcpZcpSendRecord* current_zcp_send = nullptr;
+  TcpZerocopySendCtx tcp_zerocopy_send_ctx;
+  TcpZerocopySendRecord* current_zerocopy_send = nullptr;
 };
 
 struct backup_poller {
@@ -542,7 +632,7 @@ static void tcp_free(grpc_tcp* tcp) {
   gpr_mu_unlock(&tcp->tb_mu);
   tcp->outgoing_buffer_arg = nullptr;
   gpr_mu_destroy(&tcp->tb_mu);
-  tcp->tcp_zcp_send_ctx.~TcpZcpSendCtx();
+  tcp->tcp_zerocopy_send_ctx.~TcpZerocopySendCtx();
   gpr_free(tcp);
 }
 
@@ -864,37 +954,38 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
 /** The callback function to be invoked when we get an error on the socket. */
 static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error);
 
-static TcpZcpSendRecord* tcp_get_send_zcp_record(grpc_tcp* tcp,
-                                                 grpc_slice_buffer* buf);
+static TcpZerocopySendRecord* tcp_get_send_zerocopy_record(
+    grpc_tcp* tcp, grpc_slice_buffer* buf);
 
 #ifdef GRPC_LINUX_ERRQUEUE
 static bool process_errors(grpc_tcp* tcp);
 
-static TcpZcpSendRecord* tcp_get_send_zcp_record(grpc_tcp* tcp,
-                                                 grpc_slice_buffer* buf) {
-  TcpZcpSendRecord* zcp_send_record = nullptr;
-  bool use_zerocopy = tcp->tcp_zcp_send_ctx.IsEnabled() &&
-                      tcp->tcp_zcp_send_ctx.ThresholdBytes() < buf->length;
+static TcpZerocopySendRecord* tcp_get_send_zerocopy_record(
+    grpc_tcp* tcp, grpc_slice_buffer* buf) {
+  TcpZerocopySendRecord* zerocopy_send_record = nullptr;
+  const bool use_zerocopy =
+      tcp->tcp_zerocopy_send_ctx.enabled() &&
+      tcp->tcp_zerocopy_send_ctx.threshold_bytes() < buf->length;
   if (use_zerocopy) {
-    zcp_send_record = tcp->tcp_zcp_send_ctx.GetSendRecord();
-    if (!zcp_send_record) {
+    zerocopy_send_record = tcp->tcp_zerocopy_send_ctx.GetSendRecord();
+    if (zerocopy_send_record == nullptr) {
       process_errors(tcp);
-      zcp_send_record = tcp->tcp_zcp_send_ctx.GetSendRecord();
+      zerocopy_send_record = tcp->tcp_zerocopy_send_ctx.GetSendRecord();
     }
-    if (zcp_send_record) {
-      zcp_send_record->PrepareForSends(buf);
+    if (zerocopy_send_record != nullptr) {
+      zerocopy_send_record->PrepareForSends(buf);
       GPR_DEBUG_ASSERT(buf->count == 0);
       GPR_DEBUG_ASSERT(buf->length == 0);
       tcp->outgoing_byte_idx = 0;
       tcp->outgoing_buffer = nullptr;
     }
   }
-  return zcp_send_record;
+  return zerocopy_send_record;
 }
 
 static void ZerocopyDisableAndWaitForRemaining(grpc_tcp* tcp) {
-  tcp->tcp_zcp_send_ctx.Shutdown();
-  while (!tcp->tcp_zcp_send_ctx.AllSendRecordsEmpty()) {
+  tcp->tcp_zerocopy_send_ctx.Shutdown();
+  while (!tcp->tcp_zerocopy_send_ctx.AllSendRecordsEmpty()) {
     process_errors(tcp);
   }
 }
@@ -945,7 +1036,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
 }
 
 static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
-                                            TcpZcpSendRecord* record,
+                                            TcpZerocopySendRecord* record,
                                             uint32_t seq, const char* tag);
 /* Reads \a cmsg to process zerocopy control messages. */
 static void process_zerocopy(grpc_tcp* tcp, struct cmsghdr* cmsg) {
@@ -955,12 +1046,13 @@ static void process_zerocopy(grpc_tcp* tcp, struct cmsghdr* cmsg) {
   GPR_DEBUG_ASSERT(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
   const uint32_t lo = serr->ee_info;
   const uint32_t hi = serr->ee_data;
-  for (auto seq = lo; seq <= hi; ++seq) {
+  for (uint32_t seq = lo; seq <= hi; ++seq) {
     // TODO(arjunroy): It's likely that lo and hi refer to zerocopy sequence
     // numbers that are generated by a single call to grpc_endpoint_write; ie.
     // we can batch the unref operation. So, check if record is the same for
     // both; if so, batch the unref/put.
-    TcpZcpSendRecord* record = tcp->tcp_zcp_send_ctx.ReleaseSendRecord(seq);
+    TcpZerocopySendRecord* record =
+        tcp->tcp_zerocopy_send_ctx.ReleaseSendRecord(seq);
     GPR_DEBUG_ASSERT(record);
     UnrefMaybePutZerocopySendRecord(tcp, record, seq, "CALLBACK RCVD");
   }
@@ -976,7 +1068,6 @@ static bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
   if (!CmsgIsIpLevel(cmsg)) {
     return false;
   }
-
   auto serr = reinterpret_cast<const sock_extended_err*> CMSG_DATA(&cmsg);
   return serr->ee_errno == 0 && serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY;
 }
@@ -1143,8 +1234,8 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 }
 
 #else  /* GRPC_LINUX_ERRQUEUE */
-static TcpZcpSendRecord* tcp_get_send_zcp_record(grpc_tcp* tcp,
-                                                 grpc_slice_buffer* buf) {
+static TcpZerocopySendRecord* tcp_get_send_zerocopy_record(
+    grpc_tcp* tcp, grpc_slice_buffer* buf) {
   return nullptr;
 }
 
@@ -1179,43 +1270,65 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
   }
 }
 
-/* returns true if done, false if pending; if returning true, *error is set */
 #if defined(IOV_MAX) && IOV_MAX < 1000
 #define MAX_WRITE_IOVEC IOV_MAX
 #else
 #define MAX_WRITE_IOVEC 1000
 #endif
-static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZcpSendRecord* record,
+msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
+                                                    size_t* unwind_byte_idx,
+                                                    size_t* sending_length,
+                                                    iovec* iov) {
+  msg_iovlen_type iov_size;
+  *unwind_slice_idx = out_offset_.slice_idx;
+  *unwind_byte_idx = out_offset_.byte_idx;
+  for (iov_size = 0;
+       out_offset_.slice_idx != buf_.count && iov_size != MAX_WRITE_IOVEC;
+       iov_size++) {
+    iov[iov_size].iov_base =
+        GRPC_SLICE_START_PTR(buf_.slices[out_offset_.slice_idx]) +
+        out_offset_.byte_idx;
+    iov[iov_size].iov_len =
+        GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]) -
+        out_offset_.byte_idx;
+    *sending_length += iov[iov_size].iov_len;
+    ++(out_offset_.slice_idx);
+    out_offset_.byte_idx = 0;
+  }
+  GPR_DEBUG_ASSERT(iov_size > 0);
+  return iov_size;
+}
+
+void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
+                                                     size_t actually_sent) {
+  size_t trailing = sending_length - actually_sent;
+  while (trailing > 0) {
+    size_t slice_length;
+    out_offset_.slice_idx--;
+    slice_length = GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]);
+    if (slice_length > trailing) {
+      out_offset_.byte_idx = slice_length - trailing;
+      break;
+    } else {
+      trailing -= slice_length;
+    }
+  }
+}
+
+/* returns true if done, false if pending; if returning true, *error is set */
+static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
                                   grpc_error** error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
   ssize_t sent_length = 0;
   size_t sending_length;
-  size_t trailing;
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
-
-  TcpZcpSendRecord::OutgoingOffset& out_offset = record->GetOutgoingOffsets();
-  grpc_slice_buffer* out_buf = record->Buffer();
-  for (;;) {
+  while (true) {
     sending_length = 0;
-    unwind_slice_idx = out_offset.slice_idx;
-    unwind_byte_idx = out_offset.byte_idx;
-    for (iov_size = 0;
-         out_offset.slice_idx != out_buf->count && iov_size != MAX_WRITE_IOVEC;
-         iov_size++) {
-      iov[iov_size].iov_base =
-          GRPC_SLICE_START_PTR(out_buf->slices[out_offset.slice_idx]) +
-          out_offset.byte_idx;
-      iov[iov_size].iov_len =
-          GRPC_SLICE_LENGTH(out_buf->slices[out_offset.slice_idx]) -
-          out_offset.byte_idx;
-      sending_length += iov[iov_size].iov_len;
-      ++(out_offset.slice_idx);
-      out_offset.byte_idx = 0;
-    }
-    GPR_DEBUG_ASSERT(iov_size > 0);
+    iov_size = record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
+                                    &sending_length, iov);
     msg.msg_name = nullptr;
     msg.msg_namelen = 0;
     msg.msg_iov = iov;
@@ -1224,7 +1337,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZcpSendRecord* record,
     bool tried_sending_message = false;
     // Before calling sendmsg (with or without timestamps): we
     // take a single ref on the zerocopy send record.
-    tcp->tcp_zcp_send_ctx.NoteSend(record);
+    tcp->tcp_zerocopy_send_ctx.NoteSend(record);
     if (tcp->outgoing_buffer_arg != nullptr) {
       if (!tcp->ts_capable ||
           !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
@@ -1240,18 +1353,15 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZcpSendRecord* record,
     if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
-
       GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
       GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
-
       sent_length = tcp_send(tcp->fd, &msg, MSG_ZEROCOPY);
     }
     if (sent_length < 0) {
       // If this particular send failed, drop ref taken earlier in this method.
-      tcp->tcp_zcp_send_ctx.UndoSend();
+      tcp->tcp_zerocopy_send_ctx.UndoSend();
       if (errno == EAGAIN) {
-        out_offset.byte_idx = unwind_byte_idx;
-        out_offset.slice_idx = unwind_slice_idx;
+        record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else if (errno == EPIPE) {
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
@@ -1263,22 +1373,10 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZcpSendRecord* record,
         return true;
       }
     }
-
-    GPR_DEBUG_ASSERT(out_offset.byte_idx == 0);
     tcp->bytes_counter += sent_length;
-    trailing = sending_length - static_cast<size_t>(sent_length);
-    while (trailing > 0) {
-      size_t slice_length;
-      out_offset.slice_idx--;
-      slice_length = GRPC_SLICE_LENGTH(out_buf->slices[out_offset.slice_idx]);
-      if (slice_length > trailing) {
-        out_offset.byte_idx = slice_length - trailing;
-        break;
-      } else {
-        trailing -= slice_length;
-      }
-    }
-    if (out_offset.slice_idx == out_buf->count) {
+    record->UpdateOffsetForBytesSent(sending_length,
+                                     static_cast<size_t>(sent_length));
+    if (record->AllSlicesSent()) {
       *error = GRPC_ERROR_NONE;
       return true;
     }
@@ -1286,14 +1384,14 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZcpSendRecord* record,
 }
 
 static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
-                                            TcpZcpSendRecord* record,
+                                            TcpZerocopySendRecord* record,
                                             uint32_t seq, const char* tag) {
   if (record->Unref()) {
-    tcp->tcp_zcp_send_ctx.PutSendRecord(record);
+    tcp->tcp_zerocopy_send_ctx.PutSendRecord(record);
   }
 }
 
-static bool tcp_flush_zerocopy(grpc_tcp* tcp, TcpZcpSendRecord* record,
+static bool tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
                                grpc_error** error) {
   bool done = do_tcp_flush_zerocopy(tcp, record, error);
   if (done) {
@@ -1318,7 +1416,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
   // buffer as we write
   size_t outgoing_slice_idx = 0;
 
-  for (;;) {
+  while (true) {
     sending_length = 0;
     unwind_slice_idx = outgoing_slice_idx;
     unwind_byte_idx = tcp->outgoing_byte_idx;
@@ -1418,10 +1516,10 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
-    if (tcp->current_zcp_send) {
-      UnrefMaybePutZerocopySendRecord(tcp, tcp->current_zcp_send, 0,
+    if (tcp->current_zerocopy_send != nullptr) {
+      UnrefMaybePutZerocopySendRecord(tcp, tcp->current_zerocopy_send, 0,
                                       "handle_write_err");
-      tcp->current_zcp_send = nullptr;
+      tcp->current_zerocopy_send = nullptr;
     }
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_REF(error));
     TCP_UNREF(tcp, "write");
@@ -1429,8 +1527,8 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
   }
 
   bool flush_result =
-      tcp->current_zcp_send
-          ? tcp_flush_zerocopy(tcp, tcp->current_zcp_send, &error)
+      tcp->current_zerocopy_send != nullptr
+          ? tcp_flush_zerocopy(tcp, tcp->current_zerocopy_send, &error)
           : tcp_flush(tcp, &error);
   if (!flush_result) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -1442,7 +1540,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
-    tcp->current_zcp_send = nullptr;
+    tcp->current_zerocopy_send = nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       const char* str = grpc_error_string(error);
       gpr_log(GPR_INFO, "write: %s", str);
@@ -1458,7 +1556,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   GPR_TIMER_SCOPE("tcp_write", 0);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error* error = GRPC_ERROR_NONE;
-  TcpZcpSendRecord* zcp_send_record = nullptr;
+  TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     size_t i;
@@ -1475,7 +1573,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   }
 
   GPR_ASSERT(tcp->write_cb == nullptr);
-  GPR_DEBUG_ASSERT(tcp->current_zcp_send == nullptr);
+  GPR_DEBUG_ASSERT(tcp->current_zerocopy_send == nullptr);
 
   if (buf->length == 0) {
     grpc_core::Closure::Run(
@@ -1488,8 +1586,8 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     return;
   }
 
-  zcp_send_record = tcp_get_send_zcp_record(tcp, buf);
-  if (!zcp_send_record) {
+  zerocopy_send_record = tcp_get_send_zerocopy_record(tcp, buf);
+  if (zerocopy_send_record == nullptr) {
     // Either not enough bytes, or couldn't allocate a zerocopy context.
     tcp->outgoing_buffer = buf;
     tcp->outgoing_byte_idx = 0;
@@ -1499,13 +1597,14 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     GPR_ASSERT(grpc_event_engine_can_track_errors());
   }
 
-  bool flush_result = zcp_send_record
-                          ? tcp_flush_zerocopy(tcp, zcp_send_record, &error)
-                          : tcp_flush(tcp, &error);
+  bool flush_result =
+      zerocopy_send_record != nullptr
+          ? tcp_flush_zerocopy(tcp, zerocopy_send_record, &error)
+          : tcp_flush(tcp, &error);
   if (!flush_result) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
-    tcp->current_zcp_send = zcp_send_record;
+    tcp->current_zerocopy_send = zerocopy_send_record;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "write: delayed");
     }
@@ -1589,9 +1688,10 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   int tcp_max_read_chunk_size = 4 * 1024 * 1024;
   int tcp_min_read_chunk_size = 256;
   int tcp_tx_zerocopy_enabled = ZEROCP_TX_ENABLED_DEFAULT;
-  int tcp_tx_zerocopy_send_bytes_thresh = ZEROCP_SEND_BYTES_THRESHOLD_DEFAULT;
+  int tcp_tx_zerocopy_send_bytes_thresh =
+      grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simult_sends =
-      grpc_core::TcpZcpSendCtx::kDefaultMaxSends;
+      grpc_core::TcpZerocopySendCtx::kDefaultMaxSends;
   grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
   if (channel_args != nullptr) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
@@ -1623,14 +1723,15 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
             grpc_channel_arg_get_integer(&channel_args->args[i], options);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD)) {
-        grpc_integer_options options = {ZEROCP_SEND_BYTES_THRESHOLD_DEFAULT, 0,
-                                        INT_MAX};
+        grpc_integer_options options = {
+            grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold, 0,
+            INT_MAX};
         tcp_tx_zerocopy_send_bytes_thresh =
             grpc_channel_arg_get_integer(&channel_args->args[i], options);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS)) {
         grpc_integer_options options = {
-            grpc_core::TcpZcpSendCtx::kDefaultMaxSends, 0, INT_MAX};
+            grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0, INT_MAX};
         tcp_tx_zerocopy_max_simult_sends =
             grpc_channel_arg_get_integer(&channel_args->args[i], options);
       }
@@ -1649,7 +1750,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->read_cb = nullptr;
   tcp->write_cb = nullptr;
-  tcp->current_zcp_send = nullptr;
+  tcp->current_zerocopy_send = nullptr;
   tcp->release_fd_cb = nullptr;
   tcp->release_fd = nullptr;
   tcp->incoming_buffer = nullptr;
@@ -1663,15 +1764,15 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  new (&tcp->tcp_zcp_send_ctx) TcpZcpSendCtx(tcp_tx_zerocopy_max_simult_sends);
-  tcp->tcp_zcp_send_ctx.SetThresholdBytes(tcp_tx_zerocopy_send_bytes_thresh);
-  if (tcp_tx_zerocopy_enabled && !tcp->tcp_zcp_send_ctx.IsMemoryLimited()) {
+  new (&tcp->tcp_zerocopy_send_ctx) TcpZerocopySendCtx(
+      tcp_tx_zerocopy_max_simult_sends, tcp_tx_zerocopy_send_bytes_thresh);
+  if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
     auto err =
         setsockopt(tcp->fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
     if (err == 0) {
-      tcp->tcp_zcp_send_ctx.SetEnabled(true);
+      tcp->tcp_zerocopy_send_ctx.set_enabled(true);
     } else {
       gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
     }

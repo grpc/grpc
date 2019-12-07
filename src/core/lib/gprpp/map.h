@@ -33,8 +33,9 @@ namespace grpc_core {
 
 template <class Key, class T, class Hash = std::hash<Key>,
           class KeyEqual = std::equal_to<Key>>
-using UnorderedMap = std::unordered_map<Key, T, Hash, KeyEqual,
-                                        Allocator<std::pair<const Key, T>>>;
+using UnorderedMap =
+    std::unordered_map<Key, T, Hash, KeyEqual,
+                       std::allocator<std::pair<const Key, T>>>;
 
 struct StringLess {
   bool operator()(const char* a, const char* b) const {
