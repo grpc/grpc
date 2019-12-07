@@ -18,6 +18,7 @@ from typing import Any, Optional, Sequence, Text, Tuple
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
+from . import _base_call
 from ._call import Call, UnaryUnaryCall, UnaryStreamCall
 from ._typing import (DeserializingFunction, MetadataType, SerializingFunction)
 
@@ -48,7 +49,8 @@ class UnaryUnaryMultiCallable:
                  metadata: Optional[MetadataType] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
-                 compression: Optional[grpc.Compression] = None) -> Call:
+                 compression: Optional[grpc.Compression] = None
+                ) -> _base_call.UnaryUnaryCall:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -117,7 +119,8 @@ class UnaryStreamMultiCallable:
                  metadata: Optional[MetadataType] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
-                 compression: Optional[grpc.Compression] = None) -> Call:
+                 compression: Optional[grpc.Compression] = None
+                ) -> _base_call.UnaryStreamCall:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -202,7 +205,8 @@ class Channel:
             self,
             method: Text,
             request_serializer: Optional[SerializingFunction] = None,
-            response_deserializer: Optional[DeserializingFunction] = None):
+            response_deserializer: Optional[DeserializingFunction] = None
+    ) -> UnaryUnaryMultiCallable:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
         Args:
@@ -224,7 +228,8 @@ class Channel:
             self,
             method: Text,
             request_serializer: Optional[SerializingFunction] = None,
-            response_deserializer: Optional[DeserializingFunction] = None):
+            response_deserializer: Optional[DeserializingFunction] = None
+    ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
                                         response_deserializer)
