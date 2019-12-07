@@ -19,6 +19,7 @@
 #ifndef GRPCPP_ALTS_CONTEXT_H
 #define GRPCPP_ALTS_CONTEXT_H
 
+#include <grpc/grpc_security_constants.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 
 #include <memory>
@@ -27,12 +28,6 @@
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 
 namespace grpc {
-
-enum SecurityLevel {
-  SECURITY_NONE = 0,
-  INTEGRITY_ONLY = 1,
-  INTEGRITY_AND_PRIVACY = 2
-};
 
 typedef struct Versions {
   int major_version;
@@ -57,7 +52,7 @@ class AltsContext {
   std::string record_protocol() const;
   std::string peer_service_account() const;
   std::string local_service_account() const;
-  SecurityLevel security_level() const;
+  grpc_security_level security_level() const;
   RpcProtocolVersions peer_rpc_versions() const;
 
  private:
@@ -66,7 +61,7 @@ class AltsContext {
   std::string record_protocol_;
   std::string peer_service_account_;
   std::string local_service_account_;
-  SecurityLevel security_level_ = SECURITY_NONE;
+  grpc_security_level security_level_ = GRPC_SECURITY_NONE;
   RpcProtocolVersions peer_rpc_versions_ = {{0, 0}, {0, 0}};
   explicit AltsContext(const grpc_gcp_AltsContext* ctx);
   friend std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(

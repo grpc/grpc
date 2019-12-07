@@ -62,8 +62,8 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
       peer_rpc_versions_.min_rpc_versions.minor_version = min_version_minor;
     }
   }
-  security_level_ =
-      static_cast<SecurityLevel>((int)grpc_gcp_AltsContext_security_level(ctx));
+  security_level_ = static_cast<grpc_security_level>(
+      (int)grpc_gcp_AltsContext_security_level(ctx));
 }
 
 std::string AltsContext::application_protocol() const {
@@ -80,7 +80,9 @@ std::string AltsContext::local_service_account() const {
   return local_service_account_;
 }
 
-SecurityLevel AltsContext::security_level() const { return security_level_; }
+grpc_security_level AltsContext::security_level() const {
+  return security_level_;
+}
 
 RpcProtocolVersions AltsContext::peer_rpc_versions() const {
   return peer_rpc_versions_;

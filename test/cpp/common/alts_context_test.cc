@@ -71,7 +71,7 @@ TEST(AltsContextTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   std::string expected_rp("record protocol");
   std::string expected_peer("peer");
   std::string expected_local("local");
-  SecurityLevel expected_sl = SecurityLevel::INTEGRITY_ONLY;
+  grpc_security_level expected_sl = GRPC_INTEGRITY_ONLY;
   upb::Arena context_arena;
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
   grpc_gcp_AltsContext_set_application_protocol(
@@ -136,7 +136,7 @@ TEST(AltsContextTest, AuthContextWithGoodAltsContext) {
   EXPECT_EQ("", alts_context->record_protocol());
   EXPECT_EQ("", alts_context->peer_service_account());
   EXPECT_EQ("", alts_context->local_service_account());
-  EXPECT_EQ(SecurityLevel::SECURITY_NONE, alts_context->security_level());
+  EXPECT_EQ(GRPC_SECURITY_NONE, alts_context->security_level());
   RpcProtocolVersions rpc_protocol_versions = alts_context->peer_rpc_versions();
   EXPECT_EQ(10, rpc_protocol_versions.max_rpc_versions.major_version);
   EXPECT_EQ(0, rpc_protocol_versions.max_rpc_versions.minor_version);
