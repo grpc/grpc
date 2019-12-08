@@ -176,12 +176,34 @@ static int check_x509_pem_cert(const grpc_auth_context* ctx,
   return 1;
 }
 
+static int check_x509_pem_cert_chain(const grpc_auth_context* ctx,
+                                     const char* expected_pem_cert_chain) {
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      ctx, GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop == nullptr) {
+    gpr_log(GPR_ERROR, "Pem certificate chain property not found.");
+    return 0;
+  }
+  if (strncmp(prop->value, expected_pem_cert_chain, prop->value_length) != 0) {
+    gpr_log(GPR_ERROR, "Expected pem cert chain %s and got %s",
+            expected_pem_cert_chain, prop->value);
+    return 0;
+  }
+  if (grpc_auth_property_iterator_next(&it) != nullptr) {
+    gpr_log(GPR_ERROR, "Expected only one property for pem cert chain.");
+    return 0;
+  }
+  return 1;
+}
+
 static void test_cn_only_ssl_peer_to_auth_context(void) {
   tsi_peer peer;
   tsi_peer rpeer;
   const char* expected_cn = "cn1";
   const char* expected_pem_cert = "pem_cert1";
-  GPR_ASSERT(tsi_construct_peer(3, &peer) == TSI_OK);
+  const char* expected_pem_cert_chain = "pem_cert1_chain";
+  GPR_ASSERT(tsi_construct_peer(4, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
                  &peer.properties[0]) == TSI_OK);
@@ -191,6 +213,9 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[2]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_PEM_CERT_CHAIN_PROPERTY, expected_pem_cert_chain,
+                 &peer.properties[3]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
@@ -200,6 +225,7 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_transport_security_type(ctx.get()));
   GPR_ASSERT(check_x509_cn(ctx.get(), expected_cn));
   GPR_ASSERT(check_x509_pem_cert(ctx.get(), expected_pem_cert));
+  GPR_ASSERT(check_x509_pem_cert_chain(ctx.get(), expected_pem_cert_chain));
 
   rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx.get());
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
@@ -215,7 +241,8 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   const char* expected_cn = "cn1";
   const char* expected_san = "san1";
   const char* expected_pem_cert = "pem_cert1";
-  GPR_ASSERT(tsi_construct_peer(4, &peer) == TSI_OK);
+  const char* expected_pem_cert_chain = "pem_cert1_chain";
+  GPR_ASSERT(tsi_construct_peer(5, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
                  &peer.properties[0]) == TSI_OK);
@@ -228,6 +255,9 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[3]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_PEM_CERT_CHAIN_PROPERTY, expected_pem_cert_chain,
+                 &peer.properties[4]) == TSI_OK);
 
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -238,6 +268,7 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_transport_security_type(ctx.get()));
   GPR_ASSERT(check_x509_cn(ctx.get(), expected_cn));
   GPR_ASSERT(check_x509_pem_cert(ctx.get(), expected_pem_cert));
+  GPR_ASSERT(check_x509_pem_cert_chain(ctx.get(), expected_pem_cert_chain));
 
   rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx.get());
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
@@ -253,8 +284,9 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
   const char* expected_cn = "cn1";
   const char* expected_sans[] = {"san1", "san2", "san3"};
   const char* expected_pem_cert = "pem_cert1";
+  const char* expected_pem_cert_chain = "pem_cert1_chain";
   size_t i;
-  GPR_ASSERT(tsi_construct_peer(3 + GPR_ARRAY_SIZE(expected_sans), &peer) ==
+  GPR_ASSERT(tsi_construct_peer(4 + GPR_ARRAY_SIZE(expected_sans), &peer) ==
              TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
@@ -265,10 +297,13 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[2]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_PEM_CERT_CHAIN_PROPERTY, expected_pem_cert_chain,
+                 &peer.properties[3]) == TSI_OK);
   for (i = 0; i < GPR_ARRAY_SIZE(expected_sans); i++) {
     GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                    TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
-                   expected_sans[i], &peer.properties[3 + i]) == TSI_OK);
+                   expected_sans[i], &peer.properties[4 + i]) == TSI_OK);
   }
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -279,6 +314,7 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_transport_security_type(ctx.get()));
   GPR_ASSERT(check_x509_cn(ctx.get(), expected_cn));
   GPR_ASSERT(check_x509_pem_cert(ctx.get(), expected_pem_cert));
+  GPR_ASSERT(check_x509_pem_cert_chain(ctx.get(), expected_pem_cert_chain));
 
   rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx.get());
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
@@ -294,9 +330,10 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   tsi_peer rpeer;
   const char* expected_cn = "cn1";
   const char* expected_pem_cert = "pem_cert1";
+  const char* expected_pem_cert_chain = "pem_cert1_chain";
   const char* expected_sans[] = {"san1", "san2", "san3"};
   size_t i;
-  GPR_ASSERT(tsi_construct_peer(5 + GPR_ARRAY_SIZE(expected_sans), &peer) ==
+  GPR_ASSERT(tsi_construct_peer(6 + GPR_ARRAY_SIZE(expected_sans), &peer) ==
              TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
@@ -311,10 +348,13 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[4]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_PEM_CERT_CHAIN_PROPERTY, expected_pem_cert_chain,
+                 &peer.properties[5]) == TSI_OK);
   for (i = 0; i < GPR_ARRAY_SIZE(expected_sans); i++) {
     GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                    TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
-                   expected_sans[i], &peer.properties[5 + i]) == TSI_OK);
+                   expected_sans[i], &peer.properties[6 + i]) == TSI_OK);
   }
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -325,6 +365,7 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GPR_ASSERT(check_transport_security_type(ctx.get()));
   GPR_ASSERT(check_x509_cn(ctx.get(), expected_cn));
   GPR_ASSERT(check_x509_pem_cert(ctx.get(), expected_pem_cert));
+  GPR_ASSERT(check_x509_pem_cert_chain(ctx.get(), expected_pem_cert_chain));
 
   rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx.get());
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
@@ -476,7 +517,6 @@ static void test_peer_alpn_check(void) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-
   test_unauthenticated_ssl_peer();
   test_cn_only_ssl_peer_to_auth_context();
   test_cn_and_one_san_ssl_peer_to_auth_context();

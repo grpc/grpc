@@ -35,6 +35,7 @@
 
 extern "C" {
 #include <openssl/crypto.h>
+#include <openssl/pem.h>
 }
 
 #define SSL_TSI_TEST_ALPN1 "foo"
@@ -855,6 +856,36 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer_destruct(&peer);
 }
 
+void ssl_tsi_test_extract_cert_chain() {
+  gpr_log(GPR_INFO, "ssl_tsi_test_extract_cert_chain");
+  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server1.pem");
+  char* ca = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+  char* chain = static_cast<char*>(
+      gpr_zalloc(sizeof(char) * (strlen(cert) + strlen(ca) + 1)));
+  memcpy(chain, cert, strlen(cert));
+  memcpy(chain + strlen(cert), ca, strlen(ca));
+  STACK_OF(X509)* cert_chain = sk_X509_new_null();
+  GPR_ASSERT(cert_chain != nullptr);
+  BIO* bio = BIO_new_mem_buf(chain, strlen(chain));
+  GPR_ASSERT(bio != nullptr);
+  STACK_OF(X509_INFO)* certInfos =
+      PEM_X509_INFO_read_bio(bio, nullptr, nullptr, nullptr);
+  GPR_ASSERT(certInfos != nullptr);
+  for (int i = 0; i < sk_X509_INFO_num(certInfos); i++) {
+    X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
+    if (certInfo->x509 != nullptr) {
+      GPR_ASSERT(sk_X509_push(cert_chain, certInfo->x509) != 0);
+      X509_up_ref(certInfo->x509);
+    }
+  }
+  tsi_peer_property chain_property;
+  GPR_ASSERT(tsi_ssl_get_cert_chain_contents(cert_chain, &chain_property) ==
+             TSI_OK);
+  GPR_ASSERT(memcmp(chain, chain_property.value.data,
+                    chain_property.value.length) == 0);
+  gpr_free(chain);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -881,6 +912,7 @@ int main(int argc, char** argv) {
   ssl_tsi_test_handshaker_factory_internals();
   ssl_tsi_test_duplicate_root_certificates();
   ssl_tsi_test_extract_x509_subject_names();
+  ssl_tsi_test_extract_cert_chain();
   grpc_shutdown();
   return 0;
 }
