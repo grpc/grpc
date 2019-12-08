@@ -24,6 +24,7 @@
 #include <vector>
 
 #include <grpc/grpc_security_constants.h>
+#include <grpc/grpc_security.h>
 #include <grpcpp/channel_impl.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
@@ -147,6 +148,18 @@ struct SslCredentialsOptions {
   grpc::string pem_cert_chain;
 };
 
+/// Options used to build SslClientCredentials
+struct SslClientCredentialsOptions {
+  /// This contains roots, client cert chain and the private key
+  SslCredentialsOptions credential_options;
+
+  /// grpc_ssl_verify_peer_options for verifying peer certificates
+  grpc_ssl_verify_peer_options *verify_options;
+
+  /// grpc_ssl_server_verification_option
+  grpc_ssl_server_verification_option server_verification_option;
+};
+
 // Factories for building different types of Credentials The functions may
 // return empty shared_ptr when credentials cannot be created. If a
 // Credentials pointer is returned, it can still be invalid when used to create
@@ -163,6 +176,10 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
 /// Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options);
+
+/// Builds SSL Credentials given SslClientCredentialsOptions
+std::shared_ptr<ChannelCredentials> SslClientCredentials(
+    const SslClientCredentialsOptions& options);
 
 /// Builds credentials for use when running in GCE
 ///

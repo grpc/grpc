@@ -90,21 +90,33 @@ grpc_get_tsi_client_certificate_request_type(
   switch (grpc_request_type) {
     case GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE:
       return TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
-
     case GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
       return TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY;
-
     case GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
       return TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY;
-
     case GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
       return TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY;
-
     case GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
       return TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
-
     default:
       return TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+  }
+}
+
+tsi_server_verification_option
+grpc_get_tsi_server_verification_option(
+    grpc_ssl_server_verification_option server_verification_option) {
+  switch (server_verification_option) {
+    case GRPC_SSL_SERVER_VERIFICATION:
+      return TSI_SERVER_VERIFICATION;
+    case GRPC_SSL_SKIP_HOSTNAME_VERIFICATION:
+      return TSI_SKIP_HOSTNAME_VERIFICATION;
+    case GRPC_SSL_SKIP_SERVER_CERTIFICATE_VERIFICATION:
+      return TSI_SKIP_SERVER_CERTIFICATE_VERIFICATION;
+    case GRPC_SSL_SKIP_ALL_SERVER_VERIFICATION:
+      return TSI_SKIP_ALL_SERVER_VERIFICATION;
+    default:
+      return TSI_SERVER_VERIFICATION;
   }
 }
 
@@ -225,6 +237,10 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_X509_PEM_CERT_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(),
+                                     GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SSL_SESSION_REUSED_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_SSL_SESSION_REUSED_PROPERTY,
@@ -272,6 +288,9 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
       } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_PEM_CERT_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_PEM_CERT_CHAIN_PROPERTY);
       }
     }
   }
@@ -314,6 +333,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   }
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.session_cache = ssl_session_cache;
+  options.server_verification_option = TSI_SERVER_VERIFICATION;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);

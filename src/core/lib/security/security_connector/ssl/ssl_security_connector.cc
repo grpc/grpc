@@ -105,6 +105,8 @@ class grpc_ssl_channel_security_connector final
     }
     options.cipher_suites = grpc_get_ssl_cipher_suites();
     options.session_cache = ssl_session_cache;
+    options.server_verification_option =
+        grpc_get_tsi_server_verification_option(config->server_verification_option);
     const tsi_result result =
         tsi_create_ssl_client_handshaker_factory_with_options(
             &options, &client_handshaker_factory_);
@@ -145,8 +147,16 @@ class grpc_ssl_channel_security_connector final
     grpc_error* error = ssl_check_peer(target_name, &peer, auth_context);
     if (error == GRPC_ERROR_NONE &&
         verify_options_->verify_peer_callback != nullptr) {
-      const tsi_peer_property* p =
-          tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
+      const tsi_peer_property* p = nullptr;
+      if (verify_options_->peer_cert_request_type ==
+          GRPC_SSL_PEER_LEAF_CERTIFICATE) {
+        p = tsi_peer_get_property_by_name(&peer,
+                                          TSI_X509_PEM_CERT_PROPERTY);
+      } else if (verify_options_->peer_cert_request_type ==
+                 GRPC_SSL_PEER_FULL_CHAIN) {
+        p = tsi_peer_get_property_by_name(&peer,
+                                          TSI_X509_PEM_CERT_CHAIN_PROPERTY);
+      }
       if (p == nullptr) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Cannot check peer: missing pem cert property.");
@@ -216,7 +226,7 @@ class grpc_ssl_channel_security_connector final
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
   grpc_core::UniquePtr<char> target_name_;
   grpc_core::UniquePtr<char> overridden_target_name_;
-  const verify_peer_options* verify_options_;
+  const grpc_ssl_verify_peer_options* verify_options_;
 };
 
 class grpc_ssl_server_security_connector

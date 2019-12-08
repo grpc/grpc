@@ -29,6 +29,7 @@ extern "C" {
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
+#define GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME "x509_pem_cert_chain"
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 
 /** Environment variable that points to the default SSL roots file. This file
@@ -104,6 +105,28 @@ typedef enum {
      be established. */
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 } grpc_ssl_client_certificate_request_type;
+
+
+typedef enum {
+  /** Default option: performs server certificate verification and hostname
+     verification */
+  GRPC_SSL_SERVER_VERIFICATION,
+  /** Performs server certificate verification, but skips hostname verification
+   */
+  GRPC_SSL_SKIP_HOSTNAME_VERIFICATION,
+  /** Performs hostname name verification, but skips server certificate
+     verification */
+  GRPC_SSL_SKIP_SERVER_CERTIFICATE_VERIFICATION,
+  /** Skips both server certificate and hostname verification */
+  GRPC_SSL_SKIP_ALL_SERVER_VERIFICATION
+} grpc_ssl_server_verification_option;
+
+typedef enum {
+  /** Get peer leaf certificate */
+  GRPC_SSL_PEER_LEAF_CERTIFICATE,
+  /** Get peer full chain */
+  GRPC_SSL_PEER_FULL_CHAIN
+} grpc_ssl_peer_cert_request_type;
 
 /**
  * Type of local connections for which local channel/server credentials will be

@@ -40,6 +40,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
+#include <grpc/grpc_security.h>
 
 extern "C" {
 #include <openssl/bio.h>
@@ -1032,7 +1033,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
   unsigned int alpn_selected_len;
   const tsi_ssl_handshaker_result* impl =
       reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
-  // TODO(yihuazhang): Return a full certificate chain as a peer property.
   X509* peer_cert = SSL_get_peer_certificate(impl->ssl);
   if (peer_cert != nullptr) {
     result = peer_from_x509(peer_cert, 1, peer);
@@ -1048,9 +1048,11 @@ static tsi_result ssl_handshaker_result_extract_peer(
                                    &alpn_selected_len);
   }
 
+  STACK_OF(X509) *peer_chain = SSL_get0_verified_chain(impl->ssl);
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 1;
   if (alpn_selected != nullptr) new_property_count++;
+  if (peer_chain != nullptr) new_property_count++;
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
       gpr_zalloc(sizeof(*new_properties) * new_property_count));
   for (size_t i = 0; i < peer->property_count; i++) {
@@ -1058,6 +1060,29 @@ static tsi_result ssl_handshaker_result_extract_peer(
   }
   if (peer->properties != nullptr) gpr_free(peer->properties);
   peer->properties = new_properties;
+
+  // Add peer chain if available
+  if (peer_chain != nullptr) {
+    BIO* bio = BIO_new(BIO_s_mem());
+    for (int i = 0; i < sk_X509_num(peer_chain); i++) {
+      if (!PEM_write_bio_X509(bio, sk_X509_value(peer_chain, i))) {
+        BIO_free(bio);
+        return TSI_INTERNAL_ERROR;
+      }
+    }
+    char* contents;
+    long len = BIO_get_mem_data(bio, &contents);
+    if (len <= 0) {
+      BIO_free(bio);
+      return TSI_INTERNAL_ERROR;
+    }
+    result = tsi_construct_string_peer_property(
+        TSI_X509_PEM_CERT_CHAIN_PROPERTY, (const char*)contents,
+        static_cast<size_t>(len), &peer->properties[peer->property_count]);
+    BIO_free(bio);
+    if (result != TSI_OK) return result;
+    peer->property_count++;
+  }
 
   if (alpn_selected != nullptr) {
     result = tsi_construct_string_peer_property(
@@ -1733,7 +1758,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
-  SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+  if (options->server_verification_option == TSI_SKIP_SERVER_CERTIFICATE_VERIFICATION) {
+    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
+  } else {
+    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+  }
   /* TODO(jboeuf): Add revocation verification. */
 
   *factory = impl;

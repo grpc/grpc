@@ -35,6 +35,8 @@
 
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
 
+#define TSI_X509_PEM_CERT_CHAIN_PROPERTY "x509_pem_cert_chain"
+
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
 /* --- tsi_ssl_root_certs_store object ---
@@ -142,6 +144,9 @@ struct tsi_ssl_client_handshaker_options {
   /* ssl_session_cache is a cache for reusable client-side sessions. */
   tsi_ssl_session_cache* session_cache;
 
+  /* Server verification option */
+  tsi_server_verification_option server_verification_option;
+
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
         pem_root_certs(nullptr),
@@ -149,7 +154,8 @@ struct tsi_ssl_client_handshaker_options {
         cipher_suites(nullptr),
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
-        session_cache(nullptr) {}
+        session_cache(nullptr),
+        server_verification_option(TSI_SERVER_VERIFICATION) {}
 };
 
 /* Creates a client handshaker factory.

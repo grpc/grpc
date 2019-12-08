@@ -203,6 +203,9 @@ typedef struct {
      cleaned up. The userdata argument will be passed to it. The intent is
      to perform any cleanup associated with that userdata. */
   void (*verify_peer_destruct)(void* userdata);
+
+  /** server verification options */
+  grpc_ssl_peer_cert_request_type peer_cert_request_type;
 } grpc_ssl_verify_peer_options;
 
 /** Deprecated in favor of grpc_ssl_server_credentials_create_ex. It will be
@@ -264,10 +267,14 @@ GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
      with which you can do additional verification. Can be NULL, in which
      case verification will retain default behavior. Any settings in
      verify_options are copied during this call, so the verify_options
-     object can be released afterwards. */
+     object can be released afterwards.
+   - server_verification_option controls whether default server verification
+     will be done or skipped */
 GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options, void* reserved);
+    const grpc_ssl_verify_peer_options* verify_options,
+    grpc_ssl_server_verification_option server_verification_option,
+    void* reserved);
 
 /** --- grpc_call_credentials object.
 

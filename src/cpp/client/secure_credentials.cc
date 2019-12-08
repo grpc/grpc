@@ -113,6 +113,23 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
   return WrapChannelCredentials(c_creds);
 }
 
+// Builds SSL Credentials given SSL specific options
+std::shared_ptr<ChannelCredentials> SslClientCredentials(
+    const SslClientCredentialsOptions& options) {
+  grpc::GrpcLibraryCodegen init;  // To call grpc_init().
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
+      options.credential_options.pem_private_key.c_str(),
+      options.credential_options.pem_cert_chain.c_str()};
+
+  grpc_channel_credentials* c_creds = grpc_ssl_credentials_create_ex(
+      options.credential_options.pem_root_certs.empty() ? nullptr
+          : options.credential_options.pem_root_certs.c_str(),
+      options.credential_options.pem_private_key.empty() ? nullptr
+                                                         : &pem_key_cert_pair,
+      options.verify_options, options.server_verification_option, nullptr);
+  return WrapChannelCredentials(c_creds);
+}
+
 namespace experimental {
 
 namespace {

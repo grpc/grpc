@@ -46,9 +46,29 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
 
 grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options)
+    const verify_peer_options* verify_options)
     : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
-  build_config(pem_root_certs, pem_key_cert_pair, verify_options);
+  if (verify_options != nullptr) {
+    grpc_ssl_verify_peer_options options;
+    options.verify_peer_callback = verify_options->verify_peer_callback;
+    options.verify_peer_callback_userdata = verify_options->verify_peer_callback_userdata;
+    options.verify_peer_destruct = verify_options->verify_peer_destruct;
+    options.peer_cert_request_type = GRPC_SSL_PEER_LEAF_CERTIFICATE;
+    build_config(pem_root_certs, pem_key_cert_pair, &options,
+                 GRPC_SSL_SERVER_VERIFICATION);
+  } else {
+    build_config(pem_root_certs, pem_key_cert_pair, nullptr,
+                 GRPC_SSL_SERVER_VERIFICATION);
+  }
+}
+
+grpc_ssl_credentials::grpc_ssl_credentials(
+    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const grpc_ssl_verify_peer_options* verify_options,
+    grpc_ssl_server_verification_option server_verification_option)
+    : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
+  build_config(pem_root_certs, pem_key_cert_pair, verify_options,
+               server_verification_option);
 }
 
 grpc_ssl_credentials::~grpc_ssl_credentials() {
@@ -94,7 +114,8 @@ grpc_ssl_credentials::create_security_connector(
 
 void grpc_ssl_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options) {
+    const grpc_ssl_verify_peer_options* verify_options,
+    grpc_ssl_server_verification_option server_verification_option) {
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
   if (pem_key_cert_pair != nullptr) {
     GPR_ASSERT(pem_key_cert_pair->private_key != nullptr);
@@ -110,11 +131,12 @@ void grpc_ssl_credentials::build_config(
   }
   if (verify_options != nullptr) {
     memcpy(&config_.verify_options, verify_options,
-           sizeof(verify_peer_options));
+           sizeof(grpc_ssl_verify_peer_options));
   } else {
     // Otherwise set all options to default values
-    memset(&config_.verify_options, 0, sizeof(verify_peer_options));
+    memset(&config_.verify_options, 0, sizeof(grpc_ssl_verify_peer_options));
   }
+  config_.server_verification_option = server_verification_option;
 }
 
 /* Deprecated in favor of grpc_ssl_credentials_create_ex. Will be removed
@@ -137,17 +159,22 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
 
 grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options, void* reserved) {
+    const grpc_ssl_verify_peer_options* verify_options,
+    grpc_ssl_server_verification_option server_verification_option,
+    void* reserved) {
   GRPC_API_TRACE(
       "grpc_ssl_credentials_create(pem_root_certs=%s, "
       "pem_key_cert_pair=%p, "
       "verify_options=%p, "
+      "server_verification_option=%d, "
       "reserved=%p)",
-      4, (pem_root_certs, pem_key_cert_pair, verify_options, reserved));
+      5,
+      (pem_root_certs, pem_key_cert_pair, verify_options,
+       server_verification_option, reserved));
   GPR_ASSERT(reserved == nullptr);
 
-  return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair,
-                                  verify_options);
+  return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair, verify_options,
+                                              server_verification_option);
 }
 
 //
