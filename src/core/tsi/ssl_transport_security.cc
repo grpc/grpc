@@ -1048,7 +1048,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
                                    &alpn_selected_len);
   }
 
-  STACK_OF(X509) *peer_chain = SSL_get0_verified_chain(impl->ssl);
+  STACK_OF(X509) *peer_chain = SSL_get_peer_cert_chain(impl->ssl);
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 1;
   if (alpn_selected != nullptr) new_property_count++;

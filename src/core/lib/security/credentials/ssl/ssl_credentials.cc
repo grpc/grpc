@@ -46,7 +46,7 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
 
 grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const verify_peer_options* verify_options)
+    const grpc_ssl_verify_peer_options* verify_options)
     : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
   if (verify_options != nullptr) {
     grpc_ssl_verify_peer_options options;
