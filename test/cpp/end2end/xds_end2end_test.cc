@@ -38,7 +38,6 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/map.h"
@@ -336,7 +335,7 @@ class ClientStats {
   std::map<grpc::string, uint64_t> dropped_requests_;
 };
 
-// Only the EDS functionality is implemented.
+// TODO(roth): Change this service to a real fake.
 class AdsServiceImpl : public AdsService {
  public:
   struct ResponseArgs {
@@ -372,42 +371,35 @@ class AdsServiceImpl : public AdsService {
   using ResponseDelayPair = std::pair<DiscoveryResponse, int>;
 
   AdsServiceImpl(bool enable_load_reporting) {
-    grpc_core::Optional<std::string> lrs_load_reporting_server_name;
+    default_cluster_.set_name("application_target_name");
+    default_cluster_.set_type(envoy::api::v2::Cluster::EDS);
+    default_cluster_.mutable_eds_cluster_config()
+        ->mutable_eds_config()
+        ->mutable_ads();
+    default_cluster_.set_lb_policy(envoy::api::v2::Cluster::ROUND_ROBIN);
     if (enable_load_reporting) {
-      lrs_load_reporting_server_name.set("");
+      default_cluster_.mutable_lrs_server()->mutable_self();
     }
-    cds_update_map_ = {
-        {"" /*any cluster name*/,
-         {"", std::move(lrs_load_reporting_server_name)}},
+    cds_response_data_ = {
+        {"application_target_name", default_cluster_},
     };
   }
 
   void HandleCdsRequest(DiscoveryRequest* request, Stream* stream) {
     gpr_log(GPR_INFO, "ADS[%p]: received CDS request '%s'", this,
             request->DebugString().c_str());
+    // Ignore ACK/NACK and subsequent requests.
+    if (cds_sent_) return;
     DiscoveryResponse response;
     response.set_type_url(kCdsTypeUrl);
-    for (size_t i = 0; i < request->resource_names().size(); ++i) {
-      grpc_core::CdsUpdate cds_update;
-      {
-        grpc_core::MutexLock lock(&ads_mu_);
-        cds_update = cds_update_map_[""];
-      }
-      Cluster cluster;
-      cluster.set_name(request->resource_names(i));
-      cluster.set_type(envoy::api::v2::Cluster::EDS);
-      cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_ads();
-      if (!cds_update.eds_service_name.empty()) {
-        cluster.mutable_eds_cluster_config()->set_service_name(
-            cds_update.eds_service_name);
-      }
-      cluster.set_lb_policy(envoy::api::v2::Cluster::ROUND_ROBIN);
-      if (cds_update.lrs_load_reporting_server_name.has_value()) {
-        cluster.mutable_lrs_server()->mutable_self();
-      }
-      response.add_resources()->PackFrom(cluster);
+    grpc_core::MutexLock lock(&ads_mu_);
+    for (const auto& cluster_name : request->resource_names()) {
+      auto iter = cds_response_data_.find(cluster_name);
+      if (iter == cds_response_data_.end()) continue;
+      response.add_resources()->PackFrom(iter->second);
     }
     stream->Write(response);
+    cds_sent_ = true;
   }
 
   void HandleEdsRequest(DiscoveryRequest* request, Stream* stream) {
@@ -417,7 +409,7 @@ class AdsServiceImpl : public AdsService {
     std::vector<ResponseDelayPair> responses_and_delays;
     {
       grpc_core::MutexLock lock(&ads_mu_);
-      responses_and_delays = responses_and_delays_;
+      responses_and_delays = eds_responses_and_delays_;
     }
     // Send response.
     for (const auto& p : responses_and_delays) {
@@ -464,22 +456,28 @@ class AdsServiceImpl : public AdsService {
     return Status::OK;
   }
 
-  void add_response(const DiscoveryResponse& response, int send_after_ms) {
+  void SetCdsResponse(
+      std::map<std::string /*cluster_name*/, Cluster> cds_response_data) {
+    cds_response_data_ = std::move(cds_response_data);
+  }
+
+  void AddEdsResponse(const DiscoveryResponse& response, int send_after_ms) {
     grpc_core::MutexLock lock(&ads_mu_);
-    responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
+    eds_responses_and_delays_.push_back(
+        std::make_pair(response, send_after_ms));
   }
 
   void Start() {
     grpc_core::MutexLock lock(&ads_mu_);
     ads_done_ = false;
-    responses_and_delays_.clear();
+    eds_responses_and_delays_.clear();
   }
 
   void Shutdown() {
     {
       grpc_core::MutexLock lock(&ads_mu_);
       NotifyDoneWithAdsCallLocked();
-      responses_and_delays_.clear();
+      eds_responses_and_delays_.clear();
     }
     gpr_log(GPR_INFO, "ADS[%p]: shut down", this);
   }
@@ -545,9 +543,11 @@ class AdsServiceImpl : public AdsService {
   grpc_core::Mutex ads_mu_;
   bool ads_done_ = false;
   // CDS response data.
-  grpc_core::CdsUpdateMap cds_update_map_;
+  Cluster default_cluster_;
+  std::map<std::string /*cluster_name*/, Cluster> cds_response_data_;
+  bool cds_sent_ = false;
   // EDS response data.
-  std::vector<ResponseDelayPair> responses_and_delays_;
+  std::vector<ResponseDelayPair> eds_responses_and_delays_;
 };
 
 class LrsServiceImpl : public LrsService {
@@ -919,7 +919,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void ScheduleResponseForBalancer(size_t i, const DiscoveryResponse& response,
                                    int delay_ms) {
-    balancers_[i]->ads_service()->add_response(response, delay_ms);
+    balancers_[i]->ads_service()->AddEdsResponse(response, delay_ms);
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,

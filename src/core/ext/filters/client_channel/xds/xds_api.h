@@ -47,7 +47,7 @@ struct VersionState {
   // The error message to be included in ACK/NACK with the nonce. If it's
   // GRPC_ERROR_NONE, the request is an ACK; otherwise, it's a NACK. Takes
   // ownership.
-  grpc_error* error;
+  grpc_error* error = GRPC_ERROR_NONE;
 
   ~VersionState() { GRPC_ERROR_UNREF(error); }
 };
