@@ -19,7 +19,10 @@
 #include <grpc/grpc_security.h>
 #include <grpcpp/alts_context.h>
 
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/cpp/common/secure_auth_context.h"
+#include "src/proto/grpc/gcp/altscontext.upb.h"
 
 namespace grpc {
 
@@ -103,8 +106,7 @@ std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
     gpr_log(GPR_ERROR, "fails to parse ALTS context.");
     return nullptr;
   }
-  std::unique_ptr<AltsContext> uniq_ctx(new AltsContext(ctx));
-  return uniq_ctx;
+  return grpc_core::MakeUnique<AltsContext>(AltsContext(ctx));
 }
 
 }  // namespace grpc

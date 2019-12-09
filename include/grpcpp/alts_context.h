@@ -23,9 +23,8 @@
 #include <grpcpp/impl/codegen/security/auth_context.h>
 
 #include <memory>
-// might need forward declaration
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
-#include "src/proto/grpc/gcp/altscontext.upb.h"
+
+struct grpc_gcp_AltsContext;
 
 namespace grpc {
 
@@ -43,6 +42,7 @@ typedef struct RpcProtocolVersions {
 // It should only be instantiated by calling GetAltsContextFromAuthContext.
 class AltsContext {
  public:
+  explicit AltsContext(const grpc_gcp_AltsContext* ctx);
   AltsContext& operator=(const AltsContext&) = default;
   AltsContext(const AltsContext&) = default;
   AltsContext& operator=(AltsContext&&) = default;
@@ -63,9 +63,6 @@ class AltsContext {
   std::string local_service_account_;
   grpc_security_level security_level_ = GRPC_SECURITY_NONE;
   RpcProtocolVersions peer_rpc_versions_ = {{0, 0}, {0, 0}};
-  explicit AltsContext(const grpc_gcp_AltsContext* ctx);
-  friend std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
-      const AuthContext& auth_context);
 };
 
 // GetAltsContextFromAuthContext helps to get the AltsContext from AuthContext.
