@@ -24,6 +24,9 @@ apt-get update
 apt-get install -t jessie-backports -y libssl-dev
 
 # Install c-ares
+# If the distribution provides a new-enough version of c-ares,
+# this section can be replaced with:
+# apt-get install -y libc-ares-dev
 mkdir -p "third_party/cares/cares/cmake/build"
 pushd "third_party/cares/cares/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release ../..

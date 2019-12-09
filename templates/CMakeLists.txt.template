@@ -202,6 +202,7 @@
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+  set(CMAKE_MODULE_PATH "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules")
 
   if(MSVC)
     include(cmake/msvc_static_runtime.cmake)
@@ -637,6 +638,10 @@
       <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfig.cmake
       <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfigVersion.cmake
     DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
+  )
+  install(FILES
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findc-ares.cmake
+    DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>/modules
   )
 
   install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem</%text>
