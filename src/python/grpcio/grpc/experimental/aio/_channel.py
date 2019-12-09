@@ -19,7 +19,7 @@ import grpc
 from grpc import _common
 from grpc._cython import cygrpc
 from . import _base_call
-from ._call import Call, UnaryUnaryCall, UnaryStreamCall
+from ._call import UnaryUnaryCall, UnaryStreamCall
 from ._typing import (DeserializingFunction, MetadataType, SerializingFunction)
 
 
