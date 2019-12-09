@@ -18,6 +18,13 @@
 launchctl limit maxfiles
 ulimit -a
 
+# WARNING: TRY TO KEEP THIS FILE AS LEAN AS POSSIBLE
+# The rules:
+# - think twice before adding installer that takes long time (builds are already slow)
+# - do not add any steps that are flaky (builds will become flaky)
+# - try adding a dependency under a language-specific section first (reduces latency and increases build stability)
+# - only add stuff that you absolutely need for your builds to work (add comment to explain why its needed)
+
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
@@ -56,8 +63,13 @@ then
   # set xcode version for Obj-C tests
   sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 
+  # Needed for ios-binary-size
+  time pip install --user pyyaml pyjwt cryptography requests
+
   # Store intermediate build files of ObjC tests into /tmpfs
-  # TODO(jtattermusch): why are we doing this?
+  # TODO(jtattermusch): this has likely been done to avoid running
+  # out of disk space when running ios-binary-size tests, but
+  # it would be good to revisit.
   mkdir /tmpfs/Build-ios-binary-size
   ln -s /tmpfs/Build-ios-binary-size src/objective-c/examples/Sample/Build
   mkdir -p /tmpfs/DerivedData
@@ -72,6 +84,9 @@ then
   time pip install --user virtualenv
   time pip install --user --upgrade Mako six tox setuptools twisted pyyaml pyjwt cryptography requests
   export PYTHONPATH=/Library/Python/3.4/site-packages
+
+  # make sure md5sum is available (requires coreutils 8.31+)
+  brew upgrade coreutils
 
   # Install Python 3.7 and Python 3.8
   time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
@@ -89,6 +104,9 @@ then
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
+
+  # Xcode 10+ doesn't support building for i386 architecture
+  sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 fi
 
 # PHP tests currently require using an older version of PHPUnit
