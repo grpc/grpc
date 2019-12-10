@@ -9,11 +9,13 @@
   <%
     srcs = []
     srcs.extend(php_config_m4.src)
-    php_deps = php_config_m4.get('deps', [])
     lib_maps = {lib.name: lib for lib in libs}
-    for dep in php_deps[:]:
-      php_deps.extend(lib_maps[dep].transitive_deps)
+    php_deps = php_config_m4.get('deps', [])
+    php_full_deps = []
     for dep in php_deps:
+      php_full_deps.append(dep)
+      php_full_deps.extend(lib_maps[dep].transitive_deps)
+    for dep in php_full_deps:
       srcs.extend(lib_maps[dep].src)
     srcs = sorted(set(srcs))
   %>
@@ -34,14 +36,13 @@
       "/I"+configure_module_dirname+"\\third_party\\upb "+
       "/I"+configure_module_dirname+"\\third_party\\zlib ");
   <%
-    dirset = set()
-    for src in srcs:
-      dirset.add(src[:src.rfind('/')])
-    for dir in list(dirset):
+    dirs = sorted(set(src[:src.rfind('/')] for src in srcs))
+    dirset = set(dirs)
+    for dir in dirs:
       frags = dir.split('/')
       for i in range(1, len(frags)):
         dirset.add('/'.join(frags[:i]))
-    dirs = [d.replace('/', '\\\\') for d in sorted(list(dirset))]
+    dirs = [d.replace('/', '\\\\') for d in sorted(dirset)]
   %>
     base_dir = get_define('BUILD_DIR');
     FSO.CreateFolder(base_dir+"\\ext");

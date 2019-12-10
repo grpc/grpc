@@ -39,11 +39,13 @@
   <%
     srcs = []
     srcs.extend(php_config_m4.src)
-    php_deps = php_config_m4.get('deps', [])
     lib_maps = {lib.name: lib for lib in libs}
-    for dep in php_deps[:]:
-      php_deps.extend(lib_maps[dep].transitive_deps)
-    for dep in list(set(php_deps) - set(('z',))):
+    php_deps = php_config_m4.get('deps', [])
+    php_full_deps = []
+    for dep in php_deps:
+      php_full_deps.append(dep)
+      php_full_deps.extend(lib_maps[dep].transitive_deps)
+    for dep in set(php_full_deps) - set({'z'}):
       srcs.extend(lib_maps[dep].src)
     srcs = sorted(set(srcs))
   %>
@@ -56,11 +58,7 @@
       -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 ${"\\"}
       -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
   <%
-    dirs = {}
-    for src in srcs:
-      dirs[src[:src.rfind('/')]] = 1
-    dirs = dirs.keys()
-    dirs.sort()
+    dirs = sorted(set(src[:src.rfind('/')] for src in srcs))
   %>
     % for dir in dirs:
     PHP_ADD_BUILD_DIR($ext_builddir/${dir})
