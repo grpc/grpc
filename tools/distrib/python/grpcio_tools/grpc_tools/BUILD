@@ -3,8 +3,7 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:cython_library.bzl", "pyx_library")
 
-# TODO: Reintroduce.
-# load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 
 # TODO: Move this build file up a directory to ensure that this
@@ -45,43 +44,24 @@ py_library(
     imports = [NON_BAZEL_ROOT],
 )
 
-# TODO: Make this junk work.
-# proto_library(
-#     name = "simplest_proto",
-#     srcs = ["simplest.proto"],
-#     testonly = True,
-# )
-# 
-# proto_library(
-#     name = "complicated_proto",
-#     srcs = ["complicated.proto"],
-#     deps = [":simplest_proto"],
-#     testonly = True,
-# )
-# 
-# py_proto_library(
-#     name = "complicated_py_pb2",
-#     deps = ["complicated_proto"],
-#     testonly = True,
-#     py_library_args = {
-#         "imports": [NON_BAZEL_ROOT],
-#     },
-#     proto_paths = [NON_BAZEL_ROOT],
-# )
-
-# TODO: Get rid of this and use the native Bazel build system.
-py_library(
-    name = "simplest_py_pb2",
-    srcs = ["simplest_pb2.py"],
-    imports = [NON_BAZEL_ROOT],
+proto_library(
+    name = "simplest_proto",
+    srcs = ["simplest.proto"],
+    strip_import_prefix = "/tools/distrib/python/grpcio_tools/",
     testonly = True,
 )
 
-py_library(
+proto_library(
+    name = "complicated_proto",
+    srcs = ["complicated.proto"],
+    deps = [":simplest_proto"],
+    strip_import_prefix = "/tools/distrib/python/grpcio_tools/",
+    testonly = True,
+)
+
+py_proto_library(
     name = "complicated_py_pb2",
-    srcs = ["complicated_pb2.py"],
-    deps = [":simplest_py_pb2"],
-    imports = [NON_BAZEL_ROOT],
+    deps = ["complicated_proto"],
     testonly = True,
 )
 
@@ -91,7 +71,6 @@ py_test(
   deps = [
       "//tools/distrib/python/grpcio_tools/grpc_tools:grpc_tools",
       ":complicated_py_pb2",
-      # ":complicated_py_pb2",
   ],
   data = [
     "simple.proto",
