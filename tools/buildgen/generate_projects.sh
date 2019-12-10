@@ -30,6 +30,6 @@ fi
 
 . tools/buildgen/generate_build_additions.sh
 
-tools/buildgen/generate_projects.py build.yaml $gen_build_files $*
+python tools/buildgen/generate_projects.py build.yaml $gen_build_files $*
 
 rm $gen_build_files
