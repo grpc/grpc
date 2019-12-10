@@ -146,7 +146,7 @@ cdef class _AioCall:
                receive_status_on_client_op)
 
         try:
-            await async_start_batch(self._grpc_call_wrapper,
+            await execute_batch(self._grpc_call_wrapper,
                                         ops,
                                         self._loop)
         except asyncio.CancelledError:
@@ -178,7 +178,7 @@ cdef class _AioCall:
         """Handles the status sent by peer once received."""
         cdef ReceiveStatusOnClientOperation op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
         cdef tuple ops = (op,)
-        await async_start_batch(self._grpc_call_wrapper, ops, self._loop)
+        await execute_batch(self._grpc_call_wrapper, ops, self._loop)
         cdef AioRpcStatus status = AioRpcStatus(
             op.code(),
             op.details(),
@@ -249,7 +249,7 @@ cdef class _AioCall:
         )
 
         # Actually sends out the request message.
-        await async_start_batch(self._grpc_call_wrapper,
+        await execute_batch(self._grpc_call_wrapper,
                                    outbound_ops,
                                    self._loop)
 

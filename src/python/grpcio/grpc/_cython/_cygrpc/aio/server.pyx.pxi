@@ -135,7 +135,7 @@ async def _handle_unary_unary_rpc(object method_handler,
         SendInitialMetadataOperation(None, _EMPTY_FLAGS),
         SendMessageOperation(response_raw, _EMPTY_FLAGS),
     )
-    await async_start_batch(rpc_state, send_ops, loop)
+    await execute_batch(rpc_state, send_ops, loop)
 
 
 async def _handle_unary_stream_rpc(object method_handler,
@@ -185,7 +185,7 @@ async def _handle_unary_stream_rpc(object method_handler,
     )
 
     cdef tuple ops = (op,)
-    await async_start_batch(rpc_state, ops, loop)
+    await execute_batch(rpc_state, ops, loop)
 
 
 async def _handle_cancellation_from_core(object rpc_task,
@@ -193,7 +193,7 @@ async def _handle_cancellation_from_core(object rpc_task,
                                          object loop):
     cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
     cdef tuple ops = (op,)
-    await async_start_batch(rpc_state, ops, loop)
+    await execute_batch(rpc_state, ops, loop)
     if op.cancelled() and not rpc_task.done():
         rpc_task.cancel()
 
