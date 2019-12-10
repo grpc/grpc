@@ -1968,15 +1968,18 @@ class Compression(enum.IntEnum):
 
 
 def _default_get_protos(*args, **kwargs):
-    raise NotImplementedError("Install the grpcio-tools package to use get_protos.")
+    raise NotImplementedError(
+        "Install the grpcio-tools package to use get_protos.")
 
 
 def _default_get_services(*args, **kwargs):
-    raise NotImplementedError("Install the grpcio-tools package to use get_services.")
+    raise NotImplementedError(
+        "Install the grpcio-tools package to use get_services.")
 
 
 def _default_get_protos_and_services(*args, **kwargs):
-    raise NotImplementedError("Install the grpcio-tools package to use get_protos_and_services.")
+    raise NotImplementedError(
+        "Install the grpcio-tools package to use get_protos_and_services.")
 
 
 try:

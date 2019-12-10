@@ -21,7 +21,7 @@ import multiprocessing
 import functools
 
 # TODO: Support setup.py as test runner.
-# TODO: Support Blaze as test runner.
+
 
 @contextlib.contextmanager
 def _grpc_tools_unimportable():
@@ -35,6 +35,7 @@ def _grpc_tools_unimportable():
 
 # TODO: Dedupe with grpc_tools test?
 def _wrap_in_subprocess(error_queue, fn):
+
     @functools.wraps(fn)
     def _wrapped():
         try:
@@ -42,6 +43,7 @@ def _wrap_in_subprocess(error_queue, fn):
         except Exception as e:
             error_queue.put(e)
             raise
+
     return _wrapped
 
 
@@ -53,7 +55,8 @@ def _run_in_subprocess(test_case):
     proc.join()
     if not error_queue.empty():
         raise error_queue.get()
-    assert proc.exitcode == 0, "Process exited with code {}".format(proc.exitcode)
+    assert proc.exitcode == 0, "Process exited with code {}".format(
+        proc.exitcode)
 
 
 def _test_sunny_day():
@@ -67,7 +70,8 @@ def _test_grpc_tools_unimportable():
     with _grpc_tools_unimportable():
         import grpc
         try:
-            protos, services = grpc.protos_and_services("tests/unit/data/foo/bar.proto")
+            protos, services = grpc.protos_and_services(
+                "tests/unit/data/foo/bar.proto")
         except NotImplementedError as e:
             assert "grpcio-tools" in str(e)
         else:
@@ -81,6 +85,7 @@ class DynamicStubTest(unittest.TestCase):
 
     def test_grpc_tools_unimportable(self):
         _run_in_subprocess(_test_grpc_tools_unimportable)
+
 
 if __name__ == "__main__":
     logging.basicConfig()

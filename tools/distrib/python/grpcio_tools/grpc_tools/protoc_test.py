@@ -9,7 +9,9 @@ import unittest
 import multiprocessing
 import functools
 
+
 def _wrap_in_subprocess(error_queue, fn):
+
     @functools.wraps(fn)
     def _wrapped():
         try:
@@ -17,6 +19,7 @@ def _wrap_in_subprocess(error_queue, fn):
         except Exception as e:
             error_queue.put(e)
             raise
+
     return _wrapped
 
 
@@ -28,7 +31,8 @@ def _run_in_subprocess(test_case):
     proc.join()
     if not error_queue.empty():
         raise error_queue.get()
-    assert proc.exitcode == 0, "Process exited with code {}".format(proc.exitcode)
+    assert proc.exitcode == 0, "Process exited with code {}".format(
+        proc.exitcode)
 
 
 def _test_import_protos():
@@ -65,9 +69,11 @@ def _test_proto_module_imported_once():
     proto_path = "tools/distrib/python/grpcio_tools/"
     protos = protoc._protos("grpc_tools/simple.proto", [proto_path])
     services = protoc._services("grpc_tools/simple.proto", [proto_path])
-    complicated_protos = protoc._protos("grpc_tools/complicated.proto", [proto_path])
+    complicated_protos = protoc._protos("grpc_tools/complicated.proto",
+                                        [proto_path])
     assert (complicated_protos.grpc__tools_dot_simplest__pb2.SimplestMessage is
-            protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2.SimplestMessage)
+            protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2.
+            SimplestMessage)
 
 
 def _test_static_dynamic_combo():
@@ -76,7 +82,8 @@ def _test_static_dynamic_combo():
     proto_path = "tools/distrib/python/grpcio_tools/"
     protos = protoc._protos("grpc_tools/simple.proto", [proto_path])
     assert (complicated_pb2.grpc__tools_dot_simplest__pb2.SimplestMessage is
-            protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2.SimplestMessage)
+            protos.grpc__tools_dot_simpler__pb2.grpc__tools_dot_simplest__pb2.
+            SimplestMessage)
 
 
 def _test_combined_import():
@@ -97,6 +104,7 @@ def _test_syntax_errors():
         assert "7:23" in error_str
     else:
         assert False, "Compile error expected. None occurred."
+
 
 # TODO: Test warnings.
 
@@ -128,6 +136,7 @@ class ProtocTest(unittest.TestCase):
         _run_in_subprocess(_test_syntax_errors)
 
     # TODO: Write test to ensure the right module loader is used.
+
 
 if __name__ == '__main__':
     unittest.main()
