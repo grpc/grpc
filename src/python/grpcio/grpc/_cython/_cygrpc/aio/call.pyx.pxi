@@ -24,11 +24,15 @@ _UNKNOWN_CANCELLATION_DETAILS = 'RPC cancelled for unknown reason.'
 
 cdef class _AioCall:
 
-    def __cinit__(self, AioChannel channel):
+    def __cinit__(self,
+                  AioChannel channel,
+                  object deadline,
+                  bytes method):
         self._channel = channel
         self._references = []
         self._grpc_call_wrapper = GrpcCallWrapper()
         self._loop = asyncio.get_event_loop()
+        self._create_grpc_call(deadline, method)
 
         self._status_received = asyncio.Event(loop=self._loop)
 
@@ -71,13 +75,8 @@ cdef class _AioCall:
         grpc_slice_unref(method_slice)
 
     cdef void _destroy_grpc_call(self):
-        """Destroys the corresponding Core object for this RPC.
-
-        This method is idempotent. Multiple calls should not result in crashes.
-        """
-        if self._grpc_call_wrapper.call != NULL:
-            grpc_call_unref(self._grpc_call_wrapper.call)
-            self._grpc_call_wrapper.call = NULL
+        """Destroys the corresponding Core object for this RPC."""
+        grpc_call_unref(self._grpc_call_wrapper.call)
 
     cdef AioRpcStatus _cancel_and_create_status(self, object cancellation_future):
         """Cancels the RPC in Core, and return the final RPC status."""
@@ -116,9 +115,7 @@ cdef class _AioCall:
             return status
 
     async def unary_unary(self,
-                          bytes method,
                           bytes request,
-                          object deadline,
                           object cancellation_future,
                           object initial_metadata_observer,
                           object status_observer):
@@ -149,22 +146,18 @@ cdef class _AioCall:
                receive_status_on_client_op)
 
         try:
-            self._create_grpc_call(deadline, method)
-            try:
-                await async_start_batch(self._grpc_call_wrapper,
-                                           ops,
-                                           self._loop)
-            except asyncio.CancelledError:
-                status = self._cancel_and_create_status(cancellation_future)
-                status_observer(status)
-                raise
-        finally:
-            # If the RPC failed, receive_initial_metadata_op.initial_metadata
-            # will return None instead of crash.
+            await async_start_batch(self._grpc_call_wrapper,
+                                        ops,
+                                        self._loop)
+        except asyncio.CancelledError:
+            status = self._cancel_and_create_status(cancellation_future)
+            initial_metadata_observer(None)
+            status_observer(status)
+            raise
+        else:
             initial_metadata_observer(
                 receive_initial_metadata_op.initial_metadata()
             )
-            self._destroy_grpc_call()
 
         status = AioRpcStatus(
             receive_status_on_client_op.code(),
@@ -229,9 +222,7 @@ cdef class _AioCall:
                 yield received_message
 
     async def unary_stream(self,
-                           bytes method,
                            bytes request,
-                           object deadline,
                            object cancellation_future,
                            object initial_metadata_observer,
                            object status_observer):
@@ -256,10 +247,6 @@ cdef class _AioCall:
             send_message_op,
             send_close_op,
         )
-
-        # Creates the grpc_call Core object, it needs to be deleted explicitly
-        # through _destroy_grpc_call call in other methods.
-        self._create_grpc_call(deadline, method)
 
         # Actually sends out the request message.
         await async_start_batch(self._grpc_call_wrapper,
