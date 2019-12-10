@@ -21,14 +21,14 @@ from cython.operator cimport dereference
 
 import warnings
 
-cdef extern from "grpc_tools/main.h":
-  cppclass cProtocError "ProtocError":
+cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
+  cppclass cProtocError "::grpc_tools::ProtocError":
     string filename
     int line
     int column
     string message
 
-  cppclass cProtocWarning "ProtocWarning":
+  cppclass cProtocWarning "::grpc_tools::ProtocWarning":
     string filename
     int line
     int column
