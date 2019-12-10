@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#include <vector>
 #include <string>
 #include <utility>
-
+#include <vector>
 
 // We declare `protoc_main` here since we want access to it from Cython as an
 // extern but *without* triggering a dllimport declspec when on Windows.
-int protoc_main(int argc, char *argv[]);
+int protoc_main(int argc, char* argv[]);
 
 struct ProtocError {
   std::string filename;
@@ -29,24 +27,19 @@ struct ProtocError {
   std::string message;
 
   ProtocError() {}
-  ProtocError(std::string filename, int line, int column, std::string message) :
-    filename(filename),
-    line(line),
-    column(column),
-    message(message) {}
+  ProtocError(std::string filename, int line, int column, std::string message)
+      : filename(filename), line(line), column(column), message(message) {}
 };
 
 typedef ProtocError ProtocWarning;
 
 // TODO: Create Alias for files_out type?
-int protoc_get_protos(char* protobuf_path,
-                     const std::vector<std::string>* include_paths,
-                     std::vector<std::pair<std::string, std::string>>* files_out,
-                     std::vector<ProtocError>* errors,
-                     std::vector<ProtocWarning>* warnings);
+int protoc_get_protos(
+    char* protobuf_path, const std::vector<std::string>* include_paths,
+    std::vector<std::pair<std::string, std::string>>* files_out,
+    std::vector<ProtocError>* errors, std::vector<ProtocWarning>* warnings);
 
-int protoc_get_services(char* protobuf_path,
-                     const std::vector<std::string>* include_paths,
-                     std::vector<std::pair<std::string, std::string>>* files_out,
-                     std::vector<ProtocError>* errors,
-                     std::vector<ProtocWarning>* warnings);
+int protoc_get_services(
+    char* protobuf_path, const std::vector<std::string>* include_paths,
+    std::vector<std::pair<std::string, std::string>>* files_out,
+    std::vector<ProtocError>* errors, std::vector<ProtocWarning>* warnings);
