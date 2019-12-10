@@ -202,7 +202,7 @@ class Call(_base_call.Call):
         """Private method to set final status of the RPC.
 
         This method may be called multiple time due to data race between local
-        cancellation (by application) and C-Core receiving status from peer. We
+        cancellation (by application) and Core receiving status from peer. We
         make no promise here which one will win.
         """
         if self._status.done():
@@ -388,12 +388,12 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         """Forwards the application cancellation reasoning.
 
         Async generator will receive an exception. The cancellation will go
-        deep down into C-Core, and then propagates backup as the
+        deep down into Core, and then propagates backup as the
         `cygrpc.AioRpcStatus` exception.
 
         So, under race condition, e.g. the server sent out final state headers
         and the client calling "cancel" at the same time, this method respects
-        the winner in C-Core.
+        the winner in Core.
         """
         if not self._status.done() and not self._cancellation.done():
             self._cancellation.set_result(status)

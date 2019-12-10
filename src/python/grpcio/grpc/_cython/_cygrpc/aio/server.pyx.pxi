@@ -77,7 +77,7 @@ cdef class _ServicerContext:
 
     async def send_initial_metadata(self, tuple metadata):
         if self._metadata_sent:
-            raise ValueError('Send initial metadata failed: already sent')
+            raise RuntimeError('Send initial metadata failed: already sent')
         else:
             _send_initial_metadata(self._rpc_state, self._loop)
             self._metadata_sent = True
@@ -135,7 +135,7 @@ async def _handle_unary_unary_rpc(object method_handler,
         SendInitialMetadataOperation(None, _EMPTY_FLAGS),
         SendMessageOperation(response_raw, _EMPTY_FLAGS),
     )
-    await callback_start_batch(rpc_state, send_ops, loop)
+    await async_start_batch(rpc_state, send_ops, loop)
 
 
 async def _handle_unary_stream_rpc(object method_handler,
@@ -185,7 +185,7 @@ async def _handle_unary_stream_rpc(object method_handler,
     )
 
     cdef tuple ops = (op,)
-    await callback_start_batch(rpc_state, ops, loop)
+    await async_start_batch(rpc_state, ops, loop)
 
 
 async def _handle_cancellation_from_core(object rpc_task,
@@ -193,7 +193,7 @@ async def _handle_cancellation_from_core(object rpc_task,
                                          object loop):
     cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
     cdef tuple ops = (op,)
-    await callback_start_batch(rpc_state, ops, loop)
+    await async_start_batch(rpc_state, ops, loop)
     if op.cancelled() and not rpc_task.done():
         rpc_task.cancel()
 
@@ -318,7 +318,7 @@ cdef class AioServer:
             if self._status != AIO_SERVER_STATUS_RUNNING:
                 break
 
-            # Accepts new request from C-Core
+            # Accepts new request from Core
             rpc_state = await _server_call_request_call(
                 self._server,
                 self._cq,
@@ -333,7 +333,7 @@ cdef class AioServer:
                 )
             )
 
-            # Fires off a task that listening on the cancellation from client.
+            # Fires off a task that listens on the cancellation from client.
             self._loop.create_task(
                 _handle_cancellation_from_core(
                     rpc_task,
@@ -387,7 +387,7 @@ cdef class AioServer:
             pass
 
     async def shutdown(self, grace):
-        """Gracefully shutdown the C-Core server.
+        """Gracefully shutdown the Core server.
 
         Application should only call shutdown once.
 

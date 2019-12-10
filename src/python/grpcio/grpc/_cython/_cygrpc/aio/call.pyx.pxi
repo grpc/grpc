@@ -19,7 +19,7 @@ _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
 _EMPTY_METADATA = None
 
-_UNKNOWN_CANCELLATION_DETAILS = 'RPC cancelled due to unknown reason.'
+_UNKNOWN_CANCELLATION_DETAILS = 'RPC cancelled for unknown reason.'
 
 
 cdef class _AioCall:
@@ -80,12 +80,13 @@ cdef class _AioCall:
             self._grpc_call_wrapper.call = NULL
 
     cdef AioRpcStatus _cancel_and_create_status(self, object cancellation_future):
-        """Cancels the RPC in C-Core, and return the final RPC status."""
+        """Cancels the RPC in Core, and return the final RPC status."""
         cdef AioRpcStatus status
         cdef object details
         cdef char *c_details
+        cdef grpc_call_error error
         # Try to fetch application layer cancellation details in the future.
-        # * If calcellation details present, cancel with status;
+        # * If cancellation details present, cancel with status;
         # * If details not present, cancel with unknown reason.
         if cancellation_future.done():
             status = cancellation_future.result()
@@ -93,16 +94,18 @@ cdef class _AioCall:
             self._references.append(details)
             c_details = <char *>details
             # By implementation, grpc_call_cancel_with_status always return OK
-            grpc_call_cancel_with_status(
+            error = grpc_call_cancel_with_status(
                 self._grpc_call_wrapper.call,
                 status.c_code(),
                 c_details,
                 NULL,
             )
+            assert error == GRPC_CALL_OK
             return status
         else:
             # By implementation, grpc_call_cancel always return OK
-            grpc_call_cancel(self._grpc_call_wrapper.call, NULL)
+            error = grpc_call_cancel(self._grpc_call_wrapper.call, NULL)
+            assert error == GRPC_CALL_OK
             status = AioRpcStatus(
                 StatusCode.cancelled,
                 _UNKNOWN_CANCELLATION_DETAILS,
@@ -148,7 +151,7 @@ cdef class _AioCall:
         try:
             self._create_grpc_call(deadline, method)
             try:
-                await callback_start_batch(self._grpc_call_wrapper,
+                await async_start_batch(self._grpc_call_wrapper,
                                            ops,
                                            self._loop)
             except asyncio.CancelledError:
@@ -156,7 +159,8 @@ cdef class _AioCall:
                 status_observer(status)
                 raise
         finally:
-            # If the RPC failed, this method will return None instead of crash.
+            # If the RPC failed, receive_initial_metadata_op.initial_metadata
+            # will return None instead of crash.
             initial_metadata_observer(
                 receive_initial_metadata_op.initial_metadata()
             )
@@ -181,7 +185,7 @@ cdef class _AioCall:
         """Handles the status sent by peer once received."""
         cdef ReceiveStatusOnClientOperation op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
         cdef tuple ops = (op,)
-        await callback_start_batch(self._grpc_call_wrapper, ops, self._loop)
+        await async_start_batch(self._grpc_call_wrapper, ops, self._loop)
         cdef AioRpcStatus status = AioRpcStatus(
             op.code(),
             op.details(),
@@ -218,7 +222,7 @@ cdef class _AioCall:
                 self._loop
             )
             if received_message is None:
-                # The read operation failed, C-Core should explain why it fails
+                # The read operation failed, Core should explain why it fails
                 await self._status_received.wait()
                 return
             else:
@@ -253,12 +257,12 @@ cdef class _AioCall:
             send_close_op,
         )
 
-        # Creates the grpc_call C-Core object, it needs to be deleted explicitly
+        # Creates the grpc_call Core object, it needs to be deleted explicitly
         # through _destroy_grpc_call call in other methods.
         self._create_grpc_call(deadline, method)
 
         # Actually sends out the request message.
-        await callback_start_batch(self._grpc_call_wrapper,
+        await async_start_batch(self._grpc_call_wrapper,
                                    outbound_ops,
                                    self._loop)
 

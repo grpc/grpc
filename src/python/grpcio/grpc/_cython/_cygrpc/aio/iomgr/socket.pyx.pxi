@@ -134,9 +134,9 @@ cdef class _AsyncioSocket:
     cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb):
         """Performs write to network socket in AsyncIO.
         
-        For each socket, C-Core guarantees there'll be only one ongoing write.
+        For each socket, Core guarantees there'll be only one ongoing write.
         When the write is finished, we need to call grpc_write_cb to notify
-        C-Core that the work is done.
+        Core that the work is done.
         """
         cdef char* start
         cdef bytearray outbound_buffer = bytearray()
