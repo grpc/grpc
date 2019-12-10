@@ -6,7 +6,6 @@
 - script: tools/run_tests/sanity/check_deprecated_grpc++.py
 - script: tools/run_tests/sanity/check_owners.sh
 - script: tools/run_tests/sanity/check_port_platform.py
-- script: tools/run_tests/sanity/check_pytype.sh
 - script: tools/run_tests/sanity/check_qps_scenario_changes.py
 - script: tools/run_tests/sanity/check_shellcheck.sh
 - script: tools/run_tests/sanity/check_submodules.sh
@@ -21,6 +20,7 @@
 - script: tools/distrib/check_include_guards.py
 - script: tools/distrib/check_trailing_newlines.sh
 - script: tools/distrib/check_upb_output.sh
+- script: tools/distrib/check_pytype.sh
 - script: tools/distrib/clang_format_code.sh
 - script: tools/distrib/clang_tidy_code.sh
 - script: tools/distrib/pylint_code.sh
