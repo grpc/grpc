@@ -14,14 +14,16 @@
 """Exceptions for the aio version of the RPC calls."""
 
 
-cdef class _AioRpcError(Exception):
+cdef class AioRpcStatus(Exception):
     cdef readonly:
-        tuple _initial_metadata
-        int _code
+        grpc_status_code _code
         str _details
+        # Per the spec, only client-side status has trailing metadata.
         tuple _trailing_metadata
+        str _debug_error_string
 
-    cpdef tuple initial_metadata(self)
-    cpdef int code(self)
+    cpdef grpc_status_code code(self)
     cpdef str details(self)
     cpdef tuple trailing_metadata(self)
+    cpdef str debug_error_string(self)
+    cdef grpc_status_code c_code(self)

@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,16 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# distutils: language=c++
 
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
 
-cdef extern from "src/core/lib/iomgr/timer_manager.h":
-  void grpc_timer_manager_set_threading(bint enabled);
-
-cdef extern from "src/core/lib/iomgr/iomgr_internal.h":
-  void grpc_set_default_iomgr_platform();
-
-cdef extern from "src/core/lib/iomgr/executor.h" namespace "grpc_core":
-    cdef cppclass Executor:
-        @staticmethod
-        void SetThreadingAll(bint enable);
+py_binary(
+    name = "server",
+    srcs = ["server.py"],
+    python_version = "PY3",
+    deps = [
+        "//external:six",
+        "//src/proto/grpc/testing:benchmark_service_py_pb2",
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
+    ],
+)

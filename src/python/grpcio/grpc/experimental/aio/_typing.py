@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,26 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Desired cancellation status for canceling an ongoing RPC call."""
+"""Common types for gRPC Async API"""
 
+from typing import Any, AnyStr, Callable, Sequence, Text, Tuple, TypeVar
 
-cdef class AioCancelStatus:
-
-    def __cinit__(self):
-        self._code = None
-        self._details = None
-
-    def __len__(self):
-        if self._code is None:
-            return 0
-        return 1
-
-    def cancel(self, grpc_status_code code, str details=None):
-        self._code = code
-        self._details = details
-
-    cpdef object code(self):
-        return self._code
-
-    cpdef str details(self):
-        return self._details
+RequestType = TypeVar('RequestType')
+ResponseType = TypeVar('ResponseType')
+SerializingFunction = Callable[[Any], bytes]
+DeserializingFunction = Callable[[bytes], Any]
+MetadataType = Sequence[Tuple[Text, AnyStr]]
