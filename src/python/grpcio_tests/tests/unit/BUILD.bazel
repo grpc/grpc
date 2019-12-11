@@ -89,8 +89,6 @@ py_library(
         srcs = [test_file_name],
         data = [
             "//src/python/grpcio_tests/tests/unit/credentials",
-            # TODO: Filegroup?
-            "//src/python/grpcio_tests/unit:data/foo/bar.proto",
         ],
         imports = ["../../"],
         main = test_file_name,
@@ -112,6 +110,7 @@ py_library(
     for test_file_name in GRPCIO_TESTS_UNIT
 ]
 
+# TODO: Somehow incorporate into setup.py workflow.
 py2and3_test(
     name = "_dynamic_stubs_test",
     size = "small",

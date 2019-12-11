@@ -3,13 +3,11 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:cython_library.bzl", "pyx_library")
 
-load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
-
-
 # TODO: Move this build file up a directory to ensure that this
 # points to '.', not a directory above the package root.
 NON_BAZEL_ROOT = "../"
 
+# TODO: Move BUILD file up a directory
 cc_library(
     # TODO: Better name?
     name = "protoc_lib",
