@@ -338,6 +338,13 @@ class ClientStats {
 // TODO(roth): Change this service to a real fake.
 class AdsServiceImpl : public AdsService {
  public:
+  enum ResponseState {
+    NOT_SENT,
+    SENT,
+    ACKED,
+    NACKED,
+  };
+
   struct ResponseArgs {
     struct Locality {
       Locality(const grpc::string& sub_zone, std::vector<int> ports,
@@ -388,18 +395,26 @@ class AdsServiceImpl : public AdsService {
   void HandleCdsRequest(DiscoveryRequest* request, Stream* stream) {
     gpr_log(GPR_INFO, "ADS[%p]: received CDS request '%s'", this,
             request->DebugString().c_str());
-    // Ignore ACK/NACK and subsequent requests.
-    if (cds_sent_) return;
-    DiscoveryResponse response;
-    response.set_type_url(kCdsTypeUrl);
-    grpc_core::MutexLock lock(&ads_mu_);
-    for (const auto& cluster_name : request->resource_names()) {
-      auto iter = cds_response_data_.find(cluster_name);
-      if (iter == cds_response_data_.end()) continue;
-      response.add_resources()->PackFrom(iter->second);
+    const std::string version_str = "version_1";
+    const std::string nonce_str = "nonce_1";
+    if (cds_response_state_ == NOT_SENT) {
+      DiscoveryResponse response;
+      response.set_type_url(kCdsTypeUrl);
+      response.set_version_info(version_str);
+      response.set_nonce(nonce_str);
+      grpc_core::MutexLock lock(&ads_mu_);
+      for (const auto& cluster_name : request->resource_names()) {
+        auto iter = cds_response_data_.find(cluster_name);
+        if (iter == cds_response_data_.end()) continue;
+        response.add_resources()->PackFrom(iter->second);
+      }
+      stream->Write(response);
+      cds_response_state_ = SENT;
+    } else if (cds_response_state_ == SENT &&
+               !request->response_nonce().empty()) {
+      cds_response_state_ =
+          request->version_info() == version_str ? ACKED : NACKED;
     }
-    stream->Write(response);
-    cds_sent_ = true;
   }
 
   void HandleEdsRequest(DiscoveryRequest* request, Stream* stream) {
@@ -439,13 +454,18 @@ class AdsServiceImpl : public AdsService {
                 context->client_metadata().end());
       // Keep servicing requests until the EDS response has been sent back.
       DiscoveryRequest request;
-      while (true) {
+      // TODO(roth): For each supported type, we currently only handle one
+      // request without replying to any new requests (for ACK/NACK or new
+      // resource names). It's not causing a big problem now but should be
+      // fixed.
+      bool eds_sent = false;
+      while (!eds_sent || cds_response_state_ == SENT) {
         if (!stream->Read(&request)) return;
         if (request.type_url() == kCdsTypeUrl) {
           HandleCdsRequest(&request, stream);
         } else if (request.type_url() == kEdsTypeUrl) {
           HandleEdsRequest(&request, stream);
-          break;
+          eds_sent = true;
         }
       }
       // Wait until notified done.
@@ -456,10 +476,14 @@ class AdsServiceImpl : public AdsService {
     return Status::OK;
   }
 
+  Cluster GetDefaultCluster() const { return default_cluster_; }
+
   void SetCdsResponse(
       std::map<std::string /*cluster_name*/, Cluster> cds_response_data) {
     cds_response_data_ = std::move(cds_response_data);
   }
+
+  ResponseState cds_response_state() const { return cds_response_state_; }
 
   void AddEdsResponse(const DiscoveryResponse& response, int send_after_ms) {
     grpc_core::MutexLock lock(&ads_mu_);
@@ -545,7 +569,7 @@ class AdsServiceImpl : public AdsService {
   // CDS response data.
   Cluster default_cluster_;
   std::map<std::string /*cluster_name*/, Cluster> cds_response_data_;
-  bool cds_sent_ = false;
+  ResponseState cds_response_state_ = NOT_SENT;
   // EDS response data.
   std::vector<ResponseDelayPair> eds_responses_and_delays_;
 };
@@ -1302,6 +1326,73 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
         channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
       },
       "");
+}
+
+using CdsTest = BasicTest;
+
+// Tests that CDS client should send an ACK upon correct CDS response.
+TEST_P(CdsTest, Vanilla) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
+            AdsServiceImpl::ACKED);
+}
+
+// Tests that CDS client should send a NACK if the cluster type in CDS response
+// is other than EDS.
+TEST_P(CdsTest, WrongClusterType) {
+  auto cluster = balancers_[0]->ads_service()->GetDefaultCluster();
+  cluster.set_type(envoy::api::v2::Cluster::STATIC);
+  balancers_[0]->ads_service()->SetCdsResponse(
+      {{"application_target_name", std::move(cluster)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that CDS client should send a NACK if the eds_config in CDS response is
+// other than ADS.
+TEST_P(CdsTest, WrongEdsConfig) {
+  auto cluster = balancers_[0]->ads_service()->GetDefaultCluster();
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  balancers_[0]->ads_service()->SetCdsResponse(
+      {{"application_target_name", std::move(cluster)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that CDS client should send a NACK if the lb_policy in CDS response is
+// other than ROUND_ROBIN.
+TEST_P(CdsTest, WrongLbPolicy) {
+  auto cluster = balancers_[0]->ads_service()->GetDefaultCluster();
+  cluster.set_lb_policy(envoy::api::v2::Cluster::LEAST_REQUEST);
+  balancers_[0]->ads_service()->SetCdsResponse(
+      {{"application_target_name", std::move(cluster)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that CDS client should send a NACK if the lrs_server in CDS response is
+// other than SELF.
+TEST_P(CdsTest, WrongLrsServer) {
+  auto cluster = balancers_[0]->ads_service()->GetDefaultCluster();
+  cluster.mutable_lrs_server()->mutable_ads();
+  balancers_[0]->ads_service()->SetCdsResponse(
+      {{"application_target_name", std::move(cluster)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
+            AdsServiceImpl::NACKED);
 }
 
 using LocalityMapTest = BasicTest;
@@ -2496,6 +2587,12 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
                                            TestType(true, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
+
+// CDS depends on XdsResolver.
+INSTANTIATE_TEST_SUITE_P(XdsTest, CdsTest,
+                         ::testing::Values(TestType(true, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
