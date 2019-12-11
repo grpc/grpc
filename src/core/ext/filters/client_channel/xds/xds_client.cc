@@ -694,15 +694,16 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     request_payload_slice = XdsCdsRequestCreateAndEncode(
         xds_client()->WatchedClusterNames(), node, build_version,
         cds_version_.version_info, cds_version_.nonce, cds_version_.error);
+    cds_version_.error = GRPC_ERROR_NONE;
   } else if (type_url == kEdsTypeUrl) {
     request_payload_slice = XdsEdsRequestCreateAndEncode(
         xds_client()->EdsServiceNames(), node, build_version,
         eds_version_.version_info, eds_version_.nonce, eds_version_.error);
+    eds_version_.error = GRPC_ERROR_NONE;
   } else {
     request_payload_slice = XdsUnsupportedTypeNackRequestCreateAndEncode(
         type_url, nonce_for_unsupported_type, error_for_unsupported_type);
   }
-  GRPC_ERROR_UNREF(error_for_unsupported_type);
   // Create message payload.
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -878,7 +879,7 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
     if (buffered_request != nullptr) {
       self->SendMessageLocked(type_url, buffered_request->nonce,
                               buffered_request->error, false);
-      buffered_request->error = nullptr;
+      buffered_request->error = GRPC_ERROR_NONE;
       buffered_request.reset();
       return;
     }
@@ -939,9 +940,11 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
     // Update nonce and error.
     if (type_url == kCdsTypeUrl) {
       ads_calld->cds_version_.nonce = nonce;
+      GRPC_ERROR_UNREF(ads_calld->cds_version_.error);
       ads_calld->cds_version_.error = GRPC_ERROR_REF(parse_error);
     } else if (type_url == kEdsTypeUrl) {
       ads_calld->eds_version_.nonce = nonce;
+      GRPC_ERROR_UNREF(ads_calld->eds_version_.error);
       ads_calld->eds_version_.error = GRPC_ERROR_REF(parse_error);
     }
     // NACK or ACK the response.

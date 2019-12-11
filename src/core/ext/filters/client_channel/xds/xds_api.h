@@ -44,9 +44,8 @@ struct VersionState {
   std::string version_info;
   // The nonce of the latest response.
   std::string nonce;
-  // The error message to be included in ACK/NACK with the nonce. If it's
-  // GRPC_ERROR_NONE, the request is an ACK; otherwise, it's a NACK. Takes
-  // ownership.
+  // The error message to be included in a NACK with the nonce. Consumed when a
+  // nonce is NACK'ed for the first time.
   grpc_error* error = GRPC_ERROR_NONE;
 
   ~VersionState() { GRPC_ERROR_UNREF(error); }
@@ -172,19 +171,19 @@ struct EdsUpdate {
 using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 
 // Creates a request to nack an unsupported resource type.
-// Doesn't take ownership of \a error.
+// Takes ownership of \a error.
 grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
     const std::string& type_url, const std::string& nonce, grpc_error* error);
 
 // Creates a CDS request querying \a cluster_names.
-// Doesn't take ownership of \a error.
+// Takes ownership of \a error.
 grpc_slice XdsCdsRequestCreateAndEncode(
     const std::set<StringView>& cluster_names, const XdsBootstrap::Node* node,
     const char* build_version, const std::string& version,
     const std::string& nonce, grpc_error* error);
 
 // Creates an EDS request querying \a eds_service_names.
-// Doesn't take ownership of \a error.
+// Takes ownership of \a error.
 grpc_slice XdsEdsRequestCreateAndEncode(
     const std::set<StringView>& eds_service_names,
     const XdsBootstrap::Node* node, const char* build_version,
