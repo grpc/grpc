@@ -17,7 +17,6 @@
 import pkg_resources
 import sys
 
-# TODO: Figure out how to add this dependency to setuptools.
 import six
 import os
 
@@ -150,7 +149,7 @@ class ProtoFinder(importlib.abc.MetaPathFinder):
             try:
                 prospective_path = os.path.join(search_path, filepath)
                 os.stat(prospective_path)
-            except FileNotFoundError:
+            except (FileNotFoundError, NotADirectoryError):
                 continue
             else:
                 return importlib.machinery.ModuleSpec(
