@@ -19,8 +19,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "src/core/lib/slice/b64.h"
 #include "include/grpc/support/alloc.h"
+#include "src/core/lib/slice/b64.h"
 
 bool squelch = true;
 bool leak_check = true;
