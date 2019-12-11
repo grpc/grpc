@@ -2612,3 +2612,17 @@ grpc_cc_library(
         "src/core/lib/iomgr/poller/eventmanager_interface.h",
     ],
 )
+
+# Libuv-based EventManager implementation
+grpc_cc_library(
+    name = "eventmanager_libuv",
+    srcs = [
+        "src/core/lib/iomgr/poller/eventmanager_libuv.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/poller/eventmanager_libuv.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
+)

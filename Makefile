@@ -1216,6 +1216,7 @@ cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 delegating_channel_test: $(BINDIR)/$(CONFIG)/delegating_channel_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
+eventmanager_libuv_test: $(BINDIR)/$(CONFIG)/eventmanager_libuv_test
 exception_test: $(BINDIR)/$(CONFIG)/exception_test
 filter_end2end_test: $(BINDIR)/$(CONFIG)/filter_end2end_test
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
@@ -1694,6 +1695,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/delegating_channel_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/eventmanager_libuv_test \
   $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
@@ -1867,6 +1869,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/delegating_channel_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/eventmanager_libuv_test \
   $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
@@ -2365,6 +2368,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_details_test"
 	$(Q) $(BINDIR)/$(CONFIG)/error_details_test || ( echo test error_details_test failed ; exit 1 )
+	$(E) "[RUN]     Testing eventmanager_libuv_test"
+	$(Q) $(BINDIR)/$(CONFIG)/eventmanager_libuv_test || ( echo test eventmanager_libuv_test failed ; exit 1 )
 	$(E) "[RUN]     Testing exception_test"
 	$(Q) $(BINDIR)/$(CONFIG)/exception_test || ( echo test exception_test failed ; exit 1 )
 	$(E) "[RUN]     Testing filter_end2end_test"
@@ -3647,6 +3652,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -4111,6 +4117,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -4530,6 +4537,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -4858,6 +4866,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -5149,6 +5158,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -5769,6 +5779,7 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -6999,6 +7010,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -16598,6 +16610,49 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/util/error_details_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+
+
+EVENTMANAGER_LIBUV_TEST_SRC = \
+    test/core/iomgr/poller/eventmanager_libuv_test.cc \
+
+EVENTMANAGER_LIBUV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EVENTMANAGER_LIBUV_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/eventmanager_libuv_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/eventmanager_libuv_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/eventmanager_libuv_test: $(PROTOBUF_DEP) $(EVENTMANAGER_LIBUV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(EVENTMANAGER_LIBUV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/eventmanager_libuv_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/poller/eventmanager_libuv_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_eventmanager_libuv_test: $(EVENTMANAGER_LIBUV_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(EVENTMANAGER_LIBUV_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 EXCEPTION_TEST_SRC = \
