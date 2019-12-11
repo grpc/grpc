@@ -59,23 +59,35 @@ def _run_in_subprocess(test_case):
         proc.exitcode)
 
 
-def _test_sunny_day():
+def _assert_unimplemented(msg_substr):
     import grpc
-    protos, services = grpc.protos_and_services("tests/unit/data/foo/bar.proto")
-    assert protos.BarMessage is not None
-    assert services.BarStub is not None
+    try:
+        protos, services = grpc.protos_and_services(
+            "tests/unit/data/foo/bar.proto")
+    except NotImplementedError as e:
+        assert msg_substr in str(e), "{} was not in '{}'".format(
+            msg_substr, str(e))
+    else:
+        assert False, "Did not raise NotImplementedError"
+
+
+def _test_sunny_day():
+    if sys.version_info[0] == 3:
+        import grpc
+        protos, services = grpc.protos_and_services(
+            "tests/unit/data/foo/bar.proto")
+        assert protos.BarMessage is not None
+        assert services.BarStub is not None
+    else:
+        _assert_unimplemented("Python 3")
 
 
 def _test_grpc_tools_unimportable():
     with _grpc_tools_unimportable():
-        import grpc
-        try:
-            protos, services = grpc.protos_and_services(
-                "tests/unit/data/foo/bar.proto")
-        except NotImplementedError as e:
-            assert "grpcio-tools" in str(e)
+        if sys.version_info[0] == 3:
+            _assert_unimplemented("grpcio-tools")
         else:
-            assert False, "Did not raise NotImplementedError"
+            _assert_unimplemented("Python 3")
 
 
 class DynamicStubTest(unittest.TestCase):
