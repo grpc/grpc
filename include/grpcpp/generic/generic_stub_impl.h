@@ -79,7 +79,7 @@ class GenericStub final {
                  std::function<void(grpc::Status)> on_completion) {
     UnaryCallInternal(context, method, request, response,
                       std::move(on_completion));
-  };
+  }
 
   /// Setup a unary call to a named method \a method using
   /// \a context and specifying the \a request and \a response buffers.
@@ -119,7 +119,7 @@ class GenericStub final {
                    std::function<void(grpc::Status)> on_completion) {
       stub_->UnaryCallInternal(context, method, request, response,
                                std::move(on_completion));
-    };
+    }
 
     /// Setup a unary call to a named method \a method using
     /// \a context and specifying the \a request and \a response buffers.
