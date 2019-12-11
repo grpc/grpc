@@ -6,21 +6,25 @@
   ARG_WITH("grpc", "grpc support", "no");
 
   if (PHP_GRPC != "no") {
-
-    grpc_source =
-      % for source in php_config_m4.src:
-      "${source.replace('/','\\\\')} " +
+  <%
+    srcs = []
+    srcs.extend(php_config_m4.src)
+    lib_maps = {lib.name: lib for lib in libs}
+    php_deps = php_config_m4.get('deps', [])
+    php_full_deps = []
+    for dep in php_deps:
+      php_full_deps.append(dep)
+      php_full_deps.extend(lib_maps[dep].transitive_deps)
+    for dep in php_full_deps:
+      srcs.extend(lib_maps[dep].src)
+    srcs = sorted(set(srcs))
+  %>
+    EXTENSION("grpc",
+      % for src in srcs:
+      "${src.replace('/','\\\\')} " +
       % endfor
-      % for lib in libs:
-      % if lib.name in php_config_m4.get('deps', []) and lib.name != 'ares':
-      % for source in lib.src:
-      "${source.replace('/','\\\\')} " +
-      % endfor
-      % endif
-      % endfor
-      "";
-
-    EXTENSION("grpc", grpc_source, null,
+      ""
+      , null,
       "/DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
       "/D_HAS_EXCEPTIONS=0 /DNOMINMAX /DGRPC_ARES=0 /D_WIN32_WINNT=0x600 "+
       "/I"+configure_module_dirname+" "+
@@ -32,32 +36,19 @@
       "/I"+configure_module_dirname+"\\third_party\\upb "+
       "/I"+configure_module_dirname+"\\third_party\\zlib ");
   <%
-    dirs = {}
-    for lib in libs:
-      if lib.name in php_config_m4.get('deps', []) and lib.name != 'ares':
-        for source in lib.src:
-          tmp = source
-          prev = ''
-          while (True):
-            idx = tmp.find('/');
-            if (idx == -1):
-              break
-            dirs[prev + '\\\\' + tmp[:idx]] = 1
-            prev += ('\\\\' + tmp[:idx]);
-            tmp = tmp[idx+1:]
-            
-    dirs['\\\\src'] = 1;
-    dirs['\\\\src\\\\php'] = 1;
-    dirs['\\\\src\\\\php\\\\ext'] = 1;
-    dirs['\\\\src\\\\php\\\\ext\\\\grpc'] = 1;
-    dirs = dirs.keys()
-    dirs.sort()
+    dirs = sorted(set(src[:src.rfind('/')] for src in srcs))
+    dirset = set(dirs)
+    for dir in dirs:
+      frags = dir.split('/')
+      for i in range(1, len(frags)):
+        dirset.add('/'.join(frags[:i]))
+    dirs = [d.replace('/', '\\\\') for d in sorted(dirset)]
   %>
     base_dir = get_define('BUILD_DIR');
     FSO.CreateFolder(base_dir+"\\ext");
     FSO.CreateFolder(base_dir+"\\ext\\grpc");
     % for dir in dirs:
-    FSO.CreateFolder(base_dir+"\\ext\\grpc${dir}");
+    FSO.CreateFolder(base_dir+"\\ext\\grpc\\${dir}");
     % endfor
     _build_dirs = new Array();
     for (i = 0; i < build_dirs.length; i++) {
@@ -66,5 +57,4 @@
       }
     }
     build_dirs = _build_dirs;
-
   }
