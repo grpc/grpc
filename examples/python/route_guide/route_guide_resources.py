@@ -15,7 +15,9 @@
 
 import json
 
-import route_guide_pb2
+import grpc
+protos = grpc.protos("protos/route_guide.proto",
+                     include_paths=["../.."])
 
 
 def read_route_guide_database():
@@ -23,14 +25,14 @@ def read_route_guide_database():
 
   Returns:
     The full contents of the route guide database as a sequence of
-      route_guide_pb2.Features.
+      protos.Features.
   """
     feature_list = []
     with open("route_guide_db.json") as route_guide_db_file:
         for item in json.load(route_guide_db_file):
-            feature = route_guide_pb2.Feature(
+            feature = protos.Feature(
                 name=item["name"],
-                location=route_guide_pb2.Point(
+                location=protos.Point(
                     latitude=item["location"]["latitude"],
                     longitude=item["location"]["longitude"]))
             feature_list.append(feature)

@@ -20,8 +20,8 @@ import logging
 
 import grpc
 
-import route_guide_pb2
-import route_guide_pb2_grpc
+protos, services = grpc.protos_and_services("protos/route_guide.proto",
+                                            include_paths=["../.."])
 import route_guide_resources
 
 
@@ -55,7 +55,7 @@ def get_distance(start, end):
     return R * c
 
 
-class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
+class RouteGuideServicer(services.RouteGuideServicer):
     """Provides methods that implement functionality of route guide server."""
 
     def __init__(self):
@@ -64,7 +64,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
     def GetFeature(self, request, context):
         feature = get_feature(self.db, request)
         if feature is None:
-            return route_guide_pb2.Feature(name="", location=request)
+            return protos.Feature(name="", location=request)
         else:
             return feature
 
@@ -96,7 +96,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             prev_point = point
 
         elapsed_time = time.time() - start_time
-        return route_guide_pb2.RouteSummary(
+        return protos.RouteSummary(
             point_count=point_count,
             feature_count=feature_count,
             distance=int(distance),
@@ -113,7 +113,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    route_guide_pb2_grpc.add_RouteGuideServicer_to_server(
+    services.add_RouteGuideServicer_to_server(
         RouteGuideServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()

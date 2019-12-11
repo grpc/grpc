@@ -20,15 +20,15 @@ import logging
 
 import grpc
 
-import route_guide_pb2
-import route_guide_pb2_grpc
+protos, services = grpc.protos_and_services("protos/route_guide.proto",
+                                            include_paths=["../.."])
 import route_guide_resources
 
 
 def make_route_note(message, latitude, longitude):
-    return route_guide_pb2.RouteNote(
+    return protos.RouteNote(
         message=message,
-        location=route_guide_pb2.Point(latitude=latitude, longitude=longitude))
+        location=protos.Point(latitude=latitude, longitude=longitude))
 
 
 def guide_get_one_feature(stub, point):
@@ -45,15 +45,15 @@ def guide_get_one_feature(stub, point):
 
 def guide_get_feature(stub):
     guide_get_one_feature(stub,
-                          route_guide_pb2.Point(
+                          protos.Point(
                               latitude=409146138, longitude=-746188906))
-    guide_get_one_feature(stub, route_guide_pb2.Point(latitude=0, longitude=0))
+    guide_get_one_feature(stub, protos.Point(latitude=0, longitude=0))
 
 
 def guide_list_features(stub):
-    rectangle = route_guide_pb2.Rectangle(
-        lo=route_guide_pb2.Point(latitude=400000000, longitude=-750000000),
-        hi=route_guide_pb2.Point(latitude=420000000, longitude=-730000000))
+    rectangle = protos.Rectangle(
+        lo=protos.Point(latitude=400000000, longitude=-750000000),
+        hi=protos.Point(latitude=420000000, longitude=-730000000))
     print("Looking for features between 40, -75 and 42, -73")
 
     features = stub.ListFeatures(rectangle)
@@ -105,7 +105,7 @@ def run():
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
     with grpc.insecure_channel('localhost:50051') as channel:
-        stub = route_guide_pb2_grpc.RouteGuideStub(channel)
+        stub = services.RouteGuideStub(channel)
         print("-------------- GetFeature --------------")
         guide_get_feature(stub)
         print("-------------- ListFeatures --------------")
