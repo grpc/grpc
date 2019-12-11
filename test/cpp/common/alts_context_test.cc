@@ -67,10 +67,10 @@ TEST(AltsContextTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   SecureAuthContext auth_context(ctx.get());
   ctx.reset();
 
-  std::string expected_ap("application protocol");
-  std::string expected_rp("record protocol");
-  std::string expected_peer("peer");
-  std::string expected_local("local");
+  grpc::string expected_ap("application protocol");
+  grpc::string expected_rp("record protocol");
+  grpc::string expected_peer("peer");
+  grpc::string expected_local("local");
   grpc_security_level expected_sl = GRPC_INTEGRITY_ONLY;
   upb::Arena context_arena;
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());

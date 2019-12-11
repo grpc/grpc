@@ -29,57 +29,70 @@ namespace grpc {
 AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
   upb_strview application_protocol =
       grpc_gcp_AltsContext_application_protocol(ctx);
-  application_protocol_ =
-      std::string(application_protocol.data, application_protocol.size);
+  if (application_protocol.data != nullptr && application_protocol.size > 0) {
+    application_protocol_ =
+        grpc::string(application_protocol.data, application_protocol.size);
+  }
   upb_strview record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
-  record_protocol_ = std::string(record_protocol.data, record_protocol.size);
+  if (record_protocol.data != nullptr && record_protocol.size > 0) {
+    record_protocol_ = grpc::string(record_protocol.data, record_protocol.size);
+  }
   upb_strview peer_service_account =
       grpc_gcp_AltsContext_peer_service_account(ctx);
-  peer_service_account_ =
-      std::string(peer_service_account.data, peer_service_account.size);
+  if (peer_service_account.data != nullptr && peer_service_account.size > 0) {
+    peer_service_account_ =
+        grpc::string(peer_service_account.data, peer_service_account.size);
+  }
   upb_strview local_service_account =
       grpc_gcp_AltsContext_local_service_account(ctx);
-  local_service_account_ =
-      std::string(local_service_account.data, local_service_account.size);
+  if (local_service_account.data != nullptr && local_service_account.size > 0) {
+    local_service_account_ =
+        grpc::string(local_service_account.data, local_service_account.size);
+  }
   const grpc_gcp_RpcProtocolVersions* versions =
       grpc_gcp_AltsContext_peer_rpc_versions(ctx);
   if (versions != nullptr) {
-    const grpc_gcp_RpcProtocolVersions_Version* max_versions =
+    const grpc_gcp_RpcProtocolVersions_Version* max_version =
         grpc_gcp_RpcProtocolVersions_max_rpc_version(versions);
-    if (max_versions != nullptr) {
+    if (max_version != nullptr) {
       int max_version_major =
-          grpc_gcp_RpcProtocolVersions_Version_major(max_versions);
+          grpc_gcp_RpcProtocolVersions_Version_major(max_version);
       int max_version_minor =
-          grpc_gcp_RpcProtocolVersions_Version_minor(max_versions);
+          grpc_gcp_RpcProtocolVersions_Version_minor(max_version);
       peer_rpc_versions_.max_rpc_versions.major_version = max_version_major;
       peer_rpc_versions_.max_rpc_versions.minor_version = max_version_minor;
     }
-    const grpc_gcp_RpcProtocolVersions_Version* min_versions =
+    const grpc_gcp_RpcProtocolVersions_Version* min_version =
         grpc_gcp_RpcProtocolVersions_min_rpc_version(versions);
-    if (min_versions != nullptr) {
+    if (min_version != nullptr) {
       int min_version_major =
-          grpc_gcp_RpcProtocolVersions_Version_major(min_versions);
+          grpc_gcp_RpcProtocolVersions_Version_major(min_version);
       int min_version_minor =
-          grpc_gcp_RpcProtocolVersions_Version_minor(min_versions);
+          grpc_gcp_RpcProtocolVersions_Version_minor(min_version);
       peer_rpc_versions_.min_rpc_versions.major_version = min_version_major;
       peer_rpc_versions_.min_rpc_versions.minor_version = min_version_minor;
     }
   }
-  security_level_ = static_cast<grpc_security_level>(
-      (int)grpc_gcp_AltsContext_security_level(ctx));
+  if ((int)grpc_gcp_AltsContext_security_level(ctx) >= GRPC_SECURITY_MIN ||
+      (int)grpc_gcp_AltsContext_security_level(ctx) <= GRPC_SECURITY_MAX) {
+    security_level_ = static_cast<grpc_security_level>(
+        (int)grpc_gcp_AltsContext_security_level(ctx));
+  }
 }
 
-std::string AltsContext::application_protocol() const {
+const grpc::string& AltsContext::application_protocol() const {
   return application_protocol_;
 }
 
-std::string AltsContext::record_protocol() const { return record_protocol_; }
+const grpc::string& AltsContext::record_protocol() const {
+  return record_protocol_;
+}
 
-std::string AltsContext::peer_service_account() const {
+const grpc::string& AltsContext::peer_service_account() const {
   return peer_service_account_;
 }
 
-std::string AltsContext::local_service_account() const {
+const grpc::string& AltsContext::local_service_account() const {
   return local_service_account_;
 }
 
@@ -87,7 +100,7 @@ grpc_security_level AltsContext::security_level() const {
   return security_level_;
 }
 
-RpcProtocolVersions AltsContext::peer_rpc_versions() const {
+const RpcProtocolVersions& AltsContext::peer_rpc_versions() const {
   return peer_rpc_versions_;
 }
 
@@ -106,7 +119,55 @@ std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
     gpr_log(GPR_ERROR, "fails to parse ALTS context.");
     return nullptr;
   }
+  if ((int)grpc_gcp_AltsContext_security_level(ctx) < GRPC_SECURITY_MIN ||
+      (int)grpc_gcp_AltsContext_security_level(ctx) > GRPC_SECURITY_MAX) {
+    gpr_log(GPR_ERROR, "security_level is invalid.");
+    return nullptr;
+  }
   return grpc_core::MakeUnique<AltsContext>(AltsContext(ctx));
 }
+
+//// checkContext is to check the validity of the grpc_gcp_AltsContext.
+//// It will return false if any field inside grpc_gcp_AltsContext is invalid.
+// bool checkContext(const grpc_gcp_AltsContext* ctx) {
+//  if (ctx == nullptr) {
+//    gpr_log(GPR_ERROR, "grpc_gcp_AltsContext is nullptr.");
+//    return false;
+//  }
+//  upb_strview application_protocol =
+//      grpc_gcp_AltsContext_application_protocol(ctx);
+//  if (application_protocol.data == nullptr || application_protocol.size <= 0)
+//  {
+//    gpr_log(GPR_ERROR, "application_protocol is invalid.");
+//    return false;
+//  }
+//  upb_strview record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
+//  if (record_protocol.data == nullptr || record_protocol.size <= 0) {
+//    gpr_log(GPR_ERROR, "record_protocol is invalid.");
+//    return false;
+//  }
+//  upb_strview peer_service_account =
+//      grpc_gcp_AltsContext_peer_service_account(ctx);
+//  if (peer_service_account.data == nullptr || peer_service_account.size <= 0)
+//  {
+//    gpr_log(GPR_ERROR, "peer_service_account is invalid.");
+//    return false;
+//  }
+//  upb_strview local_service_account =
+//      grpc_gcp_AltsContext_local_service_account(ctx);
+//  if (local_service_account.data == nullptr || local_service_account.size <=
+//  0) {
+//    gpr_log(GPR_ERROR, "local_service_account is invalid.");
+//    return false;
+//  }
+//  if ((int)grpc_gcp_AltsContext_security_level(ctx) <
+//  grpc_security_level.GRPC_SECURITY_MIN ||
+//  (int)grpc_gcp_AltsContext_security_level(ctx) >
+//  grpc_security_level.GRPC_SECURITY_MAX) {
+//    gpr_log(GPR_ERROR, "security_level is invalid.");
+//    return false;
+//  }
+//  return true;
+//}
 
 }  // namespace grpc
