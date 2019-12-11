@@ -72,14 +72,14 @@ Libraries in different languages may be in various states of development. We are
 | Ruby                    | [src/ruby](src/ruby)                |
 | Python                  | [src/python](src/python)            |
 | PHP                     | [src/php](src/php)                  |
-| C#                      | [src/csharp](src/csharp)            |
+| C# (core library based) | [src/csharp](src/csharp)            |
 | Objective-C             | [src/objective-c](src/objective-c)  |
 
 | Language                | Source repo                                          |
 |-------------------------|------------------------------------------------------|
-| Java                    | [grpc-java](http://github.com/grpc/grpc-java)        |
-| Go                      | [grpc-go](http://github.com/grpc/grpc-go)            |
+| Java                    | [grpc-java](https://github.com/grpc/grpc-java)        |
+| Go                      | [grpc-go](https://github.com/grpc/grpc-go)            |
 | NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
 | WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)         |
 | Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
-
+| .NET (pure C# impl.)    | [grpc-dotnet](https://github.com/grpc/grpc-dotnet)   |

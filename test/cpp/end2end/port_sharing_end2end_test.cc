@@ -33,6 +33,7 @@
 #include <mutex>
 #include <thread>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -153,7 +154,7 @@ class TestTcpServer {
   }
 
  private:
-  void OnConnect(grpc_endpoint* tcp, grpc_pollset* accepting_pollset,
+  void OnConnect(grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
                  grpc_tcp_server_acceptor* acceptor) {
     char* peer = grpc_endpoint_get_peer(tcp);
     gpr_log(GPR_INFO, "Got incoming connection! from %s", peer);
@@ -310,6 +311,12 @@ static void SendRpc(EchoTestService::Stub* stub, int num_rpcs) {
 std::vector<TestScenario> CreateTestScenarios() {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
+
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  gpr_setenv("grpc_cfstream", "0");
+#endif
+
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   // Only allow insecure credentials type when it is registered with the
   // provider. User may create providers that do not have insecure.
@@ -352,8 +359,8 @@ TEST_P(PortSharingEnd2endTest, TwoHandoffPorts) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(PortSharingEnd2end, PortSharingEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(PortSharingEnd2end, PortSharingEnd2endTest,
+                         ::testing::ValuesIn(CreateTestScenarios()));
 
 }  // namespace
 }  // namespace testing

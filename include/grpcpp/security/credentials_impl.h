@@ -28,6 +28,7 @@
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments_impl.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
@@ -335,6 +336,10 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
 /// Builds Local Credentials.
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
+
+/// Builds TLS Credentials given TLS options.
+std::shared_ptr<ChannelCredentials> TlsCredentials(
+    const TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc_impl

@@ -51,7 +51,7 @@ long QpsGauge::Get() {
 }
 
 grpc::Status MetricsServiceImpl::GetAllGauges(
-    ServerContext* context, const EmptyMessage* request,
+    ServerContext* /*context*/, const EmptyMessage* /*request*/,
     ServerWriter<GaugeResponse>* writer) {
   gpr_log(GPR_DEBUG, "GetAllGauges called");
 
@@ -66,7 +66,7 @@ grpc::Status MetricsServiceImpl::GetAllGauges(
   return Status::OK;
 }
 
-grpc::Status MetricsServiceImpl::GetGauge(ServerContext* context,
+grpc::Status MetricsServiceImpl::GetGauge(ServerContext* /*context*/,
                                           const GaugeRequest* request,
                                           GaugeResponse* response) {
   std::lock_guard<std::mutex> lock(mu_);

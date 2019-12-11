@@ -15,6 +15,9 @@
 
 set -ex
 
+# NOTE(rbellevi): We ignore generated code.
+IGNORE_PATTERNS=--ignore-patterns='.*pb2\.py,.*pb2_grpc\.py'
+
 # change to root directory
 cd "$(dirname "$0")/../.."
 
@@ -41,17 +44,17 @@ $PYTHON -m pip install --upgrade pylint==2.2.2
 
 EXIT=0
 for dir in "${DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || EXIT=1
+  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
 done
 
 for dir in "${TEST_DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || EXIT=1
+  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
 done
 
 find examples/python \
   -iname "*.py" \
   -not -name "*_pb2.py" \
   -not -name "*_pb2_grpc.py" \
-  | xargs $PYTHON -m pylint --rcfile=.pylintrc-examples -rn
+  | xargs $PYTHON -m pylint --rcfile=.pylintrc-examples -rn ${IGNORE_PATTERNS}
 
 exit $EXIT

@@ -19,7 +19,7 @@ licenses(["notice"])  # 3-clause BSD
 package(default_visibility = ["//visibility:public"])
 
 load(
-    "//src/objective-c:grpc_objc_internal_library.bzl", 
+    "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_examples_library",
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
@@ -36,8 +36,8 @@ proto_library_objc_wrapper(
 proto_library_objc_wrapper(
     name = "test_proto",
     srcs = ["RemoteTestClient/test.proto"],
-    deps = [":messages_proto"],
     use_well_known_protos = True,
+    deps = [":messages_proto"],
 )
 
 # use objc_grpc_library in bazel:objc_grpc_library.bzl when developing outside the repo
@@ -72,14 +72,14 @@ grpc_objc_examples_library(
 ios_application(
     name = "Sample",
     bundle_id = "io.grpc.Sample",
-    minimum_os_version = "8.0",
-    infoplists = ["Sample/Sample/Info.plist"],
     families = [
         "iphone",
         "ipad",
     ],
-    deps = ["Sample-lib"],
+    infoplists = ["Sample/Sample/Info.plist"],
+    minimum_os_version = "8.0",
     visibility = ["//visibility:public"],
+    deps = ["Sample-lib"],
 )
 
 grpc_objc_examples_library(
@@ -95,12 +95,12 @@ grpc_objc_examples_library(
 ios_application(
     name = "InterceptorSample",
     bundle_id = "io.grpc.InterceptorSample",
-    minimum_os_version = "9.0", # Safe Area Layout Guide used
-    infoplists = ["InterceptorSample/InterceptorSample/Info.plist"],
     families = [
         "iphone",
         "ipad",
     ],
+    infoplists = ["InterceptorSample/InterceptorSample/Info.plist"],
+    minimum_os_version = "9.0",  # Safe Area Layout Guide used
     deps = ["InterceptorSample-lib"],
 )
 
@@ -118,8 +118,8 @@ grpc_objc_examples_library(
 tvos_application(
     name = "tvOS-sample",
     bundle_id = "io.grpc.tvOS-sample",
-    minimum_os_version = "10.0",
     infoplists = ["tvOS-sample/tvOS-sample/Info.plist"],
+    minimum_os_version = "10.0",
     deps = [":tvOS-sample-lib"],
 )
 
@@ -146,27 +146,27 @@ grpc_objc_examples_library(
 ios_application(
     name = "watchOS-sample",
     bundle_id = "io.grpc.watchOS-sample",
-    minimum_os_version = "9.0", # Safe Area Layout Guide used
     families = ["iphone"],
     infoplists = ["watchOS-sample/watchOS-sample/Info.plist"],
-    deps = [":watchOS-sample-iOS-lib"],
+    minimum_os_version = "9.0",  # Safe Area Layout Guide used
     watch_application = "watchOS-sample-watchApp",
+    deps = [":watchOS-sample-iOS-lib"],
 )
 
 # c-ares does not support watchOS CPU architecture with Bazel yet
 watchos_application(
     name = "watchOS-sample-watchApp",
     bundle_id = "io.grpc.watchOS-sample.watchkitapp",
+    extension = ":watchOS-sample-extension",
+    infoplists = ["watchOS-sample/WatchKit-App/Info.plist"],
     minimum_os_version = "4.0",
     storyboards = ["watchOS-sample/WatchKit-App/Base.lproj/Interface.storyboard"],
-    infoplists = ["watchOS-sample/WatchKit-App/Info.plist"],
-    extension = ":watchOS-sample-extension",
 )
 
 watchos_extension(
     name = "watchOS-sample-extension",
     bundle_id = "io.grpc.watchOS-sample.watchkitapp.watchkitextension",
-    minimum_os_version = "4.0",
     infoplists = ["watchOS-sample/WatchKit-Extension/Info.plist"],
+    minimum_os_version = "4.0",
     deps = [":watchOS-sample-extension-lib"],
 )

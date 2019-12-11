@@ -15,11 +15,14 @@
  * limitations under the License.
  *
  */
-#import "GRPCCall.h"
+
+#import "GRPCCallLegacy.h"
 
 #include <AvailabilityMacros.h>
 
-// Deprecated interface. Please use GRPCCallOptions instead.
+/**
+ * The interface is deprecated. Please use GRPCCallOptions instead for corresponding configurations.
+ */
 @interface GRPCCall (ChannelArg)
 
 + (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host;

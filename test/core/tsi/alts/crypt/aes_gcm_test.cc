@@ -2093,7 +2093,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_20);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   grpc_init();
   gsec_test_do_generic_crypter_tests();
   gsec_test_do_vector_tests_nist();

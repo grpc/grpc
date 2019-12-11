@@ -92,7 +92,7 @@ static void test_unauthenticated_ssl_peer(void) {
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
                  &peer.properties[0]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(!grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(check_transport_security_type(ctx.get()));
@@ -192,7 +192,7 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[2]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(
@@ -230,7 +230,7 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
                  &peer.properties[3]) == TSI_OK);
 
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(
@@ -271,7 +271,7 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
                    expected_sans[i], &peer.properties[3 + i]) == TSI_OK);
   }
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(check_identity(ctx.get(), GRPC_X509_SAN_PROPERTY_NAME,
@@ -317,7 +317,7 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
                    expected_sans[i], &peer.properties[5 + i]) == TSI_OK);
   }
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(check_identity(ctx.get(), GRPC_X509_SAN_PROPERTY_NAME,
@@ -343,7 +343,7 @@ static grpc_ssl_roots_override_result override_roots_success(
 }
 
 static grpc_ssl_roots_override_result override_roots_permanent_failure(
-    char** pem_root_certs) {
+    char** /*pem_root_certs*/) {
   return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
 }
 

@@ -87,7 +87,7 @@ static size_t base64_infer_length(const char* s) {
   EXPECT_SLICE_EQ(           \
       s, grpc_chttp2_base64_decode_with_length(base64_encode(s), strlen(s)));
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

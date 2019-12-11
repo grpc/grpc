@@ -62,8 +62,8 @@ TEST(InlinedVectorTest, ValuesAreInlined) {
 }
 
 TEST(InlinedVectorTest, PushBackWithMove) {
-  InlinedVector<UniquePtr<int>, 1> v;
-  UniquePtr<int> i = MakeUnique<int>(3);
+  InlinedVector<std::unique_ptr<int>, 1> v;
+  std::unique_ptr<int> i = MakeUnique<int>(3);
   v.push_back(std::move(i));
   EXPECT_EQ(nullptr, i.get());
   EXPECT_EQ(1UL, v.size());
@@ -71,8 +71,8 @@ TEST(InlinedVectorTest, PushBackWithMove) {
 }
 
 TEST(InlinedVectorTest, EmplaceBack) {
-  InlinedVector<UniquePtr<int>, 1> v;
-  v.emplace_back(New<int>(3));
+  InlinedVector<std::unique_ptr<int>, 1> v;
+  v.emplace_back(new int(3));
   EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
 }
@@ -125,6 +125,24 @@ TEST(InlinedVectorTest, EqualOperator) {
   // The contents of v1 and v2 are different although their sizes are the same.
   v2.push_back(1);
   EXPECT_FALSE(v1 == v2);
+}
+
+TEST(InlinedVectorTest, NotEqualOperator) {
+  constexpr int kNumElements = 10;
+  // Both v1 and v2 are empty.
+  InlinedVector<int, 5> v1;
+  InlinedVector<int, 5> v2;
+  EXPECT_FALSE(v1 != v2);
+  // Both v1 and v2 contains the same data.
+  FillVector(&v1, kNumElements);
+  FillVector(&v2, kNumElements);
+  EXPECT_FALSE(v1 != v2);
+  // The sizes of v1 and v2 are different.
+  v1.push_back(0);
+  EXPECT_TRUE(v1 != v2);
+  // The contents of v1 and v2 are different although their sizes are the same.
+  v2.push_back(1);
+  EXPECT_TRUE(v1 != v2);
 }
 
 // the following constants and typedefs are used for copy/move
@@ -310,12 +328,12 @@ class Value {
     return *this;
   }
 
-  const UniquePtr<int>& value() const { return value_; }
+  const std::unique_ptr<int>& value() const { return value_; }
   bool copied() const { return copied_; }
   bool moved() const { return moved_; }
 
  private:
-  UniquePtr<int> value_;
+  std::unique_ptr<int> value_;
   bool copied_ = false;
   bool moved_ = false;
 };
@@ -443,7 +461,7 @@ TEST(InlinedVectorTest, MoveAssignmentMovesElementsAllocated) {
 }
 
 TEST(InlinedVectorTest, PopBackInlined) {
-  InlinedVector<UniquePtr<int>, 2> v;
+  InlinedVector<std::unique_ptr<int>, 2> v;
   // Add two elements, pop one out
   v.push_back(MakeUnique<int>(3));
   EXPECT_EQ(1UL, v.size());
@@ -457,7 +475,7 @@ TEST(InlinedVectorTest, PopBackInlined) {
 
 TEST(InlinedVectorTest, PopBackAllocated) {
   const int kInlinedSize = 2;
-  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  InlinedVector<std::unique_ptr<int>, kInlinedSize> v;
   // Add elements to ensure allocated backing.
   for (size_t i = 0; i < kInlinedSize + 1; ++i) {
     v.push_back(MakeUnique<int>(3));
@@ -466,6 +484,19 @@ TEST(InlinedVectorTest, PopBackAllocated) {
   size_t sz = v.size();
   v.pop_back();
   EXPECT_EQ(sz - 1, v.size());
+}
+
+TEST(InlinedVectorTest, Resize) {
+  const int kInlinedSize = 2;
+  InlinedVector<std::unique_ptr<int>, kInlinedSize> v;
+  // Size up.
+  v.resize(5);
+  EXPECT_EQ(5UL, v.size());
+  EXPECT_EQ(nullptr, v[4]);
+  // Size down.
+  v[4] = MakeUnique<int>(5);
+  v.resize(1);
+  EXPECT_EQ(1UL, v.size());
 }
 
 }  // namespace testing

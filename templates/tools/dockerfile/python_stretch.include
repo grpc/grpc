@@ -7,5 +7,3 @@ FROM debian:stretch
 RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
 RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 <%include file="./run_tests_addons.include"/>
-# Define the default command.
-CMD ["bash"]

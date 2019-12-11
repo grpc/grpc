@@ -105,7 +105,7 @@ void server_thread(void* vargs) {
 }
 
 static void on_connect(void* vargs, grpc_endpoint* tcp,
-                       grpc_pollset* accepting_pollset,
+                       grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   struct server_thread_args* args =
@@ -160,7 +160,7 @@ void bad_server_thread(void* vargs) {
   gpr_free(args->addr);
 }
 
-static void done_pollset_shutdown(void* pollset, grpc_error* error) {
+static void done_pollset_shutdown(void* pollset, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }

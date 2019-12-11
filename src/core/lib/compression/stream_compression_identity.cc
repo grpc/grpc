@@ -47,12 +47,10 @@ static void grpc_stream_compression_pass_through(grpc_slice_buffer* in,
   }
 }
 
-static bool grpc_stream_compress_identity(grpc_stream_compression_context* ctx,
-                                          grpc_slice_buffer* in,
-                                          grpc_slice_buffer* out,
-                                          size_t* output_size,
-                                          size_t max_output_size,
-                                          grpc_stream_compression_flush flush) {
+static bool grpc_stream_compress_identity(
+    grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
+    grpc_slice_buffer* out, size_t* output_size, size_t max_output_size,
+    grpc_stream_compression_flush /*flush*/) {
   if (ctx == nullptr) {
     return false;
   }
@@ -84,7 +82,7 @@ grpc_stream_compression_context_create_identity(
 }
 
 static void grpc_stream_compression_context_destroy_identity(
-    grpc_stream_compression_context* ctx) {
+    grpc_stream_compression_context* /*ctx*/) {
   return;
 }
 

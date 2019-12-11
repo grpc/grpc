@@ -25,7 +25,6 @@
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -74,25 +73,24 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
     /// Returns a result to the channel.
     /// Takes ownership of \a result.args.
-    virtual void ReturnResult(Result result) GRPC_ABSTRACT;  // NOLINT
+    virtual void ReturnResult(Result result) = 0;  // NOLINT
 
     /// Returns a transient error to the channel.
     /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
     /// attribute on the error, calls will be failed with status UNKNOWN.
-    virtual void ReturnError(grpc_error* error) GRPC_ABSTRACT;
+    virtual void ReturnError(grpc_error* error) = 0;
 
     // TODO(yashkt): As part of the service config error handling
     // changes, add a method to parse the service config JSON string.
-
-    GRPC_ABSTRACT_BASE_CLASS
   };
 
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
   Resolver& operator=(const Resolver&) = delete;
+  virtual ~Resolver();
 
   /// Starts resolving.
-  virtual void StartLocked() GRPC_ABSTRACT;
+  virtual void StartLocked() = 0;
 
   /// Asks the resolver to obtain an updated resolver result, if
   /// applicable.
@@ -123,30 +121,24 @@ class Resolver : public InternallyRefCounted<Resolver> {
     Unref();
   }
 
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
   /// Does NOT take ownership of the reference to \a combiner.
   // TODO(roth): Once we have a C++-like interface for combiners, this
   // API should change to take a RefCountedPtr<>, so that we always take
   // ownership of a new ref.
-  explicit Resolver(grpc_combiner* combiner,
-                    UniquePtr<ResultHandler> result_handler);
-
-  virtual ~Resolver();
+  explicit Resolver(Combiner* combiner,
+                    std::unique_ptr<ResultHandler> result_handler);
 
   /// Shuts down the resolver.
-  virtual void ShutdownLocked() GRPC_ABSTRACT;
+  virtual void ShutdownLocked() = 0;
 
-  grpc_combiner* combiner() const { return combiner_; }
+  Combiner* combiner() const { return combiner_; }
 
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
-  UniquePtr<ResultHandler> result_handler_;
-  grpc_combiner* combiner_;
+  std::unique_ptr<ResultHandler> result_handler_;
+  Combiner* combiner_;
 };
 
 }  // namespace grpc_core

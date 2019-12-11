@@ -35,7 +35,7 @@
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
 
-    # warnings we'd like, but that dont exist in all compilers
+    # warnings we'd like, but that don't exist in all compilers
     PREFERRED_WARNINGS=['extra-semi']
     CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable', 'no-maybe-uninitialized', 'no-unknown-warning-option']
 
@@ -374,7 +374,7 @@
   Description: $(PC_DESCRIPTION),\
   Version: $(CORE_VERSION),\
   Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires.private: $(PC_REQUIRES_PRIVATE),\
+  Requires: $(PC_REQUIRES),\
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
@@ -387,7 +387,7 @@
   Description: $(PC_DESCRIPTION),\
   Version: $(CPP_VERSION),\
   Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires.private: $(PC_REQUIRES_PRIVATE),\
+  Requires: $(PC_REQUIRES),\
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
@@ -400,7 +400,7 @@
   Description: $(PC_DESCRIPTION),\
   Version: $(CSHARP_VERSION),\
   Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires.private: $(PC_REQUIRES_PRIVATE),\
+  Requires: $(PC_REQUIRES),\
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
@@ -613,6 +613,10 @@
   ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
   CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
+  UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
+  UPB_MERGE_OBJS = $(LIBUPB_OBJS)
+  UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
+
   ifeq ($(EMBED_CARES),true)
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
@@ -695,7 +699,7 @@
   PC_NAME = gpr
   PC_DESCRIPTION = gRPC platform support library
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GPR)
+  PC_REQUIRES = $(PC_REQUIRES_GPR)
   PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
   PC_LIB = -lgpr
   GPR_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -704,7 +708,7 @@
   PC_NAME = gRPC
   PC_DESCRIPTION = high performance general RPC framework
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+  PC_REQUIRES = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
   GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -713,7 +717,7 @@
   PC_NAME = gRPC unsecure
   PC_DESCRIPTION = high performance general RPC framework without SSL
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
+  PC_REQUIRES = gpr $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc_unsecure
   GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -781,7 +785,7 @@
   PC_NAME = gRPC++
   PC_DESCRIPTION = C++ wrapper for gRPC
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
+  PC_REQUIRES = grpc $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
   PC_LIB = -lgrpc++
   GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
@@ -790,7 +794,7 @@
   PC_NAME = gRPC++ unsecure
   PC_DESCRIPTION = C++ wrapper for gRPC without SSL
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
+  PC_REQUIRES = grpc_unsecure $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
   PC_LIB = -lgrpc++_unsecure
   GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
@@ -1527,7 +1531,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1545,10 +1549,11 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting']:
+  % if lib.name not in ['z', 'ares', 'address_sorting', 'upb']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
+  $(UPB_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
@@ -1560,6 +1565,7 @@
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
+   $(UPB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1574,6 +1580,7 @@
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
+   $(UPB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1596,9 +1603,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
@@ -1623,7 +1630,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:

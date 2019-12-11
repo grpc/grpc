@@ -66,7 +66,7 @@ def _args():
         '--old',
         default='old',
         type=str,
-        help='Name of baseline run to compare to. Ususally just called "old"')
+        help='Name of baseline run to compare to. Usually just called "old"')
     argp.add_argument(
         '-r',
         '--regex',
@@ -91,14 +91,14 @@ def _args():
         '--pr_comment_name',
         type=str,
         default="microbenchmarks",
-        help='Name that Jenkins will use to commen on the PR')
+        help='Name that Jenkins will use to comment on the PR')
     argp.add_argument('--counters', dest='counters', action='store_true')
     argp.add_argument('--no-counters', dest='counters', action='store_false')
     argp.set_defaults(counters=True)
     args = argp.parse_args()
     assert args.diff_base or args.old, "One of diff_base or old must be set!"
     if args.loops < 3:
-        print "WARNING: This run will likely be noisy. Increase loops."
+        print("WARNING: This run will likely be noisy. Increase loops.")
     return args
 
 
@@ -109,7 +109,7 @@ def eintr_be_gone(fn):
         while True:
             try:
                 return fn(*args)
-            except IOError, e:
+            except IOError as e:
                 if e.errno != errno.EINTR:
                     raise
 

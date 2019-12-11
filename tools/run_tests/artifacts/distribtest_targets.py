@@ -121,7 +121,7 @@ class CSharpDistribTest(object):
                 use_workspace=True)
         elif self.platform == 'windows':
             if self.arch == 'x64':
-                # Use double leading / as the first occurence gets removed by msys bash
+                # Use double leading / as the first occurrence gets removed by msys bash
                 # when invoking the .bat file (side-effect of posix path conversion)
                 environ = {
                     'MSBUILD_EXTRA_ARGS': '//p:Platform=x64',
@@ -255,7 +255,7 @@ class PHPDistribTest(object):
 
 
 class CppDistribTest(object):
-    """Tests Cpp make intall by building examples."""
+    """Tests Cpp make install by building examples."""
 
     def __init__(self, platform, arch, docker_suffix=None, testcase=None):
         if platform == 'linux':
@@ -301,53 +301,45 @@ def targets():
         CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_externalproject'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
+        CppDistribTest('linux', 'x64', 'jessie', 'cmake_pkgconfig'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
+        CSharpDistribTest('linux', 'x64', 'stretch'),
+        CSharpDistribTest('linux', 'x64', 'stretch', use_dotnet_cli=True),
         CSharpDistribTest('linux', 'x64', 'centos7'),
-        CSharpDistribTest('linux', 'x64', 'ubuntu1404'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
-        CSharpDistribTest('linux', 'x64', 'ubuntu1404', use_dotnet_cli=True),
+        CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
+        CSharpDistribTest('linux', 'x64', 'alpine', use_dotnet_cli=True),
         CSharpDistribTest('macos', 'x86'),
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
-        PythonDistribTest('linux', 'x64', 'wheezy'),
         PythonDistribTest('linux', 'x64', 'jessie'),
         PythonDistribTest('linux', 'x86', 'jessie'),
         PythonDistribTest('linux', 'x64', 'centos6'),
         PythonDistribTest('linux', 'x64', 'centos7'),
-        PythonDistribTest('linux', 'x64', 'fedora20'),
-        PythonDistribTest('linux', 'x64', 'fedora21'),
-        PythonDistribTest('linux', 'x64', 'fedora22'),
         PythonDistribTest('linux', 'x64', 'fedora23'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1204'),
         PythonDistribTest('linux', 'x64', 'ubuntu1404'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
         PythonDistribTest('linux', 'x64', 'jessie', source=True),
         PythonDistribTest('linux', 'x86', 'jessie', source=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
-        PythonDistribTest('linux', 'x64', 'fedora22', source=True),
         PythonDistribTest('linux', 'x64', 'fedora23', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1404', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
-        RubyDistribTest('linux', 'x64', 'wheezy'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_3'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
         RubyDistribTest('linux', 'x64', 'centos6'),
         RubyDistribTest('linux', 'x64', 'centos7'),
-        RubyDistribTest('linux', 'x64', 'fedora20'),
-        RubyDistribTest('linux', 'x64', 'fedora21'),
-        RubyDistribTest('linux', 'x64', 'fedora22'),
         RubyDistribTest('linux', 'x64', 'fedora23'),
         RubyDistribTest('linux', 'x64', 'opensuse'),
-        RubyDistribTest('linux', 'x64', 'ubuntu1204'),
         RubyDistribTest('linux', 'x64', 'ubuntu1404'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
         PHPDistribTest('linux', 'x64', 'jessie'),

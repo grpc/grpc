@@ -24,7 +24,17 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "src/core/lib/json/json_common.h"
+/* The various json types. */
+typedef enum {
+  GRPC_JSON_OBJECT,
+  GRPC_JSON_ARRAY,
+  GRPC_JSON_STRING,
+  GRPC_JSON_NUMBER,
+  GRPC_JSON_TRUE,
+  GRPC_JSON_FALSE,
+  GRPC_JSON_NULL,
+  GRPC_JSON_TOP_LEVEL
+} grpc_json_type;
 
 /* A tree-like structure to hold json values. The key and value pointers
  * are not owned by it.
@@ -67,7 +77,7 @@ grpc_json* grpc_json_parse_string(char* input);
  * If indent is 0, then newlines will be suppressed as well, and the
  * output will be condensed at its maximum.
  */
-char* grpc_json_dump_to_string(grpc_json* json, int indent);
+char* grpc_json_dump_to_string(const grpc_json* json, int indent);
 
 /* Use these to create or delete a grpc_json object.
  * Deletion is recursive. We will not attempt to free any of the strings

@@ -4,14 +4,14 @@ load("//bazel:python_rules.bzl", "py2and3_test")
 
 py2and3_test(
     name = "channelz_servicer_test",
-    srcs = ["_channelz_servicer_test.py"],
-    main = "_channelz_servicer_test.py",
     size = "small",
+    srcs = ["_channelz_servicer_test.py"],
+    imports = ["../../"],
+    main = "_channelz_servicer_test.py",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
         "//src/python/grpcio_tests/tests/unit:test_common",
-        "//src/python/grpcio_tests/tests/unit/framework/common:common",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
     ],
-    imports = ["../../",],
 )

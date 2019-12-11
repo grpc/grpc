@@ -36,6 +36,12 @@ template <class RequestType, class ResponseType>
 class CallbackUnaryHandler;
 template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class RpcMethodHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class ServerStreamingHandler;
+template <::grpc::StatusCode code>
+class ErrorMethodHandler;
 
 }  // namespace internal
 }  // namespace grpc_impl
@@ -51,30 +57,22 @@ class CallOpSendMessage;
 template <class R>
 class CallOpRecvMessage;
 class CallOpGenericRecvMessage;
-class MethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class RpcMethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler;
-template <StatusCode code>
-class ErrorMethodHandler;
 class ExternalConnectionAcceptorImpl;
 template <class R>
 class DeserializeFuncType;
 class GrpcByteBufferPeer;
-template <class ServiceType, class RequestType, class ResponseType>
-class RpcMethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler;
 
 }  // namespace internal
-/// A sequence of bytes.
+/// A sequence of bytes. A ByteBuffer must be backed by at least one slice to be
+/// considered valid. You can consstruct an empty buffer through creating a
+/// ByteBuffer backed by one empty slice.
 class ByteBuffer final {
  public:
-  /// Constuct an empty buffer.
+  /// Construct an uninitialized buffer.
   ByteBuffer() : buffer_(nullptr) {}
 
-  /// Construct buffer from \a slices, of which there are \a nslices.
+  /// Construct buffer from \a slices, of which there are \a nslices. \a slices
+  /// must be a valid pointer.
   ByteBuffer(const Slice* slices, size_t nslices) {
     // The following assertions check that the representation of a grpc::Slice
     // is identical to that of a grpc_slice:  it has a grpc_slice field, and
@@ -175,19 +173,15 @@ class ByteBuffer final {
   friend class internal::CallOpRecvMessage;
   friend class internal::CallOpGenericRecvMessage;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class RpcMethodHandler;
+  friend class ::grpc_impl::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ServerStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class internal::RpcMethodHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class internal::ServerStreamingHandler;
+  friend class ::grpc_impl::internal::ServerStreamingHandler;
   template <class RequestType, class ResponseType>
   friend class ::grpc_impl::internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
   friend class ::grpc_impl::internal::CallbackServerStreamingHandler;
   template <StatusCode code>
-  friend class internal::ErrorMethodHandler;
+  friend class ::grpc_impl::internal::ErrorMethodHandler;
   template <class R>
   friend class internal::DeserializeFuncType;
   friend class ProtoBufferReader;

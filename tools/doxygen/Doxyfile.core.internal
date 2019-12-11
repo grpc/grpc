@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 8.0.0
+PROJECT_NUMBER         = 9.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -793,6 +793,7 @@ doc/interop-test-descriptions.md \
 doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
+doc/security_audit.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
 doc/server_side_auth.md \
@@ -887,7 +888,6 @@ src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
-src/core/ext/filters/client_channel/connector.cc \
 src/core/ext/filters/client_channel/connector.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
@@ -912,14 +912,9 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
+src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
@@ -927,7 +922,6 @@ src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/parse_address.cc \
 src/core/ext/filters/client_channel/parse_address.h \
-src/core/ext/filters/client_channel/proxy_mapper.cc \
 src/core/ext/filters/client_channel/proxy_mapper.h \
 src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
 src/core/ext/filters/client_channel/proxy_mapper_registry.h \
@@ -973,6 +967,17 @@ src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
+src/core/ext/filters/client_channel/xds/xds_api.cc \
+src/core/ext/filters/client_channel/xds/xds_api.h \
+src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
+src/core/ext/filters/client_channel/xds/xds_bootstrap.h \
+src/core/ext/filters/client_channel/xds/xds_channel.h \
+src/core/ext/filters/client_channel/xds/xds_channel_args.h \
+src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
+src/core/ext/filters/client_channel/xds/xds_client.cc \
+src/core/ext/filters/client_channel/xds/xds_client.h \
+src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
+src/core/ext/filters/client_channel/xds/xds_client_stats.h \
 src/core/ext/filters/client_idle/client_idle_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
@@ -1097,6 +1102,8 @@ src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
 src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h \
 src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
 src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h \
+src/core/ext/upb-generated/envoy/type/http.upb.c \
+src/core/ext/upb-generated/envoy/type/http.upb.h \
 src/core/ext/upb-generated/envoy/type/percent.upb.c \
 src/core/ext/upb-generated/envoy/type/percent.upb.h \
 src/core/ext/upb-generated/envoy/type/range.upb.c \
@@ -1203,8 +1210,6 @@ src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
 src/core/lib/gpr/log_posix.cc \
 src/core/lib/gpr/log_windows.cc \
-src/core/lib/gpr/mpscq.cc \
-src/core/lib/gpr/mpscq.h \
 src/core/lib/gpr/murmur_hash.cc \
 src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
@@ -1234,7 +1239,6 @@ src/core/lib/gpr/tmpfile_windows.cc \
 src/core/lib/gpr/useful.h \
 src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/README.md \
-src/core/lib/gprpp/abstract.h \
 src/core/lib/gprpp/arena.cc \
 src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic.h \
@@ -1252,9 +1256,10 @@ src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
 src/core/lib/gprpp/memory.h \
+src/core/lib/gprpp/mpscq.cc \
+src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/optional.h \
 src/core/lib/gprpp/orphanable.h \
-src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/string_view.h \
@@ -1341,7 +1346,11 @@ src/core/lib/iomgr/load_file.cc \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
 src/core/lib/iomgr/lockfree_event.h \
+src/core/lib/iomgr/logical_thread.cc \
+src/core/lib/iomgr/logical_thread.h \
 src/core/lib/iomgr/nameser.h \
+src/core/lib/iomgr/poller/eventmanager_libuv.cc \
+src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
@@ -1434,12 +1443,8 @@ src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.cc \
 src/core/lib/json/json.h \
-src/core/lib/json/json_common.h \
 src/core/lib/json/json_reader.cc \
-src/core/lib/json/json_reader.h \
-src/core/lib/json/json_string.cc \
 src/core/lib/json/json_writer.cc \
-src/core/lib/json/json_writer.h \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \
@@ -1484,8 +1489,8 @@ src/core/lib/security/credentials/ssl/ssl_credentials.cc \
 src/core/lib/security/credentials/ssl/ssl_credentials.h \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
-src/core/lib/security/credentials/tls/spiffe_credentials.cc \
-src/core/lib/security/credentials/tls/spiffe_credentials.h \
+src/core/lib/security/credentials/tls/tls_credentials.cc \
+src/core/lib/security/credentials/tls/tls_credentials.h \
 src/core/lib/security/security_connector/alts/alts_security_connector.cc \
 src/core/lib/security/security_connector/alts/alts_security_connector.h \
 src/core/lib/security/security_connector/fake/fake_security_connector.cc \
@@ -1502,8 +1507,10 @@ src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
 src/core/lib/security/security_connector/ssl/ssl_security_connector.h \
 src/core/lib/security/security_connector/ssl_utils.cc \
 src/core/lib/security/security_connector/ssl_utils.h \
-src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
-src/core/lib/security/security_connector/tls/spiffe_security_connector.h \
+src/core/lib/security/security_connector/ssl_utils_config.cc \
+src/core/lib/security/security_connector/ssl_utils_config.h \
+src/core/lib/security/security_connector/tls/tls_security_connector.cc \
+src/core/lib/security/security_connector/tls/tls_security_connector.h \
 src/core/lib/security/transport/auth_filters.h \
 src/core/lib/security/transport/client_auth_filter.cc \
 src/core/lib/security/transport/secure_endpoint.cc \
@@ -1650,21 +1657,7 @@ src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
-src/core/tsi/transport_security_interface.h \
-third_party/upb/upb/decode.c \
-third_party/upb/upb/decode.h \
-third_party/upb/upb/encode.c \
-third_party/upb/upb/encode.h \
-third_party/upb/upb/generated_util.h \
-third_party/upb/upb/msg.c \
-third_party/upb/upb/msg.h \
-third_party/upb/upb/port.c \
-third_party/upb/upb/port_def.inc \
-third_party/upb/upb/port_undef.inc \
-third_party/upb/upb/table.c \
-third_party/upb/upb/table.int.h \
-third_party/upb/upb/upb.c \
-third_party/upb/upb/upb.h
+src/core/tsi/transport_security_interface.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

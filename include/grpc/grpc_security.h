@@ -698,7 +698,7 @@ GRPCAPI grpc_channel_credentials* grpc_local_credentials_create(
 GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
     grpc_local_connect_type type);
 
-/** --- SPIFFE and HTTPS-based TLS channel/server credentials ---
+/** --- TLS channel/server credentials ---
  * It is used for experimental purpose for now and subject to change. */
 
 /** Config for TLS key materials. It is used for
@@ -805,20 +805,32 @@ typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
 typedef void (*grpc_tls_on_credential_reload_done_cb)(
     grpc_tls_credential_reload_arg* arg);
 
-/** A struct containing all information necessary to schedule/cancel
-    a credential reload request. cb and cb_user_data represent a gRPC-provided
-    callback and an argument passed to it. key_materials is an in/output
-    parameter containing currently used/newly reloaded credentials. If
-    credential reload does not result in a new credential, key_materials should
-    not be modified. status and error_details are used to hold information about
-    errors occurred when a credential reload request is scheduled/cancelled. It
-    is used for experimental purpose for now and subject to change. */
+/** A struct containing all information necessary to schedule/cancel a
+    credential reload request.
+    - cb and cb_user_data represent a gRPC-provided
+      callback and an argument passed to it.
+    - key_materials_config is an in/output parameter containing currently
+      used/newly reloaded credentials. If credential reload does not result
+      in a new credential, key_materials_config should not be modified.
+    - status and error_details are used to hold information about
+      errors occurred when a credential reload request is scheduled/cancelled.
+    - config is a pointer to the unique grpc_tls_credential_reload_config
+      instance that this argument corresponds to.
+    - context is a pointer to a wrapped language implementation of this
+      grpc_tls_credential_reload_arg instance.
+    - destroy_context is a pointer to a caller-provided method that cleans
+      up any data associated with the context pointer.
+    It is used for experimental purposes for now and subject to change.
+*/
 struct grpc_tls_credential_reload_arg {
   grpc_tls_on_credential_reload_done_cb cb;
   void* cb_user_data;
   grpc_tls_key_materials_config* key_materials_config;
   grpc_ssl_certificate_config_reload_status status;
   const char* error_details;
+  grpc_tls_credential_reload_config* config;
+  void* context;
+  void (*destroy_context)(void* ctx);
 };
 
 /** Create a grpc_tls_credential_reload_config instance.
@@ -863,16 +875,27 @@ typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
     grpc_tls_server_authorization_check_arg* arg);
 
 /** A struct containing all information necessary to schedule/cancel a server
-   authorization check request. cb and cb_user_data represent a gRPC-provided
-   callback and an argument passed to it. success will store the result of
-   server authorization check. That is, if success returns a non-zero value, it
-   means the authorization check passes and if returning zero, it means the
-   check fails. target_name is the name of an endpoint the channel is connecting
-   to and certificate represents a complete certificate chain including both
-   signing and leaf certificates. status and error_details contain information
-   about errors occurred when a server authorization check request is
-   scheduled/cancelled. It is used for experimental purpose for now and subject
-   to change.*/
+    authorization check request.
+    - cb and cb_user_data represent a gRPC-provided callback and an argument
+      passed to it.
+    - success will store the result of server authorization check. That is,
+      if success returns a non-zero value, it means the authorization check
+      passes and if returning zero, it means the check fails.
+   - target_name is the name of an endpoint the channel is connecting to.
+   - peer_cert represents a complete certificate chain including both
+     signing and leaf certificates.
+   - status and error_details contain information
+     about errors occurred when a server authorization check request is
+     scheduled/cancelled.
+   - config is a pointer to the unique
+     grpc_tls_server_authorization_check_config instance that this argument
+     corresponds to.
+   - context is a pointer to a wrapped language implementation of this
+     grpc_tls_server_authorization_check_arg instance.
+   - destroy_context is a pointer to a caller-provided method that cleans
+      up any data associated with the context pointer.
+   It is used for experimental purpose for now and subject to change.
+*/
 struct grpc_tls_server_authorization_check_arg {
   grpc_tls_on_server_authorization_check_done_cb cb;
   void* cb_user_data;
@@ -881,6 +904,9 @@ struct grpc_tls_server_authorization_check_arg {
   const char* peer_cert;
   grpc_status_code status;
   const char* error_details;
+  grpc_tls_server_authorization_check_config* config;
+  void* context;
+  void (*destroy_context)(void* ctx);
 };
 
 /** Create a grpc_tls_server_authorization_check_config instance.
@@ -912,10 +938,8 @@ grpc_tls_server_authorization_check_config_create(
                    grpc_tls_server_authorization_check_arg* arg),
     void (*destruct)(void* config_user_data));
 
-/** --- SPIFFE channel/server credentials --- **/
-
 /**
- * This method creates a TLS SPIFFE channel credential object.
+ * This method creates a TLS channel credential object.
  * It takes ownership of the options parameter.
  *
  * - options: grpc TLS credentials options instance.
@@ -926,7 +950,7 @@ grpc_tls_server_authorization_check_config_create(
  * to change.
  */
 
-grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
+grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options);
 
 /**
@@ -940,7 +964,7 @@ grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
  * It is used for experimental purpose for now and subject
  * to change.
  */
-grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
+grpc_server_credentials* grpc_tls_server_credentials_create(
     grpc_tls_credentials_options* options);
 
 #ifdef __cplusplus

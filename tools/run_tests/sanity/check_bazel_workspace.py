@@ -64,6 +64,7 @@ _GRPC_DEP_NAMES = [
     _TWISTED_CONSTANTLY_DEP_NAME,
     'io_bazel_rules_go',
     'build_bazel_rules_apple',
+    'build_bazel_apple_support',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -79,6 +80,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     _TWISTED_CONSTANTLY_DEP_NAME,
     'io_bazel_rules_go',
     'build_bazel_rules_apple',
+    'build_bazel_apple_support',
 ]
 
 

@@ -81,7 +81,7 @@ ChannelTrace::~ChannelTrace() {
   while (it != nullptr) {
     TraceEvent* to_free = it;
     it = it->next();
-    Delete<TraceEvent>(to_free);
+    delete to_free;
   }
   gpr_mu_destroy(&tracer_mu_);
 }
@@ -103,7 +103,7 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
     TraceEvent* to_free = head_trace_;
     event_list_memory_usage_ -= to_free->memory_usage();
     head_trace_ = head_trace_->next();
-    Delete<TraceEvent>(to_free);
+    delete to_free;
   }
 }
 
@@ -112,7 +112,7 @@ void ChannelTrace::AddTraceEvent(Severity severity, const grpc_slice& data) {
     grpc_slice_unref_internal(data);
     return;  // tracing is disabled if max_event_memory_ == 0
   }
-  AddTraceEventHelper(New<TraceEvent>(severity, data));
+  AddTraceEventHelper(new TraceEvent(severity, data));
 }
 
 void ChannelTrace::AddTraceEventWithReference(
@@ -124,7 +124,7 @@ void ChannelTrace::AddTraceEventWithReference(
   }
   // create and fill up the new event
   AddTraceEventHelper(
-      New<TraceEvent>(severity, data, std::move(referenced_entity)));
+      new TraceEvent(severity, data, std::move(referenced_entity)));
 }
 
 namespace {

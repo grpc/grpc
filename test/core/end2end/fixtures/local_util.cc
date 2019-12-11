@@ -36,7 +36,7 @@
 grpc_end2end_test_fixture grpc_end2end_local_chttp2_create_fixture_fullstack() {
   grpc_end2end_test_fixture f;
   grpc_end2end_local_fullstack_fixture_data* ffd =
-      grpc_core::New<grpc_end2end_local_fullstack_fixture_data>();
+      new grpc_end2end_local_fullstack_fixture_data();
   memset(&f, 0, sizeof(f));
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
@@ -73,8 +73,9 @@ static bool fail_server_auth_check(grpc_channel_args* server_args) {
   return false;
 }
 
-static void process_auth_failure(void* state, grpc_auth_context* ctx,
-                                 const grpc_metadata* md, size_t md_count,
+static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
+                                 const grpc_metadata* /*md*/,
+                                 size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
   GPR_ASSERT(state == nullptr);
@@ -107,5 +108,5 @@ void grpc_end2end_local_chttp2_tear_down_fullstack(
     grpc_end2end_test_fixture* f) {
   grpc_end2end_local_fullstack_fixture_data* ffd =
       static_cast<grpc_end2end_local_fullstack_fixture_data*>(f->fixture_data);
-  grpc_core::Delete(ffd);
+  delete ffd;
 }

@@ -25,6 +25,7 @@ struct envoy_api_v2_core_Node;
 struct envoy_api_v2_core_Metadata;
 struct envoy_api_v2_core_Metadata_FilterMetadataEntry;
 struct envoy_api_v2_core_RuntimeUInt32;
+struct envoy_api_v2_core_RuntimeFeatureFlag;
 struct envoy_api_v2_core_HeaderValue;
 struct envoy_api_v2_core_HeaderValueOption;
 struct envoy_api_v2_core_HeaderMap;
@@ -40,6 +41,7 @@ typedef struct envoy_api_v2_core_Node envoy_api_v2_core_Node;
 typedef struct envoy_api_v2_core_Metadata envoy_api_v2_core_Metadata;
 typedef struct envoy_api_v2_core_Metadata_FilterMetadataEntry envoy_api_v2_core_Metadata_FilterMetadataEntry;
 typedef struct envoy_api_v2_core_RuntimeUInt32 envoy_api_v2_core_RuntimeUInt32;
+typedef struct envoy_api_v2_core_RuntimeFeatureFlag envoy_api_v2_core_RuntimeFeatureFlag;
 typedef struct envoy_api_v2_core_HeaderValue envoy_api_v2_core_HeaderValue;
 typedef struct envoy_api_v2_core_HeaderValueOption envoy_api_v2_core_HeaderValueOption;
 typedef struct envoy_api_v2_core_HeaderMap envoy_api_v2_core_HeaderMap;
@@ -55,6 +57,7 @@ extern const upb_msglayout envoy_api_v2_core_Node_msginit;
 extern const upb_msglayout envoy_api_v2_core_Metadata_msginit;
 extern const upb_msglayout envoy_api_v2_core_Metadata_FilterMetadataEntry_msginit;
 extern const upb_msglayout envoy_api_v2_core_RuntimeUInt32_msginit;
+extern const upb_msglayout envoy_api_v2_core_RuntimeFeatureFlag_msginit;
 extern const upb_msglayout envoy_api_v2_core_HeaderValue_msginit;
 extern const upb_msglayout envoy_api_v2_core_HeaderValueOption_msginit;
 extern const upb_msglayout envoy_api_v2_core_HeaderMap_msginit;
@@ -274,6 +277,39 @@ UPB_INLINE void envoy_api_v2_core_RuntimeUInt32_set_default_value(envoy_api_v2_c
 }
 UPB_INLINE void envoy_api_v2_core_RuntimeUInt32_set_runtime_key(envoy_api_v2_core_RuntimeUInt32 *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
+}
+
+/* envoy.api.v2.core.RuntimeFeatureFlag */
+
+UPB_INLINE envoy_api_v2_core_RuntimeFeatureFlag *envoy_api_v2_core_RuntimeFeatureFlag_new(upb_arena *arena) {
+  return (envoy_api_v2_core_RuntimeFeatureFlag *)upb_msg_new(&envoy_api_v2_core_RuntimeFeatureFlag_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_core_RuntimeFeatureFlag *envoy_api_v2_core_RuntimeFeatureFlag_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_api_v2_core_RuntimeFeatureFlag *ret = envoy_api_v2_core_RuntimeFeatureFlag_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_RuntimeFeatureFlag_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_core_RuntimeFeatureFlag_serialize(const envoy_api_v2_core_RuntimeFeatureFlag *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_core_RuntimeFeatureFlag_msginit, arena, len);
+}
+
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_core_RuntimeFeatureFlag_default_value(const envoy_api_v2_core_RuntimeFeatureFlag *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(8, 16)); }
+UPB_INLINE upb_strview envoy_api_v2_core_RuntimeFeatureFlag_runtime_key(const envoy_api_v2_core_RuntimeFeatureFlag *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+
+UPB_INLINE void envoy_api_v2_core_RuntimeFeatureFlag_set_default_value(envoy_api_v2_core_RuntimeFeatureFlag *msg, struct google_protobuf_BoolValue* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_BoolValue*, UPB_SIZE(8, 16)) = value;
+}
+UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_core_RuntimeFeatureFlag_mutable_default_value(envoy_api_v2_core_RuntimeFeatureFlag *msg, upb_arena *arena) {
+  struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_core_RuntimeFeatureFlag_default_value(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_BoolValue*)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_RuntimeFeatureFlag_set_default_value(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_core_RuntimeFeatureFlag_set_runtime_key(envoy_api_v2_core_RuntimeFeatureFlag *msg, upb_strview value) {
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
 }
 
 /* envoy.api.v2.core.HeaderValue */

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import grpc
 
 
@@ -59,7 +60,7 @@ def _stream_response(argument, implementation, rpc, servicer_context):
     else:
         while True:
             try:
-                response = next(response_iterator)
+                response = copy.deepcopy(next(response_iterator))
             except StopIteration:
                 rpc.stream_response_complete()
                 break

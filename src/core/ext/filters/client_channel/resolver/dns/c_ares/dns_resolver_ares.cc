@@ -76,6 +76,8 @@ class AresDnsResolver : public Resolver {
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
 
+  static void OnNextResolution(void* arg, grpc_error* error);
+  static void OnResolved(void* arg, grpc_error* error);
   static void OnNextResolutionLocked(void* arg, grpc_error* error);
   static void OnResolvedLocked(void* arg, grpc_error* error);
 
@@ -106,7 +108,7 @@ class AresDnsResolver : public Resolver {
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
-  UniquePtr<ServerAddressList> addresses_;
+  std::unique_ptr<ServerAddressList> addresses_;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
   // has shutdown been initiated
@@ -152,10 +154,7 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   if (args.pollset_set != nullptr) {
     grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
   }
-  GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolutionLocked, this,
-                    grpc_combiner_scheduler(combiner()));
-  GRPC_CLOSURE_INIT(&on_resolved_, OnResolvedLocked, this,
-                    grpc_combiner_scheduler(combiner()));
+
   const grpc_arg* query_timeout_ms_arg =
       grpc_channel_args_find(channel_args_, GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
   query_timeout_ms_ = grpc_channel_arg_get_integer(
@@ -198,6 +197,13 @@ void AresDnsResolver::ShutdownLocked() {
   if (pending_request_ != nullptr) {
     grpc_cancel_ares_request_locked(pending_request_);
   }
+}
+
+void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
+  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  r->combiner()->Run(GRPC_CLOSURE_INIT(&r->on_next_resolution_,
+                                       OnNextResolutionLocked, r, nullptr),
+                     GRPC_ERROR_REF(error));
 }
 
 void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
@@ -317,6 +323,13 @@ char* ChooseServiceConfig(char* service_config_choice_json,
   return service_config;
 }
 
+void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
+  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  r->combiner()->Run(
+      GRPC_CLOSURE_INIT(&r->on_resolved_, OnResolvedLocked, r, nullptr),
+      GRPC_ERROR_REF(error));
+}
+
 void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GPR_ASSERT(r->resolving_);
@@ -373,6 +386,8 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     } else {
       GRPC_CARES_TRACE_LOG("resolver:%p retrying immediately", r);
     }
+    GRPC_CLOSURE_INIT(&r->on_next_resolution_, OnNextResolution, r,
+                      grpc_schedule_on_exec_ctx);
     grpc_timer_init(&r->next_resolution_timer_, next_try,
                     &r->on_next_resolution_);
   }
@@ -400,6 +415,8 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       // new closure API is done, find a way to track this ref with the timer
       // callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
+      GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
+                        grpc_schedule_on_exec_ctx);
       grpc_timer_init(&next_resolution_timer_,
                       ExecCtx::Get()->Now() + ms_until_next_resolution,
                       &on_next_resolution_);
@@ -417,6 +434,7 @@ void AresDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   service_config_json_ = nullptr;
+  GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
   pending_request_ = grpc_dns_lookup_ares_locked(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
       &on_resolved_, &addresses_, enable_srv_queries_ /* check_grpclb */,
@@ -433,10 +451,10 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* uri) const override { return true; }
+  bool IsValidUri(const grpc_uri* /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    return OrphanablePtr<Resolver>(New<AresDnsResolver>(std::move(args)));
+    return MakeOrphanable<AresDnsResolver>(std::move(args));
   }
 
   const char* scheme() const override { return "dns"; }
@@ -495,8 +513,7 @@ void grpc_resolver_dns_ares_init() {
     }
     grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-            grpc_core::New<grpc_core::AresDnsResolverFactory>()));
+        grpc_core::MakeUnique<grpc_core::AresDnsResolverFactory>());
   } else {
     g_use_ares_dns_resolver = false;
   }

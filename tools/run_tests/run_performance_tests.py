@@ -135,7 +135,7 @@ def create_scenario_jobspec(scenario_json,
 
     return jobset.JobSpec(
         cmdline=[cmd],
-        shortname='qps_json_driver.%s' % scenario_json['name'],
+        shortname='%s' % scenario_json['name'],
         timeout_seconds=_SCENARIO_TIMEOUT,
         shell=True,
         verbose_success=True)
@@ -153,7 +153,7 @@ def create_quit_jobspec(workers, remote_host=None):
 
     return jobset.JobSpec(
         cmdline=[cmd],
-        shortname='qps_json_driver.quit',
+        shortname='shutdown_workers',
         timeout_seconds=_QUIT_WORKER_TIMEOUT,
         shell=True,
         verbose_success=True)
@@ -193,13 +193,7 @@ def create_netperf_jobspec(server_host='localhost',
 
 def archive_repo(languages):
     """Archives local version of repo including submodules."""
-    # Directory contains symlinks that can't be correctly untarred on Windows
-    # so we just skip them as a workaround.
-    # See https://github.com/grpc/grpc/issues/16334
-    bad_symlinks_dir = '../grpc/third_party/libcxx/test/std/experimental/filesystem/Inputs/static_test_env'
-    cmdline = [
-        'tar', '--exclude', bad_symlinks_dir, '-cf', '../grpc.tar', '../grpc/'
-    ]
+    cmdline = ['tar', '-cf', '../grpc.tar', '../grpc/']
     if 'java' in languages:
         cmdline.append('../grpc-java')
     if 'go' in languages:
@@ -670,6 +664,8 @@ def main():
                     worker.start()
                 jobs = [scenario.jobspec]
                 if scenario.workers:
+                    # TODO(jtattermusch): ideally the "quit" job won't show up
+                    # in the report
                     jobs.append(
                         create_quit_jobspec(
                             scenario.workers,
@@ -707,7 +703,10 @@ def main():
             '%s/index.html' % args.flame_graph_reports, profile_output_files)
 
     report_utils.render_junit_xml_report(
-        merged_resultset, args.xml_report, suite_name='benchmarks')
+        merged_resultset,
+        args.xml_report,
+        suite_name='benchmarks',
+        multi_target=True)
 
     if total_scenario_failures > 0 or qps_workers_killed > 0:
         print('%s scenarios failed and %s qps worker jobs killed' %

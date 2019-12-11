@@ -28,31 +28,25 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-grpc_closure transport_op_cb;
+class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
+ public:
+  void Notify(grpc_connectivity_state new_state) override {
+    GPR_ASSERT(new_state == GRPC_CHANNEL_SHUTDOWN);
+  }
+};
 
 static void* tag(intptr_t x) { return (void*)x; }
 
-void verify_connectivity(void* arg, grpc_error* error) {
-  grpc_connectivity_state* state = static_cast<grpc_connectivity_state*>(arg);
-  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *state);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-}
+static grpc_closure transport_op_cb;
 
-void do_nothing(void* arg, grpc_error* error) {}
+static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void test_transport_op(grpc_channel* channel) {
-  grpc_transport_op* op;
-  grpc_channel_element* elem;
-  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_core::ExecCtx exec_ctx;
-
-  GRPC_CLOSURE_INIT(&transport_op_cb, verify_connectivity, &state,
-                    grpc_schedule_on_exec_ctx);
-
-  op = grpc_make_transport_op(nullptr);
-  op->on_connectivity_state_change = &transport_op_cb;
-  op->connectivity_state = &state;
-  elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
+  grpc_transport_op* op = grpc_make_transport_op(nullptr);
+  op->start_connectivity_watch = grpc_core::MakeOrphanable<Watcher>();
+  grpc_channel_element* elem =
+      grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(elem, op);
 
   GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, nullptr,

@@ -50,6 +50,9 @@ static void assert_valid_list(grpc_mdelem_list* list) {
     verified_count++;
   }
   GPR_ASSERT(list->count == verified_count);
+#else
+  // Avoid unused-parameter warning for debug-only parameter
+  (void)list;
 #endif /* NDEBUG */
 }
 
@@ -64,6 +67,9 @@ static void assert_valid_callouts(grpc_metadata_batch* batch) {
     }
     grpc_slice_unref_internal(key_interned);
   }
+#else
+  // Avoid unused-parameter warning for debug-only parameter
+  (void)batch;
 #endif
 }
 

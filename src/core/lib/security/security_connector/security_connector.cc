@@ -53,6 +53,7 @@ grpc_channel_security_connector::grpc_channel_security_connector(
     : grpc_security_connector(url_scheme),
       channel_creds_(std::move(channel_creds)),
       request_metadata_creds_(std::move(request_metadata_creds)) {}
+
 grpc_channel_security_connector::~grpc_channel_security_connector() {}
 
 int grpc_security_connector_cmp(const grpc_security_connector* sc,

@@ -44,6 +44,10 @@ class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T, Size>> {
     return MakeRefCounted<SliceWeakHashTable<T, Size>>();
   }
 
+  /// Use Create function instead of using this directly.
+  SliceWeakHashTable() = default;
+  ~SliceWeakHashTable() = default;
+
   /// Add a mapping from \a key to \a value, taking ownership of \a key. This
   /// operation will always succeed. It may discard older entries.
   void Add(const grpc_slice& key, T value) {
@@ -61,12 +65,6 @@ class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T, Size>> {
   }
 
  private:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
-  SliceWeakHashTable() = default;
-  ~SliceWeakHashTable() = default;
-
   /// The type of the table "rows".
   class Entry {
    public:

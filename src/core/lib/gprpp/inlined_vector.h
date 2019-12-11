@@ -26,7 +26,18 @@
 
 #include "src/core/lib/gprpp/memory.h"
 
+#if GRPC_USE_ABSL
+#include "absl/container/inlined_vector.h"
+#endif
+
 namespace grpc_core {
+
+#if GRPC_USE_ABSL
+
+template <typename T, size_t N, typename A = std::allocator<T>>
+using InlinedVector = absl::InlinedVector<T, N, A>;
+
+#else
 
 // NOTE: We eventually want to use absl::InlinedVector here.  However,
 // there are currently build problems that prevent us from using absl.
@@ -107,6 +118,10 @@ class InlinedVector {
     return true;
   }
 
+  bool operator!=(const InlinedVector& other) const {
+    return !(*this == other);
+  }
+
   void reserve(size_t capacity) {
     if (capacity > capacity_) {
       T* new_dynamic =
@@ -119,6 +134,11 @@ class InlinedVector {
       dynamic_ = new_dynamic;
       capacity_ = capacity;
     }
+  }
+
+  void resize(size_t new_size) {
+    while (new_size > size_) emplace_back();
+    while (new_size < size_) pop_back();
   }
 
   template <typename... Args>
@@ -218,6 +238,8 @@ class InlinedVector {
   size_t size_;
   size_t capacity_;
 };
+
+#endif
 
 }  // namespace grpc_core
 

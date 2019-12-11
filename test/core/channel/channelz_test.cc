@@ -459,10 +459,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   const intptr_t kLoopIterations = 50;
   grpc_core::ExecCtx exec_ctx;
-  std::vector<UniquePtr<ChannelFixture>> even_channels;
+  std::vector<std::unique_ptr<ChannelFixture>> even_channels;
   {
     // these will delete and unregister themselves after this block.
-    std::vector<UniquePtr<ChannelFixture>> odd_channels;
+    std::vector<std::unique_ptr<ChannelFixture>> odd_channels;
     for (int i = 0; i < kLoopIterations; i++) {
       odd_channels.push_back(MakeUnique<ChannelFixture>());
       even_channels.push_back(MakeUnique<ChannelFixture>());
@@ -533,8 +533,8 @@ TEST_F(ChannelzRegistryBasedTest, ManyServersTest) {
   ValidateGetServers(10);
 }
 
-INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
-                        ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
+INSTANTIATE_TEST_SUITE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
+                         ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
 
 }  // namespace testing
 }  // namespace channelz

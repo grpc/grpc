@@ -2,7 +2,7 @@
 --- |
   {
     "name": "grpc/grpc-dev",
-    "description": "gRPC library for PHP - for Developement use only",
+    "description": "gRPC library for PHP - for Development use only",
     "license": "Apache-2.0",
     "version": "${settings.php_version.php_composer()}",
     "require": {

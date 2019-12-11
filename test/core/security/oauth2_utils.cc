@@ -63,7 +63,7 @@ static void on_oauth2_response(void* arg, grpc_error* error) {
   gpr_mu_unlock(request->mu);
 }
 
-static void destroy_after_shutdown(void* pollset, grpc_error* error) {
+static void destroy_after_shutdown(void* pollset, grpc_error* /*error*/) {
   grpc_pollset_destroy(reinterpret_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }

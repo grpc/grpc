@@ -11,7 +11,6 @@
 #include "envoy/api/v2/cluster/circuit_breaker.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "gogoproto/gogo.upb.h"
 
 #include "upb/port_def.inc"
 

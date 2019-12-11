@@ -36,14 +36,12 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a
     // given watcher instance at any given time.
-    virtual void OnConnectivityStateChange(grpc_connectivity_state new_state)
-        GRPC_ABSTRACT;
+    virtual void OnConnectivityStateChange(
+        grpc_connectivity_state new_state) = 0;
 
     // TODO(roth): Remove this as soon as we move to EventManager-based
     // polling.
-    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual grpc_pollset_set* interested_parties() = 0;
   };
 
   template <typename TraceFlagT = TraceFlag>
@@ -53,7 +51,7 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   virtual ~SubchannelInterface() = default;
 
   // Returns the current connectivity state of the subchannel.
-  virtual grpc_connectivity_state CheckConnectivityState() GRPC_ABSTRACT;
+  virtual grpc_connectivity_state CheckConnectivityState() = 0;
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered when the
@@ -68,29 +66,27 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // the previous watcher using CancelConnectivityStateWatch().
   virtual void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      UniquePtr<ConnectivityStateWatcherInterface> watcher) GRPC_ABSTRACT;
+      std::unique_ptr<ConnectivityStateWatcherInterface> watcher) = 0;
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
   virtual void CancelConnectivityStateWatch(
-      ConnectivityStateWatcherInterface* watcher) GRPC_ABSTRACT;
+      ConnectivityStateWatcherInterface* watcher) = 0;
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   // If the subchannel is currently in backoff delay due to a previously
   // failed attempt, the new connection attempt will not start until the
   // backoff delay has elapsed.
-  virtual void AttemptToConnect() GRPC_ABSTRACT;
+  virtual void AttemptToConnect() = 0;
 
   // Resets the subchannel's connection backoff state.  If AttemptToConnect()
   // has been called since the subchannel entered TRANSIENT_FAILURE state,
   // starts a new connection attempt immediately; otherwise, a new connection
   // attempt will be started as soon as AttemptToConnect() is called.
-  virtual void ResetBackoff() GRPC_ABSTRACT;
+  virtual void ResetBackoff() = 0;
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
-  virtual const grpc_channel_args* channel_args() GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual const grpc_channel_args* channel_args() = 0;
 };
 
 }  // namespace grpc_core

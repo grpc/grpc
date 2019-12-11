@@ -110,6 +110,8 @@ class PythonArtifact:
         self.arch = arch
         self.labels = ['artifact', 'python', platform, arch, py_version]
         self.py_version = py_version
+        if 'manylinux' in platform:
+            self.labels.append('linux')
 
     def pre_build_jobspecs(self):
         return []
@@ -135,7 +137,7 @@ class PythonArtifact:
                 timeout_seconds=60 * 60 * 5,
                 docker_base_image='quay.io/grpc/raspbian_{}'.format(self.arch),
                 extra_docker_args=extra_args)
-        elif self.platform == 'linux':
+        elif 'manylinux' in self.platform:
             if self.arch == 'x86':
                 environ['SETARCH_CMD'] = 'linux32'
             # Inside the manylinux container, the python installations are located in
@@ -150,17 +152,25 @@ class PythonArtifact:
             environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
             environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
+
+            if self.platform == 'manylinux1':
+                # manylinux1 currently has too old version of gcc
+                # so we need to use this workaround to avoid
+                # the "SSE2 instruction set not enabled" boringssl build error
+                # https://gcc.gnu.org/ml/gcc-patches/2013-04/msg00740.html
+                environ['CFLAGS'] += ' -msse2'
+
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/grpc_artifact_python_manylinux_%s' %
-                self.arch,
+                'tools/dockerfile/grpc_artifact_python_%s_%s' % (self.platform,
+                                                                 self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
                 timeout_seconds=60 * 60,
                 docker_base_image='quay.io/pypa/manylinux1_i686'
                 if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
         elif self.platform == 'windows':
-            if 'Python27' in self.py_version or 'Python34' in self.py_version:
+            if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
             else:
                 environ['EXT_COMPILER'] = 'msvc'
@@ -360,41 +370,53 @@ def targets():
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
         CSharpExtArtifact('linux', 'android', arch_abi='x86'),
         CSharpExtArtifact('macos', 'ios'),
-        PythonArtifact('linux', 'x86', 'cp27-cp27m'),
-        PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
-        PythonArtifact('linux', 'x86', 'cp34-cp34m'),
-        PythonArtifact('linux', 'x86', 'cp35-cp35m'),
-        PythonArtifact('linux', 'x86', 'cp36-cp36m'),
-        PythonArtifact('linux', 'x86', 'cp37-cp37m'),
+        # TODO(https://github.com/grpc/grpc/issues/20283)
+        # Add manylinux2010_x86 targets once this issue is resolved.
+        PythonArtifact('manylinux1', 'x86', 'cp27-cp27m'),
+        PythonArtifact('manylinux1', 'x86', 'cp27-cp27mu'),
+        PythonArtifact('manylinux1', 'x86', 'cp35-cp35m'),
+        PythonArtifact('manylinux1', 'x86', 'cp36-cp36m'),
+        PythonArtifact('manylinux1', 'x86', 'cp37-cp37m'),
+        PythonArtifact('manylinux1', 'x86', 'cp38-cp38'),
+        PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
+        PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', '2.7'),
-        PythonArtifact('linux_extra', 'armv7', '3.4'),
         PythonArtifact('linux_extra', 'armv7', '3.5'),
         PythonArtifact('linux_extra', 'armv7', '3.6'),
         PythonArtifact('linux_extra', 'armv6', '2.7'),
-        PythonArtifact('linux_extra', 'armv6', '3.4'),
         PythonArtifact('linux_extra', 'armv6', '3.5'),
         PythonArtifact('linux_extra', 'armv6', '3.6'),
-        PythonArtifact('linux', 'x64', 'cp27-cp27m'),
-        PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
-        PythonArtifact('linux', 'x64', 'cp34-cp34m'),
-        PythonArtifact('linux', 'x64', 'cp35-cp35m'),
-        PythonArtifact('linux', 'x64', 'cp36-cp36m'),
-        PythonArtifact('linux', 'x64', 'cp37-cp37m'),
+        PythonArtifact('manylinux1', 'x64', 'cp27-cp27m'),
+        PythonArtifact('manylinux1', 'x64', 'cp27-cp27mu'),
+        PythonArtifact('manylinux1', 'x64', 'cp35-cp35m'),
+        PythonArtifact('manylinux1', 'x64', 'cp36-cp36m'),
+        PythonArtifact('manylinux1', 'x64', 'cp37-cp37m'),
+        PythonArtifact('manylinux1', 'x64', 'cp38-cp38'),
+        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27mu'),
+        PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
         PythonArtifact('macos', 'x64', 'python2.7'),
-        PythonArtifact('macos', 'x64', 'python3.4'),
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
-        PythonArtifact('windows', 'x86', 'Python27_32bits'),
-        PythonArtifact('windows', 'x86', 'Python34_32bits'),
-        PythonArtifact('windows', 'x86', 'Python35_32bits'),
-        PythonArtifact('windows', 'x86', 'Python36_32bits'),
-        PythonArtifact('windows', 'x86', 'Python37_32bits'),
+        PythonArtifact('macos', 'x64', 'python3.8'),
+        PythonArtifact('windows', 'x86', 'Python27_32bit'),
+        PythonArtifact('windows', 'x86', 'Python35_32bit'),
+        PythonArtifact('windows', 'x86', 'Python36_32bit'),
+        PythonArtifact('windows', 'x86', 'Python37_32bit'),
+        PythonArtifact('windows', 'x86', 'Python38_32bit'),
         PythonArtifact('windows', 'x64', 'Python27'),
-        PythonArtifact('windows', 'x64', 'Python34'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),
+        PythonArtifact('windows', 'x64', 'Python38'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
         PHPArtifact('linux', 'x64')

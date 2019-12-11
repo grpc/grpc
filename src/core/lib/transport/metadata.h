@@ -37,11 +37,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
 
-   Metadata is tracked in the context of a grpc_mdctx. For the time being there
-   is one of these per-channel, avoiding cross channel interference with memory
-   use and lock contention.
-
-   The context tracks unique strings (grpc_mdstr) and pairs of strings
+   Metadata is tracked in the context of a sharded global grpc_mdctx. The
+   context tracks unique strings (grpc_mdstr) and pairs of strings
    (grpc_mdelem). Any of these objects can be checked for equality by comparing
    their pointers. These objects are reference counted.
 
@@ -426,7 +423,7 @@ inline grpc_mdelem grpc_mdelem_from_slices(
     const grpc_core::ManagedMemorySlice& key,
     const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
-  return GRPC_MAKE_MDELEM(grpc_core::New<AllocatedMetadata>(key, value),
+  return GRPC_MAKE_MDELEM(new AllocatedMetadata(key, value),
                           GRPC_MDELEM_STORAGE_ALLOCATED);
 }
 
@@ -434,7 +431,7 @@ inline grpc_mdelem grpc_mdelem_from_slices(
     const grpc_core::ExternallyManagedSlice& key,
     const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
-  return GRPC_MAKE_MDELEM(grpc_core::New<AllocatedMetadata>(key, value),
+  return GRPC_MAKE_MDELEM(new AllocatedMetadata(key, value),
                           GRPC_MDELEM_STORAGE_ALLOCATED);
 }
 
@@ -442,7 +439,7 @@ inline grpc_mdelem grpc_mdelem_from_slices(
     const grpc_core::StaticMetadataSlice& key,
     const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
-  return GRPC_MAKE_MDELEM(grpc_core::New<AllocatedMetadata>(key, value),
+  return GRPC_MAKE_MDELEM(new AllocatedMetadata(key, value),
                           GRPC_MDELEM_STORAGE_ALLOCATED);
 }
 

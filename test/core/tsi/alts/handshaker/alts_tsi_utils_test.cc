@@ -66,9 +66,11 @@ static void deserialize_response_test() {
   grpc_byte_buffer_destroy(buffer);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   /* Tests. */
+  grpc_init();
   deserialize_response_test();
   convert_to_tsi_result_test();
+  grpc_shutdown();
   return 0;
 }

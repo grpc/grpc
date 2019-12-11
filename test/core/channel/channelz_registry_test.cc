@@ -52,8 +52,7 @@ class ChannelzRegistryTest : public ::testing::Test {
 };
 
 static RefCountedPtr<BaseNode> CreateTestNode() {
-  return MakeRefCounted<ListenSocketNode>(UniquePtr<char>(gpr_strdup("test")),
-                                          UniquePtr<char>(gpr_strdup("test")));
+  return MakeRefCounted<ListenSocketNode>("test", "test");
 }
 
 TEST_F(ChannelzRegistryTest, UuidStartsAboveZeroTest) {

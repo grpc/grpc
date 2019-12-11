@@ -58,7 +58,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create() {
   return ctx;
 }
 
-void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
+void local_check_peer(grpc_security_connector* /*sc*/, tsi_peer /*peer*/,
                       grpc_endpoint* ep,
                       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                       grpc_closure* on_peer_checked,
@@ -100,7 +100,7 @@ void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     return;
   }
   /* Create an auth context which is necessary to pass the santiy check in
@@ -112,7 +112,7 @@ void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
   error = *auth_context != nullptr ? GRPC_ERROR_NONE
                                    : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                          "Could not create local auth context");
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 class grpc_local_channel_security_connector final
@@ -129,13 +129,13 @@ class grpc_local_channel_security_connector final
   ~grpc_local_channel_security_connector() override { gpr_free(target_name_); }
 
   void add_handshakers(
-      grpc_pollset_set* interested_parties,
+      const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
     GPR_ASSERT(local_tsi_handshaker_create(true /* is_client */, &handshaker) ==
                TSI_OK);
     handshake_manager->Add(
-        grpc_core::SecurityHandshakerCreate(handshaker, this));
+        grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
 
   int cmp(const grpc_security_connector* other_sc) const override {
@@ -157,8 +157,8 @@ class grpc_local_channel_security_connector final
   }
 
   bool check_call_host(grpc_core::StringView host,
-                       grpc_auth_context* auth_context,
-                       grpc_closure* on_call_host_checked,
+                       grpc_auth_context* /*auth_context*/,
+                       grpc_closure* /*on_call_host_checked*/,
                        grpc_error** error) override {
     if (host.empty() || host != target_name_) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -167,7 +167,7 @@ class grpc_local_channel_security_connector final
     return true;
   }
 
-  void cancel_check_call_host(grpc_closure* on_call_host_checked,
+  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
                               grpc_error* error) override {
     GRPC_ERROR_UNREF(error);
   }
@@ -187,13 +187,13 @@ class grpc_local_server_security_connector final
   ~grpc_local_server_security_connector() override = default;
 
   void add_handshakers(
-      grpc_pollset_set* interested_parties,
+      const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
     GPR_ASSERT(local_tsi_handshaker_create(false /* is_client */,
                                            &handshaker) == TSI_OK);
     handshake_manager->Add(
-        grpc_core::SecurityHandshakerCreate(handshaker, this));
+        grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,

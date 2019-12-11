@@ -2,14 +2,14 @@ package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "foundation",
-    srcs = ["__init__.py",],
+    srcs = ["__init__.py"],
     deps = [
         ":abandonment",
         ":callable_util",
         ":future",
         ":logging_pool",
-        ":stream_util",
         ":stream",
+        ":stream_util",
     ],
 )
 
@@ -24,7 +24,7 @@ py_library(
     deps = [
         "//external:six",
     ] + select({
-        "//conditions:default": ["@enum34//:enum34",],
+        "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],
     }),
 )
@@ -41,7 +41,7 @@ py_library(
     name = "logging_pool",
     srcs = ["logging_pool.py"],
     deps = select({
-        "//conditions:default": ["@futures//:futures",],
+        "//conditions:default": ["@futures//:futures"],
         "//:python3": [],
     }),
 )

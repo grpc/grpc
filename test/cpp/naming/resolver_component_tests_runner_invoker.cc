@@ -59,7 +59,7 @@ using grpc::SubProcess;
 
 static volatile sig_atomic_t abort_wait_for_child = 0;
 
-static void sighandler(int sig) { abort_wait_for_child = 1; }
+static void sighandler(int /*sig*/) { abort_wait_for_child = 1; }
 
 static void register_sighandler() {
   struct sigaction act;

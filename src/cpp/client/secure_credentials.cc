@@ -262,11 +262,9 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   grpc_alts_credentials_options* c_options =
       grpc_alts_credentials_client_options_create();
-  for (auto service_account = options.target_service_accounts.begin();
-       service_account != options.target_service_accounts.end();
-       service_account++) {
+  for (const auto& service_account : options.target_service_accounts) {
     grpc_alts_credentials_client_options_add_target_service_account(
-        c_options, service_account->c_str());
+        c_options, service_account.c_str());
   }
   grpc_channel_credentials* c_creds = grpc_alts_credentials_create(c_options);
   grpc_alts_credentials_options_destroy(c_options);
@@ -278,6 +276,13 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return WrapChannelCredentials(grpc_local_credentials_create(type));
+}
+
+// Builds TLS Credentials given TLS options.
+std::shared_ptr<ChannelCredentials> TlsCredentials(
+    const TlsCredentialsOptions& options) {
+  return WrapChannelCredentials(
+      grpc_tls_credentials_create(options.c_credentials_options()));
 }
 
 }  // namespace experimental
@@ -377,7 +382,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 
 namespace grpc {
 namespace {
-void DeleteWrapper(void* wrapper, grpc_error* ignored) {
+void DeleteWrapper(void* wrapper, grpc_error* /*ignored*/) {
   MetadataCredentialsPluginWrapper* w =
       static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;
@@ -388,10 +393,8 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   if (wrapper == nullptr) return;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_CLOSURE_RUN(GRPC_CLOSURE_CREATE(DeleteWrapper, wrapper,
-                                       grpc_core::Executor::Scheduler(
-                                           grpc_core::ExecutorJobType::SHORT)),
-                   GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(DeleteWrapper, wrapper, nullptr),
+                           GRPC_ERROR_NONE);
 }
 
 int MetadataCredentialsPluginWrapper::GetMetadata(
@@ -432,9 +435,9 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
 namespace {
 
 void UnrefMetadata(const std::vector<grpc_metadata>& md) {
-  for (auto it = md.begin(); it != md.end(); ++it) {
-    grpc_slice_unref(it->key);
-    grpc_slice_unref(it->value);
+  for (const auto& metadatum : md) {
+    grpc_slice_unref(metadatum.key);
+    grpc_slice_unref(metadatum.value);
   }
 }
 
@@ -454,10 +457,10 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
   Status status = plugin_->GetMetadata(context.service_url, context.method_name,
                                        cpp_channel_auth_context, &metadata);
   std::vector<grpc_metadata> md;
-  for (auto it = metadata.begin(); it != metadata.end(); ++it) {
+  for (auto& metadatum : metadata) {
     grpc_metadata md_entry;
-    md_entry.key = SliceFromCopiedString(it->first);
-    md_entry.value = SliceFromCopiedString(it->second);
+    md_entry.key = SliceFromCopiedString(metadatum.first);
+    md_entry.value = SliceFromCopiedString(metadatum.second);
     md_entry.flags = 0;
     md.push_back(md_entry);
   }

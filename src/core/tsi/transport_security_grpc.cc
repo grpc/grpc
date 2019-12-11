@@ -64,3 +64,10 @@ void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self) {
   if (self == nullptr) return;
   self->vtable->destroy(self);
 }
+
+tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
+    tsi_zero_copy_grpc_protector* self, size_t& max_frame_size) {
+  if (self == nullptr) return TSI_INVALID_ARGUMENT;
+  if (self->vtable->max_frame_size == nullptr) return TSI_UNIMPLEMENTED;
+  return self->vtable->max_frame_size(self, max_frame_size);
+}

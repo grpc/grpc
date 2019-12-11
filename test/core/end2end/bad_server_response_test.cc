@@ -92,7 +92,7 @@ static grpc_closure on_write;
 
 static void* tag(intptr_t t) { return (void*)t; }
 
-static void done_write(void* arg, grpc_error* error) {
+static void done_write(void* /*arg*/, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
 
   gpr_atm_rel_store(&state.done_atm, 1);
@@ -107,7 +107,7 @@ static void handle_write() {
   grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write, nullptr);
 }
 
-static void handle_read(void* arg, grpc_error* error) {
+static void handle_read(void* /*arg*/, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   state.incoming_data_length += state.temp_incoming_buffer.length;
 
@@ -132,7 +132,7 @@ static void handle_read(void* arg, grpc_error* error) {
 }
 
 static void on_connect(void* arg, grpc_endpoint* tcp,
-                       grpc_pollset* accepting_pollset,
+                       grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   test_tcp_server* server = static_cast<test_tcp_server*>(arg);
@@ -264,8 +264,8 @@ static grpc_core::Thread* poll_server_until_read_done(
   poll_args* pa = static_cast<poll_args*>(gpr_malloc(sizeof(*pa)));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
-  auto* th = grpc_core::New<grpc_core::Thread>("grpc_poll_server",
-                                               actually_poll_server, pa);
+  auto* th =
+      new grpc_core::Thread("grpc_poll_server", actually_poll_server, pa);
   th->Start();
   return th;
 }
@@ -287,7 +287,7 @@ static void run_test(const char* response_payload,
   state.response_payload_length = response_payload_length;
 
   /* poll server until sending out the response */
-  grpc_core::UniquePtr<grpc_core::Thread> thdptr(
+  std::unique_ptr<grpc_core::Thread> thdptr(
       poll_server_until_read_done(&test_server, &ev));
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));

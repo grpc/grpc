@@ -56,6 +56,7 @@ proto_files=( \
   "envoy/api/v2/endpoint/load_report.proto" \
   "envoy/service/discovery/v2/ads.proto" \
   "envoy/service/load_stats/v2/lrs.proto" \
+  "envoy/type/http.proto" \
   "envoy/type/percent.proto" \
   "envoy/type/range.proto" \
   "gogoproto/gogo.proto" \

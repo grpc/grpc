@@ -26,7 +26,7 @@ typedef struct {
   const char* expect_details;
 } cancellation_mode;
 
-static grpc_call_error wait_for_deadline(grpc_call* call, void* reserved) {
+static grpc_call_error wait_for_deadline(grpc_call* /*call*/, void* reserved) {
   (void)reserved;
   return GRPC_CALL_OK;
 }

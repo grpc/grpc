@@ -28,18 +28,20 @@
 
 namespace tsi {
 
-static void cache_key_avl_destroy(void* key, void* unused) {}
+static void cache_key_avl_destroy(void* /*key*/, void* /*unused*/) {}
 
-static void* cache_key_avl_copy(void* key, void* unused) { return key; }
+static void* cache_key_avl_copy(void* key, void* /*unused*/) { return key; }
 
-static long cache_key_avl_compare(void* key1, void* key2, void* unused) {
+static long cache_key_avl_compare(void* key1, void* key2, void* /*unused*/) {
   return grpc_slice_cmp(*static_cast<grpc_slice*>(key1),
                         *static_cast<grpc_slice*>(key2));
 }
 
-static void cache_value_avl_destroy(void* value, void* unused) {}
+static void cache_value_avl_destroy(void* /*value*/, void* /*unused*/) {}
 
-static void* cache_value_avl_copy(void* value, void* unused) { return value; }
+static void* cache_value_avl_copy(void* value, void* /*unused*/) {
+  return value;
+}
 
 // AVL only stores pointers, ownership belonges to the linked list.
 static const grpc_avl_vtable cache_avl_vtable = {
@@ -74,7 +76,7 @@ class SslSessionLRUCache::Node {
   friend class SslSessionLRUCache;
 
   grpc_slice key_;
-  grpc_core::UniquePtr<SslCachedSession> session_;
+  std::unique_ptr<SslCachedSession> session_;
 
   Node* next_ = nullptr;
   Node* prev_ = nullptr;
@@ -90,7 +92,7 @@ SslSessionLRUCache::~SslSessionLRUCache() {
   Node* node = use_order_list_head_;
   while (node) {
     Node* next = node->next_;
-    grpc_core::Delete(node);
+    delete node;
     node = next;
   }
   grpc_avl_unref(entry_by_key_, nullptr);
@@ -125,7 +127,7 @@ void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
     return;
   }
   grpc_slice key_slice = grpc_slice_from_copied_string(key);
-  node = grpc_core::New<Node>(key_slice, std::move(session));
+  node = new Node(key_slice, std::move(session));
   PushFront(node);
   entry_by_key_ = grpc_avl_add(entry_by_key_, node->AvlKey(), node, nullptr);
   AssertInvariants();
@@ -135,7 +137,7 @@ void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
     Remove(node);
     // Order matters, key is destroyed after deleting node.
     entry_by_key_ = grpc_avl_remove(entry_by_key_, node->AvlKey(), nullptr);
-    grpc_core::Delete(node);
+    delete node;
     AssertInvariants();
   }
 }

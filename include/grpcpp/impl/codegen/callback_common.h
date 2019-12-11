@@ -47,8 +47,8 @@ void CatchingCallback(Func&& func, Args&&... args) {
 #endif  // GRPC_ALLOW_EXCEPTIONS
 }
 
-template <class ReturnType, class Func, class... Args>
-ReturnType* CatchingReactorCreator(Func&& func, Args&&... args) {
+template <class Reactor, class Func, class... Args>
+Reactor* CatchingReactorGetter(Func&& func, Args&&... args) {
 #if GRPC_ALLOW_EXCEPTIONS
   try {
     return func(std::forward<Args>(args)...);
@@ -70,7 +70,7 @@ class CallbackWithStatusTag
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    assert(size == sizeof(CallbackWithStatusTag));
+    GPR_CODEGEN_ASSERT(size == sizeof(CallbackWithStatusTag));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -78,13 +78,17 @@ class CallbackWithStatusTag
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
                         CompletionQueueTag* ops)
       : call_(call), func_(std::move(f)), ops_(ops) {
     g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithStatusTag::StaticRun;
+    // A client-side callback should never be run inline since they will always
+    // have work to do from the user application. So, set the parent's
+    // inlineable field to false
+    inlineable = false;
   }
   ~CallbackWithStatusTag() {}
   Status* status_ptr() { return &status_; }
@@ -134,7 +138,7 @@ class CallbackWithSuccessTag
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    assert(size == sizeof(CallbackWithSuccessTag));
+    GPR_CODEGEN_ASSERT(size == sizeof(CallbackWithSuccessTag));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -142,13 +146,13 @@ class CallbackWithSuccessTag
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   CallbackWithSuccessTag() : call_(nullptr) {}
 
   CallbackWithSuccessTag(grpc_call* call, std::function<void(bool)> f,
-                         CompletionQueueTag* ops) {
-    Set(call, f, ops);
+                         CompletionQueueTag* ops, bool can_inline) {
+    Set(call, f, ops, can_inline);
   }
 
   CallbackWithSuccessTag(const CallbackWithSuccessTag&) = delete;
@@ -159,14 +163,18 @@ class CallbackWithSuccessTag
   // Set can only be called on a default-constructed or Clear'ed tag.
   // It should never be called on a tag that was constructed with arguments
   // or on a tag that has been Set before unless the tag has been cleared.
+  // can_inline indicates that this particular callback can be executed inline
+  // (without needing a thread hop) and is only used for library-provided server
+  // callbacks.
   void Set(grpc_call* call, std::function<void(bool)> f,
-           CompletionQueueTag* ops) {
+           CompletionQueueTag* ops, bool can_inline) {
     GPR_CODEGEN_ASSERT(call_ == nullptr);
     g_core_codegen_interface->grpc_call_ref(call);
     call_ = call;
     func_ = std::move(f);
     ops_ = ops;
     functor_run = &CallbackWithSuccessTag::StaticRun;
+    inlineable = can_inline;
   }
 
   void Clear() {

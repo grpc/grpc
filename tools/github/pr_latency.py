@@ -18,7 +18,7 @@ You'll need a github API token to avoid being rate-limited. See
 https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
 
 This script goes over the most recent 100 pull requests. For PRs with a single
-commit, it uses the PR's creation as the initial time; othewise, it uses the
+commit, it uses the PR's creation as the initial time; otherwise, it uses the
 date of the last commit. This is somewhat fragile, and imposed by the fact that
 GitHub reports a PR's updated timestamp for any event that modifies the PR (e.g.
 comments), not just the addition of new commits.

@@ -324,8 +324,8 @@ std::vector<TestScenario> CreateTestScenarios() {
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(CFStreamTest, CFStreamTest,
-                        ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(CFStreamTest, CFStreamTest,
+                         ::testing::ValuesIn(CreateTestScenarios()));
 
 // gRPC should automatically detech network flaps (without enabling keepalives)
 //  when CFStream is enabled

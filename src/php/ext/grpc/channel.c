@@ -98,6 +98,21 @@ php_grpc_zend_object create_wrapped_grpc_channel(zend_class_entry *class_type
   PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_channel, channel_ce_handlers);
 }
 
+static bool php_grpc_not_channel_arg_key(const char* key) {
+  static const char* ignoredKeys[] = {
+    "credentials",
+    "force_new",
+    "grpc_target_persist_bound",
+  };
+
+  for (int i = 0; i < sizeof(ignoredKeys) / sizeof(ignoredKeys[0]); i++) {
+    if (strcmp(key, ignoredKeys[i]) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int php_grpc_read_args_array(zval *args_array,
                              grpc_channel_args *args TSRMLS_DC) {
   HashTable *array_hash;
@@ -108,8 +123,8 @@ int php_grpc_read_args_array(zval *args_array,
                          "array_hash is NULL", 1 TSRMLS_CC);
     return FAILURE;
   }
-  args->num_args = zend_hash_num_elements(array_hash);
-  args->args = ecalloc(args->num_args, sizeof(grpc_arg));
+
+  args->args = ecalloc(zend_hash_num_elements(array_hash), sizeof(grpc_arg));
   args_index = 0;
 
   char *key = NULL;
@@ -122,6 +137,11 @@ int php_grpc_read_args_array(zval *args_array,
                            "args keys must be strings", 1 TSRMLS_CC);
       return FAILURE;
     }
+
+    if (php_grpc_not_channel_arg_key(key)) {
+      continue;
+    }
+
     args->args[args_index].key = key;
     switch (Z_TYPE_P(data)) {
     case IS_LONG:
@@ -139,6 +159,7 @@ int php_grpc_read_args_array(zval *args_array,
     }
     args_index++;
   PHP_GRPC_HASH_FOREACH_END()
+  args->num_args = args_index;
   return SUCCESS;
 }
 
@@ -322,7 +343,6 @@ PHP_METHOD(Channel, __construct) {
                               (void **)&creds_obj) == SUCCESS) {
     if (Z_TYPE_P(creds_obj) == IS_NULL) {
       creds = NULL;
-      php_grpc_zend_hash_del(array_hash, "credentials", sizeof("credentials"));
     } else if (PHP_GRPC_GET_CLASS_ENTRY(creds_obj) !=
                grpc_ce_channel_credentials) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -333,7 +353,6 @@ PHP_METHOD(Channel, __construct) {
       Z_ADDREF(*creds_obj);
       creds = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
                                           creds_obj);
-      php_grpc_zend_hash_del(array_hash, "credentials", sizeof("credentials"));
     }
   }
   if (php_grpc_zend_hash_find(array_hash, "force_new", sizeof("force_new"),
@@ -341,7 +360,6 @@ PHP_METHOD(Channel, __construct) {
     if (PHP_GRPC_BVAL_IS_TRUE(force_new_obj)) {
       force_new = true;
     }
-    php_grpc_zend_hash_del(array_hash, "force_new", sizeof("force_new"));
   }
 
   if (php_grpc_zend_hash_find(array_hash, "grpc_target_persist_bound",
@@ -353,8 +371,6 @@ PHP_METHOD(Channel, __construct) {
                            1 TSRMLS_CC);
     }
     target_upper_bound = (int)Z_LVAL_P(force_new_obj);
-    php_grpc_zend_hash_del(array_hash, "grpc_target_persist_bound",
-                           sizeof("grpc_target_persist_bound"));
   }
 
   // parse the rest of the channel args array
@@ -366,18 +382,31 @@ PHP_METHOD(Channel, __construct) {
   // Construct a hashkey for the persistent channel
   // Currently, the hashkey contains 3 parts:
   // 1. hostname
-  // 2. hash value of the channel args array (excluding "credentials"
-  //    and "force_new")
+  // 2. hash value of the channel args (args_array excluding "credentials",
+  //    "force_new" and "grpc_target_persist_bound")
   // 3. (optional) hash value of the ChannelCredentials object
-  php_serialize_data_t var_hash;
-  smart_str buf = {0};
-  PHP_VAR_SERIALIZE_INIT(var_hash);
-  PHP_GRPC_VAR_SERIALIZE(&buf, args_array, &var_hash);
-  PHP_VAR_SERIALIZE_DESTROY(var_hash);
 
-  char sha1str[41];
-  generate_sha1_str(sha1str, PHP_GRPC_SERIALIZED_BUF_STR(buf),
-                    PHP_GRPC_SERIALIZED_BUF_LEN(buf));
+  char sha1str[41] = { 0 };
+  unsigned char digest[20] = { 0 };
+  PHP_SHA1_CTX context;
+  PHP_SHA1Init(&context);
+  for (int i = 0; i < args.num_args; i++) {
+    PHP_GRPC_SHA1Update(&context, args.args[i].key, strlen(args.args[i].key) + 1);
+    switch (args.args[i].type) {
+    case GRPC_ARG_INTEGER:
+      PHP_GRPC_SHA1Update(&context, &args.args[i].value.integer, 4);
+      break;
+    case GRPC_ARG_STRING:
+      PHP_GRPC_SHA1Update(&context, args.args[i].value.string, strlen(args.args[i].value.string) + 1);
+      break;
+    default:
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "args values must be int or string", 1 TSRMLS_CC);
+      return;
+    }
+  };
+  PHP_SHA1Final(digest, &context);
+  make_sha1_digest(sha1str, digest);
 
   php_grpc_int key_len = target_length + strlen(sha1str);
   if (creds != NULL && creds->hashstr != NULL) {
@@ -405,7 +434,6 @@ PHP_METHOD(Channel, __construct) {
   }
 
   gpr_mu_init(&channel->wrapper->mu);
-  smart_str_free(&buf);
   if (force_new || (creds != NULL && creds->has_call_creds)) {
     // If the ChannelCredentials object was composed with a CallCredentials
     // object, there is no way we can tell them apart. Do NOT persist

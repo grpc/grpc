@@ -43,7 +43,25 @@ TLS_PORT=$(curl localhost:32766/get)
 $INTEROP --port=$PLAIN_PORT --max_send_message_size=8388608 &
 $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
-trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
+# Create loopback aliases for iOS performance tests
+if [ $SCHEME == PerfTests ] || [ $SCHEME == PerfTestsPosix ]; then
+for ((i=2;i<11;i++))
+do
+    sudo ifconfig lo0 alias 127.0.0.$i up
+done
+fi
+
+function finish {
+    if [ $SCHEME == PerfTests ] || [ $SCHEME == PerfTestsPosix ]; then
+    for ((i=2;i<11;i++))
+    do
+        sudo ifconfig lo0 -alias 127.0.0.$i
+    done
+    fi
+    kill -9 `jobs -p`
+    echo "EXIT TIME:  $(date)"
+}
+trap finish EXIT
 
 set -o pipefail
 
@@ -59,6 +77,7 @@ elif [ $PLATFORM == tvos ]; then
 DESTINATION='platform=tvOS Simulator,name=Apple TV'
 fi
 
+
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
@@ -70,3 +89,4 @@ xcodebuild \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+

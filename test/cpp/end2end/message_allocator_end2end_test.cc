@@ -17,6 +17,7 @@
  */
 
 #include <algorithm>
+#include <condition_variable>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -70,14 +71,16 @@ class CallbackTestServiceImpl
     allocator_mutator_ = mutator;
   }
 
-  void Echo(ServerContext* context, const EchoRequest* request,
-            EchoResponse* response,
-            experimental::ServerCallbackRpcController* controller) override {
+  experimental::ServerUnaryReactor* Echo(
+      experimental::CallbackServerContext* context, const EchoRequest* request,
+      EchoResponse* response) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
-      allocator_mutator_(controller->GetRpcAllocatorState(), request, response);
+      allocator_mutator_(context->GetRpcAllocatorState(), request, response);
     }
-    controller->Finish(Status::OK);
+    auto* reactor = context->DefaultReactor();
+    reactor->Finish(Status::OK);
+    return reactor;
   }
 
  private:
@@ -400,12 +403,12 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(NullAllocatorTest, NullAllocatorTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
-INSTANTIATE_TEST_CASE_P(SimpleAllocatorTest, SimpleAllocatorTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
-INSTANTIATE_TEST_CASE_P(ArenaAllocatorTest, ArenaAllocatorTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(NullAllocatorTest, NullAllocatorTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(SimpleAllocatorTest, SimpleAllocatorTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(ArenaAllocatorTest, ArenaAllocatorTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
 
 }  // namespace
 }  // namespace testing

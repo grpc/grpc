@@ -25,7 +25,7 @@ import subprocess
 import sys
 import tempfile
 
-# Langauage Runtime Matrix
+# Language Runtime Matrix
 import client_matrix
 
 python_util_dir = os.path.abspath(

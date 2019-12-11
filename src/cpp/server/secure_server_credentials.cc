@@ -69,20 +69,18 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
                                       &response_metadata);
 
   std::vector<grpc_metadata> consumed_md;
-  for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
-       ++it) {
+  for (const auto& consumed : consumed_metadata) {
     grpc_metadata md_entry;
-    md_entry.key = SliceReferencingString(it->first);
-    md_entry.value = SliceReferencingString(it->second);
+    md_entry.key = SliceReferencingString(consumed.first);
+    md_entry.value = SliceReferencingString(consumed.second);
     md_entry.flags = 0;
     consumed_md.push_back(md_entry);
   }
   std::vector<grpc_metadata> response_md;
-  for (auto it = response_metadata.begin(); it != response_metadata.end();
-       ++it) {
+  for (const auto& response : response_metadata) {
     grpc_metadata md_entry;
-    md_entry.key = SliceReferencingString(it->first);
-    md_entry.value = SliceReferencingString(it->second);
+    md_entry.key = SliceReferencingString(response.first);
+    md_entry.value = SliceReferencingString(response.second);
     md_entry.flags = 0;
     response_md.push_back(md_entry);
   }
@@ -113,10 +111,9 @@ void SecureServerCredentials::SetAuthMetadataProcessor(
 std::shared_ptr<ServerCredentials> SslServerCredentials(
     const grpc::SslServerCredentialsOptions& options) {
   std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
-  for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
-       key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
-    grpc_ssl_pem_key_cert_pair p = {key_cert_pair->private_key.c_str(),
-                                    key_cert_pair->cert_chain.c_str()};
+  for (const auto& key_cert_pair : options.pem_key_cert_pairs) {
+    grpc_ssl_pem_key_cert_pair p = {key_cert_pair.private_key.c_str(),
+                                    key_cert_pair.cert_chain.c_str()};
     pem_key_cert_pairs.push_back(p);
   }
   grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create_ex(
@@ -134,7 +131,7 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
 namespace experimental {
 
 std::shared_ptr<ServerCredentials> AltsServerCredentials(
-    const AltsServerCredentialsOptions& options) {
+    const AltsServerCredentialsOptions& /* options */) {
   grpc_alts_credentials_options* c_options =
       grpc_alts_credentials_server_options_create();
   grpc_server_credentials* c_creds =
@@ -148,6 +145,12 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type) {
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(grpc_local_server_credentials_create(type)));
+}
+
+std::shared_ptr<ServerCredentials> TlsServerCredentials(
+    const TlsCredentialsOptions& options) {
+  return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
+      grpc_tls_server_credentials_create(options.c_credentials_options())));
 }
 
 }  // namespace experimental

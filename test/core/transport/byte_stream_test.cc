@@ -37,7 +37,9 @@ namespace {
 // SliceBufferByteStream tests
 //
 
-void NotCalledClosure(void* arg, grpc_error* error) { GPR_ASSERT(false); }
+void NotCalledClosure(void* /*arg*/, grpc_error* /*error*/) {
+  GPR_ASSERT(false);
+}
 
 TEST(SliceBufferByteStream, Basic) {
   grpc_core::ExecCtx exec_ctx;

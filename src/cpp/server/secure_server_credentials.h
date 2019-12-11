@@ -22,6 +22,7 @@
 #include <memory>
 
 #include <grpcpp/security/server_credentials.h>
+#include <grpcpp/security/tls_credentials_options.h>
 
 #include <grpc/grpc_security.h>
 

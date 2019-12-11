@@ -10,13 +10,13 @@
 #include "upb/msg.h"
 #include "envoy/api/v2/core/health_check.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
+#include "envoy/type/http.upb.h"
 #include "envoy/type/range.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "validate/validate.upb.h"
-#include "gogoproto/gogo.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -75,22 +75,23 @@ static const upb_msglayout *const envoy_api_v2_core_HealthCheck_HttpHealthCheck_
   &envoy_type_Int64Range_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_core_HealthCheck_HttpHealthCheck__fields[9] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(12, 24), 0, 0, 9, 1},
-  {3, UPB_SIZE(28, 56), 0, 1, 11, 1},
-  {4, UPB_SIZE(32, 64), 0, 1, 11, 1},
-  {5, UPB_SIZE(20, 40), 0, 0, 9, 1},
-  {6, UPB_SIZE(36, 72), 0, 0, 11, 3},
-  {7, UPB_SIZE(0, 0), 0, 0, 8, 1},
-  {8, UPB_SIZE(40, 80), 0, 0, 9, 3},
-  {9, UPB_SIZE(44, 88), 0, 2, 11, 3},
+static const upb_msglayout_field envoy_api_v2_core_HealthCheck_HttpHealthCheck__fields[10] = {
+  {1, UPB_SIZE(12, 16), 0, 0, 9, 1},
+  {2, UPB_SIZE(20, 32), 0, 0, 9, 1},
+  {3, UPB_SIZE(36, 64), 0, 1, 11, 1},
+  {4, UPB_SIZE(40, 72), 0, 1, 11, 1},
+  {5, UPB_SIZE(28, 48), 0, 0, 9, 1},
+  {6, UPB_SIZE(44, 80), 0, 0, 11, 3},
+  {7, UPB_SIZE(8, 8), 0, 0, 8, 1},
+  {8, UPB_SIZE(48, 88), 0, 0, 9, 3},
+  {9, UPB_SIZE(52, 96), 0, 2, 11, 3},
+  {10, UPB_SIZE(0, 0), 0, 0, 14, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit = {
   &envoy_api_v2_core_HealthCheck_HttpHealthCheck_submsgs[0],
   &envoy_api_v2_core_HealthCheck_HttpHealthCheck__fields[0],
-  UPB_SIZE(48, 96), 9, false,
+  UPB_SIZE(56, 112), 10, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_core_HealthCheck_TcpHealthCheck_submsgs[2] = {

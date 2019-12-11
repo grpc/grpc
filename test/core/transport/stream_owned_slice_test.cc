@@ -23,7 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-static void do_nothing(void* arg, grpc_error* error) {}
+static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

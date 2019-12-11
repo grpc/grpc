@@ -99,8 +99,7 @@ struct channel_data {
 
 }  // namespace
 
-static grpc_error* hs_filter_outgoing_metadata(grpc_call_element* elem,
-                                               grpc_metadata_batch* b) {
+static grpc_error* hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
   if (b->idx.named.grpc_message != nullptr) {
     grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
         GRPC_MDVALUE(b->idx.named.grpc_message->md),
@@ -364,7 +363,8 @@ static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err) {
                              "resuming hs_recv_trailing_metadata_ready from "
                              "hs_recv_initial_metadata_ready");
   }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready, err);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_initial_metadata_ready, err);
 }
 
 static void hs_recv_message_ready(void* user_data, grpc_error* err) {
@@ -379,7 +379,8 @@ static void hs_recv_message_ready(void* user_data, grpc_error* err) {
       calld->recv_message->reset(calld->read_stream.get());
       calld->have_read_stream = false;
     }
-    GRPC_CLOSURE_RUN(calld->original_recv_message_ready, GRPC_ERROR_REF(err));
+    grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_recv_message_ready,
+                            GRPC_ERROR_REF(err));
   } else {
     // We have not yet seen the recv_initial_metadata callback, so we
     // need to wait to see if this is a GET request.
@@ -405,7 +406,8 @@ static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
   err = grpc_error_add_child(
       GRPC_ERROR_REF(err),
       GRPC_ERROR_REF(calld->recv_initial_metadata_ready_error));
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready, err);
 }
 
 static grpc_error* hs_mutate_op(grpc_call_element* elem,
@@ -427,10 +429,9 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
                      &calld->content_type,
                      GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
                      GRPC_BATCH_CONTENT_TYPE));
-    hs_add_error(
-        error_name, &error,
-        hs_filter_outgoing_metadata(
-            elem, op->payload->send_initial_metadata.send_initial_metadata));
+    hs_add_error(error_name, &error,
+                 hs_filter_outgoing_metadata(
+                     op->payload->send_initial_metadata.send_initial_metadata));
     if (error != GRPC_ERROR_NONE) return error;
   }
 
@@ -463,7 +464,7 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
 
   if (op->send_trailing_metadata) {
     grpc_error* error = hs_filter_outgoing_metadata(
-        elem, op->payload->send_trailing_metadata.send_trailing_metadata);
+        op->payload->send_trailing_metadata.send_trailing_metadata);
     if (error != GRPC_ERROR_NONE) return error;
   }
 
@@ -492,8 +493,8 @@ static grpc_error* hs_init_call_elem(grpc_call_element* elem,
 
 /* Destructor for call_data */
 static void hs_destroy_call_elem(grpc_call_element* elem,
-                                 const grpc_call_final_info* final_info,
-                                 grpc_closure* ignored) {
+                                 const grpc_call_final_info* /*final_info*/,
+                                 grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
@@ -511,7 +512,7 @@ static grpc_error* hs_init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-static void hs_destroy_channel_elem(grpc_channel_element* elem) {}
+static void hs_destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter grpc_http_server_filter = {
     hs_start_transport_stream_op_batch,

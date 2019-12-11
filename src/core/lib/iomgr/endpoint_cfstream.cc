@@ -132,7 +132,7 @@ static void CallReadCb(CFStreamEndpoint* ep, grpc_error* error) {
   grpc_closure* cb = ep->read_cb;
   ep->read_cb = nullptr;
   ep->read_slices = nullptr;
-  GRPC_CLOSURE_SCHED(cb, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
 }
 
 static void CallWriteCb(CFStreamEndpoint* ep, grpc_error* error) {
@@ -145,7 +145,7 @@ static void CallWriteCb(CFStreamEndpoint* ep, grpc_error* error) {
   grpc_closure* cb = ep->write_cb;
   ep->write_cb = nullptr;
   ep->write_slices = nullptr;
-  GRPC_CLOSURE_SCHED(cb, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
 }
 
 static void ReadAction(void* arg, grpc_error* error) {
@@ -261,10 +261,12 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   ep_impl->read_cb = cb;
   ep_impl->read_slices = slices;
   grpc_slice_buffer_reset_and_unref_internal(slices);
-  grpc_resource_user_alloc_slices(&ep_impl->slice_allocator,
-                                  GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
-                                  ep_impl->read_slices);
   EP_REF(ep_impl, "read");
+  if (grpc_resource_user_alloc_slices(&ep_impl->slice_allocator,
+                                      GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
+                                      ep_impl->read_slices)) {
+    ep_impl->stream_sync->NotifyOnRead(&ep_impl->read_action);
+  }
 }
 
 static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,

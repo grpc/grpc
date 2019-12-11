@@ -53,9 +53,8 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 }
 
 void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index =
-      ServiceConfig::RegisterParser(UniquePtr<ServiceConfig::Parser>(
-          New<ClientChannelServiceConfigParser>()));
+  g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
+      MakeUnique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -67,7 +66,7 @@ bool ParseDuration(grpc_json* field, grpc_millis* duration) {
   if (field->type != GRPC_JSON_STRING) return false;
   size_t len = strlen(field->value);
   if (field->value[len - 1] != 's') return false;
-  UniquePtr<char> buf(gpr_strdup(field->value));
+  grpc_core::UniquePtr<char> buf(gpr_strdup(field->value));
   *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
   char* decimal_point = strchr(buf.get(), '.');
   int nanos = 0;
@@ -92,7 +91,7 @@ bool ParseDuration(grpc_json* field, grpc_millis* duration) {
   return true;
 }
 
-UniquePtr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
+std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
     grpc_json* field, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   auto retry_policy =
@@ -263,13 +262,13 @@ const char* ParseHealthCheckConfig(const grpc_json* field, grpc_error** error) {
 
 }  // namespace
 
-UniquePtr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfig::ParsedConfig>
 ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
                                                     grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
-  UniquePtr<char> lb_policy_name;
+  grpc_core::UniquePtr<char> lb_policy_name;
   Optional<ClientChannelGlobalParsedConfig::RetryThrottling> retry_throttling;
   const char* health_check_service_name = nullptr;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
@@ -439,22 +438,21 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel global parser",
                                          &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return UniquePtr<ServiceConfig::ParsedConfig>(
-        New<ClientChannelGlobalParsedConfig>(
-            std::move(parsed_lb_config), std::move(lb_policy_name),
-            retry_throttling, health_check_service_name));
+    return MakeUnique<ClientChannelGlobalParsedConfig>(
+        std::move(parsed_lb_config), std::move(lb_policy_name),
+        retry_throttling, health_check_service_name);
   }
   return nullptr;
 }
 
-UniquePtr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfig::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
   Optional<bool> wait_for_ready;
   grpc_millis timeout = 0;
-  UniquePtr<ClientChannelMethodParsedConfig::RetryPolicy> retry_policy;
+  std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> retry_policy;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
     if (field->key == nullptr) continue;
     if (strcmp(field->key, "waitForReady") == 0) {
@@ -493,9 +491,8 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return UniquePtr<ServiceConfig::ParsedConfig>(
-        New<ClientChannelMethodParsedConfig>(timeout, wait_for_ready,
-                                             std::move(retry_policy)));
+    return MakeUnique<ClientChannelMethodParsedConfig>(timeout, wait_for_ready,
+                                                       std::move(retry_policy));
   }
   return nullptr;
 }

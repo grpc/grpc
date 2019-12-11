@@ -43,9 +43,9 @@ const int kPaginationLimit = 100;
 
 }  // anonymous namespace
 
-void ChannelzRegistry::Init() { g_channelz_registry = New<ChannelzRegistry>(); }
+void ChannelzRegistry::Init() { g_channelz_registry = new ChannelzRegistry(); }
 
-void ChannelzRegistry::Shutdown() { Delete(g_channelz_registry); }
+void ChannelzRegistry::Shutdown() { delete g_channelz_registry; }
 
 ChannelzRegistry* ChannelzRegistry::Default() {
   GPR_DEBUG_ASSERT(g_channelz_registry != nullptr);

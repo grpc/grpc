@@ -20,7 +20,6 @@
 #define GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
 
 #include <atomic>
-#include <mutex>
 #include <set>
 
 #include <grpc/support/log.h>
@@ -120,8 +119,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
                        HealthCheckServiceImpl* service);
 
       // Not used for Check.
-      void SendHealth(std::shared_ptr<CallHandler> self,
-                      ServingStatus status) override {}
+      void SendHealth(std::shared_ptr<CallHandler> /*self*/,
+                      ServingStatus /*status*/) override {}
 
      private:
       // Called when we receive a call.

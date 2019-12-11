@@ -2,7 +2,18 @@
 gRPC C#
 =======
 
-A C# implementation of gRPC.
+A C# implementation of gRPC based on the native gRPC Core library.
+
+There are currently two official implementations of gRPC for C#
+
+- The original gRPC C# implementation based on the native gRPC Core library (the source code lives in this directory)
+- The new "gRPC for .NET" implementation written in pure C# and based on the newly released .NET Core 3 (source code available at https://github.com/grpc/grpc-dotnet)
+
+The implementations are meant to coexist side-by-side and each has its own advantages in terms of available features, integrations, supported platforms, maturity level and performance.
+They share the same API for invoking and handling RPCs, thus limiting the lock-in and enabling users to choose the implementation that satisfies their needs the best
+(and perhaps adjust their choice over time without needing to do too much refactoring).
+
+The following documentation is for the original gRPC C# implementation only (the `Grpc.Core` nuget package).
 
 SUPPORTED PLATFORMS
 ------------------

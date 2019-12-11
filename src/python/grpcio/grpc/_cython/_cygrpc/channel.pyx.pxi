@@ -420,8 +420,6 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       else:
         while state.integrated_call_states:
           state.condition.wait()
-        while state.segregated_call_states:
-          state.condition.wait()
         while state.connectivity_due:
           state.condition.wait()
 

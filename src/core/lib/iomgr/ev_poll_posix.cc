@@ -323,8 +323,16 @@ static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
             gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
   }
 #else
-#define REF_BY(fd, n, reason) ref_by(fd, n)
-#define UNREF_BY(fd, n, reason) unref_by(fd, n)
+#define REF_BY(fd, n, reason) \
+  do {                        \
+    ref_by(fd, n);            \
+    (void)(reason);           \
+  } while (0)
+#define UNREF_BY(fd, n, reason) \
+  do {                          \
+    unref_by(fd, n);            \
+    (void)(reason);             \
+  } while (0)
 static void ref_by(grpc_fd* fd, int n) {
 #endif
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
@@ -355,6 +363,8 @@ static void unref_by(grpc_fd* fd, int n) {
 }
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
+  // Avoid unused-parameter warning for debug-only parameter
+  (void)track_err;
   GPR_DEBUG_ASSERT(track_err == false);
   grpc_fd* r = static_cast<grpc_fd*>(gpr_malloc(sizeof(*r)));
   gpr_mu_init(&r->mu);
@@ -426,7 +436,7 @@ static void close_fd_locked(grpc_fd* fd) {
   if (!fd->released) {
     close(fd->fd);
   }
-  GRPC_CLOSURE_SCHED(fd->on_done_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure, GRPC_ERROR_NONE);
 }
 
 static int fd_wrapped_fd(grpc_fd* fd) {
@@ -487,17 +497,18 @@ static grpc_error* fd_shutdown_error(grpc_fd* fd) {
 static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
                              grpc_closure* closure) {
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
-    GRPC_CLOSURE_SCHED(
-        closure, grpc_error_set_int(
-                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
-                     GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, closure,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    GRPC_CLOSURE_SCHED(closure, fd_shutdown_error(fd));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, fd_shutdown_error(fd));
     maybe_wake_one_watcher_locked(fd);
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
@@ -519,7 +530,7 @@ static int set_ready_locked(grpc_fd* fd, grpc_closure** st) {
     return 0;
   } else {
     /* waiting ==> queue closure */
-    GRPC_CLOSURE_SCHED(*st, fd_shutdown_error(fd));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, *st, fd_shutdown_error(fd));
     *st = CLOSURE_NOT_READY;
     return 1;
   }
@@ -560,11 +571,11 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
   gpr_mu_unlock(&fd->mu);
 }
 
-static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
+static void fd_notify_on_error(grpc_fd* /*fd*/, grpc_closure* closure) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
   }
-  GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_CANCELLED);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_CANCELLED);
 }
 
 static void fd_set_readable(grpc_fd* fd) {
@@ -579,7 +590,7 @@ static void fd_set_writable(grpc_fd* fd) {
   gpr_mu_unlock(&fd->mu);
 }
 
-static void fd_set_error(grpc_fd* fd) {
+static void fd_set_error(grpc_fd* /*fd*/) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
   }
@@ -696,7 +707,7 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
 GPR_TLS_DECL(g_current_thread_poller);
 GPR_TLS_DECL(g_current_thread_worker);
 
-static void remove_worker(grpc_pollset* p, grpc_pollset_worker* worker) {
+static void remove_worker(grpc_pollset* /*p*/, grpc_pollset_worker* worker) {
   worker->prev->next = worker->next;
   worker->next->prev = worker->prev;
 }
@@ -886,7 +897,8 @@ static void finish_shutdown(grpc_pollset* pollset) {
     GRPC_FD_UNREF(pollset->fds[i], "multipoller");
   }
   pollset->fd_count = 0;
-  GRPC_CLOSURE_SCHED(pollset->shutdown_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_done,
+                          GRPC_ERROR_NONE);
 }
 
 static void work_combine_error(grpc_error** composite, grpc_error* error) {
@@ -1320,8 +1332,8 @@ static bool is_any_background_poller_thread(void) { return false; }
 
 static void shutdown_background_closure(void) {}
 
-static bool add_closure_to_background_poller(grpc_closure* closure,
-                                             grpc_error* error) {
+static bool add_closure_to_background_poller(grpc_closure* /*closure*/,
+                                             grpc_error* /*error*/) {
   return false;
 }
 
@@ -1379,7 +1391,9 @@ static void reset_event_manager_on_fork() {
   gpr_mu_lock(&fork_fd_list_mu);
   while (fork_fd_list_head != nullptr) {
     if (fork_fd_list_head->fd != nullptr) {
-      close(fork_fd_list_head->fd->fd);
+      if (!fork_fd_list_head->fd->closed) {
+        close(fork_fd_list_head->fd->fd);
+      }
       fork_fd_list_head->fd->fd = -1;
     } else {
       close(fork_fd_list_head->cached_wakeup_fd->fd.read_fd);
@@ -1392,7 +1406,8 @@ static void reset_event_manager_on_fork() {
   gpr_mu_unlock(&fork_fd_list_mu);
 }
 
-const grpc_event_engine_vtable* grpc_init_poll_posix(bool explicit_request) {
+const grpc_event_engine_vtable* grpc_init_poll_posix(
+    bool /*explicit_request*/) {
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping poll because of no wakeup fd.");
     return nullptr;

@@ -47,12 +47,18 @@
     s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.10'
 
     s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
-
-    % for lib in libs:
-    % if lib.name in ruby_gem.get('deps', []):
-    % for file in lib.get('public_headers', []) + lib.headers + lib.src:
+  <%
+    files = []
+    ruby_deps = ruby_gem.get('deps', [])
+    lib_maps = {lib.name: lib for lib in libs}
+    for dep in ruby_deps[:]:
+      ruby_deps.extend(lib_maps[dep].transitive_deps)
+    for dep in ruby_deps:
+      lib = lib_maps[dep]
+      files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+    files = sorted(set(files))
+  %>
+    % for file in files:
     s.files += %w( ${file} )
-    % endfor
-    % endif
     % endfor
   end

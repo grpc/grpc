@@ -98,8 +98,6 @@ FakeResolver::FakeResolver(ResolverArgs args)
     : Resolver(args.combiner, std::move(args.result_handler)),
       response_generator_(
           FakeResolverResponseGenerator::GetFromArgs(args.args)) {
-  GRPC_CLOSURE_INIT(&reresolution_closure_, ReturnReresolutionResult, this,
-                    grpc_combiner_scheduler(combiner()));
   // Channels sharing the same subchannels may have different resolver response
   // generators. If we don't remove this arg, subchannel pool will create new
   // subchannels for the same address instead of reusing existing ones because
@@ -129,7 +127,9 @@ void FakeResolver::RequestReresolutionLocked() {
     if (!reresolution_closure_pending_) {
       reresolution_closure_pending_ = true;
       Ref().release();  // ref held by closure
-      GRPC_CLOSURE_SCHED(&reresolution_closure_, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_INIT(&reresolution_closure_, ReturnReresolutionResult, this,
+                        nullptr);
+      combiner()->Run(&reresolution_closure_, GRPC_ERROR_NONE);
     }
   }
 }
@@ -159,7 +159,7 @@ void FakeResolver::MaybeSendResultLocked() {
   }
 }
 
-void FakeResolver::ReturnReresolutionResult(void* arg, grpc_error* error) {
+void FakeResolver::ReturnReresolutionResult(void* arg, grpc_error* /*error*/) {
   FakeResolver* self = static_cast<FakeResolver*>(arg);
   self->reresolution_closure_pending_ = false;
   self->MaybeSendResultLocked();
@@ -183,7 +183,7 @@ struct SetResponseClosureArg {
 };
 
 void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
-                                                      grpc_error* error) {
+                                                      grpc_error* /*error*/) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
   auto& resolver = closure_arg->resolver;
   if (!resolver->shutdown_) {
@@ -191,7 +191,7 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
     resolver->has_next_result_ = true;
     resolver->MaybeSendResultLocked();
   }
-  Delete(closure_arg);
+  delete closure_arg;
 }
 
 void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
@@ -205,25 +205,24 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
     }
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
   closure_arg->result = std::move(result);
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(
-          &closure_arg->set_response_closure, SetResponseLocked, closure_arg,
-          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+  closure_arg->resolver->combiner()->Run(
+      GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
+                        closure_arg, nullptr),
       GRPC_ERROR_NONE);
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error* /*error*/) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
   auto& resolver = closure_arg->resolver;
   if (!resolver->shutdown_) {
     resolver->reresolution_result_ = std::move(closure_arg->result);
     resolver->has_reresolution_result_ = closure_arg->has_result;
   }
-  Delete(closure_arg);
+  delete closure_arg;
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(
@@ -234,15 +233,13 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
   closure_arg->result = std::move(result);
   closure_arg->has_result = true;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(
-          &closure_arg->set_response_closure, SetReresolutionResponseLocked,
-          closure_arg,
-          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+  closure_arg->resolver->combiner()->Run(
+      GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
+                        SetReresolutionResponseLocked, closure_arg, nullptr),
       GRPC_ERROR_NONE);
 }
 
@@ -253,25 +250,23 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(
-          &closure_arg->set_response_closure, SetReresolutionResponseLocked,
-          closure_arg,
-          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+  closure_arg->resolver->combiner()->Run(
+      GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
+                        SetReresolutionResponseLocked, closure_arg, nullptr),
       GRPC_ERROR_NONE);
 }
 
 void FakeResolverResponseGenerator::SetFailureLocked(void* arg,
-                                                     grpc_error* error) {
+                                                     grpc_error* /*error*/) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
   auto& resolver = closure_arg->resolver;
   if (!resolver->shutdown_) {
     resolver->return_failure_ = true;
     if (closure_arg->immediate) resolver->MaybeSendResultLocked();
   }
-  Delete(closure_arg);
+  delete closure_arg;
 }
 
 void FakeResolverResponseGenerator::SetFailure() {
@@ -281,12 +276,11 @@ void FakeResolverResponseGenerator::SetFailure() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(
-          &closure_arg->set_response_closure, SetFailureLocked, closure_arg,
-          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+  closure_arg->resolver->combiner()->Run(
+      GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetFailureLocked,
+                        closure_arg, nullptr),
       GRPC_ERROR_NONE);
 }
 
@@ -297,13 +291,12 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
   closure_arg->immediate = false;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(
-          &closure_arg->set_response_closure, SetFailureLocked, closure_arg,
-          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+  closure_arg->resolver->combiner()->Run(
+      GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetFailureLocked,
+                        closure_arg, nullptr),
       GRPC_ERROR_NONE);
 }
 
@@ -313,13 +306,12 @@ void FakeResolverResponseGenerator::SetFakeResolver(
   resolver_ = std::move(resolver);
   if (resolver_ == nullptr) return;
   if (has_result_) {
-    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
     closure_arg->resolver = resolver_->Ref();
     closure_arg->result = std::move(result_);
-    GRPC_CLOSURE_SCHED(
+    resolver_->combiner()->Run(
         GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
-                          closure_arg,
-                          grpc_combiner_scheduler(resolver_->combiner())),
+                          closure_arg, nullptr),
         GRPC_ERROR_NONE);
     has_result_ = false;
   }
@@ -379,10 +371,10 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* uri) const override { return true; }
+  bool IsValidUri(const grpc_uri* /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    return OrphanablePtr<Resolver>(New<FakeResolver>(std::move(args)));
+    return MakeOrphanable<FakeResolver>(std::move(args));
   }
 
   const char* scheme() const override { return "fake"; }
@@ -394,8 +386,7 @@ class FakeResolverFactory : public ResolverFactory {
 
 void grpc_resolver_fake_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-          grpc_core::New<grpc_core::FakeResolverFactory>()));
+      grpc_core::MakeUnique<grpc_core::FakeResolverFactory>());
 }
 
 void grpc_resolver_fake_shutdown() {}

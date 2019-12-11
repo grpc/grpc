@@ -231,7 +231,7 @@ static void output_num(long num) {
   output_string(buf);
 }
 
-static void crash_handler(int signum, siginfo_t* info, void* data) {
+static void crash_handler(int signum, siginfo_t* /*info*/, void* /*data*/) {
   void* addrlist[MAX_FRAMES + 1];
   int addrlen;
 
@@ -379,7 +379,7 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
           GPR_TIMESPAN));
 }
 
-void grpc_test_init(int argc, char** argv) {
+void grpc_test_init(int /*argc*/, char** /*argv*/) {
   install_crash_handler();
   gpr_log(GPR_DEBUG,
           "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64

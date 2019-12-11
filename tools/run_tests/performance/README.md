@@ -24,7 +24,7 @@ GCE "worker" machines that are in the same zone.
   * For example, to start the grpc-go benchmark worker:
   [grpc-go worker main.go](https://github.com/grpc/grpc-go/blob/master/benchmark/worker/main.go) --driver_port <driver_port>
 
-#### Comands to start workers in different languages:
+#### Commands to start workers in different languages:
  * Note that these commands are what the top-level
    [run_performance_test.py](../run_performance_tests.py) script uses to
    build and run different workers through the

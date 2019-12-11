@@ -79,12 +79,12 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_whee
 if [ "$GRPC_BUILD_MANYLINUX_WHEEL" != "" ]
 then
   for wheel in dist/*.whl; do
-    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr | grep \"manylinux1
+    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
     "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
     rm "$wheel"
   done
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
-    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr | grep \"manylinux1
+    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
     "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
     rm "$wheel"
   done
@@ -134,7 +134,7 @@ fi
 
 # Ensure the generated artifacts are valid.
 "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv && "${PYTHON}" -m virtualenv venv; }
-venv/bin/python -m pip install twine
+venv/bin/python -m pip install "twine<=2.0"
 venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
 rm -rf venv/
 

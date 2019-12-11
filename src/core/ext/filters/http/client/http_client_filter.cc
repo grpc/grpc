@@ -99,8 +99,7 @@ struct channel_data {
 };
 }  // namespace
 
-static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
-                                                   grpc_metadata_batch* b) {
+static grpc_error* client_filter_incoming_metadata(grpc_metadata_batch* b) {
   if (b->idx.named.status != nullptr) {
     /* If both gRPC status and HTTP status are provided in the response, we
      * should prefer the gRPC status code, as mentioned in
@@ -177,7 +176,7 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
-    error = client_filter_incoming_metadata(elem, calld->recv_initial_metadata);
+    error = client_filter_incoming_metadata(calld->recv_initial_metadata);
     calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
   } else {
     GRPC_ERROR_REF(error);
@@ -189,7 +188,7 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
         calld->call_combiner, &calld->recv_trailing_metadata_ready,
         calld->recv_trailing_metadata_error, "continue recv_trailing_metadata");
   }
-  GRPC_CLOSURE_RUN(closure, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
@@ -204,22 +203,23 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
     return;
   }
   if (error == GRPC_ERROR_NONE) {
-    error =
-        client_filter_incoming_metadata(elem, calld->recv_trailing_metadata);
+    error = client_filter_incoming_metadata(calld->recv_trailing_metadata);
   } else {
     GRPC_ERROR_REF(error);
   }
   error = grpc_error_add_child(
       error, GRPC_ERROR_REF(calld->recv_initial_metadata_error));
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready, error);
 }
 
 static void send_message_on_complete(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->send_message_cache.Destroy();
-  GRPC_CLOSURE_RUN(calld->original_send_message_on_complete,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_send_message_on_complete,
+                          GRPC_ERROR_REF(error));
 }
 
 // Pulls a slice from the send_message byte stream, updating
@@ -302,7 +302,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
   size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
   estimated_len++; /* for the '?' */
   estimated_len += grpc_base64_estimate_encoded_size(
-      batch->payload->send_message.send_message->length(), true /* url_safe */,
+      batch->payload->send_message.send_message->length(),
       false /* multi_line */);
   grpc_core::UnmanagedMemorySlice path_with_query_slice(estimated_len);
   /* memcopy individual pieces into this slice */
@@ -340,11 +340,11 @@ static void remove_if_present(grpc_metadata_batch* batch,
   }
 }
 
-static void hc_start_transport_stream_op_batch(
+static void http_client_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
-  GPR_TIMER_SCOPE("hc_start_transport_stream_op_batch", 0);
+  GPR_TIMER_SCOPE("http_client_start_transport_stream_op_batch", 0);
 
   if (batch->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
@@ -465,16 +465,16 @@ done:
 }
 
 /* Constructor for call_data */
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* http_client_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void http_client_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
@@ -566,8 +566,8 @@ static grpc_core::ManagedMemorySlice user_agent_from_args(
 }
 
 /* Constructor for channel_data */
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* http_client_init_channel_elem(
+    grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(args->optional_transport != nullptr);
@@ -582,20 +582,20 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element* elem) {
+static void http_client_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GRPC_MDELEM_UNREF(chand->user_agent);
 }
 
 const grpc_channel_filter grpc_http_client_filter = {
-    hc_start_transport_stream_op_batch,
+    http_client_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
+    http_client_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    http_client_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    http_client_init_channel_elem,
+    http_client_destroy_channel_elem,
     grpc_channel_next_get_info,
     "http-client"};

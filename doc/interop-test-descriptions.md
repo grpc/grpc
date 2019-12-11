@@ -1121,7 +1121,7 @@ for the `SimpleRequest.response_type`. If the server does not support the
 Server gets the default SimpleRequest proto as the request. The content of the
 request is ignored. It returns the SimpleResponse proto with the payload set
 to current timestamp.  The timestamp is an integer representing current time
-with nanosecond resolution. This integer is formated as ASCII decimal in the
+with nanosecond resolution. This integer is formatted as ASCII decimal in the
 response. The format is not really important as long as the response payload
 is different for each request. In addition it adds
   1. cache control headers such that the response can be cached by proxies in
@@ -1172,7 +1172,7 @@ responses, it closes with OK.
 ### Echo Status
 [Echo Status]: #echo-status
 When the client sends a response_status in the request payload, the server closes
-the stream with the status code and messsage contained within said response_status.
+the stream with the status code and message contained within said response_status.
 The server will not process any further messages on the stream sent by the client.
 This can be used by clients to verify correct handling of different status codes and
 associated status messages end-to-end.
@@ -1189,7 +1189,7 @@ key and the corresponding value back to the client as trailing metadata.
 [Observe ResponseParameters.interval_us]: #observe-responseparametersinterval_us
 
 In StreamingOutputCall and FullDuplexCall, server delays sending a
-StreamingOutputCallResponse by the ResponseParameters's `interval_us` for that
+StreamingOutputCallResponse by the ResponseParameters' `interval_us` for that
 particular response, relative to the last response sent. That is, `interval_us`
 acts like a sleep *before* sending the response and accumulates from one
 response to the next.

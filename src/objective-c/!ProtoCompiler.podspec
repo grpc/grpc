@@ -123,6 +123,11 @@ Pod::Spec.new do |s|
   bazel = "#{repo_root}/tools/bazel"
   
   s.prepare_command = <<-CMD
-    #{bazel} build @com_google_protobuf//:protoc
+    if [ ! -f bin/protoc ]; then
+      #{bazel} build @com_google_protobuf//:protoc
+    else
+      mv bin/protoc .
+      mv include/google .
+    fi
   CMD
 end

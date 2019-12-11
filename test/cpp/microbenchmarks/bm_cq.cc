@@ -65,12 +65,14 @@ static void BM_CreateDestroyCore(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateDestroyCore);
 
-static void DoneWithCompletionOnStack(void* arg,
-                                      grpc_cq_completion* completion) {}
+static void DoneWithCompletionOnStack(void* /*arg*/,
+                                      grpc_cq_completion* /*completion*/) {}
 
 class DummyTag final : public internal::CompletionQueueTag {
  public:
-  bool FinalizeResult(void** tag, bool* status) override { return true; }
+  bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
+    return true;
+  }
 };
 
 static void BM_Pass1Cpp(benchmark::State& state) {
@@ -158,6 +160,7 @@ class TagCallback : public grpc_experimental_completion_queue_functor {
  public:
   explicit TagCallback(int* iter) : iter_(iter) {
     functor_run = &TagCallback::Run;
+    inlineable = false;
   }
   ~TagCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
@@ -177,6 +180,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
   explicit ShutdownCallback(bool* done) : done_(done) {
     functor_run = &ShutdownCallback::Run;
+    inlineable = false;
   }
   ~ShutdownCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {

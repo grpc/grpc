@@ -32,7 +32,7 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-static void assert_str(const grpc_chttp2_hptbl* tbl, grpc_slice mdstr,
+static void assert_str(const grpc_chttp2_hptbl* /*tbl*/, grpc_slice mdstr,
                        const char* str) {
   GPR_ASSERT(grpc_slice_str_cmp(mdstr, str) == 0);
 }

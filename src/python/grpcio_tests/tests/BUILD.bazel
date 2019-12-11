@@ -2,8 +2,8 @@ py_library(
     name = "bazel_namespace_package_hack",
     srcs = ["bazel_namespace_package_hack.py"],
     visibility = [
-        "//src/python/grpcio_tests/tests/status:__subpackages__",
-        "//src/python/grpcio_tests/tests/interop:__subpackages__",
         "//examples/python/errors:__subpackages__",
+        "//src/python/grpcio_tests/tests/interop:__subpackages__",
+        "//src/python/grpcio_tests/tests/status:__subpackages__",
     ],
 )

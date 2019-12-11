@@ -19,11 +19,11 @@
 #import <XCTest/XCTest.h>
 
 #import "../../GRPCClient/GRPCCallOptions.h"
-#import "../../GRPCClient/private/GRPCChannel.h"
-#import "../../GRPCClient/private/GRPCChannelPool+Test.h"
-#import "../../GRPCClient/private/GRPCChannelPool.h"
-#import "../../GRPCClient/private/GRPCCompletionQueue.h"
-#import "../../GRPCClient/private/GRPCWrappedCall.h"
+#import "../../GRPCClient/private/GRPCCore/GRPCChannel.h"
+#import "../../GRPCClient/private/GRPCCore/GRPCChannelPool+Test.h"
+#import "../../GRPCClient/private/GRPCCore/GRPCChannelPool.h"
+#import "../../GRPCClient/private/GRPCCore/GRPCCompletionQueue.h"
+#import "../../GRPCClient/private/GRPCCore/GRPCWrappedCall.h"
 
 static NSString *kDummyHost = @"dummy.host";
 static NSString *kDummyPath = @"/dummy/path";

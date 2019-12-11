@@ -31,7 +31,7 @@ class Foo : public Orphanable {
  public:
   Foo() : Foo(0) {}
   explicit Foo(int value) : value_(value) {}
-  void Orphan() override { Delete(this); }
+  void Orphan() override { delete this; }
   int value() const { return value_; }
 
  private:
@@ -39,12 +39,12 @@ class Foo : public Orphanable {
 };
 
 TEST(Orphanable, Basic) {
-  Foo* foo = New<Foo>();
+  Foo* foo = new Foo();
   foo->Orphan();
 }
 
 TEST(OrphanablePtr, Basic) {
-  OrphanablePtr<Foo> foo(New<Foo>());
+  OrphanablePtr<Foo> foo(new Foo());
   EXPECT_EQ(0, foo->value());
 }
 

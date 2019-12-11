@@ -256,7 +256,8 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
       new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
     }
-    GRPC_CLOSURE_SCHED(pending_request->on_request_metadata, new_error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            pending_request->on_request_metadata, new_error);
     grpc_polling_entity_del_from_pollset_set(
         pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
     grpc_oauth2_pending_get_request_metadata* prev = pending_request;
@@ -269,9 +270,9 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
 }
 
 bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
-    grpc_polling_entity* pollent, grpc_auth_metadata_context context,
+    grpc_polling_entity* pollent, grpc_auth_metadata_context /*context*/,
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error** error) {
+    grpc_error** /*error*/) {
   // Check if we can use the cached token.
   grpc_millis refresh_threshold =
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
@@ -332,8 +333,9 @@ void grpc_oauth2_token_fetcher_credentials::cancel_get_request_metadata(
         pending_requests_ = pending_request->next;
       }
       // Invoke the callback immediately with an error.
-      GRPC_CLOSURE_SCHED(pending_request->on_request_metadata,
-                         GRPC_ERROR_REF(error));
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                              pending_request->on_request_metadata,
+                              GRPC_ERROR_REF(error));
       gpr_free(pending_request);
       break;
     }
@@ -614,7 +616,7 @@ class StsTokenFetcherCredentials
       if (err != GRPC_ERROR_NONE) return cleanup();
       MaybeAddToBody(
           &body_strvec, "actor_token",
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)));
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)));
       MaybeAddToBody(&body_strvec, "actor_token_type", actor_token_type_.get());
     }
     return cleanup();
@@ -641,7 +643,7 @@ grpc_error* ValidateStsCredentialsOptions(
   };
   *sts_url_out = nullptr;
   InlinedVector<grpc_error*, 3> error_list;
-  UniquePtr<grpc_uri, GrpcUriDeleter> sts_url(
+  std::unique_ptr<grpc_uri, GrpcUriDeleter> sts_url(
       options->token_exchange_service_uri != nullptr
           ? grpc_uri_parse(options->token_exchange_service_uri, false)
           : nullptr);
@@ -702,15 +704,15 @@ grpc_access_token_credentials::~grpc_access_token_credentials() {
 }
 
 bool grpc_access_token_credentials::get_request_metadata(
-    grpc_polling_entity* pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error** error) {
+    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
+    grpc_credentials_mdelem_array* md_array,
+    grpc_closure* /*on_request_metadata*/, grpc_error** /*error*/) {
   grpc_credentials_mdelem_array_add(md_array, access_token_md_);
   return true;
 }
 
 void grpc_access_token_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
+    grpc_credentials_mdelem_array* /*md_array*/, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 

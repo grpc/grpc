@@ -52,7 +52,7 @@ using grpc_core::testing::input_stream;
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // global state
@@ -325,7 +325,7 @@ typedef struct addr_req {
   char* addr;
   grpc_closure* on_done;
   grpc_resolved_addresses** addrs;
-  grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses;
+  std::unique_ptr<grpc_core::ServerAddressList>* addresses;
 } addr_req;
 
 static void finish_resolve(void* arg, grpc_error* error) {
@@ -347,22 +347,22 @@ static void finish_resolve(void* arg, grpc_error* error) {
       dummy_resolved_address.len = 0;
       (*r->addresses)->emplace_back(dummy_resolved_address, nullptr);
     }
-    GRPC_CLOSURE_SCHED(r->on_done, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, GRPC_ERROR_NONE);
   } else {
-    GRPC_CLOSURE_SCHED(r->on_done,
-                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "Resolution failed", &error, 1));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
+                            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                                "Resolution failed", &error, 1));
   }
 
   gpr_free(r->addr);
-  grpc_core::Delete(r);
+  delete r;
 }
 
-void my_resolve_address(const char* addr, const char* default_port,
-                        grpc_pollset_set* interested_parties,
+void my_resolve_address(const char* addr, const char* /*default_port*/,
+                        grpc_pollset_set* /*interested_parties*/,
                         grpc_closure* on_done,
                         grpc_resolved_addresses** addrs) {
-  addr_req* r = grpc_core::New<addr_req>();
+  addr_req* r = new addr_req();
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = addrs;
@@ -375,11 +375,11 @@ static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
                                                        nullptr};
 
 grpc_ares_request* my_dns_lookup_ares_locked(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout,
-    grpc_combiner* combiner) {
+    const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    bool /*check_grpclb*/, char** /*service_config_json*/,
+    int /*query_timeout*/, grpc_core::Combiner* /*combiner*/) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -412,7 +412,7 @@ static void do_connect(void* arg, grpc_error* error) {
   future_connect* fc = static_cast<future_connect*>(arg);
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = nullptr;
-    GRPC_CLOSURE_SCHED(fc->closure, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != nullptr) {
     grpc_endpoint* client;
     grpc_endpoint* server;
@@ -424,7 +424,7 @@ static void do_connect(void* arg, grpc_error* error) {
     grpc_server_setup_transport(g_server, transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
-    GRPC_CLOSURE_SCHED(fc->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
   } else {
     sched_connect(fc->closure, fc->ep, fc->deadline);
   }
@@ -435,8 +435,9 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
                           gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = nullptr;
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                    "Connect deadline exceeded"));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, closure,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connect deadline exceeded"));
     return;
   }
 
@@ -450,9 +451,9 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
 }
 
 static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_pollset_set* interested_parties,
-                                  const grpc_channel_args* channel_args,
-                                  const grpc_resolved_address* addr,
+                                  grpc_pollset_set* /*interested_parties*/,
+                                  const grpc_channel_args* /*channel_args*/,
+                                  const grpc_resolved_address* /*addr*/,
                                   grpc_millis deadline) {
   sched_connect(closure, ep,
                 grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
@@ -481,7 +482,7 @@ static void assert_success_and_decrement(void* counter, bool success) {
   --*static_cast<int*>(counter);
 }
 
-static void decrement(void* counter, bool success) {
+static void decrement(void* counter, bool /*success*/) {
   --*static_cast<int*>(counter);
 }
 
@@ -662,7 +663,7 @@ typedef struct {
   uint8_t has_ops;
 } batch_info;
 
-static void finished_batch(void* p, bool success) {
+static void finished_batch(void* p, bool /*success*/) {
   batch_info* bi = static_cast<batch_info*>(p);
   --bi->cs->pending_ops;
   if ((bi->has_ops & (1u << GRPC_OP_RECV_MESSAGE)) &&

@@ -91,6 +91,10 @@ grpc_error* grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 /* Tries to set the socket using a grpc_socket_mutator */
 grpc_error* grpc_set_socket_with_mutator(int fd, grpc_socket_mutator* mutator);
 
+/* Extracts the first socket mutator from args if any and applies on the fd. */
+grpc_error* grpc_apply_socket_mutator_in_args(int fd,
+                                              const grpc_channel_args* args);
+
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
    Currently, this information is only used when a socket is first created, but

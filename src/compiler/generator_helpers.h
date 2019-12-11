@@ -166,7 +166,7 @@ inline MethodType GetMethodType(
   }
 }
 
-inline void Split(const grpc::string& s, char delim,
+inline void Split(const grpc::string& s, char /*delim*/,
                   std::vector<grpc::string>* append_to) {
   std::istringstream iss(s);
   grpc::string piece;

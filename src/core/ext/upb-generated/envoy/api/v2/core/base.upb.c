@@ -10,12 +10,11 @@
 #include "upb/msg.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "envoy/api/v2/core/http_uri.upb.h"
+#include "envoy/type/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "validate/validate.upb.h"
-#include "gogoproto/gogo.upb.h"
-#include "envoy/type/percent.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -87,6 +86,21 @@ static const upb_msglayout_field envoy_api_v2_core_RuntimeUInt32__fields[2] = {
 const upb_msglayout envoy_api_v2_core_RuntimeUInt32_msginit = {
   NULL,
   &envoy_api_v2_core_RuntimeUInt32__fields[0],
+  UPB_SIZE(16, 32), 2, false,
+};
+
+static const upb_msglayout *const envoy_api_v2_core_RuntimeFeatureFlag_submsgs[1] = {
+  &google_protobuf_BoolValue_msginit,
+};
+
+static const upb_msglayout_field envoy_api_v2_core_RuntimeFeatureFlag__fields[2] = {
+  {1, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
+};
+
+const upb_msglayout envoy_api_v2_core_RuntimeFeatureFlag_msginit = {
+  &envoy_api_v2_core_RuntimeFeatureFlag_submsgs[0],
+  &envoy_api_v2_core_RuntimeFeatureFlag__fields[0],
   UPB_SIZE(16, 32), 2, false,
 };
 

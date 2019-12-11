@@ -25,6 +25,7 @@
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 
 #define GRPC_ALTS_TRANSPORT_SECURITY_TYPE "alts"
+#define GRPC_ALTS_URL_SCHEME "https"
 
 /**
  * This method creates an ALTS channel security connector.
@@ -56,6 +57,10 @@ grpc_alts_channel_security_connector_create(
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+
+/* Initializes rpc_versions. */
+void grpc_alts_set_rpc_protocol_versions(
+    grpc_gcp_rpc_protocol_versions* rpc_versions);
 
 namespace grpc_core {
 namespace internal {

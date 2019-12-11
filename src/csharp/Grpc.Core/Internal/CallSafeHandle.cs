@@ -33,7 +33,7 @@ namespace Grpc.Core.Internal
         public static readonly CallSafeHandle NullInstance = new CallSafeHandle();
         static readonly NativeMethods Native = NativeMethods.Get();
 
-        // Completion handlers are pre-allocated to avoid unneccessary delegate allocations.
+        // Completion handlers are pre-allocated to avoid unnecessary delegate allocations.
         // The "state" field is used to store the actual callback to invoke.
         static readonly BatchCompletionDelegate CompletionHandler_IUnaryResponseClientCallback =
             (success, context, state) => ((IUnaryResponseClientCallback)state).OnUnaryResponseClient(success, context.GetReceivedStatusOnClient(), context.GetReceivedMessageReader(), context.GetReceivedInitialMetadata());

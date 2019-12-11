@@ -14,7 +14,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "validate/validate.upb.h"
-#include "gogoproto/gogo.upb.h"
 
 #include "upb/port_def.inc"
 

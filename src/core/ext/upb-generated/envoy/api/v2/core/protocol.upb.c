@@ -12,7 +12,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "validate/validate.upb.h"
-#include "gogoproto/gogo.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -22,18 +21,20 @@ const upb_msglayout envoy_api_v2_core_TcpProtocolOptions_msginit = {
   UPB_SIZE(0, 0), 0, false,
 };
 
-static const upb_msglayout *const envoy_api_v2_core_HttpProtocolOptions_submsgs[1] = {
+static const upb_msglayout *const envoy_api_v2_core_HttpProtocolOptions_submsgs[2] = {
   &google_protobuf_Duration_msginit,
+  &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_core_HttpProtocolOptions__fields[1] = {
+static const upb_msglayout_field envoy_api_v2_core_HttpProtocolOptions__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+  {2, UPB_SIZE(4, 8), 0, 1, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_HttpProtocolOptions_msginit = {
   &envoy_api_v2_core_HttpProtocolOptions_submsgs[0],
   &envoy_api_v2_core_HttpProtocolOptions__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 16), 2, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_core_Http1ProtocolOptions_submsgs[1] = {

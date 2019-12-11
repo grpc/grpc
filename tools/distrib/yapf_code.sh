@@ -30,7 +30,7 @@ EXCLUSIONS=(
 
 VIRTUALENV=yapf_virtual_environment
 
-python3 -m virtualenv $VIRTUALENV
+python3 -m virtualenv $VIRTUALENV -p $(which python3)
 PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install --upgrade pip==10.0.1
 "$PYTHON" -m pip install --upgrade futures

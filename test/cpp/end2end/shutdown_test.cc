@@ -46,8 +46,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext* context, const EchoRequest* /*request*/,
+              EchoResponse* /*response*/) override {
     gpr_event_set(ev_, (void*)1);
     while (!context->IsCancelled()) {
     }
@@ -136,8 +136,8 @@ std::vector<string> GetAllCredentialsTypeList() {
   return credentials_types;
 }
 
-INSTANTIATE_TEST_CASE_P(End2EndShutdown, ShutdownTest,
-                        ::testing::ValuesIn(GetAllCredentialsTypeList()));
+INSTANTIATE_TEST_SUITE_P(End2EndShutdown, ShutdownTest,
+                         ::testing::ValuesIn(GetAllCredentialsTypeList()));
 
 // TODO(ctiller): leaked objects in this test
 TEST_P(ShutdownTest, ShutdownTest) {

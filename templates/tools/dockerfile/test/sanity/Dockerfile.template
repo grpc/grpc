@@ -33,6 +33,7 @@
 
   <%include file="../../clang5.include"/>
   <%include file="../../bazel.include"/>
+  <%include file="../../buildifier.include"/>
 
   # Define the default command.
   CMD ["bash"]

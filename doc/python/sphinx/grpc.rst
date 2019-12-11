@@ -40,6 +40,7 @@ Create Client Credentials
 .. autofunction:: access_token_call_credentials
 .. autofunction:: composite_call_credentials
 .. autofunction:: composite_channel_credentials
+.. autofunction:: local_channel_credentials(local_connect_type=grpc.LocalConnectionType.LOCAL_TCP)
 
 
 Create Server
@@ -54,6 +55,13 @@ Create Server Credentials
 .. autofunction:: ssl_server_credentials
 .. autofunction:: ssl_server_certificate_configuration
 .. autofunction:: dynamic_ssl_server_credentials
+.. autofunction:: local_server_credentials(local_connect_type=grpc.LocalConnectionType.LOCAL_TCP)
+
+
+Local Connection Type
+^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: LocalConnectionType
 
 
 RPC Method Handlers

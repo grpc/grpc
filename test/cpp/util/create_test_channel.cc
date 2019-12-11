@@ -33,7 +33,7 @@ const char kProdTlsCredentialsType[] = "prod_ssl";
 class SslCredentialProvider : public testing::CredentialTypeProvider {
  public:
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      grpc::ChannelArguments* args) override {
+      grpc::ChannelArguments* /*args*/) override {
     return grpc::SslCredentials(SslCredentialsOptions());
   }
   std::shared_ptr<ServerCredentials> GetServerCredentials() override {

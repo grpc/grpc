@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])  # Apache v2
 
@@ -25,6 +25,7 @@ grpc_fuzzer(
     srcs = ["alts_credentials_fuzzer.cc"],
     corpus = "corpus/alts_credentials_corpus",
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -37,6 +38,7 @@ grpc_fuzzer(
     srcs = ["ssl_server_fuzzer.cc"],
     corpus = "corpus/ssl_server_corpus",
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -58,6 +60,7 @@ grpc_cc_test(
     name = "auth_context_test",
     srcs = ["auth_context_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -93,6 +96,7 @@ grpc_cc_test(
     name = "json_token_test",
     srcs = ["json_token_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -104,6 +108,7 @@ grpc_cc_test(
     name = "jwt_verifier_test",
     srcs = ["jwt_verifier_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -254,17 +259,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "spiffe_security_connector_test",
-    srcs = ["spiffe_security_connector_test.cc"],
-    language = "C++",
+    name = "tls_security_connector_test",
+    srcs = ["tls_security_connector_test.cc"],
     external_deps = [
-      "gtest",
+        "gtest",
     ],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
-        "//test/core/util:grpc_test_util",
         "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
     ],
 )

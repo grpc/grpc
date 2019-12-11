@@ -57,6 +57,9 @@
     }
   }, 
   {
+    "config": "counters_with_memory_counter"
+  }, 
+  {
     "config": "stapprof"
   }, 
   {

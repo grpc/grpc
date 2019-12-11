@@ -35,15 +35,15 @@ grpc_google_iam_credentials::~grpc_google_iam_credentials() {
 }
 
 bool grpc_google_iam_credentials::get_request_metadata(
-    grpc_polling_entity* pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error** error) {
+    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
+    grpc_credentials_mdelem_array* md_array,
+    grpc_closure* /*on_request_metadata*/, grpc_error** /*error*/) {
   grpc_credentials_mdelem_array_append(md_array, &md_array_);
   return true;
 }
 
 void grpc_google_iam_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
+    grpc_credentials_mdelem_array* /*md_array*/, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 

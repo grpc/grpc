@@ -21,8 +21,8 @@ load("@bazel_skylib//rules:build_test.bzl", "build_test")
 # build test //test/build_test:objective_c_examples_test
 build_test(
     name = "objective_c_examples_test",
+    tags = ["manual"],
     targets = [
         "//examples/objective-c:HelloWorld",
     ],
-    tags = ["manual"],
 )

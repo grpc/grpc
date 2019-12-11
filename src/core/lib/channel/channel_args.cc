@@ -22,6 +22,8 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -360,4 +362,18 @@ char* grpc_channel_args_string(const grpc_channel_args* args) {
       gpr_strjoin_sep(const_cast<const char**>(v.strs), v.count, ", ", nullptr);
   gpr_strvec_destroy(&v);
   return result;
+}
+
+namespace {
+grpc_channel_args_client_channel_creation_mutator g_mutator = nullptr;
+}  // namespace
+
+void grpc_channel_args_set_client_channel_creation_mutator(
+    grpc_channel_args_client_channel_creation_mutator cb) {
+  GPR_DEBUG_ASSERT(g_mutator == nullptr);
+  g_mutator = cb;
+}
+grpc_channel_args_client_channel_creation_mutator
+grpc_channel_args_get_client_channel_creation_mutator() {
+  return g_mutator;
 }

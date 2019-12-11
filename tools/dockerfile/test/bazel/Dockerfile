@@ -27,6 +27,7 @@ RUN apt-get update && apt-get -y install \
   autoconf \
   build-essential \
   curl \
+  wget \
   libtool \
   make \
   openjdk-8-jdk \
@@ -48,11 +49,32 @@ RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
 
 
+#=================
+# Compile CPython 3.6.9 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
+    tar xzvf Python-3.6.9.tgz && \
+    cd Python-3.6.9 && \
+    ./configure && \
+    make install
+
+RUN cd /tmp && \
+    echo "ff7cdaef4846c89c1ec0d7b709bbd54d Python-3.6.9.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.6 -m ensurepip && \
+    python3.6 -m pip install coverage
+
+
 #========================
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 0.29.0
+ENV BAZEL_VERSION 1.0.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

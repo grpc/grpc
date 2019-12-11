@@ -57,7 +57,7 @@ static void thd_func(void* arg) {
 }
 
 /* Sets the done_write event */
-static void set_done_write(void* arg, grpc_error* error) {
+static void set_done_write(void* arg, grpc_error* /*error*/) {
   gpr_event* done_write = static_cast<gpr_event*>(arg);
   gpr_event_set(done_write, (void*)1);
 }
@@ -70,7 +70,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 /* Sets the read_done event */
-static void set_read_done(void* arg, grpc_error* error) {
+static void set_read_done(void* arg, grpc_error* /*error*/) {
   gpr_event* read_done = static_cast<gpr_event*>(arg);
   gpr_event_set(read_done, (void*)1);
 }
@@ -252,7 +252,7 @@ void grpc_run_bad_client_test(
 }
 
 bool client_connection_preface_validator(grpc_slice_buffer* incoming,
-                                         void* arg) {
+                                         void* /*arg*/) {
   if (incoming->count < 1) {
     return false;
   }
@@ -278,7 +278,7 @@ grpc_bad_client_arg connection_preface_arg = {
     client_connection_preface_validator, nullptr,
     CONNECTION_PREFACE_FROM_CLIENT, sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
 
-bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* arg) {
+bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   // Get last frame from incoming slice buffer.
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
@@ -311,7 +311,7 @@ static void* tag(intptr_t t) { return (void*)t; }
 
 void server_verifier_request_call(grpc_server* server,
                                   grpc_completion_queue* cq,
-                                  void* registered_method) {
+                                  void* /*registered_method*/) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
