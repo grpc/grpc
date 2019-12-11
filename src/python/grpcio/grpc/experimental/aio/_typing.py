@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,17 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Exceptions for the aio version of the RPC calls."""
+"""Common types for gRPC Async API"""
 
+from typing import Any, AnyStr, Callable, Sequence, Text, Tuple, TypeVar
 
-cdef class _AioRpcError(Exception):
-    cdef readonly:
-        tuple _initial_metadata
-        int _code
-        str _details
-        tuple _trailing_metadata
-
-    cpdef tuple initial_metadata(self)
-    cpdef int code(self)
-    cpdef str details(self)
-    cpdef tuple trailing_metadata(self)
+RequestType = TypeVar('RequestType')
+ResponseType = TypeVar('ResponseType')
+SerializingFunction = Callable[[Any], bytes]
+DeserializingFunction = Callable[[bytes], Any]
+MetadataType = Sequence[Tuple[Text, AnyStr]]

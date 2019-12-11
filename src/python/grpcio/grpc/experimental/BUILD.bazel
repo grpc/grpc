@@ -4,9 +4,11 @@ py_library(
     name = "aio",
     srcs = [
         "aio/__init__.py",
+        "aio/_base_call.py",
         "aio/_call.py",
         "aio/_channel.py",
         "aio/_server.py",
+        "aio/_typing.py",
     ],
     deps = [
         "//src/python/grpcio/grpc/_cython:cygrpc",

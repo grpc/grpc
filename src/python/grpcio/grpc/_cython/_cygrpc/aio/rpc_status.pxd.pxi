@@ -11,13 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Desired cancellation status for canceling an ongoing RPC calls."""
+"""Exceptions for the aio version of the RPC calls."""
 
 
-cdef class AioCancelStatus:
+cdef class AioRpcStatus(Exception):
     cdef readonly:
-        object _code
+        grpc_status_code _code
         str _details
+        # Per the spec, only client-side status has trailing metadata.
+        tuple _trailing_metadata
+        str _debug_error_string
 
-    cpdef object code(self)
+    cpdef grpc_status_code code(self)
     cpdef str details(self)
+    cpdef tuple trailing_metadata(self)
+    cpdef str debug_error_string(self)
+    cdef grpc_status_code c_code(self)

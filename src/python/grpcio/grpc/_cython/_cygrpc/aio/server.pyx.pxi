@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import inspect
+
+
 # TODO(https://github.com/grpc/grpc/issues/20850) refactor this.
 _LOGGER = logging.getLogger(__name__)
 cdef int _EMPTY_FLAG = 0
@@ -21,9 +25,6 @@ cdef class _HandlerCallDetails:
     def __cinit__(self, str method, tuple invocation_metadata):
         self.method = method
         self.invocation_metadata = invocation_metadata
-
-
-class _ServicerContextPlaceHolder(object): pass
 
 
 cdef class RPCState:
@@ -43,12 +44,49 @@ cdef class RPCState:
             grpc_call_unref(self.call)
 
 
+cdef class _ServicerContext:
+    cdef RPCState _rpc_state
+    cdef object _loop
+    cdef bint _metadata_sent
+    cdef object _request_deserializer
+    cdef object _response_serializer
+
+    def __cinit__(self,
+                  RPCState rpc_state,
+                  object request_deserializer,
+                  object response_serializer,
+                  object loop):
+        self._rpc_state = rpc_state
+        self._request_deserializer = request_deserializer
+        self._response_serializer = response_serializer
+        self._loop = loop
+        self._metadata_sent = False
+
+    async def read(self):
+        cdef bytes raw_message = await _receive_message(self._rpc_state, self._loop)
+        return deserialize(self._request_deserializer,
+                           raw_message)
+
+    async def write(self, object message):
+        await _send_message(self._rpc_state,
+                            serialize(self._response_serializer, message),
+                            self._metadata_sent,
+                            self._loop)
+        if not self._metadata_sent:
+            self._metadata_sent = True
+
+    async def send_initial_metadata(self, tuple metadata):
+        if self._metadata_sent:
+            raise RuntimeError('Send initial metadata failed: already sent')
+        else:
+            _send_initial_metadata(self._rpc_state, self._loop)
+            self._metadata_sent = True
+
+
 cdef _find_method_handler(str method, list generic_handlers):
     # TODO(lidiz) connects Metadata to call details
-    cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(
-        method,
-        tuple()
-    )
+    cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(method,
+                                                                        None)
 
     for generic_handler in generic_handlers:
         method_handler = generic_handler.service(handler_call_details)
@@ -61,64 +99,132 @@ async def _handle_unary_unary_rpc(object method_handler,
                                   RPCState rpc_state,
                                   object loop):
     # Receives request message
-    cdef tuple receive_ops = (
-        ReceiveMessageOperation(_EMPTY_FLAGS),
-    )
-    await callback_start_batch(rpc_state, receive_ops, loop)
+    cdef bytes request_raw = await _receive_message(rpc_state, loop)
 
     # Deserializes the request message
-    cdef bytes request_raw = receive_ops[0].message()
-    cdef object request_message
-    if method_handler.request_deserializer:
-        request_message = method_handler.request_deserializer(request_raw)
-    else:
-        request_message = request_raw
+    cdef object request_message = deserialize(
+        method_handler.request_deserializer,
+        request_raw,
+    )
 
     # Executes application logic
-    cdef object response_message = await method_handler.unary_unary(request_message, _ServicerContextPlaceHolder())
+    cdef object response_message = await method_handler.unary_unary(
+        request_message,
+        _ServicerContext(
+            rpc_state,
+            None,
+            None,
+            loop,
+        ),
+    )
 
     # Serializes the response message
-    cdef bytes response_raw
-    if method_handler.response_serializer:
-        response_raw = method_handler.response_serializer(response_message)
-    else:
-        response_raw = response_message
+    cdef bytes response_raw = serialize(
+        method_handler.response_serializer,
+        response_message,
+    )
 
     # Sends response message
     cdef tuple send_ops = (
         SendStatusFromServerOperation(
-        tuple(), StatusCode.ok, b'', _EMPTY_FLAGS),
-        SendInitialMetadataOperation(tuple(), _EMPTY_FLAGS),
+            tuple(),
+            StatusCode.ok,
+            b'',
+            _EMPTY_FLAGS,
+        ),
+        SendInitialMetadataOperation(None, _EMPTY_FLAGS),
         SendMessageOperation(response_raw, _EMPTY_FLAGS),
     )
-    await callback_start_batch(rpc_state, send_ops, loop)
+    await execute_batch(rpc_state, send_ops, loop)
+
+
+async def _handle_unary_stream_rpc(object method_handler,
+                                   RPCState rpc_state,
+                                   object loop):
+    # Receives request message
+    cdef bytes request_raw = await _receive_message(rpc_state, loop)
+
+    # Deserializes the request message
+    cdef object request_message = deserialize(
+        method_handler.request_deserializer,
+        request_raw,
+    )
+
+    cdef _ServicerContext servicer_context = _ServicerContext(
+        rpc_state,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
+        loop,
+    )
+
+    cdef object async_response_generator
+    cdef object response_message
+    if inspect.iscoroutinefunction(method_handler.unary_stream):
+        # The handler uses reader / writer API, returns None.
+        await method_handler.unary_stream(
+            request_message,
+            servicer_context,
+        )
+    else:
+        # The handler uses async generator API
+        async_response_generator = method_handler.unary_stream(
+            request_message,
+            servicer_context,
+        )
+
+        # Consumes messages from the generator
+        async for response_message in async_response_generator:
+            await servicer_context.write(response_message)
+
+    # Sends the final status of this RPC
+    cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
+        None,
+        StatusCode.ok,
+        b'',
+        _EMPTY_FLAGS,
+    )
+
+    cdef tuple ops = (op,)
+    await execute_batch(rpc_state, ops, loop)
+
+
+async def _handle_cancellation_from_core(object rpc_task,
+                                         RPCState rpc_state,
+                                         object loop):
+    cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
+    cdef tuple ops = (op,)
+    await execute_batch(rpc_state, ops, loop)
+    if op.cancelled() and not rpc_task.done():
+        rpc_task.cancel()
 
 
 async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
     # Finds the method handler (application logic)
     cdef object method_handler = _find_method_handler(
         rpc_state.method().decode(),
-        generic_handlers
+        generic_handlers,
     )
     if method_handler is None:
         # TODO(lidiz) return unimplemented error to client side
         raise NotImplementedError()
 
     # TODO(lidiz) extend to all 4 types of RPC
-    if method_handler.request_streaming or method_handler.response_streaming:
-        raise NotImplementedError()
+    if not method_handler.request_streaming and method_handler.response_streaming:
+        await _handle_unary_stream_rpc(method_handler,
+                                       rpc_state,
+                                       loop)
+    elif not method_handler.request_streaming and not method_handler.response_streaming:
+        await _handle_unary_unary_rpc(method_handler,
+                                      rpc_state,
+                                      loop)
     else:
-        await _handle_unary_unary_rpc(
-            method_handler,
-            rpc_state,
-            loop
-        )
+        raise NotImplementedError()
 
 
 class _RequestCallError(Exception): pass
 
 cdef CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = CallbackFailureHandler(
-    'grpc_server_request_call', 'server shutdown', _RequestCallError)
+    'grpc_server_request_call', None, _RequestCallError)
 
 
 async def _server_call_request_call(Server server,
@@ -147,19 +253,9 @@ async def _server_call_request_call(Server server,
     return rpc_state
 
 
-async def _handle_cancellation_from_core(object rpc_task,
-                                          RPCState rpc_state,
-                                          object loop):
-    cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
-    cdef tuple ops = (op,)
-    await callback_start_batch(rpc_state, ops, loop)
-    if op.cancelled() and not rpc_task.done():
-        rpc_task.cancel()
-
-
 cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_server_shutdown_and_notify',
-    'Unknown',
+    None,
     RuntimeError)
 
 
@@ -182,6 +278,7 @@ cdef class AioServer:
         self._generic_handlers = []
         self.add_generic_rpc_handlers(generic_handlers)
         self._serving_task = None
+        self._ongoing_rpc_tasks = set()
 
         self._shutdown_lock = asyncio.Lock(loop=self._loop)
         self._shutdown_completed = self._loop.create_future()
@@ -221,11 +318,13 @@ cdef class AioServer:
             if self._status != AIO_SERVER_STATUS_RUNNING:
                 break
 
+            # Accepts new request from Core
             rpc_state = await _server_call_request_call(
                 self._server,
                 self._cq,
                 self._loop)
 
+            # Schedules the RPC as a separate coroutine
             rpc_task = self._loop.create_task(
                 _handle_rpc(
                     self._generic_handlers,
@@ -233,6 +332,8 @@ cdef class AioServer:
                     self._loop
                 )
             )
+
+            # Fires off a task that listens on the cancellation from client.
             self._loop.create_task(
                 _handle_cancellation_from_core(
                     rpc_task,
@@ -240,6 +341,10 @@ cdef class AioServer:
                     self._loop
                 )
             )
+
+            # Keeps track of created coroutines, so we can clean them up properly.
+            self._ongoing_rpc_tasks.add(rpc_task)
+            rpc_task.add_done_callback(lambda _: self._ongoing_rpc_tasks.remove(rpc_task))
 
     def _serving_task_crash_handler(self, object task):
         """Shutdown the server immediately if unexpectedly exited."""
@@ -282,7 +387,7 @@ cdef class AioServer:
             pass
 
     async def shutdown(self, grace):
-        """Gracefully shutdown the C-Core server.
+        """Gracefully shutdown the Core server.
 
         Application should only call shutdown once.
 
@@ -318,6 +423,10 @@ cdef class AioServer:
                 grpc_server_cancel_all_calls(self._server.c_server)
                 await self._shutdown_completed
 
+        # Cancels all Python layer tasks
+        for rpc_task in self._ongoing_rpc_tasks:
+            rpc_task.cancel()
+
         async with self._shutdown_lock:
             if self._status == AIO_SERVER_STATUS_STOPPING:
                 grpc_server_destroy(self._server.c_server)
@@ -328,7 +437,7 @@ cdef class AioServer:
                 # Shuts down the completion queue
                 await self._cq.shutdown()
     
-    async def wait_for_termination(self, float timeout):
+    async def wait_for_termination(self, object timeout):
         if timeout is None:
             await self._shutdown_completed
         else:

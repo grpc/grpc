@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,16 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# distutils: language=c++
 
 
-cdef extern from "src/core/lib/iomgr/timer_manager.h":
-  void grpc_timer_manager_set_threading(bint enabled);
+cdef object deserialize(object deserializer, bytes raw_message):
+    """Perform deserialization on raw bytes.
 
-cdef extern from "src/core/lib/iomgr/iomgr_internal.h":
-  void grpc_set_default_iomgr_platform();
+    Failure to deserialize is a fatal error.
+    """
+    if deserializer:
+        return deserializer(raw_message)
+    else:
+        return raw_message
 
-cdef extern from "src/core/lib/iomgr/executor.h" namespace "grpc_core":
-    cdef cppclass Executor:
-        @staticmethod
-        void SetThreadingAll(bint enable);
+
+cdef bytes serialize(object serializer, object message):
+    """Perform serialization on a message.
+
+    Failure to serialize is a fatal error.
+    """
+    if serializer:
+        return serializer(message)
+    else:
+        return message
