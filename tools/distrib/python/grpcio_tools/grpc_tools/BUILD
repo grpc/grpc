@@ -33,7 +33,6 @@ py_library(
     srcs = ["__init__.py", "protoc.py"],
     deps = [
       ":cyprotoc",
-      "@six_archive//:six",
       "@com_google_protobuf//:protobuf_python",
       "//src/python/grpcio/grpc:grpcio",
     ],

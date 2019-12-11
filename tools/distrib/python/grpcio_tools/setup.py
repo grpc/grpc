@@ -225,7 +225,6 @@ setuptools.setup(
     packages=setuptools.find_packages('.'),
     install_requires=[
         'protobuf>=3.5.0.post1',
-        'six>=1.0.0',
         'grpcio>={version}'.format(version=grpc_version.VERSION),
     ],
     package_data=package_data(),
