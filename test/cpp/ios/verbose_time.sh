@@ -13,28 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l c++
+#!/bin/bash
 
-set -ev
-
-cd "$(dirname "$0")"
-
-echo "TIME:  $(date)"
-
-./build_tests.sh | ./verbose_time.sh
-
-echo "TIME:  $(date)"
-
-set -o pipefail
-
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CronetTests \
-    -destination name="iPhone 8" \
-    test \
-    | ./verbose_time.sh \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' -
+while IFS= read -r line; do
+  echo "$(date) - $line"
+done
