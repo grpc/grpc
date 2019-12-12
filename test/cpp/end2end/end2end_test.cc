@@ -1131,8 +1131,6 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   }
 }
 
-// TODO(https://github.com/grpc/grpc/issues/21263): stop using timed sleeps to
-// synchronize cancellation semantics.
 TEST_P(End2endTest, CancelDelayedRpc) {
   MAYBE_SKIP_TEST;
   ResetStub();
@@ -1140,15 +1138,27 @@ TEST_P(End2endTest, CancelDelayedRpc) {
   EchoResponse response;
   ClientContext context;
   request.set_message("hello");
-  request.mutable_param()->set_server_sleep_us(100 * 1000);
+  request.mutable_param()->set_server_notify_started(true);
   request.mutable_param()->set_skip_cancelled_check(true);
   Status s;
   std::thread echo_thread([this, &s, &context, &request, &response] {
     s = stub_->Echo(&context, request, &response);
     EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
   });
-  std::this_thread::sleep_for(std::chrono::microseconds(10 * 1000));
+  if (!GetParam().callback_server) {
+    service_.ClientWaitRpcStarted();
+  } else {
+    callback_service_.ClientWaitRpcStarted();
+  }
+
   context.TryCancel();
+
+  if (!GetParam().callback_server) {
+    service_.SignalServerToContinue();
+  } else {
+    callback_service_.SignalServerToContinue();
+  }
+
   echo_thread.join();
   EXPECT_EQ("", response.message());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
