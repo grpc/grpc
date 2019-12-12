@@ -51,14 +51,30 @@ Pod::Spec.new do |s|
 
   s.subspec 'Messages' do |ms|
     ms.source_files = 'src/objective-c/examples/RemoteTestClient/*.pbobjc.{h,m}'
-    ms.header_mappings_dir = '.'
+    # Cocapods has change its behavior that it no longer flatten public headers of frameworks. But
+    # we do need the generated headers to be in the root directory in our tests as the generated
+    # code uses the same style. So we overridde the header mappings directory for the frameworks
+    # case.
+    if ENV['FRAMEWORKS'] != 'NO' then
+      ms.header_mappings_dir = 'src/objective-c/examples/RemoteTestClient'
+    else
+      ms.header_mappings_dir = '.'
+    end
     ms.requires_arc = false
     ms.dependency 'Protobuf'
   end
 
   s.subspec 'Services' do |ss|
     ss.source_files = 'src/objective-c/examples/RemoteTestClient/*.pbrpc.{h,m}'
-    ss.header_mappings_dir = '.'
+    # Cocapods has change its behavior that it no longer flatten public headers of frameworks. But
+    # we do need the generated headers to be in the root directory in our tests as the generated
+    # code uses the same style. So we overridde the header mappings directory for the frameworks
+    # case.
+    if ENV['FRAMEWORKS'] != 'NO' then
+      ss.header_mappings_dir = 'src/objective-c/examples/RemoteTestClient'
+    else
+      ss.header_mappings_dir = '.'
+    end
     ss.requires_arc = true
     ss.dependency 'gRPC-ProtoRPC'
     ss.dependency "#{s.name}/Messages"

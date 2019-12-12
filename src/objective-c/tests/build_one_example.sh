@@ -47,6 +47,8 @@ if [ "$SCHEME" == "tvOS-sample" ]; then
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ENTITLEMENTS="" \
+    CODE_SIGNING_ALLOWED=NO \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -
 else
@@ -58,6 +60,8 @@ else
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ENTITLEMENTS="" \
+    CODE_SIGNING_ALLOWED=NO \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -
 fi
