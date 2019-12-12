@@ -63,16 +63,13 @@ class DeserializeFuncType;
 class GrpcByteBufferPeer;
 
 }  // namespace internal
-/// A sequence of bytes. A ByteBuffer must be backed by at least one slice to be
-/// considered valid. You can consstruct an empty buffer through creating a
-/// ByteBuffer backed by one empty slice.
+/// A sequence of bytes.
 class ByteBuffer final {
  public:
-  /// Construct an uninitialized buffer.
+  /// Constuct an empty buffer.
   ByteBuffer() : buffer_(nullptr) {}
 
-  /// Construct buffer from \a slices, of which there are \a nslices. \a slices
-  /// must be a valid pointer.
+  /// Construct buffer from \a slices, of which there are \a nslices.
   ByteBuffer(const Slice* slices, size_t nslices) {
     // The following assertions check that the representation of a grpc::Slice
     // is identical to that of a grpc_slice:  it has a grpc_slice field, and
