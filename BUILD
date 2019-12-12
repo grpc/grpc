@@ -429,6 +429,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_alts",
+    srcs = [
+        "src/cpp/common/alts_context.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/alts_context.h",
+    ],
+    language = "c++",
+    standalone = True,
+    deps = [
+        "alts_upb",
+        "alts_util",
+        "grpc++",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_csharp_ext",
     srcs = [
         "src/csharp/ext/grpc_csharp_ext.c",
