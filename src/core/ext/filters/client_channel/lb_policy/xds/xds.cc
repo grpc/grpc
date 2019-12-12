@@ -739,10 +739,14 @@ void XdsLb::ShutdownLocked() {
   }
   fallback_policy_.reset();
   pending_fallback_policy_.reset();
-  // Cancel the endpoint watch here instead of in our dtor, because the
-  // watcher holds a ref to us.
-  xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
-                                        endpoint_watcher_);
+  // Cancel the endpoint watch here instead of in our dtor if we are using the
+  // XdsResolver, because the watcher holds a ref to us and we might not be
+  // destroying the Xds client leading to a situation where the Xds lb policy is
+  // never destroyed.
+  if (xds_client_from_channel_ != nullptr) {
+    xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
+                                          endpoint_watcher_);
+  }
   if (config_->lrs_load_reporting_server_name() != nullptr) {
     xds_client()->RemoveClientStats(
         StringView(config_->lrs_load_reporting_server_name()),
