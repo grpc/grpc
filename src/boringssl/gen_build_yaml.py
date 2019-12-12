@@ -29,7 +29,20 @@ sys.path.append(os.path.join(boring_ssl_root, 'util'))
 try:
   import generate_build_files
 except ImportError:
-  print(yaml.dump({}))
+  # This is a fallback target in case where boringssl is not available.
+  # Without this, targets depending on boringssl run into errors due to missing targets.
+  print(yaml.dump({
+      'libs': [{
+          'name': 'boringssl',
+          'build': 'private',
+          'language': 'c',
+          'src': [],
+          'headers': [],
+          'secure': False,
+          'boringssl': True,
+          'defaults': 'boringssl',
+      },]
+  }))
   sys.exit()
 
 def map_dir(filename):
