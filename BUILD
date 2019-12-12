@@ -1595,7 +1595,6 @@ grpc_cc_library(
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     language = "c++",
-    visibility = ["//test:__subpackages__"],
     deps = [
         "grpc_base",
         "grpc_client_channel",
