@@ -23,7 +23,7 @@ export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
 # Install mandatory Python dependencies to avoid source wheel build failure.
-"${PIP}" install -rrequirements.txt
+"${PIP}" install -rrequirements.txt --user
 
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
