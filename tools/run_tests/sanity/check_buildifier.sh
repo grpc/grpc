@@ -28,6 +28,7 @@ if [[ ${result} != 0 ]]; then
     echo ""
     echo "    tools/distrib/buildifier_format_code.sh"
     echo ""
+    exit 1
 else
     echo "==========BUILDIFIER CHECK PASSED=========="
 fi
