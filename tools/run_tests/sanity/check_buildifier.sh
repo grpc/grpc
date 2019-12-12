@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# The script to check if Bazel files needs to be formatted.
+# The script to check if Bazel files need to be formatted.
 
 GIT_ROOT="$(dirname "$0")/../../.."
 "$GIT_ROOT/tools/distrib/buildifier_format_code.sh" -mode=diff
