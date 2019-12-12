@@ -21,10 +21,10 @@ import logging
 
 import grpc
 
-hw_protos, hw_services = grpc.protos_and_services("protos/helloworld.proto",
-                                                  include_paths=["../.."])
-rg_protos, rg_services = grpc.protos_and_services("protos/route_guide.proto",
-                                                  include_paths=["../.."])
+hw_protos, hw_services = grpc.protos_and_services(
+    "protos/helloworld.proto", include_paths=["../.."])
+rg_protos, rg_services = grpc.protos_and_services(
+    "protos/route_guide.proto", include_paths=["../.."])
 import route_guide_resources
 
 

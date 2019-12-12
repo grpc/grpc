@@ -16,8 +16,7 @@
 import json
 
 import grpc
-protos = grpc.protos("protos/route_guide.proto",
-                     include_paths=["../.."])
+protos = grpc.protos("protos/route_guide.proto", include_paths=["../.."])
 
 
 def read_route_guide_database():

@@ -20,10 +20,10 @@ import logging
 
 import grpc
 
-hw_protos, hw_services = grpc.protos_and_services("protos/helloworld.proto",
-                                                  include_paths=["../.."])
-rg_protos, rg_services = grpc.protos_and_services("protos/route_guide.proto",
-                                                  include_paths=["../.."])
+hw_protos, hw_services = grpc.protos_and_services(
+    "protos/helloworld.proto", include_paths=["../.."])
+rg_protos, rg_services = grpc.protos_and_services(
+    "protos/route_guide.proto", include_paths=["../.."])
 import route_guide_resources
 
 
@@ -59,8 +59,7 @@ def _get_distance(start, end):
 class _GreeterServicer(hw_services.GreeterServicer):
 
     def SayHello(self, request, context):
-        return hw_protos.HelloReply(
-            message='Hello, {}!'.format(request.name))
+        return hw_protos.HelloReply(message='Hello, {}!'.format(request.name))
 
 
 class _RouteGuideServicer(rg_services.RouteGuideServicer):
@@ -121,10 +120,8 @@ class _RouteGuideServicer(rg_services.RouteGuideServicer):
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    hw_services.add_GreeterServicer_to_server(_GreeterServicer(),
-                                                      server)
-    rg_services.add_RouteGuideServicer_to_server(
-        _RouteGuideServicer(), server)
+    hw_services.add_GreeterServicer_to_server(_GreeterServicer(), server)
+    rg_services.add_RouteGuideServicer_to_server(_RouteGuideServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()

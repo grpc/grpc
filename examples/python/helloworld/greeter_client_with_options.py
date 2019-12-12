@@ -35,8 +35,7 @@ def run():
         stub = services.GreeterStub(channel)
         # Timeout in seconds.
         # Please refer gRPC Python documents for more detail. https://grpc.io/grpc/python/grpc.html
-        response = stub.SayHello(
-            protos.HelloRequest(name='you'), timeout=10)
+        response = stub.SayHello(protos.HelloRequest(name='you'), timeout=10)
     print("Greeter client received: " + response.message)
 
 

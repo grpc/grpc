@@ -18,8 +18,8 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services("protos/helloworld.protos",
-                                            include_paths=["../../.."])
+protos, services = grpc.protos_and_services(
+    "protos/helloworld.protos", include_paths=["../../.."])
 from request_header_validator_interceptor import RequestHeaderValidatorInterceptor
 
 

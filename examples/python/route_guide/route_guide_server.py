@@ -20,8 +20,8 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services("protos/route_guide.proto",
-                                            include_paths=["../.."])
+protos, services = grpc.protos_and_services(
+    "protos/route_guide.proto", include_paths=["../.."])
 import route_guide_resources
 
 
@@ -113,8 +113,7 @@ class RouteGuideServicer(services.RouteGuideServicer):
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    services.add_RouteGuideServicer_to_server(
-        RouteGuideServicer(), server)
+    services.add_RouteGuideServicer_to_server(RouteGuideServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()
