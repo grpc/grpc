@@ -1107,11 +1107,8 @@ TEST_P(End2endTest, DiffPackageServices) {
 }
 
 template <class ServiceType>
-void CancelRpc(ClientContext* context, int delay_us, ServiceType* service) {
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
-  while (!service->signal_client()) {
-  }
+void CancelRpcWhenNotified(ClientContext* context, ServiceType* service) {
+  service->ClientWaitToCancelSelf();
   context->TryCancel();
 }
 
@@ -1131,8 +1128,6 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   }
 }
 
-// TODO(https://github.com/grpc/grpc/issues/21263): stop using timed sleeps to
-// synchronize cancellation semantics.
 TEST_P(End2endTest, CancelDelayedRpc) {
   MAYBE_SKIP_TEST;
   ResetStub();
@@ -1140,15 +1135,27 @@ TEST_P(End2endTest, CancelDelayedRpc) {
   EchoResponse response;
   ClientContext context;
   request.set_message("hello");
-  request.mutable_param()->set_server_sleep_us(100 * 1000);
+  request.mutable_param()->set_server_notify_started(true);
   request.mutable_param()->set_skip_cancelled_check(true);
   Status s;
   std::thread echo_thread([this, &s, &context, &request, &response] {
     s = stub_->Echo(&context, request, &response);
     EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
   });
-  std::this_thread::sleep_for(std::chrono::microseconds(10 * 1000));
+  if (!GetParam().callback_server) {
+    service_.ClientWaitRpcStarted();
+  } else {
+    callback_service_.ClientWaitRpcStarted();
+  }
+
   context.TryCancel();
+
+  if (!GetParam().callback_server) {
+    service_.SignalServerToContinue();
+  } else {
+    callback_service_.SignalServerToContinue();
+  }
+
   echo_thread.join();
   EXPECT_EQ("", response.message());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
@@ -1578,27 +1585,17 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
-  const int kCancelDelayUs = 10 * 1000;
-  request.mutable_param()->set_client_cancel_after_us(kCancelDelayUs);
+  request.mutable_param()->set_client_will_cancel_after_notified(true);
 
   ClientContext context;
   std::thread cancel_thread;
   if (!GetParam().callback_server) {
     cancel_thread = std::thread(
-        [&context, this](int delay) { CancelRpc(&context, delay, &service_); },
-        kCancelDelayUs);
-    // Note: the unusual pattern above (and below) is caused by a conflict
-    // between two sets of compiler expectations. clang allows const to be
-    // captured without mention, so there is no need to capture kCancelDelayUs
-    // (and indeed clang-tidy complains if you do so). OTOH, a Windows compiler
-    // in our tests requires an explicit capture even for const. We square this
-    // circle by passing the const value in as an argument to the lambda.
+        [&context, this] { CancelRpcWhenNotified(&context, &service_); });
   } else {
-    cancel_thread = std::thread(
-        [&context, this](int delay) {
-          CancelRpc(&context, delay, &callback_service_);
-        },
-        kCancelDelayUs);
+    cancel_thread = std::thread([&context, this] {
+      CancelRpcWhenNotified(&context, &callback_service_);
+    });
   }
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();

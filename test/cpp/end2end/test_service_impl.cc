@@ -127,6 +127,11 @@ void ServerTryCancelNonblocking(experimental::CallbackServerContext* context) {
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
                              EchoResponse* response) {
+  if (request->has_param() && request->param().server_notify_started()) {
+    signaller_.SignalClientRpcStarted();
+    signaller_.ServerWaitToContinue();
+  }
+
   // A bit of sleep to make sure that short deadline tests fail
   if (request->has_param() && request->param().server_sleep_us() > 0) {
     gpr_sleep_until(
@@ -160,16 +165,12 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   if (host_) {
     response->mutable_param()->set_host(*host_);
   }
-  if (request->has_param() && request->param().client_cancel_after_us()) {
-    {
-      std::unique_lock<std::mutex> lock(mu_);
-      signal_client_ = true;
-    }
+  if (request->has_param() &&
+      request->param().client_will_cancel_after_notified()) {
+    signaller_.SignalClientToCancelSelf();
     while (!context->IsCancelled()) {
-      gpr_sleep_until(gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().client_cancel_after_us(),
-                               GPR_TIMESPAN)));
+      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                   gpr_time_from_micros(1000, GPR_TIMESPAN)));
     }
     return Status::CANCELLED;
   } else if (request->has_param() &&
@@ -416,19 +417,37 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         : service_(service), ctx_(ctx), req_(request), resp_(response) {
       // It should be safe to call IsCancelled here, even though we don't know
       // the result. Call it asynchronously to see if we trigger any data races.
+      // Join it in OnDone (technically that could be blocking but shouldn't be
+      // for very long).
       async_cancel_check_ = std::thread([this] { (void)ctx_->IsCancelled(); });
 
-      if (request->has_param() && request->param().server_sleep_us() > 0) {
+      started_ = true;
+
+      if (request->has_param() && request->param().server_notify_started()) {
+        service->signaller_.SignalClientRpcStarted();
+        // Block on the "wait to continue" decision in a different thread since
+        // we can't tie up an EM thread with blocking events. We can join it in
+        // OnDone since it would definitely be done by then.
+        rpc_wait_thread_ = std::thread([this] {
+          service_->signaller_.ServerWaitToContinue();
+          StartRpc();
+        });
+      } else {
+        StartRpc();
+      }
+    }
+
+    void StartRpc() {
+      if (req_->has_param() && req_->param().server_sleep_us() > 0) {
         // Set an alarm for that much time
         alarm_.experimental().Set(
             gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_micros(
-                             request->param().server_sleep_us(), GPR_TIMESPAN)),
+                         gpr_time_from_micros(req_->param().server_sleep_us(),
+                                              GPR_TIMESPAN)),
             [this](bool ok) { NonDelayed(ok); });
       } else {
         NonDelayed(true);
       }
-      started_ = true;
     }
     void OnSendInitialMetadataDone(bool ok) override {
       EXPECT_TRUE(ok);
@@ -448,6 +467,9 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       EXPECT_EQ(ctx_->IsCancelled(), on_cancel_invoked_);
       async_cancel_check_.join();
+      if (rpc_wait_thread_.joinable()) {
+        rpc_wait_thread_.join();
+      }
       delete this;
     }
 
@@ -487,12 +509,10 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       if (service_->host_) {
         resp_->mutable_param()->set_host(*service_->host_);
       }
-      if (req_->has_param() && req_->param().client_cancel_after_us()) {
-        {
-          std::unique_lock<std::mutex> lock(service_->mu_);
-          service_->signal_client_ = true;
-        }
-        LoopUntilCancelled(req_->param().client_cancel_after_us());
+      if (req_->has_param() &&
+          req_->param().client_will_cancel_after_notified()) {
+        service_->signaller_.SignalClientToCancelSelf();
+        LoopUntilCancelled(1000);
         return;
       } else if (req_->has_param() && req_->param().server_cancel_after_us()) {
         alarm_.experimental().Set(
@@ -575,6 +595,7 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
     bool started_{false};
     bool on_cancel_invoked_{false};
     std::thread async_cancel_check_;
+    std::thread rpc_wait_thread_;
   };
 
   return new Reactor(this, context, request, response);
