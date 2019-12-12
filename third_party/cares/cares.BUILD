@@ -159,9 +159,15 @@ cc_library(
         "inet_net_pton.c",
         "inet_ntop.c",
         "windows_port.c",
-    ],
+    ] + select({
+        ":android": [
+            "ares_android.c",
+        ],
+        "//conditions:default": [],
+    }),
     hdrs = [
         "ares.h",
+        "ares_android.h",
         "ares_build.h",
         "ares_config.h",
         "ares_data.h",
