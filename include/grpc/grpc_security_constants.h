@@ -105,6 +105,15 @@ typedef enum {
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 } grpc_ssl_client_certificate_request_type;
 
+/* Security levels of grpc transport security */
+typedef enum {
+  GRPC_SECURITY_MIN,
+  GRPC_SECURITY_NONE = GRPC_SECURITY_MIN,
+  GRPC_INTEGRITY_ONLY,
+  GRPC_PRIVACY_AND_INTEGRITY,
+  GRPC_SECURITY_MAX = GRPC_PRIVACY_AND_INTEGRITY,
+} grpc_security_level;
+
 /**
  * Type of local connections for which local channel/server credentials will be
  * applied. It supports UDS and local TCP connections.
