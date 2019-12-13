@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/macos/grpc_basictests_ruby.sh"
-gfile_resources: "/bigstore/grpc-testing-secrets/gcp_credentials/GrpcTesting-d0eeee2db331.json"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f basictests macos ruby --internal_ci -j 1 --inner_jobs 4 --max_time=3600"
-}
+export PREPARE_BUILD_INSTALL_DEPS_OBJC=true
+$(dirname $0)/grpc_run_tests_matrix.sh

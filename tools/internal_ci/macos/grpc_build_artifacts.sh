@@ -18,6 +18,9 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
+export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # install cython for all python versions
