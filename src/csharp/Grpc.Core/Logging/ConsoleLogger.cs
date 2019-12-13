@@ -30,7 +30,7 @@ namespace Grpc.Core.Logging
         {
         }
 
-        /// <summary>Creates a console logger that logs messsage specific for given type.</summary>
+        /// <summary>Creates a console logger that logs message specific for given type.</summary>
         private ConsoleLogger(Type forType) : base(() => Console.Error, forType)
         {
         }

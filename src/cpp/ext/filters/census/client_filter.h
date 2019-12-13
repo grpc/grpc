@@ -95,7 +95,7 @@ class CensusClientCallData : public CallData {
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
   // Buffer needed for grpc_slice to reference when adding trace context
-  // metatdata to outgoing message.
+  // metadata to outgoing message.
   char tracing_buf_[kMaxTraceContextLen];
 };
 

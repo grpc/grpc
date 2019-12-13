@@ -58,7 +58,7 @@ inline bool grpc_slice_eq_static_interned(const grpc_slice& a,
 
 // TODO(arjunroy): These type declarations ought to be in
 // src/core/lib/slice/slice_internal.h instead; they are here due to a circular
-// header depedency between slice_internal.h and
+// header dependency between slice_internal.h and
 // src/core/lib/transport/metadata.h. We need to fix this circular reference and
 // when we do, move these type declarations.
 //
