@@ -225,9 +225,9 @@ void grpc_credentials_mdelem_array_destroy(grpc_credentials_mdelem_array* list);
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
-  explicit grpc_call_credentials(const char* type)
-      : type_(type), security_level_(GRPC_PRIVACY_AND_INTEGRITY) {}
-  grpc_call_credentials(const char* type, grpc_security_level security_level)
+  explicit grpc_call_credentials(
+      const char* type,
+      grpc_security_level security_level = GRPC_PRIVACY_AND_INTEGRITY)
       : type_(type), security_level_(security_level) {}
 
   virtual ~grpc_call_credentials() = default;

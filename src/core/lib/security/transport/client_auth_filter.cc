@@ -272,8 +272,14 @@ static void send_security_metadata(grpc_call_element* elem,
       chand->auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
-    /* Skip sending metadata altogether. */
-    grpc_call_next_op(elem, batch);
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch,
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Established channel does not have an auth property "
+                "representing a security level."),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
+        calld->call_combiner);
     return;
   }
   grpc_security_level channel_security_level =

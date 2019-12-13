@@ -318,12 +318,12 @@ grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
 /// comforming to the schema described above.
 grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
 
+std::shared_ptr<CallCredentials> StsCredentials(
+    const StsCredentialsOptions& options);
+
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin,
     grpc_security_level security_level);
-
-std::shared_ptr<CallCredentials> StsCredentials(
-    const StsCredentialsOptions& options);
 
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {

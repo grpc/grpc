@@ -245,12 +245,6 @@ grpc_plugin_credentials::grpc_plugin_credentials(
   gpr_mu_init(&mu_);
 }
 
-grpc_plugin_credentials::grpc_plugin_credentials(
-    grpc_metadata_credentials_plugin plugin)
-    : grpc_call_credentials(plugin.type), plugin_(plugin) {
-  gpr_mu_init(&mu_);
-}
-
 grpc_call_credentials*
 grpc_metadata_credentials_create_with_security_level_from_plugin(
     grpc_metadata_credentials_plugin plugin, grpc_security_level security_level,

@@ -106,7 +106,9 @@ typedef enum {
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 } grpc_ssl_client_certificate_request_type;
 
-/* Security levels of grpc transport security */
+/* Security levels of grpc transport security. It represents an inherent
+ * property of a backend connection and is determined by a channel credential
+ * used to create the connection. */
 typedef enum {
   GRPC_SECURITY_MIN,
   GRPC_SECURITY_NONE = GRPC_SECURITY_MIN,
