@@ -442,6 +442,9 @@ void XdsClient::ChannelState::OnResourceNamesChanged(
     // Start the ADS call if this is the first request.
     ads_calld_.reset(new RetryableCall<AdsCallState>(
         Ref(DEBUG_LOCATION, "ChannelState+ads")));
+    // Note: AdsCallState's ctor will automatically send necessary messages, so
+    // we can return here.
+    return;
   }
   // If the ADS call is in backoff state, we don't need to do anything now
   // because when the call is restarted it will resend all necessary requests.

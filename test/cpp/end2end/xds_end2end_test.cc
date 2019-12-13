@@ -410,8 +410,8 @@ class AdsServiceImpl : public AdsService {
       }
       stream->Write(response);
       cds_response_state_ = SENT;
-    } else if (cds_response_state_ == SENT &&
-               !request->response_nonce().empty()) {
+    } else if (cds_response_state_ == SENT) {
+      GPR_ASSERT(!request->response_nonce().empty());
       cds_response_state_ =
           request->version_info() == version_str ? ACKED : NACKED;
     }
