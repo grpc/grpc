@@ -109,7 +109,8 @@ def get_protos(bytes protobuf_path, list include_paths):
   cdef vector[cProtocError] errors
   # NOTE: Abbreviated name used to avoid shadowing of the module name.
   cdef vector[cProtocWarning] wrnings
-  rc = protoc_get_protos(protobuf_path, &c_include_paths, &files, &errors, &wrnings)
+  with nogil:
+    rc = protoc_get_protos(protobuf_path, &c_include_paths, &files, &errors, &wrnings)
   _handle_errors(rc, &errors, &wrnings, protobuf_path)
   return files
 
