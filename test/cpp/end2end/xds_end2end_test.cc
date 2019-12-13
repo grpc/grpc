@@ -397,6 +397,7 @@ class AdsServiceImpl : public AdsService {
             request->DebugString().c_str());
     const std::string version_str = "version_1";
     const std::string nonce_str = "nonce_1";
+    grpc_core::MutexLock lock(&ads_mu_);
     if (cds_response_state_ == NOT_SENT) {
       DiscoveryResponse response;
       response.set_type_url(kCdsTypeUrl);
@@ -483,7 +484,10 @@ class AdsServiceImpl : public AdsService {
     cds_response_data_ = std::move(cds_response_data);
   }
 
-  ResponseState cds_response_state() const { return cds_response_state_; }
+  ResponseState cds_response_state() const {
+    grpc_core::MutexLock lock(&ads_mu_);
+    return cds_response_state_;
+  }
 
   void AddEdsResponse(const DiscoveryResponse& response, int send_after_ms) {
     grpc_core::MutexLock lock(&ads_mu_);
