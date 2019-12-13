@@ -1215,6 +1215,7 @@ static void post_batch_completion(batch_control* bctl) {
     error = GRPC_ERROR_NONE;
   }
   if (error != GRPC_ERROR_NONE && bctl->op.recv_message &&
+      call->receiving_buffer != nullptr && 
       *call->receiving_buffer != nullptr) {
     grpc_byte_buffer_destroy(*call->receiving_buffer);
     *call->receiving_buffer = nullptr;
