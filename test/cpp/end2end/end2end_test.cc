@@ -1131,14 +1131,14 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   }
 }
 
-TEST_P(End2endTest, CancelDelayedRpc) {
+TEST_P(End2endTest, CancelRpcAfterStart) {
   MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
   request.set_message("hello");
-  request.mutable_param()->set_server_notify_started(true);
+  request.mutable_param()->set_server_notify_client_when_started(true);
   request.mutable_param()->set_skip_cancelled_check(true);
   Status s;
   std::thread echo_thread([this, &s, &context, &request, &response] {
@@ -1146,9 +1146,9 @@ TEST_P(End2endTest, CancelDelayedRpc) {
     EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
   });
   if (!GetParam().callback_server) {
-    service_.ClientWaitRpcStarted();
+    service_.ClientWaitUntilRpcStarted();
   } else {
-    callback_service_.ClientWaitRpcStarted();
+    callback_service_.ClientWaitUntilRpcStarted();
   }
 
   context.TryCancel();

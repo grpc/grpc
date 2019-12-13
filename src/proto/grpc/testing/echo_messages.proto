@@ -50,7 +50,7 @@ message RequestParams {
   int32 server_sleep_us = 15; // sleep when invoking server for deadline tests
   int32 backend_channel_idx = 16; // which backend to send request to
   bool echo_metadata_initially = 17;
-  bool server_notify_started = 18;
+  bool server_notify_client_when_started = 18;
 }
 
 message EchoRequest {

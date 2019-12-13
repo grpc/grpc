@@ -127,8 +127,9 @@ void ServerTryCancelNonblocking(experimental::CallbackServerContext* context) {
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
                              EchoResponse* response) {
-  if (request->has_param() && request->param().server_notify_started()) {
-    signaller_.SignalClientRpcStarted();
+  if (request->has_param() &&
+      request->param().server_notify_client_when_started()) {
+    signaller_.SignalClientThatRpcStarted();
     signaller_.ServerWaitToContinue();
   }
 
@@ -427,8 +428,9 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
 
       started_ = true;
 
-      if (request->has_param() && request->param().server_notify_started()) {
-        service->signaller_.SignalClientRpcStarted();
+      if (request->has_param() &&
+          request->param().server_notify_client_when_started()) {
+        service->signaller_.SignalClientThatRpcStarted();
         // Block on the "wait to continue" decision in a different thread since
         // we can't tie up an EM thread with blocking events. We can join it in
         // OnDone since it would definitely be done by then.

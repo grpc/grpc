@@ -49,7 +49,7 @@ typedef enum {
 
 class TestServiceSignaller {
  public:
-  void ClientWaitRpcStarted() {
+  void ClientWaitUntilRpcStarted() {
     std::unique_lock<std::mutex> lock(mu_);
     cv_rpc_started_.wait(lock, [this] { return rpc_started_; });
   }
@@ -57,7 +57,7 @@ class TestServiceSignaller {
     std::unique_lock<std::mutex> lock(mu_);
     cv_server_continue_.wait(lock, [this] { return server_should_continue_; });
   }
-  void SignalClientRpcStarted() {
+  void SignalClientThatRpcStarted() {
     std::unique_lock<std::mutex> lock(mu_);
     rpc_started_ = true;
     cv_rpc_started_.notify_one();
@@ -106,7 +106,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
-  void ClientWaitRpcStarted() { signaller_.ClientWaitRpcStarted(); }
+  void ClientWaitUntilRpcStarted() { signaller_.ClientWaitUntilRpcStarted(); }
   void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
 
  private:
@@ -147,7 +147,7 @@ class CallbackTestServiceImpl
     std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
-  void ClientWaitRpcStarted() { signaller_.ClientWaitRpcStarted(); }
+  void ClientWaitUntilRpcStarted() { signaller_.ClientWaitUntilRpcStarted(); }
   void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
 
  private:
