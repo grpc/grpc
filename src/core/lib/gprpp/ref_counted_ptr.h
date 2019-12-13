@@ -170,6 +170,16 @@ class RefCountedPtr {
 
   bool operator!=(std::nullptr_t) const { return value_ != nullptr; }
 
+  template <typename Y>
+  bool operator<(const RefCountedPtr<Y>& other) const {
+    return value_ < other.value_;
+  }
+
+  template <typename Y>
+  bool operator<(const Y* other) const {
+    return value_ < other;
+  }
+
  private:
   template <typename Y>
   friend class RefCountedPtr;
