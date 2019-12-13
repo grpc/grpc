@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_SPIFFE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_SPIFFE_CREDENTIALS_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,11 +26,11 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
-class SpiffeCredentials final : public grpc_channel_credentials {
+class TlsCredentials final : public grpc_channel_credentials {
  public:
-  explicit SpiffeCredentials(
+  explicit TlsCredentials(
       grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
-  ~SpiffeCredentials() override;
+  ~TlsCredentials() override;
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
@@ -44,11 +44,11 @@ class SpiffeCredentials final : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 
-class SpiffeServerCredentials final : public grpc_server_credentials {
+class TlsServerCredentials final : public grpc_server_credentials {
  public:
-  explicit SpiffeServerCredentials(
+  explicit TlsServerCredentials(
       grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
-  ~SpiffeServerCredentials() override;
+  ~TlsServerCredentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector() override;
@@ -59,4 +59,4 @@ class SpiffeServerCredentials final : public grpc_server_credentials {
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_SPIFFE_CREDENTIALS_H */
+#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H */

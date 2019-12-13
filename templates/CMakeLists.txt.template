@@ -33,6 +33,9 @@
         return filename
       return '${_gRPC_PROTO_GENS_DIR}/' + m.group(1) + ext
 
+  def is_absl_lib(target_name):
+      return target_name.startswith("absl/");
+
   def get_deps(target_dict):
     deps = []
     if target_dict.get('baselib', False) or target_dict['name'] == 'address_sorting':
@@ -149,7 +152,15 @@
     set(gRPC_INSTALL_default OFF)
   endif()
   set(gRPC_INSTALL <%text>${gRPC_INSTALL_default}</%text> CACHE BOOL
-      "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
+      "Generate installation target")
+
+  # We can install dependencies from submodules if we're running
+  # CMake v3.13 or newer.
+  if(CMAKE_VERSION VERSION_LESS 3.13)
+    set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
+  else()
+    set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
+  endif()
 
   # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
   # "module": build the dependency using sources from git submodule (under third_party)
@@ -202,6 +213,7 @@
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+  set(CMAKE_MODULE_PATH "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules")
 
   if(MSVC)
     include(cmake/msvc_static_runtime.cmake)
@@ -386,11 +398,16 @@
     add_custom_target(buildtests
       DEPENDS buildtests_c buildtests_cxx)
   endif()
-
-  % for lib in libs:
-  % if lib.build in ["all", "protoc", "tool", "test", "private"] and not lib.boringssl:
-  % if not lib.get('build_system', []) or 'cmake' in lib.get('build_system', []):
-  % if not lib.name in ['ares', 'benchmark', 'z']:  # we build these using CMake instead
+  <%
+    cmake_libs = []
+    for lib in libs:
+      if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
+      if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
+      if lib.name in ['ares', 'benchmark', 'z']: continue  # we build these using CMake instead
+      if is_absl_lib(lib.name): continue  # we build these using CMake instead
+      cmake_libs.append(lib)
+  %>
+  % for lib in cmake_libs:
   % if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   ${cc_library(lib)}
@@ -415,9 +432,6 @@
   ${cc_install(lib)}
   % if any(proto_re.match(src) for src in lib.src):
   endif()
-  % endif
-  % endif
-  % endif
   % endif
   % endif
   % endif
@@ -637,6 +651,10 @@
       <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfig.cmake
       <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfigVersion.cmake
     DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
+  )
+  install(FILES
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findc-ares.cmake
+    DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>/modules
   )
 
   install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem</%text>

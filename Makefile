@@ -1216,6 +1216,7 @@ cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 delegating_channel_test: $(BINDIR)/$(CONFIG)/delegating_channel_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
+eventmanager_libuv_test: $(BINDIR)/$(CONFIG)/eventmanager_libuv_test
 exception_test: $(BINDIR)/$(CONFIG)/exception_test
 filter_end2end_test: $(BINDIR)/$(CONFIG)/filter_end2end_test
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
@@ -1237,7 +1238,7 @@ grpc_objective_c_plugin: $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin
 grpc_php_plugin: $(BINDIR)/$(CONFIG)/grpc_php_plugin
 grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
-grpc_spiffe_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_spiffe_security_connector_test
+grpc_tls_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
 grpclb_end2end_test: $(BINDIR)/$(CONFIG)/grpclb_end2end_test
@@ -1342,10 +1343,10 @@ h2_proxy_test: $(BINDIR)/$(CONFIG)/h2_proxy_test
 h2_sockpair_test: $(BINDIR)/$(CONFIG)/h2_sockpair_test
 h2_sockpair+trace_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test
 h2_sockpair_1byte_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test
-h2_spiffe_test: $(BINDIR)/$(CONFIG)/h2_spiffe_test
 h2_ssl_test: $(BINDIR)/$(CONFIG)/h2_ssl_test
 h2_ssl_cred_reload_test: $(BINDIR)/$(CONFIG)/h2_ssl_cred_reload_test
 h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
+h2_tls_test: $(BINDIR)/$(CONFIG)/h2_tls_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
 inproc_test: $(BINDIR)/$(CONFIG)/inproc_test
 h2_census_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_nosec_test
@@ -1590,10 +1591,10 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test \
-  $(BINDIR)/$(CONFIG)/h2_spiffe_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_cred_reload_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
+  $(BINDIR)/$(CONFIG)/h2_tls_test \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
   $(BINDIR)/$(CONFIG)/inproc_test \
   $(BINDIR)/$(CONFIG)/h2_census_nosec_test \
@@ -1694,6 +1695,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/delegating_channel_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/eventmanager_libuv_test \
   $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
@@ -1705,7 +1707,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 \
   $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test \
-  $(BINDIR)/$(CONFIG)/grpc_spiffe_security_connector_test \
+  $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
@@ -1867,6 +1869,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/delegating_channel_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/eventmanager_libuv_test \
   $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
@@ -1878,7 +1881,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 \
   $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test \
-  $(BINDIR)/$(CONFIG)/grpc_spiffe_security_connector_test \
+  $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
@@ -2365,6 +2368,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_details_test"
 	$(Q) $(BINDIR)/$(CONFIG)/error_details_test || ( echo test error_details_test failed ; exit 1 )
+	$(E) "[RUN]     Testing eventmanager_libuv_test"
+	$(Q) $(BINDIR)/$(CONFIG)/eventmanager_libuv_test || ( echo test eventmanager_libuv_test failed ; exit 1 )
 	$(E) "[RUN]     Testing exception_test"
 	$(Q) $(BINDIR)/$(CONFIG)/exception_test || ( echo test exception_test failed ; exit 1 )
 	$(E) "[RUN]     Testing filter_end2end_test"
@@ -2383,8 +2388,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test || ( echo test grpc_alts_credentials_options_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_linux_system_roots_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test || ( echo test grpc_linux_system_roots_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpc_spiffe_security_connector_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpc_spiffe_security_connector_test || ( echo test grpc_spiffe_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_tls_security_connector_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test || ( echo test grpc_tls_security_connector_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_tool_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_tool_test || ( echo test grpc_tool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
@@ -3647,6 +3652,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -3788,7 +3794,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
-    src/core/lib/security/credentials/tls/spiffe_credentials.cc \
+    src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
@@ -3798,7 +3804,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/ssl_utils_config.cc \
-    src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
+    src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
@@ -4111,6 +4117,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -4295,7 +4302,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
-    src/core/lib/security/credentials/tls/spiffe_credentials.cc \
+    src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
@@ -4305,7 +4312,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/ssl_utils_config.cc \
-    src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
+    src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
@@ -4530,6 +4537,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -4858,6 +4866,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -5149,6 +5158,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -5769,6 +5779,7 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -6999,6 +7010,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -16600,6 +16612,49 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/util/error_details_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 
 
+EVENTMANAGER_LIBUV_TEST_SRC = \
+    test/core/iomgr/poller/eventmanager_libuv_test.cc \
+
+EVENTMANAGER_LIBUV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EVENTMANAGER_LIBUV_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/eventmanager_libuv_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/eventmanager_libuv_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/eventmanager_libuv_test: $(PROTOBUF_DEP) $(EVENTMANAGER_LIBUV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(EVENTMANAGER_LIBUV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/eventmanager_libuv_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/poller/eventmanager_libuv_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_eventmanager_libuv_test: $(EVENTMANAGER_LIBUV_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(EVENTMANAGER_LIBUV_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 EXCEPTION_TEST_SRC = \
     test/cpp/end2end/exception_test.cc \
 
@@ -17423,15 +17478,15 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-GRPC_SPIFFE_SECURITY_CONNECTOR_TEST_SRC = \
-    test/core/security/spiffe_security_connector_test.cc \
+GRPC_TLS_SECURITY_CONNECTOR_TEST_SRC = \
+    test/core/security/tls_security_connector_test.cc \
 
-GRPC_SPIFFE_SECURITY_CONNECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_SPIFFE_SECURITY_CONNECTOR_TEST_SRC))))
+GRPC_TLS_SECURITY_CONNECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_TLS_SECURITY_CONNECTOR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/grpc_spiffe_security_connector_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test: openssl_dep_error
 
 else
 
@@ -17442,26 +17497,26 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
-$(BINDIR)/$(CONFIG)/grpc_spiffe_security_connector_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/grpc_spiffe_security_connector_test: $(PROTOBUF_DEP) $(GRPC_SPIFFE_SECURITY_CONNECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test: $(PROTOBUF_DEP) $(GRPC_TLS_SECURITY_CONNECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_SPIFFE_SECURITY_CONNECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_spiffe_security_connector_test
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_TLS_SECURITY_CONNECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/security/spiffe_security_connector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/security/tls_security_connector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_grpc_spiffe_security_connector_test: $(GRPC_SPIFFE_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
+deps_grpc_tls_security_connector_test: $(GRPC_TLS_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_SPIFFE_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
+-include $(GRPC_TLS_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -21825,38 +21880,6 @@ endif
 endif
 
 
-H2_SPIFFE_TEST_SRC = \
-    test/core/end2end/fixtures/h2_spiffe.cc \
-
-H2_SPIFFE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SPIFFE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_spiffe_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/h2_spiffe_test: $(H2_SPIFFE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(H2_SPIFFE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_spiffe_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_spiffe.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_h2_spiffe_test: $(H2_SPIFFE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(H2_SPIFFE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 H2_SSL_TEST_SRC = \
     test/core/end2end/fixtures/h2_ssl.cc \
 
@@ -21949,6 +21972,38 @@ deps_h2_ssl_proxy_test: $(H2_SSL_PROXY_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(H2_SSL_PROXY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_TLS_TEST_SRC = \
+    test/core/end2end/fixtures/h2_tls.cc \
+
+H2_TLS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_TLS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_tls_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_tls_test: $(H2_TLS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(H2_TLS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_tls_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_tls.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_tls_test: $(H2_TLS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_TLS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -23112,7 +23167,7 @@ src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/tls/spiffe_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/alts/alts_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/fake/fake_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/load_system_roots_fallback.cc: $(OPENSSL_DEP)
@@ -23122,7 +23177,7 @@ src/core/lib/security/security_connector/security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl/ssl_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl_utils.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl_utils_config.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/tls/spiffe_security_connector.cc: $(OPENSSL_DEP)
+src/core/lib/security/security_connector/tls/tls_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)

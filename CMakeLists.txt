@@ -55,7 +55,15 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(gRPC_INSTALL_default OFF)
 endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
-    "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
+    "Generate installation target")
+
+# We can install dependencies from submodules if we're running
+# CMake v3.13 or newer.
+if(CMAKE_VERSION VERSION_LESS 3.13)
+  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
+else()
+  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
+endif()
 
 # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
 # "module": build the dependency using sources from git submodule (under third_party)
@@ -107,6 +115,7 @@ if(WIN32)
 endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 if(MSVC)
   include(cmake/msvc_static_runtime.cmake)
@@ -579,10 +588,10 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c h2_sockpair_test)
   add_dependencies(buildtests_c h2_sockpair+trace_test)
   add_dependencies(buildtests_c h2_sockpair_1byte_test)
-  add_dependencies(buildtests_c h2_spiffe_test)
   add_dependencies(buildtests_c h2_ssl_test)
   add_dependencies(buildtests_c h2_ssl_cred_reload_test)
   add_dependencies(buildtests_c h2_ssl_proxy_test)
+  add_dependencies(buildtests_c h2_tls_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c h2_uds_test)
   endif()
@@ -735,6 +744,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx end2end_test)
   add_dependencies(buildtests_cxx error_details_test)
+  add_dependencies(buildtests_cxx eventmanager_libuv_test)
   add_dependencies(buildtests_cxx exception_test)
   add_dependencies(buildtests_cxx filter_end2end_test)
   add_dependencies(buildtests_cxx generic_end2end_test)
@@ -746,7 +756,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_fetch_oauth2)
   add_dependencies(buildtests_cxx grpc_linux_system_roots_test)
-  add_dependencies(buildtests_cxx grpc_spiffe_security_connector_test)
+  add_dependencies(buildtests_cxx grpc_tls_security_connector_test)
   add_dependencies(buildtests_cxx grpc_tool_test)
   add_dependencies(buildtests_cxx grpclb_api_test)
   add_dependencies(buildtests_cxx grpclb_end2end_test)
@@ -1165,6 +1175,7 @@ add_library(grpc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -1306,7 +1317,7 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
-  src/core/lib/security/credentials/tls/spiffe_credentials.cc
+  src/core/lib/security/credentials/tls/tls_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1316,7 +1327,7 @@ add_library(grpc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/ssl_utils_config.cc
-  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
+  src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1637,6 +1648,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -1821,7 +1833,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
-  src/core/lib/security/credentials/tls/spiffe_credentials.cc
+  src/core/lib/security/credentials/tls/tls_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1831,7 +1843,7 @@ add_library(grpc_cronet
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/ssl_utils_config.cc
-  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
+  src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -2065,6 +2077,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2407,6 +2420,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2725,6 +2739,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -3380,6 +3395,7 @@ add_library(grpc++
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -4644,6 +4660,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -12444,6 +12461,42 @@ target_link_libraries(error_details_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(eventmanager_libuv_test
+  test/core/iomgr/poller/eventmanager_libuv_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(eventmanager_libuv_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(eventmanager_libuv_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(exception_test
   test/cpp/end2end/exception_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -13185,13 +13238,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_spiffe_security_connector_test
-  test/core/security/spiffe_security_connector_test.cc
+add_executable(grpc_tls_security_connector_test
+  test/core/security/tls_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_spiffe_security_connector_test
+target_include_directories(grpc_tls_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13208,7 +13261,7 @@ target_include_directories(grpc_spiffe_security_connector_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_spiffe_security_connector_test
+target_link_libraries(grpc_tls_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -17033,34 +17086,6 @@ target_link_libraries(h2_sockpair_1byte_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(h2_spiffe_test
-  test/core/end2end/fixtures/h2_spiffe.cc
-)
-
-target_include_directories(h2_spiffe_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(h2_spiffe_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(h2_ssl_test
   test/core/end2end/fixtures/h2_ssl.cc
 )
@@ -17134,6 +17159,34 @@ target_include_directories(h2_ssl_proxy_test
 )
 
 target_link_libraries(h2_ssl_proxy_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(h2_tls_test
+  test/core/end2end/fixtures/h2_tls.cc
+)
+
+target_include_directories(h2_tls_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(h2_tls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
@@ -18268,6 +18321,10 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/gRPCConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/gRPCConfigVersion.cmake
   DESTINATION ${gRPC_INSTALL_CMAKEDIR}
+)
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findc-ares.cmake
+  DESTINATION ${gRPC_INSTALL_CMAKEDIR}/modules
 )
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem

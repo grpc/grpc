@@ -83,8 +83,7 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   /// (false)
   template <typename T>
   void Set(const T& deadline, std::function<void(bool)> f) {
-    alarm_->SetInternal(::grpc::TimePoint<T>(deadline).raw_time(),
-                        std::move(f));
+    SetInternal(::grpc::TimePoint<T>(deadline).raw_time(), std::move(f));
   }
 #endif
 
