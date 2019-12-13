@@ -403,7 +403,6 @@ class AdsServiceImpl : public AdsService {
       response.set_type_url(kCdsTypeUrl);
       response.set_version_info(version_str);
       response.set_nonce(nonce_str);
-      grpc_core::MutexLock lock(&ads_mu_);
       for (const auto& cluster_name : request->resource_names()) {
         auto iter = cds_response_data_.find(cluster_name);
         if (iter == cds_response_data_.end()) continue;
@@ -484,7 +483,7 @@ class AdsServiceImpl : public AdsService {
     cds_response_data_ = std::move(cds_response_data);
   }
 
-  ResponseState cds_response_state() const {
+  ResponseState cds_response_state() {
     grpc_core::MutexLock lock(&ads_mu_);
     return cds_response_state_;
   }
