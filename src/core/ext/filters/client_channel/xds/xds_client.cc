@@ -695,11 +695,13 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
         xds_client()->WatchedClusterNames(), node, build_version,
         cds_version_.version_info, cds_version_.nonce, cds_version_.error);
     cds_version_.error = GRPC_ERROR_NONE;
+    GRPC_ERROR_UNREF(error_for_unsupported_type);
   } else if (type_url == kEdsTypeUrl) {
     request_payload_slice = XdsEdsRequestCreateAndEncode(
         xds_client()->EdsServiceNames(), node, build_version,
         eds_version_.version_info, eds_version_.nonce, eds_version_.error);
     eds_version_.error = GRPC_ERROR_NONE;
+    GRPC_ERROR_UNREF(error_for_unsupported_type);
   } else {
     request_payload_slice = XdsUnsupportedTypeNackRequestCreateAndEncode(
         type_url, nonce_for_unsupported_type, error_for_unsupported_type);
