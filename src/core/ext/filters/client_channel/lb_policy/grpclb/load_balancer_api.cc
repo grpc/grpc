@@ -181,6 +181,12 @@ bool GrpcLbResponseParse(const grpc_slice& encoded_grpc_grpclb_response,
     }
     return true;
   }
+  // Handle fallback.
+  if (grpc_lb_v1_LoadBalanceResponse_has_fallback_response(response)) {
+    result->type = result->FALLBACK;
+    return true;
+  }
+  // Unknown response type.
   return false;
 }
 

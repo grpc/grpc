@@ -94,6 +94,11 @@ message LoadBalanceResponse {
     // Contains the list of servers selected by the load balancer. The client
     // should send requests to these servers in the specified order.
     ServerList server_list = 2;
+
+    // If this field is set, then the client should eagerly enter fallback
+    // mode (even if there are existing, healthy connections to backends).
+    // See go/grpclb-explicit-fallback for more details.
+    FallbackResponse fallback_response = 3;
   }
 }
 
@@ -148,3 +153,5 @@ message Server {
 
   reserved 5;
 }
+
+message FallbackResponse {}

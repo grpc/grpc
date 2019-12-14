@@ -1157,6 +1157,25 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
         }
         break;
       }
+      case response.FALLBACK: {
+        if (!grpclb_policy->fallback_mode_) {
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] Entering fallback mode as requested by balancer",
+                  grpclb_policy);
+          if (grpclb_policy->fallback_at_startup_checks_pending_) {
+            grpclb_policy->fallback_at_startup_checks_pending_ = false;
+            grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
+            grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
+          }
+          grpclb_policy->fallback_mode_ = true;
+          grpclb_policy->CreateOrUpdateChildPolicyLocked();
+          // Reset serverlist, so that if the balancer exits fallback
+          // mode by sending the same serverlist we were previously
+          // using, we don't incorrectly ignore it as a duplicate.
+          grpclb_policy->serverlist_.reset();
+        }
+        break;
+      }
     }
   }
   grpc_slice_unref_internal(response_slice);
