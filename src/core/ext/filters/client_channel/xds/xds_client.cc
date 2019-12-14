@@ -862,10 +862,8 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSent(void* arg,
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
     void* arg, grpc_error* error) {
   AdsCallState* self = static_cast<AdsCallState*>(arg);
-  if (!self->IsCurrentCallOnChannel() || error != GRPC_ERROR_NONE) {
-    self->Unref(DEBUG_LOCATION, "ADS+OnRequestSentLocked");
-    return;
-  }
+  self->Unref(DEBUG_LOCATION, "ADS+OnRequestSentLocked");
+  if (!self->IsCurrentCallOnChannel() || error != GRPC_ERROR_NONE) return;
   // Clean up the sent message.
   grpc_byte_buffer_destroy(self->send_message_payload_);
   self->send_message_payload_ = nullptr;
