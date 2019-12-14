@@ -95,7 +95,7 @@ class TestLite(setuptools.Command):
         import tests
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests'])
-        runner = tests.Runner()
+        runner = tests.Runner(dedicated_threads=True)
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
             sys.exit('Test failure')
@@ -120,6 +120,8 @@ class TestAio(setuptools.Command):
 
     def run(self):
         self._add_eggs_to_path()
+        from grpc.experimental.aio import init_grpc_aio
+        init_grpc_aio()
 
         import tests
         loader = tests.Loader()

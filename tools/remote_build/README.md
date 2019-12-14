@@ -32,7 +32,14 @@ bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
 Run on Windows MSVC:
 ```
 # manual run of bazel tests remotely on RBE Windows (must be run from Windows machine)
-bazel --bazelrc=tools/remote_build/windows.bazelrc test //test/...
+bazel --bazelrc=tools/remote_build/windows.bazelrc test --config=windows_opt //test/...
+```
+
+Run on MacOS (experimental for now):
+```
+# manual run of bazel tests on Mac (must be run from Mac machine)
+# NOTE: it's not really a "remote execution", but uploads results to ResultStore
+bazel --bazelrc=tools/remote_build/mac.bazelrc test --config=opt //test/...
 ```
 
 Available command line options can be found in

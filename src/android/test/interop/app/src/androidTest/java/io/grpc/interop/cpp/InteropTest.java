@@ -43,22 +43,6 @@ public class InteropTest {
     port = Integer.parseInt(InstrumentationRegistry.getArguments().getString("server_port", "443"));
     useTls =
         Boolean.parseBoolean(InstrumentationRegistry.getArguments().getString("use_tls", "true"));
-
-    if (useTls) {
-      Context ctx = InstrumentationRegistry.getTargetContext();
-      String sslRootsFile = "roots.pem";
-      InputStream in = ctx.getAssets().open(sslRootsFile);
-      File outFile = new File(ctx.getExternalFilesDir(null), sslRootsFile);
-      OutputStream out = new FileOutputStream(outFile);
-      byte[] buffer = new byte[1024];
-      int bytesRead;
-      while ((bytesRead = in.read(buffer)) != -1) {
-        out.write(buffer, 0, bytesRead);
-      }
-      in.close();
-      out.close();
-      InteropActivity.configureSslRoots(outFile.getCanonicalPath());
-    }
   }
 
   @Test

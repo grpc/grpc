@@ -160,6 +160,7 @@ class TagCallback : public grpc_experimental_completion_queue_functor {
  public:
   explicit TagCallback(int* iter) : iter_(iter) {
     functor_run = &TagCallback::Run;
+    inlineable = false;
   }
   ~TagCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
@@ -179,6 +180,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
   explicit ShutdownCallback(bool* done) : done_(done) {
     functor_run = &ShutdownCallback::Run;
+    inlineable = false;
   }
   ~ShutdownCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {

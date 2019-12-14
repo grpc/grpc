@@ -19,6 +19,9 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+STATUS_PROTO = os.path.join(
+    ROOT_DIR, '../../../third_party/googleapis/google/rpc/status.proto')
+PACKAGE_STATUS_PROTO_PATH = 'grpc_status/google/rpc'
 LICENSE = os.path.join(ROOT_DIR, '../../../LICENSE')
 
 
@@ -35,5 +38,11 @@ class Preprocess(setuptools.Command):
         pass
 
     def run(self):
+        if os.path.isfile(STATUS_PROTO):
+            if not os.path.isdir(PACKAGE_STATUS_PROTO_PATH):
+                os.makedirs(PACKAGE_STATUS_PROTO_PATH)
+            shutil.copyfile(STATUS_PROTO,
+                            os.path.join(ROOT_DIR, PACKAGE_STATUS_PROTO_PATH,
+                                         'status.proto'))
         if os.path.isfile(LICENSE):
             shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))

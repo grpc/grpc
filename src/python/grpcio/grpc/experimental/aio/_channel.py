@@ -13,42 +13,44 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
-from typing import Callable, Optional
+from typing import Any, Optional, Sequence, Text, Tuple
 
+import grpc
 from grpc import _common
 from grpc._cython import cygrpc
+from . import _base_call
+from ._call import UnaryUnaryCall, UnaryStreamCall
+from ._typing import (DeserializingFunction, MetadataType, SerializingFunction)
 
-from ._call import Call
 
-SerializingFunction = Callable[[str], bytes]
-DeserializingFunction = Callable[[bytes], str]
+def _timeout_to_deadline(loop: asyncio.AbstractEventLoop,
+                         timeout: Optional[float]) -> Optional[float]:
+    if timeout is None:
+        return None
+    return loop.time() + timeout
 
 
 class UnaryUnaryMultiCallable:
-    """Afford invoking a unary-unary RPC from client-side in an asynchronous way."""
+    """Factory an asynchronous unary-unary RPC stub call from client-side."""
 
     def __init__(self, channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
+        self._loop = asyncio.get_event_loop()
         self._channel = channel
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._loop = asyncio.get_event_loop()
-
-    def _timeout_to_deadline(self, timeout: int) -> Optional[int]:
-        if timeout is None:
-            return None
-        return self._loop.time() + timeout
 
     def __call__(self,
-                 request,
+                 request: Any,
                  *,
-                 timeout=None,
-                 metadata=None,
-                 credentials=None,
-                 wait_for_ready=None,
-                 compression=None) -> Call:
+                 timeout: Optional[float] = None,
+                 metadata: Optional[MetadataType] = None,
+                 credentials: Optional[grpc.CallCredentials] = None,
+                 wait_for_ready: Optional[bool] = None,
+                 compression: Optional[grpc.Compression] = None
+                ) -> _base_call.UnaryUnaryCall:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -86,15 +88,86 @@ class UnaryUnaryMultiCallable:
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
-        serialized_request = _common.serialize(request,
-                                               self._request_serializer)
-        timeout = self._timeout_to_deadline(timeout)
-        aio_cancel_status = cygrpc.AioCancelStatus()
-        aio_call = asyncio.ensure_future(
-            self._channel.unary_unary(self._method, serialized_request, timeout,
-                                      aio_cancel_status),
-            loop=self._loop)
-        return Call(aio_call, self._response_deserializer, aio_cancel_status)
+        deadline = _timeout_to_deadline(self._loop, timeout)
+
+        return UnaryUnaryCall(
+            request,
+            deadline,
+            self._channel,
+            self._method,
+            self._request_serializer,
+            self._response_deserializer,
+        )
+
+
+class UnaryStreamMultiCallable:
+    """Afford invoking a unary-stream RPC from client-side in an asynchronous way."""
+
+    def __init__(self, channel: cygrpc.AioChannel, method: bytes,
+                 request_serializer: SerializingFunction,
+                 response_deserializer: DeserializingFunction) -> None:
+        self._channel = channel
+        self._method = method
+        self._request_serializer = request_serializer
+        self._response_deserializer = response_deserializer
+        self._loop = asyncio.get_event_loop()
+
+    def __call__(self,
+                 request: Any,
+                 *,
+                 timeout: Optional[float] = None,
+                 metadata: Optional[MetadataType] = None,
+                 credentials: Optional[grpc.CallCredentials] = None,
+                 wait_for_ready: Optional[bool] = None,
+                 compression: Optional[grpc.Compression] = None
+                ) -> _base_call.UnaryStreamCall:
+        """Asynchronously invokes the underlying RPC.
+
+        Args:
+          request: The request value for the RPC.
+          timeout: An optional duration of time in seconds to allow
+            for the RPC.
+          metadata: Optional :term:`metadata` to be transmitted to the
+            service-side of the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+
+        Returns:
+          A Call object instance which is an awaitable object.
+
+        Raises:
+          RpcError: Indicating that the RPC terminated with non-OK status. The
+            raised RpcError will also be a Call for the RPC affording the RPC's
+            metadata, status code, and details.
+        """
+
+        if metadata:
+            raise NotImplementedError("TODO: metadata not implemented yet")
+
+        if credentials:
+            raise NotImplementedError("TODO: credentials not implemented yet")
+
+        if wait_for_ready:
+            raise NotImplementedError(
+                "TODO: wait_for_ready not implemented yet")
+
+        if compression:
+            raise NotImplementedError("TODO: compression not implemented yet")
+
+        deadline = _timeout_to_deadline(self._loop, timeout)
+
+        return UnaryStreamCall(
+            request,
+            deadline,
+            self._channel,
+            self._method,
+            self._request_serializer,
+            self._response_deserializer,
+        )
 
 
 class Channel:
@@ -103,7 +176,10 @@ class Channel:
     A cygrpc.AioChannel-backed implementation.
     """
 
-    def __init__(self, target, options, credentials, compression):
+    def __init__(self, target: Text,
+                 options: Optional[Sequence[Tuple[Text, Any]]],
+                 credentials: Optional[grpc.ChannelCredentials],
+                 compression: Optional[grpc.Compression]):
         """Constructor.
 
         Args:
@@ -125,10 +201,12 @@ class Channel:
 
         self._channel = cygrpc.AioChannel(_common.encode(target))
 
-    def unary_unary(self,
-                    method,
-                    request_serializer=None,
-                    response_deserializer=None):
+    def unary_unary(
+            self,
+            method: Text,
+            request_serializer: Optional[SerializingFunction] = None,
+            response_deserializer: Optional[DeserializingFunction] = None
+    ) -> UnaryUnaryMultiCallable:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
         Args:
@@ -145,6 +223,30 @@ class Channel:
         return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
                                        request_serializer,
                                        response_deserializer)
+
+    def unary_stream(
+            self,
+            method: Text,
+            request_serializer: Optional[SerializingFunction] = None,
+            response_deserializer: Optional[DeserializingFunction] = None
+    ) -> UnaryStreamMultiCallable:
+        return UnaryStreamMultiCallable(self._channel, _common.encode(method),
+                                        request_serializer,
+                                        response_deserializer)
+
+    def stream_unary(
+            self,
+            method: Text,
+            request_serializer: Optional[SerializingFunction] = None,
+            response_deserializer: Optional[DeserializingFunction] = None):
+        """Placeholder method for stream-unary calls."""
+
+    def stream_stream(
+            self,
+            method: Text,
+            request_serializer: Optional[SerializingFunction] = None,
+            response_deserializer: Optional[DeserializingFunction] = None):
+        """Placeholder method for stream-stream calls."""
 
     async def _close(self):
         # TODO: Send cancellation status

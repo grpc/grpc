@@ -69,7 +69,7 @@ class grpc_alts_channel_security_connector final
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name)
-      : grpc_channel_security_connector(/*url_scheme=*/nullptr,
+      : grpc_channel_security_connector(GRPC_ALTS_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
         target_name_(gpr_strdup(target_name)) {}
@@ -129,7 +129,7 @@ class grpc_alts_server_security_connector final
  public:
   grpc_alts_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(/*url_scheme=*/nullptr,
+      : grpc_server_security_connector(GRPC_ALTS_URL_SCHEME,
                                        std::move(server_creds)) {}
 
   ~grpc_alts_server_security_connector() override = default;

@@ -32,6 +32,7 @@ _TRUE_VALUES = ['yes',  'Yes',  'YES', 'true', 'True', 'TRUE', '1']
 # must  not block and should execute quickly.
 #
 # This flag is not supported on Windows.
+# This flag is also not supported for non-native IO manager.
 _GRPC_ENABLE_FORK_SUPPORT = (
     os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
         .lower() in _TRUE_VALUES)

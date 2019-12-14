@@ -28,13 +28,13 @@
 #import <RxLibrary/GRXWriter+Transformations.h>
 
 @implementation GRPCUnaryResponseHandler {
-  void (^_responseHandler)(GPBMessage *, NSError *);
+  void (^_responseHandler)(id, NSError *);
   dispatch_queue_t _responseDispatchQueue;
 
   GPBMessage *_message;
 }
 
-- (nullable instancetype)initWithResponseHandler:(void (^)(GPBMessage *, NSError *))handler
+- (nullable instancetype)initWithResponseHandler:(void (^)(id, NSError *))handler
                            responseDispatchQueue:(dispatch_queue_t)dispatchQueue {
   if ((self = [super init])) {
     _responseHandler = handler;

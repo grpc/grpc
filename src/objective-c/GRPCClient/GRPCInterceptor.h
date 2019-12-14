@@ -97,6 +97,10 @@
                                                    receiveNextMessages
    \endverbatim
  *
+ * An interceptor must forward responses to its previous interceptor in the order of initial
+ * metadata, message(s), and trailing metadata. Forwarding responses out of this order (e.g.
+ * forwarding a message before initial metadata) is not allowed.
+ *
  * Events of requests and responses are dispatched to interceptor objects using the interceptor's
  * dispatch queue. The dispatch queue should be serial queue to make sure the events are processed
  * in order. Interceptor implementations must derive from GRPCInterceptor class. The class makes

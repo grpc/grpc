@@ -25,4 +25,5 @@
 - 1.23 'g' stands for ['gangnam'](https://github.com/grpc/grpc/tree/v1.23.x)
 - 1.24 'g' stands for ['ganges'](https://github.com/grpc/grpc/tree/v1.24.x)
 - 1.25 'g' stands for ['game'](https://github.com/grpc/grpc/tree/v1.25.x)
-- 1.26 'g' stands for ['gon'](https://github.com/grpc/grpc/tree/master)
+- 1.26 'g' stands for ['gon'](https://github.com/grpc/grpc/tree/v1.26.x)
+- 1.27 'g' stands for ['guantao'](https://github.com/grpc/grpc/tree/master)

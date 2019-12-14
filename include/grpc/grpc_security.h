@@ -698,7 +698,7 @@ GRPCAPI grpc_channel_credentials* grpc_local_credentials_create(
 GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
     grpc_local_connect_type type);
 
-/** --- SPIFFE and HTTPS-based TLS channel/server credentials ---
+/** --- TLS channel/server credentials ---
  * It is used for experimental purpose for now and subject to change. */
 
 /** Config for TLS key materials. It is used for
@@ -938,10 +938,8 @@ grpc_tls_server_authorization_check_config_create(
                    grpc_tls_server_authorization_check_arg* arg),
     void (*destruct)(void* config_user_data));
 
-/** --- SPIFFE channel/server credentials --- **/
-
 /**
- * This method creates a TLS SPIFFE channel credential object.
+ * This method creates a TLS channel credential object.
  * It takes ownership of the options parameter.
  *
  * - options: grpc TLS credentials options instance.
@@ -952,7 +950,7 @@ grpc_tls_server_authorization_check_config_create(
  * to change.
  */
 
-grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
+grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options);
 
 /**
@@ -966,7 +964,7 @@ grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
  * It is used for experimental purpose for now and subject
  * to change.
  */
-grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
+grpc_server_credentials* grpc_tls_server_credentials_create(
     grpc_tls_credentials_options* options);
 
 #ifdef __cplusplus

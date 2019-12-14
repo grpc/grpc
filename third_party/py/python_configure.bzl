@@ -13,6 +13,12 @@ _PYTHON2_LIB_PATH = "PYTHON2_LIB_PATH"
 _PYTHON3_BIN_PATH = "PYTHON3_BIN_PATH"
 _PYTHON3_LIB_PATH = "PYTHON3_LIB_PATH"
 
+_HEADERS_HELP = (
+  "Are Python headers installed? Try installing python-dev or " +
+  "python3-dev on Debian-based systems. Try python-devel or python3-devel " +
+  "on Redhat-based systems."
+)
+
 def _tpl(repository_ctx, tpl, substitutions = {}, out = None):
     if not out:
         out = tpl
@@ -229,13 +235,28 @@ def _get_python_include(repository_ctx, python_bin):
             "from distutils import sysconfig;" +
             "print(sysconfig.get_python_inc())",
         ],
-        error_msg = "Problem getting python include path.",
+        error_msg = "Problem getting python include path for {}.".format(python_bin),
         error_details = (
             "Is the Python binary path set up right? " + "(See ./configure or " +
-            _PYTHON2_BIN_PATH + ".) " + "Is distutils installed?"
+            python_bin + ".) " + "Is distutils installed? " +
+            _HEADERS_HELP
         ),
     )
-    return result.stdout.splitlines()[0]
+    include_path = result.stdout.splitlines()[0]
+    _execute(
+        repository_ctx,
+        [
+          python_bin,
+          "-c",
+          "import os;" +
+          "main_header = os.path.join('{}', 'Python.h');".format(include_path) +
+          "assert os.path.exists(main_header), main_header + ' does not exist.'"
+        ],
+        error_msg = "Unable to find Python headers for {}".format(python_bin),
+        error_details = _HEADERS_HELP,
+        empty_stdout_fine = True,
+    )
+    return include_path
 
 def _get_python_import_lib_name(repository_ctx, python_bin, bin_path_key):
     """Get Python import library name (pythonXY.lib) on Windows."""

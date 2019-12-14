@@ -46,11 +46,13 @@ cdef class CallbackWrapper:
             grpc_experimental_completion_queue_functor* functor,
             int success):
         cdef CallbackContext *context = <CallbackContext *>functor
+        cdef object waiter = <object>context.waiter
+        if waiter.cancelled():
+            return
         if success == 0:
-            (<CallbackFailureHandler>context.failure_handler).handle(
-                <object>context.waiter)
+            (<CallbackFailureHandler>context.failure_handler).handle(waiter)
         else:
-            (<object>context.waiter).set_result(None)
+            waiter.set_result(None)
 
     cdef grpc_experimental_completion_queue_functor *c_functor(self):
         return &self.context.functor
@@ -83,7 +85,10 @@ cdef class CallbackCompletionQueue:
         grpc_completion_queue_destroy(self._cq)
 
 
-async def callback_start_batch(GrpcCallWrapper grpc_call_wrapper,
+class ExecuteBatchError(Exception): pass
+
+
+async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
                                tuple operations,
                                object loop):
     """The callback version of start batch operations."""
@@ -93,7 +98,7 @@ async def callback_start_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef object future = loop.create_future()
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
-        CallbackFailureHandler('callback_start_batch', operations, RuntimeError))
+        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
     # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
     # when calling "await". This is an over-optimization by Cython.
     cpython.Py_INCREF(wrapper)
@@ -104,10 +109,67 @@ async def callback_start_batch(GrpcCallWrapper grpc_call_wrapper,
         wrapper.c_functor(), NULL)
 
     if error != GRPC_CALL_OK:
-        raise RuntimeError("Failed grpc_call_start_batch: {}".format(error))
+        raise ExecuteBatchError("Failed grpc_call_start_batch: {}".format(error))
 
     await future
     cpython.Py_DECREF(wrapper)
     cdef grpc_event c_event
     # Tag.event must be called, otherwise messages won't be parsed from C
     batch_operation_tag.event(c_event)
+
+
+async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
+                           object loop):
+    """Retrives parsed messages from Core.
+
+    The messages maybe already in Core's buffer, so there isn't a 1-to-1
+    mapping between this and the underlying "socket.read()". Also, eventually,
+    this function will end with an EOF, which reads empty message.
+    """
+    cdef ReceiveMessageOperation receive_op = ReceiveMessageOperation(_EMPTY_FLAG)
+    cdef tuple ops = (receive_op,)
+    try:
+        await execute_batch(grpc_call_wrapper, ops, loop)
+    except ExecuteBatchError as e:
+        # NOTE(lidiz) The receive message operation has two ways to indicate
+        # finish state : 1) returns empty message due to EOF; 2) fails inside
+        # the callback (e.g. cancelled).
+        #
+        # Since they all indicates finish, they are better be merged.
+        _LOGGER.debug(e)
+    return receive_op.message()
+
+
+async def _send_message(GrpcCallWrapper grpc_call_wrapper,
+                        bytes message,
+                        bint metadata_sent,
+                        object loop):
+    cdef SendMessageOperation op = SendMessageOperation(message, _EMPTY_FLAG)
+    cdef tuple ops
+    if metadata_sent:
+        ops = (op,)
+    else:
+        ops = (
+            # Initial metadata must be sent before first outbound message.
+            SendInitialMetadataOperation(None, _EMPTY_FLAG),
+            op,
+        )
+    await execute_batch(grpc_call_wrapper, ops, loop)
+
+
+async def _send_initial_metadata(GrpcCallWrapper grpc_call_wrapper,
+                                 tuple metadata,
+                                 object loop):
+    cdef SendInitialMetadataOperation op = SendInitialMetadataOperation(
+        metadata,
+        _EMPTY_FLAG)
+    cdef tuple ops = (op,)
+    await execute_batch(grpc_call_wrapper, ops, loop)
+
+
+async def _receive_initial_metadata(GrpcCallWrapper grpc_call_wrapper,
+                                    object loop):
+    cdef ReceiveInitialMetadataOperation op = ReceiveInitialMetadataOperation(_EMPTY_FLAGS)
+    cdef tuple ops = (op,)
+    await execute_batch(grpc_call_wrapper, ops, loop)
+    return op.initial_metadata()
