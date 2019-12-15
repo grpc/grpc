@@ -23,6 +23,22 @@ from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests_aio.unit._constants import UNARY_CALL_WITH_SLEEP_VALUE
 
+_INITIAL_METADATA_KEY = "initial-md-key"
+_TRAILING_METADATA_KEY = "trailing-md-key-bin"
+
+
+async def _maybe_echo_metadata(servicer_context):
+    """Copies metadata from request to response if it is present."""
+    invocation_metadata = dict(servicer_context.invocation_metadata())
+    if _INITIAL_METADATA_KEY in invocation_metadata:
+        initial_metadatum = (_INITIAL_METADATA_KEY,
+                             invocation_metadata[_INITIAL_METADATA_KEY])
+        await servicer_context.send_initial_metadata((initial_metadatum,))
+    # if _TRAILING_METADATA_KEY in invocation_metadata:
+    #     trailing_metadatum = (_TRAILING_METADATA_KEY,
+    #                           invocation_metadata[_TRAILING_METADATA_KEY])
+    #     servicer_context.set_trailing_metadata((trailing_metadatum,))
+
 
 class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 

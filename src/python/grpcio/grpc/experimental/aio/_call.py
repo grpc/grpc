@@ -273,12 +273,14 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
     """
     _request: RequestType
+    _metadata: Optional[MetadataType]
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _call: asyncio.Task
 
     # pylint: disable=too-many-arguments
     def __init__(self, request: RequestType, deadline: Optional[float],
+                metadata: Optional[MetadataType],
                  credentials: Optional[grpc.CallCredentials],
                  channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
@@ -286,6 +288,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         channel.call(method, deadline, credentials)
         super().__init__(channel.call(method, deadline, credentials))
         self._request = request
+        self._metadata = metadata
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
         self._call = self._loop.create_task(self._invoke())
@@ -307,6 +310,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         try:
             serialized_response = await self._cython_call.unary_unary(
                 serialized_request,
+                self._metadata,
                 self._set_initial_metadata,
                 self._set_status,
             )

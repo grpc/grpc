@@ -31,6 +31,12 @@ from tests_aio.unit._test_server import start_test_server
 _UNARY_CALL_METHOD = '/grpc.testing.TestService/UnaryCall'
 _UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
 _STREAMING_OUTPUT_CALL_METHOD = '/grpc.testing.TestService/StreamingOutputCall'
+
+_INVOCATION_METADATA = (
+    ('initial-md-key', 'initial-md-value'),
+    ('trailing-md-key-bin', b'\x00\x02'),
+)
+
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
@@ -96,6 +102,18 @@ class TestChannel(AioTestBase):
             call = hi(messages_pb2.SimpleRequest(),
                       timeout=UNARY_CALL_WITH_SLEEP_VALUE * 5)
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_unary_call_metadata(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            hi = channel.unary_unary(
+                _UNARY_CALL_METHOD,
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = hi(messages_pb2.SimpleRequest(),
+                      metadata=_INVOCATION_METADATA)
+            initial_metadata = await call.initial_metadata()
+
+            self.assertIsInstance(initial_metadata, tuple)
 
     async def test_unary_stream(self):
         channel = aio.insecure_channel(self._server_target)

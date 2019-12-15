@@ -95,9 +95,6 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if metadata:
-            raise NotImplementedError("TODO: metadata not implemented yet")
-
         if wait_for_ready:
             raise NotImplementedError(
                 "TODO: wait_for_ready not implemented yet")
@@ -108,6 +105,7 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             return UnaryUnaryCall(
                 request,
                 _timeout_to_deadline(timeout),
+                metadata,
                 credentials,
                 self._channel,
                 self._method,
@@ -119,6 +117,7 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
                 self._interceptors,
                 request,
                 timeout,
+                metadata,
                 credentials,
                 self._channel,
                 self._method,
