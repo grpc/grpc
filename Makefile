@@ -8143,6 +8143,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing
 
 LIBGRPC_CSHARP_EXT_SRC = \
     src/csharp/ext/grpc_csharp_ext.c \
+    src/csharp/ext/std++compat.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -23364,6 +23365,7 @@ src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/util/core_stats.cc: $(OPENSSL_DEP)
 src/cpp/util/error_details.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
+src/csharp/ext/std++compat.cc: $(OPENSSL_DEP)
 test/core/bad_client/bad_client.cc: $(OPENSSL_DEP)
 test/core/bad_ssl/server_common.cc: $(OPENSSL_DEP)
 test/core/end2end/data/client_certs.cc: $(OPENSSL_DEP)
