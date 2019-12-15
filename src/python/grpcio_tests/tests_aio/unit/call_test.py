@@ -114,6 +114,24 @@ class TestUnaryUnaryCall(AioTestBase):
             call = hi(messages_pb2.SimpleRequest())
             self.assertEqual('', await call.details())
 
+    async def test_call_initial_metadata_awaitable(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            hi = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = hi(messages_pb2.SimpleRequest())
+            self.assertEqual((), await call.initial_metadata())
+
+    async def test_call_trailing_metadata_awaitable(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            hi = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = hi(messages_pb2.SimpleRequest())
+            self.assertEqual((), await call.trailing_metadata())
+
     async def test_cancel_unary_unary(self):
         async with aio.insecure_channel(self._server_target) as channel:
             hi = channel.unary_unary(

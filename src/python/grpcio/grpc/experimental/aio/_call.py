@@ -246,6 +246,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     """
     _request: RequestType
     _deadline: Optional[float]
+    _metadata: Optional[MetadataType]
     _channel: cygrpc.AioChannel
     _method: bytes
     _request_serializer: SerializingFunction
@@ -253,12 +254,13 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     _call: asyncio.Task
 
     def __init__(self, request: RequestType, deadline: Optional[float],
-                 channel: cygrpc.AioChannel, method: bytes,
-                 request_serializer: SerializingFunction,
+                 metadata: Optional[MetadataType], channel: cygrpc.AioChannel,
+                 method: bytes, request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
         super().__init__()
         self._request = request
         self._deadline = deadline
+        self._metadata = metadata
         self._channel = channel
         self._method = method
         self._request_serializer = request_serializer
@@ -284,6 +286,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
             self._method,
             serialized_request,
             self._deadline,
+            self._metadata,
             self._cancellation,
             self._set_initial_metadata,
             self._set_status,

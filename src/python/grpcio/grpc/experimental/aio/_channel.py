@@ -75,9 +75,6 @@ class UnaryUnaryMultiCallable:
             metadata, status code, and details.
         """
 
-        if metadata:
-            raise NotImplementedError("TODO: metadata not implemented yet")
-
         if credentials:
             raise NotImplementedError("TODO: credentials not implemented yet")
 
@@ -93,6 +90,7 @@ class UnaryUnaryMultiCallable:
         return UnaryUnaryCall(
             request,
             deadline,
+            metadata,
             self._channel,
             self._method,
             self._request_serializer,

@@ -27,12 +27,14 @@ cdef class _AioCall:
     def __cinit__(self,
                   AioChannel channel,
                   object deadline,
+                  tuple metadata,
                   bytes method):
         self._channel = channel
         self._references = []
         self._grpc_call_wrapper = GrpcCallWrapper()
         self._loop = asyncio.get_event_loop()
         self._create_grpc_call(deadline, method)
+        self._initial_metadata = metadata
 
         self._status_received = asyncio.Event(loop=self._loop)
 
@@ -133,7 +135,7 @@ cdef class _AioCall:
         cdef tuple ops
 
         cdef SendInitialMetadataOperation initial_metadata_op = SendInitialMetadataOperation(
-            _EMPTY_METADATA,
+            self._initial_metadata,
             GRPC_INITIAL_METADATA_USED_MASK)
         cdef SendMessageOperation send_message_op = SendMessageOperation(request, _EMPTY_FLAGS)
         cdef SendCloseFromClientOperation send_close_op = SendCloseFromClientOperation(_EMPTY_FLAGS)
