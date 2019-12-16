@@ -48,7 +48,7 @@ if(GRPC_AS_SUBMODULE)
   # the same repository as gRPC sources, so we just look a few directories up)
   add_subdirectory(../../.. ${CMAKE_CURRENT_BINARY_DIR}/grpc EXCLUDE_FROM_ALL)
   message(STATUS "Using gRPC via add_subdirectory.")
-  
+
   # After using add_subdirectory, we can now use the grpc targets directly from
   # this build.
   set(_PROTOBUF_LIBPROTOBUF libprotobuf)
@@ -63,7 +63,32 @@ if(GRPC_AS_SUBMODULE)
   else()
     set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:grpc_cpp_plugin>)
   endif()
+elseif(GRPC_FETCHCONTENT)
+  # Another way is to use CMake's FetchContent module to clone gRPC at
+  # configure time. This makes gRPC's source code available to your project,
+  # similar to a git submodule.
+  message(STATUS "Using gRPC via add_subdirectory (FetchContent).")
+  include(FetchContent)
+  FetchContent_Declare(
+    grpc
+    GIT_REPOSITORY https://github.com/grpc/grpc.git
+    # when using gRPC, you will actually set this to an existing tag, such as
+    # v1.25.0, v1.26.0 etc..
+    # For the purpose of testing, we override the tag used to the commit
+    # that's currently under test.
+    GIT_TAG        vGRPC_TAG_VERSION_OF_YOUR_CHOICE)
+  FetchContent_MakeAvailable(grpc)
 
+  # Since FetchContent uses add_subdirectory under the hood, we can use
+  # the grpc targets directly from this build.
+  set(_PROTOBUF_LIBPROTOBUF libprotobuf)
+  set(_PROTOBUF_PROTOC $<TARGET_FILE:protoc>)
+  set(_GRPC_GRPCPP_UNSECURE grpc++_unsecure)
+  if(CMAKE_CROSSCOMPILING)
+    find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
+  else()
+    set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:grpc_cpp_plugin>)
+  endif()
 else()
   # This branch assumes that gRPC and all its dependencies are already installed
   # on this system, so they can be located by find_package().
