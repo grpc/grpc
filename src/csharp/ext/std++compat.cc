@@ -26,7 +26,7 @@ namespace std {
 
 // CentOS 7 (GLIBC_2.17 / GLIBCXX_3.4.19) doesn't have a following symbol
 // which was added to GLIBCXX_3.4.20. gRPC uses Debian 8 which has
-// GLIBCXX_3.4.20 when buliding .net artifacts so artifacts can have symbols
+// GLIBCXX_3.4.20 when building .net artifacts so artifacts can have symbols
 // which are not available on CentOS 7.
 // To support CentOS 7, missing symbols are provided as weak symbols.
 void __attribute__((weak)) __throw_out_of_range_fmt(char const* fmt, ...) {
