@@ -436,7 +436,8 @@ typedef struct {
   const char* type;
 } grpc_metadata_credentials_plugin;
 
-/** Creates a credentials object from a plugin. */
+/** Creates a credentials object from a plugin and a corresponding security
+ * level. */
 GRPCAPI grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, grpc_security_level security_level,
     void* reserved);
