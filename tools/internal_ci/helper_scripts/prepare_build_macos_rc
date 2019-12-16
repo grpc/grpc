@@ -44,7 +44,10 @@ then
   set -e  # rvm commands are very verbose
   time rvm install 2.5.0
   rvm use 2.5.0 --default
-  time gem install bundler -v 1.17.3 --no-ri --no-doc
+  # Install bundler with workaround from
+  # https://discuss.bitrise.io/t/machine-unable-to-use-update-bundler-2-0/7862
+  time gem uninstall bundler --force
+  time gem install bundler --force --no-ri --no-doc
   time gem install cocoapods --version 1.3.1 --no-ri --no-doc
   time gem install rake-compiler --no-ri --no-doc
   rvm osx-ssl-certs status all
