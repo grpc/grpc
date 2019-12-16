@@ -295,6 +295,9 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (first_picked_port_ > 0) {
       grpc_recycle_unused_port(first_picked_port_);
     }
+    if (GetParam().credentials_type != kSpiffeCredentialsType) {
+      GetCredentialsProvider()->Reset();
+    }
     //DestroySpiffeThreadList(spiffe_thread_list_, &spiffe_mutex_);
   }
 
@@ -368,10 +371,10 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
-    if (GetParam().credentials_type == kSpiffeCredentialsType) {
-      spiffe_thread_list_ = CreateSpiffeThreadList(GetParam().credentials_type);
-      GetCredentialsProvider()->SetThreadInfo(spiffe_thread_list_, &spiffe_mutex_);
-    }
+    //if (GetParam().credentials_type == kSpiffeCredentialsType) {
+    //  spiffe_thread_list_ = CreateSpiffeThreadList(GetParam().credentials_type);
+    //  GetCredentialsProvider()->SetThreadInfo(spiffe_thread_list_, &spiffe_mutex_);
+    //}
     std::cout << "*********About to set channel creds" << std::endl;
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
@@ -431,9 +434,9 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     DummyInterceptor::Reset();
     //DestroySpiffeThreadList(spiffe_thread_list_, &spiffe_mutex_);
-    if (GetParam().credentials_type == kSpiffeCredentialsType) {
-      GPR_ASSERT(spiffe_thread_list_ != nullptr);
-    }
+    //if (GetParam().credentials_type == kSpiffeCredentialsType) {
+    //  GPR_ASSERT(spiffe_thread_list_ != nullptr);
+    //}
   }
 
   bool do_not_test_{false};
@@ -453,8 +456,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   int first_picked_port_;
   /** The mutex |spiffe_mutex_| synchronizes the |spiffe_thread_list|, which
    *  manages the threads used for SPIFFE's async server authorization. **/
-  std::mutex spiffe_mutex_;
-  void* spiffe_thread_list_ = nullptr;
+  //std::mutex spiffe_mutex_;
+  //void* spiffe_thread_list_ = nullptr;
 };
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,

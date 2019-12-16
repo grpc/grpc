@@ -33,41 +33,6 @@ namespace grpc {
 namespace testing {
 
 const char kSpiffeCredentialsType[] = "spiffe";
-const size_t kMaxNumberSpiffeThreads = 40;
-
-/** This class manages all the threads spawned by a
- *  SpiffeCredentialTypeProvider with asynchronous server authorization check
- *  enabled. **/
-class SpiffeThreadList {
- public:
-  SpiffeThreadList() {
-    thread_list_.reserve(kMaxNumberSpiffeThreads);
-  }
-
-  /**~SpiffeThreadList() {
-    for (size_t i = 0; i < position_; i++) {
-      thread_list_[i].join();
-    }
-  }**/
-
-  /** This method adds a new server authorization thread to |thread_list_|
-   *  and starts the thread using |callback| and |arg|.  **/
-  void start_new_spiffe_thread(void (*callback)(::grpc_impl::experimental::TlsServerAuthorizationCheckArg*),
-                         ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) {
-    GPR_ASSERT(position_ < kMaxNumberSpiffeThreads);
-    thread_list_[position_] = std::thread(callback, arg);
-    position_ += 1;
-  }
-
- private:
-  std::vector<std::thread> thread_list_;
-  size_t position_ = 0;
-};
-
-/** Helper functions for SetUp and TearDown. **/
-void* CreateSpiffeThreadList(const grpc::string& credential_type);
-
-void DestroySpiffeThreadList(void* thread_list, std::mutex* mu);
 
 /** This method creates a TlsCredentialsOptions instance with no key materials,
  *  whose credential reload config is configured using the
@@ -82,8 +47,7 @@ void DestroySpiffeThreadList(void* thread_list, std::mutex* mu);
  *  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY for both the
  *  client and the server. **/
 std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
-CreateTestTlsCredentialsOptions(bool is_client, bool is_async,
-                                void* thread_list, std::mutex* mu);
+CreateTestTlsCredentialsOptions(bool is_client, bool is_async);
 
 /** This class constructs and manages compatible, SPIFFE channel and server
  *  credentials. The constructor accepts a boolean paramter |server_authz_async|
@@ -97,17 +61,21 @@ class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
 
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
       ChannelArguments* args) override {
-    /** This method is not used for SPIFFE credentials for the following reason:
-     *  in order to properly test async server authorization, we must also pass
-     *  in a list of threads to initialize the SPIFFE credentials options. **/
-    GPR_ASSERT(1 == 0);
-    return nullptr;
+    ResetChannelOptions();
+    /** Overriding the ssl target name is necessary for the key materials
+     *  provisioned in the example to be valid for this target; without the
+     *  override, the test sets the target name to localhost:port_number,
+     *  yielding a mismatched with the example key materials. **/
+    args->SetSslTargetNameOverride("foo.test.google.fr");
+    active_channel_options_ = CreateTestTlsCredentialsOptions(true, server_authz_async_);
+    GPR_ASSERT(1==0);
+    return TlsCredentials(active_channel_options_);
   }
 
   std::shared_ptr<ChannelCredentials> GetSpiffeChannelCredentials(
       ChannelArguments* args, void* thread_list, std::mutex* mu) {
-    GPR_ASSERT(args != nullptr);
-    GPR_ASSERT(mu != nullptr);
+    //GPR_ASSERT(args != nullptr);
+    //GPR_ASSERT(mu != nullptr);
     std::cout << "**********Entered GetSpiffeChannelCredentials" << std::endl;
     ResetChannelOptions();
     std::cout << "********Done channel options reset" << std::endl;
@@ -125,7 +93,7 @@ class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
     GPR_ASSERT(1==0);
     **/
     std::cout << "************About to enter CreateTestTlsCredentialsOptions" << std::endl;
-    active_channel_options_ = CreateTestTlsCredentialsOptions(true, server_authz_async_, thread_list, mu);
+    //active_channel_options_ = CreateTestTlsCredentialsOptions(true, server_authz_async_, thread_list, mu);
     std::cout << "*************Finished setting active channel options" << std::endl;
     GPR_ASSERT(1==0);
     return TlsCredentials(active_channel_options_);
@@ -135,10 +103,14 @@ class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
     std::cout << "**********Entered GetServerCredentials" << std::endl;
     ResetServerOptions();
     std::cout << "**********Reset server options" << std::endl;
-    active_server_options_ = CreateTestTlsCredentialsOptions(
-            false, server_authz_async_, thread_list_, nullptr);
+    active_server_options_ = CreateTestTlsCredentialsOptions(false, server_authz_async_);
     std::cout << "**********About to return server credentials" << std::endl;
     return TlsServerCredentials(active_server_options_);
+  }
+
+  void Reset() {
+    ResetChannelOptions();
+    ResetServerOptions();
   }
 
  private:
@@ -154,7 +126,6 @@ class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
     }
   }
 
-  void* thread_list_ = nullptr;
   std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
       active_channel_options_ = nullptr;
   std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>

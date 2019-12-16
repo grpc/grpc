@@ -70,10 +70,7 @@ class CredentialsProvider {
   // Provide a list of secure credentials type.
   virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
 
-  void SetThreadInfo(void* thread_list, std::mutex* mutex) {
-    thread_list_ = thread_list;
-    mutex_ = mutex;
-  }
+  virtual void Reset();
 
  protected:
   // Provide a list of threads to be used to create a credential, and a mutex

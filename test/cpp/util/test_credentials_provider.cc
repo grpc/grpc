@@ -99,6 +99,10 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
       return grpc::GoogleDefaultCredentials();
+    } else if (type == grpc::testing::kSpiffeCredentialsType) {
+      args->SetSslTargetNameOverride("foo.test.google.fr");
+      active_channel_options_ = CreateTestTlsCredentialsOptions(true, true);
+      return TlsCredentials(active_channel_options_);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
@@ -106,15 +110,6 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       if (it == added_secure_type_names_.end()) {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
         return nullptr;
-      }
-      if (has_spiffe_credentials &&
-          type == grpc::testing::kSpiffeCredentialsType) {
-        std::cout << "***********Got into spiffe if statement" << std::endl;
-        SpiffeCredentialTypeProvider* spiffe_provider =
-            reinterpret_cast<SpiffeCredentialTypeProvider*>(added_secure_type_providers_[it -added_secure_type_names_.begin()].get());
-        GPR_ASSERT(spiffe_provider != nullptr);
-        std::cout << "*********About to Call GetSpiffeChannelCredentials" << std::endl;
-        return spiffe_provider->GetSpiffeChannelCredentials(args, thread_list_, mutex_);
       }
       return added_secure_type_providers_[it - added_secure_type_names_.begin()]
           ->GetChannelCredentials(args);
@@ -141,6 +136,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       }
       return SslServerCredentials(ssl_opts);
+    } else if (type == grpc::testing::kSpiffeCredentialsType) {
+      active_channel_options_ = CreateTestTlsCredentialsOptions(false, true);
+      return TlsServerCredentials(active_server_options_);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
@@ -164,11 +162,26 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     return types;
   }
 
+  void Reset() {
+    if (active_channel_options_ != nullptr) {
+      active_channel_options_ = nullptr;
+    }
+    if (active_server_options_ != nullptr) {
+      active_server_options_ = nullptr;
+    }
+  }
+
+
+
  private:
   std::mutex mu_;
   std::vector<grpc::string> added_secure_type_names_;
   std::vector<std::unique_ptr<CredentialTypeProvider>>
       added_secure_type_providers_;
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
+      active_channel_options_ = nullptr;
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
+      active_server_options_ = nullptr;
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
   bool has_spiffe_credentials = false;

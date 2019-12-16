@@ -21,7 +21,7 @@
 
 namespace grpc {
 namespace testing {
-
+/**
 void* CreateSpiffeThreadList(const grpc::string& credential_type) {
   if (credential_type == kSpiffeCredentialsType) {
     SpiffeThreadList* thread_list = new SpiffeThreadList();
@@ -41,6 +41,7 @@ void DestroySpiffeThreadList(void* thread_list, std::mutex* mu) {
   thread_list = nullptr;
   mu->unlock();
 }
+**/
 
 class TestSyncTlsCredentialReload
     : public ::grpc_impl::experimental::TlsCredentialReloadInterface {
@@ -83,27 +84,39 @@ static void TestAsyncTlsServerAuthorizationCheckCallback(
 class TestAsyncTlsServerAuthorizationCheck
     : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
  public:
-  TestAsyncTlsServerAuthorizationCheck(SpiffeThreadList* thread_list, std::mutex* mu)
-     : thread_list_(thread_list), mu_(mu) {
-     GPR_ASSERT(mu_ != nullptr);
-     GPR_ASSERT(thread_list_ != nullptr);
+  //TestAsyncTlsServerAuthorizationCheck(SpiffeThreadList* thread_list, std::mutex* mu)
+  //   : thread_list_(thread_list), mu_(mu) {
+     //GPR_ASSERT(mu_ != nullptr);
+     //GPR_ASSERT(thread_list_ != nullptr);
+  //}
+  TestAsyncTlsServerAuthorizationCheck() {
+  }
+
+  ~TestAsyncTlsServerAuthorizationCheck() {
+    //GPR_ASSERT(thread_list_ != nullptr);
+    //mu.lock();
+    //delete thread_list_;
+    //thread_list_ = nullptr;
+    //mu.unlock();
+    server_authz_thread_.join();
   }
 
   // Async implementation.
   int Schedule(
       ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
-    GPR_ASSERT(arg != nullptr);
-    GPR_ASSERT(thread_list_ != nullptr);
-    GPR_ASSERT(mu_ != nullptr);
-    mu_->lock();
-    thread_list_->start_new_spiffe_thread(TestAsyncTlsServerAuthorizationCheckCallback, arg);
-    mu_->unlock();
+    //GPR_ASSERT(arg != nullptr);
+    //GPR_ASSERT(thread_list_ != nullptr);
+    //mu.lock();
+    //thread_list_->start_new_spiffe_thread(TestAsyncTlsServerAuthorizationCheckCallback, arg);
+    //mu.unlock();
+    server_authz_thread_ = std::thread(TestAsyncTlsServerAuthorizationCheckCallback, arg);
     return 1;
   }
 
  private:
-  SpiffeThreadList* thread_list_ = nullptr;
-  std::mutex* mu_ = nullptr;
+  std::thread server_authz_thread_;
+  //SpiffeThreadList* thread_list_ = nullptr;
+  //std::mutex* mu_ = nullptr;
 };
 
 /** This method creates a TlsCredentialsOptions instance with no key materials,
@@ -119,8 +132,7 @@ class TestAsyncTlsServerAuthorizationCheck
  *  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY for both the
  *  client and the server. **/
 std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
-CreateTestTlsCredentialsOptions(bool is_client, bool is_async,
-                                void* thread_list, std::mutex* mu) {
+CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
   /** Create a credential reload config that is configured using the
    *  TestSyncTlsCredentialReload class. **/
   std::shared_ptr<TestSyncTlsCredentialReload> credential_reload_interface(
@@ -135,11 +147,8 @@ CreateTestTlsCredentialsOptions(bool is_client, bool is_async,
   std::shared_ptr<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig> test_server_authorization_check_config(nullptr);
   if (is_client) {
     if (is_async) {
-      GPR_ASSERT(thread_list != nullptr);
-      SpiffeThreadList* spiffe_thread_list =
-          reinterpret_cast<SpiffeThreadList*>(thread_list);
       std::shared_ptr<TestAsyncTlsServerAuthorizationCheck> async_interface(
-          new TestAsyncTlsServerAuthorizationCheck(spiffe_thread_list, mu));
+          new TestAsyncTlsServerAuthorizationCheck());
       test_server_authorization_check_config = std::make_shared<
           ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
           async_interface);
