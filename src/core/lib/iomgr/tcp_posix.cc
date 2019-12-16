@@ -36,6 +36,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <algorithm>
+#include <unordered_map>
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -49,7 +50,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -100,30 +100,30 @@ class TcpZerocopySendRecord {
     grpc_slice_buffer_destroy_internal(&buf_);
   }
 
-  /* Given the slices that we wish to send, and the current offset into the
-     slice buffer (indicating which have already been sent), populate an iovec
-     array that will be used for a zerocopy enabled sendmsg(). */
+  // Given the slices that we wish to send, and the current offset into the
+  //   slice buffer (indicating which have already been sent), populate an iovec
+  //   array that will be used for a zerocopy enabled sendmsg().
   msg_iovlen_type PopulateIovs(size_t* unwind_slice_idx,
                                size_t* unwind_byte_idx, size_t* sending_length,
                                iovec* iov);
 
-  /* A sendmsg() may not be able to send the bytes that we requested at this
-     time, returning EAGAIN (possibly due to backpressure). In this case,
-     unwind the offset into the slice buffer so we retry sending these bytes. */
+  // A sendmsg() may not be able to send the bytes that we requested at this
+  // time, returning EAGAIN (possibly due to backpressure). In this case,
+  // unwind the offset into the slice buffer so we retry sending these bytes.
   void UnwindIfThrottled(size_t unwind_slice_idx, size_t unwind_byte_idx) {
     out_offset_.byte_idx = unwind_byte_idx;
     out_offset_.slice_idx = unwind_slice_idx;
   }
 
-  /* Update the offset into the slice buffer based on how much we wanted to sent
-     vs. what sendmsg() actually sent (which may be lower, possibly due to
-     backpressure). */
+  // Update the offset into the slice buffer based on how much we wanted to sent
+  // vs. what sendmsg() actually sent (which may be lower, possibly due to
+  // backpressure).
   void UpdateOffsetForBytesSent(size_t sending_length, size_t actually_sent);
 
-  /* Indicates whether all underlying data has been sent or not.  */
+  // Indicates whether all underlying data has been sent or not.
   bool AllSlicesSent() { return out_offset_.slice_idx == buf_.count; }
 
-  /* Reset this structure for a new tcp_write() with zerocopy. */
+  // Reset this structure for a new tcp_write() with zerocopy.
   void PrepareForSends(grpc_slice_buffer* slices_to_send) {
     AssertEmpty();
     out_offset_.slice_idx = 0;
@@ -132,11 +132,11 @@ class TcpZerocopySendRecord {
     Ref();
   }
 
-  /* References: 1 reference per sendmsg(), and 1 for the tcp_write(). */
+  // References: 1 reference per sendmsg(), and 1 for the tcp_write().
   void Ref() { ref_.FetchAdd(1, MemoryOrder::RELAXED); }
 
-  /* Unref: called when we get an error queue notification for a sendmsg(), if a
-     sendmsg() failed or when tcp_write() is done. */
+  // Unref: called when we get an error queue notification for a sendmsg(), if a
+  //  sendmsg() failed or when tcp_write() is done.
   bool Unref() {
     const intptr_t prior = ref_.FetchSub(1, MemoryOrder::ACQ_REL);
     GPR_DEBUG_ASSERT(prior > 0);
@@ -159,10 +159,10 @@ class TcpZerocopySendRecord {
     GPR_DEBUG_ASSERT(ref_.Load(MemoryOrder::RELAXED) == 0);
   }
 
-  /* When all sendmsg() calls associated with this tcp_write() have been
-     completed (ie. we have received the notifications for each sequence number
-     for each sendmsg()) and all reference counts have been dropped, drop our
-     reference to the underlying data since we no longer need it. */
+  // When all sendmsg() calls associated with this tcp_write() have been
+  // completed (ie. we have received the notifications for each sequence number
+  // for each sendmsg()) and all reference counts have been dropped, drop our
+  // reference to the underlying data since we no longer need it.
   void AllSendsComplete() {
     GPR_DEBUG_ASSERT(ref_.Load(MemoryOrder::RELAXED) == 0);
     grpc_slice_buffer_reset_and_unref_internal(&buf_);
@@ -178,9 +178,8 @@ class TcpZerocopySendCtx {
   static constexpr int kDefaultMaxSends = 4;
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;  // 16KB
 
-  explicit TcpZerocopySendCtx(
-      int max_sends = kDefaultMaxSends,
-      size_t send_bytes_threshold = kDefaultSendBytesThreshold)
+  TcpZerocopySendCtx(int max_sends = kDefaultMaxSends,
+                     size_t send_bytes_threshold = kDefaultSendBytesThreshold)
       : max_sends_(max_sends),
         free_send_records_size_(max_sends),
         threshold_bytes_(send_bytes_threshold) {
@@ -202,7 +201,7 @@ class TcpZerocopySendCtx {
   }
 
   ~TcpZerocopySendCtx() {
-    if (send_records_) {
+    if (send_records_ != nullptr) {
       for (int idx = 0; idx < max_sends_; ++idx) {
         send_records_[idx].~TcpZerocopySendRecord();
       }
@@ -211,31 +210,30 @@ class TcpZerocopySendCtx {
     gpr_free(free_send_records_);
   }
 
-  /* True if we were unable to allocate the various bookkeeping structures at
-     transport initialization time. If memory limited, we do not zerocopy. */
-  bool memory_limited() { return memory_limited_; }
+  // True if we were unable to allocate the various bookkeeping structures at
+  // transport initialization time. If memory limited, we do not zerocopy.
+  const bool memory_limited() { return memory_limited_; }
 
-  /* TCP send zerocopy maintains an implicit sequence number for every
-     successful sendmsg() with zerocopy enabled; the kernel later gives us an
-     error queue notification with this sequence number indicating that the
-     underlying data buffers that we sent can now be released. Once that
-     notification is received, we can release the buffers associated with this
-     zerocopy send record. Here, we associate the sequence number with the data
-     buffers that were sent with the corresponding call to sendmsg(). */
+  // TCP send zerocopy maintains an implicit sequence number for every
+  // successful sendmsg() with zerocopy enabled; the kernel later gives us an
+  // error queue notification with this sequence number indicating that the
+  // underlying data buffers that we sent can now be released. Once that
+  // notification is received, we can release the buffers associated with this
+  // zerocopy send record. Here, we associate the sequence number with the data
+  // buffers that were sent with the corresponding call to sendmsg().
   void NoteSend(TcpZerocopySendRecord* record) {
     record->Ref();
     AssociateSeqWithSendRecord(last_send_, record);
     ++last_send_;
   }
 
-  /* If sendmsg() actually failed, though, we need to revert the sequence number
-     that we speculatively bumped before calling sendmsg(). Note that we bump
-     this sequence number and perform relevant bookkeeping (see: NoteSend())
-     *before* calling sendmsg() since, if we called it *after* sendmsg(), then
-     there is a possible race with the release notification which could occur on
-     another thread before we do the necessary bookkeeping. Hence, calling
-     NoteSend() *before* sendmsg() and implementing an undo function is needed.
-   */
+  // If sendmsg() actually failed, though, we need to revert the sequence number
+  // that we speculatively bumped before calling sendmsg(). Note that we bump
+  // this sequence number and perform relevant bookkeeping (see: NoteSend())
+  // *before* calling sendmsg() since, if we called it *after* sendmsg(), then
+  // there is a possible race with the release notification which could occur on
+  // another thread before we do the necessary bookkeeping. Hence, calling
+  // NoteSend() *before* sendmsg() and implementing an undo function is needed.
   void UndoSend() {
     --last_send_;
     if (ReleaseSendRecord(last_send_)->Unref()) {
@@ -244,37 +242,37 @@ class TcpZerocopySendCtx {
     }
   }
 
-  /* Simply associate this send record (and the underlying sent data buffers)
-     with the implicit sequence number for this zerocopy sendmsg(). */
+  // Simply associate this send record (and the underlying sent data buffers)
+  // with the implicit sequence number for this zerocopy sendmsg().
   void AssociateSeqWithSendRecord(uint32_t seq, TcpZerocopySendRecord* record) {
     MutexLock guard(&lock_);
     ctx_lookup_.emplace(seq, record);
   }
 
-  /* Get a send record for a send that we wish to do with zerocopy. */
+  // Get a send record for a send that we wish to do with zerocopy.
   TcpZerocopySendRecord* GetSendRecord() {
     MutexLock guard(&lock_);
     return TryGetSendRecordLocked();
   }
 
-  /* A given send record corresponds to a single tcp_write() with zerocopy
-     enabled. This can result in several sendmsg() calls to flush all of the
-     data to wire. Each sendmsg() takes a reference on the
-     TcpZerocopySendRecord, and corresponds to a single sequence number.
-     ReleaseSendRecord releases a reference on TcpZerocopySendRecord for a
-     single sequence number. This is called either when we receive the relevant
-     error queue notification (saying that we can discard the underlying
-     buffers for this sendmsg()) is received from the kernel - or, in case
-     sendmsg() was unsuccessful to begin with. */
+  // A given send record corresponds to a single tcp_write() with zerocopy
+  // enabled. This can result in several sendmsg() calls to flush all of the
+  // data to wire. Each sendmsg() takes a reference on the
+  // TcpZerocopySendRecord, and corresponds to a single sequence number.
+  // ReleaseSendRecord releases a reference on TcpZerocopySendRecord for a
+  // single sequence number. This is called either when we receive the relevant
+  // error queue notification (saying that we can discard the underlying
+  // buffers for this sendmsg()) is received from the kernel - or, in case
+  // sendmsg() was unsuccessful to begin with.
   TcpZerocopySendRecord* ReleaseSendRecord(uint32_t seq) {
     MutexLock guard(&lock_);
     return ReleaseSendRecordLocked(seq);
   }
 
-  /* After all the references to a TcpZerocopySendRecord are released, we can
-     add it back to the pool (of size max_sends_). Note that we can only have
-     max_sends_ tcp_write() instances with zerocopy enabled in flight at the
-     same time. */
+  // After all the references to a TcpZerocopySendRecord are released, we can
+  // add it back to the pool (of size max_sends_). Note that we can only have
+  // max_sends_ tcp_write() instances with zerocopy enabled in flight at the
+  // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
     GPR_DEBUG_ASSERT(record >= send_records_ &&
                      record < send_records_ + max_sends_);
@@ -282,12 +280,12 @@ class TcpZerocopySendCtx {
     PutSendRecordLocked(record);
   }
 
-  /* Indicate that we are disposing of this zerocopy context. This indicator
-     will prevent new zerocopy writes from being issued. */
+  // Indicate that we are disposing of this zerocopy context. This indicator
+  // will prevent new zerocopy writes from being issued.
   void Shutdown() { shutdown_.Store(true, MemoryOrder::RELEASE); }
 
-  /* Indicates that there are no inflight tcp_write() instances with zerocopy
-   * enabled. */
+  // Indicates that there are no inflight tcp_write() instances with zerocopy
+  // enabled.
   bool AllSendRecordsEmpty() {
     MutexLock guard(&lock_);
     return free_send_records_size_ == max_sends_;
@@ -295,14 +293,14 @@ class TcpZerocopySendCtx {
 
   bool enabled() const { return enabled_; }
 
-  void set_enabled(bool en) {
-    GPR_DEBUG_ASSERT(!en || !memory_limited());
-    enabled_ = en;
+  void set_enabled(bool enabled) {
+    GPR_DEBUG_ASSERT(!enabled || !memory_limited());
+    enabled_ = enabled;
   }
 
-  /* Only use zerocopy if we are sending at least this many bytes. The
-     additional overhead of reading the error queue for notifications means that
-     zerocopy is not useful for small transfers. */
+  // Only use zerocopy if we are sending at least this many bytes. The
+  // additional overhead of reading the error queue for notifications means that
+  // zerocopy is not useful for small transfers.
   size_t threshold_bytes() const { return threshold_bytes_; }
 
  private:
@@ -340,7 +338,7 @@ class TcpZerocopySendCtx {
   Atomic<bool> shutdown_;
   bool enabled_ = false;
   size_t threshold_bytes_ = kDefaultSendBytesThreshold;
-  UnorderedMap<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
+  std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
   bool memory_limited_ = false;
 };
 
@@ -1038,7 +1036,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
 static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
                                             TcpZerocopySendRecord* record,
                                             uint32_t seq, const char* tag);
-/* Reads \a cmsg to process zerocopy control messages. */
+// Reads \a cmsg to process zerocopy control messages.
 static void process_zerocopy(grpc_tcp* tcp, struct cmsghdr* cmsg) {
   GPR_DEBUG_ASSERT(cmsg);
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(cmsg));
@@ -1315,7 +1313,7 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
   }
 }
 
-/* returns true if done, false if pending; if returning true, *error is set */
+// returns true if done, false if pending; if returning true, *error is set
 static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
                                   grpc_error** error) {
   struct msghdr msg;
