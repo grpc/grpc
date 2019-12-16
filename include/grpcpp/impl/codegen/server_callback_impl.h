@@ -118,8 +118,9 @@ class ServerCallbackCall {
   // should be called, false otherwise.
   bool UnblockCancellation() {
     return on_cancel_conditions_remaining_.fetch_sub(
-						     1, std::memory_order_acq_rel) == 1; }
-  
+               1, std::memory_order_acq_rel) == 1;
+  }
+
   std::atomic_int on_cancel_conditions_remaining_{2};
   std::atomic_int callbacks_outstanding_{
       3};  // reserve for start, Finish, and CompletionOp
