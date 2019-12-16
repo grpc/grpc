@@ -82,8 +82,7 @@ class ServerCallbackCall {
   // Fast version called with known reactor passed in, used from derived
   // classes, typically in non-cancel case
   void MaybeCallOnCancel(ServerReactor* reactor) {
-    if (GPR_UNLIKELY(on_cancel_conditions_remaining_.fetch_sub(
-                         1, std::memory_order_acq_rel) == 1)) {
+    if (GPR_UNLIKELY(UnblockCancellation())) {
       CallOnCancel(reactor);
     }
   }
@@ -92,7 +91,11 @@ class ServerCallbackCall {
   // (such as the ServerContext CompletionOp which is formed before the
   // reactor). This is used in cancel cases only, so it's ok to be slower and
   // invoke a virtual function.
-  void MaybeCallOnCancel() { MaybeCallOnCancel(reactor()); }
+  void MaybeCallOnCancel() {
+    if (GPR_UNLIKELY(UnblockCancellation())) {
+      CallOnCancel(reactor());
+    }
+  }
 
  protected:
   /// Increases the reference count
@@ -111,6 +114,12 @@ class ServerCallbackCall {
   // it to an executor.
   void CallOnCancel(ServerReactor* reactor);
 
+  // Implement the cancellation constraint counter. Return true if OnCancel
+  // should be called, false otherwise.
+  bool UnblockCancellation() {
+    return on_cancel_conditions_remaining_.fetch_sub(
+						     1, std::memory_order_acq_rel) == 1; }
+  
   std::atomic_int on_cancel_conditions_remaining_{2};
   std::atomic_int callbacks_outstanding_{
       3};  // reserve for start, Finish, and CompletionOp
