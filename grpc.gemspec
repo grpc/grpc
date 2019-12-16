@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'google-protobuf', '~> 3.8'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
-  s.add_development_dependency 'bundler',            '~> 1.9'
+  s.add_development_dependency 'bundler',            '>= 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
