@@ -245,18 +245,11 @@ grpc_plugin_credentials::grpc_plugin_credentials(
   gpr_mu_init(&mu_);
 }
 
-grpc_call_credentials*
-grpc_metadata_credentials_create_with_security_level_from_plugin(
+grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, grpc_security_level security_level,
     void* reserved) {
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == nullptr);
   return new grpc_plugin_credentials(plugin, security_level);
-}
-
-grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
-    grpc_metadata_credentials_plugin plugin, void* reserved) {
-  return grpc_metadata_credentials_create_with_security_level_from_plugin(
-      plugin, GRPC_PRIVACY_AND_INTEGRITY, reserved);
 }

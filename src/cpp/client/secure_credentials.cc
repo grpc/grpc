@@ -266,9 +266,8 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
   grpc_metadata_credentials_plugin c_plugin = {
       grpc::MetadataCredentialsPluginWrapper::GetMetadata,
       grpc::MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
-  return WrapCallCredentials(
-      grpc_metadata_credentials_create_with_security_level_from_plugin(
-          c_plugin, security_level, nullptr));
+  return WrapCallCredentials(grpc_metadata_credentials_create_from_plugin(
+      c_plugin, security_level, nullptr));
 }
 
 // Builds ALTS Credentials given ALTS specific options
@@ -389,8 +388,8 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
   grpc_metadata_credentials_plugin c_plugin = {
       grpc::MetadataCredentialsPluginWrapper::GetMetadata,
       grpc::MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
-  return WrapCallCredentials(
-      grpc_metadata_credentials_create_from_plugin(c_plugin, nullptr));
+  return WrapCallCredentials(grpc_metadata_credentials_create_from_plugin(
+      c_plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr));
 }
 
 }  // namespace grpc_impl

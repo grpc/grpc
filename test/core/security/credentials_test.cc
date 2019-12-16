@@ -1430,8 +1430,8 @@ static void test_metadata_plugin_success(void) {
   plugin.get_metadata = plugin_get_metadata_success;
   plugin.destroy = plugin_destroy;
 
-  grpc_call_credentials* creds =
-      grpc_metadata_credentials_create_from_plugin(plugin, nullptr);
+  grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
   /* Check security level. */
   GPR_ASSERT(creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   GPR_ASSERT(state == PLUGIN_INITIAL_STATE);

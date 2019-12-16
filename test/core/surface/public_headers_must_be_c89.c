@@ -178,7 +178,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_google_iam_credentials_create);
   printf("%lx", (unsigned long) grpc_sts_credentials_create);
   printf("%lx", (unsigned long) grpc_metadata_credentials_create_from_plugin);
-  printf("%lx", (unsigned long) grpc_metadata_credentials_create_with_security_level_from_plugin);
   printf("%lx", (unsigned long) grpc_secure_channel_create);
   printf("%lx", (unsigned long) grpc_server_credentials_release);
   printf("%lx", (unsigned long) grpc_ssl_server_certificate_config_create);
