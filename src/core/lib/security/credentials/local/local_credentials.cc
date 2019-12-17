@@ -50,7 +50,7 @@ grpc_local_credentials::grpc_local_credentials(
 
 grpc_channel_credentials* grpc_local_credentials_create(
     grpc_local_connect_type connect_type) {
-  return grpc_core::New<grpc_local_credentials>(connect_type);
+  return new grpc_local_credentials(connect_type);
 }
 
 grpc_local_server_credentials::grpc_local_server_credentials(
@@ -60,5 +60,5 @@ grpc_local_server_credentials::grpc_local_server_credentials(
 
 grpc_server_credentials* grpc_local_server_credentials_create(
     grpc_local_connect_type connect_type) {
-  return grpc_core::New<grpc_local_server_credentials>(connect_type);
+  return new grpc_local_server_credentials(connect_type);
 }

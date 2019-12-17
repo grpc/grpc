@@ -144,7 +144,7 @@ class Thread {
   void Join() {
     if (impl_ != nullptr) {
       impl_->Join();
-      grpc_core::Delete(impl_);
+      delete impl_;
       state_ = DONE;
       impl_ = nullptr;
     } else {

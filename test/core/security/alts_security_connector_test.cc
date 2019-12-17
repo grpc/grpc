@@ -129,13 +129,20 @@ static void test_alts_peer_to_auth_context_success() {
   grpc_slice serialized_peer_versions;
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode(&peer_versions,
                                                    &serialized_peer_versions));
-
   GPR_ASSERT(tsi_construct_string_peer_property(
                  TSI_ALTS_RPC_VERSIONS,
                  reinterpret_cast<char*>(
                      GRPC_SLICE_START_PTR(serialized_peer_versions)),
                  GRPC_SLICE_LENGTH(serialized_peer_versions),
                  &peer.properties[2]) == TSI_OK);
+  char test_ctx[] = "test serialized context";
+  grpc_slice serialized_alts_ctx = grpc_slice_from_copied_string(test_ctx);
+  GPR_ASSERT(
+      tsi_construct_string_peer_property(
+          TSI_ALTS_CONTEXT,
+          reinterpret_cast<char*>(GRPC_SLICE_START_PTR(serialized_alts_ctx)),
+          GRPC_SLICE_LENGTH(serialized_alts_ctx),
+          &peer.properties[3]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
   GPR_ASSERT(ctx != nullptr);
@@ -143,6 +150,7 @@ static void test_alts_peer_to_auth_context_success() {
                            "alice"));
   ctx.reset(DEBUG_LOCATION, "test");
   grpc_slice_unref(serialized_peer_versions);
+  grpc_slice_unref(serialized_alts_ctx);
   tsi_peer_destruct(&peer);
 }
 

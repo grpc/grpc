@@ -38,16 +38,28 @@ void VerifyRegexMatch(grpc_error* error, const std::regex& e) {
 TEST(XdsBootstrapTest, Basic) {
   const char* json =
       "{"
-      "  \"xds_server\": {"
-      "    \"server_uri\": \"fake:///lb\","
-      "    \"channel_creds\": ["
-      "      {"
-      "        \"type\": \"fake\","
-      "        \"ignore\": 0"
-      "      }"
-      "    ],"
-      "    \"ignore\": 0"
-      "  },"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\","
+      "      \"channel_creds\": ["
+      "        {"
+      "          \"type\": \"fake\","
+      "          \"ignore\": 0"
+      "        }"
+      "      ],"
+      "      \"ignore\": 0"
+      "    },"
+      "    {"
+      "      \"server_uri\": \"ignored\","
+      "      \"channel_creds\": ["
+      "        {"
+      "          \"type\": \"ignored\","
+      "          \"ignore\": 0"
+      "        }"
+      "      ],"
+      "      \"ignore\": 0"
+      "    }"
+      "  ],"
       "  \"node\": {"
       "    \"id\": \"foo\","
       "    \"cluster\": \"bar\","
@@ -74,11 +86,11 @@ TEST(XdsBootstrapTest, Basic) {
   grpc_slice slice = grpc_slice_from_copied_string(json);
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::XdsBootstrap bootstrap(slice, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
-  EXPECT_STREQ(bootstrap.server_uri(), "fake:///lb");
-  ASSERT_EQ(bootstrap.channel_creds().size(), 1);
-  EXPECT_STREQ(bootstrap.channel_creds()[0].type, "fake");
-  EXPECT_EQ(bootstrap.channel_creds()[0].config, nullptr);
+  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  EXPECT_STREQ(bootstrap.server().server_uri, "fake:///lb");
+  ASSERT_EQ(bootstrap.server().channel_creds.size(), 1);
+  EXPECT_STREQ(bootstrap.server().channel_creds[0].type, "fake");
+  EXPECT_EQ(bootstrap.server().channel_creds[0].config, nullptr);
   ASSERT_NE(bootstrap.node(), nullptr);
   EXPECT_STREQ(bootstrap.node()->id, "foo");
   EXPECT_STREQ(bootstrap.node()->cluster, "bar");
@@ -152,16 +164,18 @@ TEST(XdsBootstrapTest, Basic) {
 TEST(XdsBootstrapTest, ValidWithoutChannelCredsAndNode) {
   const char* json =
       "{"
-      "  \"xds_server\": {"
-      "    \"server_uri\": \"fake:///lb\""
-      "  }"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\""
+      "    }"
+      "  ]"
       "}";
   grpc_slice slice = grpc_slice_from_copied_string(json);
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::XdsBootstrap bootstrap(slice, &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE);
-  EXPECT_STREQ(bootstrap.server_uri(), "fake:///lb");
-  EXPECT_EQ(bootstrap.channel_creds().size(), 0);
+  EXPECT_STREQ(bootstrap.server().server_uri, "fake:///lb");
+  EXPECT_EQ(bootstrap.server().channel_creds.size(), 0);
   EXPECT_EQ(bootstrap.node(), nullptr);
 }
 
@@ -185,30 +199,31 @@ TEST(XdsBootstrapTest, MalformedJson) {
   VerifyRegexMatch(error, e);
 }
 
-TEST(XdsBootstrapTest, MissingXdsServer) {
+TEST(XdsBootstrapTest, MissingXdsServers) {
   grpc_slice slice = grpc_slice_from_copied_string("{}");
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::XdsBootstrap bootstrap(slice, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(std::string("\"xds_server\" field not present"));
+  std::regex e(std::string("\"xds_servers\" field not present"));
   VerifyRegexMatch(error, e);
 }
 
-TEST(XdsBootstrapTest, BadXdsServer) {
+TEST(XdsBootstrapTest, BadXdsServers) {
   grpc_slice slice = grpc_slice_from_copied_string(
       "{"
-      "  \"xds_server\":1,"
-      "  \"xds_server\":{}"
+      "  \"xds_servers\":1,"
+      "  \"xds_servers\":[{}]"
       "}");
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::XdsBootstrap bootstrap(slice, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
   std::regex e(
-      std::string("\"xds_server\" field is not an object(.*)"
-                  "duplicate \"xds_server\" field(.*)"
-                  "errors parsing \"xds_server\" object(.*)"
+      std::string("\"xds_servers\" field is not an array(.*)"
+                  "duplicate \"xds_servers\" field(.*)"
+                  "errors parsing \"xds_servers\" array(.*)"
+                  "errors parsing index 0(.*)"
                   "\"server_uri\" field not present"));
   VerifyRegexMatch(error, e);
 }
@@ -216,19 +231,22 @@ TEST(XdsBootstrapTest, BadXdsServer) {
 TEST(XdsBootstrapTest, BadXdsServerContents) {
   grpc_slice slice = grpc_slice_from_copied_string(
       "{"
-      "  \"xds_server\":{"
-      "    \"server_uri\":1,"
-      "    \"server_uri\":\"foo\","
-      "    \"channel_creds\":1,"
-      "    \"channel_creds\":{}"
-      "  }"
+      "  \"xds_servers\":["
+      "    {"
+      "      \"server_uri\":1,"
+      "      \"server_uri\":\"foo\","
+      "      \"channel_creds\":1,"
+      "      \"channel_creds\":{}"
+      "    }"
+      "  ]"
       "}");
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::XdsBootstrap bootstrap(slice, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
   std::regex e(
-      std::string("errors parsing \"xds_server\" object(.*)"
+      std::string("errors parsing \"xds_servers\" array(.*)"
+                  "errors parsing index 0(.*)"
                   "\"server_uri\" field is not a string(.*)"
                   "duplicate \"server_uri\" field(.*)"
                   "\"channel_creds\" field is not an array(.*)"
@@ -240,24 +258,27 @@ TEST(XdsBootstrapTest, BadXdsServerContents) {
 TEST(XdsBootstrapTest, BadChannelCredsContents) {
   grpc_slice slice = grpc_slice_from_copied_string(
       "{"
-      "  \"xds_server\":{"
-      "    \"server_uri\":\"foo\","
-      "    \"channel_creds\":["
-      "      {"
-      "        \"type\":0,"
-      "        \"type\":\"fake\","
-      "        \"config\":1,"
-      "        \"config\":{}"
-      "      }"
-      "    ]"
-      "  }"
+      "  \"xds_servers\":["
+      "    {"
+      "      \"server_uri\":\"foo\","
+      "      \"channel_creds\":["
+      "        {"
+      "          \"type\":0,"
+      "          \"type\":\"fake\","
+      "          \"config\":1,"
+      "          \"config\":{}"
+      "        }"
+      "      ]"
+      "    }"
+      "  ]"
       "}");
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::XdsBootstrap bootstrap(slice, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
   std::regex e(
-      std::string("errors parsing \"xds_server\" object(.*)"
+      std::string("errors parsing \"xds_servers\" array(.*)"
+                  "errors parsing index 0(.*)"
                   "errors parsing \"channel_creds\" array(.*)"
                   "errors parsing index 0(.*)"
                   "\"type\" field is not a string(.*)"

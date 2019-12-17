@@ -20,6 +20,7 @@
 
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/GRPCTransport.h>
 #if COCOAPODS
 #import <HelloWorld/Helloworld.pbrpc.h>
 #else
@@ -54,7 +55,7 @@ int main(int argc, const char * argv[]) {
 
     GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
     // this example does not use TLS (secure channel); use insecure channel instead
-    options.transportType = GRPCTransportTypeInsecure;
+    options.transport = GRPCDefaultTransportImplList.core_insecure;
     options.userAgentPrefix = @"HelloWorld/1.0";
 
     GRPCUnaryProtoCall *call = [client sayHelloWithMessage:request

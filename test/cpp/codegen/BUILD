@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package", "grpc_cc_binary", "grpc_sh_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test", "grpc_package", "grpc_sh_test")
 
 grpc_package(name = "test/cpp/codegen")
 
@@ -24,11 +24,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -37,11 +37,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -51,11 +51,11 @@ grpc_cc_test(
         "gtest",
         "protobuf",
     ],
+    uses_polling = False,
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_binary(

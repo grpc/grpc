@@ -48,9 +48,9 @@
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV
 
 #include <gtest/gtest.h>
 
@@ -833,12 +833,12 @@ TEST_P(End2endTest, ReconnectChannel) {
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
   grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   if (0 == strcmp(poller.get(), "poll")) {
     poller_slowdown_factor = 2;
   }
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV
   ResetStub();
   SendRpc(stub_.get(), 1, false);
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
@@ -1131,6 +1131,42 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   }
 }
 
+TEST_P(End2endTest, CancelRpcAfterStart) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  request.mutable_param()->set_server_notify_client_when_started(true);
+  request.mutable_param()->set_skip_cancelled_check(true);
+  Status s;
+  std::thread echo_thread([this, &s, &context, &request, &response] {
+    s = stub_->Echo(&context, request, &response);
+    EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
+  });
+  if (!GetParam().callback_server) {
+    service_.ClientWaitUntilRpcStarted();
+  } else {
+    callback_service_.ClientWaitUntilRpcStarted();
+  }
+
+  context.TryCancel();
+
+  if (!GetParam().callback_server) {
+    service_.SignalServerToContinue();
+  } else {
+    callback_service_.SignalServerToContinue();
+  }
+
+  echo_thread.join();
+  EXPECT_EQ("", response.message());
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
 // Client cancels request stream after sending two messages
 TEST_P(End2endTest, ClientCancelsRequestStream) {
   MAYBE_SKIP_TEST;
@@ -1406,80 +1442,6 @@ TEST_P(End2endTest, ExpectErrorTest) {
                 std::string::npos);
     EXPECT_TRUE(context.debug_error_string().find("13") != std::string::npos);
   }
-}
-
-TEST_P(End2endTest, DelayedRpcEarlyCanceledUsingCancelCallback) {
-  MAYBE_SKIP_TEST;
-  // This test case is only relevant with callback server.
-  // Additionally, using interceptors makes this test subject to
-  // timing-dependent failures if the interceptors take too long to run.
-  if (!GetParam().callback_server || GetParam().use_interceptors) {
-    return;
-  }
-
-  ResetStub();
-  ClientContext context;
-  context.AddMetadata(kServerUseCancelCallback,
-                      grpc::to_string(MAYBE_USE_CALLBACK_EARLY_CANCEL));
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-  request.mutable_param()->set_skip_cancelled_check(true);
-  context.TryCancel();
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-}
-
-TEST_P(End2endTest, DelayedRpcLateCanceledUsingCancelCallback) {
-  MAYBE_SKIP_TEST;
-  // This test case is only relevant with callback server.
-  // Additionally, using interceptors makes this test subject to
-  // timing-dependent failures if the interceptors take too long to run.
-  if (!GetParam().callback_server || GetParam().use_interceptors) {
-    return;
-  }
-
-  ResetStub();
-  ClientContext context;
-  context.AddMetadata(kServerUseCancelCallback,
-                      grpc::to_string(MAYBE_USE_CALLBACK_LATE_CANCEL));
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-  request.mutable_param()->set_skip_cancelled_check(true);
-  // Let server sleep for 200 ms first to give the cancellation a chance.
-  // This is split into 100 ms to start the cancel and 100 ms extra time for
-  // it to make it to the server, to make it highly probable that the server
-  // RPC would have already started by the time the cancellation is sent
-  // and the server-side gets enough time to react to it.
-  request.mutable_param()->set_server_sleep_us(200000);
-
-  std::thread echo_thread{[this, &context, &request, &response] {
-    Status s = stub_->Echo(&context, request, &response);
-    EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  }};
-  std::this_thread::sleep_for(std::chrono::microseconds(100000));
-  context.TryCancel();
-  echo_thread.join();
-}
-
-TEST_P(End2endTest, DelayedRpcNonCanceledUsingCancelCallback) {
-  MAYBE_SKIP_TEST;
-  if (!GetParam().callback_server) {
-    return;
-  }
-
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-
-  ClientContext context;
-  context.AddMetadata(kServerUseCancelCallback,
-                      grpc::to_string(MAYBE_USE_CALLBACK_NO_CANCEL));
-
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_TRUE(s.ok());
 }
 
 //////////////////////////////////////////////////////////////////////////

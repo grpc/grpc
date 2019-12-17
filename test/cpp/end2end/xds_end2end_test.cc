@@ -105,14 +105,16 @@ constexpr int kDefaultLocalityPriority = 0;
 
 constexpr char kBootstrapFile[] =
     "{\n"
-    "  \"xds_server\": {\n"
-    "    \"server_uri\": \"fake:///lb\",\n"
-    "    \"channel_creds\": [\n"
-    "      {\n"
-    "        \"type\": \"fake\"\n"
-    "      }\n"
-    "    ]\n"
-    "  },\n"
+    "  \"xds_servers\": [\n"
+    "    {\n"
+    "      \"server_uri\": \"fake:///lb\",\n"
+    "      \"channel_creds\": [\n"
+    "        {\n"
+    "          \"type\": \"fake\"\n"
+    "        }\n"
+    "      ]\n"
+    "    }\n"
+    "  ],\n"
     "  \"node\": {\n"
     "    \"id\": \"xds_end2end_test\",\n"
     "    \"cluster\": \"test\",\n"
@@ -129,14 +131,16 @@ constexpr char kBootstrapFile[] =
 
 constexpr char kBootstrapFileBad[] =
     "{\n"
-    "  \"xds_server\": {\n"
-    "    \"server_uri\": \"fake:///wrong_lb\",\n"
-    "    \"channel_creds\": [\n"
-    "      {\n"
-    "        \"type\": \"fake\"\n"
-    "      }\n"
-    "    ]\n"
-    "  },\n"
+    "  \"xds_servers\": [\n"
+    "    {\n"
+    "      \"server_uri\": \"fake:///wrong_lb\",\n"
+    "      \"channel_creds\": [\n"
+    "        {\n"
+    "          \"type\": \"fake\"\n"
+    "        }\n"
+    "      ]\n"
+    "    }\n"
+    "  ],\n"
     "  \"node\": {\n"
     "  }\n"
     "}\n";
@@ -764,13 +768,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void WaitForBackend(size_t backend_idx, bool reset_counters = true) {
-    gpr_log(GPR_INFO,
-            "========= WAITING FOR BACKEND %lu ==========", backend_idx);
+    gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
+            static_cast<unsigned long>(backend_idx));
     do {
       (void)SendRpc();
     } while (backends_[backend_idx]->backend_service()->request_count() == 0);
     if (reset_counters) ResetBackendCounters();
-    gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========", backend_idx);
+    gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========",
+            static_cast<unsigned long>(backend_idx));
   }
 
   grpc_core::ServerAddressList CreateAddressListFromPortList(

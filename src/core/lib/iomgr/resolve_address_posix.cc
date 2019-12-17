@@ -152,8 +152,9 @@ typedef struct {
  * grpc_blocking_resolve_address */
 static void do_request_thread(void* rp, grpc_error* /*error*/) {
   request* r = static_cast<request*>(rp);
-  GRPC_CLOSURE_SCHED(r->on_done, grpc_blocking_resolve_address(
-                                     r->name, r->default_port, r->addrs_out));
+  grpc_core::ExecCtx::Run(
+      DEBUG_LOCATION, r->on_done,
+      grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out));
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r);

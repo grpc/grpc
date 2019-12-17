@@ -17,8 +17,7 @@ cdef class _HandlerCallDetails:
     cdef readonly tuple invocation_metadata
 
 
-cdef class RPCState:
-    cdef grpc_call* call,
+cdef class RPCState(GrpcCallWrapper):
     cdef grpc_call_details details
     cdef grpc_metadata_array request_metadata
 
@@ -30,15 +29,18 @@ cdef enum AioServerStatus:
     AIO_SERVER_STATUS_READY
     AIO_SERVER_STATUS_RUNNING
     AIO_SERVER_STATUS_STOPPED
-
-
-cdef class _CallbackCompletionQueue:
-    cdef grpc_completion_queue *_cq
-    cdef grpc_completion_queue* c_ptr(self)
+    AIO_SERVER_STATUS_STOPPING
 
 
 cdef class AioServer:
     cdef Server _server
-    cdef _CallbackCompletionQueue _cq
+    cdef CallbackCompletionQueue _cq
     cdef list _generic_handlers
     cdef AioServerStatus _status
+    cdef object _loop  # asyncio.EventLoop
+    cdef object _serving_task  # asyncio.Task
+    cdef object _shutdown_lock  # asyncio.Lock
+    cdef object _shutdown_completed  # asyncio.Future
+    cdef CallbackWrapper _shutdown_callback_wrapper
+    cdef object _crash_exception  # Exception
+    cdef set _ongoing_rpc_tasks

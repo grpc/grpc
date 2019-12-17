@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "base_lib",
-    srcs = ["__init__.py",],
+    srcs = ["__init__.py"],
     deps = [
         ":base",
         ":utilities",
@@ -16,7 +16,7 @@ py_library(
         "//src/python/grpcio/grpc/framework/foundation:abandonment",
         "//external:six",
     ] + select({
-        "//conditions:default": ["@enum34//:enum34",],
+        "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],
     }),
 )
@@ -25,7 +25,7 @@ py_library(
     name = "utilities",
     srcs = ["utilities.py"],
     deps = select({
-        "//conditions:default": ["@enum34//:enum34",],
+        "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],
     }),
 )

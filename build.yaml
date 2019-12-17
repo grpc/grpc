@@ -12,10 +12,10 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 8.0.0
+  core_version: 9.0.0
   csharp_major_version: 2
-  g_stands_for: gon
-  version: 1.26.0-dev
+  g_stands_for: guantao
+  version: 1.27.0-dev
 filegroups:
 - name: alts_tsi
   headers:
@@ -69,7 +69,7 @@ filegroups:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  uses:
+  deps:
   - upb
 - name: alts_util
   public_headers:
@@ -89,11 +89,12 @@ filegroups:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  deps:
+  - upb
   uses:
   - alts_upb
   - grpc_base
   - tsi_interface
-  - upb
 - name: census
   public_headers:
   - include/grpc/census.h
@@ -201,7 +202,7 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
-  uses:
+  deps:
   - upb
 - name: gpr_base
   src:
@@ -293,7 +294,6 @@ filegroups:
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
-  - src/core/lib/gprpp/set.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
@@ -397,6 +397,7 @@ filegroups:
   - include/grpcpp/impl/codegen/security/auth_context.h
   - include/grpcpp/impl/codegen/serialization_traits.h
   - include/grpcpp/impl/codegen/server_callback.h
+  - include/grpcpp/impl/codegen/server_callback_handlers.h
   - include/grpcpp/impl/codegen/server_callback_impl.h
   - include/grpcpp/impl/codegen/server_context.h
   - include/grpcpp/impl/codegen/server_context_impl.h
@@ -587,6 +588,7 @@ filegroups:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
   - src/cpp/server/server_credentials.cc
@@ -599,6 +601,7 @@ filegroups:
   uses:
   - gpr_base_headers
   - grpc_base_headers
+  - grpc_client_channel
   - grpc_health_upb
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
@@ -617,6 +620,7 @@ filegroups:
   public_headers:
   - include/grpc++/test/mock_stream.h
   - include/grpc++/test/server_context_test_spouse.h
+  - include/grpcpp/test/default_reactor_test_peer.h
   - include/grpcpp/test/mock_stream.h
   - include/grpcpp/test/server_context_test_spouse.h
   deps:
@@ -687,6 +691,8 @@ filegroups:
   - src/core/lib/iomgr/is_epollexclusive_available.cc
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
+  - src/core/lib/iomgr/logical_thread.cc
+  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -741,7 +747,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/json/json.cc
   - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_string.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -866,7 +871,9 @@ filegroups:
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
+  - src/core/lib/iomgr/logical_thread.h
   - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -906,9 +913,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
-  - src/core/lib/json/json_common.h
-  - src/core/lib/json/json_reader.h
-  - src/core/lib/json/json_writer.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_hash_table.h
@@ -995,7 +999,6 @@ filegroups:
   - src/core/ext/filters/client_channel/client_channel_channelz.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
-  - src/core/ext/filters/client_channel/connector.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -1004,7 +1007,6 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/parse_address.cc
-  - src/core/ext/filters/client_channel/proxy_mapper.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
@@ -1052,7 +1054,7 @@ filegroups:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   src:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  uses:
+  deps:
   - upb
 - name: grpc_http_filters
   headers:
@@ -1096,13 +1098,14 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  deps:
+  - upb
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
   - grpc_client_channel
   - grpc_lb_upb
   - grpc_resolver_fake
-  - upb
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
@@ -1116,6 +1119,8 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  deps:
+  - upb
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
@@ -1123,7 +1128,6 @@ filegroups:
   - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
-  - upb
 - name: grpc_lb_policy_pick_first
   src:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -1171,9 +1175,10 @@ filegroups:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   src:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  deps:
+  - upb
   uses:
   - google_api_upb
-  - upb
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -1279,7 +1284,7 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
-  - src/core/lib/security/credentials/tls/spiffe_credentials.h
+  - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
@@ -1289,7 +1294,7 @@ filegroups:
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
   - src/core/lib/security/security_connector/ssl_utils.h
   - src/core/lib/security/security_connector/ssl_utils_config.h
-  - src/core/lib/security/security_connector/tls/spiffe_security_connector.h
+  - src/core/lib/security/security_connector/tls/tls_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_handshaker.h
@@ -1315,7 +1320,7 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
-  - src/core/lib/security/credentials/tls/spiffe_credentials.cc
+  - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1325,7 +1330,7 @@ filegroups:
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   - src/core/lib/security/security_connector/ssl_utils.cc
   - src/core/lib/security/security_connector/ssl_utils_config.cc
-  - src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
+  - src/core/lib/security/security_connector/tls/tls_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
@@ -2240,6 +2245,7 @@ libs:
   language: csharp
   src:
   - src/csharp/ext/grpc_csharp_ext.c
+  - src/csharp/ext/std++compat.cc
   deps:
   - grpc
   - gpr
@@ -3244,37 +3250,6 @@ targets:
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
-- name: json_rewrite
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/json/json_rewrite.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: json_rewrite_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_rewrite_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: json_stream_error_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_stream_error_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
 - name: json_test
   build: test
   language: c
@@ -3309,41 +3284,6 @@ targets:
   language: c
   src:
   - test/core/network_benchmarks/low_level_ping_pong.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: memory_usage_client
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/memory_usage/client.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: memory_usage_server
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/memory_usage/server.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-- name: memory_usage_test
-  cpu_cost: 1.5
-  build: test
-  language: c
-  src:
-  - test/core/memory_usage/memory_usage_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3946,6 +3886,25 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+- name: alts_concurrent_connectivity_test
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
+  src:
+  - test/core/tsi/alts/fake_handshaker/handshaker.proto
+  - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+  - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
+  - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - linux
 - name: alts_counter_test
   build: test
   language: c++
@@ -4922,6 +4881,17 @@ targets:
   deps:
   - grpc++_error_details
   - grpc++
+- name: eventmanager_libuv_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/iomgr/poller/eventmanager_libuv_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
 - name: exception_test
   gtest: true
   build: test
@@ -5122,12 +5092,12 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-- name: grpc_spiffe_security_connector_test
+- name: grpc_tls_security_connector_test
   gtest: true
   build: test
   language: c++
   src:
-  - test/core/security/spiffe_security_connector_test.cc
+  - test/core/security/tls_security_connector_test.cc
   deps:
   - grpc_test_util
   - grpc++_test_util
@@ -5360,18 +5330,16 @@ targets:
   - mac
   - linux
   - posix
-- name: memory_test
-  gtest: true
+- name: logical_thread_test
+  cpu_cost: 10
   build: test
   language: c++
   src:
-  - test/core/gprpp/memory_test.cc
+  - test/core/iomgr/logical_thread_test.cc
   deps:
   - grpc_test_util
-  - grpc++
   - grpc
   - gpr
-  uses_polling: false
 - name: message_allocator_end2end_test
   gtest: true
   cpu_cost: 0.5
@@ -5456,6 +5424,20 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: pollset_windows_starvation_test.cc
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  src:
+  - test/core/iomgr/pollset_windows_starvation_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - windows
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -6146,6 +6128,10 @@ configs:
   counters:
     CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
+  counters_with_memory_counter:
+    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
+    DEFINES: NDEBUG
+    LDFLAGS: -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
@@ -6252,10 +6238,9 @@ openssl_fallback:
 php_config_m4:
   deps:
   - grpc
-  - gpr
+  - address_sorting
   - boringssl
   - z
-  - address_sorting
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -6283,16 +6268,14 @@ php_config_m4:
 python_dependencies:
   deps:
   - grpc
-  - gpr
+  - address_sorting
   - ares
   - boringssl
   - z
-  - address_sorting
 ruby_gem:
   deps:
   - grpc
-  - gpr
+  - address_sorting
   - ares
   - boringssl
   - z
-  - address_sorting

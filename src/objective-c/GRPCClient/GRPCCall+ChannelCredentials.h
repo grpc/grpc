@@ -18,7 +18,9 @@
 
 #import "GRPCCallLegacy.h"
 
-// Deprecated interface. Please use GRPCCallOptions instead.
+/**
+ * The interface is deprecated. Please use GRPCCallOptions instead for corresponding configurations.
+ */
 @interface GRPCCall (ChannelCredentials)
 
 + (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCert

@@ -417,7 +417,7 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
 
   tcp->read_cb = nullptr;
   tcp->incoming_buffer = nullptr;
-  GRPC_CLOSURE_SCHED(cb, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
 }
 
 #define MAX_READ_IOVEC 4
@@ -645,7 +645,8 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
      * right thing (i.e calls tcp_do_read() which either reads the available
      * bytes or calls notify_on_read() to be notified when new bytes become
      * available */
-    GRPC_CLOSURE_SCHED(&tcp->read_done_closure, GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(DEBUG_LOCATION, &tcp->read_done_closure,
+                            GRPC_ERROR_NONE);
   }
 }
 
@@ -1026,7 +1027,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
-    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_REF(error));
+    grpc_core::Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_REF(error));
     TCP_UNREF(tcp, "write");
     return;
   }
@@ -1046,7 +1047,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
       gpr_log(GPR_INFO, "write: %s", str);
     }
     // No need to take a ref on error since tcp_flush provides a ref.
-    GRPC_CLOSURE_RUN(cb, error);
+    grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
     TCP_UNREF(tcp, "write");
   }
 }
@@ -1075,11 +1076,12 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
 
   tcp->outgoing_buffer_arg = arg;
   if (buf->length == 0) {
-    GRPC_CLOSURE_SCHED(
-        cb, grpc_fd_is_shutdown(tcp->em_fd)
-                ? tcp_annotate_error(
-                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"), tcp)
-                : GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION, cb,
+        grpc_fd_is_shutdown(tcp->em_fd)
+            ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
+                                 tcp)
+            : GRPC_ERROR_NONE);
     tcp_shutdown_buffer_list(tcp);
     return;
   }
@@ -1101,7 +1103,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
       const char* str = grpc_error_string(error);
       gpr_log(GPR_INFO, "write: %s", str);
     }
-    GRPC_CLOSURE_SCHED(cb, error);
+    grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
   }
 }
 

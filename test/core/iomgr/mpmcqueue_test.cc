@@ -49,7 +49,7 @@ class ProducerThread {
   ~ProducerThread() {
     for (int i = 0; i < num_items_; ++i) {
       GPR_ASSERT(items_[i]->done);
-      grpc_core::Delete(items_[i]);
+      delete items_[i];
     }
     gpr_free(items_);
   }
@@ -62,7 +62,7 @@ class ProducerThread {
     items_ =
         static_cast<WorkItem**>(gpr_zalloc(num_items_ * sizeof(WorkItem*)));
     for (int i = 0; i < num_items_; ++i) {
-      items_[i] = grpc_core::New<WorkItem>(start_index_ + i);
+      items_[i] = new WorkItem(start_index_ + i);
       queue_->Put(items_[i]);
     }
   }
@@ -109,13 +109,13 @@ static void test_FIFO(void) {
   gpr_log(GPR_INFO, "test_FIFO");
   grpc_core::InfLenFIFOQueue large_queue;
   for (int i = 0; i < TEST_NUM_ITEMS; ++i) {
-    large_queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
+    large_queue.Put(static_cast<void*>(new WorkItem(i)));
   }
   GPR_ASSERT(large_queue.count() == TEST_NUM_ITEMS);
   for (int i = 0; i < TEST_NUM_ITEMS; ++i) {
     WorkItem* item = static_cast<WorkItem*>(large_queue.Get());
     GPR_ASSERT(i == item->index);
-    grpc_core::Delete(item);
+    delete item;
   }
 }
 
@@ -125,7 +125,7 @@ static void test_space_efficiency(void) {
   gpr_log(GPR_INFO, "test_space_efficiency");
   grpc_core::InfLenFIFOQueue queue;
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
-    queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
+    queue.Put(static_cast<void*>(new WorkItem(i)));
   }
   // Queue should not have been expanded at this time.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes());
@@ -136,34 +136,34 @@ static void test_space_efficiency(void) {
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes());
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
     WorkItem* item = static_cast<WorkItem*>(queue.Get());
-    grpc_core::Delete(item);
+    delete item;
   }
   // Queue never shrinks even it is empty.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes());
   GPR_ASSERT(queue.count() == 0);
   // queue empty now
   for (int i = 0; i < queue.init_num_nodes() * 2; ++i) {
-    queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
+    queue.Put(static_cast<void*>(new WorkItem(i)));
   }
   GPR_ASSERT(queue.count() == queue.init_num_nodes() * 2);
   // Queue should have been expanded once.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 2);
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
     WorkItem* item = static_cast<WorkItem*>(queue.Get());
-    grpc_core::Delete(item);
+    delete item;
   }
   GPR_ASSERT(queue.count() == queue.init_num_nodes());
   // Queue will never shrink, should keep same number of node as before.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 2);
   for (int i = 0; i < queue.init_num_nodes() + 1; ++i) {
-    queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
+    queue.Put(static_cast<void*>(new WorkItem(i)));
   }
   GPR_ASSERT(queue.count() == queue.init_num_nodes() * 2 + 1);
   // Queue should have been expanded twice.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 4);
   for (int i = 0; i < queue.init_num_nodes() * 2 + 1; ++i) {
     WorkItem* item = static_cast<WorkItem*>(queue.Get());
-    grpc_core::Delete(item);
+    delete item;
   }
   GPR_ASSERT(queue.count() == 0);
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 4);
@@ -182,14 +182,14 @@ static void test_many_thread(void) {
 
   gpr_log(GPR_DEBUG, "Fork ProducerThreads...");
   for (int i = 0; i < num_producer_threads; ++i) {
-    producer_threads[i] = grpc_core::New<ProducerThread>(
-        &queue, i * TEST_NUM_ITEMS, TEST_NUM_ITEMS);
+    producer_threads[i] =
+        new ProducerThread(&queue, i * TEST_NUM_ITEMS, TEST_NUM_ITEMS);
     producer_threads[i]->Start();
   }
   gpr_log(GPR_DEBUG, "ProducerThreads Started.");
   gpr_log(GPR_DEBUG, "Fork ConsumerThreads...");
   for (int i = 0; i < num_consumer_threads; ++i) {
-    consumer_threads[i] = grpc_core::New<ConsumerThread>(&queue);
+    consumer_threads[i] = new ConsumerThread(&queue);
     consumer_threads[i]->Start();
   }
   gpr_log(GPR_DEBUG, "ConsumerThreads Started.");
@@ -209,11 +209,11 @@ static void test_many_thread(void) {
   gpr_log(GPR_DEBUG, "Checking WorkItems and Cleaning Up...");
   for (int i = 0; i < num_producer_threads; ++i) {
     // Destructor of ProducerThread will do the check of WorkItems
-    grpc_core::Delete(producer_threads[i]);
+    delete producer_threads[i];
   }
   gpr_free(producer_threads);
   for (int i = 0; i < num_consumer_threads; ++i) {
-    grpc_core::Delete(consumer_threads[i]);
+    delete consumer_threads[i];
   }
   gpr_free(consumer_threads);
   gpr_log(GPR_DEBUG, "Done.");

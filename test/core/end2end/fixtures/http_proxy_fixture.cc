@@ -609,7 +609,7 @@ static void thread_main(void* arg) {
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_end2end_http_proxy* proxy = grpc_core::New<grpc_end2end_http_proxy>();
+  grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
   grpc_core::JoinHostPort(&proxy->proxy_name, "localhost", proxy_port);
@@ -658,7 +658,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset,
                                             grpc_schedule_on_exec_ctx));
   GRPC_COMBINER_UNREF(proxy->combiner, "test");
-  grpc_core::Delete(proxy);
+  delete proxy;
 }
 
 const char* grpc_end2end_http_proxy_get_proxy_name(

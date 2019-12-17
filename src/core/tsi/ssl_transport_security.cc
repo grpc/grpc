@@ -1543,7 +1543,8 @@ static int does_entry_match_name(grpc_core::StringView entry,
   entry.remove_prefix(2);                  /* Remove *. */
   size_t dot = name_subdomain.find('.');
   if (dot == grpc_core::StringView::npos || dot == name_subdomain.size() - 1) {
-    grpc_core::UniquePtr<char> name_subdomain_cstr(name_subdomain.dup());
+    grpc_core::UniquePtr<char> name_subdomain_cstr(
+        grpc_core::StringViewToCString(name_subdomain));
     gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s",
             name_subdomain_cstr.get());
     return 0;

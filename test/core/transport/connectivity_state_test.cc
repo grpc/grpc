@@ -97,7 +97,7 @@ TEST(StateTracker, SubscribeThenUnsubscribe) {
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
   ConnectivityStateWatcherInterface* watcher =
-      New<Watcher>(&count, &state, &destroyed);
+      new Watcher(&count, &state, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
   // No initial notification, since we started the watch from the
@@ -117,7 +117,7 @@ TEST(StateTracker, OrphanUponShutdown) {
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
   ConnectivityStateWatcherInterface* watcher =
-      New<Watcher>(&count, &state, &destroyed);
+      new Watcher(&count, &state, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
   // No initial notification, since we started the watch from the
@@ -137,7 +137,7 @@ TEST(StateTracker, AddWhenAlreadyShutdown) {
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_SHUTDOWN);
   ConnectivityStateWatcherInterface* watcher =
-      New<Watcher>(&count, &state, &destroyed);
+      new Watcher(&count, &state, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
   EXPECT_TRUE(destroyed);

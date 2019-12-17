@@ -220,7 +220,7 @@ class RefCount {
 
 // A base class for reference-counted objects.
 // New objects should be created via New() and start with a refcount of 1.
-// When the refcount reaches 0, the object will be deleted via Delete().
+// When the refcount reaches 0, the object will be deleted via delete .
 //
 // This will commonly be used by CRTP (curiously-recurring template pattern)
 // e.g., class MyClass : public RefCounted<MyClass>
@@ -267,12 +267,12 @@ class RefCounted : public Impl {
   // friend of this class.
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      Delete(static_cast<Child*>(this));
+      delete static_cast<Child*>(this);
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      Delete(static_cast<Child*>(this));
+      delete static_cast<Child*>(this);
     }
   }
 

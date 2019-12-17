@@ -25,8 +25,9 @@ class Server:
 
     def __init__(self, thread_pool, generic_handlers, interceptors, options,
                  maximum_concurrent_rpcs, compression):
-        self._server = cygrpc.AioServer(thread_pool, generic_handlers,
-                                        interceptors, options,
+        self._loop = asyncio.get_event_loop()
+        self._server = cygrpc.AioServer(self._loop, thread_pool,
+                                        generic_handlers, interceptors, options,
                                         maximum_concurrent_rpcs, compression)
 
     def add_generic_rpc_handlers(
@@ -83,35 +84,29 @@ class Server:
         """
         await self._server.start()
 
-    def stop(self, grace: Optional[float]) -> asyncio.Event:
+    async def stop(self, grace: Optional[float]) -> None:
         """Stops this Server.
 
-        "This method immediately stops the server from servicing new RPCs in
+        This method immediately stops the server from servicing new RPCs in
         all cases.
 
-        If a grace period is specified, this method returns immediately
-        and all RPCs active at the end of the grace period are aborted.
-        If a grace period is not specified (by passing None for `grace`),
-        all existing RPCs are aborted immediately and this method
-        blocks until the last RPC handler terminates.
+        If a grace period is specified, this method returns immediately and all
+        RPCs active at the end of the grace period are aborted. If a grace
+        period is not specified (by passing None for grace), all existing RPCs
+        are aborted immediately and this method blocks until the last RPC
+        handler terminates.
 
-        This method is idempotent and may be called at any time.
-        Passing a smaller grace value in a subsequent call will have
-        the effect of stopping the Server sooner (passing None will
-        have the effect of stopping the server immediately). Passing
-        a larger grace value in a subsequent call *will not* have the
-        effect of stopping the server later (i.e. the most restrictive
-        grace value is used).
+        This method is idempotent and may be called at any time. Passing a
+        smaller grace value in a subsequent call will have the effect of
+        stopping the Server sooner (passing None will have the effect of
+        stopping the server immediately). Passing a larger grace value in a
+        subsequent call will not have the effect of stopping the server later
+        (i.e. the most restrictive grace value is used).
 
         Args:
           grace: A duration of time in seconds or None.
-
-        Returns:
-          A threading.Event that will be set when this Server has completely
-          stopped, i.e. when running RPCs either complete or are aborted and
-          all handlers have terminated.
         """
-        raise NotImplementedError()
+        await self._server.shutdown(grace)
 
     async def wait_for_termination(self,
                                    timeout: Optional[float] = None) -> bool:
@@ -135,11 +130,15 @@ class Server:
         Returns:
           A bool indicates if the operation times out.
         """
-        if timeout:
-            raise NotImplementedError()
-        # TODO(lidiz) replace this wait forever logic
-        future = asyncio.get_event_loop().create_future()
-        await future
+        return await self._server.wait_for_termination(timeout)
+
+    def __del__(self):
+        """Schedules a graceful shutdown in current event loop.
+
+        The Cython AioServer doesn't hold a ref-count to this class. It should
+        be safe to slightly extend the underlying Cython object's life span.
+        """
+        self._loop.create_task(self._server.shutdown(None))
 
 
 def server(migration_thread_pool=None,

@@ -266,7 +266,8 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   // may do a synchronous unref.
   grpc_core::ExecCtx::Get()->Flush();
   if (destroy_done != nullptr) {
-    GRPC_CLOSURE_SCHED(destroy_done, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_done,
+                            GRPC_ERROR_REF(error));
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_channel_args_destroy(state->args);
@@ -416,8 +417,10 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
     gpr_asprintf(&socket_name, "chttp2 listener %s", addr);
     state->channelz_listen_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
-            grpc_core::UniquePtr<char>(gpr_strdup(addr)),
-            grpc_core::UniquePtr<char>(socket_name));
+            addr, socket_name);
+    // TODO(veblush): Remove this once gpr_asprintf is replaced by
+    // absl::StrFormat
+    gpr_free(socket_name);
   }
 
   /* Register with the server only upon success */

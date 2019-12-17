@@ -3,6 +3,10 @@ package(default_visibility = ["//visibility:public"])
 py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
+    data = [
+        "//:grpc",
+    ],
+    imports = ["../"],
     deps = [
         ":utilities",
         ":auth",
@@ -16,13 +20,9 @@ py_library(
         "//src/python/grpcio/grpc/framework",
         "@six_archive//:six",
     ] + select({
-        "//conditions:default": ["@enum34//:enum34",],
+        "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],
     }),
-    data = [
-        "//:grpc",
-    ],
-    imports = ["../",],
 )
 
 py_library(
@@ -40,8 +40,8 @@ py_library(
     srcs = ["_channel.py"],
     deps = [
         ":common",
-        ":grpcio_metadata",
         ":compression",
+        ":grpcio_metadata",
     ],
 )
 
@@ -65,7 +65,7 @@ py_library(
     srcs = ["_plugin_wrapping.py"],
     deps = [
         ":common",
-    ]
+    ],
 )
 
 py_library(
@@ -85,4 +85,3 @@ py_library(
         ":common",
     ],
 )
-

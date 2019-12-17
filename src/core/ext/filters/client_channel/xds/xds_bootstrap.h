@@ -40,7 +40,7 @@ class XdsBootstrap {
     double double_value;
     const char* string_value;
     bool bool_value;
-    Map<const char*, MetadataValue, StringLess> struct_value;
+    std::map<const char*, MetadataValue, StringLess> struct_value;
     std::vector<MetadataValue> list_value;
   };
 
@@ -50,7 +50,7 @@ class XdsBootstrap {
     const char* locality_region = nullptr;
     const char* locality_zone = nullptr;
     const char* locality_subzone = nullptr;
-    Map<const char*, MetadataValue, StringLess> metadata;
+    std::map<const char*, MetadataValue, StringLess> metadata;
   };
 
   struct ChannelCreds {
@@ -58,29 +58,35 @@ class XdsBootstrap {
     grpc_json* config = nullptr;
   };
 
+  struct XdsServer {
+    const char* server_uri = nullptr;
+    InlinedVector<ChannelCreds, 1> channel_creds;
+  };
+
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error reading the file.
-  static UniquePtr<XdsBootstrap> ReadFromFile(grpc_error** error);
+  static std::unique_ptr<XdsBootstrap> ReadFromFile(grpc_error** error);
 
   // Do not instantiate directly -- use ReadFromFile() above instead.
   XdsBootstrap(grpc_slice contents, grpc_error** error);
   ~XdsBootstrap();
 
-  const char* server_uri() const { return server_uri_; }
-  const InlinedVector<ChannelCreds, 1>& channel_creds() const {
-    return channel_creds_;
-  }
+  // TODO(roth): We currently support only one server. Fix this when we
+  // add support for fallback for the xds channel.
+  const XdsServer& server() const { return servers_[0]; }
   const Node* node() const { return node_.get(); }
 
  private:
-  grpc_error* ParseXdsServer(grpc_json* json);
-  grpc_error* ParseChannelCredsArray(grpc_json* json);
-  grpc_error* ParseChannelCreds(grpc_json* json, size_t idx);
+  grpc_error* ParseXdsServerList(grpc_json* json);
+  grpc_error* ParseXdsServer(grpc_json* json, size_t idx);
+  grpc_error* ParseChannelCredsArray(grpc_json* json, XdsServer* server);
+  grpc_error* ParseChannelCreds(grpc_json* json, size_t idx, XdsServer* server);
   grpc_error* ParseNode(grpc_json* json);
   grpc_error* ParseLocality(grpc_json* json);
 
   InlinedVector<grpc_error*, 1> ParseMetadataStruct(
-      grpc_json* json, Map<const char*, MetadataValue, StringLess>* result);
+      grpc_json* json,
+      std::map<const char*, MetadataValue, StringLess>* result);
   InlinedVector<grpc_error*, 1> ParseMetadataList(
       grpc_json* json, std::vector<MetadataValue>* result);
   grpc_error* ParseMetadataValue(grpc_json* json, size_t idx,
@@ -89,9 +95,8 @@ class XdsBootstrap {
   grpc_slice contents_;
   grpc_json* tree_ = nullptr;
 
-  const char* server_uri_ = nullptr;
-  InlinedVector<ChannelCreds, 1> channel_creds_;
-  UniquePtr<Node> node_;
+  InlinedVector<XdsServer, 1> servers_;
+  std::unique_ptr<Node> node_;
 };
 
 }  // namespace grpc_core

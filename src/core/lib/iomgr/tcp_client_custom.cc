@@ -96,7 +96,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
     grpc_core::ExecCtx::Get()->Flush();
     custom_tcp_connect_cleanup(connect);
   }
-  GRPC_CLOSURE_SCHED(closure, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
 }
 
 static void custom_connect_callback(grpc_custom_socket* socket,

@@ -241,7 +241,7 @@ finish:
     grpc_channel_args_destroy(ac->channel_args);
     gpr_free(ac);
   }
-  GRPC_CLOSURE_SCHED(closure, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
 }
 
 grpc_error* grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
@@ -298,12 +298,13 @@ void grpc_tcp_client_create_from_prepared_fd(
     char* addr_str = grpc_sockaddr_to_uri(addr);
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_str);
     gpr_free(addr_str);
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
-    GRPC_CLOSURE_SCHED(closure, GRPC_OS_ERROR(errno, "connect"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                            GRPC_OS_ERROR(errno, "connect"));
     return;
   }
 
@@ -344,7 +345,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   *ep = nullptr;
   if ((error = grpc_tcp_client_prepare_fd(channel_args, addr, &mapped_addr,
                                           &fdobj)) != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(closure, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
   }
   grpc_tcp_client_create_from_prepared_fd(interested_parties, closure, fdobj,

@@ -39,13 +39,13 @@ constexpr char kCds[] = "cds_experimental";
 // Parsed config for this LB policy.
 class ParsedCdsConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit ParsedCdsConfig(UniquePtr<char> cluster)
+  explicit ParsedCdsConfig(grpc_core::UniquePtr<char> cluster)
       : cluster_(std::move(cluster)) {}
   const char* cluster() const { return cluster_.get(); }
   const char* name() const override { return kCds; }
 
  private:
-  UniquePtr<char> cluster_;
+  grpc_core::UniquePtr<char> cluster_;
 };
 
 // CDS LB policy.
@@ -78,7 +78,7 @@ class CdsLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state,
-                     UniquePtr<SubchannelPicker> picker) override;
+                     std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     void AddTraceEvent(TraceSeverity severity, StringView message) override;
 
@@ -136,7 +136,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
                     ? parent_->config_->cluster()
                     : cluster_data.eds_service_name.get()));
   gpr_free(lrs_str);
-  UniquePtr<char> json_str_deleter(json_str);
+  grpc_core::UniquePtr<char> json_str_deleter(json_str);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
             parent_.get(), json_str);
@@ -203,7 +203,7 @@ RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
 }
 
 void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
-                                UniquePtr<SubchannelPicker> picker) {
+                                std::unique_ptr<SubchannelPicker> picker) {
   if (parent_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] state updated by child: %s", this,
@@ -343,7 +343,7 @@ class CdsFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       return MakeRefCounted<ParsedCdsConfig>(
-          UniquePtr<char>(gpr_strdup(cluster)));
+          grpc_core::UniquePtr<char>(gpr_strdup(cluster)));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
       return nullptr;

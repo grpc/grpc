@@ -44,8 +44,9 @@ namespace {
 size_t g_message_size_parser_index;
 }  // namespace
 
-UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
-    const grpc_json* json, grpc_error** error) {
+std::unique_ptr<ServiceConfig::ParsedConfig>
+MessageSizeParser::ParsePerMethodParams(const grpc_json* json,
+                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   int max_request_message_bytes = -1;
   int max_response_message_bytes = -1;
@@ -215,7 +216,7 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
                              calld->recv_trailing_metadata_error,
                              "continue recv_trailing_metadata_ready");
   }
-  GRPC_CLOSURE_RUN(closure, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 // Callback invoked on completion of recv_trailing_metadata
@@ -234,7 +235,8 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   error =
       grpc_error_add_child(GRPC_ERROR_REF(error), GRPC_ERROR_REF(calld->error));
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready, error);
 }
 
 // Start transport stream op.

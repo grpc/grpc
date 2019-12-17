@@ -25,8 +25,9 @@ namespace experimental {
 /** Converts the Cpp key materials to C key materials; this allocates memory for
  * the C key materials. Note that the user must free
  * the underlying pointer to private key and cert chain duplicates; they are not
- * freed when the UniquePtr<char> member variables of PemKeyCertPair are unused.
- * Similarly, the user must free the underlying pointer to c_pem_root_certs. **/
+ * freed when the grpc_core::UniquePtr<char> member variables of PemKeyCertPair
+ * are unused. Similarly, the user must free the underlying pointer to
+ * c_pem_root_certs. **/
 grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
     const std::shared_ptr<TlsKeyMaterialsConfig>& config) {
   if (config == nullptr) {

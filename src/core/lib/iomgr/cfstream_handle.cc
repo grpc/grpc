@@ -53,7 +53,7 @@ void CFStreamHandle::Release(void* info) {
 
 CFStreamHandle* CFStreamHandle::CreateStreamHandle(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream) {
-  return grpc_core::New<CFStreamHandle>(read_stream, write_stream);
+  return new CFStreamHandle(read_stream, write_stream);
 }
 
 void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
@@ -194,7 +194,7 @@ void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
             reason, val, val - 1);
   }
   if (gpr_unref(&refcount_)) {
-    grpc_core::Delete<CFStreamHandle>(this);
+    delete this;
   }
 }
 

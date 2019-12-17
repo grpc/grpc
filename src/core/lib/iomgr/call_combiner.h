@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/dynamic_annotations.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 // A simple, lock-free mechanism for serializing activity related to a
 // single call.  This is similar to a combiner but is more lightweight.
@@ -156,8 +157,8 @@ class CallCombinerClosureList {
   //
   // All but one of the closures in the list will be scheduled via
   // GRPC_CALL_COMBINER_START(), and the remaining closure will be
-  // scheduled via GRPC_CLOSURE_SCHED(), which will eventually result in
-  // yielding the call combiner.  If the list is empty, then the call
+  // scheduled via ExecCtx::Run(), which will eventually result
+  // in yielding the call combiner.  If the list is empty, then the call
   // combiner will be yielded immediately.
   void RunClosures(CallCombiner* call_combiner) {
     if (closures_.empty()) {
@@ -177,7 +178,7 @@ class CallCombinerClosureList {
               grpc_error_string(closures_[0].error), closures_[0].reason);
     }
     // This will release the call combiner.
-    GRPC_CLOSURE_SCHED(closures_[0].closure, closures_[0].error);
+    ExecCtx::Run(DEBUG_LOCATION, closures_[0].closure, closures_[0].error);
     closures_.clear();
   }
 

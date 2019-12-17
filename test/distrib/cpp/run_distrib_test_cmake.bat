@@ -29,44 +29,55 @@ powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [Sys
 @rem set absolute path to OpenSSL with forward slashes
 set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
-cd third_party/zlib
-mkdir cmake
-cd cmake
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..
+@rem Install c-ares
+mkdir third_party\cares\cares\cmake\build
+pushd third_party\cares\cares\cmake\build
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
-cd ../../..
+popd
 
-cd third_party/protobuf/cmake
-mkdir build
-cd build
+@rem Install protobuf
+mkdir third_party\protobuf\cmake\build
+pushd third_party\protobuf\cmake\build
 cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DZLIB_ROOT=%INSTALL_DIR% -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..
 cmake --build . --config Release --target install || goto :error
-cd ../../../..
+popd
 
-cd third_party/cares/cares
-mkdir cmake
-cd cmake
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..
+@rem Install zlib
+mkdir third_party\zlib\cmake\build
+pushd third_party\zlib\cmake\build
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
-cd ../../../..
+popd
 
-@rem OpenSSL-Win32 and OpenSSL-Win64 can be downloaded from https://slproweb.com/products/Win32OpenSSL.html
-cd cmake
-mkdir build
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% -DZLIB_ROOT=%INSTALL_DIR% -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_CARES_PROVIDER=package -DgRPC_SSL_PROVIDER=package -DCMAKE_BUILD_TYPE=Release ../.. || goto :error
+@rem Just before installing gRPC, wipe out contents of all the submodules to simulate
+@rem a standalone build from an archive
+git submodule deinit --all --force
+
+@rem Install gRPC
+mkdir cmake\build
+pushd cmake\build
+cmake ^
+  -DCMAKE_BUILD_TYPE=Release ^
+  -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ^
+  -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% ^
+  -DZLIB_ROOT=%INSTALL_DIR% ^
+  -DgRPC_INSTALL=ON ^
+  -DgRPC_BUILD_TESTS=OFF ^
+  -DgRPC_CARES_PROVIDER=package ^
+  -DgRPC_PROTOBUF_PROVIDER=package ^
+  -DgRPC_SSL_PROVIDER=package ^
+  -DgRPC_ZLIB_PROVIDER=package ^
+  ../.. || goto :error
 cmake --build . --config Release --target install || goto :error
-cd ../..
+popd
 
 @rem Build helloworld example using cmake
-cd examples/cpp/helloworld
-mkdir cmake
-cd cmake
-mkdir build
-cd build
+mkdir examples\cpp\helloworld\cmake\build
+pushd examples\cpp\helloworld\cmake\build
 cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% -DZLIB_ROOT=%INSTALL_DIR% ../.. || goto :error
 cmake --build . --config Release || goto :error
-cd ../../../../..
+popd
 
 goto :EOF
 

@@ -55,7 +55,7 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 
 static void pollset_shutdown(grpc_pollset* /*pollset*/, grpc_closure* closure) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
 }
 
 static void pollset_destroy(grpc_pollset* pollset) {

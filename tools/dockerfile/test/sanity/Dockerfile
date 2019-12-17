@@ -105,6 +105,11 @@ RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/b
   bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
   rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh
 
+# Install buildifier v0.29.0
+RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier
+RUN chmod +x buildifier
+RUN mv buildifier /usr/local/bin
+
 
 # Define the default command.
 CMD ["bash"]

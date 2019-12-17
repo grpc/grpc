@@ -135,8 +135,9 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
             t->num_pending_induced_frames++;
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
             if (t->notify_on_receive_settings != nullptr) {
-              GRPC_CLOSURE_SCHED(t->notify_on_receive_settings,
-                                 GRPC_ERROR_NONE);
+              grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                                      t->notify_on_receive_settings,
+                                      GRPC_ERROR_NONE);
               t->notify_on_receive_settings = nullptr;
             }
           }

@@ -30,11 +30,23 @@ To add gRPC as a dependency in bazel:
   grpc_deps()
   ```
 
-NOTE: currently bazel is only supported for building gRPC on Linux.
+## cmake
+
+`cmake` is your best option if you cannot use bazel. It supports building on Linux, MacOS and Windows (official support) but also has a good chance of working on other platforms (no promises!). `cmake` has good
+support for crosscompiling and can be used for targeting Android platform.
+
+If your project is using cmake, there are several ways to add gRPC dependency.
+- install gRPC via cmake first and then locate it with `find_package(gRPC CONFIG)`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
+- via cmake's `ExternalProject_Add` using a technique called "superbuild". [Example](../../examples/cpp/helloworld/cmake_externalproject/CMakeLists.txt)
+- add gRPC source tree to your project (preferably as a git submodule) and add it to your CMake project with `add_subdirectory`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
+
+If your project is not using CMake (e.g. you're using `make` directly), you can first install gRPC C++ using CMake,
+and have your non-CMake project rely on the `pkgconfig` files which are provided by gRPC installation. [Example](../../test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh)
 
 ## make
 
-Currently the default choice for building on UNIX based systems is `make`.
+The default choice for building on UNIX based systems used to be `make`, but we are no longer recommending it.
+You should use `bazel` or `cmake` instead.
 
 To install gRPC for C++ on your system using `make`, follow the [Building gRPC C++](../../BUILDING.md)
 instructions to build from source and then install locally using `make install`.
@@ -43,16 +55,6 @@ and the C++ gRPC plugin for `protoc`.
 
 WARNING: After installing with `make install` there is no easy way to uninstall, which can cause issues
 if you later want to remove the grpc and/or protobuf installation or upgrade to a newer version.
-
-## cmake
-
-`cmake` is the default build option on Windows, but also works on Linux, MacOS. `cmake` has good
-support for crosscompiling and can be used for targeting Android platform.
-
-If your project is using cmake, there are several ways to add gRPC dependency.
-- install gRPC via cmake first and then locate it with `find_package(gRPC CONFIG)`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
-- via cmake's `ExternalProject_Add` using a technique called "superbuild". [Example](../../examples/cpp/helloworld/cmake_externalproject/CMakeLists.txt)
-- add gRPC source tree to your project (preferably as a git submodule) and add it to your cmake project with `add_subdirectory`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
 
 ## Packaging systems
 

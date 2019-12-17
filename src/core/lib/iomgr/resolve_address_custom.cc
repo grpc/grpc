@@ -79,7 +79,7 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* r,
     return;
   }
   if (r->on_done) {
-    GRPC_CLOSURE_SCHED(r->on_done, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
   }
   gpr_free(r->host);
   gpr_free(r->port);
@@ -92,7 +92,7 @@ static grpc_error* try_split_host_port(const char* name,
                                        grpc_core::UniquePtr<char>* port) {
   /* parse name, splitting it into host and port parts */
   grpc_error* error;
-  SplitHostPort(name, host, port);
+  grpc_core::SplitHostPort(name, host, port);
   if (*host == nullptr) {
     char* msg;
     gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
@@ -161,7 +161,7 @@ static void resolve_address_impl(const char* name, const char* default_port,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(on_done, err);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, err);
     return;
   }
   r = (grpc_custom_resolver*)gpr_malloc(sizeof(grpc_custom_resolver));

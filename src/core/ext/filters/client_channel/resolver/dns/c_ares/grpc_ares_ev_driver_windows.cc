@@ -128,12 +128,12 @@ class GrpcPolledFdWindows {
   }
 
   void ScheduleAndNullReadClosure(grpc_error* error) {
-    GRPC_CLOSURE_SCHED(read_closure_, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_, error);
     read_closure_ = nullptr;
   }
 
   void ScheduleAndNullWriteClosure(grpc_error* error) {
-    GRPC_CLOSURE_SCHED(write_closure_, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, write_closure_, error);
     write_closure_ = nullptr;
   }
 
@@ -752,7 +752,7 @@ class SockToPolledFdMap {
   }
 
   void AddNewSocket(SOCKET s, GrpcPolledFdWindows* polled_fd) {
-    SockToPolledFdEntry* new_node = New<SockToPolledFdEntry>(s, polled_fd);
+    SockToPolledFdEntry* new_node = new SockToPolledFdEntry(s, polled_fd);
     new_node->next = head_;
     head_ = new_node;
   }
@@ -775,7 +775,7 @@ class SockToPolledFdMap {
          node = node->next) {
       if (node->socket == s) {
         *prev = node->next;
-        Delete(node);
+        delete node;
         return;
       }
       prev = &node->next;
@@ -805,7 +805,7 @@ class SockToPolledFdMap {
     }
     grpc_tcp_set_non_block(s);
     GrpcPolledFdWindows* polled_fd =
-        New<GrpcPolledFdWindows>(s, map->combiner_, af, type);
+        new GrpcPolledFdWindows(s, map->combiner_, af, type);
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
@@ -855,7 +855,7 @@ class SockToPolledFdMap {
           "Shut down c-ares fd before without it ever having made it into the "
           "driver's list"));
     }
-    grpc_core::Delete(polled_fd);
+    delete polled_fd;
     return 0;
   }
 
@@ -920,7 +920,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
     polled_fd->set_gotten_into_driver_list();
-    return grpc_core::New<GrpcPolledFdWindowsWrapper>(polled_fd);
+    return new GrpcPolledFdWindowsWrapper(polled_fd);
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
@@ -932,7 +932,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   SockToPolledFdMap sock_to_polled_fd_map_;
 };
 
-UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner) {
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
+    Combiner* combiner) {
   return MakeUnique<GrpcPolledFdFactoryWindows>(combiner);
 }
 

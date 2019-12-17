@@ -22,11 +22,11 @@ RUN yum install -y curl-devel expat-devel gettext-devel linux-headers openssl-de
 
 ###################################
 # Install Python build requirements
-RUN /opt/python/cp27-cp27m/bin/pip install cython
-RUN /opt/python/cp27-cp27mu/bin/pip install cython
-RUN /opt/python/cp34-cp34m/bin/pip install cython
-RUN /opt/python/cp35-cp35m/bin/pip install cython
-RUN /opt/python/cp36-cp36m/bin/pip install cython
-RUN /opt/python/cp37-cp37m/bin/pip install cython
-RUN /opt/python/cp37-cp37m/bin/pip install cython
-RUN /opt/python/cp38-cp38/bin/pip install cython
+RUN /opt/python/cp27-cp27m/bin/pip install --upgrade cython
+RUN /opt/python/cp27-cp27mu/bin/pip install --upgrade cython
+RUN /opt/python/cp34-cp34m/bin/pip install --upgrade cython
+RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
+RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
+RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
+RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
+RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython

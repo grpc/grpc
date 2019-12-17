@@ -19,45 +19,45 @@ package(
 
 GRPC_ASYNC_TESTS = glob(["*_test.py"])
 
-
 py_library(
     name = "_test_base",
-    srcs_version = "PY3",
     srcs = ["_test_base.py"],
+    srcs_version = "PY3",
 )
 
 py_library(
     name = "_test_server",
-    srcs_version = "PY3",
     srcs = ["_test_server.py"],
+    srcs_version = "PY3",
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
+        "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
-        "//src/proto/grpc/testing:empty_py_pb2",
-    ]
+        "//src/python/grpcio/grpc:grpcio",
+    ],
 )
 
 [
     py_test(
-        name=test_file_name[:-3],
-        size="small",
-        srcs=[test_file_name],
-        main=test_file_name,
-        python_version="PY3",
-        deps=[
-            ":_test_server",
-            ":_test_base",
-            "//src/python/grpcio/grpc:grpcio",
-            "//src/proto/grpc/testing:py_messages_proto",
-            "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
-            "//src/proto/grpc/testing:benchmark_service_py_pb2",
-            "//src/python/grpcio_tests/tests/unit/framework/common",
-            "//external:six"
-        ],
-        imports=["../../",],
-        data=[
+        name = test_file_name[:-3],
+        size = "small",
+        srcs = [test_file_name],
+        data = [
             "//src/python/grpcio_tests/tests/unit/credentials",
         ],
-    ) for test_file_name in GRPC_ASYNC_TESTS
+        imports = ["../../"],
+        main = test_file_name,
+        python_version = "PY3",
+        deps = [
+            ":_test_base",
+            ":_test_server",
+            "//external:six",
+            "//src/proto/grpc/testing:benchmark_service_py_pb2",
+            "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+            "//src/proto/grpc/testing:py_messages_proto",
+            "//src/python/grpcio/grpc:grpcio",
+            "//src/python/grpcio_tests/tests/unit/framework/common",
+        ],
+    )
+    for test_file_name in GRPC_ASYNC_TESTS
 ]

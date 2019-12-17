@@ -279,7 +279,9 @@ class JavaLanguage:
         return []
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        # Does not support CompressedRequest feature.
+        # Only supports CompressedResponse feature for unary.
+        return _SKIP_CLIENT_COMPRESSION + ['server_compressed_streaming']
 
     def __str__(self):
         return 'java'
@@ -301,7 +303,7 @@ class JavaOkHttpClient:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_DATA_FRAME_PADDING
 
     def __str__(self):
         return 'javaokhttp'

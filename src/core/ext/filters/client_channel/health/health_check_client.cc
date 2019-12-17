@@ -200,7 +200,7 @@ bool DecodeResponse(grpc_slice_buffer* slice_buffer, grpc_error** error) {
     return false;
   }
   // Concatenate the slices to form a single string.
-  UniquePtr<uint8_t> recv_message_deleter;
+  std::unique_ptr<uint8_t> recv_message_deleter;
   uint8_t* recv_message;
   if (slice_buffer->count == 1) {
     recv_message = GRPC_SLICE_START_PTR(slice_buffer->slices[0]);
@@ -300,7 +300,8 @@ void HealthCheckClient::CallState::StartCall() {
     // Schedule instead of running directly, since we must not be
     // holding health_check_client_->mu_ when CallEnded() is called.
     call_->Ref(DEBUG_LOCATION, "call_end_closure").release();
-    GRPC_CLOSURE_SCHED(
+    ExecCtx::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_INIT(&batch_.handler_private.closure, CallEndedRetry, this,
                           grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
@@ -399,7 +400,7 @@ void HealthCheckClient::CallState::AfterCallStackDestruction(
     void* arg, grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
-  Delete(self);
+  delete self;
 }
 
 void HealthCheckClient::CallState::OnCancelComplete(void* arg,

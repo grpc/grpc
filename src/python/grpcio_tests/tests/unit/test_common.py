@@ -100,14 +100,14 @@ def test_secure_channel(target, channel_credentials, server_host_override):
     return channel
 
 
-def test_server(max_workers=10):
+def test_server(max_workers=10, reuse_port=False):
     """Creates an insecure grpc server.
 
      These servers have SO_REUSEPORT disabled to prevent cross-talk.
      """
     return grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
-        options=(('grpc.so_reuseport', 0),))
+        options=(('grpc.so_reuseport', int(reuse_port)),))
 
 
 class WaitGroup(object):

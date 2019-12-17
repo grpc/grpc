@@ -36,7 +36,7 @@ The following are the **Opaque** structures exposed by Polling Engine interface 
 - **grpc_fd:** Structure representing a file descriptor
 - **grpc_pollset:** A set of one or more grpc_fds that are ‘polled’ for readable/writable/error events. One grpc_fd can be in multiple `grpc_pollset`s
 - **grpc_pollset_worker:** Structure representing a ‘polling thread’ - more specifically, the thread that calls `grpc_pollset_work()` API
-- **grpc_pollset_set:** A group of `grpc_fds`, `grpc_pollsets` and `grpc_pollset_sets` (yes, a `grpc_pollset_set` can contain other `grpc_pollset_sets`)
+- **grpc_pollset_set:** A group of `grpc_fd`s, `grpc_pollset`s and `grpc_pollset_set`s (yes, a `grpc_pollset_set` can contain other `grpc_pollset_set`s)
 
 ### Polling engine API
 
@@ -58,12 +58,12 @@ The following are the **Opaque** structures exposed by Polling Engine interface 
 
 #### grpc_pollset
 
-- **grpc_pollset_add_fd **
+- **grpc_pollset_add_fd**
   - Signature: `grpc_pollset_add_fd(grpc_pollset* ps, grpc_fd *fd)`
   - Add fd to pollset
     > **NOTE**: There is no `grpc_pollset_remove_fd`. This is because calling `grpc_fd_orphan()` will effectively remove the fd from all the pollsets it’s a part of
 
-- ** grpc_pollset_work **
+- **grpc_pollset_work**
   - Signature: `grpc_pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker, grpc_millis deadline)`
     > **NOTE**: `grpc_pollset_work()` requires the pollset mutex to be locked before calling it. Shortly after calling `grpc_pollset_work()`, the function populates the `*worker` pointer (among other things) and releases the mutex. Once `grpc_pollset_work()` returns, the `*worker` pointer is **invalid** and should not be used anymore. See the code in `completion_queue.cc` to see how this is used.
   - Poll the fds in the pollset for events AND return when ANY of the following is true:
@@ -72,15 +72,15 @@ The following are the **Opaque** structures exposed by Polling Engine interface 
     - worker is “kicked” (see `grpc_pollset_kick` for more details)
 
 - **grpc_pollset_kick**
- - Signature: `grpc_pollset_kick(grpc_pollset* ps, grpc_pollset_worker* worker)`
- - “Kick the worker” i.e Force the worker to return from grpc_pollset_work()
- - If `worker == nullptr`, kick ANY worker active on that pollset
+  - Signature: `grpc_pollset_kick(grpc_pollset* ps, grpc_pollset_worker* worker)`
+  - “Kick the worker” i.e Force the worker to return from grpc_pollset_work()
+  - If `worker == nullptr`, kick ANY worker active on that pollset
 
 #### grpc_pollset_set
 
 - **grpc\_pollset\_set\_[add|del]\_fd**
   - Signature: `grpc_pollset_set_[add|del]_fd(grpc_pollset_set* pss, grpc_fd *fd)`
-Add/Remove fd to the `grpc_pollset_set`
+  - Add/Remove fd to the `grpc_pollset_set`
 
 - **grpc\_pollset\_set_[add|del]\_pollset**
   - Signature: `grpc_pollset_set_[add|del]_pollset(grpc_pollset_set* pss, grpc_pollset* ps)`

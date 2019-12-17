@@ -95,7 +95,7 @@ class GrpcPolledFdFactory {
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
 
-UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner);
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner);
 
 }  // namespace grpc_core
 

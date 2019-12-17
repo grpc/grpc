@@ -35,7 +35,7 @@ GlobalSubchannelPool::~GlobalSubchannelPool() {
 }
 
 void GlobalSubchannelPool::Init() {
-  instance_ = New<RefCountedPtr<GlobalSubchannelPool>>(
+  instance_ = new RefCountedPtr<GlobalSubchannelPool>(
       MakeRefCounted<GlobalSubchannelPool>());
 }
 
@@ -45,7 +45,7 @@ void GlobalSubchannelPool::Shutdown() {
   // To ensure Shutdown() was not called before.
   GPR_ASSERT(*instance_ != nullptr);
   instance_->reset();
-  Delete(instance_);
+  delete instance_;
 }
 
 RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
@@ -78,7 +78,7 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
       // Note that we should ref the old map first because grpc_avl_add() will
       // unref it while we still need to access it later.
       grpc_avl new_map = grpc_avl_add(
-          grpc_avl_ref(old_map, nullptr), New<SubchannelKey>(*key),
+          grpc_avl_ref(old_map, nullptr), new SubchannelKey(*key),
           GRPC_SUBCHANNEL_WEAK_REF(constructed, "subchannel_register+new"),
           nullptr);
       // Try to publish the change to the shared map. It may happen (but
@@ -142,12 +142,12 @@ namespace {
 
 void sck_avl_destroy(void* p, void* /*user_data*/) {
   SubchannelKey* key = static_cast<SubchannelKey*>(p);
-  Delete(key);
+  delete key;
 }
 
 void* sck_avl_copy(void* p, void* /*unused*/) {
   const SubchannelKey* key = static_cast<const SubchannelKey*>(p);
-  auto* new_key = New<SubchannelKey>(*key);
+  auto* new_key = new SubchannelKey(*key);
   return static_cast<void*>(new_key);
 }
 

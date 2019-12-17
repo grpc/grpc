@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/fuzzer_util.h"
-#include "test/core/util/memory_counters.h"
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
@@ -67,7 +66,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     gpr_set_log_function(dont_log);
   }
   gpr_free(grpc_trace_fuzzer);
-  grpc_core::testing::LeakDetector leak_detector(leak_check);
   input_stream inp = {data, data + size};
   grpc_init();
   grpc_test_only_control_plane_credentials_force_init();

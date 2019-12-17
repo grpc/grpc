@@ -36,9 +36,7 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
 
-namespace {
-
-void alts_set_rpc_protocol_versions(
+void grpc_alts_set_rpc_protocol_versions(
     grpc_gcp_rpc_protocol_versions* rpc_versions) {
   grpc_gcp_rpc_protocol_versions_set_max(rpc_versions,
                                          GRPC_PROTOCOL_VERSION_MAX_MAJOR,
@@ -47,6 +45,8 @@ void alts_set_rpc_protocol_versions(
                                          GRPC_PROTOCOL_VERSION_MIN_MAJOR,
                                          GRPC_PROTOCOL_VERSION_MIN_MINOR);
 }
+
+namespace {
 
 void alts_check_peer(tsi_peer peer,
                      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
@@ -59,7 +59,7 @@ void alts_check_peer(tsi_peer peer,
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Could not get ALTS auth context from TSI peer");
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 class grpc_alts_channel_security_connector final
@@ -69,14 +69,10 @@ class grpc_alts_channel_security_connector final
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name)
-      : grpc_channel_security_connector(/*url_scheme=*/nullptr,
+      : grpc_channel_security_connector(GRPC_ALTS_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
-        target_name_(gpr_strdup(target_name)) {
-    grpc_alts_credentials* creds =
-        static_cast<grpc_alts_credentials*>(mutable_channel_creds());
-    alts_set_rpc_protocol_versions(&creds->mutable_options()->rpc_versions);
-  }
+        target_name_(gpr_strdup(target_name)) {}
 
   ~grpc_alts_channel_security_connector() override { gpr_free(target_name_); }
 
@@ -133,12 +129,9 @@ class grpc_alts_server_security_connector final
  public:
   grpc_alts_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(/*url_scheme=*/nullptr,
-                                       std::move(server_creds)) {
-    grpc_alts_server_credentials* creds =
-        reinterpret_cast<grpc_alts_server_credentials*>(mutable_server_creds());
-    alts_set_rpc_protocol_versions(&creds->mutable_options()->rpc_versions);
-  }
+      : grpc_server_security_connector(GRPC_ALTS_URL_SCHEME,
+                                       std::move(server_creds)) {}
+
   ~grpc_alts_server_security_connector() override = default;
 
   void add_handshakers(
@@ -193,7 +186,7 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
     return nullptr;
   }
   grpc_gcp_rpc_protocol_versions local_versions, peer_versions;
-  alts_set_rpc_protocol_versions(&local_versions);
+  grpc_alts_set_rpc_protocol_versions(&local_versions);
   grpc_slice slice = grpc_slice_from_copied_buffer(
       rpc_versions_prop->value.data, rpc_versions_prop->value.length);
   bool decode_result =
@@ -208,6 +201,13 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
       &local_versions, &peer_versions, nullptr);
   if (!check_result) {
     gpr_log(GPR_ERROR, "Mismatch of local and peer rpc protocol versions.");
+    return nullptr;
+  }
+  /* Validate ALTS Context. */
+  const tsi_peer_property* alts_context_prop =
+      tsi_peer_get_property_by_name(peer, TSI_ALTS_CONTEXT);
+  if (alts_context_prop == nullptr) {
+    gpr_log(GPR_ERROR, "Missing alts context property.");
     return nullptr;
   }
   /* Create auth context. */
@@ -225,6 +225,12 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
           tsi_prop->value.data, tsi_prop->value.length);
       GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
                      ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 1);
+    }
+    /* Add alts context to auth context. */
+    if (strcmp(tsi_prop->name, TSI_ALTS_CONTEXT) == 0) {
+      grpc_auth_context_add_property(ctx.get(), TSI_ALTS_CONTEXT,
+                                     tsi_prop->value.data,
+                                     tsi_prop->value.length);
     }
   }
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {

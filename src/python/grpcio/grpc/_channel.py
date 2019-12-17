@@ -13,8 +13,10 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
+import copy
 import functools
 import logging
+import os
 import sys
 import threading
 import time
@@ -31,6 +33,11 @@ _LOGGER = logging.getLogger(__name__)
 _USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
+
+# NOTE(rbellevi): No guarantees are given about the maintenance of this
+# environment variable.
+_DEFAULT_SINGLE_THREADED_UNARY_STREAM = os.getenv(
+    "GRPC_SINGLE_THREADED_UNARY_STREAM") is not None
 
 _UNARY_UNARY_INITIAL_DUE = (
     cygrpc.OperationType.send_initial_metadata,
@@ -263,35 +270,38 @@ def _rpc_state_string(class_name, rpc_state):
                 rpc_state.debug_error_string)
 
 
-class _RpcError(grpc.RpcError, grpc.Call):
+class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     """An RPC error not tied to the execution of a particular RPC.
+
+    The RPC represented by the state object must not be in-progress or
+    cancelled.
 
     Attributes:
       _state: An instance of _RPCState.
     """
 
     def __init__(self, state):
-        self._state = state
+        with state.condition:
+            self._state = _RPCState((), copy.deepcopy(state.initial_metadata),
+                                    copy.deepcopy(state.trailing_metadata),
+                                    state.code, copy.deepcopy(state.details))
+            self._state.response = copy.copy(state.response)
+            self._state.debug_error_string = copy.copy(state.debug_error_string)
 
     def initial_metadata(self):
-        with self._state.condition:
-            return self._state.initial_metadata
+        return self._state.initial_metadata
 
     def trailing_metadata(self):
-        with self._state.condition:
-            return self._state.trailing_metadata
+        return self._state.trailing_metadata
 
     def code(self):
-        with self._state.condition:
-            return self._state.code
+        return self._state.code
 
     def details(self):
-        with self._state.condition:
-            return _common.decode(self._state.details)
+        return _common.decode(self._state.details)
 
     def debug_error_string(self):
-        with self._state.condition:
-            return _common.decode(self._state.debug_error_string)
+        return _common.decode(self._state.debug_error_string)
 
     def _repr(self):
         return _rpc_state_string(self.__class__.__name__, self._state)
@@ -301,6 +311,41 @@ class _RpcError(grpc.RpcError, grpc.Call):
 
     def __str__(self):
         return self._repr()
+
+    def cancel(self):
+        """See grpc.Future.cancel."""
+        return False
+
+    def cancelled(self):
+        """See grpc.Future.cancelled."""
+        return False
+
+    def running(self):
+        """See grpc.Future.running."""
+        return False
+
+    def done(self):
+        """See grpc.Future.done."""
+        return True
+
+    def result(self, timeout=None):  # pylint: disable=unused-argument
+        """See grpc.Future.result."""
+        raise self
+
+    def exception(self, timeout=None):  # pylint: disable=unused-argument
+        """See grpc.Future.exception."""
+        return self
+
+    def traceback(self, timeout=None):  # pylint: disable=unused-argument
+        """See grpc.Future.traceback."""
+        try:
+            raise self
+        except grpc.RpcError:
+            return sys.exc_info()[2]
+
+    def add_done_callback(self, fn, timeout=None):  # pylint: disable=unused-argument
+        """See grpc.Future.add_done_callback."""
+        fn(self)
 
 
 class _Rendezvous(grpc.RpcError, grpc.RpcContext):
@@ -664,7 +709,7 @@ def _start_unary_request(request, timeout, request_serializer):
     if serialized_request is None:
         state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
-        error = _RpcError(state)
+        error = _InactiveRpcError(state)
         return deadline, None, error
     else:
         return deadline, serialized_request, None
@@ -678,7 +723,7 @@ def _end_unary_response_blocking(state, call, with_call, deadline):
         else:
             return state.response
     else:
-        raise _RpcError(state)
+        raise _InactiveRpcError(state)
 
 
 def _stream_unary_invocation_operationses(metadata, initial_metadata_flags):
@@ -836,7 +881,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         if serialized_request is None:
             state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                               'Exception serializing request!')
-            raise _RpcError(state)
+            raise _InactiveRpcError(state)
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = None if credentials is None else credentials._credentials
@@ -1295,7 +1340,7 @@ class Channel(grpc.Channel):
             used over the lifetime of the channel.
         """
         python_options, core_options = _separate_channel_options(options)
-        self._single_threaded_unary_stream = False
+        self._single_threaded_unary_stream = _DEFAULT_SINGLE_THREADED_UNARY_STREAM
         self._process_python_options(python_options)
         self._channel = cygrpc.Channel(
             _common.encode(target), _augment_options(core_options, compression),

@@ -77,3 +77,22 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "alts_concurrent_connectivity_test",
+    srcs = [
+        "alts_concurrent_connectivity_test.cc",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    # TODO(apolcyn): make the fake TCP server used in this
+    # test portable to Windows.
+    tags = ["no_windows"],
+    deps = [
+        "//:alts_util",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/tsi/alts/fake_handshaker:fake_handshaker_lib",
+        "//test/core/util:grpc_test_util",
+    ],
+)

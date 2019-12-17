@@ -43,7 +43,7 @@ class TestParsedConfig1 : public ServiceConfig::ParsedConfig {
 
 class TestParser1 : public ServiceConfig::Parser {
  public:
-  UniquePtr<ServiceConfig::ParsedConfig> ParseGlobalParams(
+  std::unique_ptr<ServiceConfig::ParsedConfig> ParseGlobalParams(
       const grpc_json* json, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     for (grpc_json* field = json->child; field != nullptr;
@@ -77,7 +77,7 @@ class TestParser1 : public ServiceConfig::Parser {
 
 class TestParser2 : public ServiceConfig::Parser {
  public:
-  UniquePtr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
+  std::unique_ptr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
       const grpc_json* json, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     for (grpc_json* field = json->child; field != nullptr;
@@ -115,14 +115,14 @@ class TestParser2 : public ServiceConfig::Parser {
 // This parser always adds errors
 class ErrorParser : public ServiceConfig::Parser {
  public:
-  UniquePtr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
+  std::unique_ptr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
       const grpc_json* /*json*/, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(MethodError());
     return nullptr;
   }
 
-  UniquePtr<ServiceConfig::ParsedConfig> ParseGlobalParams(
+  std::unique_ptr<ServiceConfig::ParsedConfig> ParseGlobalParams(
       const grpc_json* /*json*/, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(GlobalError());

@@ -1,26 +1,26 @@
-load("//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+
 package(default_visibility = ["//visibility:public"])
 
 py_proto_library(
     name = "health_py_pb2",
-    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor",],
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 )
 
 py_grpc_library(
     name = "health_py_pb2_grpc",
-    srcs = ["//src/proto/grpc/health/v1:health_proto_descriptor",],
-    deps = [":health_py_pb2"],
+    srcs = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
     strip_prefixes = ["src.python.grpcio_health_checking."],
+    deps = [":health_py_pb2"],
 )
 
 py_library(
     name = "grpc_health",
-    srcs = ["health.py",],
+    srcs = ["health.py"],
+    imports = ["../../"],
     deps = [
         ":health_py_pb2",
         ":health_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
     ],
-    imports=["../../",],
 )
-

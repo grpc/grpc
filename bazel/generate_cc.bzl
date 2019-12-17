@@ -111,6 +111,7 @@ def generate_cc_impl(ctx):
         "--proto_path={}".format(get_include_directory(i))
         for i in includes
     ]
+
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
     arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]

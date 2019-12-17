@@ -67,28 +67,40 @@ GenericStub::PrepareUnaryCall(grpc::ClientContext* context,
           context, request, false));
 }
 
-void GenericStub::experimental_type::UnaryCall(
+void GenericStub::UnaryCallInternal(
     grpc::ClientContext* context, const grpc::string& method,
     const grpc::ByteBuffer* request, grpc::ByteBuffer* response,
     std::function<void(grpc::Status)> on_completion) {
   internal::CallbackUnaryCall(
-      stub_->channel_.get(),
+      channel_.get(),
       grpc::internal::RpcMethod(method.c_str(),
                                 grpc::internal::RpcMethod::NORMAL_RPC),
       context, request, response, std::move(on_completion));
 }
 
-void GenericStub::experimental_type::PrepareBidiStreamingCall(
+void GenericStub::PrepareBidiStreamingCallInternal(
     grpc::ClientContext* context, const grpc::string& method,
-    experimental::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
-        reactor) {
+    ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>* reactor) {
   internal::ClientCallbackReaderWriterFactory<
       grpc::ByteBuffer,
-      grpc::ByteBuffer>::Create(stub_->channel_.get(),
+      grpc::ByteBuffer>::Create(channel_.get(),
                                 grpc::internal::RpcMethod(
                                     method.c_str(),
                                     grpc::internal::RpcMethod::BIDI_STREAMING),
                                 context, reactor);
+}
+
+void GenericStub::PrepareUnaryCallInternal(grpc::ClientContext* context,
+                                           const grpc::string& method,
+                                           const grpc::ByteBuffer* request,
+                                           grpc::ByteBuffer* response,
+                                           ClientUnaryReactor* reactor) {
+  internal::ClientCallbackUnaryFactory::Create<grpc::ByteBuffer,
+                                               grpc::ByteBuffer>(
+      channel_.get(),
+      grpc::internal::RpcMethod(method.c_str(),
+                                grpc::internal::RpcMethod::NORMAL_RPC),
+      context, request, response, reactor);
 }
 
 }  // namespace grpc_impl

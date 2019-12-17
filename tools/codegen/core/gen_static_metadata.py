@@ -526,7 +526,7 @@ uint64_t StaticMetadataInitCanary() {
 
 void grpc_init_static_metadata_ctx(void) {
   grpc_core::g_static_metadata_slice_ctx
-    = grpc_core::New<grpc_core::StaticMetadataCtx>();
+    = new grpc_core::StaticMetadataCtx();
   grpc_core::g_static_metadata_slice_table
     = grpc_core::g_static_metadata_slice_ctx->slices;
   grpc_core::g_static_metadata_slice_refcounts
@@ -538,8 +538,7 @@ void grpc_init_static_metadata_ctx(void) {
 }
 
 void grpc_destroy_static_metadata_ctx(void) {
-  grpc_core::Delete<grpc_core::StaticMetadataCtx>(
-    grpc_core::g_static_metadata_slice_ctx);
+  delete grpc_core::g_static_metadata_slice_ctx;
   grpc_core::g_static_metadata_slice_ctx = nullptr;
   grpc_core::g_static_metadata_slice_table = nullptr;
   grpc_core::g_static_metadata_slice_refcounts = nullptr;

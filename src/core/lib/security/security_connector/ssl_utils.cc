@@ -189,9 +189,9 @@ int grpc_ssl_cmp_target_name(
     grpc_core::StringView target_name, grpc_core::StringView other_target_name,
     grpc_core::StringView overridden_target_name,
     grpc_core::StringView other_overridden_target_name) {
-  int c = target_name.cmp(other_target_name);
+  int c = target_name.compare(other_target_name);
   if (c != 0) return c;
-  return overridden_target_name.cmp(other_overridden_target_name);
+  return overridden_target_name.compare(other_overridden_target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
@@ -422,7 +422,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   const bool not_use_system_roots =
       GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
   // First try to load the roots from the configuration.
-  UniquePtr<char> default_root_certs_path =
+  grpc_core::UniquePtr<char> default_root_certs_path =
       GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
   if (strlen(default_root_certs_path.get()) > 0) {
     GRPC_LOG_IF_ERROR(

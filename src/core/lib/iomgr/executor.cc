@@ -393,9 +393,9 @@ void Executor::InitAll() {
   }
 
   executors[static_cast<size_t>(ExecutorType::DEFAULT)] =
-      grpc_core::New<Executor>("default-executor");
+      new Executor("default-executor");
   executors[static_cast<size_t>(ExecutorType::RESOLVER)] =
-      grpc_core::New<Executor>("resolver-executor");
+      new Executor("resolver-executor");
 
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->Init();
   executors[static_cast<size_t>(ExecutorType::RESOLVER)]->Init();
@@ -425,7 +425,7 @@ void Executor::ShutdownAll() {
   // Delete the executor objects.
   //
   // NOTE: It is important to call Shutdown() on all executors first before
-  // calling Delete() because it is possible for one executor (that is not
+  // calling delete  because it is possible for one executor (that is not
   // shutdown yet) to call Enqueue() on a different executor which is already
   // shutdown. This is legal and in such cases, the Enqueue() operation
   // effectively "fails" and enqueues that closure on the calling thread's
@@ -434,10 +434,8 @@ void Executor::ShutdownAll() {
   // By ensuring that all executors are shutdown first, we are also ensuring
   // that no thread is active across all executors.
 
-  grpc_core::Delete<Executor>(
-      executors[static_cast<size_t>(ExecutorType::DEFAULT)]);
-  grpc_core::Delete<Executor>(
-      executors[static_cast<size_t>(ExecutorType::RESOLVER)]);
+  delete executors[static_cast<size_t>(ExecutorType::DEFAULT)];
+  delete executors[static_cast<size_t>(ExecutorType::RESOLVER)];
   executors[static_cast<size_t>(ExecutorType::DEFAULT)] = nullptr;
   executors[static_cast<size_t>(ExecutorType::RESOLVER)] = nullptr;
 

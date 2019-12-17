@@ -16,11 +16,6 @@
  *
  */
 
-/**
- * This is the legacy interface of this gRPC library. This API is deprecated and users should use
- * the API in GRPCCall.h. This API exists solely for the purpose of backwards compatibility.
- */
-
 #import <RxLibrary/GRXWriter.h>
 #import "GRPCTypes.h"
 
@@ -28,8 +23,8 @@
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 
 /**
- * This interface is deprecated. Please use \a GRPCCall2.
- *
+ * This is the legacy interface of this gRPC library. This API is deprecated and users should use
+ * GRPCCall2 in GRPCCall.h. This API exists solely for the purpose of backwards compatibility.
  * Represents a single gRPC remote call.
  */
 @interface GRPCCall : GRXWriter

@@ -67,6 +67,7 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
                     int num_add)
       : pool_(pool), counter_(counter), num_add_(num_add) {
     functor_run = &AddAnotherFunctor::Run;
+    inlineable = false;
     internal_next = this;
     internal_success = 0;
   }
@@ -130,6 +131,7 @@ class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
  public:
   SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
     functor_run = &SuicideFunctorForAdd::Run;
+    inlineable = false;
     internal_next = this;
     internal_success = 0;
   }
@@ -151,7 +153,7 @@ static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   // Setup for each run of test.
   if (state.thread_index == 0) {
     const int num_threads = state.range(1);
-    external_add_pool = grpc_core::New<grpc_core::ThreadPool>(num_threads);
+    external_add_pool = new grpc_core::ThreadPool(num_threads);
   }
   const int num_iterations = state.range(0) / state.threads;
   while (state.KeepRunningBatch(num_iterations)) {
@@ -165,7 +167,7 @@ static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   // Teardown at the end of each test run.
   if (state.thread_index == 0) {
     state.SetItemsProcessed(state.range(0));
-    grpc_core::Delete(external_add_pool);
+    delete external_add_pool;
   }
 }
 BENCHMARK(BM_ThreadPoolExternalAdd)
@@ -182,6 +184,7 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
                  int num_add)
       : pool_(pool), counter_(counter), num_add_(num_add) {
     functor_run = &AddSelfFunctor::Run;
+    inlineable = false;
     internal_next = this;
     internal_success = 0;
   }
@@ -261,6 +264,7 @@ class ShortWorkFunctorForAdd
 
   ShortWorkFunctorForAdd() {
     functor_run = &ShortWorkFunctorForAdd::Run;
+    inlineable = false;
     internal_next = this;
     internal_success = 0;
     val_ = 0;

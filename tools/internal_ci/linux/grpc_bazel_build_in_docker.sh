@@ -25,3 +25,7 @@ git clone /var/local/jenkins/grpc /var/local/git/grpc
 ${name}')
 cd /var/local/git/grpc
 bazel build --spawn_strategy=standalone --genrule_strategy=standalone :all test/... examples/...
+
+# This is a temporary build test before full absl support is done
+# with https://github.com/grpc/grpc/pull/20918.
+bazel build --spawn_strategy=standalone --genrule_strategy=standalone --define=GRPC_USE_ABSL=1 :grpc

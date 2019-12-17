@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_objc_library", "grpc_generate_objc_one_off_targets")
+load("//bazel:grpc_build_system.bzl", "grpc_generate_objc_one_off_targets", "grpc_objc_library")
 
 exports_files(["LICENSE"])
 
@@ -73,16 +73,6 @@ grpc_objc_library(
 
 grpc_objc_library(
     name = "grpc_objc_interface",
-    hdrs = [
-        "GRPCClient/GRPCCall.h",
-        "GRPCClient/GRPCCall+Interceptor.h",
-        "GRPCClient/GRPCCallOptions.h",
-        "GRPCClient/GRPCInterceptor.h",
-        "GRPCClient/GRPCTransport.h",
-        "GRPCClient/GRPCDispatchable.h",
-        "GRPCClient/internal/GRPCCallOptions+Internal.h",
-        "GRPCClient/version.h",
-    ],
     srcs = [
         "GRPCClient/GRPCCall.m",
         "GRPCClient/GRPCCall+Interceptor.m",
@@ -90,6 +80,16 @@ grpc_objc_library(
         "GRPCClient/GRPCInterceptor.m",
         "GRPCClient/GRPCTransport.m",
         "GRPCClient/private/GRPCTransport+Private.m",
+    ],
+    hdrs = [
+        "GRPCClient/GRPCCall.h",
+        "GRPCClient/GRPCCall+Interceptor.h",
+        "GRPCClient/GRPCCallOptions.h",
+        "GRPCClient/GRPCDispatchable.h",
+        "GRPCClient/GRPCInterceptor.h",
+        "GRPCClient/GRPCTransport.h",
+        "GRPCClient/internal/GRPCCallOptions+Internal.h",
+        "GRPCClient/version.h",
     ],
     includes = ["."],
     textual_hdrs = [
@@ -102,14 +102,6 @@ grpc_objc_library(
 
 grpc_objc_library(
     name = "grpc_objc_client",
-    hdrs = [
-        "GRPCClient/GRPCCall+ChannelCredentials.h",
-        "GRPCClient/GRPCCall+Cronet.h",
-        "GRPCClient/GRPCCall+OAuth2.h",
-        "GRPCClient/GRPCCall+Tests.h",
-        "GRPCClient/GRPCCall+ChannelArg.h",
-    ],
-    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
     srcs = [
         "GRPCClient/GRPCCall+ChannelArg.m",
         "GRPCClient/GRPCCall+ChannelCredentials.m",
@@ -118,8 +110,16 @@ grpc_objc_library(
         "GRPCClient/GRPCCall+Tests.m",
         "GRPCClient/GRPCCallLegacy.m",
     ] + glob(["GRPCClient/private/GRPCCore/*.m"]),
+    hdrs = [
+        "GRPCClient/GRPCCall+ChannelArg.h",
+        "GRPCClient/GRPCCall+ChannelCredentials.h",
+        "GRPCClient/GRPCCall+Cronet.h",
+        "GRPCClient/GRPCCall+OAuth2.h",
+        "GRPCClient/GRPCCall+Tests.h",
+    ],
     data = [":gRPCCertificates"],
     includes = ["."],
+    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
     deps = [
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
@@ -155,8 +155,8 @@ grpc_objc_library(
         "ProtoRPC/ProtoRPC.h",
         "ProtoRPC/ProtoService.h",
     ],
-    includes = ["."],
     defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
+    includes = ["."],
     deps = [
         ":grpc_objc_interface",
         ":proto_objc_rpc_legacy_header",
@@ -177,10 +177,10 @@ grpc_objc_library(
         "ProtoRPC/ProtoService.h",
     ],
     deps = [
-        ":rx_library",
-        ":proto_objc_rpc_v2",
-        ":proto_objc_rpc_legacy_header",
         ":grpc_objc_client_core",
+        ":proto_objc_rpc_legacy_header",
+        ":proto_objc_rpc_v2",
+        ":rx_library",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
@@ -196,15 +196,6 @@ apple_resource_bundle(
 # Internal target combining grpc_objc_client_core and proto_objc_rpc for testing
 grpc_objc_library(
     name = "grpc_objc_client_core_internal_testing",
-    hdrs = [
-        "GRPCClient/GRPCCall+ChannelCredentials.h",
-        "GRPCClient/GRPCCall+Cronet.h",
-        "GRPCClient/GRPCCall+OAuth2.h",
-        "GRPCClient/GRPCCall+Tests.h",
-        "GRPCClient/GRPCCall+ChannelArg.h",
-        "GRPCClient/internal_testing/GRPCCall+InternalTests.h",
-    ],
-    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
     srcs = [
         "GRPCClient/GRPCCall+ChannelArg.m",
         "GRPCClient/GRPCCall+ChannelCredentials.m",
@@ -214,11 +205,20 @@ grpc_objc_library(
         "GRPCClient/GRPCCallLegacy.m",
         "GRPCClient/internal_testing/GRPCCall+InternalTests.m",
     ] + glob(["GRPCClient/private/GRPCCore/*.m"]),
+    hdrs = [
+        "GRPCClient/GRPCCall+ChannelArg.h",
+        "GRPCClient/GRPCCall+ChannelCredentials.h",
+        "GRPCClient/GRPCCall+Cronet.h",
+        "GRPCClient/GRPCCall+OAuth2.h",
+        "GRPCClient/GRPCCall+Tests.h",
+        "GRPCClient/internal_testing/GRPCCall+InternalTests.h",
+    ],
     data = [":gRPCCertificates"],
-    includes = ["."],
     defines = [
         "GRPC_TEST_OBJC=1",
     ],
+    includes = ["."],
+    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
     deps = [
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
@@ -240,10 +240,10 @@ grpc_objc_library(
         "ProtoRPC/ProtoService.h",
     ],
     deps = [
-        ":rx_library",
-        ":proto_objc_rpc_v2",
-        ":proto_objc_rpc_legacy_header",
         ":grpc_objc_client_core_internal_testing",
+        ":proto_objc_rpc_legacy_header",
+        ":proto_objc_rpc_v2",
+        ":rx_library",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )

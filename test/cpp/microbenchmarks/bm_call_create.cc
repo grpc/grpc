@@ -414,7 +414,7 @@ void SetPollsetSet(grpc_transport* /*self*/, grpc_stream* /*stream*/,
 /* implementation of grpc_transport_perform_stream_op */
 void PerformStreamOp(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                      grpc_transport_stream_op_batch* op) {
-  GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, GRPC_ERROR_NONE);
 }
 
 /* implementation of grpc_transport_perform_op */
@@ -636,7 +636,7 @@ static void StartTransportOp(grpc_channel_element* /*elem*/,
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
-  GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 }
 
 static grpc_error* InitCallElem(grpc_call_element* elem,
@@ -652,7 +652,7 @@ static void SetPollsetOrPollsetSet(grpc_call_element* /*elem*/,
 static void DestroyCallElem(grpc_call_element* /*elem*/,
                             const grpc_call_final_info* /*final_info*/,
                             grpc_closure* then_sched_closure) {
-  GRPC_CLOSURE_SCHED(then_sched_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_sched_closure, GRPC_ERROR_NONE);
 }
 
 grpc_error* InitChannelElem(grpc_channel_element* /*elem*/,

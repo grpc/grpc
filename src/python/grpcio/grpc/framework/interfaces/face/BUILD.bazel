@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "face",
-    srcs = ["__init__.py",],
+    srcs = ["__init__.py"],
     deps = [
         ":face_lib",
         ":utilities",
@@ -17,7 +17,7 @@ py_library(
         "//src/python/grpcio/grpc/framework/common",
         "//external:six",
     ] + select({
-        "//conditions:default": ["@enum34//:enum34",],
+        "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],
     }),
 )
@@ -26,8 +26,8 @@ py_library(
     name = "utilities",
     srcs = ["utilities.py"],
     deps = [
+        ":face_lib",
         "//src/python/grpcio/grpc/framework/common",
         "//src/python/grpcio/grpc/framework/foundation:stream",
-        ":face_lib",
     ],
 )

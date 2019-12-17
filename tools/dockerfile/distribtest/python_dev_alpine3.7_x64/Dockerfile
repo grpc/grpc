@@ -14,7 +14,7 @@
 
 FROM alpine:3.7
 
-RUN apk add --update build-base python python-dev py-pip
+RUN apk add --update build-base linux-headers python python-dev py-pip
 
 RUN pip install --upgrade pip
 

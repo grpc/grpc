@@ -34,7 +34,7 @@
 namespace grpc_core {
 
 namespace {
-typedef InlinedVector<UniquePtr<ServiceConfig::Parser>,
+typedef InlinedVector<std::unique_ptr<ServiceConfig::Parser>,
                       ServiceConfig::kNumPreallocatedParsers>
     ServiceConfigParserList;
 ServiceConfigParserList* g_registered_parsers;
@@ -42,8 +42,8 @@ ServiceConfigParserList* g_registered_parsers;
 
 RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json,
                                                    grpc_error** error) {
-  UniquePtr<char> service_config_json(gpr_strdup(json));
-  UniquePtr<char> json_string(gpr_strdup(json));
+  grpc_core::UniquePtr<char> service_config_json(gpr_strdup(json));
+  grpc_core::UniquePtr<char> json_string(gpr_strdup(json));
   GPR_DEBUG_ASSERT(error != nullptr);
   grpc_json* json_tree = grpc_json_parse_string(json_string.get());
   if (json_tree == nullptr) {
@@ -55,9 +55,9 @@ RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json,
       std::move(service_config_json), std::move(json_string), json_tree, error);
 }
 
-ServiceConfig::ServiceConfig(UniquePtr<char> service_config_json,
-                             UniquePtr<char> json_string, grpc_json* json_tree,
-                             grpc_error** error)
+ServiceConfig::ServiceConfig(grpc_core::UniquePtr<char> service_config_json,
+                             grpc_core::UniquePtr<char> json_string,
+                             grpc_json* json_tree, grpc_error** error)
     : service_config_json_(std::move(service_config_json)),
       json_string_(std::move(json_string)),
       json_tree_(json_tree) {
@@ -121,7 +121,7 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigVectorTable(
           [parsed_method_config_vectors_storage_.size() - 1]
               .get();
   // Construct list of paths.
-  InlinedVector<UniquePtr<char>, 10> paths;
+  InlinedVector<grpc_core::UniquePtr<char>, 10> paths;
   for (grpc_json* child = json->child; child != nullptr; child = child->next) {
     if (child->key == nullptr) continue;
     if (strcmp(child->key, "name") == 0) {
@@ -132,7 +132,8 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigVectorTable(
       }
       for (grpc_json* name = child->child; name != nullptr; name = name->next) {
         grpc_error* parse_error = GRPC_ERROR_NONE;
-        UniquePtr<char> path = ParseJsonMethodName(name, &parse_error);
+        grpc_core::UniquePtr<char> path =
+            ParseJsonMethodName(name, &parse_error);
         if (path == nullptr) {
           error_list.push_back(parse_error);
         } else {
@@ -228,8 +229,8 @@ int ServiceConfig::CountNamesInMethodConfig(grpc_json* json) {
   return num_names;
 }
 
-UniquePtr<char> ServiceConfig::ParseJsonMethodName(grpc_json* json,
-                                                   grpc_error** error) {
+grpc_core::UniquePtr<char> ServiceConfig::ParseJsonMethodName(
+    grpc_json* json, grpc_error** error) {
   if (json->type != GRPC_JSON_OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:name error:type is not object");
@@ -282,7 +283,7 @@ UniquePtr<char> ServiceConfig::ParseJsonMethodName(grpc_json* json,
   char* path;
   gpr_asprintf(&path, "/%s/%s", service_name,
                method_name == nullptr ? "*" : method_name);
-  return UniquePtr<char>(path);
+  return grpc_core::UniquePtr<char>(path);
 }
 
 const ServiceConfig::ParsedConfigVector*
@@ -311,18 +312,18 @@ ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) {
   return *value;
 }
 
-size_t ServiceConfig::RegisterParser(UniquePtr<Parser> parser) {
+size_t ServiceConfig::RegisterParser(std::unique_ptr<Parser> parser) {
   g_registered_parsers->push_back(std::move(parser));
   return g_registered_parsers->size() - 1;
 }
 
 void ServiceConfig::Init() {
   GPR_ASSERT(g_registered_parsers == nullptr);
-  g_registered_parsers = New<ServiceConfigParserList>();
+  g_registered_parsers = new ServiceConfigParserList();
 }
 
 void ServiceConfig::Shutdown() {
-  Delete(g_registered_parsers);
+  delete g_registered_parsers;
   g_registered_parsers = nullptr;
 }
 

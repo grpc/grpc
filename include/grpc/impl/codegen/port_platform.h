@@ -27,6 +27,13 @@
  *  - some syscalls to be made directly
  */
 
+/*
+ * Defines GRPC_USE_ABSL to use Abseil Common Libraries (C++)
+ */
+#ifndef GRPC_USE_ABSL
+#define GRPC_USE_ABSL 0
+#endif
+
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN

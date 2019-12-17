@@ -23,8 +23,11 @@
 
 #include <grpc/grpc.h>
 
+#include <string>
+
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
@@ -82,7 +85,7 @@ class BaseNode : public RefCounted<BaseNode> {
   };
 
  protected:
-  BaseNode(EntityType type, UniquePtr<char> name);
+  BaseNode(EntityType type, std::string name);
 
  public:
   virtual ~BaseNode();
@@ -96,14 +99,14 @@ class BaseNode : public RefCounted<BaseNode> {
 
   EntityType type() const { return type_; }
   intptr_t uuid() const { return uuid_; }
-  const char* name() const { return name_.get(); }
+  const std::string& name() const { return name_; }
 
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
   friend class ChannelzRegistry;
   const EntityType type_;
   intptr_t uuid_;
-  UniquePtr<char> name_;
+  std::string name_;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
@@ -138,9 +141,9 @@ class CallCountingHelper {
           last_call_started_cycle(
               that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {}
 
-    Atomic<intptr_t> calls_started{0};
-    Atomic<intptr_t> calls_succeeded{0};
-    Atomic<intptr_t> calls_failed{0};
+    Atomic<int64_t> calls_started{0};
+    Atomic<int64_t> calls_succeeded{0};
+    Atomic<int64_t> calls_failed{0};
     Atomic<gpr_cycle_counter> last_call_started_cycle{0};
     // Make sure the size is exactly one cache line.
     uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(Atomic<intptr_t>) -
@@ -148,9 +151,9 @@ class CallCountingHelper {
   } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   struct CounterData {
-    intptr_t calls_started = 0;
-    intptr_t calls_succeeded = 0;
-    intptr_t calls_failed = 0;
+    int64_t calls_started = 0;
+    int64_t calls_succeeded = 0;
+    int64_t calls_failed = 0;
     gpr_cycle_counter last_call_started_cycle = 0;
   };
 
@@ -165,7 +168,7 @@ class CallCountingHelper {
 // Handles channelz bookkeeping for channels
 class ChannelNode : public BaseNode {
  public:
-  ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
+  ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               intptr_t parent_uuid);
 
   // Returns the string description of the given connectivity state.
@@ -208,7 +211,7 @@ class ChannelNode : public BaseNode {
   // to allow the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
 
-  UniquePtr<char> target_;
+  std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
   const intptr_t parent_uuid_;
@@ -221,8 +224,8 @@ class ChannelNode : public BaseNode {
   // TODO(roth): We don't actually use the values here, only the keys, so
   // these should be sets instead of maps, but we don't currently have a set
   // implementation.  Change this if/when we have one.
-  Map<intptr_t, bool> child_channels_;
-  Map<intptr_t, bool> child_subchannels_;
+  std::map<intptr_t, bool> child_channels_;
+  std::map<intptr_t, bool> child_subchannels_;
 };
 
 // Handles channelz bookkeeping for servers
@@ -262,15 +265,14 @@ class ServerNode : public BaseNode {
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
   Mutex child_mu_;  // Guards child maps below.
-  Map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
-  Map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
+  std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
+  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
 };
 
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(UniquePtr<char> local, UniquePtr<char> remote,
-             UniquePtr<char> name);
+  SocketNode(std::string local, std::string remote, std::string name);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -278,44 +280,44 @@ class SocketNode : public BaseNode {
   void RecordStreamStartedFromLocal();
   void RecordStreamStartedFromRemote();
   void RecordStreamSucceeded() {
-    gpr_atm_no_barrier_fetch_add(&streams_succeeded_, static_cast<gpr_atm>(1));
+    streams_succeeded_.FetchAdd(1, MemoryOrder::RELAXED);
   }
   void RecordStreamFailed() {
-    gpr_atm_no_barrier_fetch_add(&streams_failed_, static_cast<gpr_atm>(1));
+    streams_failed_.FetchAdd(1, MemoryOrder::RELAXED);
   }
   void RecordMessagesSent(uint32_t num_sent);
   void RecordMessageReceived();
   void RecordKeepaliveSent() {
-    gpr_atm_no_barrier_fetch_add(&keepalives_sent_, static_cast<gpr_atm>(1));
+    keepalives_sent_.FetchAdd(1, MemoryOrder::RELAXED);
   }
 
-  const char* remote() { return remote_.get(); }
+  const std::string& remote() { return remote_; }
 
  private:
-  gpr_atm streams_started_ = 0;
-  gpr_atm streams_succeeded_ = 0;
-  gpr_atm streams_failed_ = 0;
-  gpr_atm messages_sent_ = 0;
-  gpr_atm messages_received_ = 0;
-  gpr_atm keepalives_sent_ = 0;
-  gpr_atm last_local_stream_created_cycle_ = 0;
-  gpr_atm last_remote_stream_created_cycle_ = 0;
-  gpr_atm last_message_sent_cycle_ = 0;
-  gpr_atm last_message_received_cycle_ = 0;
-  UniquePtr<char> local_;
-  UniquePtr<char> remote_;
+  Atomic<int64_t> streams_started_{0};
+  Atomic<int64_t> streams_succeeded_{0};
+  Atomic<int64_t> streams_failed_{0};
+  Atomic<int64_t> messages_sent_{0};
+  Atomic<int64_t> messages_received_{0};
+  Atomic<int64_t> keepalives_sent_{0};
+  Atomic<gpr_cycle_counter> last_local_stream_created_cycle_{0};
+  Atomic<gpr_cycle_counter> last_remote_stream_created_cycle_{0};
+  Atomic<gpr_cycle_counter> last_message_sent_cycle_{0};
+  Atomic<gpr_cycle_counter> last_message_received_cycle_{0};
+  std::string local_;
+  std::string remote_;
 };
 
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
-  ListenSocketNode(UniquePtr<char> local_addr, UniquePtr<char> name);
+  ListenSocketNode(std::string local_addr, std::string name);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
 
  private:
-  UniquePtr<char> local_addr_;
+  std::string local_addr_;
 };
 
 }  // namespace channelz

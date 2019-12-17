@@ -62,8 +62,8 @@ TEST(InlinedVectorTest, ValuesAreInlined) {
 }
 
 TEST(InlinedVectorTest, PushBackWithMove) {
-  InlinedVector<UniquePtr<int>, 1> v;
-  UniquePtr<int> i = MakeUnique<int>(3);
+  InlinedVector<std::unique_ptr<int>, 1> v;
+  std::unique_ptr<int> i = MakeUnique<int>(3);
   v.push_back(std::move(i));
   EXPECT_EQ(nullptr, i.get());
   EXPECT_EQ(1UL, v.size());
@@ -71,8 +71,8 @@ TEST(InlinedVectorTest, PushBackWithMove) {
 }
 
 TEST(InlinedVectorTest, EmplaceBack) {
-  InlinedVector<UniquePtr<int>, 1> v;
-  v.emplace_back(New<int>(3));
+  InlinedVector<std::unique_ptr<int>, 1> v;
+  v.emplace_back(new int(3));
   EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
 }
@@ -328,12 +328,12 @@ class Value {
     return *this;
   }
 
-  const UniquePtr<int>& value() const { return value_; }
+  const std::unique_ptr<int>& value() const { return value_; }
   bool copied() const { return copied_; }
   bool moved() const { return moved_; }
 
  private:
-  UniquePtr<int> value_;
+  std::unique_ptr<int> value_;
   bool copied_ = false;
   bool moved_ = false;
 };
@@ -461,7 +461,7 @@ TEST(InlinedVectorTest, MoveAssignmentMovesElementsAllocated) {
 }
 
 TEST(InlinedVectorTest, PopBackInlined) {
-  InlinedVector<UniquePtr<int>, 2> v;
+  InlinedVector<std::unique_ptr<int>, 2> v;
   // Add two elements, pop one out
   v.push_back(MakeUnique<int>(3));
   EXPECT_EQ(1UL, v.size());
@@ -475,7 +475,7 @@ TEST(InlinedVectorTest, PopBackInlined) {
 
 TEST(InlinedVectorTest, PopBackAllocated) {
   const int kInlinedSize = 2;
-  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  InlinedVector<std::unique_ptr<int>, kInlinedSize> v;
   // Add elements to ensure allocated backing.
   for (size_t i = 0; i < kInlinedSize + 1; ++i) {
     v.push_back(MakeUnique<int>(3));
@@ -488,7 +488,7 @@ TEST(InlinedVectorTest, PopBackAllocated) {
 
 TEST(InlinedVectorTest, Resize) {
   const int kInlinedSize = 2;
-  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  InlinedVector<std::unique_ptr<int>, kInlinedSize> v;
   // Size up.
   v.resize(5);
   EXPECT_EQ(5UL, v.size());

@@ -53,7 +53,7 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
 static void offload(void* arg, grpc_error* error);
 
 grpc_core::Combiner* grpc_combiner_create(void) {
-  grpc_core::Combiner* lock = grpc_core::New<grpc_core::Combiner>();
+  grpc_core::Combiner* lock = new grpc_core::Combiner();
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
@@ -65,7 +65,7 @@ grpc_core::Combiner* grpc_combiner_create(void) {
 static void really_destroy(grpc_core::Combiner* lock) {
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p really_destroy", lock));
   GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
-  grpc_core::Delete(lock);
+  delete lock;
 }
 
 static void start_destroy(grpc_core::Combiner* lock) {
@@ -308,9 +308,9 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
       grpc_core::ExecCtx::Get()->combiner_data()->active_combiner));
   if (grpc_core::ExecCtx::Get()->combiner_data()->active_combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
-    // Reusing scheduler to store the combiner so that it can be accessed in
-    // enqueue_finally
-    closure->scheduler = reinterpret_cast<grpc_closure_scheduler*>(lock);
+    // Using error_data.scratch to store the combiner so that it can be accessed
+    // in enqueue_finally.
+    closure->error_data.scratch = reinterpret_cast<uintptr_t>(lock);
     lock->Run(GRPC_CLOSURE_CREATE(enqueue_finally, closure, nullptr), error);
     return;
   }
@@ -323,22 +323,17 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
 
 static void enqueue_finally(void* closure, grpc_error* error) {
   grpc_closure* cl = static_cast<grpc_closure*>(closure);
-  combiner_finally_exec(reinterpret_cast<grpc_core::Combiner*>(cl->scheduler),
-                        cl, GRPC_ERROR_REF(error));
+  combiner_finally_exec(
+      reinterpret_cast<grpc_core::Combiner*>(cl->error_data.scratch), cl,
+      GRPC_ERROR_REF(error));
 }
 
 namespace grpc_core {
 void Combiner::Run(grpc_closure* closure, grpc_error* error) {
-  GPR_ASSERT(closure->scheduler == nullptr ||
-             closure->scheduler ==
-                 reinterpret_cast<grpc_closure_scheduler*>(this));
   combiner_exec(this, closure, error);
 }
 
 void Combiner::FinallyRun(grpc_closure* closure, grpc_error* error) {
-  GPR_ASSERT(closure->scheduler == nullptr ||
-             closure->scheduler ==
-                 reinterpret_cast<grpc_closure_scheduler*>(this));
   combiner_finally_exec(this, closure, error);
 }
 }  // namespace grpc_core

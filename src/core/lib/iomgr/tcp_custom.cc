@@ -140,7 +140,7 @@ static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
   TCP_UNREF(tcp, "read");
   tcp->read_slices = nullptr;
   tcp->read_cb = nullptr;
-  GRPC_CLOSURE_SCHED(cb, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
 }
 
 static void custom_read_callback(grpc_custom_socket* socket, size_t nread,
@@ -220,7 +220,7 @@ static void custom_write_callback(grpc_custom_socket* socket,
     gpr_log(GPR_INFO, "write complete on %p: error=%s", tcp->socket, str);
   }
   TCP_UNREF(tcp, "write");
-  GRPC_CLOSURE_SCHED(cb, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
 }
 
 static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
@@ -241,8 +241,9 @@ static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
   }
 
   if (tcp->shutting_down) {
-    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "TCP socket is shutting down"));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, cb,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP socket is shutting down"));
     return;
   }
 
@@ -252,7 +253,7 @@ static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
   if (tcp->write_slices->count == 0) {
     // No slices means we don't have to do anything,
     // and libuv doesn't like empty writes
-    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
     return;
   }
   tcp->write_cb = cb;
@@ -289,10 +290,10 @@ static void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
       gpr_log(GPR_INFO, "TCP %p shutdown why=%s", tcp->socket, str);
     }
     tcp->shutting_down = true;
-    // GRPC_CLOSURE_SCHED(tcp->read_cb, GRPC_ERROR_REF(why));
-    // GRPC_CLOSURE_SCHED(tcp->write_cb, GRPC_ERROR_REF(why));
-    // tcp->read_cb = nullptr;
-    // tcp->write_cb = nullptr;
+    // grpc_core::ExecCtx::Run(DEBUG_LOCATION,tcp->read_cb,
+    // GRPC_ERROR_REF(why));
+    // grpc_core::ExecCtx::Run(DEBUG_LOCATION,tcp->write_cb,
+    // GRPC_ERROR_REF(why)); tcp->read_cb = nullptr; tcp->write_cb = nullptr;
     grpc_resource_user_shutdown(tcp->resource_user);
     grpc_custom_socket_vtable->shutdown(tcp->socket);
   }

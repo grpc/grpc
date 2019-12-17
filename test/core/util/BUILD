@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])  # Apache v2
 
@@ -115,11 +115,11 @@ grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         ":grpc_test_util",
         "//:gpr",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_library(
@@ -130,23 +130,23 @@ grpc_cc_library(
         "gtest",
         "gflags",
     ],
+    tags = ["no_windows"],
     deps = [
         ":grpc_test_util",
         "//:grpc",
         "//test/cpp/util:test_config",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
     name = "histogram_test",
     srcs = ["histogram_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         ":grpc_test_util",
         "//:gpr",
     ],
-    uses_polling = False,
 )
 
 sh_library(

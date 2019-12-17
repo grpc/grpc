@@ -43,8 +43,6 @@ cc_toolchain_suite(
 
 cc_toolchain(
     name = "cc-compiler-x64_windows_msys",
-    toolchain_identifier = "msys_x64",
-    toolchain_config = ":msys_x64",
     all_files = ":empty",
     ar_files = ":empty",
     as_files = ":empty",
@@ -54,12 +52,14 @@ cc_toolchain(
     objcopy_files = ":empty",
     strip_files = ":empty",
     supports_param_files = 1,
+    toolchain_config = ":msys_x64",
+    toolchain_identifier = "msys_x64",
 )
 
 cc_toolchain_config(
     name = "msys_x64",
-    cpu = "x64_windows",
     compiler = "msys-gcc",
+    cpu = "x64_windows",
 )
 
 toolchain(
@@ -79,8 +79,6 @@ toolchain(
 
 cc_toolchain(
     name = "cc-compiler-x64_windows_mingw",
-    toolchain_identifier = "msys_x64_mingw",
-    toolchain_config = ":msys_x64_mingw",
     all_files = ":empty",
     ar_files = ":empty",
     as_files = ":empty",
@@ -90,12 +88,14 @@ cc_toolchain(
     objcopy_files = ":empty",
     strip_files = ":empty",
     supports_param_files = 0,
+    toolchain_config = ":msys_x64_mingw",
+    toolchain_identifier = "msys_x64_mingw",
 )
 
 cc_toolchain_config(
     name = "msys_x64_mingw",
-    cpu = "x64_windows",
     compiler = "mingw-gcc",
+    cpu = "x64_windows",
 )
 
 toolchain(
@@ -115,8 +115,6 @@ toolchain(
 
 cc_toolchain(
     name = "cc-compiler-x64_windows",
-    toolchain_identifier = "msvc_x64",
-    toolchain_config = ":msvc_x64",
     all_files = ":empty",
     ar_files = ":empty",
     as_files = ":empty",
@@ -126,12 +124,14 @@ cc_toolchain(
     objcopy_files = ":empty",
     strip_files = ":empty",
     supports_param_files = 1,
+    toolchain_config = ":msvc_x64",
+    toolchain_identifier = "msvc_x64",
 )
 
 cc_toolchain_config(
     name = "msvc_x64",
-    cpu = "x64_windows",
     compiler = "msvc-cl",
+    cpu = "x64_windows",
 )
 
 toolchain(
@@ -150,8 +150,6 @@ toolchain(
 
 cc_toolchain(
     name = "cc-compiler-armeabi-v7a",
-    toolchain_identifier = "stub_armeabi-v7a",
-    toolchain_config = ":stub_armeabi-v7a",
     all_files = ":empty",
     ar_files = ":empty",
     as_files = ":empty",
@@ -161,12 +159,14 @@ cc_toolchain(
     objcopy_files = ":empty",
     strip_files = ":empty",
     supports_param_files = 1,
+    toolchain_config = ":stub_armeabi-v7a",
+    toolchain_identifier = "stub_armeabi-v7a",
 )
 
 cc_toolchain_config(
     name = "stub_armeabi-v7a",
-    cpu = "armeabi-v7a",
     compiler = "compiler",
+    cpu = "armeabi-v7a",
 )
 
 toolchain(
@@ -185,4 +185,3 @@ filegroup(
     name = "link_dynamic_library",
     srcs = ["link_dynamic_library.sh"],
 )
-

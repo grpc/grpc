@@ -495,7 +495,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
       GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
     }
     return RefCountedPtr<LoadBalancingPolicy::Config>(
-        New<ParsedPickFirstConfig>());
+        new ParsedPickFirstConfig());
   }
 };
 

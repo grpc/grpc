@@ -13,23 +13,24 @@
 # limitations under the License.
 
 """A Starlark cc_toolchain configuration rule"""
-load("@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
-     "action_config",
-     "artifact_name_pattern",
-     "env_entry",
-     "env_set",
-     "feature",
-     "feature_set",
-     "flag_group",
-     "flag_set",
-     "make_variable",
-     "tool",
-     "tool_path",
-     "variable_with_value",
-     "with_feature_set",
-     )
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
+load(
+    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "action_config",
+    "artifact_name_pattern",
+    "env_entry",
+    "env_set",
+    "feature",
+    "feature_set",
+    "flag_group",
+    "flag_set",
+    "make_variable",
+    "tool",
+    "tool_path",
+    "variable_with_value",
+    "with_feature_set",
+)
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
 all_compile_actions = [
     ACTION_NAMES.c_compile,
@@ -98,7 +99,7 @@ def _windows_msvc_impl(ctx):
         "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.10240.0\\ucrt",
         "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\shared",
         "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\um",
-        "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\winrt"
+        "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\winrt",
     ]
 
     cpp_link_nodeps_dynamic_library_action = action_config(
@@ -393,14 +394,14 @@ def _windows_msvc_impl(ctx):
                             ),
                             flag_group(
                                 flag_groups = [
-                                  flag_group(
-                                      flags = ["%{libraries_to_link.name}"],
-                                      expand_if_false = "libraries_to_link.is_whole_archive",
-                                  ),
-                                  flag_group(
-                                      flags = ["/WHOLEARCHIVE:%{libraries_to_link.name}"],
-                                      expand_if_true = "libraries_to_link.is_whole_archive",
-                                  ),
+                                    flag_group(
+                                        flags = ["%{libraries_to_link.name}"],
+                                        expand_if_false = "libraries_to_link.is_whole_archive",
+                                    ),
+                                    flag_group(
+                                        flags = ["/WHOLEARCHIVE:%{libraries_to_link.name}"],
+                                        expand_if_true = "libraries_to_link.is_whole_archive",
+                                    ),
                                 ],
                                 expand_if_equal = variable_with_value(
                                     name = "libraries_to_link.type",
@@ -468,7 +469,7 @@ def _windows_msvc_impl(ctx):
                         expand_if_available = "output_execpath",
                     ),
                     flag_group(
-                        flags = ["/MACHINE:X64"]
+                        flags = ["/MACHINE:X64"],
                     ),
                 ],
             ),
@@ -483,7 +484,7 @@ def _windows_msvc_impl(ctx):
                 actions = all_link_actions,
                 flag_groups = [flag_group(flags = ["/MACHINE:X64"])],
             ),
-         ],
+        ],
     )
 
     static_link_msvcrt_feature = feature(name = "static_link_msvcrt")
@@ -513,9 +514,9 @@ def _windows_msvc_impl(ctx):
             flag_set(
                 actions = all_link_actions,
                 flag_groups = [
-                  flag_group(
-                      flags = ["/DEBUG:FULL", "/INCREMENTAL:NO"],
-                  ),
+                    flag_group(
+                        flags = ["/DEBUG:FULL", "/INCREMENTAL:NO"],
+                    ),
                 ],
             ),
         ],
@@ -668,11 +669,11 @@ def _windows_msvc_impl(ctx):
                 actions = all_link_actions,
                 flag_groups = [flag_group(flags = ["/DEFAULTLIB:msvcrt.lib"])],
             ),
-          ],
-          requires = [
-              feature_set(features = ["fastbuild"]),
-              feature_set(features = ["opt"]),
-          ],
+        ],
+        requires = [
+            feature_set(features = ["fastbuild"]),
+            feature_set(features = ["opt"]),
+        ],
     )
 
     disable_assertions_feature = feature(
@@ -864,16 +865,16 @@ def _windows_msvc_impl(ctx):
             flag_set(
                 actions = [ACTION_NAMES.assemble],
                 flag_groups = [
-                  flag_group(
-                      flag_groups = [
-                          flag_group(
-                              flags = ["/Fo%{output_file}", "/Zi"],
-                              expand_if_available = "output_file",
-                              expand_if_not_available = "output_assembly_file",
-                          ),
-                      ],
-                      expand_if_not_available = "output_preprocess_file",
-                  ),
+                    flag_group(
+                        flag_groups = [
+                            flag_group(
+                                flags = ["/Fo%{output_file}", "/Zi"],
+                                expand_if_available = "output_file",
+                                expand_if_not_available = "output_assembly_file",
+                            ),
+                        ],
+                        expand_if_not_available = "output_preprocess_file",
+                    ),
                 ],
             ),
             flag_set(
@@ -1170,13 +1171,13 @@ def _windows_msys_mingw_impl(ctx):
         enabled = True,
     )
 
-    copy_dynamic_libraries_to_binary_feature = feature(name= "copy_dynamic_libraries_to_binary")
+    copy_dynamic_libraries_to_binary_feature = feature(name = "copy_dynamic_libraries_to_binary")
 
     gcc_env_feature = feature(
         name = "gcc_env",
         enabled = True,
         env_sets = [
-            env_set (
+            env_set(
                 actions = [
                     ACTION_NAMES.c_compile,
                     ACTION_NAMES.cpp_compile,
@@ -1191,17 +1192,17 @@ def _windows_msys_mingw_impl(ctx):
                     ACTION_NAMES.cpp_link_static_library,
                 ],
                 env_entries = [
-                    env_entry(key = "PATH", value = "c:/tools/msys64/mingw64/bin")
+                    env_entry(key = "PATH", value = "c:/tools/msys64/mingw64/bin"),
                 ],
             ),
         ],
     )
 
     msys_mingw_flags = [
- "-std=gnu++0x"
+        "-std=gnu++0x",
     ]
     msys_mingw_link_flags = [
- "-lstdc++"
+        "-lstdc++",
     ]
 
     default_compile_flags_feature = feature(
@@ -1272,7 +1273,7 @@ def _windows_msys_mingw_impl(ctx):
         "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.10240.0\\ucrt",
         "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\shared",
         "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\um",
-        "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\winrt"
+        "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\winrt",
     ]
 
     artifact_name_patterns = [
@@ -1285,18 +1286,17 @@ def _windows_msys_mingw_impl(ctx):
 
     make_variables = []
     tool_paths = [
-        tool_path (name= "ar", path= "c:/tools/msys64/mingw64/bin/ar"),
-        tool_path (name= "compat-ld", path= "c:/tools/msys64/mingw64/bin/ld"),
-        tool_path (name= "cpp", path= "c:/tools/msys64/mingw64/bin/cpp"),
-        tool_path (name= "dwp", path= "c:/tools/msys64/mingw64/bin/dwp"),
-        tool_path (name= "gcc", path= "c:/tools/msys64/mingw64/bin/gcc"),
-        tool_path (name= "gcov", path= "c:/tools/msys64/mingw64/bin/gcov"),
-        tool_path (name= "ld", path= "c:/tools/msys64/mingw64/bin/ld"),
-        tool_path (name= "nm", path= "c:/tools/msys64/mingw64/bin/nm"),
-        tool_path (name= "objcopy", path= "c:/tools/msys64/mingw64/bin/objcopy"),
-        tool_path (name= "objdump", path= "c:/tools/msys64/mingw64/bin/objdump"),
-        tool_path (name= "strip", path= "c:/tools/msys64/mingw64/bin/strip"),
-
+        tool_path(name = "ar", path = "c:/tools/msys64/mingw64/bin/ar"),
+        tool_path(name = "compat-ld", path = "c:/tools/msys64/mingw64/bin/ld"),
+        tool_path(name = "cpp", path = "c:/tools/msys64/mingw64/bin/cpp"),
+        tool_path(name = "dwp", path = "c:/tools/msys64/mingw64/bin/dwp"),
+        tool_path(name = "gcc", path = "c:/tools/msys64/mingw64/bin/gcc"),
+        tool_path(name = "gcov", path = "c:/tools/msys64/mingw64/bin/gcov"),
+        tool_path(name = "ld", path = "c:/tools/msys64/mingw64/bin/ld"),
+        tool_path(name = "nm", path = "c:/tools/msys64/mingw64/bin/nm"),
+        tool_path(name = "objcopy", path = "c:/tools/msys64/mingw64/bin/objcopy"),
+        tool_path(name = "objdump", path = "c:/tools/msys64/mingw64/bin/objdump"),
+        tool_path(name = "strip", path = "c:/tools/msys64/mingw64/bin/strip"),
     ]
 
     return cc_common.create_cc_toolchain_config_info(
@@ -1316,8 +1316,8 @@ def _windows_msys_mingw_impl(ctx):
         tool_paths = tool_paths,
         make_variables = make_variables,
         builtin_sysroot = builtin_sysroot,
-        cc_target_os = cc_target_os)
-
+        cc_target_os = cc_target_os,
+    )
 
 def _armeabi_impl(ctx):
     toolchain_identifier = "stub_armeabi-v7a"
@@ -1338,7 +1338,8 @@ def _armeabi_impl(ctx):
 
     cxx_builtin_include_directories = [
         # This is a workaround for https://github.com/bazelbuild/bazel/issues/5087.
-        "C:\\botcode\\w",]
+        "C:\\botcode\\w",
+    ]
     artifact_name_patterns = []
     make_variables = []
 
@@ -1373,7 +1374,7 @@ def _armeabi_impl(ctx):
         tool_paths = tool_paths,
         make_variables = make_variables,
         builtin_sysroot = builtin_sysroot,
-        cc_target_os = cc_target_os
+        cc_target_os = cc_target_os,
     )
 
 def _impl(ctx):
@@ -1385,18 +1386,17 @@ def _impl(ctx):
         return _windows_msys_mingw_impl(ctx)
 
     tool_paths = [
-        tool_path (name= "ar", path= "c:/tools/msys64/usr/bin/ar"),
-        tool_path (name= "compat-ld", path= "c:/tools/msys64/usr/bin/ld"),
-        tool_path (name= "cpp", path= "c:/tools/msys64/usr/bin/cpp"),
-        tool_path (name= "dwp", path= "c:/tools/msys64/usr/bin/dwp"),
-        tool_path (name= "gcc", path= "c:/tools/msys64/usr/bin/gcc"),
-        tool_path (name= "gcov", path= "c:/tools/msys64/usr/bin/gcov"),
-        tool_path (name= "ld", path= "c:/tools/msys64/usr/bin/ld"),
-        tool_path (name= "nm", path= "c:/tools/msys64/usr/bin/nm"),
-        tool_path (name= "objcopy", path= "c:/tools/msys64/usr/bin/objcopy"),
-        tool_path (name= "objdump", path= "c:/tools/msys64/usr/bin/objdump"),
-        tool_path (name= "strip", path= "c:/tools/msys64/usr/bin/strip"),
-
+        tool_path(name = "ar", path = "c:/tools/msys64/usr/bin/ar"),
+        tool_path(name = "compat-ld", path = "c:/tools/msys64/usr/bin/ld"),
+        tool_path(name = "cpp", path = "c:/tools/msys64/usr/bin/cpp"),
+        tool_path(name = "dwp", path = "c:/tools/msys64/usr/bin/dwp"),
+        tool_path(name = "gcc", path = "c:/tools/msys64/usr/bin/gcc"),
+        tool_path(name = "gcov", path = "c:/tools/msys64/usr/bin/gcov"),
+        tool_path(name = "ld", path = "c:/tools/msys64/usr/bin/ld"),
+        tool_path(name = "nm", path = "c:/tools/msys64/usr/bin/nm"),
+        tool_path(name = "objcopy", path = "c:/tools/msys64/usr/bin/objcopy"),
+        tool_path(name = "objdump", path = "c:/tools/msys64/usr/bin/objdump"),
+        tool_path(name = "strip", path = "c:/tools/msys64/usr/bin/strip"),
     ]
 
     cxx_builtin_include_directories = [
@@ -1407,37 +1407,32 @@ def _impl(ctx):
         "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.10240.0\\ucrt",
         "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\shared",
         "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\um",
-        "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\winrt"
+        "C:\\Program Files (x86)\\Windows Kits\\8.1\\include\\winrt",
     ]
 
     action_configs = []
 
     compile_flags = [
-        
     ]
 
     dbg_compile_flags = [
-        
     ]
 
     opt_compile_flags = [
-        
     ]
 
     cxx_flags = [
-        "-std=gnu++0x"
+        "-std=gnu++0x",
     ]
 
     link_flags = [
-        "-lstdc++"
+        "-lstdc++",
     ]
 
     opt_link_flags = [
-        
     ]
 
     unfiltered_compile_flags = [
-        
     ]
 
     targets_windows_feature = feature(
@@ -1446,13 +1441,13 @@ def _impl(ctx):
         enabled = True,
     )
 
-    copy_dynamic_libraries_to_binary_feature = feature(name= "copy_dynamic_libraries_to_binary")
+    copy_dynamic_libraries_to_binary_feature = feature(name = "copy_dynamic_libraries_to_binary")
 
     gcc_env_feature = feature(
         name = "gcc_env",
         enabled = True,
         env_sets = [
-            env_set (
+            env_set(
                 actions = [
                     ACTION_NAMES.c_compile,
                     ACTION_NAMES.cpp_compile,
@@ -1467,7 +1462,7 @@ def _impl(ctx):
                     ACTION_NAMES.cpp_link_static_library,
                 ],
                 env_entries = [
-                    env_entry(key = "PATH", value = "c:/tools/msys64/usr/bin")
+                    env_entry(key = "PATH", value = "c:/tools/msys64/usr/bin"),
                 ],
             ),
         ],
@@ -1478,8 +1473,6 @@ def _impl(ctx):
         copy_dynamic_libraries_to_binary_feature,
         gcc_env_feature,
     ]
-
-    
 
     supports_pic_feature = feature(
         name = "supports_pic",
@@ -1582,24 +1575,24 @@ def _impl(ctx):
         flag_sets = [
             flag_set(
                 actions = [
-                  ACTION_NAMES.preprocess_assemble,
-                  ACTION_NAMES.linkstamp_compile,
-                  ACTION_NAMES.c_compile,
-                  ACTION_NAMES.cpp_compile,
-                  ACTION_NAMES.cpp_header_parsing,
-                  ACTION_NAMES.cpp_module_compile,
-                  ACTION_NAMES.cpp_module_codegen,
-                  ACTION_NAMES.lto_backend,
-                  ACTION_NAMES.clif_match,
-                  ACTION_NAMES.cpp_link_executable,
-                  ACTION_NAMES.cpp_link_dynamic_library,
-                  ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                    ACTION_NAMES.preprocess_assemble,
+                    ACTION_NAMES.linkstamp_compile,
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_header_parsing,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                    ACTION_NAMES.lto_backend,
+                    ACTION_NAMES.clif_match,
+                    ACTION_NAMES.cpp_link_executable,
+                    ACTION_NAMES.cpp_link_dynamic_library,
+                    ACTION_NAMES.cpp_link_nodeps_dynamic_library,
                 ],
                 flag_groups = [
-                  flag_group(
-                      flags = ["--sysroot=%{sysroot}"],
-                      expand_if_available = "sysroot",
-                  ),
+                    flag_group(
+                        flags = ["--sysroot=%{sysroot}"],
+                        expand_if_available = "sysroot",
+                    ),
                 ],
             ),
         ],
@@ -1611,13 +1604,13 @@ def _impl(ctx):
             flag_set(
                 actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
                 flag_groups = [
-                  flag_group(
-                      flags = [
-                        "-fprofile-use=%{fdo_profile_path}",
-                        "-fprofile-correction",
-                      ],
-                      expand_if_available = "fdo_profile_path",
-                  ),
+                    flag_group(
+                        flags = [
+                            "-fprofile-use=%{fdo_profile_path}",
+                            "-fprofile-correction",
+                        ],
+                        expand_if_available = "fdo_profile_path",
+                    ),
                 ],
             ),
         ],
@@ -1632,26 +1625,26 @@ def _impl(ctx):
         flag_sets = [
             flag_set(
                 actions = [
-                  ACTION_NAMES.assemble,
-                  ACTION_NAMES.preprocess_assemble,
-                  ACTION_NAMES.linkstamp_compile,
-                  ACTION_NAMES.c_compile,
-                  ACTION_NAMES.cpp_compile,
-                  ACTION_NAMES.cpp_header_parsing,
-                  ACTION_NAMES.cpp_module_compile,
-                  ACTION_NAMES.cpp_module_codegen,
-                  ACTION_NAMES.lto_backend,
-                  ACTION_NAMES.clif_match,
+                    ACTION_NAMES.assemble,
+                    ACTION_NAMES.preprocess_assemble,
+                    ACTION_NAMES.linkstamp_compile,
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_header_parsing,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                    ACTION_NAMES.lto_backend,
+                    ACTION_NAMES.clif_match,
                 ],
                 flag_groups = [
-                  flag_group(
-                      flags = ["%{user_compile_flags}"],
-                      iterate_over = "user_compile_flags",
-                      expand_if_available = "user_compile_flags",
-                  ),
+                    flag_group(
+                        flags = ["%{user_compile_flags}"],
+                        iterate_over = "user_compile_flags",
+                        expand_if_available = "user_compile_flags",
+                    ),
                 ],
             ),
-          ],
+        ],
     )
 
     unfiltered_compile_flags_feature = feature(
@@ -1660,16 +1653,16 @@ def _impl(ctx):
         flag_sets = [
             flag_set(
                 actions = [
-                  ACTION_NAMES.assemble,
-                  ACTION_NAMES.preprocess_assemble,
-                  ACTION_NAMES.linkstamp_compile,
-                  ACTION_NAMES.c_compile,
-                  ACTION_NAMES.cpp_compile,
-                  ACTION_NAMES.cpp_header_parsing,
-                  ACTION_NAMES.cpp_module_compile,
-                  ACTION_NAMES.cpp_module_codegen,
-                  ACTION_NAMES.lto_backend,
-                  ACTION_NAMES.clif_match,
+                    ACTION_NAMES.assemble,
+                    ACTION_NAMES.preprocess_assemble,
+                    ACTION_NAMES.linkstamp_compile,
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_header_parsing,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                    ACTION_NAMES.lto_backend,
+                    ACTION_NAMES.clif_match,
                 ],
                 flag_groups = ([flag_group(flags = unfiltered_compile_flags)] if unfiltered_compile_flags else []),
             ),
@@ -1678,8 +1671,6 @@ def _impl(ctx):
 
     features = windows_features + [
         supports_pic_feature,
-        
-        
         default_compile_flags_feature,
         default_link_flags_feature,
         fdo_optimize_feature,
@@ -1692,7 +1683,7 @@ def _impl(ctx):
     ]
 
     artifact_name_patterns = [
-        artifact_name_pattern(category_name="executable", prefix="", extension=".exe"),
+        artifact_name_pattern(category_name = "executable", prefix = "", extension = ".exe"),
     ]
 
     make_variables = []
@@ -1720,9 +1711,8 @@ def _impl(ctx):
 cc_toolchain_config = rule(
     implementation = _impl,
     attrs = {
-        "cpu" : attr.string(mandatory = True),
+        "cpu": attr.string(mandatory = True),
         "compiler": attr.string(),
     },
     provides = [CcToolchainConfigInfo],
 )
-

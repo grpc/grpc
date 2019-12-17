@@ -244,7 +244,7 @@ class XdsClient::ChannelState::LrsCallState
   grpc_closure on_status_received_;
 
   // Load reporting state.
-  UniquePtr<char> cluster_name_;
+  grpc_core::UniquePtr<char> cluster_name_;
   grpc_millis load_reporting_interval_ = 0;
   OrphanablePtr<Reporter> reporter_;
 };
@@ -378,16 +378,16 @@ bool XdsClient::ChannelState::HasActiveAdsCall() const {
 
 void XdsClient::ChannelState::MaybeStartAdsCall() {
   if (ads_calld_ != nullptr) return;
-  ads_calld_.reset(New<RetryableCall<AdsCallState>>(
-      Ref(DEBUG_LOCATION, "ChannelState+ads")));
+  ads_calld_.reset(
+      new RetryableCall<AdsCallState>(Ref(DEBUG_LOCATION, "ChannelState+ads")));
 }
 
 void XdsClient::ChannelState::StopAdsCall() { ads_calld_.reset(); }
 
 void XdsClient::ChannelState::MaybeStartLrsCall() {
   if (lrs_calld_ != nullptr) return;
-  lrs_calld_.reset(New<RetryableCall<LrsCallState>>(
-      Ref(DEBUG_LOCATION, "ChannelState+lrs")));
+  lrs_calld_.reset(
+      new RetryableCall<LrsCallState>(Ref(DEBUG_LOCATION, "ChannelState+lrs")));
 }
 
 void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
@@ -396,7 +396,7 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  watcher_ = New<StateWatcher>(Ref());
+  watcher_ = new StateWatcher(Ref());
   grpc_client_channel_start_connectivity_watch(
       client_channel_elem, GRPC_CHANNEL_IDLE,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
@@ -1124,7 +1124,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked(
   // This anonymous lambda is a hack to avoid the usage of goto.
   [&]() {
     // Parse the response.
-    UniquePtr<char> new_cluster_name;
+    grpc_core::UniquePtr<char> new_cluster_name;
     grpc_millis new_load_reporting_interval;
     grpc_error* parse_error = XdsLrsResponseDecodeAndParse(
         response_slice, &new_cluster_name, &new_load_reporting_interval);
@@ -1240,24 +1240,24 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 namespace {
 
-UniquePtr<char> GenerateBuildVersionString() {
+grpc_core::UniquePtr<char> GenerateBuildVersionString() {
   char* build_version_str;
   gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
                GPR_PLATFORM_STRING);
-  return UniquePtr<char>(build_version_str);
+  return grpc_core::UniquePtr<char>(build_version_str);
 }
 
 }  // namespace
 
 XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      StringView server_name,
-                     UniquePtr<ServiceConfigWatcherInterface> watcher,
+                     std::unique_ptr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : build_version_(GenerateBuildVersionString()),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
-      server_name_(server_name.dup()),
+      server_name_(StringViewToCString(server_name)),
       service_config_watcher_(std::move(watcher)) {
   if (*error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1268,7 +1268,7 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p: creating channel to %s", this,
-            bootstrap_->server_uri());
+            bootstrap_->server().server_uri);
   }
   chand_ = MakeOrphanable<ChannelState>(
       Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel_args);
@@ -1289,14 +1289,14 @@ void XdsClient::Orphan() {
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
 }
 
-void XdsClient::WatchClusterData(StringView cluster,
-                                 UniquePtr<ClusterWatcherInterface> watcher) {
+void XdsClient::WatchClusterData(
+    StringView cluster, std::unique_ptr<ClusterWatcherInterface> watcher) {
   ClusterWatcherInterface* w = watcher.get();
   cluster_state_.cluster_watchers[w] = std::move(watcher);
   // TODO(juanlishen): Start CDS call if not already started and return
   // real data via watcher.
   CdsUpdate update;
-  update.eds_service_name = cluster.dup();
+  update.eds_service_name = StringViewToCString(cluster);
   update.lrs_load_reporting_server_name.reset(gpr_strdup(""));
   w->OnClusterChanged(std::move(update));
 }
@@ -1312,8 +1312,8 @@ void XdsClient::CancelClusterDataWatch(StringView cluster,
   }
 }
 
-void XdsClient::WatchEndpointData(StringView /*cluster*/,
-                                  UniquePtr<EndpointWatcherInterface> watcher) {
+void XdsClient::WatchEndpointData(
+    StringView /*cluster*/, std::unique_ptr<EndpointWatcherInterface> watcher) {
   EndpointWatcherInterface* w = watcher.get();
   cluster_state_.endpoint_watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher
