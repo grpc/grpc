@@ -178,7 +178,7 @@ async def _handle_unary_stream_rpc(object method_handler,
             if rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
                 # The async generator might yield much much later after the
                 # server is destroied. If we proceed, Core will crash badly.
-                _LOGGER.warn('RPC Aborted: Server already stopped.')
+                _LOGGER.info('Aborting RPC due to server stop.')
                 return
             else:
                 await servicer_context.write(response_message)
@@ -195,12 +195,9 @@ async def _handle_unary_stream_rpc(object method_handler,
     await execute_batch(rpc_state, ops, loop)
 
 
-async def _schedule_rpc_coro_and_handle_cancellation(object rpc_coro,
-                                                     RPCState rpc_state,
-                                                     object loop):
-    # Schedules the RPC coroutine.
-    cdef object rpc_task = loop.create_task(rpc_coro)
-
+async def _handle_cancellation_from_core(object rpc_task,
+                                         RPCState rpc_state,
+                                         object loop):
     cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
     cdef tuple ops = (op,)
 
@@ -209,6 +206,14 @@ async def _schedule_rpc_coro_and_handle_cancellation(object rpc_coro,
     if op.cancelled() and not rpc_task.done():
         # Injects `CancelledError` to halt the RPC coroutine
         rpc_task.cancel()
+
+
+async def _schedule_rpc_coro(object rpc_coro,
+                             RPCState rpc_state,
+                             object loop):
+    # Schedules the RPC coroutine.
+    cdef object rpc_task = loop.create_task(rpc_coro)
+    await _handle_cancellation_from_core(rpc_task, rpc_state, loop)
 
 
 async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
@@ -342,7 +347,7 @@ cdef class AioServer:
 
             # Fires off a task that listens on the cancellation from client.
             self._loop.create_task(
-                _schedule_rpc_coro_and_handle_cancellation(
+                _schedule_rpc_coro(
                     rpc_coro,
                     rpc_state,
                     self._loop
