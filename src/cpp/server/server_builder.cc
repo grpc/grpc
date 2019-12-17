@@ -218,9 +218,20 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   grpc::ChannelArguments args;
+  for (const auto& option : options_) {
+    option->UpdateArguments(&args);
+    option->UpdatePlugins(&plugins_);
+  }
+
+  for (const auto& plugin : plugins_) {
+    plugin->UpdateServerBuilder(this);
+    plugin->UpdateChannelArguments(&args);
+  }
+
   if (max_receive_message_size_ >= -1) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
+
   // The default message size is -1 (max), so no need to explicitly set it for
   // -1.
   if (max_send_message_size_ >= 0) {
@@ -241,16 +252,6 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   if (resource_quota_ != nullptr) {
     args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
-  }
-
-  for (const auto& option : options_) {
-    option->UpdateArguments(&args);
-    option->UpdatePlugins(&plugins_);
-  }
-
-  for (const auto& plugin : plugins_) {
-    plugin->UpdateServerBuilder(this);
-    plugin->UpdateChannelArguments(&args);
   }
 
   // == Determine if the server has any syncrhonous methods ==
@@ -331,10 +332,10 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(
-      &args, sync_server_cqs, sync_server_settings_.min_pollers,
-      sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
-      std::move(acceptors_), resource_quota_,
-      std::move(interceptor_creators_)));
+      max_receive_message_size_, &args, sync_server_cqs,
+      sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
+      sync_server_settings_.cq_timeout_msec, std::move(acceptors_),
+      resource_quota_, std::move(interceptor_creators_)));
 
   grpc_impl::ServerInitializer* initializer = server->initializer();
 
