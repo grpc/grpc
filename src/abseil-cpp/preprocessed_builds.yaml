@@ -1,4 +1,5 @@
-- deps: []
+- deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/algorithm/algorithm.h
   name: absl/algorithm:algorithm
@@ -11,7 +12,8 @@
   - third_party/abseil-cpp/absl/algorithm/container.h
   name: absl/algorithm:container
   src: []
-- deps: []
+- deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/base/internal/atomic_hook.h
   name: absl/base:atomic_hook
@@ -45,6 +47,7 @@
   - third_party/abseil-cpp/absl/base/internal/thread_identity.cc
   - third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc
 - deps:
+  - absl/base:config
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/base/internal/hide_ptr.h
@@ -55,6 +58,7 @@
   name: absl/base:base_internal
   src: []
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/base/internal/bits.h
@@ -94,6 +98,7 @@
   name: absl/base:endian
   src: []
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/base/internal/exponential_biased.h
@@ -101,6 +106,7 @@
   src:
   - third_party/abseil-cpp/absl/base/internal/exponential_biased.cc
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/base/log_severity.h
@@ -254,7 +260,8 @@
   - third_party/abseil-cpp/absl/container/internal/hashtable_debug.h
   name: absl/container:hashtable_debug
   src: []
-- deps: []
+- deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/container/internal/hashtable_debug_hooks.h
   name: absl/container:hashtable_debug_hooks
@@ -320,7 +327,8 @@
   - third_party/abseil-cpp/absl/container/node_hash_map.h
   name: absl/container:node_hash_map
   src: []
-- deps: []
+- deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/container/internal/node_hash_policy.h
   name: absl/container:node_hash_policy
@@ -365,6 +373,7 @@
   src:
   - third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
   - absl/base:raw_logging_internal
@@ -387,6 +396,7 @@
   - third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc
 - deps:
   - absl/base:base
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/debugging/internal/demangle.h
@@ -394,6 +404,7 @@
   src:
   - third_party/abseil-cpp/absl/debugging/internal/demangle.cc
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:raw_logging_internal
   - absl/debugging:stacktrace
@@ -416,18 +427,21 @@
   src:
   - third_party/abseil-cpp/absl/debugging/failure_signal_handler.cc
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/debugging/leak_check.h
   name: absl/debugging:leak_check
   src:
   - third_party/abseil-cpp/absl/debugging/leak_check.cc
-- deps: []
+- deps:
+  - absl/base:config
   headers: []
   name: absl/debugging:leak_check_disable
   src:
   - third_party/abseil-cpp/absl/debugging/leak_check_disable.cc
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/debugging:debugging_internal
   headers:
@@ -437,6 +451,7 @@
   - third_party/abseil-cpp/absl/debugging/stacktrace.cc
 - deps:
   - absl/base:base
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
   - absl/base:malloc_internal
@@ -579,6 +594,16 @@
   - third_party/abseil-cpp/absl/flags/internal/usage.cc
 - deps:
   - absl/base:base_internal
+  - absl/container:compressed_tuple
+  - absl/meta:type_traits
+  - absl/utility:utility
+  headers:
+  - third_party/abseil-cpp/absl/functional/bind_front.h
+  - third_party/abseil-cpp/absl/functional/internal/front_binder.h
+  name: absl/functional:bind_front
+  src: []
+- deps:
+  - absl/base:base_internal
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/functional/function_ref.h
@@ -634,7 +659,8 @@
   name: absl/numeric:int128
   src:
   - third_party/abseil-cpp/absl/numeric/int128.cc
-- deps: []
+- deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/random/internal/distribution_caller.h
   name: absl/random/internal:distribution_caller
@@ -650,7 +676,8 @@
   - third_party/abseil-cpp/absl/random/internal/distributions.h
   name: absl/random/internal:distributions
   src: []
-- deps: []
+- deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/random/internal/fast_uniform_bits.h
   name: absl/random/internal:fast_uniform_bits
@@ -685,6 +712,7 @@
   name: absl/random/internal:mocking_bit_gen_base
   src: []
 - deps:
+  - absl/base:core_headers
   - absl/base:raw_logging_internal
   - absl/random/internal:platform
   - absl/random/internal:randen_engine
@@ -716,7 +744,8 @@
   - third_party/abseil-cpp/absl/random/internal/pcg_engine.h
   name: absl/random/internal:pcg_engine
   src: []
-- deps: []
+- deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/random/internal/platform.h
   - third_party/abseil-cpp/absl/random/internal/randen-keys.inc
@@ -758,6 +787,7 @@
   name: absl/random/internal:randen_engine
   src: []
 - deps:
+  - absl/base:config
   - absl/random/internal:platform
   - absl/random/internal:randen_hwaes_impl
   headers:
@@ -767,6 +797,7 @@
   src:
   - third_party/abseil-cpp/absl/random/internal/randen_detect.cc
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/random/internal:platform
   headers:
@@ -775,6 +806,8 @@
   src:
   - third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc
 - deps:
+  - absl/base:config
+  - absl/base:core_headers
   - absl/random/internal:platform
   headers:
   - third_party/abseil-cpp/absl/random/internal/randen_slow.h
@@ -897,6 +930,7 @@
   src:
   - third_party/abseil-cpp/absl/random/seed_sequences.cc
 - deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:endian
   - absl/meta:type_traits
@@ -987,6 +1021,7 @@
 - deps:
   - absl/base:base
   - absl/base:base_internal
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:malloc_internal
   - absl/base:raw_logging_internal
@@ -1035,7 +1070,8 @@
   - third_party/abseil-cpp/absl/synchronization/internal/waiter.cc
   - third_party/abseil-cpp/absl/synchronization/mutex.cc
   - third_party/abseil-cpp/absl/synchronization/notification.cc
-- deps: []
+- deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/civil_time.h
   - third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/civil_time_detail.h
@@ -1043,6 +1079,7 @@
   src:
   - third_party/abseil-cpp/absl/time/internal/cctz/src/civil_time_detail.cc
 - deps:
+  - absl/base:config
   - absl/time/internal/cctz:civil_time
   headers:
   - third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/time_zone.h
