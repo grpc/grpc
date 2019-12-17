@@ -81,7 +81,7 @@ g_stands_for = "gon"
 
 core_version = "9.0.0"
 
-version = "1.26.0-pre1"
+version = "1.26.0"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
