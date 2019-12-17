@@ -12,6 +12,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "absl",
+        actual = "@com_google_absl//absl",
+    )
+
+    native.bind(
         name = "absl-base",
         actual = "@com_google_absl//absl/base",
     )
@@ -82,8 +87,18 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "opencensus-context",
+        actual = "@io_opencensus_cpp//opencensus/context:context",
+    )
+
+    native.bind(
         name = "opencensus-trace",
         actual = "@io_opencensus_cpp//opencensus/trace:trace",
+    )
+
+    native.bind(
+        name = "opencensus-trace-context_util",
+        actual = "@io_opencensus_cpp//opencensus/trace:context_util",
     )
 
     native.bind(
@@ -94,6 +109,16 @@ def grpc_deps():
     native.bind(
         name = "opencensus-stats-test",
         actual = "@io_opencensus_cpp//opencensus/stats:test_utils",
+    )
+
+    native.bind(
+        name = "opencensus-with-tag-map",
+        actual = "@io_opencensus_cpp//opencensus/tags:with_tag_map",
+    )
+
+    native.bind(
+        name = "opencensus-tags",
+        actual = "@io_opencensus_cpp//opencensus/tags:tags",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -165,9 +190,9 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "c5f6429c067e6b8f3c6d13d1ab2bdcd559c6f8b85317aa5b0dc8c364c37d1742",
-            strip_prefix = "abseil-cpp-846e5dbedac123d12455adcfe6f53c8b5dcbfeef",
-            url = "https://github.com/abseil/abseil-cpp/archive/846e5dbedac123d12455adcfe6f53c8b5dcbfeef.tar.gz",
+            sha256 = "ce318a8cd0fa4443c6c01d385cd28b2785b8160dd270b945d6b08cccff568ce6",
+            strip_prefix = "abseil-cpp-0514227d2547793b23e209809276375e41c76617",
+            url = "https://github.com/abseil/abseil-cpp/archive/0514227d2547793b23e209809276375e41c76617.tar.gz",
         )
 
     if "bazel_toolchains" not in native.existing_rules():

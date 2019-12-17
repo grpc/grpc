@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.26.0-dev
+PROJECT_NUMBER         = 1.27.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -992,6 +992,7 @@ include/grpcpp/impl/codegen/rpc_service_method.h \
 include/grpcpp/impl/codegen/security/auth_context.h \
 include/grpcpp/impl/codegen/serialization_traits.h \
 include/grpcpp/impl/codegen/server_callback.h \
+include/grpcpp/impl/codegen/server_callback_handlers.h \
 include/grpcpp/impl/codegen/server_callback_impl.h \
 include/grpcpp/impl/codegen/server_context.h \
 include/grpcpp/impl/codegen/server_context_impl.h \
@@ -1074,7 +1075,6 @@ src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
-src/core/ext/filters/client_channel/connector.cc \
 src/core/ext/filters/client_channel/connector.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
@@ -1093,7 +1093,6 @@ src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/parse_address.cc \
 src/core/ext/filters/client_channel/parse_address.h \
-src/core/ext/filters/client_channel/proxy_mapper.cc \
 src/core/ext/filters/client_channel/proxy_mapper.h \
 src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
 src/core/ext/filters/client_channel/proxy_mapper_registry.h \
@@ -1306,7 +1305,11 @@ src/core/lib/iomgr/load_file.cc \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
 src/core/lib/iomgr/lockfree_event.h \
+src/core/lib/iomgr/logical_thread.cc \
+src/core/lib/iomgr/logical_thread.h \
 src/core/lib/iomgr/nameser.h \
+src/core/lib/iomgr/poller/eventmanager_libuv.cc \
+src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
@@ -1399,12 +1402,8 @@ src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.cc \
 src/core/lib/json/json.h \
-src/core/lib/json/json_common.h \
 src/core/lib/json/json_reader.cc \
-src/core/lib/json/json_reader.h \
-src/core/lib/json/json_string.cc \
 src/core/lib/json/json_writer.cc \
-src/core/lib/json/json_writer.h \
 src/core/lib/profiling/timers.h \
 src/core/lib/slice/b64.cc \
 src/core/lib/slice/b64.h \
@@ -1526,6 +1525,7 @@ src/cpp/server/insecure_server_credentials.cc \
 src/cpp/server/secure_server_credentials.cc \
 src/cpp/server/secure_server_credentials.h \
 src/cpp/server/server_builder.cc \
+src/cpp/server/server_callback.cc \
 src/cpp/server/server_cc.cc \
 src/cpp/server/server_context.cc \
 src/cpp/server/server_credentials.cc \

@@ -172,8 +172,6 @@ class GrpcLb : public LoadBalancingPolicy {
     void ScheduleNextClientLoadReportLocked();
     void SendClientLoadReportLocked();
 
-    static bool LoadReportCountersAreZero(grpc_grpclb_request* request);
-
     static void MaybeSendClientLoadReport(void* arg, grpc_error* error);
     static void ClientLoadReportDone(void* arg, grpc_error* error);
     static void OnInitialRequestSent(void* arg, grpc_error* error);
@@ -227,14 +225,12 @@ class GrpcLb : public LoadBalancingPolicy {
   class Serverlist : public RefCounted<Serverlist> {
    public:
     // Takes ownership of serverlist.
-    explicit Serverlist(grpc_grpclb_serverlist* serverlist)
-        : serverlist_(serverlist) {}
-
-    ~Serverlist() { grpc_grpclb_destroy_serverlist(serverlist_); }
+    explicit Serverlist(std::vector<GrpcLbServer> serverlist)
+        : serverlist_(std::move(serverlist)) {}
 
     bool operator==(const Serverlist& other) const;
 
-    const grpc_grpclb_serverlist* serverlist() const { return serverlist_; }
+    const std::vector<GrpcLbServer>& serverlist() const { return serverlist_; }
 
     // Returns a text representation suitable for logging.
     grpc_core::UniquePtr<char> AsText() const;
@@ -257,7 +253,7 @@ class GrpcLb : public LoadBalancingPolicy {
     const char* ShouldDrop();
 
    private:
-    grpc_grpclb_serverlist* serverlist_;
+    std::vector<GrpcLbServer> serverlist_;
 
     // Guarded by the channel's data plane combiner, NOT the control
     // plane combiner.  It should not be accessed by anything but the
@@ -404,28 +400,26 @@ class GrpcLb : public LoadBalancingPolicy {
 //
 
 bool GrpcLb::Serverlist::operator==(const Serverlist& other) const {
-  return grpc_grpclb_serverlist_equals(serverlist_, other.serverlist_);
+  return serverlist_ == other.serverlist_;
 }
 
-void ParseServer(const grpc_grpclb_server* server,
-                 grpc_resolved_address* addr) {
+void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
   memset(addr, 0, sizeof(*addr));
-  if (server->drop) return;
-  const uint16_t netorder_port = grpc_htons((uint16_t)server->port);
+  if (server.drop) return;
+  const uint16_t netorder_port = grpc_htons((uint16_t)server.port);
   /* the addresses are given in binary format (a in(6)_addr struct) in
    * server->ip_address.bytes. */
-  const grpc_grpclb_server_ip_address& ip = server->ip_address;
-  if (ip.size == 4) {
+  if (server.ip_size == 4) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
     grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
     addr4->sin_family = GRPC_AF_INET;
-    memcpy(&addr4->sin_addr, ip.data, ip.size);
+    memcpy(&addr4->sin_addr, server.ip_addr, server.ip_size);
     addr4->sin_port = netorder_port;
-  } else if (ip.size == 16) {
+  } else if (server.ip_size == 16) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
     grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
     addr6->sin6_family = GRPC_AF_INET6;
-    memcpy(&addr6->sin6_addr, ip.data, ip.size);
+    memcpy(&addr6->sin6_addr, server.ip_addr, server.ip_size);
     addr6->sin6_port = netorder_port;
   }
 }
@@ -433,10 +427,10 @@ void ParseServer(const grpc_grpclb_server* server,
 grpc_core::UniquePtr<char> GrpcLb::Serverlist::AsText() const {
   gpr_strvec entries;
   gpr_strvec_init(&entries);
-  for (size_t i = 0; i < serverlist_->num_servers; ++i) {
-    const auto* server = serverlist_->servers[i];
+  for (size_t i = 0; i < serverlist_.size(); ++i) {
+    const GrpcLbServer& server = serverlist_[i];
     char* ipport;
-    if (server->drop) {
+    if (server.drop) {
       ipport = gpr_strdup("(drop)");
     } else {
       grpc_resolved_address addr;
@@ -445,7 +439,7 @@ grpc_core::UniquePtr<char> GrpcLb::Serverlist::AsText() const {
     }
     char* entry;
     gpr_asprintf(&entry, "  %" PRIuPTR ": %s token=%s\n", i, ipport,
-                 server->load_balance_token);
+                 server.load_balance_token);
     gpr_free(ipport);
     gpr_strvec_add(&entries, entry);
   }
@@ -492,23 +486,22 @@ const grpc_arg_pointer_vtable lb_token_arg_vtable = {
 const grpc_arg_pointer_vtable client_stats_arg_vtable = {
     client_stats_copy, client_stats_destroy, equal_cmp};
 
-bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
-  if (server->drop) return false;
-  const grpc_grpclb_server_ip_address& ip = server->ip_address;
-  if (GPR_UNLIKELY(server->port >> 16 != 0)) {
+bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
+  if (server.drop) return false;
+  if (GPR_UNLIKELY(server.port >> 16 != 0)) {
     if (log) {
       gpr_log(GPR_ERROR,
               "Invalid port '%d' at index %lu of serverlist. Ignoring.",
-              server->port, (unsigned long)idx);
+              server.port, (unsigned long)idx);
     }
     return false;
   }
-  if (GPR_UNLIKELY(ip.size != 4 && ip.size != 16)) {
+  if (GPR_UNLIKELY(server.ip_size != 4 && server.ip_size != 16)) {
     if (log) {
       gpr_log(GPR_ERROR,
               "Expected IP to be 4 or 16 bytes, got %d at index %lu of "
               "serverlist. Ignoring",
-              ip.size, (unsigned long)idx);
+              server.ip_size, (unsigned long)idx);
     }
     return false;
   }
@@ -519,20 +512,20 @@ bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
 ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
     GrpcLbClientStats* client_stats) const {
   ServerAddressList addresses;
-  for (size_t i = 0; i < serverlist_->num_servers; ++i) {
-    const grpc_grpclb_server* server = serverlist_->servers[i];
-    if (!IsServerValid(serverlist_->servers[i], i, false)) continue;
+  for (size_t i = 0; i < serverlist_.size(); ++i) {
+    const GrpcLbServer& server = serverlist_[i];
+    if (!IsServerValid(server, i, false)) continue;
     // Address processing.
     grpc_resolved_address addr;
     ParseServer(server, &addr);
     // LB token processing.
-    char lb_token[GPR_ARRAY_SIZE(server->load_balance_token) + 1];
-    if (server->load_balance_token[0] != 0) {
+    char lb_token[GPR_ARRAY_SIZE(server.load_balance_token) + 1];
+    if (server.load_balance_token[0] != 0) {
       const size_t lb_token_max_length =
-          GPR_ARRAY_SIZE(server->load_balance_token);
+          GPR_ARRAY_SIZE(server.load_balance_token);
       const size_t lb_token_length =
-          strnlen(server->load_balance_token, lb_token_max_length);
-      memcpy(lb_token, server->load_balance_token, lb_token_length);
+          strnlen(server.load_balance_token, lb_token_max_length);
+      memcpy(lb_token, server.load_balance_token, lb_token_length);
       lb_token[lb_token_length] = '\0';
     } else {
       char* uri = grpc_sockaddr_to_uri(&addr);
@@ -561,18 +554,18 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
 }
 
 bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
-  if (serverlist_->num_servers == 0) return false;
-  for (size_t i = 0; i < serverlist_->num_servers; ++i) {
-    if (!serverlist_->servers[i]->drop) return false;
+  if (serverlist_.empty()) return false;
+  for (const GrpcLbServer& server : serverlist_) {
+    if (!server.drop) return false;
   }
   return true;
 }
 
 const char* GrpcLb::Serverlist::ShouldDrop() {
-  if (serverlist_->num_servers == 0) return nullptr;
-  grpc_grpclb_server* server = serverlist_->servers[drop_index_];
-  drop_index_ = (drop_index_ + 1) % serverlist_->num_servers;
-  return server->drop ? server->load_balance_token : nullptr;
+  if (serverlist_.empty()) return nullptr;
+  GrpcLbServer& server = serverlist_[drop_index_];
+  drop_index_ = (drop_index_ + 1) % serverlist_.size();
+  return server.drop ? server.load_balance_token : nullptr;
 }
 
 //
@@ -782,10 +775,8 @@ GrpcLb::BalancerCallState::BalancerCallState(
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   upb::Arena arena;
-  grpc_grpclb_request* request =
-      grpc_grpclb_request_create(grpclb_policy()->server_name_, arena.ptr());
   grpc_slice request_payload_slice =
-      grpc_grpclb_request_encode(request, arena.ptr());
+      GrpcLbRequestCreate(grpclb_policy()->server_name_, arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -936,33 +927,24 @@ void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked(
   }
 }
 
-bool GrpcLb::BalancerCallState::LoadReportCountersAreZero(
-    grpc_grpclb_request* request) {
-  const grpc_lb_v1_ClientStats* cstats =
-      grpc_lb_v1_LoadBalanceRequest_client_stats(request);
-  if (cstats == nullptr) {
-    return true;
-  }
-  size_t drop_count;
-  grpc_lb_v1_ClientStats_calls_finished_with_drop(cstats, &drop_count);
-  return grpc_lb_v1_ClientStats_num_calls_started(cstats) == 0 &&
-         grpc_lb_v1_ClientStats_num_calls_finished(cstats) == 0 &&
-         grpc_lb_v1_ClientStats_num_calls_finished_with_client_failed_to_send(
-             cstats) == 0 &&
-         grpc_lb_v1_ClientStats_num_calls_finished_known_received(cstats) ==
-             0 &&
-         drop_count == 0;
-}
-
 void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
-  upb::Arena arena;
-  grpc_grpclb_request* request =
-      grpc_grpclb_load_report_request_create(client_stats_.get(), arena.ptr());
+  // Get snapshot of stats.
+  int64_t num_calls_started;
+  int64_t num_calls_finished;
+  int64_t num_calls_finished_with_client_failed_to_send;
+  int64_t num_calls_finished_known_received;
+  std::unique_ptr<GrpcLbClientStats::DroppedCallCounts> drop_token_counts;
+  client_stats_->Get(&num_calls_started, &num_calls_finished,
+                     &num_calls_finished_with_client_failed_to_send,
+                     &num_calls_finished_known_received, &drop_token_counts);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
-  if (LoadReportCountersAreZero(request)) {
+  if (num_calls_started == 0 && num_calls_finished == 0 &&
+      num_calls_finished_with_client_failed_to_send == 0 &&
+      num_calls_finished_known_received == 0 &&
+      (drop_token_counts == nullptr || drop_token_counts->size() == 0)) {
     if (last_client_load_report_counters_were_zero_) {
       ScheduleNextClientLoadReportLocked();
       return;
@@ -971,8 +953,12 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   } else {
     last_client_load_report_counters_were_zero_ = false;
   }
-  grpc_slice request_payload_slice =
-      grpc_grpclb_request_encode(request, arena.ptr());
+  // Populate load report.
+  upb::Arena arena;
+  grpc_slice request_payload_slice = GrpcLbLoadReportRequestCreate(
+      num_calls_started, num_calls_finished,
+      num_calls_finished_with_client_failed_to_send,
+      num_calls_finished_known_received, drop_token_counts.get(), arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1064,107 +1050,10 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(lb_calld->recv_message_payload_);
   lb_calld->recv_message_payload_ = nullptr;
-  const grpc_grpclb_initial_response* initial_response;
-  grpc_grpclb_serverlist* serverlist;
+  GrpcLbResponse response;
   upb::Arena arena;
-  if (!lb_calld->seen_initial_response_ &&
-      (initial_response = grpc_grpclb_initial_response_parse(
-           response_slice, arena.ptr())) != nullptr) {
-    // Have NOT seen initial response, look for initial response.
-    const google_protobuf_Duration* client_stats_report_interval =
-        grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval(
-            initial_response);
-    if (client_stats_report_interval != nullptr) {
-      lb_calld->client_stats_report_interval_ =
-          GPR_MAX(GPR_MS_PER_SEC,
-                  grpc_grpclb_duration_to_millis(client_stats_report_interval));
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-        gpr_log(GPR_INFO,
-                "[grpclb %p] lb_calld=%p: Received initial LB response "
-                "message; client load reporting interval = %" PRId64
-                " milliseconds",
-                grpclb_policy, lb_calld,
-                lb_calld->client_stats_report_interval_);
-      }
-    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO,
-              "[grpclb %p] lb_calld=%p: Received initial LB response message; "
-              "client load reporting NOT enabled",
-              grpclb_policy, lb_calld);
-    }
-    lb_calld->seen_initial_response_ = true;
-  } else if ((serverlist = grpc_grpclb_response_parse_serverlist(
-                  response_slice)) != nullptr) {
-    // Have seen initial response, look for serverlist.
-    GPR_ASSERT(lb_calld->lb_call_ != nullptr);
-    auto serverlist_wrapper = MakeRefCounted<Serverlist>(serverlist);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-      grpc_core::UniquePtr<char> serverlist_text = serverlist_wrapper->AsText();
-      gpr_log(GPR_INFO,
-              "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
-              " servers received:\n%s",
-              grpclb_policy, lb_calld, serverlist->num_servers,
-              serverlist_text.get());
-    }
-    lb_calld->seen_serverlist_ = true;
-    // Start sending client load report only after we start using the
-    // serverlist returned from the current LB call.
-    if (lb_calld->client_stats_report_interval_ > 0 &&
-        lb_calld->client_stats_ == nullptr) {
-      lb_calld->client_stats_ = MakeRefCounted<GrpcLbClientStats>();
-      // Ref held by callback.
-      lb_calld->Ref(DEBUG_LOCATION, "client_load_report").release();
-      lb_calld->ScheduleNextClientLoadReportLocked();
-    }
-    // Check if the serverlist differs from the previous one.
-    if (grpclb_policy->serverlist_ != nullptr &&
-        *grpclb_policy->serverlist_ == *serverlist_wrapper) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-        gpr_log(GPR_INFO,
-                "[grpclb %p] lb_calld=%p: Incoming server list identical to "
-                "current, ignoring.",
-                grpclb_policy, lb_calld);
-      }
-    } else {  // New serverlist.
-      // Dispose of the fallback.
-      // TODO(roth): Ideally, we should stay in fallback mode until we
-      // know that we can reach at least one of the backends in the new
-      // serverlist.  Unfortunately, we can't do that, since we need to
-      // send the new addresses to the child policy in order to determine
-      // if they are reachable, and if we don't exit fallback mode now,
-      // CreateOrUpdateChildPolicyLocked() will use the fallback
-      // addresses instead of the addresses from the new serverlist.
-      // However, if we can't reach any of the servers in the new
-      // serverlist, then the child policy will never switch away from
-      // the fallback addresses, but the grpclb policy will still think
-      // that we're not in fallback mode, which means that we won't send
-      // updates to the child policy when the fallback addresses are
-      // updated by the resolver.  This is sub-optimal, but the only way
-      // to fix it is to maintain a completely separate child policy for
-      // fallback mode, and that's more work than we want to put into
-      // the grpclb implementation at this point, since we're deprecating
-      // it in favor of the xds policy.  We will implement this the
-      // right way in the xds policy instead.
-      if (grpclb_policy->fallback_mode_) {
-        gpr_log(GPR_INFO,
-                "[grpclb %p] Received response from balancer; exiting "
-                "fallback mode",
-                grpclb_policy);
-        grpclb_policy->fallback_mode_ = false;
-      }
-      if (grpclb_policy->fallback_at_startup_checks_pending_) {
-        grpclb_policy->fallback_at_startup_checks_pending_ = false;
-        grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
-        grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
-      }
-      // Update the serverlist in the GrpcLb instance. This serverlist
-      // instance will be destroyed either upon the next update or when the
-      // GrpcLb instance is destroyed.
-      grpclb_policy->serverlist_ = std::move(serverlist_wrapper);
-      grpclb_policy->CreateOrUpdateChildPolicyLocked();
-    }
-  } else {
-    // No valid initial response or serverlist found.
+  if (!GrpcLbResponseParse(response_slice, arena.ptr(), &response) ||
+      (response.type == response.INITIAL && lb_calld->seen_initial_response_)) {
     char* response_slice_str =
         grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
@@ -1172,6 +1061,122 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
             "Ignoring.",
             grpclb_policy, lb_calld, response_slice_str);
     gpr_free(response_slice_str);
+  } else {
+    switch (response.type) {
+      case response.INITIAL: {
+        if (response.client_stats_report_interval != 0) {
+          lb_calld->client_stats_report_interval_ =
+              GPR_MAX(GPR_MS_PER_SEC, response.client_stats_report_interval);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+            gpr_log(GPR_INFO,
+                    "[grpclb %p] lb_calld=%p: Received initial LB response "
+                    "message; client load reporting interval = %" PRId64
+                    " milliseconds",
+                    grpclb_policy, lb_calld,
+                    lb_calld->client_stats_report_interval_);
+          }
+        } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] lb_calld=%p: Received initial LB response "
+                  "message; client load reporting NOT enabled",
+                  grpclb_policy, lb_calld);
+        }
+        lb_calld->seen_initial_response_ = true;
+        break;
+      }
+      case response.SERVERLIST: {
+        GPR_ASSERT(lb_calld->lb_call_ != nullptr);
+        auto serverlist_wrapper =
+            MakeRefCounted<Serverlist>(std::move(response.serverlist));
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+          grpc_core::UniquePtr<char> serverlist_text =
+              serverlist_wrapper->AsText();
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
+                  " servers received:\n%s",
+                  grpclb_policy, lb_calld,
+                  serverlist_wrapper->serverlist().size(),
+                  serverlist_text.get());
+        }
+        lb_calld->seen_serverlist_ = true;
+        // Start sending client load report only after we start using the
+        // serverlist returned from the current LB call.
+        if (lb_calld->client_stats_report_interval_ > 0 &&
+            lb_calld->client_stats_ == nullptr) {
+          lb_calld->client_stats_ = MakeRefCounted<GrpcLbClientStats>();
+          // Ref held by callback.
+          lb_calld->Ref(DEBUG_LOCATION, "client_load_report").release();
+          lb_calld->ScheduleNextClientLoadReportLocked();
+        }
+        // Check if the serverlist differs from the previous one.
+        if (grpclb_policy->serverlist_ != nullptr &&
+            *grpclb_policy->serverlist_ == *serverlist_wrapper) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+            gpr_log(GPR_INFO,
+                    "[grpclb %p] lb_calld=%p: Incoming server list identical "
+                    "to current, ignoring.",
+                    grpclb_policy, lb_calld);
+          }
+        } else {  // New serverlist.
+          // Dispose of the fallback.
+          // TODO(roth): Ideally, we should stay in fallback mode until we
+          // know that we can reach at least one of the backends in the new
+          // serverlist.  Unfortunately, we can't do that, since we need to
+          // send the new addresses to the child policy in order to determine
+          // if they are reachable, and if we don't exit fallback mode now,
+          // CreateOrUpdateChildPolicyLocked() will use the fallback
+          // addresses instead of the addresses from the new serverlist.
+          // However, if we can't reach any of the servers in the new
+          // serverlist, then the child policy will never switch away from
+          // the fallback addresses, but the grpclb policy will still think
+          // that we're not in fallback mode, which means that we won't send
+          // updates to the child policy when the fallback addresses are
+          // updated by the resolver.  This is sub-optimal, but the only way
+          // to fix it is to maintain a completely separate child policy for
+          // fallback mode, and that's more work than we want to put into
+          // the grpclb implementation at this point, since we're deprecating
+          // it in favor of the xds policy.  We will implement this the
+          // right way in the xds policy instead.
+          if (grpclb_policy->fallback_mode_) {
+            gpr_log(GPR_INFO,
+                    "[grpclb %p] Received response from balancer; exiting "
+                    "fallback mode",
+                    grpclb_policy);
+            grpclb_policy->fallback_mode_ = false;
+          }
+          if (grpclb_policy->fallback_at_startup_checks_pending_) {
+            grpclb_policy->fallback_at_startup_checks_pending_ = false;
+            grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
+            grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
+          }
+          // Update the serverlist in the GrpcLb instance. This serverlist
+          // instance will be destroyed either upon the next update or when the
+          // GrpcLb instance is destroyed.
+          grpclb_policy->serverlist_ = std::move(serverlist_wrapper);
+          grpclb_policy->CreateOrUpdateChildPolicyLocked();
+        }
+        break;
+      }
+      case response.FALLBACK: {
+        if (!grpclb_policy->fallback_mode_) {
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] Entering fallback mode as requested by balancer",
+                  grpclb_policy);
+          if (grpclb_policy->fallback_at_startup_checks_pending_) {
+            grpclb_policy->fallback_at_startup_checks_pending_ = false;
+            grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
+            grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
+          }
+          grpclb_policy->fallback_mode_ = true;
+          grpclb_policy->CreateOrUpdateChildPolicyLocked();
+          // Reset serverlist, so that if the balancer exits fallback
+          // mode by sending the same serverlist we were previously
+          // using, we don't incorrectly ignore it as a duplicate.
+          grpclb_policy->serverlist_.reset();
+        }
+        break;
+      }
+    }
   }
   grpc_slice_unref_internal(response_slice);
   if (!grpclb_policy->shutting_down_) {

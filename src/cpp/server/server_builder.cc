@@ -101,6 +101,20 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
   return *this;
 }
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
+    grpc::CallbackGenericService* service) {
+  if (generic_service_ || callback_generic_service_) {
+    gpr_log(GPR_ERROR,
+            "Adding multiple generic services is unsupported for now. "
+            "Dropping the service %p",
+            (void*)service);
+  } else {
+    callback_generic_service_ = service;
+  }
+  return *this;
+}
+#else
 ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
     grpc::experimental::CallbackGenericService* service) {
   if (builder_->generic_service_ || builder_->callback_generic_service_) {
@@ -113,6 +127,7 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
   }
   return *builder_;
 }
+#endif
 
 std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
@@ -203,20 +218,9 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   grpc::ChannelArguments args;
-  for (const auto& option : options_) {
-    option->UpdateArguments(&args);
-    option->UpdatePlugins(&plugins_);
-  }
-
-  for (const auto& plugin : plugins_) {
-    plugin->UpdateServerBuilder(this);
-    plugin->UpdateChannelArguments(&args);
-  }
-
   if (max_receive_message_size_ >= -1) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
-
   // The default message size is -1 (max), so no need to explicitly set it for
   // -1.
   if (max_send_message_size_ >= 0) {
@@ -237,6 +241,16 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   if (resource_quota_ != nullptr) {
     args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
+  }
+
+  for (const auto& option : options_) {
+    option->UpdateArguments(&args);
+    option->UpdatePlugins(&plugins_);
+  }
+
+  for (const auto& plugin : plugins_) {
+    plugin->UpdateServerBuilder(this);
+    plugin->UpdateChannelArguments(&args);
   }
 
   // == Determine if the server has any syncrhonous methods ==
@@ -317,10 +331,10 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(
-      max_receive_message_size_, &args, sync_server_cqs,
-      sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
-      sync_server_settings_.cq_timeout_msec, std::move(acceptors_),
-      resource_quota_, std::move(interceptor_creators_)));
+      &args, sync_server_cqs, sync_server_settings_.min_pollers,
+      sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
+      std::move(acceptors_), resource_quota_,
+      std::move(interceptor_creators_)));
 
   grpc_impl::ServerInitializer* initializer = server->initializer();
 

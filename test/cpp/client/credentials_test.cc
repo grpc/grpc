@@ -656,9 +656,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   delete c_options;
 }
 
-// This test demonstrates how the SPIFFE credentials will be used to create
-// channel credentials.
-TEST_F(CredentialsTest, LoadSpiffeChannelCredentials) {
+// This test demonstrates how the SPIFFE credentials will be used.
+TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
   std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
       new TestTlsCredentialReload());
   std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(

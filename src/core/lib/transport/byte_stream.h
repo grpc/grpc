@@ -40,7 +40,8 @@ class ByteStream : public Orphanable {
   // Returns true if the bytes are available immediately (in which case
   // on_complete will not be called), or false if the bytes will be available
   // asynchronously (in which case on_complete will be called when they
-  // are available).
+  // are available). Should not be called if there is no data left on the
+  // stream.
   //
   // max_size_hint can be set as a hint as to the maximum number
   // of bytes that would be acceptable to read.

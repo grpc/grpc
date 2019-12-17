@@ -22,7 +22,7 @@ cd "$(dirname "$0")"
 
 echo "TIME:  $(date)"
 
-./build_tests.sh
+./build_tests.sh | ./verbose_time.sh
 
 echo "TIME:  $(date)"
 
@@ -35,5 +35,6 @@ xcodebuild \
     -scheme CronetTests \
     -destination name="iPhone 8" \
     test \
+    | ./verbose_time.sh \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' -

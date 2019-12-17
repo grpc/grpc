@@ -16,6 +16,8 @@ import socket as native_socket
 
 from libc cimport string
 
+
+# TODO(https://github.com/grpc/grpc/issues/21348) Better flow control needed.
 cdef class _AsyncioSocket:
     def __cinit__(self):
         self._grpc_socket = NULL
@@ -29,6 +31,7 @@ cdef class _AsyncioSocket:
         self._server = None
         self._py_socket = None
         self._peername = None
+        self._loop = asyncio.get_event_loop()
 
     @staticmethod
     cdef _AsyncioSocket create(grpc_custom_socket * grpc_socket,
@@ -56,30 +59,25 @@ cdef class _AsyncioSocket:
         return f"<{class_name} {id_} connected={connected}>"
 
     def _connect_cb(self, future):
-        error = False
         try:
             self._reader, self._writer = future.result()
         except Exception as e:
-            error = True
-            error_msg = str(e)
+            self._grpc_connect_cb(
+                <grpc_custom_socket*>self._grpc_socket,
+                grpc_socket_error("Socket connect failed: {}".format(e).encode())
+            )
         finally:
             self._task_connect = None
 
-        if not error:
-            # gRPC default posix implementation disables nagle
-            # algorithm.
-            sock = self._writer.transport.get_extra_info('socket')
-            sock.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
+        # gRPC default posix implementation disables nagle
+        # algorithm.
+        sock = self._writer.transport.get_extra_info('socket')
+        sock.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
-            self._grpc_connect_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                <grpc_error*>0
-            )
-        else:
-            self._grpc_connect_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                grpc_socket_error("connect {}".format(error_msg).encode())
-            )
+        self._grpc_connect_cb(
+            <grpc_custom_socket*>self._grpc_socket,
+            <grpc_error*>0
+        )
 
     def _read_cb(self, future):
         error = False
@@ -87,7 +85,8 @@ cdef class _AsyncioSocket:
             buffer_ = future.result()
         except Exception as e:
             error = True
-            error_msg = str(e)
+            error_msg = "%s: %s" % (type(e), str(e))
+            _LOGGER.exception(e)
         finally:
             self._task_read = None
 
@@ -106,7 +105,7 @@ cdef class _AsyncioSocket:
             self._grpc_read_cb(
                 <grpc_custom_socket*>self._grpc_socket,
                 -1,
-                grpc_socket_error("read {}".format(error_msg).encode())
+                grpc_socket_error("Read failed: {}".format(error_msg).encode())
             )
 
     cdef void connect(self,
@@ -125,7 +124,7 @@ cdef class _AsyncioSocket:
     cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb):
         assert not self._task_read
 
-        self._task_read = asyncio.ensure_future(
+        self._task_read = self._loop.create_task(
             self._reader.read(n=length)
         )
         self._grpc_read_cb = grpc_read_cb
@@ -133,15 +132,20 @@ cdef class _AsyncioSocket:
         self._read_buffer = buffer_
  
     cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb):
+        """Performs write to network socket in AsyncIO.
+        
+        For each socket, Core guarantees there'll be only one ongoing write.
+        When the write is finished, we need to call grpc_write_cb to notify
+        Core that the work is done.
+        """
         cdef char* start
-        buffer_ = bytearray()
+        cdef bytearray outbound_buffer = bytearray()
         for i in range(g_slice_buffer.count):
             start = grpc_slice_buffer_start(g_slice_buffer, i)
             length = grpc_slice_buffer_length(g_slice_buffer, i)
-            buffer_.extend(<bytes>start[:length])
+            outbound_buffer.extend(<bytes>start[:length])
 
-        self._writer.write(buffer_)
-
+        self._writer.write(outbound_buffer)
         grpc_write_cb(
             <grpc_custom_socket*>self._grpc_socket,
             <grpc_error*>0
@@ -171,9 +175,9 @@ cdef class _AsyncioSocket:
         self._grpc_client_socket.impl = <void*>client_socket
         cpython.Py_INCREF(client_socket)  # Py_DECREF in asyncio_socket_destroy
         # Accept callback expects to be called with:
-        #   grpc_custom_socket: A grpc custom socket for server
-        #   grpc_custom_socket: A grpc custom socket for client (with new Socket instance)
-        #   grpc_error: An error object
+        # * grpc_custom_socket: A grpc custom socket for server
+        # * grpc_custom_socket: A grpc custom socket for client (with new Socket instance)
+        # * grpc_error: An error object
         self._grpc_accept_cb(self._grpc_socket, self._grpc_client_socket, grpc_error_none())
 
     cdef listen(self):
@@ -183,7 +187,7 @@ cdef class _AsyncioSocket:
                 sock=self._py_socket,
             )
 
-        asyncio.get_event_loop().create_task(create_asyncio_server())
+        self._loop.create_task(create_asyncio_server())
 
     cdef accept(self,
                 grpc_custom_socket* grpc_socket_client,

@@ -854,7 +854,8 @@ static void cq_end_op_for_callback(
   }
 
   auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(tag);
-  if (internal || grpc_iomgr_is_any_background_poller_thread()) {
+  if (internal || functor->inlineable ||
+      grpc_iomgr_is_any_background_poller_thread()) {
     grpc_core::ApplicationCallbackExecCtx::Enqueue(functor,
                                                    (error == GRPC_ERROR_NONE));
     GRPC_ERROR_UNREF(error);

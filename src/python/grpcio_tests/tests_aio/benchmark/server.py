@@ -27,16 +27,23 @@ class BenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
         payload = messages_pb2.Payload(body=b'\0' * request.response_size)
         return messages_pb2.SimpleResponse(payload=payload)
 
+    async def StreamingFromServer(self, request, context):
+        payload = messages_pb2.Payload(body=b'\0' * request.response_size)
+        # Sends response at full capacity!
+        while True:
+            yield messages_pb2.SimpleResponse(payload=payload)
+
 
 async def _start_async_server():
     server = aio.server()
 
-    port = server.add_insecure_port(('localhost:%s' % 50051).encode('ASCII'))
+    port = server.add_insecure_port('localhost:%s' % 50051)
     servicer = BenchmarkServer()
     benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
         servicer, server)
 
     await server.start()
+    logging.info('Benchmark server started at :%d' % port)
     await server.wait_for_termination()
 
 
@@ -48,5 +55,5 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     main()

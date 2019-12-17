@@ -43,3 +43,4 @@ cdef class AioServer:
     cdef object _shutdown_completed  # asyncio.Future
     cdef CallbackWrapper _shutdown_callback_wrapper
     cdef object _crash_exception  # Exception
+    cdef set _ongoing_rpc_tasks
