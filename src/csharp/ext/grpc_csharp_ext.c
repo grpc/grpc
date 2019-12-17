@@ -1136,7 +1136,8 @@ grpcsharp_metadata_credentials_create_from_plugin(void* callback_tag) {
   plugin.destroy = grpcsharp_metadata_credentials_destroy_handler;
   plugin.state = callback_tag;
   plugin.type = "";
-  return grpc_metadata_credentials_create_from_plugin(plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
+  return grpc_metadata_credentials_create_from_plugin(
+      plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
 }
 
 /* Auth context */

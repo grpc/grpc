@@ -1460,8 +1460,8 @@ static void test_metadata_plugin_failure(void) {
   plugin.get_metadata = plugin_get_metadata_failure;
   plugin.destroy = plugin_destroy;
 
-  grpc_call_credentials* creds =
-      grpc_metadata_credentials_create_from_plugin(plugin, nullptr);
+  grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
   GPR_ASSERT(state == PLUGIN_INITIAL_STATE);
   run_request_metadata_test(creds, auth_md_ctx, md_state);
   GPR_ASSERT(state == PLUGIN_GET_METADATA_CALLED_STATE);
