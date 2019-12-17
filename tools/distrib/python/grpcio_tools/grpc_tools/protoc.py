@@ -21,7 +21,6 @@ import os
 
 from grpc_tools import _protoc_compiler
 
-_PROTO_MODULE_SUFFIX = "_pb2"
 _SERVICE_MODULE_SUFFIX = "_pb2_grpc"
 
 

@@ -24,26 +24,4 @@ static const grpc_python_generator::PythonGrpcGenerator g_grpc_code_generator;
 // extern but *without* triggering a dllimport declspec when on Windows.
 int protoc_main(int argc, char* argv[]);
 
-struct ProtocError {
-  std::string filename;
-  int line;
-  int column;
-  std::string message;
-
-  ProtocError() {}
-  ProtocError(std::string filename, int line, int column, std::string message)
-      : filename(filename), line(line), column(column), message(message) {}
-};
-
-typedef ProtocError ProtocWarning;
-
-int protoc_get_protos(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
-    std::vector<std::pair<std::string, std::string>>* files_out,
-    std::vector<ProtocError>* errors, std::vector<ProtocWarning>* warnings);
-
-int protoc_get_services(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
-    std::vector<std::pair<std::string, std::string>>* files_out,
-    std::vector<ProtocError>* errors, std::vector<ProtocWarning>* warnings);
 }  // end namespace grpc_tools
