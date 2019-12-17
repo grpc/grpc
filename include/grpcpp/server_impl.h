@@ -163,6 +163,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   ///
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
+  /// \param max_message_size Maximum message length that the channel can
+  /// receive.
+  ///
   /// \param args The channel args
   ///
   /// \param sync_server_cqs The completion queues to use if the server is a
@@ -179,7 +182,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   ///
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
-  Server(ChannelArguments* args,
+  Server(int max_message_size, ChannelArguments* args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
@@ -303,7 +306,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
       std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
 
-  int max_receive_message_size_;
+  const int max_receive_message_size_;
 
   /// The following completion queues are ONLY used in case of Sync API
   /// i.e. if the server has any services with sync methods. The server uses
