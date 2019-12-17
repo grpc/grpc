@@ -391,6 +391,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
       gpr_time_from_millis(
           300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
           GPR_TIMESPAN)));
+  WaitOnServerAuthorizationToComplete(GetCredentialsProvider());
   SendRpc(1);
 }
 

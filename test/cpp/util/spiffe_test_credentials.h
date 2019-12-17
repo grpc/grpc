@@ -22,12 +22,19 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <memory>
+#include <thread>
 #include <vector>
 
 namespace grpc {
 namespace testing {
 
-const char kSpiffeCredentialsType[] = "spiffe";
+const char kSpiffeCredentialsType[] = "tls";
+
+struct TlsData {
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options;
+  std::thread* server_authz_thread;
+  bool* server_authz_thread_started;
+};
 
 /** This method creates a TlsCredentialsOptions instance with no key materials,
  *  whose credential reload config is configured using the
@@ -41,8 +48,7 @@ const char kSpiffeCredentialsType[] = "spiffe";
  *  Further, the cert request type of the options instance is always set to
  *  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY for both the
  *  client and the server. **/
-std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
-CreateTestTlsCredentialsOptions(bool is_client, bool is_async);
+TlsData CreateTestTlsCredentialsOptions(bool is_client, bool is_async);
 
 }  // namespace testing
 }  // namespace grpc

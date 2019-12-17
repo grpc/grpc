@@ -299,8 +299,6 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     if (is_server_started_) {
       server_->Shutdown();
-      ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/false,
-                       /*reset_server=*/true);
       BuildAndStartServer(processor);
     }
   }
@@ -355,8 +353,6 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (!is_server_started_) {
       StartServer(std::shared_ptr<AuthMetadataProcessor>());
     }
-    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
-                     /*reset_server=*/false);
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
@@ -858,6 +854,7 @@ TEST_P(End2endTest, ReconnectChannel) {
       gpr_time_from_millis(
           300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
           GPR_TIMESPAN)));
+  WaitOnServerAuthorizationToComplete(GetCredentialsProvider());
   SendRpc(stub_.get(), 1, false);
 }
 

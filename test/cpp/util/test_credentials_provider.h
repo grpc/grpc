@@ -88,6 +88,10 @@ void SetCredentialsProvider(CredentialsProvider* provider);
  *  |provider|. **/
 void EnableSpiffeCredentials(CredentialsProvider* provider);
 
+/** This method forces the current application to wait on any ongoing server
+ *  authorization check to complete prior to continuing. **/
+void WaitOnServerAuthorizationToComplete(CredentialsProvider* provider);
+
 /** This method resets the active channel/server TLS credentials options, if the
  *  SPIFFE credentials are currently in use. **/
 void ResetCredentials(CredentialsProvider* provider, bool reset_channel,

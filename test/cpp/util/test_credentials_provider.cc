@@ -99,7 +99,10 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       return grpc::GoogleDefaultCredentials();
     } else if (type == grpc::testing::kSpiffeCredentialsType) {
       args->SetSslTargetNameOverride("foo.test.google.fr");
-      active_channel_options_ = CreateTestTlsCredentialsOptions(true, true);
+      TlsData tls_data = CreateTestTlsCredentialsOptions(true, true);
+      active_channel_options_ = tls_data.options;
+      server_authz_thread_ = tls_data.server_authz_thread;
+      server_authz_thread_started_ = tls_data.server_authz_thread_started;
       return TlsCredentials(active_channel_options_);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
@@ -135,7 +138,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       }
       return SslServerCredentials(ssl_opts);
     } else if (type == grpc::testing::kSpiffeCredentialsType) {
-      active_server_options_ = CreateTestTlsCredentialsOptions(false, true);
+      active_server_options_ =
+          CreateTestTlsCredentialsOptions(false, true).options;
       return TlsServerCredentials(active_server_options_);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
@@ -165,6 +169,16 @@ class DefaultCredentialsProvider : public CredentialsProvider {
 
   void EnableSpiffeCredentials() { spiffe_credentials_ = true; }
 
+  void JoinServerAuthzThread() {
+    if (spiffe_credentials_ && server_authz_thread_ != nullptr &&
+        server_authz_thread_started_ != nullptr) {
+      if (*server_authz_thread_started_) {
+        server_authz_thread_->join();
+        *server_authz_thread_started_ = false;
+      }
+    }
+  }
+
   void Reset(bool reset_channel, bool reset_server) {
     if (reset_channel && active_channel_options_ != nullptr) {
       active_channel_options_ = nullptr;
@@ -186,6 +200,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
   bool spiffe_credentials_ = false;
+  std::thread* server_authz_thread_ = nullptr;
+  bool* server_authz_thread_started_ = nullptr;
 };
 
 CredentialsProvider* g_provider = nullptr;
@@ -210,6 +226,13 @@ void EnableSpiffeCredentials(CredentialsProvider* provider) {
     DefaultCredentialsProvider* default_provider =
         reinterpret_cast<DefaultCredentialsProvider*>(provider);
     default_provider->EnableSpiffeCredentials();
+  }
+}
+void WaitOnServerAuthorizationToComplete(CredentialsProvider* provider) {
+  if (provider != nullptr && provider->IsDefault()) {
+    DefaultCredentialsProvider* default_provider =
+        reinterpret_cast<DefaultCredentialsProvider*>(provider);
+    default_provider->JoinServerAuthzThread();
   }
 }
 
