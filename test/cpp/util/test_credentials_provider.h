@@ -70,14 +70,10 @@ class CredentialsProvider {
   // Provide a list of secure credentials type.
   virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
 
-  virtual void Reset();
+  bool IsDefault() { return is_default_; }
 
  protected:
-  // Provide a list of threads to be used to create a credential, and a mutex
-  // for adding to the list. E.g. to perform an async server authorization
-  // check for SPIFFE.
-  void* thread_list_ = nullptr;
-  std::mutex* mutex_ = nullptr;
+  bool is_default_ = false;
 };
 
 // Get the current provider. Create a default one if not set.
@@ -88,6 +84,9 @@ CredentialsProvider* GetCredentialsProvider();
 // destroyed.
 // Not thread-safe.
 void SetCredentialsProvider(CredentialsProvider* provider);
+
+void ResetCredentials(CredentialsProvider* provider, bool reset_channel,
+                      bool reset_server);
 
 }  // namespace testing
 }  // namespace grpc

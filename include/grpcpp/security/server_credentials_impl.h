@@ -81,7 +81,8 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type);
 
 /// Builds TLS ServerCredentials given TLS options.
-std::shared_ptr<ServerCredentials> TlsServerCredentials(std::shared_ptr<TlsCredentialsOptions> options);
+std::shared_ptr<ServerCredentials> TlsServerCredentials(
+    std::shared_ptr<TlsCredentialsOptions> options);
 
 }  // namespace experimental
 }  // namespace grpc_impl

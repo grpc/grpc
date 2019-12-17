@@ -57,6 +57,7 @@ grpc::string ReadFile(const grpc::string& src_path) {
 class DefaultCredentialsProvider : public CredentialsProvider {
  public:
   DefaultCredentialsProvider() {
+    is_default_ = true;
     if (!FLAGS_tls_key_file.empty()) {
       custom_server_key_ = ReadFile(FLAGS_tls_key_file);
     }
@@ -80,9 +81,6 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     } else {
       added_secure_type_providers_[it - added_secure_type_names_.begin()] =
           std::move(type_provider);
-    }
-    if (type == grpc::testing::kSpiffeCredentialsType) {
-      has_spiffe_credentials = true;
     }
   }
 
@@ -137,7 +135,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       }
       return SslServerCredentials(ssl_opts);
     } else if (type == grpc::testing::kSpiffeCredentialsType) {
-      active_channel_options_ = CreateTestTlsCredentialsOptions(false, true);
+      active_server_options_ = CreateTestTlsCredentialsOptions(false, true);
       return TlsServerCredentials(active_server_options_);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
@@ -154,6 +152,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::vector<grpc::string> GetSecureCredentialsTypeList() override {
     std::vector<grpc::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
+    types.push_back(grpc::testing::kSpiffeCredentialsType);
     std::unique_lock<std::mutex> lock(mu_);
     for (auto it = added_secure_type_names_.begin();
          it != added_secure_type_names_.end(); it++) {
@@ -162,16 +161,14 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     return types;
   }
 
-  void Reset() {
-    if (active_channel_options_ != nullptr) {
+  void Reset(bool reset_channel, bool reset_server) {
+    if (reset_channel && active_channel_options_ != nullptr) {
       active_channel_options_ = nullptr;
     }
-    if (active_server_options_ != nullptr) {
+    if (reset_server && active_server_options_ != nullptr) {
       active_server_options_ = nullptr;
     }
   }
-
-
 
  private:
   std::mutex mu_;
@@ -184,7 +181,6 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       active_server_options_ = nullptr;
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
-  bool has_spiffe_credentials = false;
 };
 
 CredentialsProvider* g_provider = nullptr;
@@ -202,6 +198,15 @@ void SetCredentialsProvider(CredentialsProvider* provider) {
   // For now, forbids overriding provider.
   GPR_ASSERT(g_provider == nullptr);
   g_provider = provider;
+}
+
+void ResetCredentials(CredentialsProvider* provider, bool reset_channel,
+                      bool reset_server) {
+  if (provider != nullptr && provider->IsDefault()) {
+    DefaultCredentialsProvider* default_provider =
+        reinterpret_cast<DefaultCredentialsProvider*>(provider);
+    default_provider->Reset(reset_channel, reset_server);
+  }
 }
 
 }  // namespace testing

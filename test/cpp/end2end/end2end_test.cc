@@ -35,8 +35,6 @@
 #include <mutex>
 #include <thread>
 
-#include <iostream>
-
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -258,13 +256,9 @@ void TestScenario::Log() const {
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  static void SetUpTestCase() {
-    grpc_init();
-  }
+  static void SetUpTestCase() { grpc_init(); }
 
-  static void TearDownTestCase() {
-    grpc_shutdown();
-  }
+  static void TearDownTestCase() { grpc_shutdown(); }
 
   End2endTest()
       : is_server_started_(false),
@@ -284,7 +278,6 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       do_not_test_ = true;
       return;
     }
-    //spiffe_thread_list_ = CreateSpiffeThreadList(GetParam().credentials_type);
   }
 
   void TearDown() override {
@@ -295,10 +288,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (first_picked_port_ > 0) {
       grpc_recycle_unused_port(first_picked_port_);
     }
-    if (GetParam().credentials_type != kSpiffeCredentialsType) {
-      GetCredentialsProvider()->Reset();
-    }
-    //DestroySpiffeThreadList(spiffe_thread_list_, &spiffe_mutex_);
+    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
+                     /*reset_server=*/true);
   }
 
   void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
@@ -312,6 +303,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     if (is_server_started_) {
       server_->Shutdown();
+      ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/false,
+                       /*reset_server=*/true);
       BuildAndStartServer(processor);
     }
   }
@@ -320,10 +313,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       const std::shared_ptr<AuthMetadataProcessor>& processor) {
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
-    std::cout << "************About to get server creds" << std::endl;
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
-    std::cout << "*********Got server creds" << std::endl;
     if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
     }
@@ -354,7 +345,6 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
-    std::cout << "**********Finishing BuildAndStartServer" << std::endl;
   }
 
   virtual void ConfigureServerBuilder(ServerBuilder* builder) {
@@ -369,13 +359,10 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (!is_server_started_) {
       StartServer(std::shared_ptr<AuthMetadataProcessor>());
     }
+    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
+                     /*reset_server=*/false);
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
-    //if (GetParam().credentials_type == kSpiffeCredentialsType) {
-    //  spiffe_thread_list_ = CreateSpiffeThreadList(GetParam().credentials_type);
-    //  GetCredentialsProvider()->SetThreadInfo(spiffe_thread_list_, &spiffe_mutex_);
-    //}
-    std::cout << "*********About to set channel creds" << std::endl;
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     if (!user_agent_prefix_.empty()) {
@@ -409,9 +396,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators = {}) {
-    //DestroySpiffeThreadList(spiffe_thread_list_, &spiffe_mutex_);
     ResetChannel(std::move(interceptor_creators));
-    //DestroySpiffeThreadList(spiffe_thread_list_, &spiffe_mutex_);
     if (GetParam().use_proxy) {
       proxy_service_.reset(new Proxy(channel_));
       int port = grpc_pick_unused_port_or_die();
@@ -433,10 +418,6 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     DummyInterceptor::Reset();
-    //DestroySpiffeThreadList(spiffe_thread_list_, &spiffe_mutex_);
-    //if (GetParam().credentials_type == kSpiffeCredentialsType) {
-    //  GPR_ASSERT(spiffe_thread_list_ != nullptr);
-    //}
   }
 
   bool do_not_test_{false};
@@ -454,10 +435,6 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   TestServiceImplDupPkg dup_pkg_service_;
   grpc::string user_agent_prefix_;
   int first_picked_port_;
-  /** The mutex |spiffe_mutex_| synchronizes the |spiffe_thread_list|, which
-   *  manages the threads used for SPIFFE's async server authorization. **/
-  //std::mutex spiffe_mutex_;
-  //void* spiffe_thread_list_ = nullptr;
 };
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
@@ -2249,13 +2226,8 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
 #endif
 
   if (test_secure) {
-    CredentialsProvider* credentials_provider = GetCredentialsProvider();
-    /** Add Spiffe credentials with asynchronous server authz. **/
-    credentials_provider->AddSecureType(
-        kSpiffeCredentialsType,
-        std::unique_ptr<SpiffeCredentialTypeProvider>(
-            new SpiffeCredentialTypeProvider(/** server_authz_async **/ false)));
-    credentials_types = credentials_provider->GetSecureCredentialsTypeList();
+    credentials_types =
+        GetCredentialsProvider()->GetSecureCredentialsTypeList();
   }
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the

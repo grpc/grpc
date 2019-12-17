@@ -147,7 +147,8 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
       new SecureServerCredentials(grpc_local_server_credentials_create(type)));
 }
 
-std::shared_ptr<ServerCredentials> TlsServerCredentials(std::shared_ptr<TlsCredentialsOptions> options) {
+std::shared_ptr<ServerCredentials> TlsServerCredentials(
+    std::shared_ptr<TlsCredentialsOptions> options) {
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(grpc_tls_spiffe_server_credentials_create(
           options->c_credentials_options())));
