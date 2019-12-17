@@ -17,6 +17,9 @@
 #include <vector>
 
 namespace grpc_tools {
+
+static const grpc_python_generator::PythonGrpcGenerator g_grpc_code_generator;
+
 // We declare `protoc_main` here since we want access to it from Cython as an
 // extern but *without* triggering a dllimport declspec when on Windows.
 int protoc_main(int argc, char* argv[]);

@@ -129,6 +129,7 @@ static void calculate_transitive_closure(
 
 }  // end namespace internal
 
+// TODO: This should take a const pointer to a code_generator.
 static int generate_code(
     ::google::protobuf::compiler::CodeGenerator* code_generator,
     char* protobuf_path, const std::vector<std::string>* include_paths,

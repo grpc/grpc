@@ -23,7 +23,13 @@ from cython.operator cimport dereference
 
 import warnings
 
+cdef extern from "src/compiler/python_generator.h" namespace "grpc_python_generator":
+  cppclass PythonGrpcGenerator:
+    pass
+
 cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
+  cdef PythonGrpcGenerator g_grpc_code_generator
+
   cppclass cProtocError "::grpc_tools::ProtocError":
     string filename
     int line
@@ -110,7 +116,7 @@ def get_protos(bytes protobuf_path, list include_paths):
   # NOTE: Abbreviated name used to avoid shadowing of the module name.
   cdef vector[cProtocWarning] wrnings
   cdef int rc = 0
-  protoc_get_protos(protobuf_path, &c_include_paths, &files, &errors, &wrnings)
+  rc = protoc_get_protos(protobuf_path, &c_include_paths, &files, &errors, &wrnings)
   _handle_errors(rc, &errors, &wrnings, protobuf_path)
   return files
 
@@ -124,3 +130,4 @@ def get_services(bytes protobuf_path, list include_paths):
   _handle_errors(rc, &errors, &wrnings, protobuf_path)
   return files
 
+grpc_code_generator = int(<long>&g_grpc_code_generator)

@@ -42,6 +42,7 @@ struct GeneratorConfiguration {
 class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   PythonGrpcGenerator(const GeneratorConfiguration& config);
+  PythonGrpcGenerator() : PythonGrpcGenerator(GeneratorConfiguration()) {}
   ~PythonGrpcGenerator();
 
   bool Generate(const grpc::protobuf::FileDescriptor* file,
