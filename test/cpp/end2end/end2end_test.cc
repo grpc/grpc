@@ -410,6 +410,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     DummyInterceptor::Reset();
+    WaitOnServerAuthorizationToComplete(GetCredentialsProvider());
   }
 
   bool do_not_test_{false};
