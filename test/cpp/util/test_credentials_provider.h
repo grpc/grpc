@@ -84,6 +84,10 @@ CredentialsProvider* GetCredentialsProvider();
 // Not thread-safe.
 void SetCredentialsProvider(CredentialsProvider* provider);
 
+/** This adds the SPIFFE test credentials to the list of secure types for
+ *  |provider|. **/
+void EnableSpiffeCredentials(CredentialsProvider* provider);
+
 /** This method resets the active channel/server TLS credentials options, if the
  *  SPIFFE credentials are currently in use. **/
 void ResetCredentials(CredentialsProvider* provider, bool reset_channel,

@@ -1842,6 +1842,7 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
   if (insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
+  EnableSpiffeCredentials(GetCredentialsProvider());
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);

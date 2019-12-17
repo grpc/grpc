@@ -252,14 +252,10 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     if (first_picked_port_ > 0) {
       grpc_recycle_unused_port(first_picked_port_);
     }
-    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
-                     /*reset_server=*/true);
   }
 
   void ResetStubs() {
     EXPECT_TRUE(is_server_started_);
-    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
-                     /*reset_server=*/false);
     ChannelArguments args;
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(

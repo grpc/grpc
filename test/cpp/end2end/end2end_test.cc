@@ -274,10 +274,6 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       do_not_test_ = true;
       return;
     }
-    if (GetParam().credentials_type != kSpiffeCredentialsType) {
-      do_not_test_ = true;
-      return;
-    }
   }
 
   void TearDown() override {
@@ -2188,6 +2184,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
 #endif
 
   if (test_secure) {
+    EnableSpiffeCredentials(GetCredentialsProvider());
     credentials_types =
         GetCredentialsProvider()->GetSecureCredentialsTypeList();
   }

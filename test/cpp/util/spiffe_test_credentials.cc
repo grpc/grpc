@@ -110,10 +110,10 @@ CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
   if (!is_client) {
     /** There is no server authorization check done on the server-side. **/
     std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options(
-      new ::grpc_impl::experimental::TlsCredentialsOptions(
-          GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
-          /** key materials config **/ nullptr, test_credential_reload_config,
-          /** server authorization check config **/ nullptr));
+        new ::grpc_impl::experimental::TlsCredentialsOptions(
+            GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+            /** key materials config **/ nullptr, test_credential_reload_config,
+            /** server authorization check config **/ nullptr));
     return options;
   }
 
@@ -122,17 +122,17 @@ CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
   std::shared_ptr<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>
       test_server_authorization_check_config;
   if (is_async) {
-      std::shared_ptr<TestAsyncTlsServerAuthorizationCheck> async_interface(
-          new TestAsyncTlsServerAuthorizationCheck());
-      test_server_authorization_check_config = std::make_shared<
-          ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
-          async_interface);
+    std::shared_ptr<TestAsyncTlsServerAuthorizationCheck> async_interface(
+        new TestAsyncTlsServerAuthorizationCheck());
+    test_server_authorization_check_config = std::make_shared<
+        ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
+        async_interface);
   } else {
-      std::shared_ptr<TestSyncTlsServerAuthorizationCheck> sync_interface(
-          new TestSyncTlsServerAuthorizationCheck());
-      test_server_authorization_check_config = std::make_shared<
-          ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
-          sync_interface);
+    std::shared_ptr<TestSyncTlsServerAuthorizationCheck> sync_interface(
+        new TestSyncTlsServerAuthorizationCheck());
+    test_server_authorization_check_config = std::make_shared<
+        ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
+        sync_interface);
   }
 
   /** Create a TlsCredentialsOptions instance with an empty key materials

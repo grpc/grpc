@@ -152,7 +152,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::vector<grpc::string> GetSecureCredentialsTypeList() override {
     std::vector<grpc::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
-    types.push_back(grpc::testing::kSpiffeCredentialsType);
+    if (spiffe_credentials_) {
+      types.push_back(grpc::testing::kSpiffeCredentialsType);
+    }
     std::unique_lock<std::mutex> lock(mu_);
     for (auto it = added_secure_type_names_.begin();
          it != added_secure_type_names_.end(); it++) {
@@ -160,6 +162,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     }
     return types;
   }
+
+  void EnableSpiffeCredentials() { spiffe_credentials_ = true; }
 
   void Reset(bool reset_channel, bool reset_server) {
     if (reset_channel && active_channel_options_ != nullptr) {
@@ -181,6 +185,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       active_server_options_ = nullptr;
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
+  bool spiffe_credentials_ = false;
 };
 
 CredentialsProvider* g_provider = nullptr;
@@ -198,6 +203,14 @@ void SetCredentialsProvider(CredentialsProvider* provider) {
   // For now, forbids overriding provider.
   GPR_ASSERT(g_provider == nullptr);
   g_provider = provider;
+}
+
+void EnableSpiffeCredentials(CredentialsProvider* provider) {
+  if (provider != nullptr && provider->IsDefault()) {
+    DefaultCredentialsProvider* default_provider =
+        reinterpret_cast<DefaultCredentialsProvider*>(provider);
+    default_provider->EnableSpiffeCredentials();
+  }
 }
 
 void ResetCredentials(CredentialsProvider* provider, bool reset_channel,
