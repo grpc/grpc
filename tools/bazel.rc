@@ -6,6 +6,7 @@
 build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
 build --action_env=GRPC_BAZEL_RUNTIME=1
+build --define=use_fast_cpp_protos=true
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
