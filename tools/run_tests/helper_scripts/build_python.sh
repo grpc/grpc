@@ -175,7 +175,7 @@ case "$VENV" in
   ;;
 esac
 
-$VENV_PYTHON -m pip install --upgrade pip
+$VENV_PYTHON -m pip install --upgrade pip==19.3.1
 $VENV_PYTHON -m pip install --upgrade setuptools
 $VENV_PYTHON -m pip install --upgrade cython
 $VENV_PYTHON -m pip install --upgrade six enum34 protobuf
