@@ -37,47 +37,22 @@ def main(command_arguments):
 
 if sys.version_info[0] > 2:
     from google import protobuf
-    import importlib
-    import contextlib
 
     _protos = protobuf.protos
 
-    # TODO: Somehow access this function from protobuf?
-    def _proto_file_to_module_name(suffix, proto_file):
-        components = proto_file.split(os.path.sep)
-        proto_base_name = os.path.splitext(components[-1])[0]
-        return ".".join(components[:-1] + [proto_base_name + suffix])
-
-
-    # TODO: Somehow access this function from protobuf?
-    @contextlib.contextmanager
-    def _augmented_syspath(new_paths):
-        original_sys_path = sys.path
-        if new_paths is not None:
-            sys.path = sys.path + new_paths
-        try:
-            yield
-        finally:
-            sys.path = original_sys_path
-
+    finder, _import_raw = protobuf.get_import_machinery(_SERVICE_MODULE_SUFFIX,
+                                                        _protoc_compiler.grpc_code_generator)
 
     def _services(protobuf_path, include_paths=None):
-        protobuf.protos(protobuf_path, include_paths)
-        with _augmented_syspath(include_paths):
-            module_name = _proto_file_to_module_name(_SERVICE_MODULE_SUFFIX,
-                                                     protobuf_path)
-            module = importlib.import_module(module_name)
-            return module
-
+        protobuf.protos(protobuf_path, include_paths=include_paths)
+        return _import_raw(protobuf_path, include_paths=include_paths)
 
     def _protos_and_services(protobuf_path, include_paths=None):
         return (protobuf.protos(protobuf_path, include_paths=include_paths),
                 _services(protobuf_path, include_paths=include_paths))
 
 
-    sys.meta_path.extend([
-        protobuf.ProtoFinder(_SERVICE_MODULE_SUFFIX, _protoc_compiler.grpc_code_generator)
-    ])
+    sys.meta_path.extend([finder])
 
 
 if __name__ == '__main__':
