@@ -145,7 +145,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
         return nullptr;
       }
-      added_secure_type_providers_[it - added_secure_type_names_.begin()]
+      return added_secure_type_providers_[it - added_secure_type_names_.begin()]
           ->GetServerCredentials();
     }
   }

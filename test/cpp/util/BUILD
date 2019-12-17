@@ -43,6 +43,7 @@ grpc_cc_library(
     hdrs = ["spiffe_test_credentials.h"],
     deps = [
         "//:grpc++",
+        "//test/core/end2end:ssl_test_data",
     ],
 )
 

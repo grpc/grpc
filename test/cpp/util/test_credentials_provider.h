@@ -20,7 +20,6 @@
 #define GRPC_TEST_CPP_UTIL_TEST_CREDENTIALS_PROVIDER_H
 
 #include <memory>
-#include <mutex>
 
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
@@ -85,6 +84,8 @@ CredentialsProvider* GetCredentialsProvider();
 // Not thread-safe.
 void SetCredentialsProvider(CredentialsProvider* provider);
 
+/** This method resets the active channel/server TLS credentials options, if the
+ *  SPIFFE credentials are currently in use. **/
 void ResetCredentials(CredentialsProvider* provider, bool reset_channel,
                       bool reset_server);
 
