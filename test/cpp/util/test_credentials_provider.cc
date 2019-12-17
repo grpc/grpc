@@ -182,6 +182,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   void Reset(bool reset_channel, bool reset_server) {
     if (reset_channel && active_channel_options_ != nullptr) {
       active_channel_options_ = nullptr;
+      server_authz_thread_ = nullptr;
+      server_authz_thread_started_ = nullptr;
     }
     if (reset_server && active_server_options_ != nullptr) {
       active_server_options_ = nullptr;
