@@ -359,11 +359,9 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         serialized_request = _common.serialize(self._request,
                                                self._request_serializer)
         try:
-            await self._cython_call.unary_stream(
-                serialized_request,
-                self._set_initial_metadata,
-                self._set_status
-            )
+            await self._cython_call.unary_stream(serialized_request,
+                                                 self._set_initial_metadata,
+                                                 self._set_status)
         except asyncio.CancelledError:
             if self._code != grpc.StatusCode.CANCELLED:
                 self.cancel()

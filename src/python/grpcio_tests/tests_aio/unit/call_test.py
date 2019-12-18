@@ -33,7 +33,7 @@ _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 _RESPONSE_INTERVAL_US = test_constants.SHORT_TIMEOUT * 1000 * 1000
 _UNREACHABLE_TARGET = '0.1:1111'
 
-_INFINITE_INTERVAL_US = 2**31-1
+_INFINITE_INTERVAL_US = 2**31 - 1
 
 
 class TestUnaryUnaryCall(AioTestBase):
