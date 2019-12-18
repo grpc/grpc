@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +15,7 @@
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
+from __future__ import print_function
 
 import yaml
 import collections
@@ -405,7 +405,7 @@ def main():
           for t in END2END_TESTS.keys()
       )
   }
-  print yaml.dump(json)
+  print(yaml.dump(json))
 
 
 if __name__ == '__main__':
