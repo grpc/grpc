@@ -6,14 +6,17 @@ https://boringssl-review.googlesource.com/c/boringssl/+/38744
 
 ```
 cd third_party/boringssl/src
-git fetch "https://boringssl.googlesource.com/boringssl" refs/changes/44/38744/1
-git checkout FETCH_HEAD
+git fetch origin
+git checkout origin/master
+#git fetch "https://boringssl.googlesource.com/boringssl" refs/changes/44/38744/1#
+#git checkout FETCH_HEAD
 ```
 
 2. 
 generate cmake files
 
 ```
+# from third_party/boringssl directory
 python src/util/generate_build_files.py cmake
 ```
 
