@@ -149,14 +149,12 @@ class Call(_base_call.Call):
     _code: grpc.StatusCode
     _status: Awaitable[cygrpc.AioRpcStatus]
     _initial_metadata: Awaitable[MetadataType]
-    _cancellation: asyncio.Future
 
     def __init__(self) -> None:
         self._loop = asyncio.get_event_loop()
         self._code = None
         self._status = self._loop.create_future()
         self._initial_metadata = self._loop.create_future()
-        self._cancellation = self._loop.create_future()
 
     def cancel(self) -> bool:
         """Placeholder cancellation method.
@@ -205,7 +203,6 @@ class Call(_base_call.Call):
         cancellation (by application) and Core receiving status from peer. We
         make no promise here which one will win.
         """
-        logging.debug('Call._set_status, %s, %s', self._status.done(), status)
         # In case of the RPC finished without receiving metadata.
         if not self._initial_metadata.done():
             self._initial_metadata.set_result(None)
