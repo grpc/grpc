@@ -77,6 +77,11 @@ cdef class _AioCall:
         """Destroys the corresponding Core object for this RPC."""
         grpc_call_unref(self._grpc_call_wrapper.call)
 
+    @property
+    def locally_cancelled(self):
+        """Grant Python layer access of the cancelled flag."""
+        return self._is_locally_cancelled
+
     def cancel(self, AioRpcStatus status):
         """Cancels the RPC in Core with given RPC status.
         
@@ -145,6 +150,7 @@ cdef class _AioCall:
                receive_status_on_client_op)
 
         # Executes all operations in one batch.
+        # Might raise CancelledError, handling it in Python UnaryUnaryCall.
         await execute_batch(self._grpc_call_wrapper,
                             ops,
                             self._loop)
