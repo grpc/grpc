@@ -417,7 +417,7 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         if response_message is None:
             # If the read operation failed, Core should explain why.
             await self._raise_rpc_error_if_not_ok()
-            # If everything is okay, there is something wrong internally.
+            # If no exception raised, there is something wrong internally.
             assert False, 'Read operation failed with StatusCode.OK'
         else:
             return response_message
