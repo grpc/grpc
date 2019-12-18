@@ -126,17 +126,22 @@ class TestUnaryUnaryCall(AioTestBase):
             self.assertTrue(call.cancel())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(asyncio.CancelledError) as exception_context:
+            with self.assertRaises(grpc.RpcError) as exception_context:
                 await call
+
+            # The info in the RpcError should match the info in Call object.
+            rpc_error = exception_context.exception
+            self.assertEqual(rpc_error.code(), await call.code())
+            self.assertEqual(rpc_error.details(), await call.details())
+            self.assertEqual(rpc_error.trailing_metadata(), await
+                             call.trailing_metadata())
+            self.assertEqual(rpc_error.debug_error_string(), await
+                             call.debug_error_string())
 
             self.assertTrue(call.cancelled())
             self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
             self.assertEqual(await call.details(),
                              'Locally cancelled by application!')
-
-            # NOTE(lidiz) The CancelledError is almost always re-created,
-            # so we might not want to use it to transmit data.
-            # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
 
 
 class TestUnaryStreamCall(AioTestBase):

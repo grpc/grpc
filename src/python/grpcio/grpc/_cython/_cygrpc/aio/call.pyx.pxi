@@ -33,8 +33,7 @@ cdef class _AioCall:
         self._grpc_call_wrapper = GrpcCallWrapper()
         self._loop = asyncio.get_event_loop()
         self._create_grpc_call(deadline, method)
-
-        self._status_received = asyncio.Event(loop=self._loop)
+        self._is_locally_cancelled = False
 
     def __dealloc__(self):
         self._destroy_grpc_call()
@@ -78,17 +77,21 @@ cdef class _AioCall:
         """Destroys the corresponding Core object for this RPC."""
         grpc_call_unref(self._grpc_call_wrapper.call)
 
-    cdef AioRpcStatus _cancel_and_create_status(self, object cancellation_future):
-        """Cancels the RPC in Core, and return the final RPC status."""
-        cdef AioRpcStatus status
+    def cancel(self, AioRpcStatus status):
+        """Cancels the RPC in Core with given RPC status.
+        
+        Above abstractions must invoke this method to set Core objects into
+        proper state.
+        """
+        self._is_locally_cancelled = True
+
         cdef object details
         cdef char *c_details
         cdef grpc_call_error error
         # Try to fetch application layer cancellation details in the future.
         # * If cancellation details present, cancel with status;
         # * If details not present, cancel with unknown reason.
-        if cancellation_future.done():
-            status = cancellation_future.result()
+        if status is not None:
             details = str_to_bytes(status.details())
             self._references.append(details)
             c_details = <char *>details
@@ -100,7 +103,6 @@ cdef class _AioCall:
                 NULL,
             )
             assert error == GRPC_CALL_OK
-            return status
         else:
             # By implementation, grpc_call_cancel always return OK
             error = grpc_call_cancel(self._grpc_call_wrapper.call, NULL)
@@ -111,12 +113,9 @@ cdef class _AioCall:
                 None,
                 None,
             )
-            cancellation_future.set_result(status)
-            return status
 
     async def unary_unary(self,
                           bytes request,
-                          object cancellation_future,
                           object initial_metadata_observer,
                           object status_observer):
         """Performs a unary unary RPC.
@@ -145,19 +144,10 @@ cdef class _AioCall:
                receive_initial_metadata_op, receive_message_op,
                receive_status_on_client_op)
 
-        try:
-            await execute_batch(self._grpc_call_wrapper,
-                                        ops,
-                                        self._loop)
-        except asyncio.CancelledError:
-            status = self._cancel_and_create_status(cancellation_future)
-            initial_metadata_observer(None)
-            status_observer(status)
-            raise
-        else:
-            initial_metadata_observer(
-                receive_initial_metadata_op.initial_metadata()
-            )
+        # Executes all operations in one batch.
+        await execute_batch(self._grpc_call_wrapper,
+                            ops,
+                            self._loop)
 
         status = AioRpcStatus(
             receive_status_on_client_op.code(),
@@ -179,6 +169,11 @@ cdef class _AioCall:
         cdef ReceiveStatusOnClientOperation op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
         cdef tuple ops = (op,)
         await execute_batch(self._grpc_call_wrapper, ops, self._loop)
+
+        # Halts if the RPC is locally cancelled
+        if self._is_locally_cancelled:
+            return
+
         cdef AioRpcStatus status = AioRpcStatus(
             op.code(),
             op.details(),
@@ -186,52 +181,30 @@ cdef class _AioCall:
             op.error_string(),
         )
         status_observer(status)
-        self._status_received.set()
 
-    def _handle_cancellation_from_application(self,
-                                              object cancellation_future,
-                                              object status_observer):
-        def _cancellation_action(finished_future):
-            if not self._status_received.set():
-                status = self._cancel_and_create_status(finished_future)
-                status_observer(status)
-                self._status_received.set()
-
-        cancellation_future.add_done_callback(_cancellation_action)
-
-    async def _message_async_generator(self):
+    async def receive_serialized_message(self):
+        """Receives one single raw message in bytes."""
         cdef bytes received_message
 
-        # Infinitely receiving messages, until:
+        # Receives a message. Returns None when failed:
         # * EOF, no more messages to read;
-        # * The client application cancells;
+        # * The client application cancels;
         # * The server sends final status.
-        while True:
-            if self._status_received.is_set():
-                return
-
-            received_message = await _receive_message(
-                self._grpc_call_wrapper,
-                self._loop
-            )
-            if received_message is None:
-                # The read operation failed, Core should explain why it fails
-                await self._status_received.wait()
-                return
-            else:
-                yield received_message
+        received_message = await _receive_message(
+            self._grpc_call_wrapper,
+            self._loop
+        )
+        return received_message
 
     async def unary_stream(self,
                            bytes request,
-                           object cancellation_future,
                            object initial_metadata_observer,
                            object status_observer):
-        """Actual implementation of the complete unary-stream call.
-        
-        Needs to pay extra attention to the raise mechanism. If we want to
-        propagate the final status exception, then we have to raise it.
-        Othersize, it would end normally and raise `StopAsyncIteration()`.
-        """
+        """Implementation of the start of a unary-stream call."""
+        # Peer may prematurely end this RPC at any point. We need a corutine
+        # that watches if the server sends the final status.
+        self._loop.create_task(self._handle_status_once_received(status_observer))
+
         cdef tuple outbound_ops
         cdef Operation initial_metadata_op = SendInitialMetadataOperation(
             _EMPTY_METADATA,
@@ -248,21 +221,13 @@ cdef class _AioCall:
             send_close_op,
         )
 
-        # Actually sends out the request message.
+        # Sends out the request message.
         await execute_batch(self._grpc_call_wrapper,
-                                   outbound_ops,
-                                   self._loop)
-
-        # Peer may prematurely end this RPC at any point. We need a mechanism
-        # that handles both the normal case and the error case.
-        self._loop.create_task(self._handle_status_once_received(status_observer))
-        self._handle_cancellation_from_application(cancellation_future,
-                                                    status_observer)
+                            outbound_ops,
+                            self._loop)
 
         # Receives initial metadata.
         initial_metadata_observer(
             await _receive_initial_metadata(self._grpc_call_wrapper,
                                             self._loop),
         )
-
-        return self._message_async_generator()
