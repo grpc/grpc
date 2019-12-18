@@ -16,43 +16,48 @@
 This takes the list of libs, node_modules, and targets from our
 yaml dictionary, and adds to each the transitive closure
 of the list of dependencies.
-
 """
 
 
-def get_lib(libs, name):
-    try:
-        return next(lib for lib in libs if lib['name'] == name)
-    except StopIteration:
-        return None
+def transitive_deps(lib_map, node):
+    """Returns a list of transitive dependencies from node.
 
+    Recursively iterate all dependent node in a depth-first fashion and
+    list a result using a topological sorting.
+    """
+    result = []
+    seen = set()
+    start = node
 
-def transitive_deps(lib, libs):
-    if lib is not None and 'deps' in lib:
-        # Recursively call transitive_deps on each dependency, and take the union
-        return set.union(
-            set(lib['deps']), *[
-                set(transitive_deps(get_lib(libs, dep), libs))
-                for dep in lib['deps']
-            ])
-    else:
-        return set()
+    def recursive_helper(node):
+        if node is None:
+            return
+        for dep in node.get("deps", []):
+            if dep not in seen:
+                seen.add(dep)
+                next_node = lib_map.get(dep)
+                recursive_helper(next_node)
+        if node is not start:
+            result.insert(0, node["name"])
+
+    recursive_helper(node)
+    return result
 
 
 def mako_plugin(dictionary):
     """The exported plugin code for transitive_dependencies.
 
-  Iterate over each list and check each item for a deps list. We add a
-  transitive_deps property to each with the transitive closure of those
-  dependency lists.
-  """
-    libs = dictionary.get('libs')
+    Iterate over each list and check each item for a deps list. We add a
+    transitive_deps property to each with the transitive closure of those
+    dependency lists. The result list is sorted in a topological ordering.
+    """
+    lib_map = {lib['name']: lib for lib in dictionary.get('libs')}
 
     for target_name, target_list in dictionary.items():
         for target in target_list:
             if isinstance(target, dict) and 'deps' in target:
-                target['transitive_deps'] = transitive_deps(target, libs)
+                target['transitive_deps'] = transitive_deps(lib_map, target)
 
     python_dependencies = dictionary.get('python_dependencies')
-    python_dependencies['transitive_deps'] = (transitive_deps(
-        python_dependencies, libs))
+    python_dependencies['transitive_deps'] = transitive_deps(
+        lib_map, python_dependencies)
