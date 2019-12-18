@@ -41,6 +41,7 @@ VALID_ATTRIBUTE_KEYS_MAP = {
         'boringssl': one_of((True,)),
         'build_system': anything(),
         'build': anything(),
+        'cmake_target': anything(),
         'defaults': anything(),
         'deps_linkage': one_of(('static',)),
         'deps': anything(),
