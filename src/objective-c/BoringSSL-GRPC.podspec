@@ -204,6 +204,7 @@ Pod::Spec.new do |s|
       }
     EOF
 
+    # TODO(jtattermusch): update this file to third_party/boringssl/src submodule
     # To build boringssl, we need the generated file err_data.c, which is normally generated
     # by boringssl's err_data_generate.go, but we already have a copy of err_data.c checked into the
     # grpc/grpc repository that gets regenerated whenever we update the third_party/boringssl submodule.

@@ -6221,7 +6221,7 @@ defaults:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
     CFLAGS: -g
-    CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
+    CPPFLAGS: -Ithird_party/boringssl/src/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-exceptions
   global:

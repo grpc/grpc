@@ -21,6 +21,7 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
     set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
   endif()
 
+  # TODO(jtattermusch): this CMakeLists.txt will always be there, even if the submodule is not present
   if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
     if(CMAKE_GENERATOR MATCHES "Visual Studio")
       if(CMAKE_VERSION VERSION_LESS 3.13)
