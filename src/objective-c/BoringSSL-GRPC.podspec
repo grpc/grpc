@@ -78,7 +78,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/google/boringssl.git',
-    :commit => "2c02c76f1a06093267ec0119f0bbf417868ed8e5",
+    :commit => "d6c7aed54d4535e837ba9109cc7e6673d8332604",
   }
 
   s.ios.deployment_target = '7.0'
@@ -204,7 +204,6 @@ Pod::Spec.new do |s|
       }
     EOF
 
-    # TODO(jtattermusch): update this file to third_party/boringssl/src submodule
     # To build boringssl, we need the generated file err_data.c, which is normally generated
     # by boringssl's err_data_generate.go, but we already have a copy of err_data.c checked into the
     # grpc/grpc repository that gets regenerated whenever we update the third_party/boringssl submodule.
