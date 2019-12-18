@@ -4,7 +4,7 @@
     def expand_symbol_list(symbol_list):
         return ',\n    '.join("'#define %s GRPC_SHADOW_%s'" % (symbol, symbol) for symbol in symbol_list)
     import subprocess
-    boringssl_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd='third_party/boringssl').decode().strip()
+    boringssl_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd='third_party/boringssl/src').decode().strip()
   %>
 
   # This file has been automatically generated from a template file.
