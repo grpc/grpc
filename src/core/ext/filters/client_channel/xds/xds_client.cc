@@ -862,31 +862,31 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSent(void* arg,
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
     void* arg, grpc_error* error) {
   AdsCallState* self = static_cast<AdsCallState*>(arg);
-  self->Unref(DEBUG_LOCATION, "ADS+OnRequestSentLocked");
-  if (!self->IsCurrentCallOnChannel() || error != GRPC_ERROR_NONE) return;
-  // Clean up the sent message.
-  grpc_byte_buffer_destroy(self->send_message_payload_);
-  self->send_message_payload_ = nullptr;
-  // Continue to send another pending message if any.
-  // TODO(roth): The current code to handle buffered messages has the advantage
-  // of sending only the most recent list
-  //  of resource names for each resource type (no matter how many times that
-  //  resource type has been requested to send while the current message sending
-  //  is still pending). But its disadvantage is that we send the requests in
-  //  fixed order of resource types. We need to fix this if we are seeing some
-  //  resource type(s) starved due to frequent requests of other resource
-  //  type(s).
-  for (auto& p : self->buffered_request_map_) {
-    const std::string& type_url = p.first;
-    std::unique_ptr<BufferedRequest>& buffered_request = p.second;
-    if (buffered_request != nullptr) {
-      self->SendMessageLocked(type_url, buffered_request->nonce,
-                              buffered_request->error, false);
-      buffered_request->error = GRPC_ERROR_NONE;
-      buffered_request.reset();
-      return;
+  if (self->IsCurrentCallOnChannel() && error == GRPC_ERROR_NONE) {
+    // Clean up the sent message.
+    grpc_byte_buffer_destroy(self->send_message_payload_);
+    self->send_message_payload_ = nullptr;
+    // Continue to send another pending message if any.
+    // TODO(roth): The current code to handle buffered messages has the
+    // advantage of sending only the most recent list of resource names for each
+    // resource type (no matter how many times that resource type has been
+    // requested to send while the current message sending is still pending).
+    // But its disadvantage is that we send the requests in fixed order of
+    // resource types. We need to fix this if we are seeing some resource
+    // type(s) starved due to frequent requests of other resource type(s).
+    for (auto& p : self->buffered_request_map_) {
+      const std::string& type_url = p.first;
+      std::unique_ptr<BufferedRequest>& buffered_request = p.second;
+      if (buffered_request != nullptr) {
+        self->SendMessageLocked(type_url, buffered_request->nonce,
+                                buffered_request->error, false);
+        buffered_request->error = GRPC_ERROR_NONE;
+        buffered_request.reset();
+        break;
+      }
     }
   }
+  self->Unref(DEBUG_LOCATION, "ADS+OnRequestSentLocked");
 }
 
 void XdsClient::ChannelState::AdsCallState::OnResponseReceived(
