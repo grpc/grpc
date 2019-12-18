@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.24.3 documentation</title>
+    <title>gRPC &#8212; gRPC Python 1.26.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
 
 
 
-<p class="blurb">1.24.3</p>
+<p class="blurb">1.26.0</p>
 
 
 
@@ -52,6 +52,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#create-client-credentials">Create Client Credentials</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-server">Create Server</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-server-credentials">Create Server Credentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#local-connection-type">Local Connection Type</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rpc-method-handlers">RPC Method Handlers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#channel-ready-future">Channel Ready Future</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#channel-connectivity">Channel Connectivity</a></li>
@@ -332,6 +333,34 @@ authorization header, for example
 </table>
 </dd></dl>
 
+<dl class="function">
+<dt id="grpc.local_channel_credentials">
+<code class="descclassname">grpc.</code><code class="descname">local_channel_credentials</code><span class="sig-paren">(</span><em>local_connect_type=grpc.LocalConnectionType.LOCAL_TCP</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#local_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.local_channel_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a local ChannelCredentials used for local connections.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<p>Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+also UDS connections.</p>
+<p>The connections created by local channel credentials are not
+encrypted, but will be checked if they are local or not.
+The UDS connections are considered secure by providing peer authentication
+and data confidentiality while TCP connections are considered insecure.</p>
+<p>It is allowed to transmit call credentials over connections created by
+local channel credentials.</p>
+<p>Local channel credentials are useful for 1) eliminating insecure_channel usage;
+2) enable unit testing for call credentials without setting up secrets.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>local_connect_type</strong> – Local connection type (either
+grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A ChannelCredentials for use with a local Channel</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 <div class="section" id="create-server">
 <h3>Create Server<a class="headerlink" href="#create-server" title="Permalink to this headline">¶</a></h3>
@@ -461,6 +490,55 @@ require clients to be authenticated.</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.local_server_credentials">
+<code class="descclassname">grpc.</code><code class="descname">local_server_credentials</code><span class="sig-paren">(</span><em>local_connect_type=grpc.LocalConnectionType.LOCAL_TCP</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#local_server_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.local_server_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a local ServerCredentials used for local connections.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<p>Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+also UDS connections.</p>
+<p>The connections created by local server credentials are not
+encrypted, but will be checked if they are local or not.
+The UDS connections are considered secure by providing peer authentication
+and data confidentiality while TCP connections are considered insecure.</p>
+<p>It is allowed to transmit call credentials over connections created by local
+server credentials.</p>
+<p>Local server credentials are useful for 1) eliminating insecure_channel usage;
+2) enable unit testing for call credentials without setting up secrets.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>local_connect_type</strong> – Local connection type (either
+grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A ServerCredentials for use with a local Server</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="local-connection-type">
+<h3>Local Connection Type<a class="headerlink" href="#local-connection-type" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.LocalConnectionType">
+<em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">LocalConnectionType</code><a class="reference internal" href="_modules/grpc.html#LocalConnectionType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.LocalConnectionType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Types of local connection for local credential creation.</p>
+<dl class="attribute">
+<dt id="grpc.LocalConnectionType.UDS">
+<code class="descname">UDS</code><a class="headerlink" href="#grpc.LocalConnectionType.UDS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unix domain socket connections</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.LocalConnectionType.LOCAL_TCP">
+<code class="descname">LOCAL_TCP</code><a class="headerlink" href="#grpc.LocalConnectionType.LOCAL_TCP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local TCP connections.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>

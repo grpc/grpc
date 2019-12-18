@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc_health.v1.health &#8212; gRPC Python 1.24.3 documentation</title>
+    <title>grpc_health.v1.health &#8212; gRPC Python 1.26.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.24.3</p>
+<p class="blurb">1.26.0</p>
 
 
 
@@ -108,20 +108,20 @@
 
 <span class="kn">import</span> <span class="nn">grpc</span>
 
-<span class="kn">from</span> <span class="nn">grpc_health.v1</span> <span class="k">import</span> <span class="n">health_pb2</span> <span class="k">as</span> <span class="n">_health_pb2</span>
-<span class="kn">from</span> <span class="nn">grpc_health.v1</span> <span class="k">import</span> <span class="n">health_pb2_grpc</span> <span class="k">as</span> <span class="n">_health_pb2_grpc</span>
+<span class="kn">from</span> <span class="nn">grpc_health.v1</span> <span class="kn">import</span> <span class="n">health_pb2</span> <span class="k">as</span> <span class="n">_health_pb2</span>
+<span class="kn">from</span> <span class="nn">grpc_health.v1</span> <span class="kn">import</span> <span class="n">health_pb2_grpc</span> <span class="k">as</span> <span class="n">_health_pb2_grpc</span>
 
 <span class="n">SERVICE_NAME</span> <span class="o">=</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">DESCRIPTOR</span><span class="o">.</span><span class="n">services_by_name</span><span class="p">[</span><span class="s1">&#39;Health&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">full_name</span>
 
 
 <span class="k">class</span> <span class="nc">_Watcher</span><span class="p">():</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_responses</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_open</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">_next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -136,7 +136,7 @@
     <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
@@ -164,7 +164,7 @@
 <div class="viewcode-block" id="HealthServicer"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer">[docs]</a><span class="k">class</span> <span class="nc">HealthServicer</span><span class="p">(</span><span class="n">_health_pb2_grpc</span><span class="o">.</span><span class="n">HealthServicer</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Servicer handling RPCs for service statuses.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">experimental_non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                  <span class="n">experimental_thread_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
