@@ -719,6 +719,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   op.op = GRPC_OP_SEND_MESSAGE;
   op.data.send_message.send_message = send_message_payload_;
   Ref(DEBUG_LOCATION, "ADS+OnRequestSentLocked").release();
+  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
+                    grpc_schedule_on_exec_ctx);
   grpc_call_error call_error =
       grpc_call_start_batch_and_execute(call_, &op, 1, &on_request_sent_);
   if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
