@@ -193,6 +193,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
+
     # NOTE: these attributes won't be used for the poller-specific versions of a test
     # automatically, you need to set them explicitly (if applicable)
     args = {
