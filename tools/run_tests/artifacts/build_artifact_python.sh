@@ -70,6 +70,9 @@ tar xzf "${GRPCIO_TAR_GZ}" -C "${GRPCIO_STRIP_TEMPDIR}"
 )
 mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 
+# Build proxy package
+${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpc/setup.py preprocess sdist
+
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
@@ -138,8 +141,9 @@ fi
 # Ensure the generated artifacts are valid.
 "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv && "${PYTHON}" -m virtualenv venv; }
 venv/bin/python -m pip install "twine<=2.0"
-venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+venv/bin/python -m twine check dist/* tools/distrib/python/grpc/dist/* tools/distrib/python/grpcio_tools/dist/*
 rm -rf venv/
 
 cp -r dist/* "$ARTIFACT_DIR"
+cp -r tools/distrib/python/grpc/dist/* "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"

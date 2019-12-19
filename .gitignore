@@ -23,6 +23,8 @@ a.out
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
 .pytype
+*.egg-info
+tools/distrib/python/*/LICENSE
 
 # Node installation output
 node_modules
