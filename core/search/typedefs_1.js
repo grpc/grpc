@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7',1,'alloc.h']]],
   ['gpr_5fatm',['gpr_atm',['../impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_atomic.h'],['../impl_2codegen_2atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_sync.h'],['../impl_2codegen_2atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_windows.h']]],
   ['gpr_5fcv',['gpr_cv',['../impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885',1,'gpr_cv():&#160;sync_posix.h'],['../impl_2codegen_2sync__windows_8h.html#a81241bed6e85e9b106a1311060a04d9d',1,'gpr_cv():&#160;sync_windows.h']]],
   ['gpr_5flog_5ffunc',['gpr_log_func',['../impl_2codegen_2log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05',1,'log.h']]],

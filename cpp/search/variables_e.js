@@ -6,5 +6,5 @@ var searchData=
   ['pem_5fprivate_5fkey',['pem_private_key',['../structgrpc__impl_1_1_ssl_credentials_options.html#a3315b434219f4041b502c7fc4363d50f',1,'grpc_impl::SslCredentialsOptions']]],
   ['pem_5froot_5fcerts',['pem_root_certs',['../structgrpc__impl_1_1_ssl_credentials_options.html#a0a00552b843196f3e62eb6d904cff8fc',1,'grpc_impl::SslCredentialsOptions::pem_root_certs()'],['../structgrpc_1_1_ssl_server_credentials_options.html#acdde73dba83ee30aeda4a678f5ce8e74',1,'grpc::SslServerCredentialsOptions::pem_root_certs()']]],
   ['pointer',['pointer',['../uniongrpc__arg_1_1grpc__arg__value.html#aed77f552b492a65ec44d848589b57570',1,'grpc_arg::grpc_arg_value']]],
-  ['private_5fkey',['private_key',['../structgrpc_1_1_ssl_server_credentials_options_1_1_pem_key_cert_pair.html#ad9fa2a2083a40127d264e61cca637050',1,'grpc::SslServerCredentialsOptions::PemKeyCertPair']]]
+  ['private_5fkey',['private_key',['../structgrpc_1_1_ssl_server_credentials_options_1_1_pem_key_cert_pair.html#ad9fa2a2083a40127d264e61cca637050',1,'grpc::SslServerCredentialsOptions::PemKeyCertPair::private_key()'],['../structgrpc__impl_1_1experimental_1_1_tls_key_materials_config_1_1_pem_key_cert_pair.html#aa73e9cea8d0de059365b877ef5f160e3',1,'grpc_impl::experimental::TlsKeyMaterialsConfig::PemKeyCertPair::private_key()']]]
 ];

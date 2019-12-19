@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -65,8 +65,11 @@ $(function() {
 <li>::grpc::experimental::DelegatingChannel
 : <a class="el" href="classgrpc_1_1_channel_interface.html#ac8c9786b36d074059b306ff1d1d90453">grpc::ChannelInterface</a>
 </li>
+<li>::grpc::experimental::GenericCallbackServerContext
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#ab8dc153c13074d5df081b2ce787c9e77">grpc_impl::ServerContextBase</a>
+</li>
 <li>::grpc::GenericServerContext
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#a650cca6cc6da2784b74d9401713f5160">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a650cca6cc6da2784b74d9401713f5160">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc::internal::BlockingUnaryCallImpl
 : <a class="el" href="classgrpc_1_1_channel_interface.html#ad26a823fee699f97244d581f400fe39a">grpc::ChannelInterface</a>
@@ -83,15 +86,6 @@ $(function() {
 <li>::grpc::internal::CallOpSet
 : <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a560fa0fe4346e5487f19cd7403071aca">grpc_impl::CompletionQueue</a>
 </li>
-<li>::grpc::internal::ClientStreamingHandler
-: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#aee2bfad715a7c61f2839cdc9b5be6ef5">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#aee2bfad715a7c61f2839cdc9b5be6ef5">grpc_impl::ServerContext</a>
-, <a class="el" href="classgrpc__impl_1_1_server_reader.html#aee2bfad715a7c61f2839cdc9b5be6ef5">grpc_impl::ServerReader&lt; R &gt;</a>
-</li>
-<li>::grpc::internal::ErrorMethodHandler
-: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a388eaf44b2f41899396d4b5b05cf857c">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a388eaf44b2f41899396d4b5b05cf857c">grpc_impl::ServerContext</a>
-</li>
 <li>::grpc::internal::InterceptedChannel
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a9a23a8cfcee9fd9658ecd8bb1a3193ac">grpc::ChannelInterface</a>
 , <a class="el" href="classgrpc__impl_1_1_channel.html#a9a23a8cfcee9fd9658ecd8bb1a3193ac">grpc_impl::Channel</a>
@@ -99,47 +93,29 @@ $(function() {
 <li>::grpc::internal::RpcMethod
 : <a class="el" href="classgrpc_1_1_channel_interface.html#afdfab4a69fd00ee5bffe02b9fd2718a2">grpc::ChannelInterface</a>
 </li>
-<li>::grpc::internal::RpcMethodHandler
-: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#ab4e0fda6a3be8543f0d9f79f297533e9">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#ab4e0fda6a3be8543f0d9f79f297533e9">grpc_impl::ServerContext</a>
-</li>
-<li>::grpc::internal::ServerStreamingHandler
-: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#abba72ec6d1dbf06ecb1bf48e1c916c48">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#abba72ec6d1dbf06ecb1bf48e1c916c48">grpc_impl::ServerContext</a>
-, <a class="el" href="classgrpc__impl_1_1_server_writer.html#abba72ec6d1dbf06ecb1bf48e1c916c48">grpc_impl::ServerWriter&lt; W &gt;</a>
-</li>
-<li>::grpc::internal::TemplatedBidiStreamingHandler
-: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a65ae6d263727d1e67e811969f909212b">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a65ae6d263727d1e67e811969f909212b">grpc_impl::ServerContext</a>
-</li>
-<li>::grpc::internal::TemplatedBidiStreamingHandler&lt; ServerReaderWriter&lt; W, R &gt;, false &gt;
-: <a class="el" href="classgrpc__impl_1_1_server_reader_writer.html#ad5e20c27db422593daf07f623748087f">grpc_impl::ServerReaderWriter&lt; W, R &gt;</a>
-</li>
-<li>::grpc::internal::TemplatedBidiStreamingHandler&lt; ServerSplitStreamer&lt; RequestType, ResponseType &gt;, false &gt;
-: <a class="el" href="classgrpc__impl_1_1_server_split_streamer.html#a2f377a3ef865d9c532d57407197534f7">grpc_impl::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>
-</li>
-<li>::grpc::internal::TemplatedBidiStreamingHandler&lt; ServerUnaryStreamer&lt; RequestType, ResponseType &gt;, true &gt;
-: <a class="el" href="classgrpc__impl_1_1_server_unary_streamer.html#a9c54683e2904a949dbb2d533d67056ad">grpc_impl::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>
-</li>
 <li>::grpc::ServerInterface
-: <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html#a8edbec79fc5ad7456e57c0f513451e2f">grpc::internal::ServerAsyncStreamingInterface</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_generic_callback_server_context.html#a8edbec79fc5ad7456e57c0f513451e2f">grpc::experimental::GenericCallbackServerContext</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html#a8edbec79fc5ad7456e57c0f513451e2f">grpc::internal::ServerAsyncStreamingInterface</a>
 , <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a8edbec79fc5ad7456e57c0f513451e2f">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a8edbec79fc5ad7456e57c0f513451e2f">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a8edbec79fc5ad7456e57c0f513451e2f">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc::Service
 : <a class="el" href="classgrpc_1_1_server_interface.html#ae167bce70b5b1c42985d3a22425c8e66">grpc::ServerInterface</a>
+</li>
+<li>::grpc::testing::DefaultReactorTestPeer
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#adffb40972486d82d72310e8d4b1bfdb1">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc::testing::InteropClientContextInspector
 : <a class="el" href="classgrpc__impl_1_1_client_context.html#ac4ab4e2d21681704cee0f6e741cc813c">grpc_impl::ClientContext</a>
 </li>
 <li>::grpc::testing::InteropServerContextInspector
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#a23b6c885fa0656c25c2a46ab22e99270">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a23b6c885fa0656c25c2a46ab22e99270">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc::testing::ServerBuilderPluginTest
 : <a class="el" href="classgrpc__impl_1_1_server_builder.html#a6d051c774efa6448928d2ca4062676d0">grpc_impl::ServerBuilder</a>
 </li>
 <li>::grpc::testing::ServerContextTestSpouse
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#a1cc35b5d4492397bf75bf6c08367a58b">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a1cc35b5d4492397bf75bf6c08367a58b">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::Channel
 : <a class="el" href="classgrpc__impl_1_1_client_context.html#a3b58c0a256e5390791b734aa74068b19">grpc_impl::ClientContext</a>
@@ -158,7 +134,7 @@ $(function() {
 : <a class="el" href="classgrpc__impl_1_1_client_context.html#a9625b726c673a6af85a10af84ff4edcc">grpc_impl::ClientContext</a>
 </li>
 <li>::grpc_impl::ClientContext
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#aa6fdf74316c6adb02694d4d3a5553c5f">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#aa6fdf74316c6adb02694d4d3a5553c5f">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::ClientReader
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a05b1387940f7625cebd368b4ad8bfb78">grpc::ChannelInterface</a>
@@ -176,14 +152,14 @@ $(function() {
 , <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a50a886684b0bead6daf85a6537b57ed9">grpc_impl::CompletionQueue</a>
 </li>
 <li>::grpc_impl::internal::CallbackBidiHandler
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#a2b84d1b805b9ca90af10c66b287b2ba1">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a2b84d1b805b9ca90af10c66b287b2ba1">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::internal::CallbackClientStreamingHandler
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#a09c4b3e16526fd4a81ebaaf98b8b4052">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a09c4b3e16526fd4a81ebaaf98b8b4052">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::internal::CallbackServerStreamingHandler
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a423395a97df4554ec335991ff564f779">grpc::ByteBuffer</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a423395a97df4554ec335991ff564f779">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a423395a97df4554ec335991ff564f779">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::internal::CallbackUnaryCallImpl
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a4cb550833580f99a3482fddc7fe86125">grpc::ChannelInterface</a>
@@ -191,7 +167,7 @@ $(function() {
 </li>
 <li>::grpc_impl::internal::CallbackUnaryHandler
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a4cd64467fd0156a568372a91bd13683f">grpc::ByteBuffer</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a4cd64467fd0156a568372a91bd13683f">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a4cd64467fd0156a568372a91bd13683f">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::internal::ClientAsyncReaderFactory
 : <a class="el" href="classgrpc_1_1_channel_interface.html#acec66ebadeb4641d4f4b6ca5f8605576">grpc::ChannelInterface</a>
@@ -232,44 +208,82 @@ $(function() {
 <li>::grpc_impl::internal::ClientContextAccessor
 : <a class="el" href="classgrpc__impl_1_1_client_context.html#a82974e6f0c863dafdd5e0c6f9f271ee8">grpc_impl::ClientContext</a>
 </li>
+<li>::grpc_impl::internal::ClientStreamingHandler
+: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a1e95806520e0fd29cf59b9a809cab2eb">grpc_impl::CompletionQueue</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a1e95806520e0fd29cf59b9a809cab2eb">grpc_impl::ServerContextBase</a>
+, <a class="el" href="classgrpc__impl_1_1_server_reader.html#a1e95806520e0fd29cf59b9a809cab2eb">grpc_impl::ServerReader&lt; R &gt;</a>
+</li>
+<li>::grpc_impl::internal::ErrorMethodHandler
+: <a class="el" href="classgrpc_1_1_byte_buffer.html#ac9c3405f27b5188020e61c8fc04ebf48">grpc::ByteBuffer</a>
+, <a class="el" href="classgrpc__impl_1_1_completion_queue.html#ac9c3405f27b5188020e61c8fc04ebf48">grpc_impl::CompletionQueue</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#ac9c3405f27b5188020e61c8fc04ebf48">grpc_impl::ServerContextBase</a>
+</li>
+<li>::grpc_impl::internal::FinishOnlyReactor
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a0859bdc11d40e768d25326cae33599f2">grpc_impl::ServerContextBase</a>
+</li>
+<li>::grpc_impl::internal::RpcMethodHandler
+: <a class="el" href="classgrpc_1_1_byte_buffer.html#a49e74735a6311aa358e09205b4d5a258">grpc::ByteBuffer</a>
+, <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a49e74735a6311aa358e09205b4d5a258">grpc_impl::CompletionQueue</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a49e74735a6311aa358e09205b4d5a258">grpc_impl::ServerContextBase</a>
+</li>
 <li>::grpc_impl::internal::ServerReaderWriterBody
 : <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a351aa4aad60b2123232c179620d8138f">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a351aa4aad60b2123232c179620d8138f">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a351aa4aad60b2123232c179620d8138f">grpc_impl::ServerContextBase</a>
+</li>
+<li>::grpc_impl::internal::ServerStreamingHandler
+: <a class="el" href="classgrpc_1_1_byte_buffer.html#a6460cfb51a46a5a2993d1350641fa0bd">grpc::ByteBuffer</a>
+, <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a6460cfb51a46a5a2993d1350641fa0bd">grpc_impl::CompletionQueue</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a6460cfb51a46a5a2993d1350641fa0bd">grpc_impl::ServerContextBase</a>
+, <a class="el" href="classgrpc__impl_1_1_server_writer.html#a6460cfb51a46a5a2993d1350641fa0bd">grpc_impl::ServerWriter&lt; W &gt;</a>
+</li>
+<li>::grpc_impl::internal::TemplatedBidiStreamingHandler
+: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#ac225cb0c86e8c84953d6ccdf8f671a97">grpc_impl::CompletionQueue</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#ac225cb0c86e8c84953d6ccdf8f671a97">grpc_impl::ServerContextBase</a>
+</li>
+<li>::grpc_impl::internal::TemplatedBidiStreamingHandler&lt; ServerReaderWriter&lt; W, R &gt;, false &gt;
+: <a class="el" href="classgrpc__impl_1_1_server_reader_writer.html#ab42ef04622d84924a8ec7bb603f35646">grpc_impl::ServerReaderWriter&lt; W, R &gt;</a>
+</li>
+<li>::grpc_impl::internal::TemplatedBidiStreamingHandler&lt; ServerSplitStreamer&lt; RequestType, ResponseType &gt;, false &gt;
+: <a class="el" href="classgrpc__impl_1_1_server_split_streamer.html#a93f0de52b4a12ad301edbb87e0e10baf">grpc_impl::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>
+</li>
+<li>::grpc_impl::internal::TemplatedBidiStreamingHandler&lt; ServerUnaryStreamer&lt; RequestType, ResponseType &gt;, true &gt;
+: <a class="el" href="classgrpc__impl_1_1_server_unary_streamer.html#a77237aaef139524ff364ba469b657584">grpc_impl::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>::grpc_impl::Server
 : <a class="el" href="classgrpc_1_1experimental_1_1_callback_generic_service.html#a3e6ceb26728f815024f4e836b9ffd56f">grpc::experimental::CallbackGenericService</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_generic_callback_server_context.html#a3e6ceb26728f815024f4e836b9ffd56f">grpc::experimental::GenericCallbackServerContext</a>
 , <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a3e6ceb26728f815024f4e836b9ffd56f">grpc_impl::CompletionQueue</a>
 , <a class="el" href="classgrpc__impl_1_1_server_async_reader_writer.html#a3e6ceb26728f815024f4e836b9ffd56f">grpc_impl::ServerAsyncReaderWriter&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_server_completion_queue.html#a3e6ceb26728f815024f4e836b9ffd56f">grpc_impl::ServerCompletionQueue</a>
 , <a class="el" href="classgrpc__impl_1_1_server_context.html#a3e6ceb26728f815024f4e836b9ffd56f">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a3e6ceb26728f815024f4e836b9ffd56f">grpc_impl::ServerContextBase</a>
 , <a class="el" href="classgrpc__impl_1_1_server_credentials.html#a3e6ceb26728f815024f4e836b9ffd56f">grpc_impl::ServerCredentials</a>
 </li>
 <li>::grpc_impl::ServerAsyncReader
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#abf9aa1d05e4abcec1fa6c08fe3803620">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#abf9aa1d05e4abcec1fa6c08fe3803620">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::ServerAsyncReaderWriter
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#a5684c79858172c0c49d7c416b495fb6c">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a5684c79858172c0c49d7c416b495fb6c">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::ServerAsyncResponseWriter
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#a6f479ac22bbc4276de05a1871cb226e8">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a6f479ac22bbc4276de05a1871cb226e8">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::ServerAsyncWriter
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#a8bb9a1ef5fbf305e034525399fbcd4bf">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a8bb9a1ef5fbf305e034525399fbcd4bf">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::ServerBuilder
 : <a class="el" href="classgrpc__impl_1_1_server_completion_queue.html#a81a5af0a3598381081010c789a284854">grpc_impl::ServerCompletionQueue</a>
 </li>
-<li>::grpc_impl::ServerContext
-: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#aff192364682c8f4dbb834022d512828d">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#aff192364682c8f4dbb834022d512828d">grpc_impl::internal::ServerReactor</a>
+<li>::grpc_impl::ServerContextBase
+: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a1a98e211b8990d1f50934a1feb99ade8">grpc_impl::CompletionQueue</a>
 </li>
 <li>::grpc_impl::ServerReader
 : <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a85615871a77b46040c6284451edddebd">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a85615871a77b46040c6284451edddebd">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a85615871a77b46040c6284451edddebd">grpc_impl::ServerContextBase</a>
 </li>
 <li>::grpc_impl::ServerWriter
 : <a class="el" href="classgrpc__impl_1_1_completion_queue.html#af3a9e4fac5f28f2e68bef6d7318b7aad">grpc_impl::CompletionQueue</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#af3a9e4fac5f28f2e68bef6d7318b7aad">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#af3a9e4fac5f28f2e68bef6d7318b7aad">grpc_impl::ServerContextBase</a>
 </li>
 </ul>
 
@@ -291,26 +305,29 @@ $(function() {
 <li>CallbackServerStreamingHandler
 : <a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#acdc495055cbcc7cffb4b9bbf5f2523df">grpc_impl::internal::ServerReactor</a>
 </li>
+<li>CallbackUnaryHandler
+: <a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#a36fce87741ce699f749216a4c7d36d1f">grpc_impl::internal::ServerReactor</a>
+</li>
 <li>ClientCallbackReader&lt; Response &gt;
-: <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_read_reactor.html#aea195c80cb9809bbc4c6ae8f436cda69">grpc_impl::experimental::ClientReadReactor&lt; Response &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_client_read_reactor.html#aea195c80cb9809bbc4c6ae8f436cda69">grpc_impl::ClientReadReactor&lt; Response &gt;</a>
 </li>
 <li>ClientCallbackReaderFactory&lt; Response &gt;
 : <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_reader_impl.html#af474594db92113861f52dddc0b8fd516">grpc_impl::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>
 </li>
 <li>ClientCallbackReaderWriter&lt; Request, Response &gt;
-: <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_bidi_reactor.html#a9e889e5582a185bc4aee78b7abaf8108">grpc_impl::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#a9e889e5582a185bc4aee78b7abaf8108">grpc_impl::ClientBidiReactor&lt; Request, Response &gt;</a>
 </li>
 <li>ClientCallbackReaderWriterFactory&lt; Request, Response &gt;
 : <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_reader_writer_impl.html#aa2491adadbf938f78f8d333783de1160">grpc_impl::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
 </li>
 <li>ClientCallbackUnary
-: <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_unary_reactor.html#a17f5a31869ecd91f7378b86c16c9af21">grpc_impl::experimental::ClientUnaryReactor</a>
+: <a class="el" href="classgrpc__impl_1_1_client_unary_reactor.html#a17f5a31869ecd91f7378b86c16c9af21">grpc_impl::ClientUnaryReactor</a>
 </li>
 <li>ClientCallbackUnaryFactory
 : <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_unary_impl.html#ab2d5a9a45d14b149c8c0e4fe1067a59c">grpc_impl::internal::ClientCallbackUnaryImpl</a>
 </li>
 <li>ClientCallbackWriter&lt; Request &gt;
-: <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_write_reactor.html#aa7ddcd53bb3de499d89826c71d0149a3">grpc_impl::experimental::ClientWriteReactor&lt; Request &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_client_write_reactor.html#aa7ddcd53bb3de499d89826c71d0149a3">grpc_impl::ClientWriteReactor&lt; Request &gt;</a>
 </li>
 <li>ClientCallbackWriterFactory&lt; Request &gt;
 : <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_writer_impl.html#ad3c798dc493cb90385992b43312f851c">grpc_impl::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
@@ -342,6 +359,9 @@ $(function() {
 <li>grpc::CreateChannelInternal
 : <a class="el" href="classgrpc__impl_1_1_channel.html#a7a541c76961259d2cdc6190255e81490">grpc_impl::Channel</a>
 </li>
+<li>grpc::ServerInterface
+: <a class="el" href="classgrpc_1_1_generic_server_context.html#afe81e822dc43d93ac8f982db5bb1497d">grpc::GenericServerContext</a>
+</li>
 <li>grpc::testing::ChannelArgumentsTest
 : <a class="el" href="classgrpc__impl_1_1_channel_arguments.html#a418577e16bfe952f5c7af804255eccd1">grpc_impl::ChannelArguments</a>
 </li>
@@ -362,8 +382,8 @@ $(function() {
 <li>grpc_impl::ServerBuilder
 : <a class="el" href="classgrpc__impl_1_1_server.html#a91be5dd8ce6ace7fe702dd760a815b33">grpc_impl::Server</a>
 </li>
-<li>grpc_impl::ServerContext
-: <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a489201c76c2a27c561d84331b58bbca5">grpc::experimental::ServerRpcInfo</a>
+<li>grpc_impl::ServerContextBase
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a363acaf9b953a262489c5e203aee027e">grpc::experimental::ServerRpcInfo</a>
 </li>
 <li>grpc_impl::ServerInitializer
 : <a class="el" href="classgrpc__impl_1_1_server.html#ad4614e5fb61b8fc39963ecdc3576d01e">grpc_impl::Server</a>
@@ -408,9 +428,6 @@ $(function() {
 <li>internal::DeserializeFuncType
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a8575cd74967bac70dad4afbf830db64c">grpc::ByteBuffer</a>
 </li>
-<li>internal::ErrorMethodHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a91a3296cb8faa9b7afad2f0db836df4d">grpc::ByteBuffer</a>
-</li>
 <li>internal::ExternalConnectionAcceptorImpl
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a7b74f44e39cd7ec6e6843612ea13573a">grpc::ByteBuffer</a>
 </li>
@@ -423,12 +440,6 @@ $(function() {
 </li>
 <li>internal::ProtoBufferWriterPeer
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">grpc::ProtoBufferWriter</a>
-</li>
-<li>internal::RpcMethodHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a471b336e252edb7105b57058c8de7fff">grpc::ByteBuffer</a>
-</li>
-<li>internal::ServerStreamingHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a92a457fe95d4f1662f65ed9b47be0f84">grpc::ByteBuffer</a>
 </li>
 </ul>
 
@@ -443,13 +454,6 @@ $(function() {
 </ul>
 
 
-<h3><a id="index_r"></a>- r -</h3><ul>
-<li>RpcMethodHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a76b9bb18b02084e9eaa8c9b99c668676">grpc::ByteBuffer</a>
-</li>
-</ul>
-
-
 <h3><a id="index_s"></a>- s -</h3><ul>
 <li>SecureAuthContext
 : <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a18a70918b1f73cdd22cb263845b78d6d">grpc::AuthPropertyIterator</a>
@@ -458,27 +462,26 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#ab90fe50537dd6fe009b7b913652420f0">grpc::ByteBuffer</a>
 </li>
 <li>ServerCallbackReader&lt; Request &gt;
-: <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_read_reactor.html#a07a17206f02027eb9b10cfc3174e0476">grpc_impl::experimental::ServerReadReactor&lt; Request, Response &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_server_read_reactor.html#a07a17206f02027eb9b10cfc3174e0476">grpc_impl::ServerReadReactor&lt; Request &gt;</a>
 </li>
 <li>ServerCallbackReaderWriter&lt; Request, Response &gt;
-: <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a7c37735f41590c54ad5948d348e63864">grpc_impl::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html#a7c37735f41590c54ad5948d348e63864">grpc_impl::ServerBidiReactor&lt; Request, Response &gt;</a>
+</li>
+<li>ServerCallbackUnary
+: <a class="el" href="classgrpc__impl_1_1_server_unary_reactor.html#ae5d8451f33d09b510f7c769b74d5d434">grpc_impl::ServerUnaryReactor</a>
 </li>
 <li>ServerCallbackWriter&lt; Response &gt;
-: <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a87a27438db283c324791f49cf59b6e69">grpc_impl::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_server_write_reactor.html#a87a27438db283c324791f49cf59b6e69">grpc_impl::ServerWriteReactor&lt; Response &gt;</a>
 </li>
 <li>ServerInterface
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#ad0907065db479dc47b2fa752d7782b6f">grpc::ByteBuffer</a>
-, <a class="el" href="classgrpc_1_1_generic_server_context.html#ad0907065db479dc47b2fa752d7782b6f">grpc::GenericServerContext</a>
 , <a class="el" href="classgrpc_1_1_service.html#ad0907065db479dc47b2fa752d7782b6f">grpc::Service</a>
-</li>
-<li>ServerStreamingHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#ac2a23a31e1f8f09e2e51f09e7f50ba0c">grpc::ByteBuffer</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

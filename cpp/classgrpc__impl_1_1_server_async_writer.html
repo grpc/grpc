@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -177,7 +177,7 @@ template&lt;class W &gt; </div>
 
 <p>See the <em><a class="el" href="classgrpc__impl_1_1_server_async_writer_interface.html#a6683f8dfe66786b7d8de4466ea0908cd" title="Indicate that the stream is to be finished with a certain status code. ">ServerAsyncWriterInterface.Finish</a></em> method for semantics. </p>
 <p>Implicit input parameter:</p><ul>
-<li>the <em><a class="el" href="classgrpc__impl_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call is used for sending trailing (and initial if not already sent) metadata to the client.</li>
+<li>the <em><a class="el" href="classgrpc__impl_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to: ...">ServerContext</a></em> associated with this call is used for sending trailing (and initial if not already sent) metadata to the client.</li>
 </ul>
 <p>Note: there are no restrictions are the code of <em>status</em>,it may be non-OK</p>
 <p>gRPC doesn't take ownership or a reference to <em>status</em>, so it is safe to to deallocate once Finish returns. </p>
@@ -214,7 +214,7 @@ template&lt;class W &gt; </div>
 
 <p>See <em>ServerAsyncStreamingInterface::SendInitialMetadata</em> for semantics. </p>
 <p>Implicit input parameter:</p><ul>
-<li>The initial metadata that will be sent to the client from this op will be taken from the <em><a class="el" href="classgrpc__impl_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with the call.</li>
+<li>The initial metadata that will be sent to the client from this op will be taken from the <em><a class="el" href="classgrpc__impl_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to: ...">ServerContext</a></em> associated with the call.</li>
 </ul>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -386,7 +386,7 @@ template&lt;class W &gt; </div>
 
 <p>See the <em><a class="el" href="classgrpc__impl_1_1_server_async_writer_interface.html#af457dc1e137016870f17e7c60dd3d912" title="Request the writing of msg and coalesce it with trailing metadata which contains status, using WriteOptions options with identifying tag tag. ">ServerAsyncWriterInterface.WriteAndFinish</a></em> method for semantics. </p>
 <p>Implicit input parameter:</p><ul>
-<li>the <em><a class="el" href="classgrpc__impl_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call is used for sending trailing (and initial) metadata to the client.</li>
+<li>the <em><a class="el" href="classgrpc__impl_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to: ...">ServerContext</a></em> associated with this call is used for sending trailing (and initial) metadata to the client.</li>
 </ul>
 <p>Note: <em>status</em> must have an OK code.</p>
 <p>gRPC doesn't take ownership or a reference to <em>msg</em> and <em>status</em>, so it is safe to deallocate once WriteAndFinish returns. </p>
@@ -401,7 +401,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

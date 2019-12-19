@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">9.0.0</span>
    </div>
   </td>
  </tr>
@@ -76,6 +76,9 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a803544c5034a25e2f6de1bc1ee465ff6"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__experimental__completion__queue__functor.html#a803544c5034a25e2f6de1bc1ee465ff6">functor_run</a> )(struct <a class="el" href="structgrpc__experimental__completion__queue__functor.html">grpc_experimental_completion_queue_functor</a> *, int)</td></tr>
 <tr class="memdesc:a803544c5034a25e2f6de1bc1ee465ff6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The run member specifies a function that will be called when this tag is extracted from the completion queue.  <a href="#a803544c5034a25e2f6de1bc1ee465ff6">More...</a><br /></td></tr>
 <tr class="separator:a803544c5034a25e2f6de1bc1ee465ff6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad622c1b44c3b548c55a09c2634413f31"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__experimental__completion__queue__functor.html#ad622c1b44c3b548c55a09c2634413f31">inlineable</a></td></tr>
+<tr class="memdesc:ad622c1b44c3b548c55a09c2634413f31"><td class="mdescLeft">&#160;</td><td class="mdescRight">The inlineable member specifies whether this functor can be run inline.  <a href="#ad622c1b44c3b548c55a09c2634413f31">More...</a><br /></td></tr>
+<tr class="separator:ad622c1b44c3b548c55a09c2634413f31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48923cdb284a8d75fd2f5a52ef413ec6"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__experimental__completion__queue__functor.html#a48923cdb284a8d75fd2f5a52ef413ec6">internal_success</a></td></tr>
 <tr class="memdesc:a48923cdb284a8d75fd2f5a52ef413ec6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following fields are not API.  <a href="#a48923cdb284a8d75fd2f5a52ef413ec6">More...</a><br /></td></tr>
 <tr class="separator:a48923cdb284a8d75fd2f5a52ef413ec6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -100,6 +103,23 @@ Data Fields</h2></td></tr>
 
 <p>The run member specifies a function that will be called when this tag is extracted from the completion queue. </p>
 <p>Its arguments will be a pointer to this functor and a boolean that indicates whether the operation succeeded (non-zero) or failed (zero) </p>
+
+</div>
+</div>
+<a id="ad622c1b44c3b548c55a09c2634413f31"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad622c1b44c3b548c55a09c2634413f31">&#9670;&nbsp;</a></span>inlineable</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int grpc_experimental_completion_queue_functor::inlineable</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The inlineable member specifies whether this functor can be run inline. </p>
+<p>This should only be used for trivial internally-defined functors. </p>
 
 </div>
 </div>
@@ -140,7 +160,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

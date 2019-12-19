@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -105,16 +105,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0bd7f7e15b2e081d7f9f138bb98d8bf7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57b">Type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a0bd7f7e15b2e081d7f9f138bb98d8bf7">type</a> () const</td></tr>
 <tr class="memdesc:a0bd7f7e15b2e081d7f9f138bb98d8bf7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the type of the RPC (unary or a streaming flavor)  <a href="#a0bd7f7e15b2e081d7f9f138bb98d8bf7">More...</a><br /></td></tr>
 <tr class="separator:a0bd7f7e15b2e081d7f9f138bb98d8bf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03c2efa34cf4d08fe18bd4a4831f7596"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a03c2efa34cf4d08fe18bd4a4831f7596">server_context</a> ()</td></tr>
-<tr class="memdesc:a03c2efa34cf4d08fe18bd4a4831f7596"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a pointer to the underlying ServerContext structure associated with the RPC to support features that apply to it.  <a href="#a03c2efa34cf4d08fe18bd4a4831f7596">More...</a><br /></td></tr>
-<tr class="separator:a03c2efa34cf4d08fe18bd4a4831f7596"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2058914ba4bf08985470433eb2970a38"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__impl_1_1_server_context_base.html">grpc_impl::ServerContextBase</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a2058914ba4bf08985470433eb2970a38">server_context</a> ()</td></tr>
+<tr class="memdesc:a2058914ba4bf08985470433eb2970a38"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a pointer to the underlying ServerContext structure associated with the RPC to support features that apply to it.  <a href="#a2058914ba4bf08985470433eb2970a38">More...</a><br /></td></tr>
+<tr class="separator:a2058914ba4bf08985470433eb2970a38"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a92d0ab83566677bbb964bef133221b67"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a92d0ab83566677bbb964bef133221b67">internal::InterceptorBatchMethodsImpl</a></td></tr>
 <tr class="separator:a92d0ab83566677bbb964bef133221b67"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a489201c76c2a27c561d84331b58bbca5"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a489201c76c2a27c561d84331b58bbca5">grpc_impl::ServerContext</a></td></tr>
-<tr class="separator:a489201c76c2a27c561d84331b58bbca5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a363acaf9b953a262489c5e203aee027e"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a363acaf9b953a262489c5e203aee027e">grpc_impl::ServerContextBase</a></td></tr>
+<tr class="separator:a363acaf9b953a262489c5e203aee027e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html" title="ServerRpcInfo represents the state of a particular RPC as it appears to an interceptor. ">ServerRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor. </p>
@@ -308,8 +308,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="a03c2efa34cf4d08fe18bd4a4831f7596"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a03c2efa34cf4d08fe18bd4a4831f7596">&#9670;&nbsp;</a></span>server_context()</h2>
+<a id="a2058914ba4bf08985470433eb2970a38"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2058914ba4bf08985470433eb2970a38">&#9670;&nbsp;</a></span>server_context()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -318,7 +318,7 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a>* grpc::experimental::ServerRpcInfo::server_context </td>
+          <td class="memname"><a class="el" href="classgrpc__impl_1_1_server_context_base.html">grpc_impl::ServerContextBase</a>* grpc::experimental::ServerRpcInfo::server_context </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -363,8 +363,8 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a id="a489201c76c2a27c561d84331b58bbca5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a489201c76c2a27c561d84331b58bbca5">&#9670;&nbsp;</a></span>grpc_impl::ServerContext</h2>
+<a id="a363acaf9b953a262489c5e203aee027e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a363acaf9b953a262489c5e203aee027e">&#9670;&nbsp;</a></span>grpc_impl::ServerContextBase</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -373,7 +373,7 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class <a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc__impl_1_1_server_context_base.html">grpc_impl::ServerContextBase</a></td>
         </tr>
       </table>
   </td>
@@ -413,7 +413,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

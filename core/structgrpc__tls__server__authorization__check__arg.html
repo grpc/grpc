@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">9.0.0</span>
    </div>
   </td>
  </tr>
@@ -87,10 +87,26 @@ Data Fields</h2></td></tr>
 <tr class="separator:ad5947a871b4a54e5562d4419f7dafc56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a602504f40324d142e186527ce99a01c2"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a602504f40324d142e186527ce99a01c2">error_details</a></td></tr>
 <tr class="separator:a602504f40324d142e186527ce99a01c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a682bb119d97a1166dd50001c848f9b38"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a682bb119d97a1166dd50001c848f9b38">config</a></td></tr>
+<tr class="separator:a682bb119d97a1166dd50001c848f9b38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a840309051d10d17392e977812f78254e"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a840309051d10d17392e977812f78254e">context</a></td></tr>
+<tr class="separator:a840309051d10d17392e977812f78254e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3202abff43af16a7cc01d3d09845f1c"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#af3202abff43af16a7cc01d3d09845f1c">destroy_context</a> )(void *ctx)</td></tr>
+<tr class="separator:af3202abff43af16a7cc01d3d09845f1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A struct containing all information necessary to schedule/cancel a server authorization check request. </p>
-<p>cb and cb_user_data represent a gRPC-provided callback and an argument passed to it. success will store the result of server authorization check. That is, if success returns a non-zero value, it means the authorization check passes and if returning zero, it means the check fails. target_name is the name of an endpoint the channel is connecting to and certificate represents a complete certificate chain including both signing and leaf certificates. status and error_details contain information about errors occurred when a server authorization check request is scheduled/cancelled. It is used for experimental purpose for now and subject to change. </p>
+<ul>
+<li>cb and cb_user_data represent a gRPC-provided callback and an argument passed to it.</li>
+<li>success will store the result of server authorization check. That is, if success returns a non-zero value, it means the authorization check passes and if returning zero, it means the check fails.</li>
+</ul>
+<p>target_name is the name of an endpoint the channel is connecting to.</p><ul>
+<li>peer_cert represents a complete certificate chain including both signing and leaf certificates.</li>
+<li>status and error_details contain information about errors occurred when a server authorization check request is scheduled/cancelled.</li>
+<li>config is a pointer to the unique grpc_tls_server_authorization_check_config instance that this argument corresponds to.</li>
+<li>context is a pointer to a wrapped language implementation of this <a class="el" href="structgrpc__tls__server__authorization__check__arg.html" title="A struct containing all information necessary to schedule/cancel a server authorization check request...">grpc_tls_server_authorization_check_arg</a> instance.</li>
+<li>destroy_context is a pointer to a caller-provided method that cleans up any data associated with the context pointer. It is used for experimental purpose for now and subject to change. </li>
+</ul>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a id="a77029657f0b1b653fe3694a05b3272dc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a77029657f0b1b653fe3694a05b3272dc">&#9670;&nbsp;</a></span>cb</h2>
@@ -114,6 +130,48 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">void* grpc_tls_server_authorization_check_arg::cb_user_data</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a682bb119d97a1166dd50001c848f9b38"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a682bb119d97a1166dd50001c848f9b38">&#9670;&nbsp;</a></span>config</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a>* grpc_tls_server_authorization_check_arg::config</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a840309051d10d17392e977812f78254e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a840309051d10d17392e977812f78254e">&#9670;&nbsp;</a></span>context</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void* grpc_tls_server_authorization_check_arg::context</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af3202abff43af16a7cc01d3d09845f1c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3202abff43af16a7cc01d3d09845f1c">&#9670;&nbsp;</a></span>destroy_context</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void(* grpc_tls_server_authorization_check_arg::destroy_context) (void *ctx)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -196,7 +254,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

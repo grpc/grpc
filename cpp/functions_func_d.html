@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 </li>
 <li>deadline()
 : <a class="el" href="classgrpc__impl_1_1_client_context.html#a6d5270ba5b97ca8f365875304bb238d7">grpc_impl::ClientContext</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a9ff33b26e160484e88581d8112307886">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a744be5eb26c86367a7b1b992a80c1c8c">grpc_impl::ServerContextBase</a>
 </li>
 <li>debug_error_string()
 : <a class="el" href="classgrpc__impl_1_1_client_context.html#ac827b1a5cb757a98c95938602262df86">grpc_impl::ClientContext</a>
@@ -78,6 +78,9 @@ $(function() {
 <li>DefaultMessageHolder()
 : <a class="el" href="classgrpc__impl_1_1internal_1_1_default_message_holder.html#aed463128975d1cb9ce66404eaf5317f8">grpc_impl::internal::DefaultMessageHolder&lt; Request, Response &gt;</a>
 </li>
+<li>DefaultReactor()
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a90dedbcb860ba09533908bf69e3700f8">grpc_impl::ServerContextBase</a>
+</li>
 <li>delegate_channel()
 : <a class="el" href="classgrpc_1_1experimental_1_1_delegating_channel.html#ab0c2ff5604ca9d69ecf253b2aa060928">grpc::experimental::DelegatingChannel</a>
 </li>
@@ -87,13 +90,13 @@ $(function() {
 <li>Deserialize()
 : <a class="el" href="classgrpc_1_1internal_1_1_deserialize_func.html#adc5d764822f82dbe6452e3faed4a0c95">grpc::internal::DeserializeFunc</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_deserialize_func_type.html#a75143cf9a39f6334b15a546cdd593b9c">grpc::internal::DeserializeFuncType&lt; R &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a1f660a48fc1e71b55cac34026c1b958e">grpc::internal::ErrorMethodHandler&lt; code &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#ab2e06e37ecfe5f4dbdb200f8323995bd">grpc::internal::MethodHandler</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#a2f56d06838a9e24ef33d84eb7e1bd161">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a8d8404240f14c9ed8dfda44c62b66501">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
 , <a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a11eb353a98d86bab2fa1a1bfd5df9393">grpc::SerializationTraits&lt; ByteBuffer, void &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_callback_server_streaming_handler.html#a27cf9eb7be8d9735968fed5bb6115c00">grpc_impl::internal::CallbackServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_callback_unary_handler.html#a79f216ff6d1f12ddc4d77745ed39f9da">grpc_impl::internal::CallbackUnaryHandler&lt; RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_error_method_handler.html#ae50fae4668ce956bf2713acf795a0a85">grpc_impl::internal::ErrorMethodHandler&lt; code &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_rpc_method_handler.html#aba087a2c07eb2c86a80b17ff1ed2cd96">grpc_impl::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_server_streaming_handler.html#ae85b8d2852db5d3c4b54bf88bddf146f">grpc_impl::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
 </li>
 <li>DeserializeFuncType()
 : <a class="el" href="classgrpc_1_1internal_1_1_deserialize_func_type.html#acb545d5b5bb36f2798de40ca004578be">grpc::internal::DeserializeFuncType&lt; R &gt;</a>
@@ -126,7 +129,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">9.0.0</span>
    </div>
   </td>
  </tr>
@@ -64,8 +64,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a> &#124;
-<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">alloc.h File Reference</div>  </div>
@@ -76,16 +74,6 @@ $(function() {
 </div>
 <p><a href="alloc_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a54bbd527f303da4b618adb37ae44efd7"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7">gpr_allocation_functions</a></td></tr>
-<tr class="separator:a54bbd527f303da4b618adb37ae44efd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:aa15f6aa58f356420b0d955fc6e506a60"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#aa15f6aa58f356420b0d955fc6e506a60">gpr_malloc</a> (size_t size)</td></tr>
@@ -106,28 +94,7 @@ Functions</h2></td></tr>
 <tr class="memitem:aafbdc542e56bcd24fcb80a9cd55afef1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#aafbdc542e56bcd24fcb80a9cd55afef1">gpr_free_aligned</a> (void *ptr)</td></tr>
 <tr class="memdesc:aafbdc542e56bcd24fcb80a9cd55afef1"><td class="mdescLeft">&#160;</td><td class="mdescRight">free memory allocated by gpr_malloc_aligned  <a href="#aafbdc542e56bcd24fcb80a9cd55afef1">More...</a><br /></td></tr>
 <tr class="separator:aafbdc542e56bcd24fcb80a9cd55afef1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2a32fcafdda423e2a11b4130d55951b4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#a2a32fcafdda423e2a11b4130d55951b4">gpr_set_allocation_functions</a> (<a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a> functions)</td></tr>
-<tr class="memdesc:a2a32fcafdda423e2a11b4130d55951b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the family of allocation functions in <em>functions</em> be used.  <a href="#a2a32fcafdda423e2a11b4130d55951b4">More...</a><br /></td></tr>
-<tr class="separator:a2a32fcafdda423e2a11b4130d55951b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa96aa61deb3f72c6e5d8f57d08942602"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#aa96aa61deb3f72c6e5d8f57d08942602">gpr_get_allocation_functions</a> (void)</td></tr>
-<tr class="memdesc:aa96aa61deb3f72c6e5d8f57d08942602"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the family of allocation functions currently in effect.  <a href="#aa96aa61deb3f72c6e5d8f57d08942602">More...</a><br /></td></tr>
-<tr class="separator:aa96aa61deb3f72c6e5d8f57d08942602"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="a54bbd527f303da4b618adb37ae44efd7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a54bbd527f303da4b618adb37ae44efd7">&#9670;&nbsp;</a></span>gpr_allocation_functions</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a>  <a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="a7f8641de6e80a37dd003d3100cc94bd7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7f8641de6e80a37dd003d3100cc94bd7">&#9670;&nbsp;</a></span>gpr_free()</h2>
@@ -166,26 +133,6 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>free memory allocated by gpr_malloc_aligned </p>
-
-</div>
-</div>
-<a id="aa96aa61deb3f72c6e5d8f57d08942602"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa96aa61deb3f72c6e5d8f57d08942602">&#9670;&nbsp;</a></span>gpr_get_allocation_functions()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a> gpr_get_allocation_functions </td>
-          <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return the family of allocation functions currently in effect. </p>
 
 </div>
 </div>
@@ -270,27 +217,6 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a2a32fcafdda423e2a11b4130d55951b4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2a32fcafdda423e2a11b4130d55951b4">&#9670;&nbsp;</a></span>gpr_set_allocation_functions()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_set_allocation_functions </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a>&#160;</td>
-          <td class="paramname"><em>functions</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Request the family of allocation functions in <em>functions</em> be used. </p>
-<p>NOTE that this request will be honored in a <em>best effort</em> basis and that no guarantees are made about the default functions (eg, malloc) being called. The functions.free_fn implementation must be a no-op for NULL input. </p>
-
-</div>
-</div>
 <a id="ad9a7a782f4f00cad27d64d27ebbd1a72"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad9a7a782f4f00cad27d64d27ebbd1a72">&#9670;&nbsp;</a></span>gpr_zalloc()</h2>
 
@@ -314,7 +240,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

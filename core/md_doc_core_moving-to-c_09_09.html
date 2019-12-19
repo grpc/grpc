@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">9.0.0</span>
    </div>
   </td>
  </tr>
@@ -63,42 +63,34 @@ $(function() {
 <div class="title">Moving gRPC core to C++ </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>October 2017</p>
-<p>ctiller, markdroth, vjpai</p>
+<div class="textblock"><p>Originally written by ctiller, markdroth, and vjpai in October 2017</p>
+<p>Revised by veblush in October 2019</p>
 <h2>Background and Goal</h2>
-<p>gRPC core was originally written in C89 for several reasons (possibility of kernel integration, ease of wrapping, compiler support, etc). Over time, this was changed to C99 as all relevant compilers in active use came to support C99 effectively. https://github.com/grpc/proposal/blob/master/L6-allow-c%2B%2B-in-grpc-core.md "Now, gRPC core is C++" (although the code is still idiomatically C code) with C linkage for public functions. Throughout all of these transitions, the public header files are committed to remain in C89.</p>
+<p>gRPC core was originally written in C89 for several reasons (possibility of kernel integration, ease of wrapping, compiler support, etc). Over time, this was changed to C99 as all relevant compilers in active use came to support C99 effectively.</p>
+<p>gRPC started allowing to use C++ with a couple of exceptions not to have C++ library linked such as <code>libstdc++.so</code>. (For more detail, see the https://github.com/grpc/proposal/blob/master/L6-core-allow-cpp.md "proposal")</p>
+<p>Finally gRPC became ready to use full C++11 with the standard library by the https://github.com[/grpc/proposal/blob/master/L59-core-allow-cppstdlib.md "proposal".</p>
+<p>Throughout all of these transitions, the public header files are committed to remain in C89.</p>
 <p>The goal now is to make the gRPC core implementation true idiomatic C++ compatible with <a href="https://google.github.io/styleguide/cppguide.html">Google's C++ style guide</a>.</p>
 <h2>Constraints</h2>
 <ul>
-<li>No use of standard library if it requires link-time dependency<ul>
-<li>Standard library makes wrapping difficult/impossible and also reduces platform portability</li>
-<li>This takes precedence over using C++ style guide</li>
+<li>Most of features available in C++11 are allowed to use but there are some exceptions because gRPC should support old systems.<ul>
+<li>Should be built with gcc 4.8, clang 3.3, and Visual C++ 2015.</li>
+<li>Should be run on Linux system with libstdc++ 6.0.9 to support <a href="https://www.python.org/dev/peps/pep-0513">manylinux1</a>.</li>
 </ul>
 </li>
-<li>Limited use of standard library if it does not require link-time dependency<ul>
-<li>We can use things from <code>std::</code> as long as they are header-only implementations.</li>
-<li>Since the standard library API does not specify whether any given part of the API is implemented header-only, the only way to know is to try using something and see if our tests fail.</li>
-<li>Since there is no guarantee that some header-only implementation in the standard library will remain header-only in the future, we should define our own API in lib/gprpp that is an alias for the thing we want to use in <code>std::</code> and use the gprpp API in core. That way, if we later need to stop using the thing from <code>std::</code>, we can replace the alias with our own implementation.</li>
+<li>This would limit us not to use modern C++11 standard library such as <code>filesystem</code>. You can easily see whether PR is free from this issue by checking the result of <code>Artifact Build Linux</code> test.</li>
+<li><code>thread_local</code> is not allowed to use on Apple's products because their old OSes (e.g. ios &lt; 9.0) don't support <code>thread_local</code>. Please use <code>GPR_TLS_DECL</code> instead.</li>
+<li>gRPC main libraries (grpc, grpc+++, and plugins) cannot use following C++ libraries: (Test and example codes are relatively free from this constraints)<ul>
+<li><code>&lt;thread&gt;</code>. Use <code>grpc_core::Thread</code>.</li>
+<li><code>&lt;condition_variable&gt;</code>. Use <code>grpc_core::CondVar</code>.</li>
+<li><code>&lt;mutex&gt;</code>. Use <code>grpc_core::Mutex</code>, <code>grpc_core::MutexLock</code>, and <code>grpc_core::ReleasableMutexLock</code>.</li>
+<li><code>&lt;future&gt;</code></li>
+<li><code>&lt;ratio&gt;</code></li>
+<li><code>&lt;system_error&gt;</code></li>
+<li><code>&lt;filesystem&gt;</code></li>
 </ul>
 </li>
-<li>But lambdas are ok</li>
-<li>As are third-party libraries that meet our build requirements (such as many parts of abseil)</li>
-<li>There will be some C++ features that don't work<ul>
-<li><code>new</code> and <code>delete</code></li>
-<li>pure virtual functions are not allowed because the message that prints out "Pure Virtual Function called" is part of the standard library<ul>
-<li>Make a <code>#define GRPC_ABSTRACT {<a class="el" href="impl_2codegen_2log_8h.html#a6ccf52ff690655cc22cd9d053650876f" title="abort() the process if x is zero, having written a line to the log. ">GPR_ASSERT(false)</a>;}</code> instead of <code>= 0;</code></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>The sanity for making sure that we don't depend on libstdc++ is that at least some tests should explicitly not include it<ul>
-<li>Most tests can migrate to use gtest<ul>
-<li>There are tremendous # of code paths that can now be exposed to unit tests because of the use of gtest and C++</li>
-</ul>
-</li>
-<li>But at least some tests should not use gtest</li>
-</ul>
-</li>
+<li><code>grpc_core::Atomic</code> is prefered over <code>std::atomic</code> in gRPC library because it provides additional debugging information.</li>
 </ul>
 <h2>Roadmap</h2>
 <ul>
@@ -122,19 +114,12 @@ $(function() {
 <h2>Implications for C++ API and wrapped languages</h2>
 <ul>
 <li>For C++ structs, switch to <code>using</code> when possible (e.g., Slice, ByteBuffer, ...)</li>
-<li>The C++ API implementation might directly start using <code>grpc_transport_stream_op_batch</code> rather than the core surface <code><a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a></code>.</li>
-<li>Can we get wrapped languages to a point where we can statically link C++? This will take a year in probability but that would allow the use of <code>std::</code><ul>
-<li>Are there other environments that don't support std library, like maybe Android NDK?<ul>
-<li>Probably, that might push things out to 18 months </li>
-</ul>
-</li>
-</ul>
-</li>
+<li>The C++ API implementation might directly start using <code>grpc_transport_stream_op_batch</code> rather than the core surface <code><a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a></code>. </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

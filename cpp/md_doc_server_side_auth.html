@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -63,7 +63,7 @@ $(function() {
 <div class="title">Server-side API for Authenticating Clients </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>NOTE: This document describes how server-side authentication works in C-core based gRPC implementations only. In gRPC Java and Go, server side authentication is handled differently. NOTE2: <code>CallCredentials</code> class is only valid for secure channels in C-Core. So, for connections under insecure channels, features below might not be avaiable.</p>
+<div class="textblock"><p>NOTE: This document describes how server-side authentication works in C-core based gRPC implementations only. In gRPC Java and Go, server side authentication is handled differently. NOTE2: <code>CallCredentials</code> class is only valid for secure channels in C-Core. So, for connections under insecure channels, features below might not be available.</p>
 <h2>AuthContext</h2>
 <p>To perform server-side authentication, gRPC exposes the <em>authentication context</em> for each call. The context exposes important authentication-related information about the RPC such as the type of security/authentication type being used and the peer identity.</p>
 <p>The authentication context is structured as a multi-map of key-value pairs - the <em>auth properties</em>. In addition to that, for authenticated RPCs, the set of properties corresponding to a selected key will represent the verified identity of the caller - the <em>peer identity</em>.</p>
@@ -92,7 +92,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

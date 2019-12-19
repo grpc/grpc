@@ -120,7 +120,7 @@ var searchData=
   ['grpc_5fssl_5ftransport_5fsecurity_5ftype',['GRPC_SSL_TRANSPORT_SECURITY_TYPE',['../grpc__security__constants_8h.html#a35a35c597b7090b8ac7e2d854c9bcc7a',1,'grpc_security_constants.h']]],
   ['grpc_5ftransport_5fsecurity_5ftype_5fproperty_5fname',['GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME',['../grpc__security__constants_8h.html#aff82fdff9e7c40c4dd4bdc650e38e25a',1,'grpc_security_constants.h']]],
   ['grpc_5funused',['GRPC_UNUSED',['../impl_2codegen_2port__platform_8h.html#a278515bb22fcd59e3a1092bb35063bd8',1,'port_platform.h']]],
-  ['grpc_5fuse_5fcpp_5fstd_5flib',['GRPC_USE_CPP_STD_LIB',['../impl_2codegen_2port__platform_8h.html#aaa329ac460019060d0539aa8087e4eaf',1,'port_platform.h']]],
+  ['grpc_5fuse_5fabsl',['GRPC_USE_ABSL',['../impl_2codegen_2port__platform_8h.html#ac2a2a477003c37daadc1832ef15aa2ad',1,'port_platform.h']]],
   ['grpc_5fwrite_5fbuffer_5fhint',['GRPC_WRITE_BUFFER_HINT',['../grpc__types_8h.html#adf29fd8b7df2ecc47d14a7f5a3a079c0',1,'grpc_types.h']]],
   ['grpc_5fwrite_5fno_5fcompress',['GRPC_WRITE_NO_COMPRESS',['../grpc__types_8h.html#ae09000181671f031ed0e319ed557da4e',1,'grpc_types.h']]],
   ['grpc_5fwrite_5fthrough',['GRPC_WRITE_THROUGH',['../grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23',1,'grpc_types.h']]],

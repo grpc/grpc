@@ -11,11 +11,8 @@ var searchData=
   ['clientreaderwriterfactory_3c_20w_2c_20r_20_3e',['ClientReaderWriterFactory&lt; W, R &gt;',['../classgrpc__impl_1_1_client_reader_writer.html#afecda317e553ccff29f57d43166b2d34',1,'grpc_impl::ClientReaderWriter']]],
   ['clientwriterfactory_3c_20w_20_3e',['ClientWriterFactory&lt; W &gt;',['../classgrpc__impl_1_1_client_writer.html#aaf47eddb323a45d41fc685be03d970c9',1,'grpc_impl::ClientWriter']]],
   ['deserializefunctype',['DeserializeFuncType',['../classgrpc_1_1_byte_buffer.html#a8575cd74967bac70dad4afbf830db64c',1,'grpc::ByteBuffer']]],
-  ['errormethodhandler',['ErrorMethodHandler',['../classgrpc_1_1_byte_buffer.html#a91a3296cb8faa9b7afad2f0db836df4d',1,'grpc::ByteBuffer']]],
   ['externalconnectionacceptorimpl',['ExternalConnectionAcceptorImpl',['../classgrpc_1_1_byte_buffer.html#a7b74f44e39cd7ec6e6843612ea13573a',1,'grpc::ByteBuffer']]],
   ['grpcbytebufferpeer',['GrpcByteBufferPeer',['../classgrpc_1_1_byte_buffer.html#a26d1eb015b546436fbfb535a20e2f115',1,'grpc::ByteBuffer']]],
   ['interceptorbatchmethodsimpl',['InterceptorBatchMethodsImpl',['../classgrpc_1_1internal_1_1_intercepted_channel.html#a727024a430a919fd5294f685d1c5b36c',1,'grpc::internal::InterceptedChannel::InterceptorBatchMethodsImpl()'],['../classgrpc_1_1experimental_1_1_client_rpc_info.html#a92d0ab83566677bbb964bef133221b67',1,'grpc::experimental::ClientRpcInfo::InterceptorBatchMethodsImpl()'],['../classgrpc_1_1experimental_1_1_server_rpc_info.html#a92d0ab83566677bbb964bef133221b67',1,'grpc::experimental::ServerRpcInfo::InterceptorBatchMethodsImpl()']]],
-  ['protobufferwriterpeer',['ProtoBufferWriterPeer',['../classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4',1,'grpc::ProtoBufferWriter']]],
-  ['rpcmethodhandler',['RpcMethodHandler',['../classgrpc_1_1_byte_buffer.html#a471b336e252edb7105b57058c8de7fff',1,'grpc::ByteBuffer']]],
-  ['serverstreaminghandler',['ServerStreamingHandler',['../classgrpc_1_1_byte_buffer.html#a92a457fe95d4f1662f65ed9b47be0f84',1,'grpc::ByteBuffer']]]
+  ['protobufferwriterpeer',['ProtoBufferWriterPeer',['../classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4',1,'grpc::ProtoBufferWriter']]]
 ];

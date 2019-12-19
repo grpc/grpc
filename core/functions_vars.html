@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">9.0.0</span>
    </div>
   </td>
  </tr>
@@ -128,6 +128,14 @@ $(function() {
 <li>compression
 : <a class="el" href="structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a110cdc07225f77ae580e50a8944bcb7c">grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer</a>
 </li>
+<li>config
+: <a class="el" href="structgrpc__tls__credential__reload__arg.html#ad704bf86341f423d1fc9f8fb7a9f95c4">grpc_tls_credential_reload_arg</a>
+, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a682bb119d97a1166dd50001c848f9b38">grpc_tls_server_authorization_check_arg</a>
+</li>
+<li>context
+: <a class="el" href="structgrpc__tls__credential__reload__arg.html#a351c3904aa7154c947a724d7d5203115">grpc_tls_credential_reload_arg</a>
+, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a840309051d10d17392e977812f78254e">grpc_tls_server_authorization_check_arg</a>
+</li>
 <li>copy
 : <a class="el" href="structgrpc__arg__pointer__vtable.html#a1a71527a772bae82735ef8682d0668ad">grpc_arg_pointer_vtable</a>
 </li>
@@ -178,6 +186,10 @@ $(function() {
 , <a class="el" href="structgrpc__auth__metadata__processor.html#a33be2059783190555aee0edb42bca475">grpc_auth_metadata_processor</a>
 , <a class="el" href="structgrpc__metadata__credentials__plugin.html#a445b45204d00f76d957a6065cc117cc6">grpc_metadata_credentials_plugin</a>
 </li>
+<li>destroy_context
+: <a class="el" href="structgrpc__tls__credential__reload__arg.html#a26ffe67d208d353d24caa0135c9723f4">grpc_tls_credential_reload_arg</a>
+, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#af3202abff43af16a7cc01d3d09845f1c">grpc_tls_server_authorization_check_arg</a>
+</li>
 </ul>
 
 
@@ -204,9 +216,6 @@ $(function() {
 , <a class="el" href="structgrpc__metadata.html#a133ac4f411ab967565bebce75a0e1b91">grpc_metadata</a>
 , <a class="el" href="structgrpc__op.html#a5b6e034719e0ac3cd6bcf5efbc7cb019">grpc_op</a>
 </li>
-<li>free_fn
-: <a class="el" href="structgpr__allocation__functions.html#a1cebaedc2a76e00f773254bd16ab5f9a">gpr_allocation_functions</a>
-</li>
 <li>functor_run
 : <a class="el" href="structgrpc__experimental__completion__queue__functor.html#a803544c5034a25e2f6de1bc1ee465ff6">grpc_experimental_completion_queue_functor</a>
 </li>
@@ -231,6 +240,9 @@ $(function() {
 <li>index
 : <a class="el" href="structgrpc__auth__property__iterator.html#ac2b2a0501f097562a6d8856e3da5e7e6">grpc_auth_property_iterator</a>
 , <a class="el" href="uniongrpc__byte__buffer__reader_1_1grpc__byte__buffer__reader__current.html#a75e9e86942ca6b95cba101775f7c15ea">grpc_byte_buffer_reader::grpc_byte_buffer_reader_current</a>
+</li>
+<li>inlineable
+: <a class="el" href="structgrpc__experimental__completion__queue__functor.html#ad622c1b44c3b548c55a09c2634413f31">grpc_experimental_completion_queue_functor</a>
 </li>
 <li>inlined
 : <a class="el" href="uniongrpc__slice_1_1grpc__slice__data.html#add6546143f511291a173ed5bb85e66f5">grpc_slice::grpc_slice_data</a>
@@ -290,9 +302,6 @@ $(function() {
 
 
 <h3><a id="index_m"></a>- m -</h3><ul>
-<li>malloc_fn
-: <a class="el" href="structgpr__allocation__functions.html#ad305eae61dce43f120ea64da1fe889f1">gpr_allocation_functions</a>
-</li>
 <li>maybe_compression_level
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata.html#a1912a64a40c7ebdba980b317629a6db8">grpc_op::grpc_op_data::grpc_op_send_initial_metadata</a>
 </li>
@@ -356,9 +365,6 @@ $(function() {
 <li>raw
 : <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a1b18536aa82c2ad37c7a22d4485d280d">grpc_byte_buffer::grpc_byte_buffer_data</a>
 </li>
-<li>realloc_fn
-: <a class="el" href="structgpr__allocation__functions.html#a6e045f05fd723164fb8d6d6eeeed305e">gpr_allocation_functions</a>
-</li>
 <li>recv_close_on_server
 : <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#a9dddb27dfca57fa1322723845612c517">grpc_op::grpc_op_data</a>
 </li>
@@ -384,10 +390,10 @@ $(function() {
 </li>
 <li>reserved
 : <a class="el" href="structgrpc__auth__metadata__context.html#a0ca2d1c0da619c1e50cef8437f1ef517">grpc_auth_metadata_context</a>
-, <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a4336cf56aea5c505f2cd44826e2954ab">grpc_byte_buffer::grpc_byte_buffer_data</a>
+, <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a83dbb8e4a7b9660b1d8b3a21b68128c0">grpc_byte_buffer::grpc_byte_buffer_data</a>
 , <a class="el" href="structgrpc__byte__buffer.html#a0945e647b3a7b14083537a6d3e51fde5">grpc_byte_buffer</a>
 , <a class="el" href="structgrpc__call__details.html#a5c323f3f0c94cbb867f13453dd43dd9d">grpc_call_details</a>
-, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ad3859f113f08d8564d504161c263bc08">grpc_op::grpc_op_data</a>
+, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ada262cf2f51816ed6a9e5b32c41bdf03">grpc_op::grpc_op_data</a>
 , <a class="el" href="structgrpc__op.html#a58d279ba14f133153eb0ee801deb74f5">grpc_op</a>
 </li>
 <li>resource
@@ -517,17 +523,10 @@ $(function() {
 : <a class="el" href="structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html#a9ac50b325433ccb4c4a6f617ad4fdd8f">grpc_arg::grpc_arg_value::grpc_arg_pointer</a>
 </li>
 </ul>
-
-
-<h3><a id="index_z"></a>- z -</h3><ul>
-<li>zalloc_fn
-: <a class="el" href="structgpr__allocation__functions.html#ac3b36e6fa09be3fec1bfc7fcc956dbfb">gpr_allocation_functions</a>
-</li>
-</ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

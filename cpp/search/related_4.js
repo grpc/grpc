@@ -8,6 +8,7 @@ var searchData=
   ['securechannelcredentials',['SecureChannelCredentials',['../classgrpc__impl_1_1_channel_arguments.html#a43036c92bd17e6695c8f275baf38d727',1,'grpc_impl::ChannelArguments']]],
   ['server',['Server',['../classgrpc_1_1_generic_server_context.html#a229d861ba45e98e733c9e497f274b0cc',1,'grpc::GenericServerContext::Server()'],['../classgrpc_1_1_async_generic_service.html#a229d861ba45e98e733c9e497f274b0cc',1,'grpc::AsyncGenericService::Server()'],['../classgrpc_1_1_service.html#a229d861ba45e98e733c9e497f274b0cc',1,'grpc::Service::Server()']]],
   ['serverbuilder',['ServerBuilder',['../classgrpc__impl_1_1_server.html#a91be5dd8ce6ace7fe702dd760a815b33',1,'grpc_impl::Server']]],
-  ['servercontext',['ServerContext',['../classgrpc_1_1experimental_1_1_server_rpc_info.html#a489201c76c2a27c561d84331b58bbca5',1,'grpc::experimental::ServerRpcInfo']]],
-  ['serverinitializer',['ServerInitializer',['../classgrpc__impl_1_1_server.html#ad4614e5fb61b8fc39963ecdc3576d01e',1,'grpc_impl::Server']]]
+  ['servercontextbase',['ServerContextBase',['../classgrpc_1_1experimental_1_1_server_rpc_info.html#a363acaf9b953a262489c5e203aee027e',1,'grpc::experimental::ServerRpcInfo']]],
+  ['serverinitializer',['ServerInitializer',['../classgrpc__impl_1_1_server.html#ad4614e5fb61b8fc39963ecdc3576d01e',1,'grpc_impl::Server']]],
+  ['serverinterface',['ServerInterface',['../classgrpc_1_1_generic_server_context.html#afe81e822dc43d93ac8f982db5bb1497d',1,'grpc::GenericServerContext']]]
 ];
