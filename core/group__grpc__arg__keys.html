@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">9.0.0</span>
    </div>
   </td>
  </tr>
@@ -196,6 +196,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga728b6e9699b2bc90b56a4fb06d269670"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga728b6e9699b2bc90b56a4fb06d269670">GRPC_SSL_SESSION_CACHE_ARG</a>&#160;&#160;&#160;&quot;grpc.ssl_session_cache&quot;</td></tr>
 <tr class="memdesc:ga728b6e9699b2bc90b56a4fb06d269670"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, a pointer to a session cache (a pointer of type grpc_ssl_session_cache*).  <a href="#ga728b6e9699b2bc90b56a4fb06d269670">More...</a><br /></td></tr>
 <tr class="separator:ga728b6e9699b2bc90b56a4fb06d269670"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf6f0cd3313637e1c4dbeb60043423635"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf6f0cd3313637e1c4dbeb60043423635">GRPC_ARG_TSI_MAX_FRAME_SIZE</a>&#160;&#160;&#160;&quot;grpc.tsi.max_frame_size&quot;</td></tr>
+<tr class="memdesc:gaf6f0cd3313637e1c4dbeb60043423635"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, it will determine the maximum frame size used by TSI's frame protector.  <a href="#gaf6f0cd3313637e1c4dbeb60043423635">More...</a><br /></td></tr>
+<tr class="separator:gaf6f0cd3313637e1c4dbeb60043423635"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga2a9e23d3fe81ae539ba655d2e49051c8">GRPC_ARG_MAX_METADATA_SIZE</a>&#160;&#160;&#160;&quot;grpc.max_metadata_size&quot;</td></tr>
 <tr class="memdesc:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum metadata size, in bytes.  <a href="#ga2a9e23d3fe81ae539ba655d2e49051c8">More...</a><br /></td></tr>
 <tr class="separator:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -250,6 +253,8 @@ Macros</h2></td></tr>
 <tr class="separator:gabe5b41f89f0017e0f89c5945fe1e0470"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4c78436839c4f7398a38fb0732435b66"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4c78436839c4f7398a38fb0732435b66">GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS</a>&#160;&#160;&#160;&quot;grpc.xds_locality_retention_interval_ms&quot;</td></tr>
 <tr class="separator:ga4c78436839c4f7398a38fb0732435b66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1e04374ed3531bdda5ccd6260a75840f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga1e04374ed3531bdda5ccd6260a75840f">GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.xds_failover_timeout_ms&quot;</td></tr>
+<tr class="separator:ga1e04374ed3531bdda5ccd6260a75840f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">GRPC_ARG_WORKAROUND_CRONET_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td></tr>
 <tr class="memdesc:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, grpc server's cronet compression workaround will be enabled.  <a href="#ga618ddbf19fdd38d8f90b8f3d7cb5d481">More...</a><br /></td></tr>
 <tr class="separator:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1379,6 +1384,23 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="gaf6f0cd3313637e1c4dbeb60043423635"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaf6f0cd3313637e1c4dbeb60043423635">&#9670;&nbsp;</a></span>GRPC_ARG_TSI_MAX_FRAME_SIZE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_TSI_MAX_FRAME_SIZE&#160;&#160;&#160;&quot;grpc.tsi.max_frame_size&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If non-zero, it will determine the maximum frame size used by TSI's frame protector. </p>
+<p>NOTE: Be aware that using a large "max_frame_size" is memory inefficient for non-zerocopy protectors. Also, increasing this value above 1MiB can break old binaries that don't support larger than 1MiB frame size. </p>
+
+</div>
+</div>
 <a id="ga3da556ec531495ace9f93b97c8c4f24b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga3da556ec531495ace9f93b97c8c4f24b">&#9670;&nbsp;</a></span>GRPC_ARG_USE_CRONET_PACKET_COALESCING</h2>
 
@@ -1425,6 +1447,20 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>If non-zero, grpc server's cronet compression workaround will be enabled. </p>
+
+</div>
+</div>
+<a id="ga1e04374ed3531bdda5ccd6260a75840f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga1e04374ed3531bdda5ccd6260a75840f">&#9670;&nbsp;</a></span>GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS&#160;&#160;&#160;&quot;grpc.xds_failover_timeout_ms&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -1547,7 +1583,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

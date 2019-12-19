@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../structgpr__allocation__functions.html',1,'']]],
   ['gpr_5fevent',['gpr_event',['../structgpr__event.html',1,'']]],
   ['gpr_5flog_5ffunc_5fargs',['gpr_log_func_args',['../structgpr__log__func__args.html',1,'']]],
   ['gpr_5fmu',['gpr_mu',['../structgpr__mu.html',1,'']]],

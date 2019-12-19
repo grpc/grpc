@@ -5,6 +5,7 @@ var searchData=
   ['ssl_20in_20grpc_20and_20performance',['SSL in gRPC and performance',['../md_doc_ssl-performance.html',1,'']]],
   ['status_20codes_20and_20their_20use_20in_20grpc',['Status codes and their use in gRPC',['../md_doc_statuscodes.html',1,'']]],
   ['scope',['scope',['../structgrpc__sts__credentials__options.html#a1da17c75496e5debe7b89d3f43fc511b',1,'grpc_sts_credentials_options']]],
+  ['security_5faudit_2emd',['security_audit.md',['../security__audit_8md.html',1,'']]],
   ['send_5finitial_5fmetadata',['send_initial_metadata',['../uniongrpc__op_1_1grpc__op__data.html#ae6ef97451e551478d4e4e5c74f0ece2f',1,'grpc_op::grpc_op_data']]],
   ['send_5fmessage',['send_message',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html#ac5710965e63672497b156855e096a759',1,'grpc_op::grpc_op_data::grpc_op_send_message::send_message()'],['../uniongrpc__op_1_1grpc__op__data.html#a475ece8579e74caec4338c3e9221702c',1,'grpc_op::grpc_op_data::send_message()']]],
   ['send_5fstatus_5ffrom_5fserver',['send_status_from_server',['../uniongrpc__op_1_1grpc__op__data.html#adc789e7a8a91b5f20a16a989e9150a0d',1,'grpc_op::grpc_op_data']]],

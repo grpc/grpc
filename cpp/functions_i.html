@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -80,6 +80,9 @@ $(function() {
 </li>
 <li>InitServer()
 : <a class="el" href="classgrpc_1_1_server_builder_plugin.html#a239127fbc007c28a6a955b23dd7cf088">grpc::ServerBuilderPlugin</a>
+</li>
+<li>inlineable
+: <a class="el" href="structgrpc__experimental__completion__queue__functor.html#ad622c1b44c3b548c55a09c2634413f31">grpc_experimental_completion_queue_functor</a>
 </li>
 <li>inlined
 : <a class="el" href="uniongrpc__slice_1_1grpc__slice__data.html#add6546143f511291a173ed5bb85e66f5">grpc_slice::grpc_slice_data</a>
@@ -143,9 +146,6 @@ $(function() {
 <li>internal::DeserializeFuncType
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a8575cd74967bac70dad4afbf830db64c">grpc::ByteBuffer</a>
 </li>
-<li>internal::ErrorMethodHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a91a3296cb8faa9b7afad2f0db836df4d">grpc::ByteBuffer</a>
-</li>
 <li>internal::ExternalConnectionAcceptorImpl
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a7b74f44e39cd7ec6e6843612ea13573a">grpc::ByteBuffer</a>
 </li>
@@ -159,14 +159,8 @@ $(function() {
 <li>internal::ProtoBufferWriterPeer
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">grpc::ProtoBufferWriter</a>
 </li>
-<li>internal::RpcMethodHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a471b336e252edb7105b57058c8de7fff">grpc::ByteBuffer</a>
-</li>
-<li>internal::ServerStreamingHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a92a457fe95d4f1662f65ed9b47be0f84">grpc::ByteBuffer</a>
-</li>
 <li>internal_data
-: <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a940af1913445d4059385a7980372b602">grpc::internal::MethodHandler::HandlerParameter</a>
+: <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a5e52a3e79a744f590e2902ed0194f15e">grpc::internal::MethodHandler::HandlerParameter</a>
 , <a class="el" href="structgrpc__metadata.html#af57c3b2e391435caff04793bf30243f0">grpc_metadata</a>
 </li>
 <li>internal_next
@@ -178,11 +172,17 @@ $(function() {
 <li>InternalAddPluginFactory()
 : <a class="el" href="classgrpc__impl_1_1_server_builder.html#a0b1caed24280d09df03320326b5777f1">grpc_impl::ServerBuilder</a>
 </li>
+<li>InternalInlineable()
+: <a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#a5e5f8dfe3370dd7ff2b3a9ebfb2a9039">grpc_impl::internal::ServerReactor</a>
+</li>
 <li>is_corked()
 : <a class="el" href="classgrpc_1_1_write_options.html#a28b60c6668d42680d8928e1cffc90db8">grpc::WriteOptions</a>
 </li>
 <li>is_last_message()
 : <a class="el" href="classgrpc_1_1_write_options.html#a7d08d7bc3a62cc4cfe8499d4bd70e0d7">grpc::WriteOptions</a>
+</li>
+<li>is_pem_key_cert_pair_list_empty()
+: <a class="el" href="classgrpc__impl_1_1experimental_1_1_tls_credential_reload_arg.html#af38e0b9e2e02a265f1b4807ca7d1059a">grpc_impl::experimental::TlsCredentialReloadArg</a>
 </li>
 <li>is_set
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a8d0cb47bccc7bcbd4bb77121e7a689c6">grpc::internal::CallOpSendInitialMetadata</a>
@@ -199,7 +199,7 @@ $(function() {
 , <a class="el" href="classgrpc__impl_1_1_metadata_credentials_plugin.html#a99e59926089444f1ece3c7d28deca1b8">grpc_impl::MetadataCredentialsPlugin</a>
 </li>
 <li>IsCancelled()
-: <a class="el" href="classgrpc__impl_1_1_server_context.html#ac0fe2a9425b18b724f910adbe0e3c17a">grpc_impl::ServerContext</a>
+: <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a8cddeac523cbcfb67113bfd39b70c148">grpc_impl::ServerContextBase</a>
 </li>
 <li>IsFrequentlyPolled()
 : <a class="el" href="classgrpc__impl_1_1_server_completion_queue.html#aab40c635d653b9d9c57a17e88b776c0d">grpc_impl::ServerCompletionQueue</a>
@@ -214,7 +214,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

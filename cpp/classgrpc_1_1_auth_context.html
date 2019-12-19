@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -95,11 +95,11 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4a4a9e18e05e1a06cf25b8a77edd8c89"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a81d358b427e0f1096e148918cdeef991"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_auth_property_iterator.html">AuthPropertyIterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a81d358b427e0f1096e148918cdeef991">end</a> () const =0</td></tr>
 <tr class="separator:a81d358b427e0f1096e148918cdeef991"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add9dbb40b1a822f683a7ebad71e774f2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#add9dbb40b1a822f683a7ebad71e774f2">AddProperty</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &amp;value)=0</td></tr>
-<tr class="memdesc:add9dbb40b1a822f683a7ebad71e774f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mutation functions: should only be used by an AuthMetadataProcessor.  <a href="#add9dbb40b1a822f683a7ebad71e774f2">More...</a><br /></td></tr>
-<tr class="separator:add9dbb40b1a822f683a7ebad71e774f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a218158a0698137b9c5d6fff0c8054cc4"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a218158a0698137b9c5d6fff0c8054cc4">SetPeerIdentityPropertyName</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name)=0</td></tr>
-<tr class="separator:a218158a0698137b9c5d6fff0c8054cc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeae28236de5b890eb3dea125ffeaa048"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#aeae28236de5b890eb3dea125ffeaa048">AddProperty</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> &amp;value)=0</td></tr>
+<tr class="memdesc:aeae28236de5b890eb3dea125ffeaa048"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mutation functions: should only be used by an AuthMetadataProcessor.  <a href="#aeae28236de5b890eb3dea125ffeaa048">More...</a><br /></td></tr>
+<tr class="separator:aeae28236de5b890eb3dea125ffeaa048"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affa9e838e6a15fdb881bb99058969f49"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#affa9e838e6a15fdb881bb99058969f49">SetPeerIdentityPropertyName</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a> &amp;name)=0</td></tr>
+<tr class="separator:affa9e838e6a15fdb881bb99058969f49"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Class encapsulating the Authentication Information. </p>
@@ -131,8 +131,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="add9dbb40b1a822f683a7ebad71e774f2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add9dbb40b1a822f683a7ebad71e774f2">&#9670;&nbsp;</a></span>AddProperty()</h2>
+<a id="aeae28236de5b890eb3dea125ffeaa048"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeae28236de5b890eb3dea125ffeaa048">&#9670;&nbsp;</a></span>AddProperty()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> &amp;&#160;</td>
           <td class="paramname"><em>value</em>&#160;</td>
         </tr>
         <tr>
@@ -329,8 +329,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a218158a0698137b9c5d6fff0c8054cc4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a218158a0698137b9c5d6fff0c8054cc4">&#9670;&nbsp;</a></span>SetPeerIdentityPropertyName()</h2>
+<a id="affa9e838e6a15fdb881bb99058969f49"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#affa9e838e6a15fdb881bb99058969f49">&#9670;&nbsp;</a></span>SetPeerIdentityPropertyName()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -341,7 +341,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual bool grpc::AuthContext::SetPeerIdentityPropertyName </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a> &amp;&#160;</td>
           <td class="paramname"><em>name</em></td><td>)</td>
           <td></td>
         </tr>
@@ -361,7 +361,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -16,6 +16,7 @@ var searchData=
   ['grpc_20name_20resolution',['gRPC Name Resolution',['../md_doc_naming.html',1,'']]],
   ['grpc_20over_20http2',['gRPC over HTTP2',['../md_doc__p_r_o_t_o_c_o_l-_h_t_t_p2.html',1,'']]],
   ['grpc_20web',['gRPC Web',['../md_doc__p_r_o_t_o_c_o_l-_w_e_b.html',1,'']]],
+  ['grpc_20security_20audit',['gRPC Security Audit',['../md_doc_security_audit.html',1,'']]],
   ['grpc_20server_20reflection_20protocol',['GRPC Server Reflection Protocol',['../md_doc_server-reflection.html',1,'']]],
   ['grpc_20server_20reflection_20tutorial',['gRPC Server Reflection Tutorial',['../md_doc_server_reflection_tutorial.html',1,'']]],
   ['grpc_20versioning_20guide',['gRPC Versioning Guide',['../md_doc_versioning.html',1,'']]],

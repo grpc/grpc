@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['message',['Message',['../namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c',1,'grpc::protobuf']]],
-  ['messagelite',['MessageLite',['../namespacegrpc_1_1protobuf.html#ac789dec12d47ac654c7b6250b1c567e2',1,'grpc::protobuf']]],
-  ['metadatacredentialsplugin',['MetadataCredentialsPlugin',['../namespacegrpc.html#a9db94ddbe0252efe09ab45f0de8abba8',1,'grpc']]],
-  ['methoddescriptor',['MethodDescriptor',['../namespacegrpc_1_1protobuf.html#a8efefadec7fe436dcc7657c6d6f4569a',1,'grpc::protobuf']]]
+  ['healthcheckserviceinterface',['HealthCheckServiceInterface',['../namespacegrpc.html#a7dad7f8e27d95459a7f538356ef2aecb',1,'grpc']]],
+  ['hoststring',['HostString',['../classgrpc__impl_1_1_server_builder.html#a99be6918c103dc4a6887cf60f97043f5',1,'grpc_impl::ServerBuilder']]]
 ];

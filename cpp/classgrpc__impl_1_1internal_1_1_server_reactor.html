@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -81,11 +81,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a867b79e8c86ef14ac12f55e0322117e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaf788a6824178974d5ab414325746fa2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#aaf788a6824178974d5ab414325746fa2">OnCancel</a> ()=0</td></tr>
 <tr class="separator:aaf788a6824178974d5ab414325746fa2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e5f8dfe3370dd7ff2b3a9ebfb2a9039"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#a5e5f8dfe3370dd7ff2b3a9ebfb2a9039">InternalInlineable</a> ()</td></tr>
+<tr class="separator:a5e5f8dfe3370dd7ff2b3a9ebfb2a9039"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
-<tr class="memitem:aff192364682c8f4dbb834022d512828d"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#aff192364682c8f4dbb834022d512828d">::grpc_impl::ServerContext</a></td></tr>
-<tr class="separator:aff192364682c8f4dbb834022d512828d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36fce87741ce699f749216a4c7d36d1f"><td class="memTemplParams" colspan="2">template&lt;class Request , class Response &gt; </td></tr>
+<tr class="memitem:a36fce87741ce699f749216a4c7d36d1f"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#a36fce87741ce699f749216a4c7d36d1f">CallbackUnaryHandler</a></td></tr>
+<tr class="separator:a36fce87741ce699f749216a4c7d36d1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab42503b71cc07a77da05b39d647e0c3e"><td class="memTemplParams" colspan="2">template&lt;class Request , class Response &gt; </td></tr>
 <tr class="memitem:ab42503b71cc07a77da05b39d647e0c3e"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_server_reactor.html#ab42503b71cc07a77da05b39d647e0c3e">CallbackClientStreamingHandler</a></td></tr>
 <tr class="separator:ab42503b71cc07a77da05b39d647e0c3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -123,6 +126,31 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a5e5f8dfe3370dd7ff2b3a9ebfb2a9039"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e5f8dfe3370dd7ff2b3a9ebfb2a9039">&#9670;&nbsp;</a></span>InternalInlineable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual bool grpc_impl::internal::ServerReactor::InternalInlineable </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="aaf788a6824178974d5ab414325746fa2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aaf788a6824178974d5ab414325746fa2">&#9670;&nbsp;</a></span>OnCancel()</h2>
 
@@ -146,7 +174,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#adbd8cd34a49c2a4d818c0561188960f2">grpc_impl::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#adbd8cd34a49c2a4d818c0561188960f2">grpc_impl::experimental::ServerWriteReactor&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_read_reactor.html#a5a53fd1f2408a8a1065e150a6688378d">grpc_impl::experimental::ServerReadReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_read_reactor.html#a5a53fd1f2408a8a1065e150a6688378d">grpc_impl::experimental::ServerReadReactor&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a0f52f858160cdf418881671eb153a35f">grpc_impl::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a0f52f858160cdf418881671eb153a35f">grpc_impl::experimental::ServerBidiReactor&lt; RequestType, ResponseType &gt;</a>, and <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a0f52f858160cdf418881671eb153a35f">grpc_impl::experimental::ServerBidiReactor&lt; ByteBuffer, ByteBuffer &gt;</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc__impl_1_1_server_unary_reactor.html#af352314050b7006e99d7c323c9e74450">grpc_impl::ServerUnaryReactor</a>, <a class="el" href="classgrpc__impl_1_1_server_write_reactor.html#a10b826d183705c42420767da95185063">grpc_impl::ServerWriteReactor&lt; Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1_server_read_reactor.html#a8ae3e3f38d546b8e03a7387224a7d186">grpc_impl::ServerReadReactor&lt; Request &gt;</a>, and <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html#af38ba8302d38a0f191c39112e2afe55b">grpc_impl::ServerBidiReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
@@ -173,33 +201,11 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="classgrpc__impl_1_1internal_1_1_unimplemented_bidi_reactor.html#ae31c06b1aedca0e27ffab19c56580155">grpc_impl::internal::UnimplementedBidiReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1internal_1_1_unimplemented_write_reactor.html#a9331eca67e771e386e0ba1021e1e1a92">grpc_impl::internal::UnimplementedWriteReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1internal_1_1_unimplemented_read_reactor.html#a5ad121109195913844a5859c5cb94067">grpc_impl::internal::UnimplementedReadReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a6a3dd9464a186ec4bfe82b38e37c05fd">grpc_impl::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a6a3dd9464a186ec4bfe82b38e37c05fd">grpc_impl::experimental::ServerWriteReactor&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_read_reactor.html#ad6e506db2bc9d1fcbbd00ba74b9ed60a">grpc_impl::experimental::ServerReadReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_read_reactor.html#ad6e506db2bc9d1fcbbd00ba74b9ed60a">grpc_impl::experimental::ServerReadReactor&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a3cd92331893b7be7b53aca6d97e3e0fe">grpc_impl::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a3cd92331893b7be7b53aca6d97e3e0fe">grpc_impl::experimental::ServerBidiReactor&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a3cd92331893b7be7b53aca6d97e3e0fe">grpc_impl::experimental::ServerBidiReactor&lt; ByteBuffer, ByteBuffer &gt;</a>, and <a class="el" href="classgrpc_1_1internal_1_1_unimplemented_generic_bidi_reactor.html#a6f50a96820f24e2582c0139882d44a8a">grpc::internal::UnimplementedGenericBidiReactor</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc__impl_1_1_server_unary_reactor.html#a70b69f711a78b8dc24f71ace068858f5">grpc_impl::ServerUnaryReactor</a>, <a class="el" href="classgrpc__impl_1_1_server_write_reactor.html#a82868ce3df29af87285809092e451db0">grpc_impl::ServerWriteReactor&lt; Response &gt;</a>, <a class="el" href="classgrpc__impl_1_1_server_read_reactor.html#ad58f64adfbd97c8d4dce9917252c61b5">grpc_impl::ServerReadReactor&lt; Request &gt;</a>, and <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html#ac14906ed846912da6e420084be1c3e4f">grpc_impl::ServerBidiReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a id="aff192364682c8f4dbb834022d512828d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff192364682c8f4dbb834022d512828d">&#9670;&nbsp;</a></span>::grpc_impl::ServerContext</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="ac41268fbcd7a5fc78bbf5541bfb0b618"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac41268fbcd7a5fc78bbf5541bfb0b618">&#9670;&nbsp;</a></span>CallbackBidiHandler</h2>
 
@@ -272,13 +278,37 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
+<a id="a36fce87741ce699f749216a4c7d36d1f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36fce87741ce699f749216a4c7d36d1f">&#9670;&nbsp;</a></span>CallbackUnaryHandler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request , class Response &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc__impl_1_1internal_1_1_callback_unary_handler.html">CallbackUnaryHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/impl/codegen/<a class="el" href="impl_2codegen_2server__callback__impl_8h_source.html">server_callback_impl.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">9.0.0</span>
    </div>
   </td>
  </tr>
@@ -65,9 +65,6 @@ $(function() {
 <li>GPR_ALIGN_STRUCT
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#aafd38282877816cf1eea110c65fdf14b">port_platform.h</a>
 </li>
-<li>gpr_allocation_functions
-: <a class="el" href="alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7">alloc.h</a>
-</li>
 <li>gpr_asprintf()
 : <a class="el" href="string__util_8h.html#acf4ee571585b7e7785cad0eec91857fa">string_util.h</a>
 </li>
@@ -97,8 +94,8 @@ $(function() {
 : <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">atm_gcc_sync.h</a>
 </li>
 <li>gpr_atm_full_fetch_add
-: <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#abada8771b338845e4c6ef93c8392582c">atm_gcc_sync.h</a>
-, <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">atm_gcc_atomic.h</a>
+: <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">atm_gcc_atomic.h</a>
+, <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#abada8771b338845e4c6ef93c8392582c">atm_gcc_sync.h</a>
 </li>
 <li>gpr_atm_full_xchg
 : <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">atm_gcc_atomic.h</a>
@@ -218,11 +215,11 @@ $(function() {
 <li>gpr_event_get()
 : <a class="el" href="support_2sync_8h.html#afb62d3857409962718465c407f97fec3">sync.h</a>
 </li>
-<li>GPR_EVENT_INIT
-: <a class="el" href="impl_2codegen_2sync__generic_8h.html#a6f38fe7692eaa6663c1f79ff5847c050">sync_generic.h</a>
-</li>
 <li>gpr_event_init()
 : <a class="el" href="support_2sync_8h.html#a8c1e214b5ff9e8f25dfc785977d8a092">sync.h</a>
+</li>
+<li>GPR_EVENT_INIT
+: <a class="el" href="impl_2codegen_2sync__generic_8h.html#a6f38fe7692eaa6663c1f79ff5847c050">sync_generic.h</a>
 </li>
 <li>gpr_event_set()
 : <a class="el" href="support_2sync_8h.html#a39a77b09ffc2c288b097c84c4e0e29a5">sync.h</a>
@@ -238,9 +235,6 @@ $(function() {
 </li>
 <li>gpr_free_aligned()
 : <a class="el" href="alloc_8h.html#aafbdc542e56bcd24fcb80a9cd55afef1">alloc.h</a>
-</li>
-<li>gpr_get_allocation_functions()
-: <a class="el" href="alloc_8h.html#aa96aa61deb3f72c6e5d8f57d08942602">alloc.h</a>
 </li>
 <li>GPR_HAS_ATTRIBUTE
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#a4b5b587f4ab8c10f30046681bc5e87da">port_platform.h</a>
@@ -369,9 +363,6 @@ $(function() {
 </li>
 <li>gpr_refn()
 : <a class="el" href="support_2sync_8h.html#a91472a0360a87654379b3b6eb0fe942e">sync.h</a>
-</li>
-<li>gpr_set_allocation_functions()
-: <a class="el" href="alloc_8h.html#a2a32fcafdda423e2a11b4130d55951b4">alloc.h</a>
 </li>
 <li>gpr_set_log_function()
 : <a class="el" href="impl_2codegen_2log_8h.html#ae437062e3540eeebb4c95f119fe56be5">log.h</a>
@@ -820,6 +811,9 @@ $(function() {
 <li>GRPC_ARG_TCP_READ_CHUNK_SIZE
 : <a class="el" href="group__grpc__arg__keys.html#ga82582ed0fcd7d6b0090f9102d75c765a">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_TSI_MAX_FRAME_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#gaf6f0cd3313637e1c4dbeb60043423635">grpc_types.h</a>
+</li>
 <li>grpc_arg_type
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593">grpc_types.h</a>
 </li>
@@ -831,6 +825,9 @@ $(function() {
 </li>
 <li>GRPC_ARG_WORKAROUND_CRONET_COMPRESSION
 : <a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS
+: <a class="el" href="group__grpc__arg__keys.html#ga1e04374ed3531bdda5ccd6260a75840f">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS
 : <a class="el" href="group__grpc__arg__keys.html#gabe5b41f89f0017e0f89c5945fe1e0470">grpc_types.h</a>
@@ -937,11 +934,11 @@ $(function() {
 <li>grpc_call_details_init()
 : <a class="el" href="grpc_8h.html#afd22cfbc549db65ee265335c3264a57b">grpc.h</a>
 </li>
-<li>grpc_call_error
-: <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_types.h</a>
-</li>
 <li>GRPC_CALL_ERROR
 : <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba86e7b6bf1fe5dec17fc08ba2f77d1b41">grpc_types.h</a>
+</li>
+<li>grpc_call_error
+: <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_types.h</a>
 </li>
 <li>GRPC_CALL_ERROR_ALREADY_ACCEPTED
 : <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba2f6f332e63eb94df8abedfddb96ae63a">grpc_types.h</a>
@@ -1666,11 +1663,11 @@ $(function() {
 <li>GRPC_SLICE_LENGTH
 : <a class="el" href="impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">slice.h</a>
 </li>
-<li>grpc_slice_malloc()
-: <a class="el" href="slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">slice.h</a>
-</li>
 <li>GRPC_SLICE_MALLOC
 : <a class="el" href="slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">slice.h</a>
+</li>
+<li>grpc_slice_malloc()
+: <a class="el" href="slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">slice.h</a>
 </li>
 <li>grpc_slice_malloc_large()
 : <a class="el" href="slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">slice.h</a>
@@ -1990,8 +1987,8 @@ $(function() {
 <li>GRPC_UNUSED
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#a278515bb22fcd59e3a1092bb35063bd8">port_platform.h</a>
 </li>
-<li>GRPC_USE_CPP_STD_LIB
-: <a class="el" href="impl_2codegen_2port__platform_8h.html#aaa329ac460019060d0539aa8087e4eaf">port_platform.h</a>
+<li>GRPC_USE_ABSL
+: <a class="el" href="impl_2codegen_2port__platform_8h.html#ac2a2a477003c37daadc1832ef15aa2ad">port_platform.h</a>
 </li>
 <li>grpc_version_string()
 : <a class="el" href="grpc_8h.html#a8bf40c680565d2d3b29b85e8a9e661f3">grpc.h</a>
@@ -2030,7 +2027,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

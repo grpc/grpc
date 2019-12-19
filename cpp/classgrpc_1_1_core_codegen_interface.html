@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -152,6 +152,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a40df30e7435089121f7fa03f76031124"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95637f38b81aeaf75b8868a9e38423c1"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a95637f38b81aeaf75b8868a9e38423c1">grpc_call_arena_alloc</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, size_t length)=0</td></tr>
 <tr class="separator:a95637f38b81aeaf75b8868a9e38423c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac31d5f1ed6dc1abeb89edeaaa18ff22c"><td class="memItemLeft" align="right" valign="top">virtual const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#ac31d5f1ed6dc1abeb89edeaaa18ff22c">grpc_call_error_to_string</a> (<a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_call_error</a> error)=0</td></tr>
+<tr class="separator:ac31d5f1ed6dc1abeb89edeaaa18ff22c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48ec1eb8637d95b2eb452db2846bf76c"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a48ec1eb8637d95b2eb452db2846bf76c">grpc_empty_slice</a> ()=0</td></tr>
 <tr class="separator:a48ec1eb8637d95b2eb452db2846bf76c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a937d192d91be97e09b9eafd51fb20cf6"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a937d192d91be97e09b9eafd51fb20cf6">grpc_slice_malloc</a> (size_t length)=0</td></tr>
@@ -926,6 +928,32 @@ Public Member Functions</h2></td></tr>
           <td></td>
           <td>)</td>
           <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac31d5f1ed6dc1abeb89edeaaa18ff22c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac31d5f1ed6dc1abeb89edeaaa18ff22c">&#9670;&nbsp;</a></span>grpc_call_error_to_string()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual const char* grpc::CoreCodegenInterface::grpc_call_error_to_string </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_call_error</a>&#160;</td>
+          <td class="paramname"><em>error</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
   </td>
@@ -1873,7 +1901,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">9.0.0</span>
    </div>
   </td>
  </tr>
@@ -121,11 +121,8 @@ $(function() {
 <li><p class="startli">Get Service/method descriptors.</p>
 <p class="startli">```c++ const google::protobuf::ServiceDescriptor* service_desc = desc_pool-&gt;FindServiceByName("helloworld.Greeter"); const google::protobuf::MethodDescriptor* method_desc = desc_pool-&gt;FindMethodByName("helloworld.Greeter.SayHello"); ```</p>
 </li>
-<li><p class="startli">Get message type descriptors.</p>
-<p class="startli">```c++ const google::protobuf::Descriptor* request_desc = desc_pool-&gt;FindMessageTypeByName("helloworld.HelloRequest"); ```</p>
-</li>
-<li><p class="startli">Feed <a href="https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.dynamic_message#DynamicMessageFactory">google::protobuf::DynamicMessageFactory</a>.</p>
-<p class="startli">```c++ google::protobuf::DynamicMessageFactory(&amp;desc_pool); ``` </p>
+<li><p class="startli">Get message type descriptors and create messages dynamically.</p>
+<p class="startli">```c++ const google::protobuf::Descriptor* request_desc = desc_pool-&gt;FindMessageTypeByName("helloworld.HelloRequest"); google::protobuf::DynamicMessageFactory dmf; google::protobuf::Message* request = dmf.GetPrototype(request_desc)-&gt;New(); ``` </p>
 </li>
 </ul>
 </li>
@@ -133,7 +130,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

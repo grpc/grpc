@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -75,60 +75,60 @@ $(function() {
 <div class="textblock"><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2byte__buffer_8h_source.html">grpcpp/impl/codegen/byte_buffer.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h_source.html">grpcpp/impl/codegen/core_codegen_interface.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2rpc__service__method_8h_source.html">grpcpp/impl/codegen/rpc_service_method.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2sync__stream_8h_source.html">grpcpp/impl/codegen/sync_stream.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="impl_2codegen_2sync__stream__impl_8h_source.html">grpcpp/impl/codegen/sync_stream_impl.h</a>&gt;</code><br />
 </div>
 <p><a href="grpcpp_2impl_2codegen_2method__handler__impl_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper class of an application provided rpc method handler.  <a href="classgrpc_1_1internal_1_1_rpc_method_handler.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_rpc_method_handler.html">grpc_impl::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper class of an application provided rpc method handler.  <a href="classgrpc__impl_1_1internal_1_1_rpc_method_handler.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_streaming_handler.html">grpc::internal::ClientStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper class of an application provided client streaming handler.  <a href="classgrpc_1_1internal_1_1_client_streaming_handler.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_client_streaming_handler.html">grpc_impl::internal::ClientStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper class of an application provided client streaming handler.  <a href="classgrpc__impl_1_1internal_1_1_client_streaming_handler.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper class of an application provided server streaming handler.  <a href="classgrpc_1_1internal_1_1_server_streaming_handler.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_server_streaming_handler.html">grpc_impl::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper class of an application provided server streaming handler.  <a href="classgrpc__impl_1_1internal_1_1_server_streaming_handler.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html">grpc::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper class of an application provided bidi-streaming handler.  <a href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_templated_bidi_streaming_handler.html">grpc_impl::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper class of an application provided bidi-streaming handler.  <a href="classgrpc__impl_1_1internal_1_1_templated_bidi_streaming_handler.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_bidi_streaming_handler.html">grpc::internal::BidiStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_bidi_streaming_handler.html">grpc_impl::internal::BidiStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_streamed_unary_handler.html">grpc::internal::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_streamed_unary_handler.html">grpc_impl::internal::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_split_server_streaming_handler.html">grpc::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_split_server_streaming_handler.html">grpc_impl::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html">grpc::internal::ErrorMethodHandler&lt; code &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">General method handler class for errors that prevent real method use e.g., handle unknown method by returning UNIMPLEMENTED error.  <a href="classgrpc_1_1internal_1_1_error_method_handler.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1internal_1_1_error_method_handler.html">grpc_impl::internal::ErrorMethodHandler&lt; code &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">General method handler class for errors that prevent real method use e.g., handle unknown method by returning UNIMPLEMENTED error.  <a href="classgrpc__impl_1_1internal_1_1_error_method_handler.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:namespacegrpc"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html">grpc</a></td></tr>
-<tr class="memdesc:namespacegrpc"><td class="mdescLeft">&#160;</td><td class="mdescRight">This header provides an object that reads bytes directly from a <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">grpc::ByteBuffer</a>, via the ZeroCopyInputStream interface. <br /></td></tr>
+<tr class="memitem:namespacegrpc__impl"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__impl.html">grpc_impl</a></td></tr>
+<tr class="memdesc:namespacegrpc__impl"><td class="mdescLeft">&#160;</td><td class="mdescRight">An <a class="el" href="classgrpc__impl_1_1_alarm.html">Alarm</a> posts the user-provided tag to its associated completion queue or invokes the user-provided function on expiry or cancellation. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:namespacegrpc_1_1internal"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html">grpc::internal</a></td></tr>
-<tr class="memdesc:namespacegrpc_1_1internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Models a gRPC server. <br /></td></tr>
+<tr class="memitem:namespacegrpc__impl_1_1internal"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__impl_1_1internal.html">grpc_impl::internal</a></td></tr>
+<tr class="memdesc:namespacegrpc__impl_1_1internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actual implementation of bi-directional streaming. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:aadad19d5473515e912bc2abdcffacae5"><td class="memItemLeft" align="right" valign="top">typedef ErrorMethodHandler&lt; StatusCode::UNIMPLEMENTED &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#aadad19d5473515e912bc2abdcffacae5">grpc::internal::UnknownMethodHandler</a></td></tr>
-<tr class="separator:aadad19d5473515e912bc2abdcffacae5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8644abe728be83718a18f5faf44110d3"><td class="memItemLeft" align="right" valign="top">typedef ErrorMethodHandler&lt; StatusCode::RESOURCE_EXHAUSTED &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a8644abe728be83718a18f5faf44110d3">grpc::internal::ResourceExhaustedHandler</a></td></tr>
-<tr class="separator:a8644abe728be83718a18f5faf44110d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad992e71bb0d233a8ab699c554f034407"><td class="memItemLeft" align="right" valign="top">typedef ErrorMethodHandler&lt;::<a class="el" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b">grpc::StatusCode::UNIMPLEMENTED</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__impl_1_1internal.html#ad992e71bb0d233a8ab699c554f034407">grpc_impl::internal::UnknownMethodHandler</a></td></tr>
+<tr class="separator:ad992e71bb0d233a8ab699c554f034407"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae790a3ad5465bae7c2138bad206db877"><td class="memItemLeft" align="right" valign="top">typedef ErrorMethodHandler&lt;::<a class="el" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba663615dcb59881e3fe4206066666086f">grpc::StatusCode::RESOURCE_EXHAUSTED</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__impl_1_1internal.html#ae790a3ad5465bae7c2138bad206db877">grpc_impl::internal::ResourceExhaustedHandler</a></td></tr>
+<tr class="separator:ae790a3ad5465bae7c2138bad206db877"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ae548f7c35cdcccbd9b8453b99ba1e326"><td class="memTemplParams" colspan="2">template&lt;class Callable &gt; </td></tr>
-<tr class="memitem:ae548f7c35cdcccbd9b8453b99ba1e326"><td class="memTemplItemLeft" align="right" valign="top">Status&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#ae548f7c35cdcccbd9b8453b99ba1e326">grpc::internal::CatchingFunctionHandler</a> (Callable &amp;&amp;handler)</td></tr>
-<tr class="separator:ae548f7c35cdcccbd9b8453b99ba1e326"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfbc2e6eb565a194f1cf9a537e938940"><td class="memTemplParams" colspan="2">template&lt;class Callable &gt; </td></tr>
+<tr class="memitem:acfbc2e6eb565a194f1cf9a537e938940"><td class="memTemplItemLeft" align="right" valign="top">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__impl_1_1internal.html#acfbc2e6eb565a194f1cf9a537e938940">grpc_impl::internal::CatchingFunctionHandler</a> (Callable &amp;&amp;handler)</td></tr>
+<tr class="separator:acfbc2e6eb565a194f1cf9a537e938940"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

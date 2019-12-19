@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.24.0</span>
+   &#160;<span id="projectnumber">1.26.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 </li>
 <li>raw_deadline()
 : <a class="el" href="classgrpc__impl_1_1_client_context.html#ad13e34b1ce51ad9fd52285054a0fc560">grpc_impl::ClientContext</a>
-, <a class="el" href="classgrpc__impl_1_1_server_context.html#a17956416a0c780b6f9ee49d8ed897507">grpc_impl::ServerContext</a>
+, <a class="el" href="classgrpc__impl_1_1_server_context_base.html#a73b960be3567cad8d8e75261c229ad72">grpc_impl::ServerContextBase</a>
 </li>
 <li>raw_time()
 : <a class="el" href="classgrpc_1_1_time_point.html#adb76465d3bf0fef9ad5b918f0ea6a9b6">grpc::TimePoint&lt; T &gt;</a>
@@ -80,12 +80,10 @@ $(function() {
 <li>Read()
 : <a class="el" href="classgrpc__impl_1_1_client_async_reader.html#a97a711a7b063bd053c7f9f9eb43e927e">grpc_impl::ClientAsyncReader&lt; R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_client_async_reader_writer.html#abe2cf1c1b17d874be4eef640867e2755">grpc_impl::ClientAsyncReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_callback_reader.html#ae162992196b9acdffa5a41215a67c7ef">grpc_impl::ClientCallbackReader&lt; Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_callback_reader_writer.html#a8383f1543e195499b6e47485bdd69a9a">grpc_impl::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_client_reader.html#a4d655dd582352d5bd8ee6201b387b73a">grpc_impl::ClientReader&lt; R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_client_reader_writer.html#a81b490710516815442c809eb662a436d">grpc_impl::ClientReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_reader.html#adaa7610d3e49d530c2338368a79139fe">grpc_impl::experimental::ClientCallbackReader&lt; Response &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_reader_writer.html#aa8403d466e1e996298a30b9be44be27e">grpc_impl::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_callback_reader.html#a1b9d14e253efb56bfaeee735698ead60">grpc_impl::experimental::ServerCallbackReader&lt; Request &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_callback_reader_writer.html#a216e2e32a40457dc833167c359c3f7b6">grpc_impl::experimental::ServerCallbackReaderWriter&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_async_reader_interface.html#a02645c77e024a39abbd922650cfed5fd">grpc_impl::internal::AsyncReaderInterface&lt; R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_reader_impl.html#a419f3f3198d7719f65a8046fa5b05c84">grpc_impl::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_reader_writer_impl.html#adc588ef68c657c24f47f19e2b780e6dc">grpc_impl::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
@@ -93,6 +91,8 @@ $(function() {
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_server_reader_writer_body.html#acb52ae67f3d4e2833c01c8466f4e8fd9">grpc_impl::internal::ServerReaderWriterBody&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_server_async_reader.html#abc05433351dff99d1686ec796573d94a">grpc_impl::ServerAsyncReader&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_server_async_reader_writer.html#a541cdb861458b3e182e2d504078e270f">grpc_impl::ServerAsyncReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_callback_reader.html#a6b33ebc796e51a8dc39fa0168a1efd3d">grpc_impl::ServerCallbackReader&lt; Request &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_callback_reader_writer.html#a250254ddb1ba38b5df7950fcc1aad4e3">grpc_impl::ServerCallbackReaderWriter&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_server_reader.html#ad13a6f91db11b8033ce63b0cda7c834d">grpc_impl::ServerReader&lt; R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_server_reader_writer.html#aa055ed5d1d18000f31ead21219782fe6">grpc_impl::ServerReaderWriter&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_server_split_streamer.html#a31c5a6e2b0bb3e1ce416273259a1fcce">grpc_impl::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>
@@ -111,9 +111,6 @@ $(function() {
 , <a class="el" href="classgrpc__impl_1_1_client_async_response_reader_interface.html#a90e74f22d09cb7208f7db43715419cdc">grpc_impl::ClientAsyncResponseReaderInterface&lt; R &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1_client_async_writer.html#ad59395cea7267f21fe0b52679e552609">grpc_impl::ClientAsyncWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_client_async_streaming_interface.html#aba046f399b355f6c67160d0c5779add4">grpc_impl::internal::ClientAsyncStreamingInterface</a>
-</li>
-<li>realloc_fn
-: <a class="el" href="structgpr__allocation__functions.html#a6e045f05fd723164fb8d6d6eeeed305e">gpr_allocation_functions</a>
 </li>
 <li>recv_close_on_server
 : <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#a9dddb27dfca57fa1322723845612c517">grpc_op::grpc_op_data</a>
@@ -135,6 +132,9 @@ $(function() {
 <li>RecvMessage()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_generic_recv_message.html#a6463ef0334a4b68b522967d2cdd73a44">grpc::internal::CallOpGenericRecvMessage</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html#a645064efa6ca17b194438b3b5f3a36c5">grpc::internal::CallOpRecvMessage&lt; R &gt;</a>
+</li>
+<li>Ref()
+: <a class="el" href="classgrpc__impl_1_1internal_1_1_server_callback_call.html#aa1093ddb04be88a3bd4cc21e2ecae15d">grpc_impl::internal::ServerCallbackCall</a>
 </li>
 <li>refcount
 : <a class="el" href="structgrpc__slice.html#a467ef319d024f1897c7ff3bdadb78493">grpc_slice</a>
@@ -168,12 +168,12 @@ $(function() {
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_default_message_holder.html#a5446fcb81a8bda54748fdad52670a61a">grpc_impl::internal::DefaultMessageHolder&lt; Request, Response &gt;</a>
 </li>
 <li>RemoveHold()
-: <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_bidi_reactor.html#ad58b2b0828150f3356142dd4eeddbdb1">grpc_impl::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_reader.html#a11e7f9638068a89d897e8b95b4003f05">grpc_impl::experimental::ClientCallbackReader&lt; Response &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_reader_writer.html#a580c49d71acbf4ebd4d87d6ea1c31bb8">grpc_impl::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_writer.html#ac96d87bf5c62bd8216c068cddb163183">grpc_impl::experimental::ClientCallbackWriter&lt; Request &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_read_reactor.html#aa5ee30fafa13f17a8c654ac07cd023b0">grpc_impl::experimental::ClientReadReactor&lt; Response &gt;</a>
-, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_write_reactor.html#a2ee89162105a983caa68d0b9144c94ca">grpc_impl::experimental::ClientWriteReactor&lt; Request &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#a19f38bfd21b8056b8d945a303849183f">grpc_impl::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_callback_reader.html#a157362ea0b38a603deae4f76338f1bf0">grpc_impl::ClientCallbackReader&lt; Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_callback_reader_writer.html#ae90e0e0d9e12db65002b73086cd182d7">grpc_impl::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_callback_writer.html#a2a3642ea9a82070316ce252f34619356">grpc_impl::ClientCallbackWriter&lt; Request &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_read_reactor.html#a33cbadd362c92b0fd6602f975477a942">grpc_impl::ClientReadReactor&lt; Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_write_reactor.html#ab9e8a9b71a3ff7135a44cd854e6ee3c1">grpc_impl::ClientWriteReactor&lt; Request &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_reader_impl.html#a1cb486577fba5d1d6c3fa1e59eee519e">grpc_impl::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_reader_writer_impl.html#a53d39968c9ce4af5ef8a9ee93769cabe">grpc_impl::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_writer_impl.html#a6dac7e7cb8f1095ff17c87b01ffa50c6">grpc_impl::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
@@ -183,7 +183,7 @@ $(function() {
 </li>
 <li>request()
 : <a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html#af8dfca1336d734a4f3406327d35e22b7">grpc::experimental::MessageHolder&lt; RequestT, ResponseT &gt;</a>
-, <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a5f0e94d92cebbf12013daeb1867c507a">grpc::internal::MethodHandler::HandlerParameter</a>
+, <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a3c37a1f69489858f7805e69514ee621d">grpc::internal::MethodHandler::HandlerParameter</a>
 </li>
 <li>RequestAsyncBidiStreaming()
 : <a class="el" href="classgrpc_1_1_service.html#a96c590a738c1e31f550d408c8b6bac55">grpc::Service</a>
@@ -213,7 +213,7 @@ $(function() {
 : <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a4336cf56aea5c505f2cd44826e2954ab">grpc_byte_buffer::grpc_byte_buffer_data</a>
 , <a class="el" href="structgrpc__byte__buffer.html#a0945e647b3a7b14083537a6d3e51fde5">grpc_byte_buffer</a>
 , <a class="el" href="structgrpc__call__details.html#a5c323f3f0c94cbb867f13453dd43dd9d">grpc_call_details</a>
-, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ada262cf2f51816ed6a9e5b32c41bdf03">grpc_op::grpc_op_data</a>
+, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ad3859f113f08d8564d504161c263bc08">grpc_op::grpc_op_data</a>
 , <a class="el" href="structgrpc__op.html#a58d279ba14f133153eb0ee801deb74f5">grpc_op</a>
 </li>
 <li>Reset()
@@ -226,17 +226,16 @@ $(function() {
 : <a class="el" href="structgrpc__impl_1_1experimental_1_1_sts_credentials_options.html#a47337ba32e8386f51ab6994d65dd39e2">grpc_impl::experimental::StsCredentialsOptions</a>
 </li>
 <li>ResourceQuota()
-: <a class="el" href="classgrpc__impl_1_1_resource_quota.html#ac29a69b8cd3d4d9e0772c0293a116911">grpc_impl::ResourceQuota</a>
+: <a class="el" href="classgrpc__impl_1_1_resource_quota.html#a33881aaabb7f326cd69e72c7ee109ce4">grpc_impl::ResourceQuota</a>
 </li>
 <li>response()
 : <a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html#a169fb5a4b742b8a55b04fc9dec54aecb">grpc::experimental::MessageHolder&lt; RequestT, ResponseT &gt;</a>
 </li>
 <li>RpcMethod()
-: <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a1c13d569c84898f688b74958a4d7db49">grpc::internal::RpcMethod</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a254b308ceaa38d17c99afb71f4fc1d73">grpc::internal::RpcMethod</a>
 </li>
-<li>RpcMethodHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a76b9bb18b02084e9eaa8c9b99c668676">grpc::ByteBuffer</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#a8870e188e91eb0627006933e60eead8d">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
+<li>RpcMethodHandler()
+: <a class="el" href="classgrpc__impl_1_1internal_1_1_rpc_method_handler.html#a3da195171fabc1c8d08a49c3b58b4ab9">grpc_impl::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
 </li>
 <li>RpcServiceMethod()
 : <a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#acf2c8f9cd802005c855a85221ba56502">grpc::internal::RpcServiceMethod</a>
@@ -245,16 +244,16 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">grpc::internal::RpcMethod</a>
 </li>
 <li>RunHandler()
-: <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_handler.html#ac633b61b307a63b0b2709605ce9e04fd">grpc::internal::ClientStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a9b33799ed0523968ae533c0d26acc688">grpc::internal::ErrorMethodHandler&lt; code &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#a61b91173bcf71a512a80947a5413c6c6">grpc::internal::MethodHandler</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#aea7618c2fa08638d40ee4edf620ef695">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a1c932932aaccfa13c7777bbcdfa3f89e">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#a61b91173bcf71a512a80947a5413c6c6">grpc::internal::MethodHandler</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_callback_bidi_handler.html#af9fa877074d21889c42ee523c562cd80">grpc_impl::internal::CallbackBidiHandler&lt; RequestType, ResponseType &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_callback_client_streaming_handler.html#aee340aab545700fa10261e8302579a79">grpc_impl::internal::CallbackClientStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_callback_server_streaming_handler.html#a15b6f1a2737fab6701f73f01a6571d2c">grpc_impl::internal::CallbackServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 , <a class="el" href="classgrpc__impl_1_1internal_1_1_callback_unary_handler.html#a0ef4639bce9de13366c1ba6069cb0212">grpc_impl::internal::CallbackUnaryHandler&lt; RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_client_streaming_handler.html#ac1ea3938f6508db6cba57ed6b1c737f3">grpc_impl::internal::ClientStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_error_method_handler.html#abdc0594aaa087efcf92ece5d482453bd">grpc_impl::internal::ErrorMethodHandler&lt; code &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_rpc_method_handler.html#a51ddb8547e61b025ab9060fce95517a6">grpc_impl::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_server_streaming_handler.html#abb95aba5c4ed73cd0e7c1e3b5a441d46">grpc_impl::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_templated_bidi_streaming_handler.html#a1035e0441e22ef329f8b6677d07e3eea">grpc_impl::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</a>
 </li>
 <li>RunInterceptors()
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a2912a6895dfec6974291bd46bc6d5778">grpc::internal::InterceptorBatchMethodsImpl</a>
@@ -263,7 +262,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 18 2019 17:23:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
