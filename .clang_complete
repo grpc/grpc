@@ -6,7 +6,7 @@
 -Isrc/core/ext/upb-generated
 -Ithird_party/abseil-cpp
 -Ithird_party/benchmark/include
--Ithird_party/boringssl/include
+-Ithird_party/boringssl-with-bazel/src/include
 -Ithird_party/cares
 -Ithird_party/cares/cares
 -Ithird_party/googletest
