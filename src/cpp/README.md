@@ -89,20 +89,6 @@ to your project as a
 You can then add it to your CMake project with `add_subdirectory()`.
 [Example](../../examples/cpp/helloworld/CMakeLists.txt)
 
-### ExternalProject
-Another way to automatically download and build gRPC is to use CMake's
-[ExternalProject module](https://cmake.org/cmake/help/latest/module/ExternalProject.html)
-in a technique commonly known as a "superbuild". A superbuild is an outer,
-"wrapper" build whose only purpose is to build other projects.
-A superbuild is implemented as a sequence of `ExternalProject_Add()` calls.
-
-ExternalProject is different from FetchContent in that gRPC's source code will
-be downloaded at build time, not configure time. This means that we cannot use
-`add_subdirectory()` to build gRPC. Instead, we use the `ExternalProject_Add()`
-command to build gRPC, any other dependencies you may need, and your actual
-project itself.
-[Example](../../examples/cpp/helloworld/cmake_externalproject/CMakeLists.txt)
-
 ### Support system-installed gRPC
 
 If your project builds gRPC you should still consider the case where a user
