@@ -193,7 +193,8 @@ class ClientReader final : public ClientReaderInterface<R> {
   }
 
   bool NextMessageSize(uint32_t* sz) override {
-    *sz = call_.max_receive_message_size();
+    int result = call_.max_receive_message_size();
+    *sz = (result > 0) ? result : UINT32_MAX;
     return true;
   }
 
@@ -463,7 +464,8 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   }
 
   bool NextMessageSize(uint32_t* sz) override {
-    *sz = call_.max_receive_message_size();
+    int result = call_.max_receive_message_size();
+    *sz = (result > 0) ? result : UINT32_MAX;
     return true;
   }
 
@@ -597,7 +599,8 @@ class ServerReader final : public ServerReaderInterface<R> {
   }
 
   bool NextMessageSize(uint32_t* sz) override {
-    *sz = call_->max_receive_message_size();
+    int result = call_->max_receive_message_size();
+    *sz = (result > 0) ? result : UINT32_MAX;
     return true;
   }
 
@@ -724,7 +727,8 @@ class ServerReaderWriterBody final {
   }
 
   bool NextMessageSize(uint32_t* sz) {
-    *sz = call_->max_receive_message_size();
+    int result = call_->max_receive_message_size();
+    *sz = (result > 0) ? result : UINT32_MAX;
     return true;
   }
 
