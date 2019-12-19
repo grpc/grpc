@@ -121,10 +121,6 @@ class TestUnaryUnaryCall(AioTestBase):
 
             self.assertFalse(call.cancelled())
 
-            # TODO(https://github.com/grpc/grpc/issues/20869) remove sleep.
-            # Force the loop to execute the RPC task.
-            await asyncio.sleep(0)
-
             self.assertTrue(call.cancel())
             self.assertFalse(call.cancel())
 

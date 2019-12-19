@@ -308,16 +308,17 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
                                 _LOCAL_CANCELLATION_DETAILS, None, None))
 
     def __await__(self) -> ResponseType:
-        """Wait till the ongoing RPC request finishes.
-
-        Returns:
-          Response of the RPC call.
-
-        Raises:
-          RpcError: Indicating that the RPC terminated with non-OK status.
-          asyncio.CancelledError: Indicating that the RPC was canceled.
-        """
-        response = yield from self._call
+        """Wait till the ongoing RPC request finishes."""
+        try:
+            response = yield from self._call
+        except asyncio.CancelledError:
+            # Even if we converted all other CancelledError, there is still
+            # this corner case. If the application cancels immediately after
+            # the Call object is created, we will observe this
+            # `CancelledError`.
+            if not self.cancelled():
+                self.cancel()
+            raise _create_rpc_error(_EMPTY_METADATA, self._status.result())
         return response
 
 
