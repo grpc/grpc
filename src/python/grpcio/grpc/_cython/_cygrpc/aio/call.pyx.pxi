@@ -77,11 +77,6 @@ cdef class _AioCall:
         """Destroys the corresponding Core object for this RPC."""
         grpc_call_unref(self._grpc_call_wrapper.call)
 
-    @property
-    def locally_cancelled(self):
-        """Grant Python layer access of the cancelled flag."""
-        return self._is_locally_cancelled
-
     def cancel(self, AioRpcStatus status):
         """Cancels the RPC in Core with given RPC status.
         
@@ -112,12 +107,6 @@ cdef class _AioCall:
             # By implementation, grpc_call_cancel always return OK
             error = grpc_call_cancel(self._grpc_call_wrapper.call, NULL)
             assert error == GRPC_CALL_OK
-            status = AioRpcStatus(
-                StatusCode.cancelled,
-                _UNKNOWN_CANCELLATION_DETAILS,
-                None,
-                None,
-            )
 
     async def unary_unary(self,
                           bytes request,

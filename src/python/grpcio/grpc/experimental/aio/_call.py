@@ -297,6 +297,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         """Forwards the application cancellation reasoning."""
         if not self._status.done():
             self._set_status(status)
+            self._cython_call.cancel(status)
             self._call.cancel()
             return True
         else:
