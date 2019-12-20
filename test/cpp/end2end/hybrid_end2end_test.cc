@@ -821,6 +821,8 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
     ServerGenericBidiReactor* CreateReactor(
         GenericCallbackServerContext* context) override {
       EXPECT_EQ(context->method(), "/grpc.testing.EchoTestService/Echo");
+      gpr_log(GPR_DEBUG, "Constructor of generic service %d",
+              static_cast<int>(context->deadline().time_since_epoch().count()));
 
       class Reactor : public ServerGenericBidiReactor {
        public:
