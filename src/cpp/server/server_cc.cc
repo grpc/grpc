@@ -818,6 +818,7 @@ bool Server::CallbackRequest<
     grpc::GenericCallbackServerContext>::FinalizeResult(void** /*tag*/,
                                                         bool* status) {
   if (*status) {
+    deadline_ = call_details_->deadline;
     // TODO(yangg) remove the copy here
     ctx_.method_ = grpc::StringFromCopiedSlice(call_details_->method);
     ctx_.host_ = grpc::StringFromCopiedSlice(call_details_->host);
