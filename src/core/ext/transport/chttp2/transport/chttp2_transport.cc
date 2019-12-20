@@ -295,7 +295,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
           &channel_args->args[i], {0, 0, MAX_WRITE_BUFFER_SIZE}));
     } else if (0 ==
                strcmp(channel_args->args[i].key, GRPC_ARG_HTTP2_BDP_PROBE)) {
-      enable_bdp = grpc_channel_arg_get_bool(&channel_args->args[i], true);
+      enable_bdp = grpc_channel_arg_get_bool(&channel_args->args[i], false);
     } else if (0 ==
                strcmp(channel_args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
       const int value = grpc_channel_arg_get_integer(
@@ -3008,8 +3008,8 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
     }
   } else if (s->read_closed) {
     if (bs->remaining_bytes_ != 0) {
-      s->byte_stream_error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
+      s->byte_stream_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "Truncated message", &s->read_closed_error, 1);
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
                               GRPC_ERROR_REF(s->byte_stream_error));
       if (s->data_parser.parsing_frame != nullptr) {
