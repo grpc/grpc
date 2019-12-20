@@ -58,7 +58,8 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
    * 4. http_proxy environment variable
    * If none of the above are set, then no HTTP proxy will be used.
    */
-  char* uri_str = gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY));
+  char* uri_str =
+      gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY));
   if (uri_str == nullptr) uri_str = gpr_getenv("grpc_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
