@@ -34,8 +34,8 @@ types as protocol buffer message types. Both the client and the
 server use interface code generated from the service definition.
 
 Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](../../protos/helloworld.proto). The `Greeting`
-service has one method, `hello`, that lets the server receive a single
+[helloworld.proto](../../protos/helloworld.proto). The `Greeter`
+service has one method, `SayHello`, that lets the server receive a single
 `HelloRequest`
 message from the remote client containing the user's name, then send back
 a greeting in a single `HelloReply`. This is the simplest type of RPC you
