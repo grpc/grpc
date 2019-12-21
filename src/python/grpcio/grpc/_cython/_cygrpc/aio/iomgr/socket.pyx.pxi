@@ -66,6 +66,7 @@ cdef class _AsyncioSocket:
                 <grpc_custom_socket*>self._grpc_socket,
                 grpc_socket_error("Socket connect failed: {}".format(e).encode())
             )
+            return
         finally:
             self._task_connect = None
 
