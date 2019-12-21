@@ -5855,7 +5855,6 @@ if(gRPC_BUILD_CSHARP_EXT)
 
 add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
-  src/csharp/ext/std++compat.cc
 )
 
 set_target_properties(grpc_csharp_ext PROPERTIES
