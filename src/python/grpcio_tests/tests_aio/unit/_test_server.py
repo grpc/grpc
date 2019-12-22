@@ -33,19 +33,16 @@ async def _maybe_echo_metadata(servicer_context):
         initial_metadatum = (_INITIAL_METADATA_KEY,
                              invocation_metadata[_INITIAL_METADATA_KEY])
         await servicer_context.send_initial_metadata((initial_metadatum,))
-    # if _TRAILING_METADATA_KEY in invocation_metadata:
-    #     trailing_metadatum = (_TRAILING_METADATA_KEY,
-    #                           invocation_metadata[_TRAILING_METADATA_KEY])
-    #     servicer_context.set_trailing_metadata((trailing_metadatum,))
+    if _TRAILING_METADATA_KEY in invocation_metadata:
+        trailing_metadatum = (_TRAILING_METADATA_KEY,
+                              invocation_metadata[_TRAILING_METADATA_KEY])
+        servicer_context.set_trailing_metadata((trailing_metadatum,))
 
 
 class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
     async def UnaryCall(self, request, context):
-        # try:
-        #     await _maybe_echo_metadata(context)
-        # except Exception as e:
-        #     print(e)
+        await _maybe_echo_metadata(context)
         return messages_pb2.SimpleResponse()
 
     # TODO(lidizheng) The semantic of this call is not matching its description

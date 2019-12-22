@@ -32,9 +32,13 @@ cdef class RPCState:
     def __cinit__(self):
         grpc_metadata_array_init(&self.request_metadata)
         grpc_call_details_init(&self.details)
+        self.trailing_metadata = tuple()
 
     cdef bytes method(self):
-      return _slice_bytes(self.details.method)
+        return _slice_bytes(self.details.method)
+
+    cdef tuple invocation_metadata(self):
+        return _metadata(&self.request_metadata)
 
     def __dealloc__(self):
         """Cleans the Core objects."""
@@ -82,8 +86,11 @@ cdef class _ServicerContext:
             await _send_initial_metadata(self._rpc_state, metadata, self._loop)
             self._metadata_sent = True
 
+    def set_trailing_metadata(self, tuple metadata):
+        self._rpc_state.trailing_metadata = metadata
+
     def invocation_metadata(self):
-        return _metadata(&self._rpc_state.request_metadata)
+        return self._rpc_state.invocation_metadata()
 
 
 cdef _find_method_handler(str method, list generic_handlers):
@@ -111,14 +118,10 @@ async def _handle_unary_unary_rpc(object method_handler,
     )
 
     # Executes application logic
+    servicer_context = _ServicerContext(rpc_state, None, None, loop)
     cdef object response_message = await method_handler.unary_unary(
         request_message,
-        _ServicerContext(
-            rpc_state,
-            None,
-            None,
-            loop,
-        ),
+        servicer_context,
     )
 
     # Serializes the response message
@@ -128,16 +131,28 @@ async def _handle_unary_unary_rpc(object method_handler,
     )
 
     # Sends response message
-    cdef tuple send_ops = (
-        SendStatusFromServerOperation(
-            tuple(),
-            StatusCode.ok,
-            b'',
-            _EMPTY_FLAGS,
-        ),
-        SendInitialMetadataOperation(None, _EMPTY_FLAGS),
-        SendMessageOperation(response_raw, _EMPTY_FLAGS),
-    )
+    cdef tuple send_ops
+    if servicer_context._metadata_sent:
+        send_ops = (
+            SendStatusFromServerOperation(
+                rpc_state.trailing_metadata,
+                StatusCode.ok,
+                b'',
+                _EMPTY_FLAGS,
+            ),
+            SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        )
+    else:
+        send_ops = (
+            SendStatusFromServerOperation(
+                rpc_state.trailing_metadata,
+                StatusCode.ok,
+                b'',
+                _EMPTY_FLAGS,
+            ),
+            SendInitialMetadataOperation(None, _EMPTY_FLAGS),
+            SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        )
     await execute_batch(rpc_state, send_ops, loop)
 
 

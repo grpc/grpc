@@ -20,8 +20,10 @@ cdef class _HandlerCallDetails:
 cdef class RPCState(GrpcCallWrapper):
     cdef grpc_call_details details
     cdef grpc_metadata_array request_metadata
+    cdef tuple trailing_metadata
 
     cdef bytes method(self)
+    cdef tuple invocation_metadata(self)
 
 
 cdef enum AioServerStatus:
