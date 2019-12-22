@@ -112,8 +112,12 @@ class TestChannel(AioTestBase):
             call = hi(messages_pb2.SimpleRequest(),
                       metadata=_INVOCATION_METADATA)
             initial_metadata = await call.initial_metadata()
+            trailing_metadata = await call.trailing_metadata()
 
             self.assertIsInstance(initial_metadata, tuple)
+            self.assertEqual(_INVOCATION_METADATA[0], initial_metadata[0])
+            self.assertIsInstance(trailing_metadata, tuple)
+            self.assertEqual(_INVOCATION_METADATA[1], trailing_metadata[0])
 
     async def test_unary_stream(self):
         channel = aio.insecure_channel(self._server_target)

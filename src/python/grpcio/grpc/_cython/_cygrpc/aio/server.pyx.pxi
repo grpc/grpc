@@ -40,9 +40,13 @@ cdef class RPCState:
         self.abort_exception = None
         self.metadata_sent = False
         self.status_sent = False
+        self.trailing_metadata = tuple()
 
     cdef bytes method(self):
-      return _slice_bytes(self.details.method)
+        return _slice_bytes(self.details.method)
+
+    cdef tuple invocation_metadata(self):
+        return _metadata(&self.request_metadata)
 
     def __dealloc__(self):
         """Cleans the Core objects."""
@@ -146,8 +150,11 @@ cdef class _ServicerContext:
 
             raise self._rpc_state.abort_exception
 
+    def set_trailing_metadata(self, tuple metadata):
+        self._rpc_state.trailing_metadata = metadata
+
     def invocation_metadata(self):
-        return _metadata(&self._rpc_state.request_metadata)
+        return self._rpc_state.invocation_metadata()
 
 
 cdef _find_method_handler(str method, list generic_handlers):
@@ -192,10 +199,10 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
 
     # Assembles the batch operations
     cdef Operation send_status_op = SendStatusFromServerOperation(
-        tuple(),
-            StatusCode.ok,
-            b'',
-            _EMPTY_FLAGS,
+        rpc_state.trailing_metadata,
+        StatusCode.ok,
+        b'',
+        _EMPTY_FLAGS,
     )
     cdef tuple finish_ops
     if not rpc_state.metadata_sent:
