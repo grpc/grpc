@@ -1934,8 +1934,8 @@ def _build_and_run(check_cancelled,
             try:
               upload_results_to_bq(resultset, args.bq_result_table,
                                  upload_extra_fields)
-            except NameError:
-              pass # It's fine to ignore since this is not critical
+            except NameError as e:
+              logging.warning(e) # It's fine to ignore since this is not critical
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
                 resultset,
