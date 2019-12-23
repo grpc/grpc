@@ -1932,10 +1932,11 @@ def _build_and_run(check_cancelled,
                 'platform': platform_string()
             }
             try:
-              upload_results_to_bq(resultset, args.bq_result_table,
-                                 upload_extra_fields)
+                upload_results_to_bq(resultset, args.bq_result_table,
+                                     upload_extra_fields)
             except NameError as e:
-              logging.warning(e) # It's fine to ignore since this is not critical
+                logging.warning(
+                    e)  # It's fine to ignore since this is not critical
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
                 resultset,
