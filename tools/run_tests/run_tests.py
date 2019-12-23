@@ -1931,8 +1931,11 @@ def _build_and_run(check_cancelled,
                     0],  # args.language is a list but will always have one element when uploading to BQ is enabled.
                 'platform': platform_string()
             }
-            upload_results_to_bq(resultset, args.bq_result_table,
+            try:
+              upload_results_to_bq(resultset, args.bq_result_table,
                                  upload_extra_fields)
+            except NameError:
+              pass # It's fine to ignore since this is not critical
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
                 resultset,
