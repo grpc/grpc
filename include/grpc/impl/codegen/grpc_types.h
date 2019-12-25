@@ -456,9 +456,11 @@ typedef enum grpc_call_error {
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
 /** Force this message to be written to the socket before completing it */
 #define GRPC_WRITE_THROUGH (0x00000004u)
+/** The message to sent is already length prefixed */
+#define GRPC_WRITE_LENGTH_PREFIXED (0x00000008u)
 /** Mask of all valid flags. */
 #define GRPC_WRITE_USED_MASK \
-  (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_THROUGH)
+  (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_THROUGH | GRPC_WRITE_LENGTH_PREFIXED)
 
 /** Initial metadata flags */
 /** Signal that the call is idempotent */

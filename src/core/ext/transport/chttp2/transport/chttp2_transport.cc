@@ -1494,15 +1494,17 @@ static void perform_stream_op_locked(void* stream_op,
           "fetching_send_message_finished");
     } else {
       GPR_ASSERT(s->fetching_send_message == nullptr);
-      uint8_t* frame_hdr = grpc_slice_buffer_tiny_add(
-          &s->flow_controlled_buffer, GRPC_HEADER_SIZE_IN_BYTES);
       uint32_t flags = op_payload->send_message.send_message->flags();
-      frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
       size_t len = op_payload->send_message.send_message->length();
-      frame_hdr[1] = static_cast<uint8_t>(len >> 24);
-      frame_hdr[2] = static_cast<uint8_t>(len >> 16);
-      frame_hdr[3] = static_cast<uint8_t>(len >> 8);
-      frame_hdr[4] = static_cast<uint8_t>(len);
+      if (!(flags & GRPC_WRITE_LENGTH_PREFIXED)) {
+        uint8_t* frame_hdr = grpc_slice_buffer_tiny_add(
+            &s->flow_controlled_buffer, GRPC_HEADER_SIZE_IN_BYTES);
+        frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
+        frame_hdr[1] = static_cast<uint8_t>(len >> 24);
+        frame_hdr[2] = static_cast<uint8_t>(len >> 16);
+        frame_hdr[3] = static_cast<uint8_t>(len >> 8);
+        frame_hdr[4] = static_cast<uint8_t>(len);
+      }
       s->fetching_send_message =
           std::move(op_payload->send_message.send_message);
       s->fetched_send_message_length = 0;
