@@ -120,15 +120,15 @@ task 'gem:native' do
   if RUBY_PLATFORM =~ /darwin/
     FileUtils.touch 'grpc_c.32.ruby'
     FileUtils.touch 'grpc_c.64.ruby'
-    unless '2.5' == /(\d+\.\d+)/.match(RUBY_VERSION).to_s
+    unless '2.7' == /(\d+\.\d+)/.match(RUBY_VERSION).to_s
       fail "rake gem:native (the rake task to build the binary packages) is being " \
         "invoked on macos with ruby #{RUBY_VERSION}. The ruby macos artifact " \
-        "build should be running on ruby 2.5."
+        "build should be running on ruby 2.7."
     end
-    system "rake cross native gem RUBY_CC_VERSION=2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    system "rake cross native gem RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
     Rake::Task['dlls'].execute
-    docker_for_windows "gem update --system --no-document && bundle && rake cross native gem RUBY_CC_VERSION=2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    docker_for_windows "gem update --system --no-document && bundle && rake cross native gem RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   end
 end
 
