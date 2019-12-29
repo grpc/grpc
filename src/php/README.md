@@ -210,7 +210,7 @@ $ [sudo] pecl install protobuf
 or specific version
 
 ``` sh
-$ [sudo] pecl install protobuf-3.8.0
+$ [sudo] pecl install protobuf-3.11.2
 ```
 
 And add this to your `php.ini` file:
