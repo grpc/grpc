@@ -55,9 +55,9 @@ char* GetHttpProxyServer(char** user_cred) {
    * fallback behavior can be removed if there's a demand for it.
    */
   char* uri_str = gpr_getenv("grpc_proxy");
-  if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
-  if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
-  if (uri_str == nullptr) return nullptr;
+  if (uri_str == nullptr || uri_str[0] == '\0') uri_str = gpr_getenv("https_proxy");
+  if (uri_str == nullptr || uri_str[0] == '\0') uri_str = gpr_getenv("http_proxy");
+  if (uri_str == nullptr || uri_str[0] == '\0') return nullptr;
   grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
   if (uri == nullptr || uri->authority == nullptr) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
