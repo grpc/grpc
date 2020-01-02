@@ -150,12 +150,14 @@ class Call(_base_call.Call):
     _code: grpc.StatusCode
     _status: Awaitable[cygrpc.AioRpcStatus]
     _initial_metadata: Awaitable[MetadataType]
+    _locally_cancelled: bool
 
     def __init__(self) -> None:
         self._loop = asyncio.get_event_loop()
         self._code = None
         self._status = self._loop.create_future()
         self._initial_metadata = self._loop.create_future()
+        self._locally_cancelled = False
 
     def cancel(self) -> bool:
         """Placeholder cancellation method.
@@ -204,6 +206,10 @@ class Call(_base_call.Call):
         cancellation (by application) and Core receiving status from peer. We
         make no promise here which one will win.
         """
+        # In case of local cancellation, flip the flag.
+        if status.details() is _LOCAL_CANCELLATION_DETAILS:
+            self._locally_cancelled = True
+
         # In case of the RPC finished without receiving metadata.
         if not self._initial_metadata.done():
             self._initial_metadata.set_result(_EMPTY_METADATA)
@@ -212,7 +218,9 @@ class Call(_base_call.Call):
         self._status.set_result(status)
         self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()]
 
-    async def _raise_rpc_error_if_not_ok(self) -> None:
+    async def _raise_if_not_ok(self) -> None:
+        if self._locally_cancelled:
+            raise asyncio.CancelledError()
         await self._status
         if self._code != grpc.StatusCode.OK:
             raise _create_rpc_error(await self.initial_metadata(),
@@ -287,8 +295,8 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
             if self._code != grpc.StatusCode.CANCELLED:
                 self.cancel()
 
-        # Raises RpcError here if RPC failed or cancelled
-        await self._raise_rpc_error_if_not_ok()
+        # Raises here if RPC failed or cancelled
+        await self._raise_if_not_ok()
 
         return _common.deserialize(serialized_response,
                                    self._response_deserializer)
@@ -319,7 +327,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
             # `CancelledError`.
             if not self.cancelled():
                 self.cancel()
-            raise _create_rpc_error(_EMPTY_METADATA, self._status.result())
+            raise
         return response
 
 
@@ -367,7 +375,7 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         except asyncio.CancelledError:
             if self._code != grpc.StatusCode.CANCELLED:
                 self.cancel()
-            await self._raise_rpc_error_if_not_ok()
+            raise
 
     async def _fetch_stream_responses(self) -> ResponseType:
         await self._send_unary_request_task
@@ -418,7 +426,7 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         except asyncio.CancelledError:
             if self._code != grpc.StatusCode.CANCELLED:
                 self.cancel()
-            await self._raise_rpc_error_if_not_ok()
+            raise
 
         if raw_response is None:
             return None
@@ -428,14 +436,14 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
 
     async def read(self) -> ResponseType:
         if self._status.done():
-            await self._raise_rpc_error_if_not_ok()
+            await self._raise_if_not_ok()
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
 
         response_message = await self._read()
 
         if response_message is None:
             # If the read operation failed, Core should explain why.
-            await self._raise_rpc_error_if_not_ok()
+            await self._raise_if_not_ok()
             # If no exception raised, there is something wrong internally.
             assert False, 'Read operation failed with StatusCode.OK'
         else:

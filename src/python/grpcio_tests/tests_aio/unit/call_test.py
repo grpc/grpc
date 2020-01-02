@@ -124,18 +124,10 @@ class TestUnaryUnaryCall(AioTestBase):
             self.assertTrue(call.cancel())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await call
 
             # The info in the RpcError should match the info in Call object.
-            rpc_error = exception_context.exception
-            self.assertEqual(rpc_error.code(), await call.code())
-            self.assertEqual(rpc_error.details(), await call.details())
-            self.assertEqual(rpc_error.trailing_metadata(), await
-                             call.trailing_metadata())
-            self.assertEqual(rpc_error.debug_error_string(), await
-                             call.debug_error_string())
-
             self.assertTrue(call.cancelled())
             self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
             self.assertEqual(await call.details(),
@@ -159,10 +151,8 @@ class TestUnaryUnaryCall(AioTestBase):
 
             self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await task
-            self.assertEqual(grpc.StatusCode.CANCELLED,
-                             exception_context.exception.code())
 
 
 class TestUnaryStreamCall(AioTestBase):
@@ -201,7 +191,7 @@ class TestUnaryStreamCall(AioTestBase):
                              call.details())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await call.read()
             self.assertTrue(call.cancelled())
 
@@ -232,7 +222,7 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancel())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await call.read()
 
     async def test_early_cancel_unary_stream(self):
@@ -256,15 +246,10 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertTrue(call.cancel())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await call.read()
 
             self.assertTrue(call.cancelled())
-
-            self.assertEqual(grpc.StatusCode.CANCELLED,
-                             exception_context.exception.code())
-            self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION,
-                             exception_context.exception.details())
 
             self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
             self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION, await
@@ -377,10 +362,8 @@ class TestUnaryStreamCall(AioTestBase):
 
             self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await task
-            self.assertEqual(grpc.StatusCode.CANCELLED,
-                             exception_context.exception.code())
 
     async def test_cancel_unary_stream_in_task_using_async_for(self):
         async with aio.insecure_channel(self._server_target) as channel:
@@ -411,10 +394,8 @@ class TestUnaryStreamCall(AioTestBase):
 
             self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await task
-            self.assertEqual(grpc.StatusCode.CANCELLED,
-                             exception_context.exception.code())
 
 
 if __name__ == '__main__':
