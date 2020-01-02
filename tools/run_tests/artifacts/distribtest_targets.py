@@ -27,7 +27,8 @@ def create_docker_jobspec(name,
                           environ={},
                           flake_retries=0,
                           timeout_retries=0,
-                          copy_rel_path=None):
+                          copy_rel_path=None,
+                          timeout_seconds=30 * 60):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
     environ['RUN_COMMAND'] = shell_command
@@ -47,7 +48,7 @@ def create_docker_jobspec(name,
         docker_args,
         environ=docker_env,
         shortname='distribtest.%s' % (name),
-        timeout_seconds=30 * 60,
+        timeout_seconds=timeout_seconds,
         flake_retries=flake_retries,
         timeout_retries=timeout_retries)
     return jobspec
@@ -277,9 +278,11 @@ class CppDistribTest(object):
     def build_jobspec(self):
         if self.platform == 'linux':
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/distribtest/cpp_%s_%s' %
-                (self.docker_suffix, self.arch),
-                'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase)
+                self.name,
+                'tools/dockerfile/distribtest/cpp_%s_%s' % (self.docker_suffix,
+                                                            self.arch),
+                'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase,
+                timeout_seconds=45 * 60)
         elif self.platform == 'windows':
             return create_jobspec(
                 self.name,
