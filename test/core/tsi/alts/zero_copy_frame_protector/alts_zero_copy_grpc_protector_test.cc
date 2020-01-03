@@ -116,14 +116,14 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
                  enable_extra_copy, &max_protected_frame_size,
                  &fixture->client) == TSI_OK);
   GPR_ASSERT(tsi_zero_copy_grpc_protector_max_frame_size(
-                 fixture->client, actual_max_protected_frame_size) == TSI_OK);
+                 fixture->client, &actual_max_protected_frame_size) == TSI_OK);
   GPR_ASSERT(actual_max_protected_frame_size == max_protected_frame_size);
   GPR_ASSERT(alts_zero_copy_grpc_protector_create(
                  key, key_length, rekey, /*is_client=*/false, integrity_only,
                  enable_extra_copy, &max_protected_frame_size,
                  &fixture->server) == TSI_OK);
   GPR_ASSERT(tsi_zero_copy_grpc_protector_max_frame_size(
-                 fixture->server, actual_max_protected_frame_size) == TSI_OK);
+                 fixture->server, &actual_max_protected_frame_size) == TSI_OK);
   GPR_ASSERT(actual_max_protected_frame_size == max_protected_frame_size);
   gpr_free(key);
   grpc_core::ExecCtx::Get()->Flush();

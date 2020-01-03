@@ -102,6 +102,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.22.1', ReleaseInfo()),
         ('v1.23.0', ReleaseInfo()),
         ('v1.24.0', ReleaseInfo()),
+        ('v1.25.0', ReleaseInfo()),
+        ('v1.26.0', ReleaseInfo()),
     ]),
     'go':
     OrderedDict(
@@ -150,6 +152,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.23.1', ReleaseInfo(runtimes=['go1.11'])),
             ('v1.24.0', ReleaseInfo(runtimes=['go1.11'])),
             ('v1.25.0', ReleaseInfo(runtimes=['go1.11'])),
+            ('v1.26.0', ReleaseInfo(runtimes=['go1.11'])),
         ]),
     'java':
     OrderedDict([
@@ -222,6 +225,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.22.1', ReleaseInfo()),
         ('v1.23.0', ReleaseInfo()),
         ('v1.24.0', ReleaseInfo()),
+        ('v1.25.0', ReleaseInfo()),
+        ('v1.26.0', ReleaseInfo()),
     ]),
     'node':
     OrderedDict([
@@ -275,9 +280,11 @@ LANG_RELEASE_MATRIX = {
         ('v1.22.1', ReleaseInfo()),
         ('v1.23.0', ReleaseInfo()),
         ('v1.24.0', ReleaseInfo()),
+        ('v1.25.0', ReleaseInfo()),
         # TODO: https://github.com/grpc/grpc/issues/18262.
         # If you are not encountering the error in above issue
         # go ahead and upload the docker image for new releases.
+        ('v1.26.0', ReleaseInfo()),
     ]),
     'php':
     OrderedDict([
@@ -306,6 +313,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.22.1', ReleaseInfo()),
         ('v1.23.0', ReleaseInfo()),
         ('v1.24.0', ReleaseInfo()),
+        ('v1.25.0', ReleaseInfo()),
+        ('v1.26.0', ReleaseInfo()),
     ]),
     'csharp':
     OrderedDict([
@@ -340,5 +349,7 @@ LANG_RELEASE_MATRIX = {
         ('v1.22.1', ReleaseInfo()),
         ('v1.23.0', ReleaseInfo()),
         ('v1.24.0', ReleaseInfo()),
+        ('v1.25.0', ReleaseInfo()),
+        ('v1.26.0', ReleaseInfo()),
     ]),
 }

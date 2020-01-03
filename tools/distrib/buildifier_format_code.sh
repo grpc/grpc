@@ -1,4 +1,4 @@
-#! /bin/bash -ex
+#! /bin/bash
 # Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+set -e
 
 BUILDIFIER_VERSION="0.29.0"
 TEMP_BUILDIFIER_PATH="/tmp/buildifier"
