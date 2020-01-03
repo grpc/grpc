@@ -23,10 +23,6 @@ DIRS=(
     'src/python'
     'tools'
 )
-EXCLUSIONS=(
-    '*protoc_lib_deps.py'  # this file is auto-generated
-    '*_pb2*.py'  # no need to format protoc generated files
-)
 
 VIRTUALENV=yapf_virtual_environment
 
@@ -34,14 +30,10 @@ python3 -m virtualenv $VIRTUALENV -p $(which python3)
 PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install --upgrade pip==19.3.1
 "$PYTHON" -m pip install --upgrade futures
-"$PYTHON" -m pip install yapf==0.20.0
+"$PYTHON" -m pip install yapf==0.28.0
 
 yapf() {
-    local exclusion exclusion_args=()
-    for exclusion in "${EXCLUSIONS[@]}"; do
-        exclusion_args+=( "--exclude" "$1/${exclusion}" )
-    done
-    $PYTHON -m yapf -i -r --style=setup.cfg -p "${exclusion_args[@]}" "${1}"
+    $PYTHON -m yapf -i -r --style=setup.cfg "${1}"
 }
 
 if [[ -z "${TEST}" ]]; then

@@ -49,17 +49,15 @@ class ChannelArgsTest(unittest.TestCase):
         grpc.insecure_channel('localhost:8080', options=TEST_CHANNEL_ARGS)
 
     def test_server(self):
-        grpc.server(
-            futures.ThreadPoolExecutor(max_workers=1),
-            options=TEST_CHANNEL_ARGS)
+        grpc.server(futures.ThreadPoolExecutor(max_workers=1),
+                    options=TEST_CHANNEL_ARGS)
 
     def test_invalid_client_args(self):
         for invalid_arg in INVALID_TEST_CHANNEL_ARGS:
-            self.assertRaises(
-                ValueError,
-                grpc.insecure_channel,
-                'localhost:8080',
-                options=invalid_arg)
+            self.assertRaises(ValueError,
+                              grpc.insecure_channel,
+                              'localhost:8080',
+                              options=invalid_arg)
 
 
 if __name__ == '__main__':

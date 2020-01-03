@@ -35,9 +35,9 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                     datetime.timedelta(microseconds=response_parameters.
                                        interval_us).total_seconds())
             yield messages_pb2.StreamingOutputCallResponse(
-                payload=messages_pb2.Payload(
-                    type=request.response_type,
-                    body=b'\x00' * response_parameters.size))
+                payload=messages_pb2.Payload(type=request.response_type,
+                                             body=b'\x00' *
+                                             response_parameters.size))
 
 
 async def start_test_server():

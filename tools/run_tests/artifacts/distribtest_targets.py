@@ -67,14 +67,13 @@ def create_jobspec(name,
         environ['WORKSPACE_NAME'] = 'workspace_%s' % name
         cmdline = ['bash', 'tools/run_tests/artifacts/run_in_workspace.sh'
                   ] + cmdline
-    jobspec = jobset.JobSpec(
-        cmdline=cmdline,
-        environ=environ,
-        shortname='distribtest.%s' % (name),
-        timeout_seconds=timeout_seconds,
-        flake_retries=flake_retries,
-        timeout_retries=timeout_retries,
-        shell=shell)
+    jobspec = jobset.JobSpec(cmdline=cmdline,
+                             environ=environ,
+                             shortname='distribtest.%s' % (name),
+                             timeout_seconds=timeout_seconds,
+                             flake_retries=flake_retries,
+                             timeout_retries=timeout_retries,
+                             shell=shell)
     return jobspec
 
 
@@ -112,13 +111,11 @@ class CSharpDistribTest(object):
                 self.script_suffix,
                 copy_rel_path='test/distrib')
         elif self.platform == 'macos':
-            return create_jobspec(
-                self.name, [
-                    'test/distrib/csharp/run_distrib_test%s.sh' %
-                    self.script_suffix
-                ],
-                environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix
+            ],
+                                  environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+                                  use_workspace=True)
         elif self.platform == 'windows':
             if self.arch == 'x64':
                 # Use double leading / as the first occurrence gets removed by msys bash
@@ -129,13 +126,12 @@ class CSharpDistribTest(object):
                 }
             else:
                 environ = {'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}
-            return create_jobspec(
-                self.name, [
-                    'test\\distrib\\csharp\\run_distrib_test%s.bat' %
-                    self.script_suffix
-                ],
-                environ=environ,
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'test\\distrib\\csharp\\run_distrib_test%s.bat' %
+                self.script_suffix
+            ],
+                                  environ=environ,
+                                  use_workspace=True)
         else:
             raise Exception("Not supported yet.")
 
@@ -238,8 +234,8 @@ class PHPDistribTest(object):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/distribtest/php_%s_%s' % (self.docker_suffix,
-                                                            self.arch),
+                'tools/dockerfile/distribtest/php_%s_%s' %
+                (self.docker_suffix, self.arch),
                 'test/distrib/php/run_distrib_test.sh',
                 copy_rel_path='test/distrib')
         elif self.platform == 'macos':

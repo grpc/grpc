@@ -47,8 +47,7 @@ def get_stats_from_github():
         if issue.pull_request is None and is_untriaged(issue)
     ]
     total_bugs = [
-        issue
-        for issue in repo.get_issues(state='all', labels=[LABEL_KIND_BUG])
+        issue for issue in repo.get_issues(state='all', labels=[LABEL_KIND_BUG])
         if issue.pull_request is None
     ]
 

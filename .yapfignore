@@ -1,0 +1,5 @@
+# this file is auto-generated
+*protoc_lib_deps.py
+
+# no need to format protoc generated files
+*_pb2*.py

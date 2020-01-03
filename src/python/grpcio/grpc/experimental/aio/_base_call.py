@@ -117,8 +117,9 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
 
-class UnaryUnaryCall(
-        Generic[RequestType, ResponseType], Call, metaclass=ABCMeta):
+class UnaryUnaryCall(Generic[RequestType, ResponseType],
+                     Call,
+                     metaclass=ABCMeta):
     """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
@@ -130,8 +131,9 @@ class UnaryUnaryCall(
         """
 
 
-class UnaryStreamCall(
-        Generic[RequestType, ResponseType], Call, metaclass=ABCMeta):
+class UnaryStreamCall(Generic[RequestType, ResponseType],
+                      Call,
+                      metaclass=ABCMeta):
 
     @abstractmethod
     def __aiter__(self) -> AsyncIterable[ResponseType]:

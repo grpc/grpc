@@ -165,8 +165,8 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             response = await call.read()
-            self.assertIs(
-                type(response), messages_pb2.StreamingOutputCallResponse)
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
             self.assertTrue(call.cancel())
@@ -197,8 +197,8 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             response = await call.read()
-            self.assertIs(
-                type(response), messages_pb2.StreamingOutputCallResponse)
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
             self.assertTrue(call.cancel())
@@ -261,8 +261,8 @@ class TestUnaryStreamCall(AioTestBase):
 
             for _ in range(_NUM_STREAM_RESPONSES):
                 response = await call.read()
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 
@@ -290,8 +290,8 @@ class TestUnaryStreamCall(AioTestBase):
 
             for _ in range(_NUM_STREAM_RESPONSES):
                 response = await call.read()
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 
@@ -316,8 +316,8 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             async for response in call:
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 

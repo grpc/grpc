@@ -63,8 +63,8 @@ class ErrorMessageEncodingTest(unittest.TestCase):
 
     def setUp(self):
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers((_GenericHandler(
-            weakref.proxy(self)),))
+        self._server.add_generic_rpc_handlers(
+            (_GenericHandler(weakref.proxy(self)),))
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()
         self._channel = grpc.insecure_channel('localhost:%d' % port)
