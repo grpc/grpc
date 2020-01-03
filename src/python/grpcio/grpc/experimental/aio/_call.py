@@ -321,7 +321,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         try:
             response = yield from self._call
         except asyncio.CancelledError:
-            # Even if we converted all other CancelledError, there is still
+            # Even if we caught all other CancelledError, there is still
             # this corner case. If the application cancels immediately after
             # the Call object is created, we will observe this
             # `CancelledError`.
