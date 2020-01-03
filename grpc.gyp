@@ -1750,16 +1750,6 @@
       ],
     },
     {
-      'target_name': 'grpc++_alts',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc++',
-      ],
-      'sources': [
-        'src/cpp/common/alts_context.cc',
-      ],
-    },
-    {
       'target_name': 'grpc++_core_stats',
       'type': 'static_library',
       'dependencies': [
@@ -2308,6 +2298,7 @@
       ],
       'sources': [
         'src/csharp/ext/grpc_csharp_ext.c',
+        'src/csharp/ext/std++compat.cc',
       ],
     },
     {

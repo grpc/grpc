@@ -29,7 +29,8 @@ cdef class _HandlerCallDetails:
 
 cdef class RPCState:
 
-    def __cinit__(self):
+    def __cinit__(self, AioServer server):
+        self.server = server
         grpc_metadata_array_init(&self.request_metadata)
         grpc_call_details_init(&self.details)
         self.trailing_metadata = tuple()
@@ -192,7 +193,13 @@ async def _handle_unary_stream_rpc(object method_handler,
 
         # Consumes messages from the generator
         async for response_message in async_response_generator:
-            await servicer_context.write(response_message)
+            if rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
+                # The async generator might yield much much later after the
+                # server is destroied. If we proceed, Core will crash badly.
+                _LOGGER.info('Aborting RPC due to server stop.')
+                return
+            else:
+                await servicer_context.write(response_message)
 
     # Sends the final status of this RPC
     cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
@@ -211,9 +218,20 @@ async def _handle_cancellation_from_core(object rpc_task,
                                          object loop):
     cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
     cdef tuple ops = (op,)
+
+    # Awaits cancellation from peer.
     await execute_batch(rpc_state, ops, loop)
     if op.cancelled() and not rpc_task.done():
+        # Injects `CancelledError` to halt the RPC coroutine
         rpc_task.cancel()
+
+
+async def _schedule_rpc_coro(object rpc_coro,
+                             RPCState rpc_state,
+                             object loop):
+    # Schedules the RPC coroutine.
+    cdef object rpc_task = loop.create_task(rpc_coro)
+    await _handle_cancellation_from_core(rpc_task, rpc_state, loop)
 
 
 async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
@@ -243,32 +261,6 @@ class _RequestCallError(Exception): pass
 
 cdef CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_server_request_call', None, _RequestCallError)
-
-
-async def _server_call_request_call(Server server,
-                                    CallbackCompletionQueue cq,
-                                    object loop):
-    cdef grpc_call_error error
-    cdef RPCState rpc_state = RPCState()
-    cdef object future = loop.create_future()
-    cdef CallbackWrapper wrapper = CallbackWrapper(
-        future,
-        REQUEST_CALL_FAILURE_HANDLER)
-    # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
-    # when calling "await". This is an over-optimization by Cython.
-    cpython.Py_INCREF(wrapper)
-    error = grpc_server_request_call(
-        server.c_server, &rpc_state.call, &rpc_state.details,
-        &rpc_state.request_metadata,
-        cq.c_ptr(), cq.c_ptr(),
-        wrapper.c_functor()
-    )
-    if error != GRPC_CALL_OK:
-        raise RuntimeError("Error in _server_call_request_call: %s" % error)
-
-    await future
-    cpython.Py_DECREF(wrapper)
-    return rpc_state
 
 
 cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
@@ -325,6 +317,29 @@ cdef class AioServer:
         return self._server.add_http2_port(address,
                                           server_credentials._credentials)
 
+    async def _request_call(self):
+        cdef grpc_call_error error
+        cdef RPCState rpc_state = RPCState(self)
+        cdef object future = self._loop.create_future()
+        cdef CallbackWrapper wrapper = CallbackWrapper(
+            future,
+            REQUEST_CALL_FAILURE_HANDLER)
+        # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
+        # when calling "await". This is an over-optimization by Cython.
+        cpython.Py_INCREF(wrapper)
+        error = grpc_server_request_call(
+            self._server.c_server, &rpc_state.call, &rpc_state.details,
+            &rpc_state.request_metadata,
+            self._cq.c_ptr(), self._cq.c_ptr(),
+            wrapper.c_functor()
+        )
+        if error != GRPC_CALL_OK:
+            raise RuntimeError("Error in grpc_server_request_call: %s" % error)
+
+        await future
+        cpython.Py_DECREF(wrapper)
+        return rpc_state
+
     async def _server_main_loop(self,
                                 object server_started):
         self._server.start()
@@ -337,32 +352,25 @@ cdef class AioServer:
                 break
 
             # Accepts new request from Core
-            rpc_state = await _server_call_request_call(
-                self._server,
-                self._cq,
-                self._loop)
+            rpc_state = await self._request_call()
 
-            # Schedules the RPC as a separate coroutine
-            rpc_task = self._loop.create_task(
-                _handle_rpc(
-                    self._generic_handlers,
-                    rpc_state,
-                    self._loop
-                )
-            )
+            # Creates the dedicated RPC coroutine. If we schedule it right now,
+            # there is no guarantee if the cancellation listening coroutine is
+            # ready or not. So, we should control the ordering by scheduling
+            # the coroutine onto event loop inside of the cancellation
+            # coroutine.
+            rpc_coro = _handle_rpc(self._generic_handlers,
+                                   rpc_state,
+                                   self._loop)
 
             # Fires off a task that listens on the cancellation from client.
             self._loop.create_task(
-                _handle_cancellation_from_core(
-                    rpc_task,
+                _schedule_rpc_coro(
+                    rpc_coro,
                     rpc_state,
                     self._loop
                 )
             )
-
-            # Keeps track of created coroutines, so we can clean them up properly.
-            self._ongoing_rpc_tasks.add(rpc_task)
-            rpc_task.add_done_callback(lambda _: self._ongoing_rpc_tasks.remove(rpc_task))
 
     def _serving_task_crash_handler(self, object task):
         """Shutdown the server immediately if unexpectedly exited."""
@@ -440,10 +448,6 @@ cdef class AioServer:
                 # Cancels all ongoing calls by the end of grace period.
                 grpc_server_cancel_all_calls(self._server.c_server)
                 await self._shutdown_completed
-
-        # Cancels all Python layer tasks
-        for rpc_task in self._ongoing_rpc_tasks:
-            rpc_task.cancel()
 
         async with self._shutdown_lock:
             if self._status == AIO_SERVER_STATUS_STOPPING:

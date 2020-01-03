@@ -429,23 +429,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc++_alts",
-    srcs = [
-        "src/cpp/common/alts_context.cc",
-    ],
-    hdrs = [
-        "include/grpcpp/alts_context.h",
-    ],
-    language = "c++",
-    standalone = True,
-    deps = [
-        "alts_upb",
-        "alts_util",
-        "grpc++",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_csharp_ext",
     srcs = [
         "src/csharp/ext/grpc_csharp_ext.c",
@@ -890,7 +873,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
-        "src/core/lib/iomgr/logical_thread.h",  
+        "src/core/lib/iomgr/logical_thread.h",
         "src/core/lib/iomgr/nameser.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",

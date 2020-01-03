@@ -1,9 +1,12 @@
-- deps: []
+- cmake_target: absl::algorithm
+  deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/algorithm/algorithm.h
   name: absl/algorithm:algorithm
   src: []
-- deps:
+- cmake_target: absl::algorithm_container
+  deps:
   - absl/algorithm:algorithm
   - absl/base:core_headers
   - absl/meta:type_traits
@@ -11,12 +14,15 @@
   - third_party/abseil-cpp/absl/algorithm/container.h
   name: absl/algorithm:container
   src: []
-- deps: []
+- cmake_target: absl::atomic_hook
+  deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/base/internal/atomic_hook.h
   name: absl/base:atomic_hook
   src: []
-- deps:
+- cmake_target: absl::base
+  deps:
   - absl/base:atomic_hook
   - absl/base:base_internal
   - absl/base:config
@@ -44,7 +50,9 @@
   - third_party/abseil-cpp/absl/base/internal/sysinfo.cc
   - third_party/abseil-cpp/absl/base/internal/thread_identity.cc
   - third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc
-- deps:
+- cmake_target: absl::base_internal
+  deps:
+  - absl/base:config
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/base/internal/hide_ptr.h
@@ -54,20 +62,24 @@
   - third_party/abseil-cpp/absl/base/internal/scheduling_mode.h
   name: absl/base:base_internal
   src: []
-- deps:
+- cmake_target: absl::bits
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/base/internal/bits.h
   name: absl/base:bits
   src: []
-- deps: []
+- cmake_target: absl::config
+  deps: []
   headers:
   - third_party/abseil-cpp/absl/base/config.h
   - third_party/abseil-cpp/absl/base/options.h
   - third_party/abseil-cpp/absl/base/policy_checks.h
   name: absl/base:config
   src: []
-- deps:
+- cmake_target: absl::core_headers
+  deps:
   - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/base/attributes.h
@@ -79,13 +91,15 @@
   - third_party/abseil-cpp/absl/base/thread_annotations.h
   name: absl/base:core_headers
   src: []
-- deps: []
+- cmake_target: absl::dynamic_annotations
+  deps: []
   headers:
   - third_party/abseil-cpp/absl/base/dynamic_annotations.h
   name: absl/base:dynamic_annotations
   src:
   - third_party/abseil-cpp/absl/base/dynamic_annotations.cc
-- deps:
+- cmake_target: absl::endian
+  deps:
   - absl/base:config
   - absl/base:core_headers
   headers:
@@ -93,21 +107,26 @@
   - third_party/abseil-cpp/absl/base/internal/unaligned_access.h
   name: absl/base:endian
   src: []
-- deps:
+- cmake_target: absl::exponential_biased
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/base/internal/exponential_biased.h
   name: absl/base:exponential_biased
   src:
   - third_party/abseil-cpp/absl/base/internal/exponential_biased.cc
-- deps:
+- cmake_target: absl::log_severity
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/base/log_severity.h
   name: absl/base:log_severity
   src:
   - third_party/abseil-cpp/absl/base/log_severity.cc
-- deps:
+- cmake_target: absl::malloc_internal
+  deps:
   - absl/base:base
   - absl/base:base_internal
   - absl/base:config
@@ -120,7 +139,8 @@
   name: absl/base:malloc_internal
   src:
   - third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc
-- deps:
+- cmake_target: absl::periodic_sampler
+  deps:
   - absl/base:core_headers
   - absl/base:exponential_biased
   headers:
@@ -128,12 +148,14 @@
   name: absl/base:periodic_sampler
   src:
   - third_party/abseil-cpp/absl/base/internal/periodic_sampler.cc
-- deps: []
+- cmake_target: absl::pretty_function
+  deps: []
   headers:
   - third_party/abseil-cpp/absl/base/internal/pretty_function.h
   name: absl/base:pretty_function
   src: []
-- deps:
+- cmake_target: absl::raw_logging_internal
+  deps:
   - absl/base:atomic_hook
   - absl/base:config
   - absl/base:core_headers
@@ -143,7 +165,8 @@
   name: absl/base:raw_logging_internal
   src:
   - third_party/abseil-cpp/absl/base/internal/raw_logging.cc
-- deps:
+- cmake_target: absl::spinlock_wait
+  deps:
   - absl/base:base_internal
   - absl/base:core_headers
   headers:
@@ -155,7 +178,8 @@
   name: absl/base:spinlock_wait
   src:
   - third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc
-- deps:
+- cmake_target: absl::throw_delegate
+  deps:
   - absl/base:config
   - absl/base:raw_logging_internal
   headers:
@@ -163,7 +187,8 @@
   name: absl/base:throw_delegate
   src:
   - third_party/abseil-cpp/absl/base/internal/throw_delegate.cc
-- deps:
+- cmake_target: absl::btree
+  deps:
   - absl/base:core_headers
   - absl/base:throw_delegate
   - absl/container:common
@@ -182,27 +207,31 @@
   - third_party/abseil-cpp/absl/container/internal/btree_container.h
   name: absl/container:btree
   src: []
-- deps:
+- cmake_target: ''
+  deps:
   - absl/meta:type_traits
   - absl/types:optional
   headers:
   - third_party/abseil-cpp/absl/container/internal/common.h
   name: absl/container:common
   src: []
-- deps:
+- cmake_target: absl::compressed_tuple
+  deps:
   - absl/utility:utility
   headers:
   - third_party/abseil-cpp/absl/container/internal/compressed_tuple.h
   name: absl/container:compressed_tuple
   src: []
-- deps:
+- cmake_target: absl::container_memory
+  deps:
   - absl/memory:memory
   - absl/utility:utility
   headers:
   - third_party/abseil-cpp/absl/container/internal/container_memory.h
   name: absl/container:container_memory
   src: []
-- deps:
+- cmake_target: absl::fixed_array
+  deps:
   - absl/algorithm:algorithm
   - absl/base:core_headers
   - absl/base:dynamic_annotations
@@ -213,7 +242,8 @@
   - third_party/abseil-cpp/absl/container/fixed_array.h
   name: absl/container:fixed_array
   src: []
-- deps:
+- cmake_target: absl::flat_hash_map
+  deps:
   - absl/algorithm:container
   - absl/container:container_memory
   - absl/container:hash_function_defaults
@@ -223,7 +253,8 @@
   - third_party/abseil-cpp/absl/container/flat_hash_map.h
   name: absl/container:flat_hash_map
   src: []
-- deps:
+- cmake_target: absl::flat_hash_set
+  deps:
   - absl/algorithm:container
   - absl/base:core_headers
   - absl/container:container_memory
@@ -234,7 +265,8 @@
   - third_party/abseil-cpp/absl/container/flat_hash_set.h
   name: absl/container:flat_hash_set
   src: []
-- deps:
+- cmake_target: absl::hash_function_defaults
+  deps:
   - absl/base:config
   - absl/hash:hash
   - absl/strings:strings
@@ -242,24 +274,29 @@
   - third_party/abseil-cpp/absl/container/internal/hash_function_defaults.h
   name: absl/container:hash_function_defaults
   src: []
-- deps:
+- cmake_target: absl::hash_policy_traits
+  deps:
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/container/internal/hash_policy_traits.h
   name: absl/container:hash_policy_traits
   src: []
-- deps:
+- cmake_target: absl::hashtable_debug
+  deps:
   - absl/container:hashtable_debug_hooks
   headers:
   - third_party/abseil-cpp/absl/container/internal/hashtable_debug.h
   name: absl/container:hashtable_debug
   src: []
-- deps: []
+- cmake_target: absl::hashtable_debug_hooks
+  deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/container/internal/hashtable_debug_hooks.h
   name: absl/container:hashtable_debug_hooks
   src: []
-- deps:
+- cmake_target: absl::hashtablez_sampler
+  deps:
   - absl/base:base
   - absl/base:core_headers
   - absl/base:exponential_biased
@@ -274,12 +311,14 @@
   src:
   - third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc
   - third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc
-- deps: []
+- cmake_target: absl::have_sse
+  deps: []
   headers:
   - third_party/abseil-cpp/absl/container/internal/have_sse.h
   name: absl/container:have_sse
   src: []
-- deps:
+- cmake_target: absl::inlined_vector
+  deps:
   - absl/algorithm:algorithm
   - absl/base:core_headers
   - absl/base:throw_delegate
@@ -289,7 +328,8 @@
   - third_party/abseil-cpp/absl/container/inlined_vector.h
   name: absl/container:inlined_vector
   src: []
-- deps:
+- cmake_target: absl::inlined_vector_internal
+  deps:
   - absl/base:core_headers
   - absl/container:compressed_tuple
   - absl/memory:memory
@@ -299,7 +339,8 @@
   - third_party/abseil-cpp/absl/container/internal/inlined_vector.h
   name: absl/container:inlined_vector_internal
   src: []
-- deps:
+- cmake_target: absl::layout
+  deps:
   - absl/base:core_headers
   - absl/meta:type_traits
   - absl/strings:strings
@@ -309,7 +350,8 @@
   - third_party/abseil-cpp/absl/container/internal/layout.h
   name: absl/container:layout
   src: []
-- deps:
+- cmake_target: absl::node_hash_map
+  deps:
   - absl/algorithm:container
   - absl/container:container_memory
   - absl/container:hash_function_defaults
@@ -320,12 +362,15 @@
   - third_party/abseil-cpp/absl/container/node_hash_map.h
   name: absl/container:node_hash_map
   src: []
-- deps: []
+- cmake_target: absl::node_hash_policy
+  deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/container/internal/node_hash_policy.h
   name: absl/container:node_hash_policy
   src: []
-- deps:
+- cmake_target: absl::node_hash_set
+  deps:
   - absl/algorithm:container
   - absl/container:hash_function_defaults
   - absl/container:node_hash_policy
@@ -335,7 +380,8 @@
   - third_party/abseil-cpp/absl/container/node_hash_set.h
   name: absl/container:node_hash_set
   src: []
-- deps:
+- cmake_target: absl::raw_hash_map
+  deps:
   - absl/base:throw_delegate
   - absl/container:container_memory
   - absl/container:raw_hash_set
@@ -343,7 +389,8 @@
   - third_party/abseil-cpp/absl/container/internal/raw_hash_map.h
   name: absl/container:raw_hash_map
   src: []
-- deps:
+- cmake_target: absl::raw_hash_set
+  deps:
   - absl/base:bits
   - absl/base:config
   - absl/base:core_headers
@@ -364,7 +411,9 @@
   name: absl/container:raw_hash_set
   src:
   - third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc
-- deps:
+- cmake_target: absl::debugging_internal
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
   - absl/base:raw_logging_internal
@@ -385,15 +434,19 @@
   - third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc
   - third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc
   - third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc
-- deps:
+- cmake_target: absl::demangle_internal
+  deps:
   - absl/base:base
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/debugging/internal/demangle.h
   name: absl/debugging:demangle_internal
   src:
   - third_party/abseil-cpp/absl/debugging/internal/demangle.cc
-- deps:
+- cmake_target: absl::examine_stack
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:raw_logging_internal
   - absl/debugging:stacktrace
@@ -403,7 +456,8 @@
   name: absl/debugging:examine_stack
   src:
   - third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc
-- deps:
+- cmake_target: absl::failure_signal_handler
+  deps:
   - absl/base:base
   - absl/base:config
   - absl/base:core_headers
@@ -415,19 +469,25 @@
   name: absl/debugging:failure_signal_handler
   src:
   - third_party/abseil-cpp/absl/debugging/failure_signal_handler.cc
-- deps:
+- cmake_target: absl::leak_check
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   headers:
   - third_party/abseil-cpp/absl/debugging/leak_check.h
   name: absl/debugging:leak_check
   src:
   - third_party/abseil-cpp/absl/debugging/leak_check.cc
-- deps: []
+- cmake_target: absl::leak_check_disable
+  deps:
+  - absl/base:config
   headers: []
   name: absl/debugging:leak_check_disable
   src:
   - third_party/abseil-cpp/absl/debugging/leak_check_disable.cc
-- deps:
+- cmake_target: absl::stacktrace
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/debugging:debugging_internal
   headers:
@@ -435,8 +495,10 @@
   name: absl/debugging:stacktrace
   src:
   - third_party/abseil-cpp/absl/debugging/stacktrace.cc
-- deps:
+- cmake_target: absl::symbolize
+  deps:
   - absl/base:base
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
   - absl/base:malloc_internal
@@ -452,7 +514,8 @@
   name: absl/debugging:symbolize
   src:
   - third_party/abseil-cpp/absl/debugging/symbolize.cc
-- deps:
+- cmake_target: absl::flags_config
+  deps:
   - absl/base:core_headers
   - absl/flags:path_util
   - absl/flags:program_name
@@ -464,7 +527,8 @@
   name: absl/flags:config
   src:
   - third_party/abseil-cpp/absl/flags/usage_config.cc
-- deps:
+- cmake_target: absl::flags
+  deps:
   - absl/base:base
   - absl/base:core_headers
   - absl/flags:config
@@ -479,7 +543,8 @@
   name: absl/flags:flag
   src:
   - third_party/abseil-cpp/absl/flags/flag.cc
-- deps:
+- cmake_target: absl::flags_internal
+  deps:
   - absl/base:core_headers
   - absl/flags:handle
   - absl/flags:registry
@@ -491,7 +556,8 @@
   name: absl/flags:flag_internal
   src:
   - third_party/abseil-cpp/absl/flags/internal/flag.cc
-- deps:
+- cmake_target: absl::flags_handle
+  deps:
   - absl/base:core_headers
   - absl/flags:config
   - absl/flags:marshalling
@@ -501,7 +567,8 @@
   name: absl/flags:handle
   src:
   - third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc
-- deps:
+- cmake_target: absl::flags_marshalling
+  deps:
   - absl/base:core_headers
   - absl/strings:str_format
   - absl/strings:strings
@@ -510,7 +577,8 @@
   name: absl/flags:marshalling
   src:
   - third_party/abseil-cpp/absl/flags/marshalling.cc
-- deps:
+- cmake_target: absl::flags_parse
+  deps:
   - absl/flags:config
   - absl/flags:flag
   - absl/flags:program_name
@@ -525,13 +593,15 @@
   name: absl/flags:parse
   src:
   - third_party/abseil-cpp/absl/flags/parse.cc
-- deps:
+- cmake_target: absl::flags_path_util
+  deps:
   - absl/strings:strings
   headers:
   - third_party/abseil-cpp/absl/flags/internal/path_util.h
   name: absl/flags:path_util
   src: []
-- deps:
+- cmake_target: absl::flags_program_name
+  deps:
   - absl/flags:path_util
   - absl/strings:strings
   - absl/synchronization:synchronization
@@ -540,7 +610,8 @@
   name: absl/flags:program_name
   src:
   - third_party/abseil-cpp/absl/flags/internal/program_name.cc
-- deps:
+- cmake_target: absl::flags_registry
+  deps:
   - absl/base:core_headers
   - absl/base:dynamic_annotations
   - absl/base:raw_logging_internal
@@ -555,7 +626,8 @@
   src:
   - third_party/abseil-cpp/absl/flags/internal/registry.cc
   - third_party/abseil-cpp/absl/flags/internal/type_erased.cc
-- deps:
+- cmake_target: absl::flags_usage
+  deps:
   - absl/flags:usage_internal
   - absl/strings:strings
   - absl/synchronization:synchronization
@@ -564,7 +636,8 @@
   name: absl/flags:usage
   src:
   - third_party/abseil-cpp/absl/flags/usage.cc
-- deps:
+- cmake_target: absl::flags_usage_internal
+  deps:
   - absl/flags:config
   - absl/flags:flag
   - absl/flags:handle
@@ -577,7 +650,19 @@
   name: absl/flags:usage_internal
   src:
   - third_party/abseil-cpp/absl/flags/internal/usage.cc
-- deps:
+- cmake_target: ''
+  deps:
+  - absl/base:base_internal
+  - absl/container:compressed_tuple
+  - absl/meta:type_traits
+  - absl/utility:utility
+  headers:
+  - third_party/abseil-cpp/absl/functional/bind_front.h
+  - third_party/abseil-cpp/absl/functional/internal/front_binder.h
+  name: absl/functional:bind_front
+  src: []
+- cmake_target: ''
+  deps:
   - absl/base:base_internal
   - absl/meta:type_traits
   headers:
@@ -585,7 +670,8 @@
   - third_party/abseil-cpp/absl/functional/internal/function_ref.h
   name: absl/functional:function_ref
   src: []
-- deps:
+- cmake_target: absl::city
+  deps:
   - absl/base:config
   - absl/base:core_headers
   - absl/base:endian
@@ -594,7 +680,8 @@
   name: absl/hash:city
   src:
   - third_party/abseil-cpp/absl/hash/internal/city.cc
-- deps:
+- cmake_target: absl::hash
+  deps:
   - absl/base:core_headers
   - absl/base:endian
   - absl/container:fixed_array
@@ -611,20 +698,23 @@
   name: absl/hash:hash
   src:
   - third_party/abseil-cpp/absl/hash/internal/hash.cc
-- deps:
+- cmake_target: absl::memory
+  deps:
   - absl/base:core_headers
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/memory/memory.h
   name: absl/memory:memory
   src: []
-- deps:
+- cmake_target: absl::type_traits
+  deps:
   - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/meta/type_traits.h
   name: absl/meta:type_traits
   src: []
-- deps:
+- cmake_target: absl::int128
+  deps:
   - absl/base:config
   - absl/base:core_headers
   headers:
@@ -634,12 +724,15 @@
   name: absl/numeric:int128
   src:
   - third_party/abseil-cpp/absl/numeric/int128.cc
-- deps: []
+- cmake_target: absl::random_internal_distribution_caller
+  deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/random/internal/distribution_caller.h
   name: absl/random/internal:distribution_caller
   src: []
-- deps:
+- cmake_target: absl::random_internal_distributions
+  deps:
   - absl/base:base
   - absl/meta:type_traits
   - absl/random/internal:distribution_caller
@@ -650,18 +743,22 @@
   - third_party/abseil-cpp/absl/random/internal/distributions.h
   name: absl/random/internal:distributions
   src: []
-- deps: []
+- cmake_target: absl::random_internal_fast_uniform_bits
+  deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/random/internal/fast_uniform_bits.h
   name: absl/random/internal:fast_uniform_bits
   src: []
-- deps:
+- cmake_target: absl::random_internal_fastmath
+  deps:
   - absl/base:bits
   headers:
   - third_party/abseil-cpp/absl/random/internal/fastmath.h
   name: absl/random/internal:fastmath
   src: []
-- deps:
+- cmake_target: absl::random_internal_generate_real
+  deps:
   - absl/base:bits
   - absl/meta:type_traits
   - absl/random/internal:fastmath
@@ -670,21 +767,25 @@
   - third_party/abseil-cpp/absl/random/internal/generate_real.h
   name: absl/random/internal:generate_real
   src: []
-- deps:
+- cmake_target: absl::random_internal_iostream_state_saver
+  deps:
   - absl/meta:type_traits
   - absl/numeric:int128
   headers:
   - third_party/abseil-cpp/absl/random/internal/iostream_state_saver.h
   name: absl/random/internal:iostream_state_saver
   src: []
-- deps:
+- cmake_target: absl::random_internal_mocking_bit_gen_base
+  deps:
   - absl/random:random
   - absl/strings:strings
   headers:
   - third_party/abseil-cpp/absl/random/internal/mocking_bit_gen_base.h
   name: absl/random/internal:mocking_bit_gen_base
   src: []
-- deps:
+- cmake_target: ''
+  deps:
+  - absl/base:core_headers
   - absl/base:raw_logging_internal
   - absl/random/internal:platform
   - absl/random/internal:randen_engine
@@ -693,7 +794,8 @@
   name: absl/random/internal:nanobenchmark
   src:
   - third_party/abseil-cpp/absl/random/internal/nanobenchmark.cc
-- deps:
+- cmake_target: absl::random_internal_nonsecure_base
+  deps:
   - absl/base:core_headers
   - absl/meta:type_traits
   - absl/random/internal:pool_urbg
@@ -706,7 +808,8 @@
   - third_party/abseil-cpp/absl/random/internal/nonsecure_base.h
   name: absl/random/internal:nonsecure_base
   src: []
-- deps:
+- cmake_target: absl::random_internal_pcg_engine
+  deps:
   - absl/base:config
   - absl/meta:type_traits
   - absl/numeric:int128
@@ -716,14 +819,17 @@
   - third_party/abseil-cpp/absl/random/internal/pcg_engine.h
   name: absl/random/internal:pcg_engine
   src: []
-- deps: []
+- cmake_target: absl::random_internal_platform
+  deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/random/internal/platform.h
   - third_party/abseil-cpp/absl/random/internal/randen-keys.inc
   - third_party/abseil-cpp/absl/random/internal/randen_traits.h
   name: absl/random/internal:platform
   src: []
-- deps:
+- cmake_target: absl::random_internal_pool_urbg
+  deps:
   - absl/base:base
   - absl/base:config
   - absl/base:core_headers
@@ -739,7 +845,8 @@
   name: absl/random/internal:pool_urbg
   src:
   - third_party/abseil-cpp/absl/random/internal/pool_urbg.cc
-- deps:
+- cmake_target: absl::random_internal_randen
+  deps:
   - absl/base:raw_logging_internal
   - absl/random/internal:platform
   - absl/random/internal:randen_hwaes
@@ -749,7 +856,8 @@
   name: absl/random/internal:randen
   src:
   - third_party/abseil-cpp/absl/random/internal/randen.cc
-- deps:
+- cmake_target: absl::random_internal_randen_engine
+  deps:
   - absl/meta:type_traits
   - absl/random/internal:iostream_state_saver
   - absl/random/internal:randen
@@ -757,7 +865,9 @@
   - third_party/abseil-cpp/absl/random/internal/randen_engine.h
   name: absl/random/internal:randen_engine
   src: []
-- deps:
+- cmake_target: absl::random_internal_randen_hwaes
+  deps:
+  - absl/base:config
   - absl/random/internal:platform
   - absl/random/internal:randen_hwaes_impl
   headers:
@@ -766,7 +876,9 @@
   name: absl/random/internal:randen_hwaes
   src:
   - third_party/abseil-cpp/absl/random/internal/randen_detect.cc
-- deps:
+- cmake_target: absl::random_internal_randen_hwaes_impl
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/random/internal:platform
   headers:
@@ -774,14 +886,18 @@
   name: absl/random/internal:randen_hwaes_impl
   src:
   - third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc
-- deps:
+- cmake_target: absl::random_internal_randen_slow
+  deps:
+  - absl/base:config
+  - absl/base:core_headers
   - absl/random/internal:platform
   headers:
   - third_party/abseil-cpp/absl/random/internal/randen_slow.h
   name: absl/random/internal:randen_slow
   src:
   - third_party/abseil-cpp/absl/random/internal/randen_slow.cc
-- deps:
+- cmake_target: absl::random_internal_salted_seed_seq
+  deps:
   - absl/container:inlined_vector
   - absl/meta:type_traits
   - absl/random/internal:seed_material
@@ -791,7 +907,8 @@
   - third_party/abseil-cpp/absl/random/internal/salted_seed_seq.h
   name: absl/random/internal:salted_seed_seq
   src: []
-- deps:
+- cmake_target: absl::random_internal_seed_material
+  deps:
   - absl/base:core_headers
   - absl/base:raw_logging_internal
   - absl/random/internal:fast_uniform_bits
@@ -803,19 +920,22 @@
   name: absl/random/internal:seed_material
   src:
   - third_party/abseil-cpp/absl/random/internal/seed_material.cc
-- deps:
+- cmake_target: absl::random_internal_traits
+  deps:
   - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/random/internal/traits.h
   name: absl/random/internal:traits
   src: []
-- deps:
+- cmake_target: absl::random_internal_uniform_helper
+  deps:
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/random/internal/uniform_helper.h
   name: absl/random/internal:uniform_helper
   src: []
-- deps:
+- cmake_target: absl::random_internal_wide_multiply
+  deps:
   - absl/base:bits
   - absl/base:config
   - absl/numeric:int128
@@ -824,7 +944,8 @@
   - third_party/abseil-cpp/absl/random/internal/wide_multiply.h
   name: absl/random/internal:wide_multiply
   src: []
-- deps:
+- cmake_target: absl::random_bit_gen_ref
+  deps:
   - absl/base:core_headers
   - absl/meta:type_traits
   - absl/random/internal:distribution_caller
@@ -834,7 +955,8 @@
   - third_party/abseil-cpp/absl/random/bit_gen_ref.h
   name: absl/random:bit_gen_ref
   src: []
-- deps:
+- cmake_target: absl::random_distributions
+  deps:
   - absl/base:base_internal
   - absl/base:core_headers
   - absl/meta:type_traits
@@ -865,7 +987,8 @@
   src:
   - third_party/abseil-cpp/absl/random/discrete_distribution.cc
   - third_party/abseil-cpp/absl/random/gaussian_distribution.cc
-- deps:
+- cmake_target: absl::random_random
+  deps:
   - absl/random/internal:nonsecure_base
   - absl/random/internal:pcg_engine
   - absl/random/internal:pool_urbg
@@ -876,14 +999,16 @@
   - third_party/abseil-cpp/absl/random/random.h
   name: absl/random:random
   src: []
-- deps:
+- cmake_target: absl::random_seed_gen_exception
+  deps:
   - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/random/seed_gen_exception.h
   name: absl/random:seed_gen_exception
   src:
   - third_party/abseil-cpp/absl/random/seed_gen_exception.cc
-- deps:
+- cmake_target: absl::random_seed_sequences
+  deps:
   - absl/container:inlined_vector
   - absl/random/internal:nonsecure_base
   - absl/random/internal:pool_urbg
@@ -896,7 +1021,9 @@
   name: absl/random:seed_sequences
   src:
   - third_party/abseil-cpp/absl/random/seed_sequences.cc
-- deps:
+- cmake_target: absl::strings_internal
+  deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:endian
   - absl/meta:type_traits
@@ -909,13 +1036,15 @@
   src:
   - third_party/abseil-cpp/absl/strings/internal/ostringstream.cc
   - third_party/abseil-cpp/absl/strings/internal/utf8.cc
-- deps:
+- cmake_target: absl::str_format
+  deps:
   - absl/strings:str_format_internal
   headers:
   - third_party/abseil-cpp/absl/strings/str_format.h
   name: absl/strings:str_format
   src: []
-- deps:
+- cmake_target: absl::str_format_internal
+  deps:
   - absl/base:config
   - absl/base:core_headers
   - absl/meta:type_traits
@@ -938,7 +1067,8 @@
   - third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.cc
   - third_party/abseil-cpp/absl/strings/internal/str_format/output.cc
   - third_party/abseil-cpp/absl/strings/internal/str_format/parser.cc
-- deps:
+- cmake_target: absl::strings
+  deps:
   - absl/base:base
   - absl/base:bits
   - absl/base:config
@@ -984,9 +1114,11 @@
   - third_party/abseil-cpp/absl/strings/str_split.cc
   - third_party/abseil-cpp/absl/strings/string_view.cc
   - third_party/abseil-cpp/absl/strings/substitute.cc
-- deps:
+- cmake_target: absl::graphcycles_internal
+  deps:
   - absl/base:base
   - absl/base:base_internal
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:malloc_internal
   - absl/base:raw_logging_internal
@@ -995,7 +1127,8 @@
   name: absl/synchronization:graphcycles_internal
   src:
   - third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc
-- deps:
+- cmake_target: absl::kernel_timeout_internal
+  deps:
   - absl/base:core_headers
   - absl/base:raw_logging_internal
   - absl/time:time
@@ -1003,7 +1136,8 @@
   - third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.h
   name: absl/synchronization:kernel_timeout_internal
   src: []
-- deps:
+- cmake_target: absl::synchronization
+  deps:
   - absl/base:atomic_hook
   - absl/base:base
   - absl/base:base_internal
@@ -1035,14 +1169,18 @@
   - third_party/abseil-cpp/absl/synchronization/internal/waiter.cc
   - third_party/abseil-cpp/absl/synchronization/mutex.cc
   - third_party/abseil-cpp/absl/synchronization/notification.cc
-- deps: []
+- cmake_target: absl::civil_time
+  deps:
+  - absl/base:config
   headers:
   - third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/civil_time.h
   - third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/civil_time_detail.h
   name: absl/time/internal/cctz:civil_time
   src:
   - third_party/abseil-cpp/absl/time/internal/cctz/src/civil_time_detail.cc
-- deps:
+- cmake_target: absl::time_zone
+  deps:
+  - absl/base:config
   - absl/time/internal/cctz:civil_time
   headers:
   - third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/time_zone.h
@@ -1065,7 +1203,8 @@
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc
   - third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc
-- deps:
+- cmake_target: absl::time
+  deps:
   - absl/base:base
   - absl/base:core_headers
   - absl/base:raw_logging_internal
@@ -1086,7 +1225,8 @@
   - third_party/abseil-cpp/absl/time/duration.cc
   - third_party/abseil-cpp/absl/time/format.cc
   - third_party/abseil-cpp/absl/time/time.cc
-- deps:
+- cmake_target: absl::any
+  deps:
   - absl/base:config
   - absl/base:core_headers
   - absl/meta:type_traits
@@ -1096,14 +1236,16 @@
   - third_party/abseil-cpp/absl/types/any.h
   name: absl/types:any
   src: []
-- deps:
+- cmake_target: absl::bad_any_cast
+  deps:
   - absl/base:config
   - absl/types:bad_any_cast_impl
   headers:
   - third_party/abseil-cpp/absl/types/bad_any_cast.h
   name: absl/types:bad_any_cast
   src: []
-- deps:
+- cmake_target: absl::bad_any_cast_impl
+  deps:
   - absl/base:config
   - absl/base:raw_logging_internal
   headers:
@@ -1111,7 +1253,8 @@
   name: absl/types:bad_any_cast_impl
   src:
   - third_party/abseil-cpp/absl/types/bad_any_cast.cc
-- deps:
+- cmake_target: absl::bad_optional_access
+  deps:
   - absl/base:config
   - absl/base:raw_logging_internal
   headers:
@@ -1119,7 +1262,8 @@
   name: absl/types:bad_optional_access
   src:
   - third_party/abseil-cpp/absl/types/bad_optional_access.cc
-- deps:
+- cmake_target: absl::bad_variant_access
+  deps:
   - absl/base:config
   - absl/base:raw_logging_internal
   headers:
@@ -1127,14 +1271,16 @@
   name: absl/types:bad_variant_access
   src:
   - third_party/abseil-cpp/absl/types/bad_variant_access.cc
-- deps:
+- cmake_target: absl::compare
+  deps:
   - absl/base:core_headers
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/types/compare.h
   name: absl/types:compare
   src: []
-- deps:
+- cmake_target: absl::optional
+  deps:
   - absl/base:base_internal
   - absl/base:config
   - absl/base:core_headers
@@ -1147,7 +1293,8 @@
   - third_party/abseil-cpp/absl/types/optional.h
   name: absl/types:optional
   src: []
-- deps:
+- cmake_target: absl::span
+  deps:
   - absl/algorithm:algorithm
   - absl/base:core_headers
   - absl/base:throw_delegate
@@ -1157,7 +1304,8 @@
   - third_party/abseil-cpp/absl/types/span.h
   name: absl/types:span
   src: []
-- deps:
+- cmake_target: absl::variant
+  deps:
   - absl/base:base_internal
   - absl/base:config
   - absl/base:core_headers
@@ -1169,7 +1317,8 @@
   - third_party/abseil-cpp/absl/types/variant.h
   name: absl/types:variant
   src: []
-- deps:
+- cmake_target: absl::utility
+  deps:
   - absl/base:base_internal
   - absl/base:config
   - absl/meta:type_traits

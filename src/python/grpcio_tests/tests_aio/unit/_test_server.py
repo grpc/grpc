@@ -45,12 +45,6 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
         await _maybe_echo_metadata(context)
         return messages_pb2.SimpleResponse()
 
-    # TODO(lidizheng) The semantic of this call is not matching its description
-    # See src/proto/grpc/testing/test.proto
-    async def EmptyCall(self, request, context):
-        while True:
-            await asyncio.sleep(test_constants.LONG_TIMEOUT)
-
     async def StreamingOutputCall(
             self, request: messages_pb2.StreamingOutputCallRequest, context):
         for response_parameters in request.response_parameters:

@@ -77,7 +77,7 @@ sudo apt-get install -y google-cloud-sdk
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 
 # Python dependencies
-sudo pip install --upgrade pip==10.0.1
+sudo pip install --upgrade pip==19.3.1
 sudo pip install tabulate
 sudo pip install google-api-python-client oauth2client
 sudo pip install virtualenv
