@@ -76,8 +76,9 @@ def bound_socket(bind_address='localhost',
         - the address to which the socket is bound
         - the port to which the socket is bound
     """
-    host, port, sock = get_socket(
-        bind_address=bind_address, listen=listen, sock_options=sock_options)
+    host, port, sock = get_socket(bind_address=bind_address,
+                                  listen=listen,
+                                  sock_options=sock_options)
     try:
         yield host, port
     finally:

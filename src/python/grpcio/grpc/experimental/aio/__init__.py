@@ -42,8 +42,8 @@ def insecure_channel(target, options=None, compression=None):
     Returns:
       A Channel.
     """
-    return Channel(target, ()
-                   if options is None else options, None, compression)
+    return Channel(target, () if options is None else options, None,
+                   compression)
 
 
 ###################################  __all__  #################################

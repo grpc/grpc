@@ -36,8 +36,8 @@ _ADDR_TEMPLATE = 'localhost:%d'
 class DebugExampleTest(unittest.TestCase):
 
     def test_channelz_example(self):
-        server = debug_server.create_server(
-            addr='[::]:0', failure_rate=_FAILURE_RATE)
+        server = debug_server.create_server(addr='[::]:0',
+                                            failure_rate=_FAILURE_RATE)
         port = server.add_insecure_port('[::]:0')
         server.start()
         address = _ADDR_TEMPLATE % port

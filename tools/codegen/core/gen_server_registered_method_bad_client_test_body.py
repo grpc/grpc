@@ -45,11 +45,11 @@ for message_length in range(0, 3):
             is_end = frame_length == len(
                 payload) and send_message_length == message_length
             frame = [(frame_length >> 16) & 0xff, (frame_length >> 8) & 0xff,
-                     (frame_length) & 0xff, 0, 1
-                     if is_end else 0, 0, 0, 0, 1] + payload[0:frame_length]
+                     (frame_length) & 0xff, 0, 1 if is_end else 0, 0, 0, 0, 1
+                    ] + payload[0:frame_length]
             text = esc_c(frame)
             if text not in done:
                 print 'GRPC_RUN_BAD_CLIENT_TEST(verifier_%s, PFX_STR %s, %s);' % (
-                    'succeeds' if is_end else 'fails', text, '0'
-                    if is_end else 'GRPC_BAD_CLIENT_DISCONNECT')
+                    'succeeds' if is_end else 'fails', text,
+                    '0' if is_end else 'GRPC_BAD_CLIENT_DISCONNECT')
                 done.add(text)

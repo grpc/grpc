@@ -74,38 +74,33 @@ class _Serverish(_common.Serverish):
         if handler.add_termination_callback(rpc.extrinsic_abort):
             servicer_context = _servicer_context.ServicerContext(
                 rpc, self._time, deadline)
-            service_thread = threading.Thread(
-                target=service_behavior,
-                args=(
-                    implementation,
-                    rpc,
-                    servicer_context,
-                ))
+            service_thread = threading.Thread(target=service_behavior,
+                                              args=(
+                                                  implementation,
+                                                  rpc,
+                                                  servicer_context,
+                                              ))
             service_thread.start()
 
     def invoke_unary_unary(self, method_descriptor, handler,
                            invocation_metadata, request, deadline):
-        self._invoke(
-            _unary_unary_service(request), method_descriptor, handler,
-            invocation_metadata, deadline)
+        self._invoke(_unary_unary_service(request), method_descriptor, handler,
+                     invocation_metadata, deadline)
 
     def invoke_unary_stream(self, method_descriptor, handler,
                             invocation_metadata, request, deadline):
-        self._invoke(
-            _unary_stream_service(request), method_descriptor, handler,
-            invocation_metadata, deadline)
+        self._invoke(_unary_stream_service(request), method_descriptor, handler,
+                     invocation_metadata, deadline)
 
     def invoke_stream_unary(self, method_descriptor, handler,
                             invocation_metadata, deadline):
-        self._invoke(
-            _stream_unary_service(handler), method_descriptor, handler,
-            invocation_metadata, deadline)
+        self._invoke(_stream_unary_service(handler), method_descriptor, handler,
+                     invocation_metadata, deadline)
 
     def invoke_stream_stream(self, method_descriptor, handler,
                              invocation_metadata, deadline):
-        self._invoke(
-            _stream_stream_service(handler), method_descriptor, handler,
-            invocation_metadata, deadline)
+        self._invoke(_stream_stream_service(handler), method_descriptor,
+                     handler, invocation_metadata, deadline)
 
 
 def _deadline_and_handler(requests_closed, time, timeout):
@@ -127,15 +122,17 @@ class _Server(grpc_testing.Server):
     def invoke_unary_unary(self, method_descriptor, invocation_metadata,
                            request, timeout):
         deadline, handler = _deadline_and_handler(True, self._time, timeout)
-        self._serverish.invoke_unary_unary(
-            method_descriptor, handler, invocation_metadata, request, deadline)
+        self._serverish.invoke_unary_unary(method_descriptor, handler,
+                                           invocation_metadata, request,
+                                           deadline)
         return _server_rpc.UnaryUnaryServerRpc(handler)
 
     def invoke_unary_stream(self, method_descriptor, invocation_metadata,
                             request, timeout):
         deadline, handler = _deadline_and_handler(True, self._time, timeout)
-        self._serverish.invoke_unary_stream(
-            method_descriptor, handler, invocation_metadata, request, deadline)
+        self._serverish.invoke_unary_stream(method_descriptor, handler,
+                                            invocation_metadata, request,
+                                            deadline)
         return _server_rpc.UnaryStreamServerRpc(handler)
 
     def invoke_stream_unary(self, method_descriptor, invocation_metadata,
