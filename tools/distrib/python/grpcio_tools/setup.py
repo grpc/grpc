@@ -113,11 +113,9 @@ if EXTRA_ENV_LINK_ARGS is None:
             EXTRA_ENV_LINK_ARGS += ' -latomic'
     elif "win32" in sys.platform and sys.version_info < (3, 5):
         msvcr = cygwinccompiler.get_msvcr()[0]
-        # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
-        # influence on the linkage outcome on MinGW for non-C++ programs.
         EXTRA_ENV_LINK_ARGS += (
-            ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr} '
-            '-static'.format(msvcr=msvcr))
+            ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
+            ' -static -lshlwapi'.format(msvcr=msvcr))
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
