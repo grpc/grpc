@@ -19,8 +19,9 @@ set -ex
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
-    'examples/python'
-    'src/python'
+    'examples'
+    'src'
+    'test'
     'tools'
 )
 
@@ -32,24 +33,4 @@ PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install --upgrade futures
 "$PYTHON" -m pip install yapf==0.28.0
 
-yapf() {
-    $PYTHON -m yapf -i -r --style=setup.cfg "${1}"
-}
-
-if [[ -z "${TEST}" ]]; then
-    for dir in "${DIRS[@]}"; do
-	yapf "${dir}"
-    done
-else
-    ok=yes
-    for dir in "${DIRS[@]}"; do
-	tempdir=$(mktemp -d)
-	cp -RT "${dir}" "${tempdir}"
-	yapf "${tempdir}"
-	diff -x '*.pyc' -ru "${dir}" "${tempdir}" || ok=no
-	rm -rf "${tempdir}"
-    done
-    if [[ ${ok} == no ]]; then
-	false
-    fi
-fi
+$PYTHON -m yapf --diff --recursive --style=setup.cfg "${DIRS[@]}"
