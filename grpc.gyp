@@ -2309,7 +2309,6 @@
       ],
       'sources': [
         'src/csharp/ext/grpc_csharp_ext.c',
-        'src/csharp/ext/std++compat.cc',
       ],
     },
     {
