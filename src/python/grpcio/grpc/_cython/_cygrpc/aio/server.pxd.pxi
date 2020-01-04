@@ -21,6 +21,9 @@ cdef class RPCState(GrpcCallWrapper):
     cdef grpc_call_details details
     cdef grpc_metadata_array request_metadata
     cdef AioServer server
+    cdef object abort_exception
+    cdef bint metadata_sent
+    cdef bint status_sent
 
     cdef bytes method(self)
 
