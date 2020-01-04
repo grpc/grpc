@@ -121,6 +121,11 @@ def grpc_deps():
         actual = "@io_opencensus_cpp//opencensus/tags:tags",
     )
 
+    native.bind(
+        name = "libuv",
+        actual = "@libuv//:libuv",
+    )
+
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
@@ -262,6 +267,15 @@ def grpc_deps():
             ],
             sha256 = "122ebf7fe7d1c8e938af6aeaee0efe788a3a2449ece5a8d6a428cb18d6f88033",
         )
+
+    if "libuv" not in native.existing_rules():
+       http_archive(
+           name = "zlib",
+           build_file = "@com_github_grpc_grpc//third_party:libuv.BUILD",
+           sha256 = "",
+           strip_prefix = "libuv-15ae750151ac9341e5945eb38f8982d59fb99201",
+           url = "https://github.com/libuv/libuv/archive/15ae750151ac9341e5945eb38f8982d59fb99201.tar.gz",
+       )
 
     grpc_python_deps()
 
