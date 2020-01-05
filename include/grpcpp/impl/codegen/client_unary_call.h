@@ -49,10 +49,16 @@ class BlockingUnaryCallImpl {
   BlockingUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
                         grpc_impl::ClientContext* context,
                         const InputMessage& request, OutputMessage* result) {
-    ::grpc_impl::CompletionQueue cq(grpc_completion_queue_attributes{
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    ::grpc_impl::CompletionQueue* cq = channel->CallbackCQ();
+    GPR_CODEGEN_ASSERT(cq != nullptr);
+#else
+    ::grpc_impl::CompletionQueue cq_obj(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
         nullptr});  // Pluckable completion queue
-    ::grpc::internal::Call call(channel->CreateCall(method, context, &cq));
+    ::grpc_impl::CompletionQueue* cq = &cq_obj;
+#endif
+    ::grpc::internal::Call call(channel->CreateCall(method, context, cq));
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
               CallOpClientSendClose, CallOpClientRecvStatus>
@@ -68,8 +74,28 @@ class BlockingUnaryCallImpl {
     ops.AllowNoMessage();
     ops.ClientSendClose();
     ops.ClientRecvStatus(context, &status_);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    CallbackWithStatusTag tag(call.call(),
+                              [&mu, &cv, &done](::grpc::Status) {
+                                grpc::internal::MutexLock l(&mu);
+                                done = true;
+                                cv.Signal();
+                              },
+                              &ops);
+    ops.set_core_cq_tag(&tag);
+#endif
     call.PerformOps(&ops);
-    cq.Pluck(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+#else
+    cq->Pluck(&ops);
+#endif
     // Some of the ops might fail. If the ops fail in the core layer, status
     // would reflect the error. But, if the ops fail in the C++ layer, the
     // status would still be the same as the one returned by gRPC Core. This can

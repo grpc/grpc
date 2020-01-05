@@ -188,8 +188,29 @@ class ClientReader final : public ClientReaderInterface<R> {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
         ops;
     ops.RecvInitialMetadata(context_);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done](bool) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+#else
     cq_.Pluck(&ops);  /// status ignored
+#endif
   }
 
   bool NextMessageSize(uint32_t* sz) override {
@@ -211,8 +232,32 @@ class ClientReader final : public ClientReaderInterface<R> {
       ops.RecvInitialMetadata(context_);
     }
     ops.RecvMessage(msg);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    return ok && ops.got_message;
+#else
     return cq_.Pluck(&ops) && ops.got_message;
+#endif
   }
 
   /// See the \a ClientStreamingInterface.Finish method for semantics.
@@ -224,15 +269,41 @@ class ClientReader final : public ClientReaderInterface<R> {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpClientRecvStatus> ops;
     ::grpc::Status status;
     ops.ClientRecvStatus(context_, &status);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    GPR_CODEGEN_ASSERT(ok);
+#else
     GPR_CODEGEN_ASSERT(cq_.Pluck(&ops));
+#endif
     return status;
   }
 
  private:
   friend class internal::ClientReaderFactory<R>;
   ::grpc_impl::ClientContext* context_;
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
   ::grpc_impl::CompletionQueue cq_;
+#endif
   ::grpc::internal::Call call_;
 
   /// Block to create a stream and write the initial metadata and \a request
@@ -243,10 +314,20 @@ class ClientReader final : public ClientReaderInterface<R> {
                const ::grpc::internal::RpcMethod& method,
                ::grpc_impl::ClientContext* context, const W& request)
       : context_(context),
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
             nullptr}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+#endif
+        call_(channel->CreateCall(method, context
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                                  ,
+                                  channel->CallbackCQ()
+#else
+                                  ,
+                                  &cq_
+#endif
+                                      )) {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 ::grpc::internal::CallOpSendMessage,
                                 ::grpc::internal::CallOpClientSendClose>
@@ -256,8 +337,29 @@ class ClientReader final : public ClientReaderInterface<R> {
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(ops.SendMessagePtr(&request).ok());
     ops.ClientSendClose();
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done](bool) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+#else
     cq_.Pluck(&ops);
+#endif
   }
 };
 
@@ -307,8 +409,29 @@ class ClientWriter : public ClientWriterInterface<W> {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
         ops;
     ops.RecvInitialMetadata(context_);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done](bool) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+#else
     cq_.Pluck(&ops);  // status ignored
+#endif
   }
 
   /// See the WriterInterface.Write(const W& msg, WriteOptions options) method
@@ -337,15 +460,63 @@ class ClientWriter : public ClientWriterInterface<W> {
       return false;
     }
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    return ok;
+#else
     return cq_.Pluck(&ops);
+#endif
   }
 
   bool WritesDone() override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpClientSendClose> ops;
     ops.ClientSendClose();
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    return ok;
+#else
     return cq_.Pluck(&ops);
+#endif
   }
 
   /// See the ClientStreamingInterface.Finish method for semantics.
@@ -360,8 +531,32 @@ class ClientWriter : public ClientWriterInterface<W> {
       finish_ops_.RecvInitialMetadata(context_);
     }
     finish_ops_.ClientRecvStatus(context_, &status);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &finish_ops_, false);
+    finish_ops_.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&finish_ops_);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    GPR_CODEGEN_ASSERT(ok);
+#else
     GPR_CODEGEN_ASSERT(cq_.Pluck(&finish_ops_));
+#endif
     return status;
   }
 
@@ -378,10 +573,20 @@ class ClientWriter : public ClientWriterInterface<W> {
                const ::grpc::internal::RpcMethod& method,
                ::grpc_impl::ClientContext* context, R* response)
       : context_(context),
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
             nullptr}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+#endif
+        call_(channel->CreateCall(method, context
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                                  ,
+                                  channel->CallbackCQ()
+#else
+                                  ,
+                                  &cq_
+#endif
+                                      )) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
 
@@ -390,8 +595,29 @@ class ClientWriter : public ClientWriterInterface<W> {
           ops;
       ops.SendInitialMetadata(&context->send_initial_metadata_,
                               context->initial_metadata_flags());
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      grpc::internal::Mutex mu;
+      grpc::internal::CondVar cv;
+      bool done /* GUARDED_BY(mu) */ = false;
+      grpc::internal::CallbackWithSuccessTag tag;
+      tag.Set(call_.call(),
+              [&mu, &cv, &done](bool) {
+                grpc::internal::MutexLock l(&mu);
+                done = true;
+                cv.Signal();
+              },
+              &ops, false);
+      ops.set_core_cq_tag(&tag);
+#endif
       call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      {
+        grpc::internal::MutexLock l(&mu);
+        cv.WaitUntil(&mu, [&done] { return done; });
+      }
+#else
       cq_.Pluck(&ops);
+#endif
     }
   }
 
@@ -400,7 +626,9 @@ class ClientWriter : public ClientWriterInterface<W> {
                               ::grpc::internal::CallOpGenericRecvMessage,
                               ::grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
   ::grpc_impl::CompletionQueue cq_;
+#endif
   ::grpc::internal::Call call_;
 };
 
@@ -459,8 +687,29 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
         ops;
     ops.RecvInitialMetadata(context_);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done](bool) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+#else
     cq_.Pluck(&ops);  // status ignored
+#endif
   }
 
   bool NextMessageSize(uint32_t* sz) override {
@@ -481,8 +730,32 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
       ops.RecvInitialMetadata(context_);
     }
     ops.RecvMessage(msg);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    return ok && ops.got_message;
+#else
     return cq_.Pluck(&ops) && ops.got_message;
+#endif
   }
 
   /// See the \a WriterInterface.Write method for semantics.
@@ -510,15 +783,63 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
       return false;
     }
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    return ok;
+#else
     return cq_.Pluck(&ops);
+#endif
   }
 
   bool WritesDone() override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpClientSendClose> ops;
     ops.ClientSendClose();
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    return ok;
+#else
     return cq_.Pluck(&ops);
+#endif
   }
 
   /// See the ClientStreamingInterface.Finish method for semantics.
@@ -535,8 +856,32 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     }
     ::grpc::Status status;
     ops.ClientRecvStatus(context_, &status);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    bool done /* GUARDED_BY(mu) */ = false;
+    bool ok;  // synchronized with cv
+    grpc::internal::CallbackWithSuccessTag tag;
+    tag.Set(call_.call(),
+            [&mu, &cv, &done, &ok](bool in_ok) {
+              grpc::internal::MutexLock l(&mu);
+              done = true;
+              ok = in_ok;
+              cv.Signal();
+            },
+            &ops, false);
+    ops.set_core_cq_tag(&tag);
+#endif
     call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    {
+      grpc::internal::MutexLock l(&mu);
+      cv.WaitUntil(&mu, [&done] { return done; });
+    }
+    GPR_CODEGEN_ASSERT(ok);
+#else
     GPR_CODEGEN_ASSERT(cq_.Pluck(&ops));
+#endif
     return status;
   }
 
@@ -544,7 +889,9 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   friend class internal::ClientReaderWriterFactory<W, R>;
 
   ::grpc_impl::ClientContext* context_;
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
   ::grpc_impl::CompletionQueue cq_;
+#endif
   ::grpc::internal::Call call_;
 
   /// Block to create a stream and write the initial metadata and \a request
@@ -554,17 +901,48 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
                      const ::grpc::internal::RpcMethod& method,
                      ::grpc_impl::ClientContext* context)
       : context_(context),
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
             nullptr}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+#endif
+        call_(channel->CreateCall(method, context
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                                  ,
+                                  channel->CallbackCQ()
+#else
+                                  ,
+                                  &cq_
+#endif
+                                      )) {
     if (!context_->initial_metadata_corked_) {
       ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
           ops;
       ops.SendInitialMetadata(&context->send_initial_metadata_,
                               context->initial_metadata_flags());
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      grpc::internal::Mutex mu;
+      grpc::internal::CondVar cv;
+      bool done /* GUARDED_BY(mu) */ = false;
+      grpc::internal::CallbackWithSuccessTag tag;
+      tag.Set(call_.call(),
+              [&mu, &cv, &done](bool) {
+                grpc::internal::MutexLock l(&mu);
+                done = true;
+                cv.Signal();
+              },
+              &ops, false);
+      ops.set_core_cq_tag(&tag);
+#endif
       call_.PerformOps(&ops);
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      {
+        grpc::internal::MutexLock l(&mu);
+        cv.WaitUntil(&mu, [&done] { return done; });
+      }
+#else
       cq_.Pluck(&ops);
+#endif
     }
   }
 };
