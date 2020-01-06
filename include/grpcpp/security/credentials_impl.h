@@ -323,7 +323,7 @@ std::shared_ptr<CallCredentials> StsCredentials(
 
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin,
-    grpc_security_level security_level);
+    grpc_security_level min_security_level);
 
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {

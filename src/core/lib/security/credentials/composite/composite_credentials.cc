@@ -151,11 +151,11 @@ grpc_composite_call_credentials::grpc_composite_call_credentials(
   inner_.reserve(size);
   push_to_inner(std::move(creds1), creds1_is_composite);
   push_to_inner(std::move(creds2), creds2_is_composite);
-  security_level_ = GRPC_SECURITY_NONE;
+  min_security_level_ = GRPC_SECURITY_NONE;
   for (size_t i = 0; i < inner_.size(); ++i) {
-    if (static_cast<int>(security_level_) <
-        static_cast<int>(inner_[i]->security_level())) {
-      security_level_ = inner_[i]->security_level();
+    if (static_cast<int>(min_security_level_) <
+        static_cast<int>(inner_[i]->min_security_level())) {
+      min_security_level_ = inner_[i]->min_security_level();
     }
   }
 }

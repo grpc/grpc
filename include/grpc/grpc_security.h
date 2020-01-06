@@ -236,7 +236,7 @@ typedef struct {
      case verification will retain default behavior. Any settings in
      verify_options are copied during this call, so the verify_options
      object can be released afterwards. The security level of the resulting
-   connection is GRPC_PRIVACY_AND_INTEGRITY. */
+     connection is GRPC_PRIVACY_AND_INTEGRITY. */
 GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const verify_peer_options* verify_options, void* reserved);
@@ -436,11 +436,11 @@ typedef struct {
   const char* type;
 } grpc_metadata_credentials_plugin;
 
-/** Creates a credentials object from a plugin and a corresponding security
+/** Creates a credentials object from a plugin with a specified minimum security
  * level. */
 GRPCAPI grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
-    grpc_metadata_credentials_plugin plugin, grpc_security_level security_level,
-    void* reserved);
+    grpc_metadata_credentials_plugin plugin,
+    grpc_security_level min_security_level, void* reserved);
 
 /** --- Secure channel creation. --- */
 

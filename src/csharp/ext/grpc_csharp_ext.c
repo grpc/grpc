@@ -1136,6 +1136,9 @@ grpcsharp_metadata_credentials_create_from_plugin(void* callback_tag) {
   plugin.destroy = grpcsharp_metadata_credentials_destroy_handler;
   plugin.state = callback_tag;
   plugin.type = "";
+  // TODO(yihuazhang): Expose min_security_level via the C# API so
+  // that applications can decide what minimum security level their
+  // plugins require.
   return grpc_metadata_credentials_create_from_plugin(
       plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
 }

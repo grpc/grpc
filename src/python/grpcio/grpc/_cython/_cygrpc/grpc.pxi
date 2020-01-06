@@ -569,7 +569,7 @@ cdef extern from "grpc/grpc_security.h":
     const char *type
 
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
-      grpc_metadata_credentials_plugin plugin, grpc_security_level level, void *reserved) nogil
+      grpc_metadata_credentials_plugin plugin, grpc_security_level min_security_level, void *reserved) nogil
 
   ctypedef struct grpc_auth_property_iterator:
     pass

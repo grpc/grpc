@@ -258,7 +258,7 @@ std::shared_ptr<CallCredentials> StsCredentials(
 
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin,
-    grpc_security_level security_level) {
+    grpc_security_level min_security_level) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   const char* type = plugin->GetType();
   grpc::MetadataCredentialsPluginWrapper* wrapper =
@@ -267,7 +267,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       grpc::MetadataCredentialsPluginWrapper::GetMetadata,
       grpc::MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
   return WrapCallCredentials(grpc_metadata_credentials_create_from_plugin(
-      c_plugin, security_level, nullptr));
+      c_plugin, min_security_level, nullptr));
 }
 
 // Builds ALTS Credentials given ALTS specific options

@@ -282,7 +282,8 @@ static void send_security_metadata(grpc_call_element* elem,
         calld->call_combiner);
     return;
   }
-  grpc_security_level call_cred_security_level = calld->creds->security_level();
+  grpc_security_level call_cred_security_level =
+      calld->creds->min_security_level();
   int is_security_level_ok = grpc_check_security_level(
       grpc_tsi_security_level_string_to_enum(prop->value),
       call_cred_security_level);
