@@ -407,6 +407,7 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
   }
   gpr_free((void*)arg->target_name);
   gpr_free((void*)arg->peer_cert);
+  if (arg->peer_cert_full_chain) gpr_free((void*)arg->peer_cert_full_chain);
   gpr_free((void*)arg->error_details);
   if (arg->destroy_context != nullptr) {
     arg->destroy_context(arg->context);
