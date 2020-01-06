@@ -380,7 +380,7 @@ extern grpc_google_iam_credentials_create_type grpc_google_iam_credentials_creat
 typedef grpc_call_credentials*(*grpc_sts_credentials_create_type)(const grpc_sts_credentials_options* options, void* reserved);
 extern grpc_sts_credentials_create_type grpc_sts_credentials_create_import;
 #define grpc_sts_credentials_create grpc_sts_credentials_create_import
-typedef grpc_call_credentials*(*grpc_metadata_credentials_create_from_plugin_type)(grpc_metadata_credentials_plugin plugin, void* reserved);
+typedef grpc_call_credentials*(*grpc_metadata_credentials_create_from_plugin_type)(grpc_metadata_credentials_plugin plugin, grpc_security_level min_security_level, void* reserved);
 extern grpc_metadata_credentials_create_from_plugin_type grpc_metadata_credentials_create_from_plugin_import;
 #define grpc_metadata_credentials_create_from_plugin grpc_metadata_credentials_create_from_plugin_import
 typedef grpc_channel*(*grpc_secure_channel_create_type)(grpc_channel_credentials* creds, const char* target, const grpc_channel_args* args, void* reserved);
