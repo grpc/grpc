@@ -43,7 +43,7 @@ py_binary(
     deps = [
         ":hash_name_py_pb2",
         ":hash_name_py_pb2_grpc",
-        "//external:six",
+        "@six//:six",
         "//src/python/grpcio/grpc:grpcio",
     ],
 )

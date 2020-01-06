@@ -4,18 +4,12 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
 def grpc_python_deps():
-    native.bind(
-        name = "six",
-        actual = "@six_archive//:six",
-    )
-
     # protobuf binds to the name "six", so we can't use it here.
     # See https://github.com/bazelbuild/bazel/issues/1952 for why bind is
     # horrible.
-    if "six_archive" not in native.existing_rules():
+    if "six" not in native.existing_rules():
         http_archive(
-            name = "six_archive",
-            strip_prefix = "six-1.12.0",
+            name = "six",
             build_file = "@com_github_grpc_grpc//third_party:six.BUILD",
             sha256 = "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73",
             urls = ["https://files.pythonhosted.org/packages/dd/bf/4138e7bfb757de47d1f4b6994648ec67a51efe58fa907c1e11e350cddfca/six-1.12.0.tar.gz"],
