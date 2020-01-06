@@ -184,6 +184,8 @@ typedef struct {
      cleaned up. The userdata argument will be passed to it. The intent is
      to perform any cleanup associated with that userdata. */
   void (*verify_peer_destruct)(void* userdata);
+  /** True, if the default verification should be skipped, otherwise False */
+  bool skip_default_verification;
 } verify_peer_options;
 
 /** Object that holds additional peer-verification options on a secure
@@ -204,6 +206,8 @@ typedef struct {
      cleaned up. The userdata argument will be passed to it. The intent is
      to perform any cleanup associated with that userdata. */
   void (*verify_peer_destruct)(void* userdata);
+  /** True, if the default verification should be skipped, otherwise False */
+  bool skip_default_verification;
 } grpc_ssl_verify_peer_options;
 
 /** Deprecated in favor of grpc_ssl_server_credentials_create_ex. It will be

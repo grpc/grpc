@@ -42,20 +42,13 @@
 
 namespace {
 grpc_error* ssl_check_peer(
-    const char* peer_name, const tsi_peer* peer,
+    const tsi_peer* peer,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
   grpc_error* error = grpc_ssl_check_alpn(peer);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
-  /* Check the peer name if specified. */
-  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
-  }
+  
   *auth_context =
       grpc_ssl_peer_to_auth_context(peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   return GRPC_ERROR_NONE;
@@ -105,6 +98,7 @@ class grpc_ssl_channel_security_connector final
     }
     options.cipher_suites = grpc_get_ssl_cipher_suites();
     options.session_cache = ssl_session_cache;
+    options.skip_server_certificate_verification = verify_options.skip_default_verification;
     const tsi_result result =
         tsi_create_ssl_client_handshaker_factory_with_options(
             &options, &client_handshaker_factory_);
@@ -142,9 +136,17 @@ class grpc_ssl_channel_security_connector final
     const char* target_name = overridden_target_name_ != nullptr
                                   ? overridden_target_name_.get()
                                   : target_name_.get();
-    grpc_error* error = ssl_check_peer(target_name, &peer, auth_context);
-    if (error == GRPC_ERROR_NONE &&
-        verify_options_->verify_peer_callback != nullptr) {
+    grpc_error* error;
+    if (!verify_options_->skip_default_verification) {
+      /* Check the peer name if specified. */
+      if (target_name != nullptr && !grpc_ssl_host_matches_name(&peer, target_name)) {
+        char* msg;
+        gpr_asprintf(&msg, "Peer name %s is not in peer certificate", target_name);
+        error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+        gpr_free(msg);
+      }
+    }
+    if (verify_options_->verify_peer_callback != nullptr) {
       const tsi_peer_property* p =
           tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
       if (p == nullptr) {
@@ -166,6 +168,9 @@ class grpc_ssl_channel_security_connector final
           gpr_free(msg);
         }
       }
+    }
+    if (error == GRPC_ERROR_NONE) {
+      error = ssl_check_peer(&peer, auth_context);
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
@@ -300,7 +305,7 @@ class grpc_ssl_server_security_connector
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    grpc_error* error = ssl_check_peer(nullptr, &peer, auth_context);
+    grpc_error* error = ssl_check_peer(&peer, auth_context);
     tsi_peer_destruct(&peer);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   }

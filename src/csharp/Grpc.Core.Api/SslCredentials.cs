@@ -16,6 +16,8 @@
 
 #endregion
 
+using System;
+
 namespace Grpc.Core
 {
     /// <summary>
@@ -41,6 +43,7 @@ namespace Grpc.Core
         readonly string rootCertificates;
         readonly KeyCertificatePair keyCertificatePair;
         readonly VerifyPeerCallback verifyPeerCallback;
+        readonly bool skipDefaultVerification;
 
         /// <summary>
         /// Creates client-side SSL credentials loaded from
@@ -76,11 +79,25 @@ namespace Grpc.Core
         /// <param name="keyCertificatePair">a key certificate pair.</param>
         /// <param name="verifyPeerCallback">a callback to verify peer's target name and certificate.</param>
         /// Note: experimental API that can change or be removed without any prior notice.
-        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback)
+        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback) :
+            this(rootCertificates, keyCertificatePair, verifyPeerCallback, false)
+        {
+        }
+
+        /// <summary>
+        /// Creates client-side SSL credentials.
+        /// </summary>
+        /// <param name="rootCertificates">string containing PEM encoded server root certificates.</param>
+        /// <param name="keyCertificatePair">a key certificate pair.</param>
+        /// <param name="verifyPeerCallback">a callback to verify peer's target name and certificate.</param>
+        /// <param name="skipDefaultVerification">true, if the default server verification is turned off, otherwise false</param>
+        /// Note: experimental API that can change or be removed without any prior notice.
+        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback, bool skipDefaultVerification)
         {
             this.rootCertificates = rootCertificates;
             this.keyCertificatePair = keyCertificatePair;
             this.verifyPeerCallback = verifyPeerCallback;
+            this.skipDefaultVerification = skipDefaultVerification;
         }
 
         /// <summary>
@@ -112,7 +129,7 @@ namespace Grpc.Core
         /// </summary>
         public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
         {
-            configurator.SetSslCredentials(state, rootCertificates, keyCertificatePair, verifyPeerCallback);
+            configurator.SetSslCredentials(state, rootCertificates, keyCertificatePair, verifyPeerCallback, skipDefaultVerification);
         }
 
         internal override bool IsComposable => true;

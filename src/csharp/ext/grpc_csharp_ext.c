@@ -1006,7 +1006,8 @@ GPR_EXPORT grpc_channel_credentials* GPR_CALLTYPE
 grpcsharp_ssl_credentials_create(const char* pem_root_certs,
                                  const char* key_cert_pair_cert_chain,
                                  const char* key_cert_pair_private_key,
-                                 void* verify_peer_callback_tag) {
+                                 void* verify_peer_callback_tag,
+                                 int32_t skip_default_verification) {
   grpc_ssl_pem_key_cert_pair key_cert_pair;
   verify_peer_options verify_options;
   grpc_ssl_pem_key_cert_pair* key_cert_pair_ptr = NULL;
@@ -1027,7 +1028,14 @@ grpcsharp_ssl_credentials_create(const char* pem_root_certs,
     verify_options.verify_peer_callback_userdata = verify_peer_callback_tag;
     verify_options.verify_peer_destruct = grpcsharp_verify_peer_destroy_handler;
     verify_options.verify_peer_callback = grpcsharp_verify_peer_handler;
+    if (skip_default_verification != 0) {
+      verify_options.skip_default_verification = true;
+    } else {
+      verify_options.skip_default_verification = false;
+    }
     verify_options_ptr = &verify_options;
+  } else {
+    GPR_ASSERT(!skip_default_verification)
   }
 
   return grpc_ssl_credentials_create(pem_root_certs, key_cert_pair_ptr,

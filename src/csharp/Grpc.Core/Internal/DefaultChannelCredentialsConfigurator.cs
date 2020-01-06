@@ -52,12 +52,12 @@ namespace Grpc.Core.Internal
             nativeCredentials = null;
         }
 
-        public override void SetSslCredentials(object state, string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback)
+        public override void SetSslCredentials(object state, string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback, bool skipDefaultVerification)
         {
             GrpcPreconditions.CheckState(!configured);
             configured = true;
             nativeCredentials = GetOrCreateNativeCredentials((ChannelCredentials) state,
-                () => CreateNativeSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallback));
+                () => CreateNativeSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallback, skipDefaultVerification));
         }
 
         public override void SetCompositeCredentials(object state, ChannelCredentials channelCredentials, CallCredentials callCredentials)
@@ -68,14 +68,18 @@ namespace Grpc.Core.Internal
                 () => CreateNativeCompositeCredentials(channelCredentials, callCredentials));
         }
 
-        private ChannelCredentialsSafeHandle CreateNativeSslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback)
+        private ChannelCredentialsSafeHandle CreateNativeSslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback, bool skipDefaultVerification)
         {
             IntPtr verifyPeerCallbackTag = IntPtr.Zero;
             if (verifyPeerCallback != null)
             {
                 verifyPeerCallbackTag = new VerifyPeerCallbackRegistration(verifyPeerCallback).CallbackRegistration.Tag;
             }
-            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallbackTag);
+            else
+            {
+                GrpcPreconditions.CheckArgument(!skipDefaultVerification, "Skipping default verification requires a verify callback");
+            }
+            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallbackTag, skipDefaultVerification);
         }
 
         private ChannelCredentialsSafeHandle CreateNativeCompositeCredentials(ChannelCredentials channelCredentials, CallCredentials callCredentials)
