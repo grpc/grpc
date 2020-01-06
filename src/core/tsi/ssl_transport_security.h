@@ -20,12 +20,13 @@
 #define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
 #include <grpc/support/port_platform.h>
-extern "C" {
-#include <openssl/x509.h>
-}
 
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/tsi/transport_security_interface.h"
+
+extern "C" {
+#include <openssl/x509.h>
+}
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
 #define TSI_X509_CERTIFICATE_TYPE "X509"
