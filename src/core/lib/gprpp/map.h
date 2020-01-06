@@ -23,9 +23,6 @@
 
 #include <string.h>
 
-#include <map>
-#include <unordered_map>
-
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/string_view.h"
 

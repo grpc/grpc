@@ -74,9 +74,11 @@
 #define SENDMSG_FLAGS 0
 #endif
 
-#define ZEROCP_TX_ENABLED_DEFAULT 0
-
 // TCP zero copy sendmsg flag.
+// NB: We define this here as a fallback in case we're using an older set of
+// library headers that has not defined MSG_ZEROCOPY. Since this constant is
+// part of the kernel, we are guaranteed it will never change/disagree so
+// defining it here is safe.
 #ifndef MSG_ZEROCOPY
 #define MSG_ZEROCOPY 0x4000000
 #endif
@@ -212,7 +214,7 @@ class TcpZerocopySendCtx {
 
   // True if we were unable to allocate the various bookkeeping structures at
   // transport initialization time. If memory limited, we do not zerocopy.
-  const bool memory_limited() { return memory_limited_; }
+  bool memory_limited() const { return memory_limited_; }
 
   // TCP send zerocopy maintains an implicit sequence number for every
   // successful sendmsg() with zerocopy enabled; the kernel later gives us an
@@ -1682,10 +1684,11 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_channel_args* channel_args,
                                const char* peer_string) {
+  static constexpr bool kZerocpTxEnabledDefault = false;
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
   int tcp_max_read_chunk_size = 4 * 1024 * 1024;
   int tcp_min_read_chunk_size = 256;
-  int tcp_tx_zerocopy_enabled = ZEROCP_TX_ENABLED_DEFAULT;
+  bool tcp_tx_zerocopy_enabled = kZerocpTxEnabledDefault;
   int tcp_tx_zerocopy_send_bytes_thresh =
       grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simult_sends =
@@ -1716,9 +1719,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                 channel_args->args[i].value.pointer.p));
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED)) {
-        grpc_integer_options options = {ZEROCP_TX_ENABLED_DEFAULT, 0, INT_MAX};
-        tcp_tx_zerocopy_enabled =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        tcp_tx_zerocopy_enabled = grpc_channel_arg_get_bool(
+            &channel_args->args[i], kZerocpTxEnabledDefault);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD)) {
         grpc_integer_options options = {
