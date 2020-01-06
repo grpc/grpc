@@ -65,9 +65,8 @@ class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
 @contextlib.contextmanager
 def run_server(port):
     # Bind interceptor to server
-    server = grpc.server(
-        futures.ThreadPoolExecutor(),
-        interceptors=(SignatureValidationInterceptor(),))
+    server = grpc.server(futures.ThreadPoolExecutor(),
+                         interceptors=(SignatureValidationInterceptor(),))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(SimpleGreeter(), server)
 
     # Loading credentials
@@ -89,8 +88,11 @@ def run_server(port):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--port', nargs='?', type=int, default=50051, help='the listening port')
+    parser.add_argument('--port',
+                        nargs='?',
+                        type=int,
+                        default=50051,
+                        help='the listening port')
     args = parser.parse_args()
 
     with run_server(args.port) as (server, port):

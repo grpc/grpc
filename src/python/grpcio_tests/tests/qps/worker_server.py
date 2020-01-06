@@ -57,10 +57,9 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
     def _get_server_status(self, start_time, end_time, port, cores):
         end_time = time.time()
         elapsed_time = end_time - start_time
-        stats = stats_pb2.ServerStats(
-            time_elapsed=elapsed_time,
-            time_user=elapsed_time,
-            time_system=elapsed_time)
+        stats = stats_pb2.ServerStats(time_elapsed=elapsed_time,
+                                      time_user=elapsed_time,
+                                      time_system=elapsed_time)
         return control_pb2.ServerStatus(stats=stats, port=port, cores=cores)
 
     def _create_server(self, config):
@@ -80,9 +79,10 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
             servicer = benchmark_server.GenericBenchmarkServer(resp_size)
             method_implementations = {
                 'StreamingCall':
-                grpc.stream_stream_rpc_method_handler(servicer.StreamingCall),
+                    grpc.stream_stream_rpc_method_handler(servicer.StreamingCall
+                                                         ),
                 'UnaryCall':
-                grpc.unary_unary_rpc_method_handler(servicer.UnaryCall),
+                    grpc.unary_unary_rpc_method_handler(servicer.UnaryCall),
             }
             handler = grpc.method_handlers_generic_handler(
                 'grpc.testing.BenchmarkService', method_implementations)
@@ -135,11 +135,10 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         latencies = qps_data.get_data()
         end_time = time.time()
         elapsed_time = end_time - start_time
-        stats = stats_pb2.ClientStats(
-            latencies=latencies,
-            time_elapsed=elapsed_time,
-            time_user=elapsed_time,
-            time_system=elapsed_time)
+        stats = stats_pb2.ClientStats(latencies=latencies,
+                                      time_elapsed=elapsed_time,
+                                      time_user=elapsed_time,
+                                      time_system=elapsed_time)
         return control_pb2.ClientStatus(stats=stats)
 
     def _create_client_runner(self, server, config, qps_data):

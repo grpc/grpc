@@ -55,6 +55,7 @@
       '-Wall',
       '-Wextra',
       '-DOSATOMIC_USE_INLINED=1',
+      '-Ithird_party/abseil-cpp',
       '-Ithird_party/upb',
       '-Isrc/core/ext/upb-generated',
     ],
@@ -131,6 +132,7 @@
             '-Wall',
             '-Wextra',
             '-DOSATOMIC_USE_INLINED=1',
+            '-Ithird_party/abseil-cpp',
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
           ],
@@ -139,6 +141,7 @@
             '-Wall',
             '-Wextra',
             '-DOSATOMIC_USE_INLINED=1',
+            '-Ithird_party/abseil-cpp',
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
             '-stdlib=libc++',
@@ -176,6 +179,9 @@
       'target_name': 'gpr',
       'type': 'static_library',
       'dependencies': [
+        'absl/container:inlined_vector',
+        'absl/strings:strings',
+        'absl/types:optional',
       ],
       'sources': [
         'src/core/lib/gpr/alloc.cc',
@@ -1487,6 +1493,7 @@
       'target_name': 'dns_test_util',
       'type': 'static_library',
       'dependencies': [
+        'gpr',
       ],
       'sources': [
         'test/cpp/naming/dns_test_util.cc',
@@ -1747,6 +1754,17 @@
         'src/core/ext/upb-generated/google/protobuf/wrappers.upb.c',
         'src/core/ext/upb-generated/google/rpc/status.upb.c',
         'src/cpp/codegen/codegen_init.cc',
+      ],
+    },
+    {
+      'target_name': 'grpc++_alts',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+      ],
+      'sources': [
+        'src/cpp/common/alts_context.cc',
+        'src/cpp/common/alts_util.cc',
       ],
     },
     {
@@ -2298,7 +2316,6 @@
       ],
       'sources': [
         'src/csharp/ext/grpc_csharp_ext.c',
-        'src/csharp/ext/std++compat.cc',
       ],
     },
     {

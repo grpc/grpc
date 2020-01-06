@@ -31,6 +31,7 @@ _NUM_STREAM_RESPONSES = 5
 _RESPONSE_PAYLOAD_SIZE = 42
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 _RESPONSE_INTERVAL_US = test_constants.SHORT_TIMEOUT * 1000 * 1000
+_UNREACHABLE_TARGET = '0.1:1111'
 
 
 class TestUnaryUnaryCall(AioTestBase):
@@ -63,20 +64,14 @@ class TestUnaryUnaryCall(AioTestBase):
             self.assertIs(response, response_retry)
 
     async def test_call_rpc_error(self):
-        async with aio.insecure_channel(self._server_target) as channel:
-            empty_call_with_sleep = channel.unary_unary(
-                "/grpc.testing.TestService/EmptyCall",
+        async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
+            hi = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
                 response_deserializer=messages_pb2.SimpleResponse.FromString,
             )
-            timeout = test_constants.SHORT_TIMEOUT / 2
-            # TODO(https://github.com/grpc/grpc/issues/20869
-            # Update once the async server is ready, change the
-            # synchronization mechanism by removing the sleep(<timeout>)
-            # as both components (client & server) will be on the same
-            # process.
-            call = empty_call_with_sleep(
-                messages_pb2.SimpleRequest(), timeout=timeout)
+
+            call = hi(messages_pb2.SimpleRequest(), timeout=0.1)
 
             with self.assertRaises(grpc.RpcError) as exception_context:
                 await call
@@ -170,8 +165,8 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             response = await call.read()
-            self.assertIs(
-                type(response), messages_pb2.StreamingOutputCallResponse)
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
             self.assertTrue(call.cancel())
@@ -202,8 +197,8 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             response = await call.read()
-            self.assertIs(
-                type(response), messages_pb2.StreamingOutputCallResponse)
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
             self.assertTrue(call.cancel())
@@ -266,8 +261,8 @@ class TestUnaryStreamCall(AioTestBase):
 
             for _ in range(_NUM_STREAM_RESPONSES):
                 response = await call.read()
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 
@@ -295,8 +290,8 @@ class TestUnaryStreamCall(AioTestBase):
 
             for _ in range(_NUM_STREAM_RESPONSES):
                 response = await call.read()
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 
@@ -321,8 +316,8 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             async for response in call:
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 

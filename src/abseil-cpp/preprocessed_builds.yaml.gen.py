@@ -16,12 +16,16 @@
 
 import collections
 import os
+import re
 import subprocess
 import xml.etree.ElementTree as ET
 import yaml
 
 ABSEIL_PATH = "third_party/abseil-cpp"
 OUTPUT_PATH = "src/abseil-cpp/preprocessed_builds.yaml"
+CAPITAL_WORD = re.compile("[A-Z]+")
+ABSEIL_CMAKE_RULE_BEGIN = re.compile("^absl_cc_.*\(", re.MULTILINE)
+ABSEIL_CMAKE_RULE_END = re.compile("^\)", re.MULTILINE)
 
 # Rule object representing the rule of Bazel BUILD.
 Rule = collections.namedtuple(
@@ -49,7 +53,7 @@ def normalize_paths(paths):
   return [path.lstrip("/").replace(":", "/") for path in paths]
 
 
-def parse_rule(elem, package):
+def parse_bazel_rule(elem, package):
   """Returns a rule from bazel XML rule."""
   return Rule(
       type=elem.attrib["class"],
@@ -63,38 +67,103 @@ def parse_rule(elem, package):
       testonly=get_elem_value(elem, "testonly") or False)
 
 
-def read_build(package):
+def read_bazel_build(package):
   """Runs bazel query on given package file and returns all cc rules."""
   result = subprocess.check_output(
       ["bazel", "query", package + ":all", "--output", "xml"])
   root = ET.fromstring(result)
   return [
-      parse_rule(elem, package)
+      parse_bazel_rule(elem, package)
       for elem in root
       if elem.tag == "rule" and elem.attrib["class"].startswith("cc_")
   ]
 
 
-def collect_rules(root_path):
-  """Collects and returns all rules from root path recursively."""
+def collect_bazel_rules(root_path):
+  """Collects and returns all bazel rules from root path recursively."""
   rules = []
   for cur, _, _ in os.walk(root_path):
     build_path = os.path.join(cur, "BUILD.bazel")
     if os.path.exists(build_path):
-      rules.extend(read_build("//" + cur))
+      rules.extend(read_bazel_build("//" + cur))
   return rules
 
 
+def parse_cmake_rule(rule, package):
+  """Returns a rule from absl cmake rule.
+     Reference: https://github.com/abseil/abseil-cpp/blob/master/CMake/AbseilHelpers.cmake
+  """
+  kv = {}
+  bucket = None
+  lines = rule.splitlines()
+  for line in lines[1:-1]:
+    if CAPITAL_WORD.match(line.strip()):
+      bucket = kv.setdefault(line.strip(), [])
+    else:
+      if bucket is not None:
+        bucket.append(line.strip())
+      else:
+        raise ValueError("Illegal syntax: {}".format(rule))
+  return Rule(
+      type=lines[0].rstrip("("),
+      name="absl::" + kv["NAME"][0],
+      package=package,
+      srcs=[package + "/" + f.strip('"') for f in kv.get("SRCS", [])],
+      hdrs=[package + "/" + f.strip('"') for f in kv.get("HDRS", [])],
+      textual_hdrs=[],
+      deps=kv.get("DEPS", []),
+      visibility="PUBLIC" in kv,
+      testonly="TESTONLY" in kv,
+  )
+
+
+def read_cmake_build(build_path, package):
+  """Parses given CMakeLists.txt file and returns all cc rules."""
+  rules = []
+  with open(build_path, "r") as f:
+    src = f.read()
+    for begin_mo in ABSEIL_CMAKE_RULE_BEGIN.finditer(src):
+      end_mo = ABSEIL_CMAKE_RULE_END.search(src[begin_mo.start(0):])
+      expr = src[begin_mo.start(0):begin_mo.start(0) + end_mo.start(0) + 1]
+      rules.append(parse_cmake_rule(expr, package))
+  return rules
+
+
+def collect_cmake_rules(root_path):
+  """Collects and returns all cmake rules from root path recursively."""
+  rules = []
+  for cur, _, _ in os.walk(root_path):
+    build_path = os.path.join(cur, "CMakeLists.txt")
+    if os.path.exists(build_path):
+      rules.extend(read_cmake_build(build_path, cur))
+  return rules
+
+
+def pairing_bazel_and_cmake_rules(bazel_rules, cmake_rules):
+  """Returns a pair map between bazel rules and cmake rules based on
+     the similarity of the file list in the rule. This is because
+     cmake build and bazel build of abseil are not identical.
+  """
+  pair_map = {}
+  for rule in bazel_rules:
+    best_crule, best_similarity = None, 0
+    for crule in cmake_rules:
+      similarity = len(
+          set(rule.srcs + rule.hdrs + rule.textual_hdrs).intersection(
+              set(crule.srcs + crule.hdrs + crule.textual_hdrs)))
+      if similarity > best_similarity:
+        best_crule, best_similarity = crule, similarity
+    if best_crule:
+      pair_map[(rule.package, rule.name)] = best_crule.name
+  return pair_map
+
+
 def resolve_hdrs(files):
-  return [
-      ABSEIL_PATH + "/" + f for f in files if f.endswith((".h", ".inc"))
-  ]
+  return [ABSEIL_PATH + "/" + f for f in files if f.endswith((".h", ".inc"))]
 
 
 def resolve_srcs(files):
-  return [
-      ABSEIL_PATH + "/" + f for f in files if f.endswith(".cc")
-  ]
+  return [ABSEIL_PATH + "/" + f for f in files if f.endswith(".cc")]
 
 
 def resolve_deps(targets):
@@ -103,15 +172,26 @@ def resolve_deps(targets):
 
 def generate_builds(root_path):
   """Generates builds from all BUILD files under absl directory."""
-  rules = filter(lambda r: r.type == "cc_library" and not r.testonly,
-                 collect_rules(root_path))
+  bazel_rules = list(
+      filter(lambda r: r.type == "cc_library" and not r.testonly,
+             collect_bazel_rules(root_path)))
+  cmake_rules = list(
+      filter(lambda r: r.type == "absl_cc_library" and not r.testonly,
+             collect_cmake_rules(root_path)))
+  pair_map = pairing_bazel_and_cmake_rules(bazel_rules, cmake_rules)
   builds = []
-  for rule in sorted(rules, key=lambda r: r.package[2:] + ":" + r.name):
+  for rule in sorted(bazel_rules, key=lambda r: r.package[2:] + ":" + r.name):
     p = {
-        "name": rule.package[2:] + ":" + rule.name,
-        "headers": sorted(resolve_hdrs(rule.srcs + rule.hdrs + rule.textual_hdrs)),
-        "src": sorted(resolve_srcs(rule.srcs + rule.hdrs + rule.textual_hdrs)),
-        "deps": sorted(resolve_deps(rule.deps)),
+        "name":
+            rule.package[2:] + ":" + rule.name,
+        "cmake_target":
+            pair_map.get((rule.package, rule.name)) or "",
+        "headers":
+            sorted(resolve_hdrs(rule.srcs + rule.hdrs + rule.textual_hdrs)),
+        "src":
+            sorted(resolve_srcs(rule.srcs + rule.hdrs + rule.textual_hdrs)),
+        "deps":
+            sorted(resolve_deps(rule.deps)),
     }
     builds.append(p)
   return builds

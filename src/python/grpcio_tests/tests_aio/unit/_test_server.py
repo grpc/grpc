@@ -27,12 +27,6 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
     async def UnaryCall(self, request, context):
         return messages_pb2.SimpleResponse()
 
-    # TODO(lidizheng) The semantic of this call is not matching its description
-    # See src/proto/grpc/testing/test.proto
-    async def EmptyCall(self, request, context):
-        while True:
-            await asyncio.sleep(test_constants.LONG_TIMEOUT)
-
     async def StreamingOutputCall(
             self, request: messages_pb2.StreamingOutputCallRequest, context):
         for response_parameters in request.response_parameters:
@@ -41,9 +35,9 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                     datetime.timedelta(microseconds=response_parameters.
                                        interval_us).total_seconds())
             yield messages_pb2.StreamingOutputCallResponse(
-                payload=messages_pb2.Payload(
-                    type=request.response_type,
-                    body=b'\x00' * response_parameters.size))
+                payload=messages_pb2.Payload(type=request.response_type,
+                                             body=b'\x00' *
+                                             response_parameters.size))
 
 
 async def start_test_server():

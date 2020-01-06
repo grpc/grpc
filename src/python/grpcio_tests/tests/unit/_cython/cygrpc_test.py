@@ -116,12 +116,12 @@ class ServerClientMixin(object):
                 cygrpc.ChannelArgKey.ssl_target_name_override,
                 host_override,
             ),)
-            self.client_channel = cygrpc.Channel('localhost:{}'.format(
-                self.port).encode(), client_channel_arguments,
-                                                 client_credentials)
+            self.client_channel = cygrpc.Channel(
+                'localhost:{}'.format(self.port).encode(),
+                client_channel_arguments, client_credentials)
         else:
-            self.client_channel = cygrpc.Channel('localhost:{}'.format(
-                self.port).encode(), set(), None)
+            self.client_channel = cygrpc.Channel(
+                'localhost:{}'.format(self.port).encode(), set(), None)
         if host_override:
             self.host_argument = None  # default host
             self.expected_host = host_override
@@ -227,9 +227,8 @@ class ServerClientMixin(object):
                                              request_event.invocation_metadata))
         self.assertEqual(METHOD, request_event.call_details.method)
         self.assertEqual(self.expected_host, request_event.call_details.host)
-        self.assertLess(
-            abs(DEADLINE - request_event.call_details.deadline),
-            DEADLINE_TOLERANCE)
+        self.assertLess(abs(DEADLINE - request_event.call_details.deadline),
+                        DEADLINE_TOLERANCE)
 
         server_call_tag = object()
         server_call = request_event.call
@@ -323,19 +322,21 @@ class ServerClientMixin(object):
                                  self.server_completion_queue,
                                  server_request_tag)
         client_call = self.client_channel.segregated_call(
-            0, METHOD, self.host_argument, DEADLINE, None, None, ([(
+            0, METHOD, self.host_argument, DEADLINE, None, None,
+            ([(
                 [
                     cygrpc.SendInitialMetadataOperation(empty_metadata,
                                                         _EMPTY_FLAGS),
                     cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
                 ],
                 object(),
-            ), (
-                [
-                    cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
-                ],
-                object(),
-            )]))
+            ),
+              (
+                  [
+                      cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+                  ],
+                  object(),
+              )]))
 
         client_initial_metadata_event_future = test_utilities.SimpleFuture(
             client_call.next_event)
@@ -376,10 +377,10 @@ class ServerClientMixin(object):
             cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
         ], "Client epilogue")
         # One for ReceiveStatusOnClient, one for SendCloseFromClient.
-        client_events_future = test_utilities.SimpleFuture(
-            lambda: {
-                client_call.next_event(),
-                client_call.next_event(),})
+        client_events_future = test_utilities.SimpleFuture(lambda: {
+            client_call.next_event(),
+            client_call.next_event(),
+        })
 
         server_event_future = perform_server_operations([
             cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),

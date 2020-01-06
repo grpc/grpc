@@ -246,6 +246,10 @@ filegroups:
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
+  deps:
+  - absl/container:inlined_vector
+  - absl/strings:strings
+  - absl/types:optional
   uses:
   - gpr_base_headers
 - name: gpr_base_headers
@@ -1848,6 +1852,8 @@ libs:
   - test/cpp/naming/dns_test_util.h
   src:
   - test/cpp/naming/dns_test_util.cc
+  deps:
+  - gpr
 - name: grpc++
   build: all
   language: c++
@@ -1879,6 +1885,19 @@ libs:
   - grpc++_codegen_proto
   - grpc++_codegen_base_src
   secure: check
+- name: grpc++_alts
+  build: all
+  language: c++
+  public_headers:
+  - include/grpcpp/impl/codegen/security/auth_context.h
+  - include/grpcpp/security/alts_context.h
+  - include/grpcpp/security/alts_util.h
+  src:
+  - src/cpp/common/alts_context.cc
+  - src/cpp/common/alts_util.cc
+  deps:
+  - grpc++
+  baselib: true
 - name: grpc++_core_stats
   build: private
   language: c++
@@ -2245,7 +2264,6 @@ libs:
   language: csharp
   src:
   - src/csharp/ext/grpc_csharp_ext.c
-  - src/csharp/ext/std++compat.cc
   deps:
   - grpc
   - gpr
@@ -4006,6 +4024,19 @@ targets:
   - alts_test_util
   - gpr
   - grpc
+- name: alts_util_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/common/alts_util_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++_alts
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
 - name: alts_zero_copy_grpc_protector_test
   build: test
   language: c++
@@ -6227,7 +6258,8 @@ defaults:
   global:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
+    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/upb
+      -Isrc/core/ext/upb-generated
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden
