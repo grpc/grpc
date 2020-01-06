@@ -405,7 +405,7 @@ static void test_google_iam_creds(void) {
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
   /* Check security level. */
-  GPR_ASSERT(creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   run_request_metadata_test(creds, auth_md_ctx, state);
@@ -423,7 +423,7 @@ static void test_access_token_creds(void) {
                                             nullptr, nullptr};
   GPR_ASSERT(strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
   /* Check security level. */
-  GPR_ASSERT(creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   run_request_metadata_test(creds, auth_md_ctx, state);
   creds->Unref();
 }
@@ -480,7 +480,7 @@ static void test_oauth2_google_iam_composite_creds(void) {
       "authorization", test_oauth2_bearer_token, 0);
 
   /* Check security level of fake credentials. */
-  GPR_ASSERT(oauth2_creds->security_level() == GRPC_SECURITY_NONE);
+  GPR_ASSERT(oauth2_creds->min_security_level() == GRPC_SECURITY_NONE);
 
   grpc_call_credentials* google_iam_creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
@@ -489,7 +489,8 @@ static void test_oauth2_google_iam_composite_creds(void) {
       grpc_composite_call_credentials_create(oauth2_creds, google_iam_creds,
                                              nullptr);
   /* Check security level of composite credentials. */
-  GPR_ASSERT(composite_creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  GPR_ASSERT(composite_creds->min_security_level() ==
+             GRPC_PRIVACY_AND_INTEGRITY);
 
   oauth2_creds->Unref();
   google_iam_creds->Unref();
@@ -617,7 +618,7 @@ static void test_compute_engine_creds_success() {
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   /* Check security level. */
-  GPR_ASSERT(creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http get should be called. */
   request_metadata_state* state =
@@ -710,7 +711,7 @@ static void test_refresh_token_creds_success(void) {
       test_refresh_token_str, nullptr);
 
   /* Check security level. */
-  GPR_ASSERT(creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
   request_metadata_state* state =
@@ -942,7 +943,7 @@ static void test_sts_creds_success(void) {
       grpc_sts_credentials_create(&valid_options, nullptr);
 
   /* Check security level. */
-  GPR_ASSERT(creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
   request_metadata_state* state =
@@ -1088,7 +1089,7 @@ static void test_jwt_creds_lifetime(void) {
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           grpc_max_auth_token_lifetime()) == 0);
   /* Check security level. */
-  GPR_ASSERT(jwt_creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  GPR_ASSERT(jwt_creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   grpc_call_credentials_release(jwt_creds);
 
   // Shorter lifetime.
@@ -1433,7 +1434,7 @@ static void test_metadata_plugin_success(void) {
   grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
       plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
   /* Check security level. */
-  GPR_ASSERT(creds->security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   GPR_ASSERT(state == PLUGIN_INITIAL_STATE);
   run_request_metadata_test(creds, auth_md_ctx, md_state);
   GPR_ASSERT(state == PLUGIN_GET_METADATA_CALLED_STATE);
