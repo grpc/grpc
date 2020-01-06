@@ -218,7 +218,7 @@ class Call(_base_call.Call):
         self._status.set_result(status)
         self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()]
 
-    async def _raise_if_not_ok(self) -> None:
+    async def _raise_for_status(self) -> None:
         if self._locally_cancelled:
             raise asyncio.CancelledError()
         await self._status
@@ -296,7 +296,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
                 self.cancel()
 
         # Raises here if RPC failed or cancelled
-        await self._raise_if_not_ok()
+        await self._raise_for_status()
 
         return _common.deserialize(serialized_response,
                                    self._response_deserializer)
@@ -436,14 +436,14 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
 
     async def read(self) -> ResponseType:
         if self._status.done():
-            await self._raise_if_not_ok()
+            await self._raise_for_status()
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
 
         response_message = await self._read()
 
         if response_message is None:
             # If the read operation failed, Core should explain why.
-            await self._raise_if_not_ok()
+            await self._raise_for_status()
             # If no exception raised, there is something wrong internally.
             assert False, 'Read operation failed with StatusCode.OK'
         else:
