@@ -146,9 +146,9 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "416212e14481cff8fd4849b1c1c1200a7f34808a54377e22d7447efdf54ad758",
-            strip_prefix = "protobuf-09745575a923640154bcf307fba8aedff47f240a",
-            url = "https://github.com/google/protobuf/archive/09745575a923640154bcf307fba8aedff47f240a.tar.gz",
+            sha256 = "7adbf4833bc56e201db3076e864f6f4fd3043b5895e5f7e6ab953d385b49a926",
+            strip_prefix = "protobuf-fe1790ca0df67173702f70d5646b82f48f412b99",
+            url = "https://github.com/google/protobuf/archive/fe1790ca0df67173702f70d5646b82f48f412b99.tar.gz",
         )
 
     if "com_github_google_googletest" not in native.existing_rules():
