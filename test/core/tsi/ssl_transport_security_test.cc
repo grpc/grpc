@@ -883,7 +883,12 @@ void ssl_tsi_test_extract_cert_chain() {
              TSI_OK);
   GPR_ASSERT(memcmp(chain, chain_property.value.data,
                     chain_property.value.length) == 0);
+  BIO_free(bio);
   gpr_free(chain);
+  gpr_free(cert);
+  gpr_free(ca);
+  tsi_peer_property_destruct(chain_property);
+  sk_X509_INFO_pop_free(inf, X509_INFO_free);
 }
 
 int main(int argc, char** argv) {
