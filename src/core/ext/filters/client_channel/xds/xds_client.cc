@@ -1301,7 +1301,7 @@ void XdsClient::WatchClusterData(
   w->OnClusterChanged(std::move(update));
 }
 
-void XdsClient::CancelClusterDataWatch(StringView cluster,
+void XdsClient::CancelClusterDataWatch(StringView /*cluster*/,
                                        ClusterWatcherInterface* watcher) {
   auto it = cluster_state_.cluster_watchers.find(watcher);
   if (it != cluster_state_.cluster_watchers.end()) {
