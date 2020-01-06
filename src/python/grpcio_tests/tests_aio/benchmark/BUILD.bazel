@@ -22,7 +22,7 @@ py_binary(
     srcs = ["server.py"],
     python_version = "PY3",
     deps = [
-        "//external:six",
+        "@six//:six",
         "//src/proto/grpc/testing:benchmark_service_py_pb2",
         "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
         "//src/proto/grpc/testing:py_messages_proto",

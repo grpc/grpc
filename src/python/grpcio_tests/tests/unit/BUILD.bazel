@@ -102,7 +102,7 @@ py_library(
             ":resources",
             ":test_common",
             ":thread_pool",
-            "//external:six",
+            "@six//:six",
             "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/testing",
             "//src/python/grpcio_tests/tests/unit/framework/common",
