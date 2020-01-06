@@ -129,10 +129,8 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
                 interceptors: Iterator[UnaryUnaryClientInterceptor],
                 client_call_details: ClientCallDetails,
                 request: RequestType) -> _base_call.UnaryUnaryCall:
-            try:
-                interceptor = next(interceptors)
-            except StopIteration:
-                interceptor = None
+
+            interceptor = next(interceptors, None)
 
             if interceptor:
                 continuation = functools.partial(_run_interceptor, interceptors)
