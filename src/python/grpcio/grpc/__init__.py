@@ -1162,7 +1162,13 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     @abc.abstractmethod
     def set_trailing_metadata(self, trailing_metadata):
-        """Sends the trailing metadata for the RPC.
+        """Sets the trailing metadata for the RPC.
+
+        Sets the trailing metadata to be sent upon completion of the RPC.
+
+        If this method is invoked multiple times throughout the lifetime of an
+        RPC, the value supplied in the final invocation will be the value sent
+        over the wire.
 
         This method need not be called by implementations if they have no
         metadata to add to what the gRPC runtime will transmit.
