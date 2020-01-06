@@ -889,6 +889,7 @@ void ssl_tsi_test_extract_cert_chain() {
   gpr_free(ca);
   tsi_peer_property_destruct(&chain_property);
   sk_X509_INFO_pop_free(certInfos, X509_INFO_free);
+  sk_X509_pop_free(cert_chain, X509_free);
 }
 
 int main(int argc, char** argv) {
