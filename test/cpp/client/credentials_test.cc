@@ -54,10 +54,10 @@ static void tls_credential_reload_callback(
 class TestTlsCredentialReload : public TlsCredentialReloadInterface {
   int Schedule(TlsCredentialReloadArg* arg) override {
     GPR_ASSERT(arg != nullptr);
-    TlsKeyMaterialsConfig::PemKeyCertPair pair3 = {"private_key3",
+    TlsKeyMaterialsConfig::PemKeyCertPair pair = {"private_key3",
                                                    "cert_chain3"};
     arg->set_pem_root_certs("new_pem_root_certs");
-    arg->add_pem_key_cert_pair(pair3);
+    arg->add_pem_key_cert_pair(pair);
     arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
     return 0;
   }
@@ -656,7 +656,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   delete c_options;
 }
 
-// This test demonstrates how the SPIFFE credentials will be used.
+// This test demonstrates how the TLS credentials will be used.
 TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
   std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
       new TestTlsCredentialReload());
@@ -669,25 +669,24 @@ TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
       server_authorization_check_config(new TlsServerAuthorizationCheckConfig(
           test_server_authorization_check));
 
-  std::shared_ptr<TlsCredentialsOptions> options(new TlsCredentialsOptions(
+  TlsCredentialsOptions options = TlsCredentialsOptions(
       GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, nullptr,
-      credential_reload_config, server_authorization_check_config));
+      credential_reload_config, server_authorization_check_config);
   std::shared_ptr<grpc_impl::ChannelCredentials> channel_credentials =
       grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials != nullptr);
 }
 
-// This test demonstrates how the SPIFFE credentials will be used to create
+// This test demonstrates how the TLS credentials will be used to create
 // server credentials.
-TEST_F(CredentialsTest, LoadSpiffeServerCredentials) {
+TEST_F(CredentialsTest, LoadTlsServerCredentials) {
   std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
       new TestTlsCredentialReload());
   std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
       new TlsCredentialReloadConfig(test_credential_reload));
 
-  std::shared_ptr<TlsCredentialsOptions> options(
-      new TlsCredentialsOptions(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-                                nullptr, credential_reload_config, nullptr));
+  TlsCredentialsOptions options = TlsCredentialsOptions(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+                                nullptr, credential_reload_config, nullptr);
   std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
       grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials != nullptr);

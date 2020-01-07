@@ -4163,10 +4163,10 @@ add_library(grpc++_test_util
   test/cpp/util/byte_buffer_proto_helper.cc
   test/cpp/util/channel_trace_proto_helper.cc
   test/cpp/util/create_test_channel.cc
-  test/cpp/util/spiffe_test_credentials.cc
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
   test/cpp/util/test_credentials_provider.cc
+  test/cpp/util/tls_test_credentials.cc
   src/cpp/codegen/codegen_init.cc
 )
 

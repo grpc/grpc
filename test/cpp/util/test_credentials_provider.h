@@ -34,6 +34,7 @@ const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
 const char kTlsCredentialsType[] = "ssl";
 const char kAltsCredentialsType[] = "alts";
 const char kGoogleDefaultCredentialsType[] = "google_default_credentials";
+const char kSpiffeCredentialsType[] = "tls";
 
 // Provide test credentials of a particular type.
 class CredentialTypeProvider {
@@ -72,6 +73,8 @@ class CredentialsProvider {
   bool IsDefault() { return is_default_; }
 
  protected:
+  /** This variable indicates whether this credentials provider is a
+   *  DefaultCredentialsProvider instance. **/
   bool is_default_ = false;
 };
 
@@ -84,13 +87,9 @@ CredentialsProvider* GetCredentialsProvider();
 // Not thread-safe.
 void SetCredentialsProvider(CredentialsProvider* provider);
 
-/** This adds the SPIFFE test credentials to the list of secure types for
- *  |provider|. **/
-void EnableSpiffeCredentials(CredentialsProvider* provider);
-
-/** This method forces the current application to wait on any ongoing server
- *  authorization check to complete prior to continuing. **/
-void WaitOnServerAuthorizationToComplete(CredentialsProvider* provider);
+/** This method forces the current application to wait on any threads spawned
+ *  by |providuer| to complete prior to continuing. **/
+void WaitOnSpawnedThreads(CredentialsProvider* provider);
 
 /** This method resets the active channel/server TLS credentials options, if the
  *  SPIFFE credentials are currently in use. **/

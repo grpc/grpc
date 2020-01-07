@@ -85,21 +85,13 @@ class TlsCredentialReloadArg {
   TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg);
   ~TlsCredentialReloadArg();
 
-  /** Getters for member fields. The callback function is not exposed.
-   * They return the corresponding fields of the underlying C arg. In the case
-   * of the key materials config, it creates a new instance of the C++ key
-   * materials config from the underlying C grpc_tls_key_materials_config. **/
+  /** Getters for member fields. **/
   void* cb_user_data() const;
   bool is_pem_key_cert_pair_list_empty() const;
   grpc_ssl_certificate_config_reload_status status() const;
   grpc::string error_details() const;
 
-  /** Setters for member fields. They modify the fields of the underlying C arg.
-   * The setters for the key_materials_config and the error_details allocate
-   * memory when modifying c_arg_, so one must remember to free c_arg_'s
-   * original key_materials_config or error_details after using the appropriate
-   * setter function.
-   * **/
+  /** Setters for member fields. **/
   void set_cb_user_data(void* cb_user_data);
   void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(
@@ -190,8 +182,7 @@ class TlsServerAuthorizationCheckArg {
   TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg);
   ~TlsServerAuthorizationCheckArg();
 
-  /** Getters for member fields. They return the corresponding fields of the
-   * underlying C arg.**/
+  /** Getters for member fields. **/
   void* cb_user_data() const;
   int success() const;
   grpc::string target_name() const;
@@ -199,12 +190,7 @@ class TlsServerAuthorizationCheckArg {
   grpc_status_code status() const;
   grpc::string error_details() const;
 
-  /** Setters for member fields. They modify the fields of the underlying C arg.
-   * The setters for target_name, peer_cert, and error_details allocate memory
-   * when modifying c_arg_, so one must remember to free c_arg_'s original
-   * target_name, peer_cert, or error_details after using the appropriate setter
-   * function.
-   * **/
+  /** Setters for member fields. **/
   void set_cb_user_data(void* cb_user_data);
   void set_success(int success);
   void set_target_name(const grpc::string& target_name);

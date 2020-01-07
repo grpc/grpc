@@ -16,7 +16,7 @@
  *
  */
 
-#include "test/cpp/util/spiffe_test_credentials.h"
+#include "test/cpp/util/tls_test_credentials.h"
 #include <thread>
 #include "test/core/end2end/data/ssl_test_data.h"
 

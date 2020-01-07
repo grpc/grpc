@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_UTIL_SPIFFE_TEST_CREDENTIALS_H
-#define GRPC_TEST_CPP_UTIL_SPIFFE_TEST_CREDENTIALS_H
+#ifndef GRPC_TEST_CPP_UTIL_TLS_TEST_CREDENTIALS_H
+#define GRPC_TEST_CPP_UTIL_TLS_TEST_CREDENTIALS_H
 
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
@@ -27,8 +27,6 @@
 
 namespace grpc {
 namespace testing {
-
-const char kSpiffeCredentialsType[] = "tls";
 
 struct TlsData {
   std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options;
@@ -53,4 +51,4 @@ TlsData CreateTestTlsCredentialsOptions(bool is_client, bool is_async);
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_SPIFFE_TEST_CREDENTIALS_H
+#endif  // GRPC_TEST_CPP_UTIL_TLS_TEST_CREDENTIALS_H

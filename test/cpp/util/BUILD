@@ -38,9 +38,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "spiffe_test_credentials",
-    srcs = ["spiffe_test_credentials.cc"],
-    hdrs = ["spiffe_test_credentials.h"],
+    name = "tls_test_credentials",
+    srcs = ["tls_test_credentials.cc"],
+    hdrs = ["tls_test_credentials.h"],
     deps = [
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",
@@ -92,7 +92,7 @@ grpc_cc_library(
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
-        ":spiffe_test_credentials",
+        ":tls_test_credentials",
     ],
 )
 

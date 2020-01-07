@@ -32,7 +32,7 @@
 #include <grpcpp/security/server_credentials.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
-#include "test/cpp/util/spiffe_test_credentials.h"
+#include "test/cpp/util/tls_test_credentials.h"
 
 DEFINE_string(tls_cert_file, "", "The TLS cert file used when --use_tls=true");
 DEFINE_string(tls_key_file, "", "The TLS key file used when --use_tls=true");
@@ -101,9 +101,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       args->SetSslTargetNameOverride("foo.test.google.fr");
       TlsData tls_data = CreateTestTlsCredentialsOptions(true, true);
       active_channel_options_ = tls_data.options;
-      server_authz_thread_ = tls_data.server_authz_thread;
-      server_authz_thread_started_ = tls_data.server_authz_thread_started;
-      return TlsCredentials(active_channel_options_);
+      thread_ = tls_data.server_authz_thread;
+      thread_started_ = tls_data.server_authz_thread_started;
+      return TlsCredentials(*active_channel_options_);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
@@ -140,7 +140,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     } else if (type == grpc::testing::kSpiffeCredentialsType) {
       active_server_options_ =
           CreateTestTlsCredentialsOptions(false, true).options;
-      return TlsServerCredentials(active_server_options_);
+      return TlsServerCredentials(*active_server_options_);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
@@ -156,9 +156,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::vector<grpc::string> GetSecureCredentialsTypeList() override {
     std::vector<grpc::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
-    if (spiffe_credentials_) {
-      types.push_back(grpc::testing::kSpiffeCredentialsType);
-    }
+    types.push_back(grpc::testing::kSpiffeCredentialsType);
     std::unique_lock<std::mutex> lock(mu_);
     for (auto it = added_secure_type_names_.begin();
          it != added_secure_type_names_.end(); it++) {
@@ -167,23 +165,18 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     return types;
   }
 
-  void EnableSpiffeCredentials() { spiffe_credentials_ = true; }
-
-  void JoinServerAuthzThread() {
-    if (spiffe_credentials_ && server_authz_thread_ != nullptr &&
-        server_authz_thread_started_ != nullptr) {
-      if (*server_authz_thread_started_) {
-        server_authz_thread_->join();
-        *server_authz_thread_started_ = false;
-      }
+  void JoinThread() {
+    if (thread_ != nullptr && thread_started_ != nullptr && *thread_started_) {
+        thread_->join();
+        *thread_started_ = false;
     }
   }
 
   void Reset(bool reset_channel, bool reset_server) {
     if (reset_channel && active_channel_options_ != nullptr) {
       active_channel_options_ = nullptr;
-      server_authz_thread_ = nullptr;
-      server_authz_thread_started_ = nullptr;
+      thread_ = nullptr;
+      thread_started_ = nullptr;
     }
     if (reset_server && active_server_options_ != nullptr) {
       active_server_options_ = nullptr;
@@ -195,15 +188,12 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::vector<grpc::string> added_secure_type_names_;
   std::vector<std::unique_ptr<CredentialTypeProvider>>
       added_secure_type_providers_;
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
-      active_channel_options_ = nullptr;
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
-      active_server_options_ = nullptr;
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> active_channel_options_;
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> active_server_options_;
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
-  bool spiffe_credentials_ = false;
-  std::thread* server_authz_thread_ = nullptr;
-  bool* server_authz_thread_started_ = nullptr;
+  std::thread* thread_ = nullptr;
+  bool* thread_started_ = nullptr;
 };
 
 CredentialsProvider* g_provider = nullptr;
@@ -223,18 +213,11 @@ void SetCredentialsProvider(CredentialsProvider* provider) {
   g_provider = provider;
 }
 
-void EnableSpiffeCredentials(CredentialsProvider* provider) {
+void WaitOnSpawnedThreads(CredentialsProvider* provider) {
   if (provider != nullptr && provider->IsDefault()) {
     DefaultCredentialsProvider* default_provider =
         reinterpret_cast<DefaultCredentialsProvider*>(provider);
-    default_provider->EnableSpiffeCredentials();
-  }
-}
-void WaitOnServerAuthorizationToComplete(CredentialsProvider* provider) {
-  if (provider != nullptr && provider->IsDefault()) {
-    DefaultCredentialsProvider* default_provider =
-        reinterpret_cast<DefaultCredentialsProvider*>(provider);
-    default_provider->JoinServerAuthzThread();
+    default_provider->JoinThread();
   }
 }
 

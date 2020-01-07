@@ -1948,10 +1948,10 @@ libs:
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/channel_trace_proto_helper.h
   - test/cpp/util/create_test_channel.h
-  - test/cpp/util/spiffe_test_credentials.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
+  - test/cpp/util/tls_test_credentials.h
   src:
   - src/proto/grpc/channelz/channelz.proto
   - src/proto/grpc/health/v1/health.proto
@@ -1964,10 +1964,10 @@ libs:
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
-  - test/cpp/util/spiffe_test_credentials.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
+  - test/cpp/util/tls_test_credentials.cc
   deps:
   - grpc++
   - grpc_test_util

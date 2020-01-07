@@ -40,7 +40,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/spiffe_test_credentials.h"
+#include "test/cpp/util/tls_test_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -391,7 +391,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
       gpr_time_from_millis(
           300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
           GPR_TIMESPAN)));
-  WaitOnServerAuthorizationToComplete(GetCredentialsProvider());
+  WaitOnSpawnedThreads(GetCredentialsProvider());
   SendRpc(1);
 }
 
@@ -1843,7 +1843,6 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
   if (insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  EnableSpiffeCredentials(GetCredentialsProvider());
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);

@@ -338,8 +338,7 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
 
 /// Builds TLS Credentials given TLS options.
-std::shared_ptr<ChannelCredentials> TlsCredentials(
-    const std::shared_ptr<TlsCredentialsOptions>& options);
+std::shared_ptr<ChannelCredentials> TlsCredentials(const TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc_impl

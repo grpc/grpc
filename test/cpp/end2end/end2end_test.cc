@@ -45,7 +45,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
-#include "test/cpp/util/spiffe_test_credentials.h"
+#include "test/cpp/util/tls_test_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -257,9 +257,7 @@ void TestScenario::Log() const {
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
   static void SetUpTestCase() { grpc_init(); }
-
   static void TearDownTestCase() { grpc_shutdown(); }
-
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
@@ -410,7 +408,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     DummyInterceptor::Reset();
-    WaitOnServerAuthorizationToComplete(GetCredentialsProvider());
+    WaitOnSpawnedThreads(GetCredentialsProvider());
   }
 
   bool do_not_test_{false};
@@ -855,7 +853,7 @@ TEST_P(End2endTest, ReconnectChannel) {
       gpr_time_from_millis(
           300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
           GPR_TIMESPAN)));
-  WaitOnServerAuthorizationToComplete(GetCredentialsProvider());
+  WaitOnSpawnedThreads(GetCredentialsProvider());
   SendRpc(stub_.get(), 1, false);
 }
 
@@ -2182,7 +2180,6 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
 #endif
 
   if (test_secure) {
-    EnableSpiffeCredentials(GetCredentialsProvider());
     credentials_types =
         GetCredentialsProvider()->GetSecureCredentialsTypeList();
   }
