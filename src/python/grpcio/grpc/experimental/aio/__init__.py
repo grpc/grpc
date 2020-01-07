@@ -24,13 +24,12 @@ import six
 import grpc
 from grpc._cython.cygrpc import init_grpc_aio
 
-from ._base_call import RpcContext, Call, UnaryUnaryCall, UnaryStreamCall
+from ._base_call import Call, RpcContext, UnaryStreamCall, UnaryUnaryCall
 from ._call import AioRpcError
-from ._channel import Channel
-from ._channel import UnaryUnaryMultiCallable
-from ._interceptor import ClientCallDetails, UnaryUnaryClientInterceptor
-from ._interceptor import InterceptedUnaryUnaryCall
-from ._server import server, Server
+from ._channel import Channel, UnaryUnaryMultiCallable
+from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
+                           UnaryUnaryClientInterceptor)
+from ._server import Server, server
 
 
 def insecure_channel(

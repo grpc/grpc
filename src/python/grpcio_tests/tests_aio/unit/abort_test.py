@@ -101,11 +101,10 @@ class TestServer(AioTestBase):
         self.assertEqual(_ABORT_CODE, await call.code())
         self.assertEqual(_ABORT_DETAILS, await call.details())
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
 
         rpc_error = exception_context.exception
-        rpc_error.code()
         self.assertEqual(_ABORT_CODE, rpc_error.code())
         self.assertEqual(_ABORT_DETAILS, rpc_error.details())
 
@@ -113,11 +112,10 @@ class TestServer(AioTestBase):
         method = self._channel.unary_unary(_SUPPRESS_ABORT)
         call = method(_REQUEST)
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
 
         rpc_error = exception_context.exception
-        rpc_error.code()
         self.assertEqual(_ABORT_CODE, rpc_error.code())
         self.assertEqual(_ABORT_DETAILS, rpc_error.details())
 
@@ -125,11 +123,10 @@ class TestServer(AioTestBase):
         method = self._channel.unary_unary(_REPLACE_ABORT)
         call = method(_REQUEST)
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
 
         rpc_error = exception_context.exception
-        rpc_error.code()
         self.assertEqual(_ABORT_CODE, rpc_error.code())
         self.assertEqual(_ABORT_DETAILS, rpc_error.details())
 
@@ -137,11 +134,10 @@ class TestServer(AioTestBase):
         method = self._channel.unary_stream(_ABORT_AFTER_REPLY)
         call = method(_REQUEST)
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.read()
 
         rpc_error = exception_context.exception
-        rpc_error.code()
         self.assertEqual(_ABORT_CODE, rpc_error.code())
         self.assertEqual(_ABORT_DETAILS, rpc_error.details())
 
