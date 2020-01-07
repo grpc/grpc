@@ -148,7 +148,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
-    const grpc_tls_credentials_options& options,
+    const grpc_tls_credentials_options& options, bool server_config,
     grpc_ssl_certificate_config_reload_status* status);
 
 }  // namespace grpc_core
