@@ -156,7 +156,6 @@ cc_library(
         "-D_LARGEFILE_SOURCE",
         "-D_FILE_OFFSET_BITS=64",
         "-D_GNU_SOURCE",
-        "-DHAVE_CONFIG_H",
         "-pthread",
         "--std=gnu89",
         "-pedantic",
