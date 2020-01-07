@@ -52,16 +52,16 @@ def insecure_channel(
     Returns:
       A Channel.
     """
-    return Channel(
-        target, () if options is None else options,
-        None,
-        compression,
-        interceptors=interceptors)
+    return Channel(target, () if options is None else options,
+                   None,
+                   compression,
+                   interceptors=interceptors)
 
 
 ###################################  __all__  #################################
 
-__all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall',
-           'init_grpc_aio', 'Channel', 'UnaryUnaryMultiCallable',
-           'ClientCallDetails', 'UnaryUnaryClientInterceptor',
-           'InterceptedUnaryUnaryCall', 'insecure_channel', 'server')
+__all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
+           'UnaryStreamCall', 'init_grpc_aio', 'Channel',
+           'UnaryUnaryMultiCallable', 'ClientCallDetails',
+           'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
+           'insecure_channel', 'server')

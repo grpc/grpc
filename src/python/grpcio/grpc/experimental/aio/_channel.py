@@ -216,7 +216,8 @@ class Channel:
         else:
             self._unary_unary_interceptors = list(
                 filter(
-                    lambda interceptor: isinstance(interceptor, UnaryUnaryClientInterceptor),
+                    lambda interceptor: isinstance(interceptor,
+                                                   UnaryUnaryClientInterceptor),
                     interceptors))
 
             invalid_interceptors = set(interceptors) - set(
@@ -249,9 +250,10 @@ class Channel:
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
         """
-        return UnaryUnaryMultiCallable(
-            self._channel, _common.encode(method), request_serializer,
-            response_deserializer, self._unary_unary_interceptors)
+        return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
+                                       request_serializer,
+                                       response_deserializer,
+                                       self._unary_unary_interceptors)
 
     def unary_stream(
             self,

@@ -118,11 +118,12 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
     def __del__(self):
         self.cancel()
 
-    async def _invoke(
-            self, interceptors: Sequence[UnaryUnaryClientInterceptor],
-            method: bytes, timeout: Optional[float], request: RequestType,
-            request_serializer: SerializingFunction,
-            response_deserializer: DeserializingFunction) -> UnaryUnaryCall:
+    async def _invoke(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+                      method: bytes, timeout: Optional[float],
+                      request: RequestType,
+                      request_serializer: SerializingFunction,
+                      response_deserializer: DeserializingFunction
+                     ) -> UnaryUnaryCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
@@ -154,16 +155,16 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
                     return UnaryUnaryCallResponse(call_or_response)
 
             else:
-                return UnaryUnaryCall(request,
-                                      _timeout_to_deadline(
-                                          self._loop,
-                                          client_call_details.timeout),
-                                      self._channel, client_call_details.method,
-                                      request_serializer, response_deserializer)
+                return UnaryUnaryCall(
+                    request,
+                    _timeout_to_deadline(self._loop,
+                                         client_call_details.timeout),
+                    self._channel, client_call_details.method,
+                    request_serializer, response_deserializer)
 
         client_call_details = ClientCallDetails(method, timeout, None, None)
-        return await _run_interceptor(
-            iter(interceptors), client_call_details, request)
+        return await _run_interceptor(iter(interceptors), client_call_details,
+                                      request)
 
     def cancel(self) -> bool:
         if self._interceptors_task.done():

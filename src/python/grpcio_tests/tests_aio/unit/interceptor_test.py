@@ -52,8 +52,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
 
         server_target, _ = await start_test_server()  # pylint: disable=unused-variable
 
-        async with aio.insecure_channel(
-                server_target, interceptors=interceptors) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=interceptors) as channel:
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
@@ -99,8 +99,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
         interceptor = StatusCodeOkInterceptor()
         server_target, server = await start_test_server()  # pylint: disable=unused-variable
 
-        async with aio.insecure_channel(
-                server_target, interceptors=[interceptor]) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=[interceptor]) as channel:
 
             # when no error StatusCode.OK must be observed
             multicallable = channel.unary_unary(
@@ -129,8 +129,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
         interceptor = TimeoutInterceptor()
         server_target, server = await start_test_server()
 
-        async with aio.insecure_channel(
-                server_target, interceptors=[interceptor]) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=[interceptor]) as channel:
 
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
@@ -190,8 +190,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
         interceptor = RetryInterceptor()
         server_target, server = await start_test_server()
 
-        async with aio.insecure_channel(
-                server_target, interceptors=[interceptor]) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=[interceptor]) as channel:
 
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
@@ -329,8 +329,9 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
         server_target, _ = await start_test_server()  # pylint: disable=unused-variable
 
-        async with aio.insecure_channel(
-                server_target, interceptors=[Interceptor()]) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
 
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
@@ -363,8 +364,9 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
         server_target, _ = await start_test_server()  # pylint: disable=unused-variable
 
-        async with aio.insecure_channel(
-                server_target, interceptors=[Interceptor()]) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
 
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
@@ -407,8 +409,9 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
         server_target, _ = await start_test_server()  # pylint: disable=unused-variable
 
-        async with aio.insecure_channel(
-                server_target, interceptors=[Interceptor()]) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
 
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
@@ -446,8 +449,9 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
         server_target, _ = await start_test_server()  # pylint: disable=unused-variable
 
-        async with aio.insecure_channel(
-                server_target, interceptors=[Interceptor()]) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
 
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
@@ -478,8 +482,9 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
         server_target, _ = await start_test_server()  # pylint: disable=unused-variable
 
-        async with aio.insecure_channel(
-                server_target, interceptors=[Interceptor()]) as channel:
+        async with aio.insecure_channel(server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
 
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
