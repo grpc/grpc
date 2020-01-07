@@ -15,6 +15,9 @@
 
 set -ex
 
+ACTION=${1:---in-place}
+[[ $ACTION == '--in-place' ]] || [[ $ACTION == '--diff' ]]
+
 # change to root directory
 cd "$(dirname "${0}")/../.."
 
@@ -33,4 +36,4 @@ PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install --upgrade futures
 "$PYTHON" -m pip install yapf==0.28.0
 
-$PYTHON -m yapf --diff --recursive --style=setup.cfg "${DIRS[@]}"
+$PYTHON -m yapf $ACTION --recursive --style=setup.cfg "${DIRS[@]}"
