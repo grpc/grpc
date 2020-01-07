@@ -84,7 +84,7 @@ async def _start_test_server():
     return 'localhost:%d' % port, server
 
 
-class TestServer(AioTestBase):
+class TestAbort(AioTestBase):
 
     async def setUp(self):
         address, self._server = await _start_test_server()
