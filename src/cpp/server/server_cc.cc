@@ -15,6 +15,7 @@
  *
  */
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/server.h>
 
 #include <cstdlib>
@@ -23,6 +24,7 @@
 #include <utility>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
@@ -964,7 +966,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(
-    int max_receive_message_size, grpc::ChannelArguments* args,
+    grpc::ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec,
@@ -976,7 +978,7 @@ Server::Server(
         interceptor_creators)
     : acceptors_(std::move(acceptors)),
       interceptor_creators_(std::move(interceptor_creators)),
-      max_receive_message_size_(max_receive_message_size),
+      max_receive_message_size_(-1),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
       shutdown_(false),
@@ -1026,10 +1028,12 @@ Server::Server(
             static_cast<grpc::HealthCheckServiceInterface*>(
                 channel_args.args[i].value.pointer.p));
       }
-      break;
+    }
+    if (0 ==
+        strcmp(channel_args.args[i].key, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)) {
+      max_receive_message_size_ = channel_args.args[i].value.integer;
     }
   }
-
   server_ = grpc_server_create(&channel_args, nullptr);
 }
 
