@@ -22,13 +22,12 @@ cdef class _AioCall:
         # time we need access to the event loop.
         object _loop
 
-        # Streaming call only attributes:
-        # 
-        # A asyncio.Event that indicates if the status is received on the client side.
-        object _status_received
-        # A tuple of key value pairs representing the initial metadata sent by peer.
-        tuple _initial_metadata
+        # Flag indicates whether cancel being called or not. Cancellation from
+        # Core or peer works perfectly fine with normal procedure. However, we
+        # need this flag to clean up resources for cancellation from the
+        # application layer. Directly cancelling tasks might cause segfault
+        # because Core is holding a pointer for the callback handler.
+        bint _is_locally_cancelled
 
     cdef grpc_call* _create_grpc_call(self, object timeout, bytes method) except *
     cdef void _destroy_grpc_call(self)
-    cdef AioRpcStatus _cancel_and_create_status(self, object cancellation_future)

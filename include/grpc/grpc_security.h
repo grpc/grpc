@@ -731,6 +731,19 @@ GRPCAPI int grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
 
+/** Set grpc_tls_server_verification_option field in credentials options
+    with the provided server_verification_option. options should not be NULL.
+    This should be called only on the client side.
+    If grpc_tls_server_verification_option is not
+    GRPC_TLS_SERVER_VERIFICATION, use of a customer server
+    authorization check (grpc_tls_server_authorization_check_config)
+    will be mandatory.
+    It returns 1 on success and 0 on failure. It is used for
+    experimental purpose for now and subject to change. */
+GRPCAPI int grpc_tls_credentials_options_set_server_verification_option(
+    grpc_tls_credentials_options* options,
+    grpc_tls_server_verification_option server_verification_option);
+
 /** Set grpc_tls_key_materials_config field in credentials options
     with the provided config struct whose ownership is transferred.
     Both parameters should not be NULL.
@@ -902,6 +915,7 @@ struct grpc_tls_server_authorization_check_arg {
   int success;
   const char* target_name;
   const char* peer_cert;
+  const char* peer_cert_full_chain;
   grpc_status_code status;
   const char* error_details;
   grpc_tls_server_authorization_check_config* config;

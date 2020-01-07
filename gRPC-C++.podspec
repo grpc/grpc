@@ -214,6 +214,9 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     abseil_version = '0.20190808.1'
+    ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/strings/strings', abseil_version
+    ss.dependency 'abseil/types/optional', abseil_version
 
     ss.source_files = 'include/grpcpp/impl/codegen/core_codegen.h',
                       'src/core/ext/filters/client_channel/backend_metric.h',

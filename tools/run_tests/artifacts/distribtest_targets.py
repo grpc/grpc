@@ -275,8 +275,8 @@ class CppDistribTest(object):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/distribtest/cpp_%s_%s' % (self.docker_suffix,
-                                                            self.arch),
+                'tools/dockerfile/distribtest/cpp_%s_%s' %
+                (self.docker_suffix, self.arch),
                 'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase,
                 timeout_seconds=45 * 60)
         elif self.platform == 'windows':
