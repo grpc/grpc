@@ -233,7 +233,7 @@ class Call(_base_call.Call):
         if self._code is grpc.StatusCode.OK:
             return _OK_CALL_REPRESENTATION.format(
                 self.__class__.__name__, self._code,
-                self._status.result().self._status.result().details())
+                self._status.result().details())
         else:
             return _NON_OK_CALL_REPRESENTATION.format(
                 self.__class__.__name__, self._code,

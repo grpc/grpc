@@ -22,7 +22,7 @@ import grpc
 from grpc._cython import cygrpc
 
 from . import _base_call
-from ._call import UnaryUnaryCall
+from ._call import UnaryUnaryCall, AioRpcError
 from ._utils import _timeout_to_deadline
 from ._typing import (RequestType, SerializingFunction, DeserializingFunction,
                       MetadataType, ResponseType)
@@ -135,19 +135,9 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
 
             if interceptor:
                 continuation = functools.partial(_run_interceptor, interceptors)
-                try:
-                    call_or_response = await interceptor.intercept_unary_unary(
-                        continuation, client_call_details, request)
-                except grpc.RpcError as err:
-                    # gRPC error is masked inside an artificial call,
-                    # caller will see this error if and only
-                    # if it runs an `await call` operation
-                    return UnaryUnaryCallRpcError(err)
-                except asyncio.CancelledError:
-                    # Cancellation is masked inside an artificial call,
-                    # caller will see this error if and only
-                    # if it runs an `await call` operation
-                    return UnaryUnaryCancelledError()
+
+                call_or_response = await interceptor.intercept_unary_unary(
+                    continuation, client_call_details, request)
 
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
                     return call_or_response
@@ -176,14 +166,25 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
         if not self._interceptors_task.done():
             return False
 
-        call = self._interceptors_task.result()
-        return call.cancelled()
+        try:
+            call = self._interceptors_task.result()
+        except AioRpcError:
+            return False
+        except asyncio.CancelledError:
+            return True
+        else:
+            return call.cancelled()
 
     def done(self) -> bool:
         if not self._interceptors_task.done():
             return False
 
-        return True
+        try:
+            call = self._interceptors_task.result()
+        except (AioRpcError, asyncio.CancelledError):
+            return True
+        else:
+            return call.done()
 
     def add_done_callback(self, unused_callback) -> None:
         raise NotImplementedError()
@@ -192,65 +193,59 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
         raise NotImplementedError()
 
     async def initial_metadata(self) -> Optional[MetadataType]:
-        return await (await self._interceptors_task).initial_metadata()
+        try:
+            call = await self._interceptors_task
+        except AioRpcError as err:
+            return err.initial_metadata()
+        except asyncio.CancelledError:
+            return None
+        else:
+            return await call.initial_metadata()
 
     async def trailing_metadata(self) -> Optional[MetadataType]:
-        return await (await self._interceptors_task).trailing_metadata()
+        try:
+            call = await self._interceptors_task
+        except AioRpcError as err:
+            return err.trailing_metadata()
+        except asyncio.CancelledError:
+            return None
+        else:
+            return await call.trailing_metadata()
 
     async def code(self) -> grpc.StatusCode:
-        return await (await self._interceptors_task).code()
+        try:
+            call = await self._interceptors_task
+        except AioRpcError as err:
+            return err.code()
+        except asyncio.CancelledError:
+            return grpc.StatusCode.CANCELLED
+        else:
+            return await call.code()
 
     async def details(self) -> str:
-        return await (await self._interceptors_task).details()
+        try:
+            call = await self._interceptors_task
+        except AioRpcError as err:
+            return err.details()
+        except asyncio.CancelledError:
+            return _LOCAL_CANCELLATION_DETAILS
+        else:
+            return await call.details()
 
     async def debug_error_string(self) -> Optional[str]:
-        return await (await self._interceptors_task).debug_error_string()
+        try:
+            call = await self._interceptors_task
+        except AioRpcError as err:
+            return err.debug_error_string()
+        except asyncio.CancelledError:
+            return ''
+        else:
+            return await call.debug_error_string()
 
     def __await__(self):
         call = yield from self._interceptors_task.__await__()
         response = yield from call.__await__()
         return response
-
-
-class UnaryUnaryCallRpcError(_base_call.UnaryUnaryCall):
-    """Final UnaryUnaryCall class finished with an RpcError."""
-    _error: grpc.RpcError
-
-    def __init__(self, error: grpc.RpcError) -> None:
-        self._error = error
-
-    def cancel(self) -> bool:
-        return False
-
-    def cancelled(self) -> bool:
-        return False
-
-    def done(self) -> bool:
-        return True
-
-    def add_done_callback(self, unused_callback) -> None:
-        raise NotImplementedError()
-
-    def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
-
-    async def initial_metadata(self) -> Optional[MetadataType]:
-        return None
-
-    async def trailing_metadata(self) -> Optional[MetadataType]:
-        return self._error.initial_metadata()
-
-    async def code(self) -> grpc.StatusCode:
-        return self._error.code()
-
-    async def details(self) -> str:
-        return self._error.details()
-
-    async def debug_error_string(self) -> Optional[str]:
-        return self._error.debug_error_string()
-
-    def __await__(self):
-        raise self._error
 
 
 class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
@@ -296,40 +291,3 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
             # for telling the interpreter that __await__ is a generator.
             yield None
         return self._response
-
-
-class UnaryUnaryCancelledError(_base_call.UnaryUnaryCall):
-    """Final UnaryUnaryCall class finished with an asyncio.CancelledError."""
-
-    def cancel(self) -> bool:
-        return False
-
-    def cancelled(self) -> bool:
-        return True
-
-    def done(self) -> bool:
-        return True
-
-    def add_done_callback(self, unused_callback) -> None:
-        raise NotImplementedError()
-
-    def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
-
-    async def initial_metadata(self) -> Optional[MetadataType]:
-        return None
-
-    async def trailing_metadata(self) -> Optional[MetadataType]:
-        return None
-
-    async def code(self) -> grpc.StatusCode:
-        return grpc.StatusCode.CANCELLED
-
-    async def details(self) -> str:
-        return _LOCAL_CANCELLATION_DETAILS
-
-    async def debug_error_string(self) -> Optional[str]:
-        return None
-
-    def __await__(self):
-        raise asyncio.CancelledError()
