@@ -286,9 +286,9 @@ grpc_security_status TlsChannelSecurityConnector::ReplaceHandshakerFactory(
     tsi_ssl_session_cache* ssl_session_cache) {
   const TlsCredentials* creds =
       static_cast<const TlsCredentials*>(channel_creds());
-  tsi_server_verification_option server_verification_option =
-      grpc_get_tsi_server_verification_option(
-          creds->options().server_verification_option());
+  bool skip_server_certificate_verification =
+      creds->options().server_verification_option() ==
+      GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION;
   /* Free the client handshaker factory if exists. */
   if (client_handshaker_factory_) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
@@ -297,7 +297,7 @@ grpc_security_status TlsChannelSecurityConnector::ReplaceHandshakerFactory(
       key_materials_config_->pem_key_cert_pair_list());
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair, key_materials_config_->pem_root_certs(),
-      server_verification_option, ssl_session_cache,
+      skip_server_certificate_verification, ssl_session_cache,
       &client_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);

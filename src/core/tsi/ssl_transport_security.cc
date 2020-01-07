@@ -1765,7 +1765,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
-  if (options->server_verification_option == TSI_SKIP_ALL_SERVER_VERIFICATION) {
+  if (options->skip_server_certificate_verification) {
     SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
   } else {
     SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);

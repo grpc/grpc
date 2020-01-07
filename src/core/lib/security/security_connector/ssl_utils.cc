@@ -108,20 +108,6 @@ grpc_get_tsi_client_certificate_request_type(
   }
 }
 
-tsi_server_verification_option grpc_get_tsi_server_verification_option(
-    grpc_tls_server_verification_option server_verification_option) {
-  switch (server_verification_option) {
-    case GRPC_TLS_SERVER_VERIFICATION:
-      return TSI_SERVER_VERIFICATION;
-    case GRPC_TLS_SKIP_HOSTNAME_VERIFICATION:
-      return TSI_SKIP_HOSTNAME_VERIFICATION;
-    case GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION:
-      return TSI_SKIP_ALL_SERVER_VERIFICATION;
-    default:
-      return TSI_SERVER_VERIFICATION;
-  }
-}
-
 grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   /* Check the ALPN if ALPN is supported. */
@@ -306,7 +292,7 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
-    tsi_server_verification_option server_verification_option,
+    bool skip_server_certificate_verification,
     tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
@@ -337,7 +323,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   }
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.session_cache = ssl_session_cache;
-  options.server_verification_option = server_verification_option;
+  options.skip_server_certificate_verification =
+      skip_server_certificate_verification;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);

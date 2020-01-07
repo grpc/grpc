@@ -68,18 +68,13 @@ tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type);
 
-/* Map from grpc_tls_server_verification_option to
- * tsi_server_verification_option. */
-tsi_server_verification_option grpc_get_tsi_server_verification_option(
-    grpc_tls_server_verification_option server_verification_option);
-
 /* Return an array of strings containing alpn protocols. */
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 
 /* Initialize TSI SSL server/client handshaker factory. */
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
-    tsi_server_verification_option server_verification_option,
+    bool skip_server_certificate_verification,
     tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 

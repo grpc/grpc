@@ -148,8 +148,8 @@ struct tsi_ssl_client_handshaker_options {
   /* ssl_session_cache is a cache for reusable client-side sessions. */
   tsi_ssl_session_cache* session_cache;
 
-  /* Server verification option */
-  tsi_server_verification_option server_verification_option;
+  /* skip server certificate verification. */
+  bool skip_server_certificate_verification;
 
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
@@ -159,7 +159,7 @@ struct tsi_ssl_client_handshaker_options {
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
         session_cache(nullptr),
-        server_verification_option(TSI_SERVER_VERIFICATION) {}
+        skip_server_certificate_verification(false) {}
 };
 
 /* Creates a client handshaker factory.

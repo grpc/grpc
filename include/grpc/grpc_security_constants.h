@@ -117,12 +117,15 @@ typedef enum {
 
 typedef enum {
   /** Default option: performs server certificate verification and hostname
-     verification */
+     verification. */
   GRPC_TLS_SERVER_VERIFICATION,
   /** Performs server certificate verification, but skips hostname verification
-   */
+     Client is responsible for verifying server's identity via
+     server authorization check callback. */
   GRPC_TLS_SKIP_HOSTNAME_VERIFICATION,
-  /** Skips both server certificate and hostname verification */
+  /** Skips both server certificate and hostname verification.
+     Client is responsible for verifying server's identity and
+     server's certificate via server authorization check callback. */
   GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION
 } grpc_tls_server_verification_option;
 
