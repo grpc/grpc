@@ -193,6 +193,7 @@ class TlsServerAuthorizationCheckArg {
   int success() const;
   grpc::string target_name() const;
   grpc::string peer_cert() const;
+  grpc::string peer_cert_full_chain() const;
   grpc_status_code status() const;
   grpc::string error_details() const;
 
@@ -206,6 +207,7 @@ class TlsServerAuthorizationCheckArg {
   void set_success(int success);
   void set_target_name(const grpc::string& target_name);
   void set_peer_cert(const grpc::string& peer_cert);
+  void set_peer_cert_full_chain(const grpc::string& peer_cert_full_chain);
   void set_status(grpc_status_code status);
   void set_error_details(const grpc::string& error_details);
 
@@ -287,6 +289,7 @@ class TlsCredentialsOptions {
  public:
   TlsCredentialsOptions(
       grpc_ssl_client_certificate_request_type cert_request_type,
+      grpc_tls_server_verification_option server_verification_option,
       std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
       std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
       std::shared_ptr<TlsServerAuthorizationCheckConfig>
@@ -296,6 +299,9 @@ class TlsCredentialsOptions {
   /** Getters for member fields. **/
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
+  }
+  grpc_tls_server_verification_option server_verification_option() const {
+    return server_verification_option_;
   }
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
     return key_materials_config_;
@@ -317,6 +323,9 @@ class TlsCredentialsOptions {
    * goes unused when creating channel credentials, and the user can set it to
    * GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE. **/
   grpc_ssl_client_certificate_request_type cert_request_type_;
+  /** The server_verification_option_ flag is only relevant when the
+   * TlsCredentialsOptions are used to instantiate client credentials; **/
+  grpc_tls_server_verification_option server_verification_option_;
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config_;
   std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config_;
   std::shared_ptr<TlsServerAuthorizationCheckConfig>

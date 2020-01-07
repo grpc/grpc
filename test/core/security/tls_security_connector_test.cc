@@ -118,7 +118,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
 TEST_F(TlsSecurityConnectorTest, NoKeysAndConfig) {
   grpc_ssl_certificate_config_reload_status reload_status;
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_FAILED_PRECONDITION);
   options_->Unref();
 }
@@ -127,7 +127,7 @@ TEST_F(TlsSecurityConnectorTest, NoKeySuccessReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(SUCCESS);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   options_->Unref();
@@ -137,7 +137,7 @@ TEST_F(TlsSecurityConnectorTest, NoKeyFailReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(FAIL);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_INTERNAL);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   options_->Unref();
@@ -148,7 +148,7 @@ TEST_F(TlsSecurityConnectorTest, NoKeyAsyncReload) {
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetOptions(ASYNC);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
@@ -159,7 +159,7 @@ TEST_F(TlsSecurityConnectorTest, NoKeyUnchangedReload) {
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetOptions(UNCHANGED);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
@@ -170,7 +170,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeyNoReload) {
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   options_->Unref();
 }
@@ -180,7 +180,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeySuccessReload) {
   SetOptions(SUCCESS);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   options_->Unref();
@@ -191,7 +191,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeyFailReload) {
   SetOptions(FAIL);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   options_->Unref();
@@ -203,7 +203,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeyAsyncReload) {
   SetOptions(ASYNC);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
@@ -215,7 +215,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeyUnchangedReload) {
   SetOptions(UNCHANGED);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
