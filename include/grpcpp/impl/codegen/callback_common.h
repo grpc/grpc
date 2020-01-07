@@ -125,8 +125,9 @@ class CallbackWithStatusTag
     auto status = std::move(status_);
     func_ = nullptr;     // reset to clear this out for sure
     status_ = Status();  // reset to clear this out for sure
+    grpc_call* call = call_;
     CatchingCallback(std::move(func), std::move(status));
-    g_core_codegen_interface->grpc_call_unref(call_);
+    g_core_codegen_interface->grpc_call_unref(call);
   }
 };
 
