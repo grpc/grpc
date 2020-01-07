@@ -15,7 +15,6 @@
  *
  */
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/server.h>
 
 #include <cstdlib>
@@ -978,7 +977,7 @@ Server::Server(
         interceptor_creators)
     : acceptors_(std::move(acceptors)),
       interceptor_creators_(std::move(interceptor_creators)),
-      max_receive_message_size_(-1),
+      max_receive_message_size_(INT_MIN),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
       shutdown_(false),
