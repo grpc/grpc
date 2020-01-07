@@ -177,7 +177,6 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
 
                 self.calls.append(call)
 
-
                 new_client_call_details = aio.ClientCallDetails(
                     method=client_call_details.method,
                     timeout=None,
@@ -354,7 +353,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             self.assertTrue(call.done())
             self.assertFalse(call.cancelled())
-            self.assertEqual(await call.code(), grpc.StatusCode.DEADLINE_EXCEEDED)
+            self.assertEqual(await call.code(),
+                             grpc.StatusCode.DEADLINE_EXCEEDED)
             self.assertEqual(await call.details(), 'Deadline Exceeded')
             self.assertEqual(await call.initial_metadata(), ())
             self.assertEqual(await call.trailing_metadata(), ())
@@ -389,7 +389,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             self.assertTrue(call.done())
             self.assertFalse(call.cancelled())
-            self.assertEqual(await call.code(), grpc.StatusCode.DEADLINE_EXCEEDED)
+            self.assertEqual(await call.code(),
+                             grpc.StatusCode.DEADLINE_EXCEEDED)
             self.assertEqual(await call.details(), 'Deadline Exceeded')
             self.assertEqual(await call.initial_metadata(), ())
             self.assertEqual(await call.trailing_metadata(), ())
