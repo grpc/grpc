@@ -3,6 +3,7 @@
   "unit.aio_rpc_error_test.TestAioRpcError",
   "unit.call_test.TestUnaryStreamCall",
   "unit.call_test.TestUnaryUnaryCall",
+  "unit.channel_argument_test.TestChannelArgument",
   "unit.channel_test.TestChannel",
   "unit.init_test.TestInsecureChannel",
   "unit.interceptor_test.TestInterceptedUnaryUnaryCall",

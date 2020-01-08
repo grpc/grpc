@@ -13,7 +13,7 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
-from typing import Any, Optional, Sequence, Text, Tuple
+from typing import Any, Optional, Text
 
 import grpc
 from grpc import _common
@@ -188,9 +188,7 @@ class Channel:
     _channel: cygrpc.AioChannel
     _unary_unary_interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
 
-    def __init__(self,
-                 target: Text,
-                 options: Optional[ChannelArgumentType],
+    def __init__(self, target: Text, options: Optional[ChannelArgumentType],
                  credentials: Optional[grpc.ChannelCredentials],
                  compression: Optional[grpc.Compression],
                  interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]):
