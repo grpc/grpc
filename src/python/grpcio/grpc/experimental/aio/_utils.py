@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Internal utilities used by the gRPC Aio module."""
-import asyncio
 import time
 from typing import Optional
 
 
-def _timeout_to_deadline(loop: asyncio.AbstractEventLoop,
-                         timeout: Optional[float]) -> Optional[float]:
+def _timeout_to_deadline(timeout: Optional[float]) -> Optional[float]:
     if timeout is None:
         return None
     return time.time() + timeout

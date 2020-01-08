@@ -96,7 +96,7 @@ class UnaryUnaryMultiCallable:
         if not self._interceptors:
             return UnaryUnaryCall(
                 request,
-                _timeout_to_deadline(self._loop, timeout),
+                _timeout_to_deadline(timeout),
                 self._channel,
                 self._method,
                 self._request_serializer,
@@ -166,7 +166,7 @@ class UnaryStreamMultiCallable:
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
-        deadline = _timeout_to_deadline(self._loop, timeout)
+        deadline = _timeout_to_deadline(timeout)
 
         return UnaryStreamCall(
             request,
