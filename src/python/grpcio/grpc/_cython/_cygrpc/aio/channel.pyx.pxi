@@ -13,8 +13,11 @@
 # limitations under the License.
 
 cdef class AioChannel:
-    def __cinit__(self, bytes target):
-        self.channel = grpc_insecure_channel_create(<char *>target, NULL, NULL)
+    def __cinit__(self, bytes target, tuple options):
+        if options is None:
+            options = ()
+        cdef _ChannelArgs channel_args = _ChannelArgs(options)
+        self.channel = grpc_insecure_channel_create(<char *>target, channel_args.c_args(), NULL)
         self.cq = CallbackCompletionQueue()
         self._target = target
 

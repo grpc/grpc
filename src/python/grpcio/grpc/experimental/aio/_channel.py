@@ -20,9 +20,11 @@ from grpc import _common
 from grpc._cython import cygrpc
 
 from . import _base_call
-from ._call import UnaryUnaryCall, UnaryStreamCall
-from ._interceptor import UnaryUnaryClientInterceptor, InterceptedUnaryUnaryCall
-from ._typing import (DeserializingFunction, MetadataType, SerializingFunction)
+from ._call import UnaryStreamCall, UnaryUnaryCall
+from ._interceptor import (InterceptedUnaryUnaryCall,
+                           UnaryUnaryClientInterceptor)
+from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
+                      SerializingFunction)
 from ._utils import _timeout_to_deadline
 
 
@@ -186,8 +188,9 @@ class Channel:
     _channel: cygrpc.AioChannel
     _unary_unary_interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
 
-    def __init__(self, target: Text,
-                 options: Optional[Sequence[Tuple[Text, Any]]],
+    def __init__(self,
+                 target: Text,
+                 options: Optional[ChannelArgumentType],
                  credentials: Optional[grpc.ChannelCredentials],
                  compression: Optional[grpc.Compression],
                  interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]):
@@ -202,8 +205,6 @@ class Channel:
           interceptors: An optional list of interceptors that would be used for
             intercepting any RPC executed with that channel.
         """
-        if options:
-            raise NotImplementedError("TODO: options not implemented yet")
 
         if credentials:
             raise NotImplementedError("TODO: credentials not implemented yet")
@@ -229,7 +230,7 @@ class Channel:
                     "UnaryUnaryClientInterceptors, the following are invalid: {}"\
                     .format(invalid_interceptors))
 
-        self._channel = cygrpc.AioChannel(_common.encode(target))
+        self._channel = cygrpc.AioChannel(_common.encode(target), options)
 
     def unary_unary(
             self,

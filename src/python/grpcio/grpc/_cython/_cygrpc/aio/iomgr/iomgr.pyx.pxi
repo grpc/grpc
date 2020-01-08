@@ -26,6 +26,7 @@ cdef grpc_socket_vtable asyncio_socket_vtable
 cdef grpc_custom_resolver_vtable asyncio_resolver_vtable
 cdef grpc_custom_timer_vtable asyncio_timer_vtable
 cdef grpc_custom_poller_vtable asyncio_pollset_vtable
+cdef bint so_reuse_port
 
 
 cdef grpc_error* asyncio_socket_init(
@@ -121,10 +122,22 @@ cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil
     return grpc_error_none()
 
 
-def _asyncio_apply_socket_options(object s, so_reuse_port=False):
-    # TODO(https://github.com/grpc/grpc/issues/20667)
-    # Connects the so_reuse_port option to channel arguments
+cdef list _socket_options_list = []
+cdef str _SOCKET_OPT_SO_REUSEPORT = 'grpc.so_reuseport'
+
+cdef _apply_socket_options(tuple options):
+    if options is None:
+        options = ()
+    
+    for key, value in options:
+        if key == _SOCKET_OPT_SO_REUSEPORT:
+            _socket_options_list.append(value)
+
+
+def _asyncio_apply_socket_options(object s):
     s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEADDR, 1)
+    if _socket_options_list.pop(0):
+        s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEPORT, 1)
     s.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
 
