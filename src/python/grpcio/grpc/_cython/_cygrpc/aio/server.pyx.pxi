@@ -227,21 +227,17 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
         # TODO(lidiz) return unimplemented error to client side
         raise NotImplementedError()
 
-    try:
-        # TODO(lidiz) extend to all 4 types of RPC
-        if not method_handler.request_streaming and method_handler.response_streaming:
-            await _handle_unary_stream_rpc(method_handler,
-                                        rpc_state,
-                                        loop)
-        elif not method_handler.request_streaming and not method_handler.response_streaming:
-            await _handle_unary_unary_rpc(method_handler,
-                                        rpc_state,
-                                        loop)
-        else:
-            raise NotImplementedError()
-    except Exception as e:
-        _LOGGER.exception(e)
-        raise
+    # TODO(lidiz) extend to all 4 types of RPC
+    if not method_handler.request_streaming and method_handler.response_streaming:
+        await _handle_unary_stream_rpc(method_handler,
+                                    rpc_state,
+                                    loop)
+    elif not method_handler.request_streaming and not method_handler.response_streaming:
+        await _handle_unary_unary_rpc(method_handler,
+                                    rpc_state,
+                                    loop)
+    else:
+        raise NotImplementedError()
 
 
 class _RequestCallError(Exception): pass
@@ -473,7 +469,7 @@ cdef class AioServer:
         If the Cython representation is deallocated without underlying objects
         freed, raise an RuntimeError.
         """
-        # NOTE(lidiz) if users create server, and then dealloc it immediately.
+        # TODO(lidiz) if users create server, and then dealloc it immediately.
         # There is a potential memory leak of created Core server.
         if self._status != AIO_SERVER_STATUS_STOPPED:
             _LOGGER.warn(
