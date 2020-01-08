@@ -324,7 +324,7 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(await call.initial_metadata(), ())
             self.assertEqual(await call.trailing_metadata(), ())
 
-    async def test_call_rpcerror(self):
+    async def test_call_rpc_error(self):
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):
 
