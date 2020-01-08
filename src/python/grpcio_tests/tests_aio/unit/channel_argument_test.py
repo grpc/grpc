@@ -93,6 +93,7 @@ class TestChannelArgument(AioTestBase):
         random.seed(_RANDOM_SEED)
 
     async def test_server_so_reuse_port_is_set_properly(self):
+
         async def test_body():
             fact, options = random.choice(_OPTIONS)
             server = aio.server(options=options)
@@ -110,9 +111,7 @@ class TestChannelArgument(AioTestBase):
                 await server.stop(None)
 
         # Creating a lot of servers concurrently
-        await asyncio.gather(
-            *(test_body() for _ in range(_NUM_SERVER_CREATED))
-        )
+        await asyncio.gather(*(test_body() for _ in range(_NUM_SERVER_CREATED)))
 
     async def test_client(self):
         aio.insecure_channel('[::]:0', options=_TEST_CHANNEL_ARGS)
