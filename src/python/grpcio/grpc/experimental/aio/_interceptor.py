@@ -168,12 +168,12 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
 
         try:
             call = self._interceptors_task.result()
-        except AioRpcError:
-            return False
+        except AioRpcError as err:
+            return err.code() == grpc.StatusCode.CANCELLED
         except asyncio.CancelledError:
             return True
-        else:
-            return call.cancelled()
+
+        return call.cancelled()
 
     def done(self) -> bool:
         if not self._interceptors_task.done():
@@ -183,8 +183,8 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             call = self._interceptors_task.result()
         except (AioRpcError, asyncio.CancelledError):
             return True
-        else:
-            return call.done()
+
+        return call.done()
 
     def add_done_callback(self, unused_callback) -> None:
         raise NotImplementedError()
@@ -199,8 +199,8 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             return err.initial_metadata()
         except asyncio.CancelledError:
             return None
-        else:
-            return await call.initial_metadata()
+
+        return await call.initial_metadata()
 
     async def trailing_metadata(self) -> Optional[MetadataType]:
         try:
@@ -209,8 +209,8 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             return err.trailing_metadata()
         except asyncio.CancelledError:
             return None
-        else:
-            return await call.trailing_metadata()
+
+        return await call.trailing_metadata()
 
     async def code(self) -> grpc.StatusCode:
         try:
@@ -219,8 +219,8 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             return err.code()
         except asyncio.CancelledError:
             return grpc.StatusCode.CANCELLED
-        else:
-            return await call.code()
+
+        return await call.code()
 
     async def details(self) -> str:
         try:
@@ -229,8 +229,8 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             return err.details()
         except asyncio.CancelledError:
             return _LOCAL_CANCELLATION_DETAILS
-        else:
-            return await call.details()
+
+        return await call.details()
 
     async def debug_error_string(self) -> Optional[str]:
         try:
@@ -239,8 +239,8 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             return err.debug_error_string()
         except asyncio.CancelledError:
             return ''
-        else:
-            return await call.debug_error_string()
+
+        return await call.debug_error_string()
 
     def __await__(self):
         call = yield from self._interceptors_task.__await__()
