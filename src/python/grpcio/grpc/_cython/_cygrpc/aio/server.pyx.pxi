@@ -66,35 +66,6 @@ def _raise_if_aborted(RPCState rpc_state):
         raise rpc_state.abort_exception
 
 
-async def _perform_abort(RPCState rpc_state,
-                         grpc_status_code code,
-                         str details, 
-                         tuple trailing_metadata,
-                         object loop):
-    """Perform the abort logic.
-
-    Sends final status to the client, and then set the RPC into corresponding
-    state.
-    """
-    if rpc_state.abort_exception is not None:
-        raise RuntimeError('Abort already called!')
-    else:
-        # Keeps track of the exception object. After abort happen, the RPC
-        # should stop execution. However, if users decided to suppress it, it
-        # could lead to undefined behavior.
-        rpc_state.abort_exception = AbortError('Locally aborted.')
-
-    rpc_state.status_sent = True
-    await _send_error_status_from_server(
-        rpc_state,
-        code,
-        details,
-        trailing_metadata,
-        rpc_state.metadata_sent,
-        loop
-    )
-
-
 cdef class _ServicerContext:
     cdef RPCState _rpc_state
     cdef object _loop
