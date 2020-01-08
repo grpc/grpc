@@ -260,8 +260,6 @@ cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
                  options, maximum_concurrent_rpcs, compression):
-        # Notify IO manager about the socket options
-        _apply_socket_options(options)
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)

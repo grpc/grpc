@@ -73,7 +73,7 @@ async def test_if_reuse_port_enabled(server: aio.Server):
     await server.start()
 
     try:
-        another_socket = socket.socket(family=socket.AF_INET6)
+        another_socket = socket.socket(family=socket.AF_INET)
         another_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         another_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         another_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
@@ -92,6 +92,7 @@ class TestChannelArgument(AioTestBase):
     async def setUp(self):
         random.seed(_RANDOM_SEED)
 
+    @unittest.skip('https://github.com/grpc/grpc/issues/20667')
     async def test_server_so_reuse_port_is_set_properly(self):
 
         async def test_body():

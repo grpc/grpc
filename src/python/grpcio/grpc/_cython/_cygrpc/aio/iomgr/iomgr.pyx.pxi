@@ -122,22 +122,8 @@ cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil
     return grpc_error_none()
 
 
-cdef list _socket_options_list = []
-cdef str _SOCKET_OPT_SO_REUSEPORT = 'grpc.so_reuseport'
-
-cdef _apply_socket_options(tuple options):
-    if options is None:
-        options = ()
-    
-    for key, value in options:
-        if key == _SOCKET_OPT_SO_REUSEPORT:
-            _socket_options_list.append(value)
-
-
 def _asyncio_apply_socket_options(object s):
     s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEADDR, 1)
-    if _socket_options_list.pop(0):
-        s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEPORT, 1)
     s.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
 
