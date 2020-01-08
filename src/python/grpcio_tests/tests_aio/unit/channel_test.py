@@ -70,7 +70,8 @@ class TestChannel(AioTestBase):
             )
 
             with self.assertRaises(grpc.RpcError) as exception_context:
-                await hi(messages_pb2.SimpleRequest(), timeout=UNARY_CALL_WITH_SLEEP_VALUE / 2)
+                await hi(messages_pb2.SimpleRequest(),
+                         timeout=UNARY_CALL_WITH_SLEEP_VALUE / 2)
 
             _, details = grpc.StatusCode.DEADLINE_EXCEEDED.value  # pylint: disable=unused-variable
             self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
@@ -89,7 +90,8 @@ class TestChannel(AioTestBase):
                 response_deserializer=messages_pb2.SimpleResponse.FromString,
             )
 
-            call = hi(messages_pb2.SimpleRequest(), timeout=UNARY_CALL_WITH_SLEEP_VALUE * 2)
+            call = hi(messages_pb2.SimpleRequest(),
+                      timeout=UNARY_CALL_WITH_SLEEP_VALUE * 2)
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
     async def test_unary_stream(self):

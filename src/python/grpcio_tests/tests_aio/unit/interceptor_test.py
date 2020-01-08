@@ -22,7 +22,6 @@ from tests_aio.unit._test_server import start_test_server, UNARY_CALL_WITH_SLEEP
 from tests_aio.unit._test_base import AioTestBase
 from src.proto.grpc.testing import messages_pb2
 
-
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 
 
@@ -234,8 +233,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
         interceptor, interceptor_response = Interceptor(), ResponseInterceptor()
 
         async with aio.insecure_channel(
-                self._server_target, interceptors=[interceptor,
-                                             interceptor_response]) as channel:
+                self._server_target,
+                interceptors=[interceptor, interceptor_response]) as channel:
 
             multicallable = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
@@ -277,7 +276,6 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 call = await continuation(client_call_details, request)
                 return call
 
-
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
                                                      ]) as channel:
@@ -307,7 +305,6 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 await call
                 return call
 
-
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
                                                      ]) as channel:
@@ -336,7 +333,6 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 call = await continuation(client_call_details, request)
                 return call
 
-
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
                                                      ]) as channel:
@@ -346,7 +342,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
                 response_deserializer=messages_pb2.SimpleResponse.FromString)
 
-            call = multicallable(messages_pb2.SimpleRequest(), timeout=UNARY_CALL_WITH_SLEEP_VALUE / 2)
+            call = multicallable(messages_pb2.SimpleRequest(),
+                                 timeout=UNARY_CALL_WITH_SLEEP_VALUE / 2)
 
             with self.assertRaises(aio.AioRpcError) as exception_context:
                 await call
@@ -369,7 +366,6 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 await call
                 return call
 
-
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
                                                      ]) as channel:
@@ -379,7 +375,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
                 response_deserializer=messages_pb2.SimpleResponse.FromString)
 
-            call = multicallable(messages_pb2.SimpleRequest(), timeout=UNARY_CALL_WITH_SLEEP_VALUE / 2)
+            call = multicallable(messages_pb2.SimpleRequest(),
+                                 timeout=UNARY_CALL_WITH_SLEEP_VALUE / 2)
 
             with self.assertRaises(aio.AioRpcError) as exception_context:
                 await call
@@ -405,7 +402,6 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
                 # This line should never be reached
                 raise Exception()
-
 
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
@@ -450,7 +446,6 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 # This line should never be reached
                 raise Exception()
 
-
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
                                                      ]) as channel:
@@ -489,7 +484,6 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 await call
                 return call
 
-
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
                                                      ]) as channel:
@@ -520,7 +514,6 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 call = await continuation(client_call_details, request)
                 call.cancel()
                 return call
-
 
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()

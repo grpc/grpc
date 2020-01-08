@@ -54,17 +54,17 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 async def start_test_server():
     server = aio.server(options=(('grpc.so_reuseport', 0),))
     servicer = _TestServiceServicer()
-    test_pb2_grpc.add_TestServiceServicer_to_server(servicer,
-                                                    server)
+    test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
 
     # Add programatically extra methods not provided by the proto file
     # that are used during the tests
     rpc_method_handlers = {
-        'UnaryCallWithSleep': grpc.unary_unary_rpc_method_handler(
-        servicer.UnaryCallWithSleep,
-        request_deserializer=messages_pb2.SimpleRequest.FromString,
-        response_serializer=messages_pb2.SimpleResponse.SerializeToString
-      )
+        'UnaryCallWithSleep':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.UnaryCallWithSleep,
+                request_deserializer=messages_pb2.SimpleRequest.FromString,
+                response_serializer=messages_pb2.SimpleResponse.
+                SerializeToString)
     }
     extra_handler = grpc.method_handlers_generic_handler(
         'grpc.testing.TestService', rpc_method_handlers)
