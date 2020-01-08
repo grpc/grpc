@@ -146,8 +146,7 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
 
             else:
                 return UnaryUnaryCall(
-                    request,
-                    _timeout_to_deadline(client_call_details.timeout),
+                    request, _timeout_to_deadline(client_call_details.timeout),
                     self._channel, client_call_details.method,
                     request_serializer, response_deserializer)
 
