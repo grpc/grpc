@@ -1075,7 +1075,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   // the peer's certificate is not present in the stack
   STACK_OF(X509)* peer_chain = SSL_get_peer_cert_chain(impl->ssl);
   // 1 is for session reused property.
-  size_t new_property_count = peer->property_count + 1;
+  size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
@@ -1099,6 +1099,13 @@ static tsi_result ssl_handshaker_result_extract_peer(
     if (result != TSI_OK) return result;
     peer->property_count++;
   }
+  // Add security_level peer property.
+  result = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+      &peer->properties[peer->property_count]);
+  if (result != TSI_OK) return result;
+  peer->property_count++;
 
   const char* session_reused = SSL_session_reused(impl->ssl) ? "true" : "false";
   result = tsi_construct_string_peer_property_from_cstring(

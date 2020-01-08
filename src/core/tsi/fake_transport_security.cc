@@ -495,13 +495,17 @@ typedef struct {
 } fake_handshaker_result;
 
 static tsi_result fake_handshaker_result_extract_peer(
-    const tsi_handshaker_result* /*self*/, tsi_peer* peer) {
-  /* Construct a tsi_peer with 1 property: certificate type. */
-  tsi_result result = tsi_construct_peer(1, peer);
+    const tsi_handshaker_result* self, tsi_peer* peer) {
+  /* Construct a tsi_peer with 1 property: certificate type, security_level. */
+  tsi_result result = tsi_construct_peer(2, peer);
   if (result != TSI_OK) return result;
   result = tsi_construct_string_peer_property_from_cstring(
       TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_FAKE_CERTIFICATE_TYPE,
       &peer->properties[0]);
+  if (result != TSI_OK) tsi_peer_destruct(peer);
+  result = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_SECURITY_NONE), &peer->properties[1]);
   if (result != TSI_OK) tsi_peer_destruct(peer);
   return result;
 }
