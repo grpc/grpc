@@ -76,7 +76,9 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
     fork_handlers_and_grpc_init()
-    return grpc_metadata_credentials_create_from_plugin(c_metadata_plugin, NULL)
+    # TODO(yihuazhang): Expose min_security_level via the Python API so that
+    # applications can decide what minimum security level their plugins require.
+    return grpc_metadata_credentials_create_from_plugin(c_metadata_plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL)
 
 
 cdef grpc_call_credentials *_composition(call_credentialses):

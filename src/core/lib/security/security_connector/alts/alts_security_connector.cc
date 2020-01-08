@@ -178,6 +178,13 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
     gpr_log(GPR_ERROR, "Invalid or missing certificate type property.");
     return nullptr;
   }
+  /* Check if security level exists. */
+  const tsi_peer_property* security_level_prop =
+      tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  if (security_level_prop == nullptr) {
+    gpr_log(GPR_ERROR, "Missing security level property.");
+    return nullptr;
+  }
   /* Validate RPC protocol versions. */
   const tsi_peer_property* rpc_versions_prop =
       tsi_peer_get_property_by_name(peer, TSI_ALTS_RPC_VERSIONS);
@@ -231,6 +238,12 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
       grpc_auth_context_add_property(ctx.get(), TSI_ALTS_CONTEXT,
                                      tsi_prop->value.data,
                                      tsi_prop->value.length);
+    }
+    /* Add security level to auth context. */
+    if (strcmp(tsi_prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+          tsi_prop->value.data, tsi_prop->value.length);
     }
   }
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {

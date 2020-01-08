@@ -188,6 +188,15 @@ static void check_alpn(ssl_tsi_test_fixture* ssl_fixture,
   }
 }
 
+static void check_security_level(const tsi_peer* peer) {
+  const tsi_peer_property* security_level =
+      tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  GPR_ASSERT(security_level != nullptr);
+  const char* expected_match = "TSI_PRIVACY_AND_INTEGRITY";
+  GPR_ASSERT(memcmp(security_level->value.data, expected_match,
+                    security_level->value.length) == 0);
+}
+
 static const tsi_peer_property*
 check_basic_authenticated_peer_and_get_common_name(const tsi_peer* peer) {
   const tsi_peer_property* cert_type_property =
@@ -272,7 +281,7 @@ static void check_client_peer(ssl_tsi_test_fixture* ssl_fixture,
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   if (!ssl_fixture->force_client_auth) {
     GPR_ASSERT(peer->property_count ==
-               (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 2 : 1));
+               (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 3 : 2));
   } else {
     const tsi_peer_property* property =
         check_basic_authenticated_peer_and_get_common_name(peer);
@@ -298,6 +307,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
+    check_security_level(&peer);
     if (ssl_fixture->server_name_indication != nullptr) {
       check_server1_peer(&peer);
     } else {
@@ -311,6 +321,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
                    ssl_fixture->base.server_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
+    check_security_level(&peer);
     check_client_peer(ssl_fixture, &peer);
   } else {
     GPR_ASSERT(ssl_fixture->base.server_result == nullptr);
@@ -826,7 +837,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer peer;
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
-  // One for common name, one for certificate, and six for SAN fields.
+  // One for common name, one for certificate, one for security level, and six
+  // for SAN fields.
   size_t expected_property_count = 8;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name

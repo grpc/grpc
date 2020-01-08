@@ -25,6 +25,8 @@
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for FAKE certs. */
 #define TSI_FAKE_CERTIFICATE_TYPE "FAKE"
+/* Value of the TSI_SECURITY_LEVEL_PEER_PROPERTY property for FAKE certs. */
+#define TSI_FAKE_SECURITY_LEVEL "TSI_SECURITY_NONE"
 
 /* Creates a fake handshaker that will create a fake frame protector.
 

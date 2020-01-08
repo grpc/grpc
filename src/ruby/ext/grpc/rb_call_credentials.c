@@ -229,7 +229,10 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
   plugin.state = (void*)proc;
   plugin.type = "";
 
-  creds = grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+  // TODO(yihuazhang): Expose min_security_level via the Ruby API so that
+  // applications can decide what minimum security level their plugins require.
+  creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
     return Qnil;
