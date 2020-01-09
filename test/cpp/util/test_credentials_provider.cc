@@ -57,7 +57,7 @@ grpc::string ReadFile(const grpc::string& src_path) {
 class DefaultCredentialsProvider : public CredentialsProvider {
  public:
   DefaultCredentialsProvider() {
-    is_default_ = true;
+    is_default_credentials_provider_ = true;
     if (!FLAGS_tls_key_file.empty()) {
       custom_server_key_ = ReadFile(FLAGS_tls_key_file);
     }
@@ -99,11 +99,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       return grpc::GoogleDefaultCredentials();
     } else if (type == grpc::testing::kSpiffeCredentialsType) {
       args->SetSslTargetNameOverride("foo.test.google.fr");
-      TlsData tls_data = CreateTestTlsCredentialsOptions(true, true);
-      active_channel_options_ = tls_data.options;
-      thread_ = tls_data.server_authz_thread;
-      thread_started_ = tls_data.server_authz_thread_started;
-      return TlsCredentials(*active_channel_options_);
+      active_channel_data_.push_back(CreateTestTlsCredentialsOptions(
+          /*is_client=*/true, /*is_async=*/true));
+      return TlsCredentials(active_channel_data_.back()->options);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
@@ -138,9 +136,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       }
       return SslServerCredentials(ssl_opts);
     } else if (type == grpc::testing::kSpiffeCredentialsType) {
-      active_server_options_ =
-          CreateTestTlsCredentialsOptions(false, true).options;
-      return TlsServerCredentials(*active_server_options_);
+      active_server_data_.push_back(CreateTestTlsCredentialsOptions(
+          /*is_client=*/false, /*is_async=*/true));
+      return TlsServerCredentials(active_server_data_.back()->options);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
@@ -165,21 +163,32 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     return types;
   }
 
-  void JoinThread() {
-    if (thread_ != nullptr && thread_started_ != nullptr && *thread_started_) {
-        thread_->join();
-        *thread_started_ = false;
+  void JoinThreads() {
+    for (auto& data : active_channel_data_) {
+      if (data == nullptr) {
+        continue;
+      }
+      for (TlsThread* thread : *(data->thread_list)) {
+        if (thread != nullptr) {
+          thread->Join();
+        }
+      }
     }
   }
 
   void Reset(bool reset_channel, bool reset_server) {
-    if (reset_channel && active_channel_options_ != nullptr) {
-      active_channel_options_ = nullptr;
-      thread_ = nullptr;
-      thread_started_ = nullptr;
+    if (reset_channel) {
+      JoinThreads();
+      for (auto& data : active_channel_data_) {
+        delete data;
+      }
+      active_channel_data_.clear();
     }
-    if (reset_server && active_server_options_ != nullptr) {
-      active_server_options_ = nullptr;
+    if (reset_server) {
+      for (auto& data : active_server_data_) {
+        delete data;
+      }
+      active_server_data_.clear();
     }
   }
 
@@ -188,12 +197,10 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::vector<grpc::string> added_secure_type_names_;
   std::vector<std::unique_ptr<CredentialTypeProvider>>
       added_secure_type_providers_;
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> active_channel_options_;
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> active_server_options_;
+  std::vector<TlsData*> active_channel_data_;
+  std::vector<TlsData*> active_server_data_;
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
-  std::thread* thread_ = nullptr;
-  bool* thread_started_ = nullptr;
 };
 
 CredentialsProvider* g_provider = nullptr;
@@ -213,11 +220,15 @@ void SetCredentialsProvider(CredentialsProvider* provider) {
   g_provider = provider;
 }
 
-void WaitOnSpawnedThreads(CredentialsProvider* provider) {
+void WaitOnSpawnedThreads(CredentialsProvider* provider,
+                          const grpc::string& credential_type) {
+  if (credential_type != grpc::testing::kSpiffeCredentialsType) {
+    return;
+  }
   if (provider != nullptr && provider->IsDefault()) {
     DefaultCredentialsProvider* default_provider =
         reinterpret_cast<DefaultCredentialsProvider*>(provider);
-    default_provider->JoinThread();
+    default_provider->JoinThreads();
   }
 }
 

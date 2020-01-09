@@ -70,12 +70,12 @@ class CredentialsProvider {
   // Provide a list of secure credentials type.
   virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
 
-  bool IsDefault() { return is_default_; }
+  bool IsDefault() { return is_default_credentials_provider_; }
 
  protected:
   /** This variable indicates whether this credentials provider is a
    *  DefaultCredentialsProvider instance. **/
-  bool is_default_ = false;
+  bool is_default_credentials_provider_ = false;
 };
 
 // Get the current provider. Create a default one if not set.
@@ -89,10 +89,13 @@ void SetCredentialsProvider(CredentialsProvider* provider);
 
 /** This method forces the current application to wait on any threads spawned
  *  by |providuer| to complete prior to continuing. **/
-void WaitOnSpawnedThreads(CredentialsProvider* provider);
+void WaitOnSpawnedThreads(CredentialsProvider* provider,
+                          const grpc::string& credentials_type);
 
-/** This method resets the active channel/server TLS credentials options, if the
- *  SPIFFE credentials are currently in use. **/
+/** When the |is_default_| field of |provider| is set to true, this method
+ *  resets the active channel/server TLS credential data, if the
+ *  TLS credentials are currently in use. Otherwise, this method does nothing.
+ * **/
 void ResetCredentials(CredentialsProvider* provider, bool reset_channel,
                       bool reset_server);
 

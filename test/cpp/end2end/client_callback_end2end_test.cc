@@ -165,6 +165,7 @@ class ClientCallbackEnd2endTest
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     generic_stub_.reset(new GenericStub(channel_));
     DummyInterceptor::Reset();
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
 
   void TearDown() override {
@@ -177,6 +178,8 @@ class ClientCallbackEnd2endTest
     if (picked_port_ > 0) {
       grpc_recycle_unused_port(picked_port_);
     }
+    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
+                     /*reset_server=*/true);
   }
 
   void SendRpcs(int num_rpcs, bool with_binary_metadata) {

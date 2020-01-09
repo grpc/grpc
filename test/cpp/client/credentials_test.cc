@@ -55,7 +55,7 @@ class TestTlsCredentialReload : public TlsCredentialReloadInterface {
   int Schedule(TlsCredentialReloadArg* arg) override {
     GPR_ASSERT(arg != nullptr);
     TlsKeyMaterialsConfig::PemKeyCertPair pair = {"private_key3",
-                                                   "cert_chain3"};
+                                                  "cert_chain3"};
     arg->set_pem_root_certs("new_pem_root_certs");
     arg->add_pem_key_cert_pair(pair);
     arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
@@ -685,8 +685,9 @@ TEST_F(CredentialsTest, LoadTlsServerCredentials) {
   std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
       new TlsCredentialReloadConfig(test_credential_reload));
 
-  TlsCredentialsOptions options = TlsCredentialsOptions(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-                                nullptr, credential_reload_config, nullptr);
+  TlsCredentialsOptions options =
+      TlsCredentialsOptions(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+                            nullptr, credential_reload_config, nullptr);
   std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
       grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials != nullptr);

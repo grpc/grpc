@@ -40,7 +40,6 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/tls_test_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -272,8 +271,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ;
     stub_.reset();
     grpc_recycle_unused_port(port_);
-    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
-                     /*reset_server=*/true);
+    // ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
+    //                 /*reset_server=*/true);
   }
 
   void BuildAndStartServer() {
@@ -306,6 +305,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
         !(GetParam().inproc) ? ::grpc::CreateCustomChannel(
                                    server_address_.str(), channel_creds, args)
                              : server_->InProcessChannel(args);
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -391,7 +391,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
       gpr_time_from_millis(
           300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
           GPR_TIMESPAN)));
-  WaitOnSpawnedThreads(GetCredentialsProvider());
+  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   SendRpc(1);
 }
 
@@ -1269,6 +1269,7 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
       !(GetParam().inproc) ? ::grpc::CreateCustomChannel(server_address_.str(),
                                                          channel_creds, args)
                            : server_->InProcessChannel(args);
+  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
   EchoRequest send_request;

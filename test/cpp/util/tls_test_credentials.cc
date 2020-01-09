@@ -64,8 +64,14 @@ class TestAsyncTlsServerAuthorizationCheck
     : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
  public:
   ~TestAsyncTlsServerAuthorizationCheck() {
-    if (thread_started_) {
-      server_authz_thread_.join();
+    for (TlsThread* thread : thread_list_) {
+      if (thread == nullptr) {
+        continue;
+      }
+      if (thread->thread_started_) {
+        thread->thread_.join();
+      }
+      delete thread;
     }
   }
 
@@ -73,21 +79,23 @@ class TestAsyncTlsServerAuthorizationCheck
   int Schedule(
       ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
     GPR_ASSERT(arg != nullptr);
-    thread_started_ = true;
-    server_authz_thread_ =
+    TlsThread* tls_thread = new TlsThread();
+    thread_list_.push_back(tls_thread);
+    tls_thread->thread_started_ = true;
+    tls_thread->thread_ =
         std::thread(TestAsyncTlsServerAuthorizationCheckCallback, arg);
     return 1;
   }
 
-  std::thread* server_authz_thread() { return &server_authz_thread_; }
-  bool* thread_started() { return &thread_started_; }
+  std::vector<TlsThread*>* thread_list() { return &thread_list_; }
 
  private:
-  std::thread server_authz_thread_;
-  bool thread_started_ = false;
+  /** A vector of all the threads spawned by scheduling server authorization
+   *  checks. **/
+  std::vector<TlsThread*> thread_list_;
 };
 
-TlsData CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
+TlsData* CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
   /** Create a credential reload config that is configured using the
    *  TestSyncTlsCredentialReload class. **/
   std::shared_ptr<TestSyncTlsCredentialReload> credential_reload_interface(
@@ -96,31 +104,24 @@ TlsData CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
       test_credential_reload_config(
           new ::grpc_impl::experimental::TlsCredentialReloadConfig(
               credential_reload_interface));
-
   if (!is_client) {
     /** There is no server authorization check done on the server-side. **/
-    std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options(
-        new ::grpc_impl::experimental::TlsCredentialsOptions(
-            GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
-            /** key materials config **/ nullptr, test_credential_reload_config,
-            /** server authorization check config **/ nullptr));
-    return {options, nullptr, nullptr};
+    return new TlsData(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, nullptr,
+        test_credential_reload_config, nullptr, nullptr);
   }
-
   /** Create a server authorization check config that is configured depending on
    *  the parameters |is_client| and |is_async|. **/
   std::shared_ptr<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>
       test_server_authorization_check_config;
-  std::thread* server_authz_thread = nullptr;
-  bool* server_authz_thread_started = nullptr;
+  std::vector<TlsThread*>* server_authz_thread_list = nullptr;
   if (is_async) {
     std::shared_ptr<TestAsyncTlsServerAuthorizationCheck> async_interface(
         new TestAsyncTlsServerAuthorizationCheck());
     test_server_authorization_check_config = std::make_shared<
         ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
         async_interface);
-    server_authz_thread = async_interface->server_authz_thread();
-    server_authz_thread_started = async_interface->thread_started();
+    server_authz_thread_list = async_interface->thread_list();
   } else {
     std::shared_ptr<TestSyncTlsServerAuthorizationCheck> sync_interface(
         new TestSyncTlsServerAuthorizationCheck());
@@ -128,16 +129,10 @@ TlsData CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
         ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
         sync_interface);
   }
-
-  /** Create a TlsCredentialsOptions instance with an empty key materials
-   *  config, and the credential reload and server authorization check configs
-   *  are set based upon the ... **/
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options(
-      new ::grpc_impl::experimental::TlsCredentialsOptions(
-          GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
-          /** key materials config **/ nullptr, test_credential_reload_config,
-          test_server_authorization_check_config));
-  return {options, server_authz_thread, server_authz_thread_started};
+  return new TlsData(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+                     nullptr, test_credential_reload_config,
+                     test_server_authorization_check_config,
+                     server_authz_thread_list);
 }
 
 }  // namespace testing

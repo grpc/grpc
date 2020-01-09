@@ -45,7 +45,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
-#include "test/cpp/util/tls_test_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -282,8 +281,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (first_picked_port_ > 0) {
       grpc_recycle_unused_port(first_picked_port_);
     }
-    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
-                     /*reset_server=*/true);
+    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true, /*reset_server=*/true);
   }
 
   void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
@@ -297,6 +295,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     if (is_server_started_) {
       server_->Shutdown();
+      ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/false,
+                       /*reset_server=*/true);
       BuildAndStartServer(processor);
     }
   }
@@ -305,6 +305,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       const std::shared_ptr<AuthMetadataProcessor>& processor) {
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
+    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/false,
+                       /*reset_server=*/true);
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
     if (GetParam().credentials_type != kInsecureCredentialsType) {
@@ -408,7 +410,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     DummyInterceptor::Reset();
-    WaitOnSpawnedThreads(GetCredentialsProvider());
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
 
   bool do_not_test_{false};
@@ -853,7 +855,7 @@ TEST_P(End2endTest, ReconnectChannel) {
       gpr_time_from_millis(
           300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
           GPR_TIMESPAN)));
-  WaitOnSpawnedThreads(GetCredentialsProvider());
+  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   SendRpc(stub_.get(), 1, false);
 }
 

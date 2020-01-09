@@ -25,13 +25,45 @@
 #include <thread>
 #include <vector>
 
+using ::grpc_impl::experimental::TlsCredentialReloadConfig;
+using ::grpc_impl::experimental::TlsCredentialsOptions;
+using ::grpc_impl::experimental::TlsKeyMaterialsConfig;
+using ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig;
+
 namespace grpc {
 namespace testing {
 
-struct TlsData {
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options;
-  std::thread* server_authz_thread;
-  bool* server_authz_thread_started;
+struct TlsThread {
+  void Join() {
+    if (thread_started_) {
+      thread_.join();
+      thread_started_ = false;
+    }
+  }
+
+  std::thread thread_;
+  bool thread_started_ = false;
+};
+
+class TlsData {
+ public:
+  TlsData(grpc_ssl_client_certificate_request_type cert_request_type,
+          std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+          std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
+          std::shared_ptr<TlsServerAuthorizationCheckConfig>
+              server_authorization_check_config,
+          std::vector<TlsThread*>* list)
+      : options(cert_request_type, key_materials_config,
+                credential_reload_config, server_authorization_check_config),
+        thread_list(list), key_materials(key_materials_config), credential_reload(credential_reload_config), server_authorization_check(server_authorization_check_config) {}
+
+  ~TlsData() {}
+
+  TlsCredentialsOptions options;
+  std::vector<TlsThread*>* thread_list = nullptr;
+  std::shared_ptr<TlsKeyMaterialsConfig> key_materials;
+  std::shared_ptr<TlsCredentialReloadConfig> credential_reload;
+  std::shared_ptr<TlsServerAuthorizationCheckConfig> server_authorization_check;
 };
 
 /** This method creates a TlsCredentialsOptions instance with no key materials,
@@ -46,7 +78,7 @@ struct TlsData {
  *  Further, the cert request type of the options instance is always set to
  *  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY for both the
  *  client and the server. **/
-TlsData CreateTestTlsCredentialsOptions(bool is_client, bool is_async);
+TlsData* CreateTestTlsCredentialsOptions(bool is_client, bool is_async);
 
 }  // namespace testing
 }  // namespace grpc
