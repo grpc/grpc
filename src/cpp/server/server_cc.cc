@@ -15,7 +15,6 @@
  *
  */
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/server.h>
 
 #include <cstdlib>
@@ -820,6 +819,7 @@ bool Server::CallbackRequest<
     grpc::GenericCallbackServerContext>::FinalizeResult(void** /*tag*/,
                                                         bool* status) {
   if (*status) {
+    deadline_ = call_details_->deadline;
     // TODO(yangg) remove the copy here
     ctx_.method_ = grpc::StringFromCopiedSlice(call_details_->method);
     ctx_.host_ = grpc::StringFromCopiedSlice(call_details_->host);
@@ -977,7 +977,7 @@ Server::Server(
         interceptor_creators)
     : acceptors_(std::move(acceptors)),
       interceptor_creators_(std::move(interceptor_creators)),
-      max_receive_message_size_(-1),
+      max_receive_message_size_(INT_MIN),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
       shutdown_(false),

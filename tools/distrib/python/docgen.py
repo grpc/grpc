@@ -24,18 +24,16 @@ import sys
 import tempfile
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--config',
-    metavar='c',
-    type=str,
-    nargs=1,
-    help='GRPC/GPR libraries build configuration',
-    default='opt')
+parser.add_argument('--config',
+                    metavar='c',
+                    type=str,
+                    nargs=1,
+                    help='GRPC/GPR libraries build configuration',
+                    default='opt')
 parser.add_argument('--submit', action='store_true')
-parser.add_argument(
-    '--repo-owner',
-    type=str,
-    help=('Owner of the GitHub repository to be pushed'))
+parser.add_argument('--repo-owner',
+                    type=str,
+                    help=('Owner of the GitHub repository to be pushed'))
 parser.add_argument('--doc-branch', type=str)
 args = parser.parse_args()
 
@@ -68,7 +66,7 @@ subprocess_arguments_list = [
         'env': environment
     },
     {
-        'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip==18.1'],
+        'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip==19.3.1'],
         'env': environment
     },
     {
@@ -105,22 +103,20 @@ elif args.submit:
     doc_branch = args.doc_branch
 
     print('Cloning your repository...')
-    subprocess.check_call(
-        [
-            'git',
-            'clone',
-            '--branch',
-            'gh-pages',
-            'https://github.com/grpc/grpc',
-        ],
-        cwd=repo_parent_dir)
+    subprocess.check_call([
+        'git',
+        'clone',
+        '--branch',
+        'gh-pages',
+        'https://github.com/grpc/grpc',
+    ],
+                          cwd=repo_parent_dir)
     subprocess.check_call(['git', 'checkout', '-b', doc_branch], cwd=repo_dir)
-    subprocess.check_call(
-        [
-            'git', 'remote', 'add', 'ssh-origin',
-            'git@github.com:%s/grpc.git' % (github_repository_owner)
-        ],
-        cwd=repo_dir)
+    subprocess.check_call([
+        'git', 'remote', 'add', 'ssh-origin',
+        'git@github.com:%s/grpc.git' % (github_repository_owner)
+    ],
+                          cwd=repo_dir)
     print('Updating documentation...')
     shutil.rmtree(python_doc_dir, ignore_errors=True)
     shutil.copytree(DOC_PATH, python_doc_dir)

@@ -69,9 +69,8 @@ for filename in sys.argv[1:]:
     js = rebuild_as_ordered_dict(js, _TOP_LEVEL_KEYS)
     for grp in ['filegroups', 'libs', 'targets']:
         if grp not in js: continue
-        js[grp] = sorted(
-            [clean_elem(x) for x in js[grp]],
-            key=lambda x: (x.get('language', '_'), x['name']))
+        js[grp] = sorted([clean_elem(x) for x in js[grp]],
+                         key=lambda x: (x.get('language', '_'), x['name']))
     output = yaml.dump(js, indent=2, width=80, default_flow_style=False)
     # massage out trailing whitespace
     lines = []

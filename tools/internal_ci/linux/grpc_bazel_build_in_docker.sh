@@ -26,6 +26,6 @@ ${name}')
 cd /var/local/git/grpc
 bazel build --spawn_strategy=standalone --genrule_strategy=standalone :all test/... examples/...
 
-# This is a temporary build test before full absl support is done
-# with https://github.com/grpc/grpc/pull/20918.
-bazel build --spawn_strategy=standalone --genrule_strategy=standalone --define=GRPC_USE_ABSL=1 :grpc
+# This is a temporary build test before absl is proven safe to work with gRPC.
+# TODO(veblush): Remove this after abseil integration is finally done.
+bazel build --spawn_strategy=standalone --genrule_strategy=standalone --define=GRPC_USE_ABSL=0 :grpc

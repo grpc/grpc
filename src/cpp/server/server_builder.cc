@@ -26,6 +26,7 @@
 
 #include <utility>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
@@ -218,7 +219,22 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   grpc::ChannelArguments args;
+
+  for (const auto& option : options_) {
+    option->UpdateArguments(&args);
+    option->UpdatePlugins(&plugins_);
+  }
   if (max_receive_message_size_ >= -1) {
+    grpc_channel_args c_args = args.c_channel_args();
+    const grpc_arg* arg =
+        grpc_channel_args_find(&c_args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
+    // Some option has set max_receive_message_length and it is also set
+    // directly on the ServerBuilder.
+    if (arg != nullptr) {
+      gpr_log(
+          GPR_ERROR,
+          "gRPC ServerBuilder receives multiple max_receive_message_length");
+    }
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
   // The default message size is -1 (max), so no need to explicitly set it for
@@ -241,11 +257,6 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   if (resource_quota_ != nullptr) {
     args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
-  }
-
-  for (const auto& option : options_) {
-    option->UpdateArguments(&args);
-    option->UpdatePlugins(&plugins_);
   }
 
   for (const auto& plugin : plugins_) {

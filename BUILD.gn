@@ -158,6 +158,9 @@ config("grpc_config") {
         "src/core/lib/profiling/timers.h",
     ]
     deps = [
+        ":absl/container:inlined_vector",
+        ":absl/strings:strings",
+        ":absl/types:optional",
     ]
     
     public_configs = [

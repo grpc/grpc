@@ -138,15 +138,15 @@ grpc_cc_test(
     name = "logical_thread_test",
     srcs = ["logical_thread_test.cc"],
     exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
-    ],
-    external_deps = [
-      "gtest",
     ],
 )
 
@@ -271,8 +271,8 @@ grpc_cc_test(
     srcs = ["tcp_posix_test.cc"],
     language = "C++",
     tags = [
-        "no_windows",
         "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
+        "no_windows",
     ],
     deps = [
         ":endpoint_tests",

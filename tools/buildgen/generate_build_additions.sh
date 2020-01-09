@@ -33,6 +33,6 @@ gen_build_files=""
 for gen_build_yaml in $gen_build_yaml_dirs
 do
   output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
+  python $gen_build_yaml/gen_build_yaml.py > $output_file
   gen_build_files="$gen_build_files $output_file"
 done

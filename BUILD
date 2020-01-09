@@ -70,8 +70,8 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_use_absl",
-    values = {"define": "GRPC_USE_ABSL=1"},
+    name = "grpc_disable_absl",
+    values = {"define": "GRPC_USE_ABSL=0"},
 )
 
 python_config_settings()
@@ -429,6 +429,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_alts",
+    srcs = [
+        "src/cpp/common/alts_context.cc",
+        "src/cpp/common/alts_util.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/security/alts_context.h",
+        "include/grpcpp/security/alts_util.h",
+    ],
+    language = "c++",
+    standalone = True,
+    deps = [
+        "alts_upb",
+        "alts_util",
+        "grpc++",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_csharp_ext",
     srcs = [
         "src/csharp/ext/grpc_csharp_ext.c",
@@ -541,6 +560,9 @@ grpc_cc_library(
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
@@ -595,6 +617,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "inlined_vector",
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/gprpp/inlined_vector.h",
@@ -612,6 +637,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "optional",
+    external_deps = [
+        "absl/types:optional",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/gprpp/optional.h",
@@ -873,7 +901,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
-        "src/core/lib/iomgr/logical_thread.h",  
+        "src/core/lib/iomgr/logical_thread.h",
         "src/core/lib/iomgr/nameser.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",

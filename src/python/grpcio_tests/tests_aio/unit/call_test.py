@@ -31,6 +31,9 @@ _NUM_STREAM_RESPONSES = 5
 _RESPONSE_PAYLOAD_SIZE = 42
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 _RESPONSE_INTERVAL_US = test_constants.SHORT_TIMEOUT * 1000 * 1000
+_UNREACHABLE_TARGET = '0.1:1111'
+
+_INFINITE_INTERVAL_US = 2**31 - 1
 
 
 class TestUnaryUnaryCall(AioTestBase):
@@ -63,20 +66,14 @@ class TestUnaryUnaryCall(AioTestBase):
             self.assertIs(response, response_retry)
 
     async def test_call_rpc_error(self):
-        async with aio.insecure_channel(self._server_target) as channel:
-            empty_call_with_sleep = channel.unary_unary(
-                "/grpc.testing.TestService/EmptyCall",
+        async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
+            hi = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
                 response_deserializer=messages_pb2.SimpleResponse.FromString,
             )
-            timeout = test_constants.SHORT_TIMEOUT / 2
-            # TODO(https://github.com/grpc/grpc/issues/20869
-            # Update once the async server is ready, change the
-            # synchronization mechanism by removing the sleep(<timeout>)
-            # as both components (client & server) will be on the same
-            # process.
-            call = empty_call_with_sleep(
-                messages_pb2.SimpleRequest(), timeout=timeout)
+
+            call = hi(messages_pb2.SimpleRequest(), timeout=0.1)
 
             with self.assertRaises(grpc.RpcError) as exception_context:
                 await call
@@ -124,24 +121,38 @@ class TestUnaryUnaryCall(AioTestBase):
 
             self.assertFalse(call.cancelled())
 
-            # TODO(https://github.com/grpc/grpc/issues/20869) remove sleep.
-            # Force the loop to execute the RPC task.
-            await asyncio.sleep(0)
-
             self.assertTrue(call.cancel())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(asyncio.CancelledError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await call
 
+            # The info in the RpcError should match the info in Call object.
             self.assertTrue(call.cancelled())
             self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
             self.assertEqual(await call.details(),
                              'Locally cancelled by application!')
 
-            # NOTE(lidiz) The CancelledError is almost always re-created,
-            # so we might not want to use it to transmit data.
-            # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
+    async def test_cancel_unary_unary_in_task(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            coro_started = asyncio.Event()
+            call = stub.EmptyCall(messages_pb2.SimpleRequest())
+
+            async def another_coro():
+                coro_started.set()
+                await call
+
+            task = self.loop.create_task(another_coro())
+            await coro_started.wait()
+
+            self.assertFalse(task.done())
+            task.cancel()
+
+            self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+
+            with self.assertRaises(asyncio.CancelledError):
+                await task
 
 
 class TestUnaryStreamCall(AioTestBase):
@@ -170,8 +181,8 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             response = await call.read()
-            self.assertIs(
-                type(response), messages_pb2.StreamingOutputCallResponse)
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
             self.assertTrue(call.cancel())
@@ -180,7 +191,7 @@ class TestUnaryStreamCall(AioTestBase):
                              call.details())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await call.read()
             self.assertTrue(call.cancelled())
 
@@ -202,8 +213,8 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             response = await call.read()
-            self.assertIs(
-                type(response), messages_pb2.StreamingOutputCallResponse)
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
             self.assertTrue(call.cancel())
@@ -211,7 +222,7 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancel())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await call.read()
 
     async def test_early_cancel_unary_stream(self):
@@ -235,15 +246,10 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertTrue(call.cancel())
             self.assertFalse(call.cancel())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(asyncio.CancelledError):
                 await call.read()
 
             self.assertTrue(call.cancelled())
-
-            self.assertEqual(grpc.StatusCode.CANCELLED,
-                             exception_context.exception.code())
-            self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION,
-                             exception_context.exception.details())
 
             self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
             self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION, await
@@ -266,8 +272,8 @@ class TestUnaryStreamCall(AioTestBase):
 
             for _ in range(_NUM_STREAM_RESPONSES):
                 response = await call.read()
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 
@@ -295,8 +301,8 @@ class TestUnaryStreamCall(AioTestBase):
 
             for _ in range(_NUM_STREAM_RESPONSES):
                 response = await call.read()
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 
@@ -321,12 +327,75 @@ class TestUnaryStreamCall(AioTestBase):
             self.assertFalse(call.cancelled())
 
             async for response in call:
-                self.assertIs(
-                    type(response), messages_pb2.StreamingOutputCallResponse)
+                self.assertIs(type(response),
+                              messages_pb2.StreamingOutputCallResponse)
                 self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                  len(response.payload.body))
 
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_cancel_unary_stream_in_task_using_read(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            coro_started = asyncio.Event()
+
+            # Configs the server method to block forever
+            request = messages_pb2.StreamingOutputCallRequest()
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(
+                    size=_RESPONSE_PAYLOAD_SIZE,
+                    interval_us=_INFINITE_INTERVAL_US,
+                ))
+
+            # Invokes the actual RPC
+            call = stub.StreamingOutputCall(request)
+
+            async def another_coro():
+                coro_started.set()
+                await call.read()
+
+            task = self.loop.create_task(another_coro())
+            await coro_started.wait()
+
+            self.assertFalse(task.done())
+            task.cancel()
+
+            self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+
+    async def test_cancel_unary_stream_in_task_using_async_for(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            coro_started = asyncio.Event()
+
+            # Configs the server method to block forever
+            request = messages_pb2.StreamingOutputCallRequest()
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(
+                    size=_RESPONSE_PAYLOAD_SIZE,
+                    interval_us=_INFINITE_INTERVAL_US,
+                ))
+
+            # Invokes the actual RPC
+            call = stub.StreamingOutputCall(request)
+
+            async def another_coro():
+                coro_started.set()
+                async for _ in call:
+                    pass
+
+            task = self.loop.create_task(another_coro())
+            await coro_started.wait()
+
+            self.assertFalse(task.done())
+            task.cancel()
+
+            self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+
+            with self.assertRaises(asyncio.CancelledError):
+                await task
 
 
 if __name__ == '__main__':

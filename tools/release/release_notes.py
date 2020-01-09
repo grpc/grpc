@@ -286,31 +286,31 @@ def write_rel_notes(langs_pr, file, version, name):
 def build_args_parser():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'release_version', type=str, help='New release version e.g. 1.14.0')
-    parser.add_argument(
-        'release_name', type=str, help='New release name e.g. gladiolus')
-    parser.add_argument(
-        'release_date', type=str, help='Release date e.g. 7/30/18')
-    parser.add_argument(
-        'previous_release_label',
-        type=str,
-        help='Previous release branch/tag e.g. v1.13.x')
-    parser.add_argument(
-        'release_branch',
-        type=str,
-        help='Current release branch e.g. origin/v1.14.x')
-    parser.add_argument(
-        'draft_filename', type=str, help='Name of the draft file e.g. draft.md')
-    parser.add_argument(
-        'release_notes_filename',
-        type=str,
-        help='Name of the release notes file e.g. relnotes.md')
-    parser.add_argument(
-        '--token',
-        type=str,
-        default='',
-        help='GitHub API token to avoid being rate limited')
+    parser.add_argument('release_version',
+                        type=str,
+                        help='New release version e.g. 1.14.0')
+    parser.add_argument('release_name',
+                        type=str,
+                        help='New release name e.g. gladiolus')
+    parser.add_argument('release_date',
+                        type=str,
+                        help='Release date e.g. 7/30/18')
+    parser.add_argument('previous_release_label',
+                        type=str,
+                        help='Previous release branch/tag e.g. v1.13.x')
+    parser.add_argument('release_branch',
+                        type=str,
+                        help='Current release branch e.g. origin/v1.14.x')
+    parser.add_argument('draft_filename',
+                        type=str,
+                        help='Name of the draft file e.g. draft.md')
+    parser.add_argument('release_notes_filename',
+                        type=str,
+                        help='Name of the release notes file e.g. relnotes.md')
+    parser.add_argument('--token',
+                        type=str,
+                        default='',
+                        help='GitHub API token to avoid being rate limited')
     return parser
 
 

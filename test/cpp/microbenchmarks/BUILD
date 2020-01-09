@@ -137,8 +137,8 @@ grpc_cc_binary(
         "bm_fullstack_streaming_ping_pong.cc",
     ],
     tags = [
-        "no_windows",
         "no_mac",  # to emulate "excluded_poll_engines: poll"
+        "no_windows",
     ],
     deps = [":fullstack_streaming_ping_pong_h"],
 )
@@ -159,8 +159,8 @@ grpc_cc_binary(
         "bm_fullstack_streaming_pump.cc",
     ],
     tags = [
-        "no_windows",
         "no_mac",  # to emulate "excluded_poll_engines: poll"
+        "no_windows",
     ],
     deps = [":fullstack_streaming_pump_h"],
 )
@@ -170,8 +170,8 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
     tags = [
-        "no_windows",
         "no_mac",  # to emulate "excluded_poll_engines: poll"
+        "no_windows",
     ],
     deps = [":helpers"],
 )
@@ -192,8 +192,8 @@ grpc_cc_binary(
         "bm_fullstack_unary_ping_pong.cc",
     ],
     tags = [
-        "no_windows",
         "no_mac",  # to emulate "excluded_poll_engines: poll"
+        "no_windows",
     ],
     deps = [":fullstack_unary_ping_pong_h"],
 )

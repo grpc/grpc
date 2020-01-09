@@ -266,6 +266,39 @@ static void send_security_metadata(grpc_call_element* elem,
         call_creds_has_md ? ctx->creds->Ref() : channel_call_creds->Ref();
   }
 
+  /* Check security level of call credential and channel, and do not send
+   * metadata if the check fails. */
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      chand->auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop == nullptr) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch,
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Established channel does not have an auth property "
+                "representing a security level."),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
+        calld->call_combiner);
+    return;
+  }
+  grpc_security_level call_cred_security_level =
+      calld->creds->min_security_level();
+  int is_security_level_ok = grpc_check_security_level(
+      grpc_tsi_security_level_string_to_enum(prop->value),
+      call_cred_security_level);
+  if (!is_security_level_ok) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "Established channel does not have a sufficient "
+                               "security level to transfer call credential."),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_UNAUTHENTICATED),
+        calld->call_combiner);
+    return;
+  }
+
   grpc_auth_metadata_context_build(
       chand->security_connector->url_scheme(), calld->host, calld->method,
       chand->auth_context.get(), &calld->auth_md_context);

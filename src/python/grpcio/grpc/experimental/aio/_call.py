@@ -41,6 +41,8 @@ _NON_OK_CALL_REPRESENTATION = ('<{} of RPC that terminated with:\n'
                                '\tdebug_error_string = "{}"\n'
                                '>')
 
+_EMPTY_METADATA = tuple()
+
 
 class AioRpcError(grpc.RpcError):
     """An implementation of RpcError to be used by the asynchronous API.
@@ -148,14 +150,14 @@ class Call(_base_call.Call):
     _code: grpc.StatusCode
     _status: Awaitable[cygrpc.AioRpcStatus]
     _initial_metadata: Awaitable[MetadataType]
-    _cancellation: asyncio.Future
+    _locally_cancelled: bool
 
     def __init__(self) -> None:
         self._loop = asyncio.get_event_loop()
         self._code = None
         self._status = self._loop.create_future()
         self._initial_metadata = self._loop.create_future()
-        self._cancellation = self._loop.create_future()
+        self._locally_cancelled = False
 
     def cancel(self) -> bool:
         """Placeholder cancellation method.
@@ -167,8 +169,7 @@ class Call(_base_call.Call):
         raise NotImplementedError()
 
     def cancelled(self) -> bool:
-        return self._cancellation.done(
-        ) or self._code == grpc.StatusCode.CANCELLED
+        return self._code == grpc.StatusCode.CANCELLED
 
     def done(self) -> bool:
         return self._status.done()
@@ -205,14 +206,22 @@ class Call(_base_call.Call):
         cancellation (by application) and Core receiving status from peer. We
         make no promise here which one will win.
         """
-        if self._status.done():
-            return
-        else:
-            self._status.set_result(status)
-            self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[
-                status.code()]
+        # In case of local cancellation, flip the flag.
+        if status.details() is _LOCAL_CANCELLATION_DETAILS:
+            self._locally_cancelled = True
 
-    async def _raise_rpc_error_if_not_ok(self) -> None:
+        # In case of the RPC finished without receiving metadata.
+        if not self._initial_metadata.done():
+            self._initial_metadata.set_result(_EMPTY_METADATA)
+
+        # Sets final status
+        self._status.set_result(status)
+        self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()]
+
+    async def _raise_for_status(self) -> None:
+        if self._locally_cancelled:
+            raise asyncio.CancelledError()
+        await self._status
         if self._code != grpc.StatusCode.OK:
             raise _create_rpc_error(await self.initial_metadata(),
                                     self._status.result())
@@ -245,12 +254,11 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
     """
     _request: RequestType
-    _deadline: Optional[float]
     _channel: cygrpc.AioChannel
-    _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _call: asyncio.Task
+    _cython_call: cygrpc._AioCall
 
     def __init__(self, request: RequestType, deadline: Optional[float],
                  channel: cygrpc.AioChannel, method: bytes,
@@ -258,11 +266,10 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
                  response_deserializer: DeserializingFunction) -> None:
         super().__init__()
         self._request = request
-        self._deadline = deadline
         self._channel = channel
-        self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
+        self._cython_call = self._channel.call(method, deadline)
         self._call = self._loop.create_task(self._invoke())
 
     def __del__(self) -> None:
@@ -275,28 +282,30 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         serialized_request = _common.serialize(self._request,
                                                self._request_serializer)
 
-        # NOTE(lidiz) asyncio.CancelledError is not a good transport for
-        # status, since the Task class do not cache the exact
-        # asyncio.CancelledError object. So, the solution is catching the error
-        # in Cython layer, then cancel the RPC and update the status, finally
-        # re-raise the CancelledError.
-        serialized_response = await self._channel.unary_unary(
-            self._method,
-            serialized_request,
-            self._deadline,
-            self._cancellation,
-            self._set_initial_metadata,
-            self._set_status,
-        )
-        await self._raise_rpc_error_if_not_ok()
+        # NOTE(lidiz) asyncio.CancelledError is not a good transport for status,
+        # because the asyncio.Task class do not cache the exception object.
+        # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
+        try:
+            serialized_response = await self._cython_call.unary_unary(
+                serialized_request,
+                self._set_initial_metadata,
+                self._set_status,
+            )
+        except asyncio.CancelledError:
+            if self._code != grpc.StatusCode.CANCELLED:
+                self.cancel()
+
+        # Raises here if RPC failed or cancelled
+        await self._raise_for_status()
 
         return _common.deserialize(serialized_response,
                                    self._response_deserializer)
 
     def _cancel(self, status: cygrpc.AioRpcStatus) -> bool:
         """Forwards the application cancellation reasoning."""
-        if not self._status.done() and not self._cancellation.done():
-            self._cancellation.set_result(status)
+        if not self._status.done():
+            self._set_status(status)
+            self._cython_call.cancel(status)
             self._call.cancel()
             return True
         else:
@@ -308,16 +317,17 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
                                 _LOCAL_CANCELLATION_DETAILS, None, None))
 
     def __await__(self) -> ResponseType:
-        """Wait till the ongoing RPC request finishes.
-
-        Returns:
-          Response of the RPC call.
-
-        Raises:
-          RpcError: Indicating that the RPC terminated with non-OK status.
-          asyncio.CancelledError: Indicating that the RPC was canceled.
-        """
-        response = yield from self._call
+        """Wait till the ongoing RPC request finishes."""
+        try:
+            response = yield from self._call
+        except asyncio.CancelledError:
+            # Even if we caught all other CancelledError, there is still
+            # this corner case. If the application cancels immediately after
+            # the Call object is created, we will observe this
+            # `CancelledError`.
+            if not self.cancelled():
+                self.cancel()
+            raise
         return response
 
 
@@ -328,13 +338,11 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
     Returned when an instance of `UnaryStreamMultiCallable` object is called.
     """
     _request: RequestType
-    _deadline: Optional[float]
     _channel: cygrpc.AioChannel
-    _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
-    _call: asyncio.Task
-    _bytes_aiter: AsyncIterable[bytes]
+    _cython_call: cygrpc._AioCall
+    _send_unary_request_task: asyncio.Task
     _message_aiter: AsyncIterable[ResponseType]
 
     def __init__(self, request: RequestType, deadline: Optional[float],
@@ -343,13 +351,13 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
                  response_deserializer: DeserializingFunction) -> None:
         super().__init__()
         self._request = request
-        self._deadline = deadline
         self._channel = channel
-        self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._call = self._loop.create_task(self._invoke())
-        self._message_aiter = self._process()
+        self._send_unary_request_task = self._loop.create_task(
+            self._send_unary_request())
+        self._message_aiter = self._fetch_stream_responses()
+        self._cython_call = self._channel.call(method, deadline)
 
     def __del__(self) -> None:
         if not self._status.done():
@@ -357,32 +365,24 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
                 cygrpc.AioRpcStatus(cygrpc.StatusCode.cancelled,
                                     _GC_CANCELLATION_DETAILS, None, None))
 
-    async def _invoke(self) -> ResponseType:
+    async def _send_unary_request(self) -> ResponseType:
         serialized_request = _common.serialize(self._request,
                                                self._request_serializer)
+        try:
+            await self._cython_call.unary_stream(serialized_request,
+                                                 self._set_initial_metadata,
+                                                 self._set_status)
+        except asyncio.CancelledError:
+            if self._code != grpc.StatusCode.CANCELLED:
+                self.cancel()
+            raise
 
-        self._bytes_aiter = await self._channel.unary_stream(
-            self._method,
-            serialized_request,
-            self._deadline,
-            self._cancellation,
-            self._set_initial_metadata,
-            self._set_status,
-        )
-
-    async def _process(self) -> ResponseType:
-        await self._call
-        async for serialized_response in self._bytes_aiter:
-            if self._cancellation.done():
-                await self._status
-            if self._status.done():
-                # Raises pre-maturely if final status received here. Generates
-                # more helpful stack trace for end users.
-                await self._raise_rpc_error_if_not_ok()
-            yield _common.deserialize(serialized_response,
-                                      self._response_deserializer)
-
-        await self._raise_rpc_error_if_not_ok()
+    async def _fetch_stream_responses(self) -> ResponseType:
+        await self._send_unary_request_task
+        message = await self._read()
+        while message:
+            yield message
+            message = await self._read()
 
     def _cancel(self, status: cygrpc.AioRpcStatus) -> bool:
         """Forwards the application cancellation reasoning.
@@ -395,8 +395,15 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         and the client calling "cancel" at the same time, this method respects
         the winner in Core.
         """
-        if not self._status.done() and not self._cancellation.done():
-            self._cancellation.set_result(status)
+        if not self._status.done():
+            self._set_status(status)
+            self._cython_call.cancel(status)
+
+            if not self._send_unary_request_task.done():
+                # Injects CancelledError to the Task. The exception will
+                # propagate to _fetch_stream_responses as well, if the sending
+                # is not done.
+                self._send_unary_request_task.cancel()
             return True
         else:
             return False
@@ -409,8 +416,35 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
     def __aiter__(self) -> AsyncIterable[ResponseType]:
         return self._message_aiter
 
+    async def _read(self) -> ResponseType:
+        # Wait for the request being sent
+        await self._send_unary_request_task
+
+        # Reads response message from Core
+        try:
+            raw_response = await self._cython_call.receive_serialized_message()
+        except asyncio.CancelledError:
+            if self._code != grpc.StatusCode.CANCELLED:
+                self.cancel()
+            raise
+
+        if raw_response is None:
+            return None
+        else:
+            return _common.deserialize(raw_response,
+                                       self._response_deserializer)
+
     async def read(self) -> ResponseType:
         if self._status.done():
-            await self._raise_rpc_error_if_not_ok()
+            await self._raise_for_status()
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
-        return await self._message_aiter.__anext__()
+
+        response_message = await self._read()
+
+        if response_message is None:
+            # If the read operation failed, Core should explain why.
+            await self._raise_for_status()
+            # If no exception raised, there is something wrong internally.
+            assert False, 'Read operation failed with StatusCode.OK'
+        else:
+            return response_message
