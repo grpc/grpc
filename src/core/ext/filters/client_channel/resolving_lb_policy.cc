@@ -187,7 +187,7 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
       process_resolver_result_user_data_(process_resolver_result_user_data) {
   GPR_ASSERT(process_resolver_result != nullptr);
   resolver_ = ResolverRegistry::CreateResolver(
-      target_uri_.get(), args.args, interested_parties(), combiner(),
+      target_uri_.get(), args.args, interested_parties(), logical_thread(),
       MakeUnique<ResolverResultHandler>(Ref()));
   // Since the validity of args has been checked when create the channel,
   // CreateResolver() must return a non-null result.
@@ -373,7 +373,7 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     TraceStringVector* trace_strings) {
   ResolvingControlHelper* helper = new ResolvingControlHelper(Ref());
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.logical_thread = logical_thread();
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
   lb_policy_args.args = &args;

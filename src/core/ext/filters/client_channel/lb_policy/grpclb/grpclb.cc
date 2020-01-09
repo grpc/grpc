@@ -251,16 +251,16 @@ class GrpcLb : public LoadBalancingPolicy {
     // should not be dropped.
     //
     // Note: This is called from the picker, so it will be invoked in
-    // the channel's data plane combiner, NOT the control plane
-    // combiner.  It should not be accessed by any other part of the LB
+    // the channel's data plane logical_thread, NOT the control plane
+    // logical_thread.  It should not be accessed by any other part of the LB
     // policy.
     const char* ShouldDrop();
 
    private:
     grpc_grpclb_serverlist* serverlist_;
 
-    // Guarded by the channel's data plane combiner, NOT the control
-    // plane combiner.  It should not be accessed by anything but the
+    // Guarded by the channel's data plane logical_thread, NOT the control
+    // plane logical_thread.  It should not be accessed by anything but the
     // picker via the ShouldDrop() method.
     size_t drop_index_ = 0;
   };
@@ -911,7 +911,7 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(void* arg,
                                                           grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
+  lb_calld->grpclb_policy()->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&lb_calld->client_load_report_closure_,
                             MaybeSendClientLoadReportLocked, lb_calld, nullptr),
@@ -998,7 +998,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
 void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
                                                      grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
+  lb_calld->grpclb_policy()->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&lb_calld->client_load_report_closure_,
                             ClientLoadReportDoneLocked, lb_calld, nullptr),
@@ -1022,7 +1022,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(void* arg,
 void GrpcLb::BalancerCallState::OnInitialRequestSent(void* arg,
                                                      grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
+  lb_calld->grpclb_policy()->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&lb_calld->lb_on_initial_request_sent_,
                             OnInitialRequestSentLocked, lb_calld, nullptr),
@@ -1048,7 +1048,7 @@ void GrpcLb::BalancerCallState::OnInitialRequestSentLocked(
 void GrpcLb::BalancerCallState::OnBalancerMessageReceived(void* arg,
                                                           grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
+  lb_calld->grpclb_policy()->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&lb_calld->lb_on_balancer_message_received_,
                             OnBalancerMessageReceivedLocked, lb_calld, nullptr),
@@ -1206,7 +1206,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
 void GrpcLb::BalancerCallState::OnBalancerStatusReceived(void* arg,
                                                          grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
+  lb_calld->grpclb_policy()->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&lb_calld->lb_on_balancer_status_received_,
                             OnBalancerStatusReceivedLocked, lb_calld, nullptr),
@@ -1548,7 +1548,7 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
 void GrpcLb::OnBalancerChannelConnectivityChanged(void* arg,
                                                   grpc_error* error) {
   GrpcLb* self = static_cast<GrpcLb*>(arg);
-  self->combiner()->Run(
+  self->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&self->lb_channel_on_connectivity_changed_,
                             &GrpcLb::OnBalancerChannelConnectivityChangedLocked,
@@ -1647,7 +1647,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
 
 void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  grpclb_policy->combiner()->Run(
+  grpclb_policy->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&grpclb_policy->lb_on_call_retry_,
                             &GrpcLb::OnBalancerCallRetryTimerLocked,
@@ -1694,7 +1694,7 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
 
 void GrpcLb::OnFallbackTimer(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  grpclb_policy->combiner()->Run(
+  grpclb_policy->logical_thread()->Run(
       Closure::ToFunction(GRPC_CLOSURE_INIT(&grpclb_policy->lb_on_fallback_,
                                             &GrpcLb::OnFallbackTimerLocked,
                                             grpclb_policy, nullptr),
@@ -1742,7 +1742,7 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
   Helper* helper = new Helper(Ref());
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.logical_thread = logical_thread();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);

@@ -33,7 +33,7 @@ DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
 
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
-      combiner_(std::move(args.combiner)),
+      logical_thread_(std::move(args.logical_thread)),
       interested_parties_(grpc_pollset_set_create()),
       channel_control_helper_(std::move(args.channel_control_helper)) {}
 
@@ -98,28 +98,22 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    the time this function returns, the pick will already have
   //    been processed, and we'll be trying to re-process the same
   //    pick again, leading to a crash.
-  // 2. We are currently running in the data plane combiner, but we
-  //    need to bounce into the control plane combiner to call
+  // 2. We are currently running in the data plane logical_thread, but we
+  //    need to bounce into the control plane logical_thread to call
   //    ExitIdleLocked().
   if (!exit_idle_called_) {
     exit_idle_called_ = true;
-    parent_->Ref().release();  // ref held by closure.
-    parent_->combiner()->Run(
-        Closure::ToFunction(
-            GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(), nullptr),
-            GRPC_ERROR_NONE),
+    auto* parent = parent_->Ref().release();  // ref held by lambda.
+    parent_->logical_thread()->Run(
+        [parent]() {
+          parent->ExitIdleLocked();
+          parent->Unref();
+        },
         DEBUG_LOCATION);
   }
   PickResult result;
   result.type = PickResult::PICK_QUEUE;
   return result;
-}
-
-void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
-                                                    grpc_error* /*error*/) {
-  LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
-  parent->ExitIdleLocked();
-  parent->Unref();
 }
 
 //

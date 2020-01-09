@@ -172,22 +172,14 @@ FakeResolverResponseGenerator::FakeResolverResponseGenerator() {}
 
 FakeResolverResponseGenerator::~FakeResolverResponseGenerator() {}
 
-struct SetResponseClosureArg {
-  RefCountedPtr<FakeResolver> resolver;
-  Resolver::Result result;
-  bool has_result = false;
-  bool immediate = true;
-};
-
-void FakeResolverResponseGenerator::SetResponseLocked(void* arg) {
-  SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  auto& resolver = closure_arg->resolver;
+void FakeResolverResponseGenerator::SetResponseLocked(SetResponseArg* arg) {
+  auto& resolver = arg->resolver;
   if (!resolver->shutdown_) {
-    resolver->next_result_ = std::move(closure_arg->result);
+    resolver->next_result_ = std::move(arg->result);
     resolver->has_next_result_ = true;
     resolver->MaybeSendResultLocked();
   }
-  delete closure_arg;
+  delete arg;
 }
 
 void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
@@ -201,21 +193,21 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
     }
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
-  closure_arg->resolver = std::move(resolver);
-  closure_arg->result = std::move(result);
-  closure_arg->resolver->combiner()->Run(
-      [closure_arg]() { SetResponseLocked(closure_arg); }, DEBUG_LOCATION);
+  SetResponseArg* arg = new SetResponseArg();
+  arg->resolver = std::move(resolver);
+  arg->result = std::move(result);
+  arg->resolver->combiner()->Run([arg]() { SetResponseLocked(arg); },
+                                 DEBUG_LOCATION);
 }
 
-void FakeResolverResponseGenerator::SetReresolutionResponseLocked(void* arg) {
-  SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  auto& resolver = closure_arg->resolver;
+void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
+    SetResponseArg* arg) {
+  auto& resolver = arg->resolver;
   if (!resolver->shutdown_) {
-    resolver->reresolution_result_ = std::move(closure_arg->result);
-    resolver->has_reresolution_result_ = closure_arg->has_result;
+    resolver->reresolution_result_ = std::move(arg->result);
+    resolver->has_reresolution_result_ = arg->has_result;
   }
-  delete closure_arg;
+  delete arg;
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(
@@ -226,13 +218,12 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
-  closure_arg->resolver = std::move(resolver);
-  closure_arg->result = std::move(result);
-  closure_arg->has_result = true;
-  closure_arg->resolver->combiner()->Run(
-      [closure_arg]() { SetReresolutionResponseLocked(closure_arg); },
-      DEBUG_LOCATION);
+  SetResponseArg* arg = new SetResponseArg();
+  arg->resolver = std::move(resolver);
+  arg->result = std::move(result);
+  arg->has_result = true;
+  arg->resolver->combiner()->Run(
+      [arg]() { SetReresolutionResponseLocked(arg); }, DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
@@ -242,21 +233,19 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
-  closure_arg->resolver = std::move(resolver);
-  closure_arg->resolver->combiner()->Run(
-      [closure_arg]() { SetReresolutionResponseLocked(closure_arg); },
-      DEBUG_LOCATION);
+  SetResponseArg* arg = new SetResponseArg();
+  arg->resolver = std::move(resolver);
+  arg->resolver->combiner()->Run(
+      [arg]() { SetReresolutionResponseLocked(arg); }, DEBUG_LOCATION);
 }
 
-void FakeResolverResponseGenerator::SetFailureLocked(void* arg) {
-  SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  auto& resolver = closure_arg->resolver;
+void FakeResolverResponseGenerator::SetFailureLocked(SetResponseArg* arg) {
+  auto& resolver = arg->resolver;
   if (!resolver->shutdown_) {
     resolver->return_failure_ = true;
-    if (closure_arg->immediate) resolver->MaybeSendResultLocked();
+    if (arg->immediate) resolver->MaybeSendResultLocked();
   }
-  delete closure_arg;
+  delete arg;
 }
 
 void FakeResolverResponseGenerator::SetFailure() {
@@ -266,10 +255,10 @@ void FakeResolverResponseGenerator::SetFailure() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
-  closure_arg->resolver = std::move(resolver);
-  closure_arg->resolver->combiner()->Run(
-      [closure_arg]() { SetFailureLocked(closure_arg); }, DEBUG_LOCATION);
+  SetResponseArg* arg = new SetResponseArg();
+  arg->resolver = std::move(resolver);
+  arg->resolver->combiner()->Run([arg]() { SetFailureLocked(arg); },
+                                 DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetFailureOnReresolution() {
@@ -279,11 +268,11 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
-  closure_arg->resolver = std::move(resolver);
-  closure_arg->immediate = false;
-  closure_arg->resolver->combiner()->Run(
-      [closure_arg]() { SetFailureLocked(closure_arg); }, DEBUG_LOCATION);
+  SetResponseArg* arg = new SetResponseArg();
+  arg->resolver = std::move(resolver);
+  arg->immediate = false;
+  arg->resolver->combiner()->Run([arg]() { SetFailureLocked(arg); },
+                                 DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetFakeResolver(
@@ -292,11 +281,11 @@ void FakeResolverResponseGenerator::SetFakeResolver(
   resolver_ = std::move(resolver);
   if (resolver_ == nullptr) return;
   if (has_result_) {
-    SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
-    closure_arg->resolver = resolver_->Ref();
-    closure_arg->result = std::move(result_);
-    resolver_->combiner()->Run(
-        [closure_arg]() { SetResponseLocked(closure_arg); }, DEBUG_LOCATION);
+    SetResponseArg* arg = new SetResponseArg();
+    arg->resolver = resolver_->Ref();
+    arg->result = std::move(result_);
+    resolver_->combiner()->Run([arg]() { SetResponseLocked(arg); },
+                               DEBUG_LOCATION);
     has_result_ = false;
   }
 }

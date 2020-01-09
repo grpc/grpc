@@ -104,10 +104,10 @@ class GrpcPolledFdWindows {
         tcp_write_state_(WRITE_IDLE),
         gotten_into_driver_list_(false),
         address_family_(address_family),
-        socket_type_(socket_type) {
+        socket_type_(socket_type),
+        combiner_(std::move(combiner)) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, as);
     winsocket_ = grpc_winsocket_create(as, name_);
-    combiner_ = std::move(combiner);
   }
 
   ~GrpcPolledFdWindows() {
@@ -137,7 +137,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(!read_buf_has_data_);
     read_buf_ = GRPC_SLICE_MALLOC(4192);
     if (connect_done_) {
-      combiner_->Run([this]() { ContinueRegisterForOnReadableLocked(this); },
+      combiner_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
                      DEBUG_LOCATION);
     } else {
       GPR_ASSERT(pending_continue_register_for_on_readable_locked_ == false);
@@ -145,12 +145,7 @@ class GrpcPolledFdWindows {
     }
   }
 
-  static void ContinueRegisterForOnReadableLocked(
-      GrpcPolledFdWindows* grpc_polled_fd) {
-    grpc_polled_fd->InnerContinueRegisterForOnReadableLocked(GRPC_ERROR_NONE);
-  }
-
-  void InnerContinueRegisterForOnReadableLocked(grpc_error* unused_error) {
+  void ContinueRegisterForOnReadableLocked() {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| InnerContinueRegisterForOnReadableLocked "
         "wsa_connect_error_:%d",
@@ -202,7 +197,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (connect_done_) {
-      combiner_->Run([this]() { ContinueRegisterForOnWriteableLocked(this); },
+      combiner_->Run([this]() { ContinueRegisterForOnWriteableLocked(); },
                      DEBUG_LOCATION);
     } else {
       GPR_ASSERT(pending_continue_register_for_on_writeable_locked_ == false);
@@ -210,12 +205,7 @@ class GrpcPolledFdWindows {
     }
   }
 
-  static void ContinueRegisterForOnWriteableLocked(
-      GrpcPolledFdWindows* grpc_polled_fd) {
-    grpc_polled_fd->InnerContinueRegisterForOnWriteableLocked(GRPC_ERROR_NONE);
-  }
-
-  void InnerContinueRegisterForOnWriteableLocked(grpc_error* unused_error) {
+  void ContinueRegisterForOnWriteableLocked() {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| InnerContinueRegisterForOnWriteableLocked "
         "wsa_connect_error_:%d",
@@ -475,11 +465,11 @@ class GrpcPolledFdWindows {
       wsa_connect_error_ = WSA_OPERATION_ABORTED;
     }
     if (pending_continue_register_for_on_readable_locked_) {
-      combiner_->Run([this]() { ContinueRegisterForOnReadableLocked(this); },
+      combiner_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
                      DEBUG_LOCATION);
     }
     if (pending_continue_register_for_on_writeable_locked_) {
-      combiner_->Run([this]() { ContinueRegisterForOnWriteableLocked(this); },
+      combiner_->Run([this]() { ContinueRegisterForOnWriteableLocked(); },
                      DEBUG_LOCATION);
     }
   }

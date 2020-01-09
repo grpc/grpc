@@ -746,11 +746,11 @@ void XdsLb::ShutdownLocked() {
   if (xds_client_from_channel_ != nullptr) {
     xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
                                           endpoint_watcher_);
-  }
-  if (config_->lrs_load_reporting_server_name() != nullptr) {
-    xds_client()->RemoveClientStats(
-        StringView(config_->lrs_load_reporting_server_name()),
-        StringView(eds_service_name()), &client_stats_);
+    if (config_->lrs_load_reporting_server_name() != nullptr) {
+      xds_client()->RemoveClientStats(
+          StringView(config_->lrs_load_reporting_server_name()),
+          StringView(eds_service_name()), &client_stats_);
+    }
   }
   xds_client_from_channel_.reset();
   xds_client_.reset();
@@ -799,8 +799,9 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     if (xds_client_from_channel_ == nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       xds_client_ = MakeOrphanable<XdsClient>(
-          combiner(), interested_parties(), StringView(eds_service_name()),
-          nullptr /* service config watcher */, *args_, &error);
+          logical_thread(), interested_parties(),
+          StringView(eds_service_name()), nullptr /* service config watcher */,
+          *args_, &error);
       // TODO(roth): If we decide that we care about fallback mode, add
       // proper error handling here.
       GPR_ASSERT(error == GRPC_ERROR_NONE);
@@ -870,7 +871,7 @@ void XdsLb::MaybeCancelFallbackAtStartupChecks() {
 
 void XdsLb::OnFallbackTimer(void* arg, grpc_error* error) {
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  xdslb_policy->combiner()->Run(
+  xdslb_policy->logical_thread()->Run(
       Closure::ToFunction(GRPC_CLOSURE_INIT(&xdslb_policy->lb_on_fallback_,
                                             &XdsLb::OnFallbackTimerLocked,
                                             xdslb_policy, nullptr),
@@ -1001,7 +1002,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateFallbackPolicyLocked(
   FallbackHelper* helper =
       new FallbackHelper(Ref(DEBUG_LOCATION, "FallbackHelper"));
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.logical_thread = logical_thread();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
@@ -1409,7 +1410,7 @@ void XdsLb::PriorityList::LocalityMap::UpdateConnectivityStateLocked() {
 void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimer(
     void* arg, grpc_error* error) {
   LocalityMap* self = static_cast<LocalityMap*>(arg);
-  self->xds_policy_->combiner()->Run(
+  self->xds_policy_->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
                             OnDelayedRemovalTimerLocked, self, nullptr),
@@ -1450,7 +1451,7 @@ void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimerLocked(
 void XdsLb::PriorityList::LocalityMap::OnFailoverTimer(void* arg,
                                                        grpc_error* error) {
   LocalityMap* self = static_cast<LocalityMap*>(arg);
-  self->xds_policy_->combiner()->Run(
+  self->xds_policy_->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&self->on_failover_timer_, OnFailoverTimerLocked,
                             self, nullptr),
@@ -1513,7 +1514,7 @@ XdsLb::PriorityList::LocalityMap::Locality::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
   Helper* helper = new Helper(this->Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = xds_policy()->combiner();
+  lb_policy_args.logical_thread = xds_policy()->logical_thread();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
@@ -1708,7 +1709,7 @@ void XdsLb::PriorityList::LocalityMap::Locality::DeactivateLocked() {
 void XdsLb::PriorityList::LocalityMap::Locality::OnDelayedRemovalTimer(
     void* arg, grpc_error* error) {
   Locality* self = static_cast<Locality*>(arg);
-  self->xds_policy()->combiner()->Run(
+  self->xds_policy()->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
                             OnDelayedRemovalTimerLocked, self, nullptr),

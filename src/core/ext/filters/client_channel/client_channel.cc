@@ -209,8 +209,8 @@ class ChannelData {
     void Cancel();
 
    private:
-    static void AddWatcherLocked(ExternalConnectivityWatcher* arg);
-    static void RemoveWatcherLocked(ExternalConnectivityWatcher* arg);
+    void AddWatcherLocked();
+    void RemoveWatcherLocked();
 
     ChannelData* chand_;
     grpc_polling_entity pollent_;
@@ -243,9 +243,9 @@ class ChannelData {
 
   grpc_error* DoPingLocked(grpc_transport_op* op);
 
-  static void StartTransportOpLocked(void* arg, grpc_error* ignored);
+  static void StartTransportOpLocked(grpc_transport_op* op);
 
-  static void TryToConnectLocked(ChannelData* arg);
+  void TryToConnectLocked();
 
   void ProcessLbPolicy(
       const Resolver::Result& resolver_result,
@@ -279,9 +279,9 @@ class ChannelData {
   RefCountedPtr<ServiceConfig> service_config_;
 
   //
-  // Fields used in the control plane.  Guarded by combiner.
+  // Fields used in the control plane.  Guarded by logical_thread.
   //
-  RefCountedPtr<LogicalThread> combiner_;
+  RefCountedPtr<LogicalThread> logical_thread_;
   grpc_pollset_set* interested_parties_;
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   OrphanablePtr<ResolvingLoadBalancingPolicy> resolving_lb_policy_;
@@ -293,17 +293,18 @@ class ChannelData {
   std::map<Subchannel*, int> subchannel_refcount_map_;
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
-  // combiner when the SubchannelWrappers are created and destroyed.
+  // logical_thread when the SubchannelWrappers are created and destroyed.
   std::set<SubchannelWrapper*> subchannel_wrappers_;
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
-  // Updates are queued here in the control plane combiner and then applied
-  // in the data plane mutex when the picker is updated.
+  // Updates are queued here in the control plane logical_thread and then
+  // applied in the data plane mutex when the picker is updated.
   std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
            RefCountedPtrLess<SubchannelWrapper>>
       pending_subchannel_updates_;
 
   //
-  // Fields accessed from both data plane mutex and control plane combiner.
+  // Fields accessed from both data plane mutex and control plane
+  // logical_thread.
   //
   Atomic<grpc_error*> disconnect_error_;
 
@@ -837,7 +838,7 @@ class CallData {
 // Note that no synchronization is needed here, because even if the
 // underlying subchannel is shared between channels, this wrapper will only
 // be used within one channel, so it will always be synchronized by the
-// control plane combiner.
+// control plane logical_thread.
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
   SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
@@ -963,7 +964,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     health_check_service_name_ = std::move(health_check_service_name);
   }
 
-  // Caller must be holding the control-plane combiner.
+  // Caller must be holding the control-plane logical_thread.
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
   }
@@ -1014,7 +1015,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
                 "subchannel %p (connected_subchannel=%p state=%s); "
-                "hopping into combiner",
+                "hopping into logical_thread",
                 parent_->chand_, parent_.get(), parent_->subchannel_,
                 connected_subchannel.get(), ConnectivityStateName(new_state));
       }
@@ -1047,41 +1048,39 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           : parent_(std::move(parent)),
             state_(new_state),
             connected_subchannel_(std::move(connected_subchannel)) {
-        ExecCtx::Run(
-            DEBUG_LOCATION,
-            GRPC_CLOSURE_CREATE(
-                [](void* arg, grpc_error* /*error*/) {
-                  Updater* self = static_cast<Updater*>(arg);
-                  self->parent_->parent_->chand_->combiner_->Run(
-                      [self]() { ApplyUpdateInControlPlaneCombiner(self); },
-                      DEBUG_LOCATION);
-                },
-                this, nullptr),
-            GRPC_ERROR_NONE);
+        ExecCtx::Run(DEBUG_LOCATION,
+                     GRPC_CLOSURE_CREATE(
+                         [](void* arg, grpc_error* /*error*/) {
+                           Updater* self = static_cast<Updater*>(arg);
+                           self->parent_->parent_->chand_->logical_thread_->Run(
+                               [self]() {
+                                 self->ApplyUpdateInControlPlaneLogicalThread();
+                               },
+                               DEBUG_LOCATION);
+                         },
+                         this, nullptr),
+                     GRPC_ERROR_NONE);
       }
 
      private:
-      static void ApplyUpdateInControlPlaneCombiner(void* arg) {
-        Updater* self = static_cast<Updater*>(arg);
+      void ApplyUpdateInControlPlaneLogicalThread() {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
           gpr_log(GPR_INFO,
-                  "chand=%p: processing connectivity change in combiner "
+                  "chand=%p: processing connectivity change in logical thread "
                   "for subchannel wrapper %p subchannel %p "
                   "(connected_subchannel=%p state=%s): watcher=%p",
-                  self->parent_->parent_->chand_, self->parent_->parent_.get(),
-                  self->parent_->parent_->subchannel_,
-                  self->connected_subchannel_.get(),
-                  ConnectivityStateName(self->state_),
-                  self->parent_->watcher_.get());
+                  parent_->parent_->chand_, parent_->parent_.get(),
+                  parent_->parent_->subchannel_, connected_subchannel_.get(),
+                  ConnectivityStateName(state_), parent_->watcher_.get());
         }
         // Ignore update if the parent WatcherWrapper has been replaced
         // since this callback was scheduled.
-        if (self->parent_->watcher_ == nullptr) return;
-        self->parent_->last_seen_state_ = self->state_;
-        self->parent_->parent_->MaybeUpdateConnectedSubchannel(
-            std::move(self->connected_subchannel_));
-        self->parent_->watcher_->OnConnectivityStateChange(self->state_);
-        delete self;
+        if (parent_->watcher_ == nullptr) return;
+        parent_->last_seen_state_ = state_;
+        parent_->parent_->MaybeUpdateConnectedSubchannel(
+            std::move(connected_subchannel_));
+        parent_->watcher_->OnConnectivityStateChange(state_);
+        delete this;
       }
 
       RefCountedPtr<WatcherWrapper> parent_;
@@ -1126,7 +1125,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   // CancelConnectivityStateWatch() with its watcher, we know the
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
-  // To be accessed only in the control plane combiner.
+  // To be accessed only in the control plane logical_thread.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   // To be accessed only in the data plane mutex.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_in_data_plane_;
@@ -1149,16 +1148,16 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
   grpc_polling_entity_add_to_pollset_set(&pollent_,
                                          chand_->interested_parties_);
   GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalConnectivityWatcher");
-  ExecCtx::Run(DEBUG_LOCATION,
-               GRPC_CLOSURE_CREATE(
-                   [](void* arg, grpc_error* /*error*/) {
-                     auto* self =
-                         static_cast<ExternalConnectivityWatcher*>(arg);
-                     self->chand_->combiner_->Run(
-                         [self]() { AddWatcherLocked(self); }, DEBUG_LOCATION);
-                   },
-                   this, nullptr),
-               GRPC_ERROR_NONE);
+  ExecCtx::Run(
+      DEBUG_LOCATION,
+      GRPC_CLOSURE_CREATE(
+          [](void* arg, grpc_error* /*error*/) {
+            auto* self = static_cast<ExternalConnectivityWatcher*>(arg);
+            self->chand_->logical_thread_->Run(
+                [self]() { self->AddWatcherLocked(); }, DEBUG_LOCATION);
+          },
+          this, nullptr),
+      GRPC_ERROR_NONE);
 }
 
 ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
@@ -1180,12 +1179,12 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   // Report new state to the user.
   *state_ = state;
   ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_NONE);
-  // Hop back into the combiner to clean up.
+  // Hop back into the logical_thread to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
   if (state != GRPC_CHANNEL_SHUTDOWN) {
-    chand_->combiner_->Run([this]() { RemoveWatcherLocked(this); },
-                           DEBUG_LOCATION);
+    chand_->logical_thread_->Run([this]() { RemoveWatcherLocked(); },
+                                 DEBUG_LOCATION);
   }
 }
 
@@ -1196,23 +1195,20 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
     return;  // Already done.
   }
   ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
-  // Hop back into the combiner to clean up.
-  chand_->combiner_->Run([this]() { RemoveWatcherLocked(this); },
-                         DEBUG_LOCATION);
+  // Hop back into the logical_thread to clean up.
+  chand_->logical_thread_->Run([this]() { RemoveWatcherLocked(); },
+                               DEBUG_LOCATION);
 }
 
-void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
-    ExternalConnectivityWatcher* self) {
-  Closure::Run(DEBUG_LOCATION, self->watcher_timer_init_, GRPC_ERROR_NONE);
+void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked() {
+  Closure::Run(DEBUG_LOCATION, watcher_timer_init_, GRPC_ERROR_NONE);
   // Add new watcher.
-  self->chand_->state_tracker_.AddWatcher(
-      self->initial_state_,
-      OrphanablePtr<ConnectivityStateWatcherInterface>(self));
+  chand_->state_tracker_.AddWatcher(
+      initial_state_, OrphanablePtr<ConnectivityStateWatcherInterface>(this));
 }
 
-void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked(
-    ExternalConnectivityWatcher* self) {
-  self->chand_->state_tracker_.RemoveWatcher(self);
+void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked() {
+  chand_->state_tracker_.RemoveWatcher(this);
 }
 
 //
@@ -1228,17 +1224,15 @@ class ChannelData::ConnectivityWatcherAdder {
         initial_state_(initial_state),
         watcher_(std::move(watcher)) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherAdder");
-    chand_->combiner_->Run([this]() { AddWatcherLocked(this); },
-                           DEBUG_LOCATION);
+    chand_->logical_thread_->Run([this]() { AddWatcherLocked(); },
+                                 DEBUG_LOCATION);
   }
 
  private:
-  static void AddWatcherLocked(ConnectivityWatcherAdder* self) {
-    self->chand_->state_tracker_.AddWatcher(self->initial_state_,
-                                            std::move(self->watcher_));
-    GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
-                             "ConnectivityWatcherAdder");
-    delete self;
+  void AddWatcherLocked() {
+    chand_->state_tracker_.AddWatcher(initial_state_, std::move(watcher_));
+    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "ConnectivityWatcherAdder");
+    delete this;
   }
 
   ChannelData* chand_;
@@ -1256,16 +1250,16 @@ class ChannelData::ConnectivityWatcherRemover {
                              AsyncConnectivityStateWatcherInterface* watcher)
       : chand_(chand), watcher_(watcher) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherRemover");
-    chand_->combiner_->Run([this]() { RemoveWatcherLocked(this); },
-                           DEBUG_LOCATION);
+    chand_->logical_thread_->Run([this]() { RemoveWatcherLocked(); },
+                                 DEBUG_LOCATION);
   }
 
  private:
-  static void RemoveWatcherLocked(ConnectivityWatcherRemover* self) {
-    self->chand_->state_tracker_.RemoveWatcher(self->watcher_);
-    GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
+  void RemoveWatcherLocked() {
+    chand_->state_tracker_.RemoveWatcher(watcher_);
+    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_,
                              "ConnectivityWatcherRemover");
-    delete self;
+    delete this;
   }
 
   ChannelData* chand_;
@@ -1410,7 +1404,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
       channelz_node_(GetChannelzNode(args->channel_args)),
-      combiner_(MakeRefCounted<LogicalThread>()),
+      logical_thread_(MakeRefCounted<LogicalThread>()),
       interested_parties_(grpc_pollset_set_create()),
       subchannel_pool_(GetSubchannelPool(args->channel_args)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
@@ -1584,7 +1578,7 @@ void ChannelData::UpdateServiceConfigLocked(
 void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   // Instantiate resolving LB policy.
   LoadBalancingPolicy::Args lb_args;
-  lb_args.combiner = combiner_;
+  lb_args.logical_thread = logical_thread_;
   lb_args.channel_control_helper = MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
   grpc_core::UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
@@ -1805,8 +1799,7 @@ grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
   return result.error;
 }
 
-void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
-  grpc_transport_op* op = static_cast<grpc_transport_op*>(arg);
+void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
   grpc_channel_element* elem =
       static_cast<grpc_channel_element*>(op->handler_private.extra_arg);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
@@ -1877,15 +1870,11 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   if (op->bind_pollset != nullptr) {
     grpc_pollset_set_add_pollset(chand->interested_parties_, op->bind_pollset);
   }
-  // Pop into control plane combiner for remaining ops.
+  // Pop into control plane logical_thread for remaining ops.
   op->handler_private.extra_arg = elem;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "start_transport_op");
-  chand->combiner_->Run(
-      Closure::ToFunction(
-          GRPC_CLOSURE_INIT(&op->handler_private.closure,
-                            ChannelData::StartTransportOpLocked, op, nullptr),
-          GRPC_ERROR_NONE),
-      DEBUG_LOCATION);
+  chand->logical_thread_->Run(
+      [op]() { ChannelData::StartTransportOpLocked(op); }, DEBUG_LOCATION);
 }
 
 void ChannelData::GetChannelInfo(grpc_channel_element* elem,
@@ -1936,14 +1925,13 @@ ChannelData::GetConnectedSubchannelInDataPlane(
   return connected_subchannel->Ref();
 }
 
-void ChannelData::TryToConnectLocked(ChannelData* arg) {
-  auto* chand = static_cast<ChannelData*>(arg);
-  if (chand->resolving_lb_policy_ != nullptr) {
-    chand->resolving_lb_policy_->ExitIdleLocked();
+void ChannelData::TryToConnectLocked() {
+  if (resolving_lb_policy_ != nullptr) {
+    resolving_lb_policy_->ExitIdleLocked();
   } else {
-    chand->CreateResolvingLoadBalancingPolicyLocked();
+    CreateResolvingLoadBalancingPolicyLocked();
   }
-  GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "TryToConnect");
+  GRPC_CHANNEL_STACK_UNREF(owning_stack_, "TryToConnect");
 }
 
 grpc_connectivity_state ChannelData::CheckConnectivityState(
@@ -1955,8 +1943,8 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
                  GRPC_CLOSURE_CREATE(
                      [](void* arg, grpc_error* /*error*/) {
                        auto* chand = static_cast<ChannelData*>(arg);
-                       chand->combiner_->Run(
-                           [chand]() { TryToConnectLocked(chand); },
+                       chand->logical_thread_->Run(
+                           [chand]() { chand->TryToConnectLocked(); },
                            DEBUG_LOCATION);
                      },
                      this, nullptr),
@@ -3872,7 +3860,7 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
   // The picker being null means that the channel is currently in IDLE state.
   // The incoming call will make the channel exit IDLE.
   if (chand->picker() == nullptr) {
-    // Bounce into the control plane combiner to exit IDLE.
+    // Bounce into the control plane logical thread to exit IDLE.
     chand->CheckConnectivityState(/*try_to_connect=*/true);
     // Queue the pick, so that it will be attempted once the channel
     // becomes connected.

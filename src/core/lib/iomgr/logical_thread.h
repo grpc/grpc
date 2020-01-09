@@ -45,6 +45,7 @@ class LogicalThreadImpl : public Orphanable {
   void DrainQueue();
 
   Atomic<size_t> size_{0};
+  Atomic<bool> orphaned_{false};
   MultiProducerSingleConsumerQueue queue_;
 };
 

@@ -160,7 +160,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
   // Create child policy if not already present.
   if (parent_->child_policy_ == nullptr) {
     LoadBalancingPolicy::Args args;
-    args.combiner = parent_->combiner();
+    args.logical_thread = parent_->logical_thread();
     args.args = parent_->args_;
     args.channel_control_helper = MakeUnique<Helper>(parent_->Ref());
     parent_->child_policy_ =

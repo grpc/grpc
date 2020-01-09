@@ -80,9 +80,15 @@ class FakeResolverResponseGenerator
   // Set the corresponding FakeResolver to this generator.
   void SetFakeResolver(RefCountedPtr<FakeResolver> resolver);
 
-  static void SetResponseLocked(void* arg);
-  static void SetReresolutionResponseLocked(void* arg);
-  static void SetFailureLocked(void* arg);
+  struct SetResponseArg {
+    RefCountedPtr<FakeResolver> resolver;
+    Resolver::Result result;
+    bool has_result = false;
+    bool immediate = true;
+  };
+  static void SetResponseLocked(SetResponseArg* arg);
+  static void SetReresolutionResponseLocked(SetResponseArg* arg);
+  static void SetFailureLocked(SetResponseArg* arg);
 
   // Mutex protecting the members below.
   Mutex mu_;

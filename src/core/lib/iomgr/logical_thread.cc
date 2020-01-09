@@ -49,6 +49,11 @@ void LogicalThreadImpl::Run(std::function<void()> callback,
     callback();
     // Loan this thread to the logical thread and drain the queue.
     DrainQueue();
+    // It is possible that while draining the queue, one of the callbacks ended
+    // up orphaning the logical thread. In that case, delete the object.
+    if (orphaned_.Load(MemoryOrder::ACQUIRE)) {
+      delete this;
+    }
   } else {
     CallbackWrapper* cb_wrapper =
         new CallbackWrapper(std::move(callback), location);
@@ -62,15 +67,11 @@ void LogicalThreadImpl::Run(std::function<void()> callback,
 }
 
 void LogicalThreadImpl::Orphan() {
-  ExecCtx::Run(DEBUG_LOCATION,
-               GRPC_CLOSURE_CREATE(
-                   [](void* arg, grpc_error* /*error*/) {
-                     LogicalThreadImpl* self =
-                         static_cast<LogicalThreadImpl*>(arg);
-                     delete self;
-                   },
-                   this, nullptr),
-               GRPC_ERROR_NONE);
+  if (size_.Load(MemoryOrder::ACQUIRE) == 0) {
+    delete this;
+  } else {
+    orphaned_.Store(true, MemoryOrder::RELEASE);
+  }
 }
 
 // The thread that calls this loans itself to the logical thread so as to
@@ -83,7 +84,6 @@ void LogicalThreadImpl::DrainQueue() {
       gpr_log(GPR_INFO, "LogicalThread::DrainQueue() %p", this);
     }
     size_t prev_size = size_.FetchSub(1);
-    // prev_size should be atleast 1 since
     GPR_DEBUG_ASSERT(prev_size >= 1);
     if (prev_size == 1) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {

@@ -72,7 +72,7 @@ extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 /// LoadBalacingPolicy API.
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
-/// combiner passed to the constructor.
+/// logical_thread passed to the constructor.
 ///
 /// Any I/O done by the LB policy should be done under the pollset_set
 /// returned by \a interested_parties().
@@ -242,7 +242,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// live in the LB policy object itself.
   ///
   /// Currently, pickers are always accessed from within the
-  /// client_channel data plane combiner, so they do not have to be
+  /// client_channel data plane logical_thread, so they do not have to be
   /// thread-safe.
   class SubchannelPicker {
    public:
@@ -309,9 +309,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Args used to instantiate an LB policy.
   struct Args {
-    /// The combiner under which all LB policy calls will be run.
-    /// Policy does NOT take ownership of the reference to the combiner.
-    RefCountedPtr<LogicalThread> combiner;
+    /// The logical_thread under which all LB policy calls will be run.
+    /// Policy does NOT take ownership of the reference to the logical_thread.
+    RefCountedPtr<LogicalThread> logical_thread;
     /// Channel control helper.
     /// Note: LB policies MUST NOT call any method on the helper from
     /// their constructor.
@@ -349,7 +349,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  // Note: This must be invoked while holding the combiner.
+  // Note: This must be invoked while holding the logical_thread.
   void Orphan() override;
 
   // A picker that returns PICK_QUEUE for all picks.
@@ -365,8 +365,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     PickResult Pick(PickArgs args) override;
 
    private:
-    static void CallExitIdle(void* arg, grpc_error* error);
-
     RefCountedPtr<LoadBalancingPolicy> parent_;
     bool exit_idle_called_ = false;
   };
@@ -384,7 +382,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
  protected:
-  RefCountedPtr<LogicalThread> combiner() const { return combiner_; }
+  RefCountedPtr<LogicalThread> logical_thread() const {
+    return logical_thread_;
+  }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
@@ -396,8 +396,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void ShutdownLocked() = 0;
 
  private:
-  /// Combiner under which LB policy actions take place.
-  RefCountedPtr<LogicalThread> combiner_;
+  /// Logical Thread under which LB policy actions take place.
+  RefCountedPtr<LogicalThread> logical_thread_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
