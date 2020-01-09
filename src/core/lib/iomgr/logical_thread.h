@@ -44,8 +44,9 @@ class LogicalThreadImpl : public Orphanable {
  private:
   void DrainQueue();
 
-  Atomic<size_t> size_{0};
-  Atomic<bool> orphaned_{false};
+  // An initial size of 1 keeps track of whether the logical thread has been
+  // orphaned.
+  Atomic<size_t> size_{1};
   MultiProducerSingleConsumerQueue queue_;
 };
 

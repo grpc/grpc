@@ -40,7 +40,9 @@ void LogicalThreadImpl::Run(std::function<void()> callback,
             this, location.file(), location.line());
   }
   const size_t prev_size = size_.FetchAdd(1);
-  if (prev_size == 0) {
+  // The logical thread should not have been orphaned.
+  GPR_DEBUG_ASSERT(prev_size > 0);
+  if (prev_size == 1) {
     // There is no other closure executing right now on this logical thread.
     // Execute this closure immediately.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
@@ -49,11 +51,6 @@ void LogicalThreadImpl::Run(std::function<void()> callback,
     callback();
     // Loan this thread to the logical thread and drain the queue.
     DrainQueue();
-    // It is possible that while draining the queue, one of the callbacks ended
-    // up orphaning the logical thread. In that case, delete the object.
-    if (orphaned_.Load(MemoryOrder::ACQUIRE)) {
-      delete this;
-    }
   } else {
     CallbackWrapper* cb_wrapper =
         new CallbackWrapper(std::move(callback), location);
@@ -67,10 +64,15 @@ void LogicalThreadImpl::Run(std::function<void()> callback,
 }
 
 void LogicalThreadImpl::Orphan() {
-  if (size_.Load(MemoryOrder::ACQUIRE) == 0) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+    gpr_log(GPR_INFO, "LogicalThread::Orphan() %p", this);
+  }
+  size_t prev_size = size_.FetchSub(1);
+  if (prev_size == 0) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+      gpr_log(GPR_INFO, "  Destroying");
+    }
     delete this;
-  } else {
-    orphaned_.Store(true, MemoryOrder::RELEASE);
   }
 }
 
@@ -85,11 +87,20 @@ void LogicalThreadImpl::DrainQueue() {
     }
     size_t prev_size = size_.FetchSub(1);
     GPR_DEBUG_ASSERT(prev_size >= 1);
+    // It is possible that while draining the queue, one of the callbacks ended
+    // up orphaning the logical thread. In that case, delete the object.
     if (prev_size == 1) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+        gpr_log(GPR_INFO, "  Queue Drained. Destroying");
+      }
+      delete this;
+      return;
+    }
+    if (prev_size == 2) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
         gpr_log(GPR_INFO, "  Queue Drained");
       }
-      break;
+      return;
     }
     // There is atleast one callback on the queue. Pop the callback from the
     // queue and execute it.
