@@ -1685,6 +1685,8 @@ libs:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
   - grpc
+  filegroups:
+  - grpc_test_util_base
   secure: true
 - name: gpr
   build: all
