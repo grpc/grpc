@@ -60,7 +60,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void CreateChannelArgsNull()
         {
-            var channelArgs = ChannelOptions.CreateChannelArgs(null);
+            var channelArgs = ChannelArgsSafeHandle.CreateFromOptions(null);
             Assert.IsTrue(channelArgs.IsInvalid);
         }
 
@@ -68,7 +68,7 @@ namespace Grpc.Core.Tests
         public void CreateChannelArgsEmpty()
         {
             var options = new List<ChannelOption>();
-            var channelArgs = ChannelOptions.CreateChannelArgs(options);
+            var channelArgs = ChannelArgsSafeHandle.CreateFromOptions(options);
             channelArgs.Dispose();
         }
 
@@ -83,7 +83,7 @@ namespace Grpc.Core.Tests
                 new ChannelOption("GHIJK", 12345),
             };
 
-            var channelArgs = ChannelOptions.CreateChannelArgs(options);
+            var channelArgs = ChannelArgsSafeHandle.CreateFromOptions(options);
             channelArgs.Dispose();
         }
     }

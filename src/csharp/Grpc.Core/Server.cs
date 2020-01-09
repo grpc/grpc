@@ -71,7 +71,7 @@ namespace Grpc.Core
             this.ports = new ServerPortCollection(this);
             this.environment = GrpcEnvironment.AddRef();
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
-            using (var channelArgs = ChannelOptions.CreateChannelArgs(this.options))
+            using (var channelArgs = ChannelArgsSafeHandle.CreateFromOptions(this.options))
             {
                 this.handle = ServerSafeHandle.NewServer(channelArgs);
             }

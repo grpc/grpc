@@ -42,6 +42,8 @@ using Grpc.Core.Utils;
 [assembly:TypeForwardedToAttribute(typeof(ClientBase))]
 [assembly:TypeForwardedToAttribute(typeof(ClientBase<>))]
 [assembly:TypeForwardedToAttribute(typeof(ChannelCredentials))]
+[assembly:TypeForwardedToAttribute(typeof(ChannelOption))]
+[assembly:TypeForwardedToAttribute(typeof(ChannelOptions))]
 [assembly:TypeForwardedToAttribute(typeof(ClientInterceptorContext<,>))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationOptions))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationToken))]

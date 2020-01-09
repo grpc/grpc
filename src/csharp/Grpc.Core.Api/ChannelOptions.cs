@@ -211,48 +211,5 @@ namespace Grpc.Core
 
         /// <summary>If non-zero, allow the use of SO_REUSEPORT for server if it's available (default 1)</summary>
         public const string SoReuseport = "grpc.so_reuseport";
-
-        /// <summary>
-        /// Creates native object for a collection of channel options.
-        /// </summary>
-        /// <returns>The native channel arguments.</returns>
-        internal static ChannelArgsSafeHandle CreateChannelArgs(ICollection<ChannelOption> options)
-        {
-            if (options == null || options.Count == 0)
-            {
-                return ChannelArgsSafeHandle.CreateNull();
-            }
-            ChannelArgsSafeHandle nativeArgs = null;
-            try
-            {
-                nativeArgs = ChannelArgsSafeHandle.Create(options.Count);
-                int i = 0;
-                foreach (var option in options)
-                {
-                    if (option.Type == ChannelOption.OptionType.Integer)
-                    {
-                        nativeArgs.SetInteger(i, option.Name, option.IntValue);
-                    }
-                    else if (option.Type == ChannelOption.OptionType.String)
-                    {
-                        nativeArgs.SetString(i, option.Name, option.StringValue);
-                    }
-                    else 
-                    {
-                        throw new InvalidOperationException("Unknown option type");
-                    }
-                    i++;
-                }
-                return nativeArgs;
-            }
-            catch (Exception)
-            {
-                if (nativeArgs != null)
-                {
-                    nativeArgs.Dispose();
-                }
-                throw;
-            }
-        }
     }
 }
