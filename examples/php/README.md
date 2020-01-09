@@ -1,35 +1,34 @@
-gRPC in 3 minutes (PHP)
-===========================
+# gRPC PHP Quick Start Example
 
-PREREQUISITES
--------------
 
-This requires `php` >=5.5, `phpize`, `pecl`
+## Prerequisites
 
-INSTALL
--------
- - Install the gRPC PHP extension
+This requires `php` >= 5.5, `pecl`, `composer`
+
+## Install
+
+ - Install the `grpc` extension
 
    ```sh
    $ [sudo] pecl install grpc
    ```
 
- - Clone this repository
+ - Install the `protoc` compiler plugin `grpc_php_plugin`
 
    ```sh
    $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+   $ cd grpc
+   $ make grpc_php_plugin
    ```
 
- - Install composer
+ - Install the `grpc/grpc` composer package
 
    ```
    $ cd examples/php
-   $ curl -sS https://getcomposer.org/installer | php
-   $ php composer.phar install
+   $ composer install
    ```
 
-TRY IT!
--------
+## Try it!
 
  - Run the server
 
@@ -49,14 +48,7 @@ TRY IT!
    $ ./run_greeter_client.sh
    ```
 
-NOTE
-----
-
-This directory has a copy of `helloworld.proto` because it currently depends on
-some Protocol Buffer 2.0 syntax. There is no proto3 support for PHP yet.
-
-TUTORIAL
---------
+## In-depth Tutorial
 
 You can find a more detailed tutorial in [gRPC Basics: PHP][]
 

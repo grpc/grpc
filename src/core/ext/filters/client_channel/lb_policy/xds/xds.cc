@@ -1246,7 +1246,7 @@ void XdsLb::PriorityList::LocalityMap::UpdateXdsPickerLocked() {
     picker_list.push_back(std::make_pair(end, locality->picker_wrapper()));
   }
   xds_policy()->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, MakeUnique<LocalityPicker>(
+      GRPC_CHANNEL_READY, grpc_core::MakeUnique<LocalityPicker>(
                               xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+Picker"),
                               std::move(picker_list)));
 }

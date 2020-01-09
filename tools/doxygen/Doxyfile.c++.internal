@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.26.0-dev
+PROJECT_NUMBER         = 1.27.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1308,6 +1308,8 @@ src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/logical_thread.cc \
 src/core/lib/iomgr/logical_thread.h \
 src/core/lib/iomgr/nameser.h \
+src/core/lib/iomgr/poller/eventmanager_libuv.cc \
+src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
@@ -1400,12 +1402,8 @@ src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.cc \
 src/core/lib/json/json.h \
-src/core/lib/json/json_common.h \
 src/core/lib/json/json_reader.cc \
-src/core/lib/json/json_reader.h \
-src/core/lib/json/json_string.cc \
 src/core/lib/json/json_writer.cc \
-src/core/lib/json/json_writer.h \
 src/core/lib/profiling/timers.h \
 src/core/lib/slice/b64.cc \
 src/core/lib/slice/b64.h \

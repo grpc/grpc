@@ -33,12 +33,14 @@
       <file baseinstalldir="/" name="src/php/README.md" role="src" />\
   <%
     srcs = []
-    for src in (php_config_m4.src + php_config_m4.headers):
-      srcs.append(src)
-    for lib in libs:
-      if lib.name in php_config_m4.get('deps', []):
-        for src in (lib.get('public_headers', []) + lib.headers + lib.src):
-          srcs.append(src)
+    srcs.extend(php_config_m4.src + php_config_m4.headers)
+    php_deps = php_config_m4.get('deps', [])
+    lib_maps = {lib.name: lib for lib in libs}
+    for dep in php_deps[:]:
+      php_deps.extend(lib_maps[dep].transitive_deps)
+    for dep in php_deps:
+      lib = lib_maps[dep]
+      srcs.extend(lib.get('public_headers', []) + lib.headers + lib.src)
     srcs = sorted(set(srcs))
   %>
       % for src in srcs:

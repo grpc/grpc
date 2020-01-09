@@ -121,6 +121,16 @@ class StringView final {
                                                                       size());
   }
 
+  // Compares with other.
+  inline int compare(StringView other) {
+    const size_t len = GPR_MIN(size(), other.size());
+    const int ret = strncmp(data(), other.data(), len);
+    if (ret != 0) return ret;
+    if (size() == other.size()) return 0;
+    if (size() < other.size()) return -1;
+    return 1;
+  }
+
  private:
   const char* ptr_;
   size_t size_;
@@ -132,6 +142,10 @@ inline bool operator==(StringView lhs, StringView rhs) {
 }
 
 inline bool operator!=(StringView lhs, StringView rhs) { return !(lhs == rhs); }
+
+inline bool operator<(StringView lhs, StringView rhs) {
+  return lhs.compare(rhs) < 0;
+}
 
 #endif  // GRPC_USE_ABSL
 
@@ -148,16 +162,6 @@ inline grpc_core::UniquePtr<char> StringViewToCString(const StringView sv) {
   if (sv.size() > 0) memcpy(str, sv.data(), sv.size());
   str[sv.size()] = '\0';
   return grpc_core::UniquePtr<char>(str);
-}
-
-// Compares lhs and rhs.
-inline int StringViewCmp(const StringView lhs, const StringView rhs) {
-  const size_t len = GPR_MIN(lhs.size(), rhs.size());
-  const int ret = strncmp(lhs.data(), rhs.data(), len);
-  if (ret != 0) return ret;
-  if (lhs.size() == rhs.size()) return 0;
-  if (lhs.size() < rhs.size()) return -1;
-  return 1;
 }
 
 }  // namespace grpc_core

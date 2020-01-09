@@ -20,60 +20,70 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-
-  <%!
-  def grpc_lib_files(libs, expect_libs, groups):
-    out = []
-    for lib in libs:
-      if lib.name in expect_libs:
-        for group in groups:
-          out += lib.get(group, [])
-    return sorted(out)
-
-  grpc_libs = ("grpc", "gpr", "upb")
-
-  def grpc_private_files(libs):
-    out = grpc_lib_files(libs, grpc_libs, ("headers", "src"))
-    return out
-
-  def grpc_public_headers(libs):
-    out = grpc_lib_files(libs, grpc_libs, ("public_headers",))
-    return out
-
-  def grpc_private_headers(libs):
-    out = grpc_lib_files(libs, grpc_libs, ("headers",))
-    return out
-
-  def grpc_cronet_files(libs):
-    out = grpc_lib_files(libs, ("grpc_cronet",), ("src", "headers"))
-    excl = grpc_private_files(libs)
-    excl += [
-        # We do not need cronet dedicated plugin registry
-        "src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc",
-        # We do not need dummy cronet API for ObjC
-        "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc",
-    ]
-    return [file for file in out if not file in excl]
-
-  def grpc_cronet_public_headers(libs):
-    out = grpc_lib_files(libs, ("grpc_cronet",), ("public_headers",))
-    excl = grpc_public_headers(libs)
-    return [file for file in out if not file in excl]
-
-  def grpc_test_util_files(libs):
-    out = grpc_lib_files(libs, ("grpc_test_util",), ("src", "headers"))
-    excl = grpc_private_files(libs)
-    # Subprocess is not supported in tvOS and not needed by our tests.
-    excl += ["test/core/util/subprocess_posix.cc"]
-    return [file for file in out if not file in excl]
-
-  def end2end_tests_files(libs):
-    out = grpc_lib_files(libs, ("end2end_tests",), ("src", "headers"))
-    excl = grpc_private_files(libs)
-    return [file for file in out if not file in excl]
+  <%
+  lib_maps = {lib.name: lib for lib in libs}
 
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
+
+  def is_absl_lib(target_name):
+    return target_name.startswith("absl/")
+
+  def get_absl_spec_name(label):
+    # e.g. absl/apple:banana -> abseil/apple/banana
+    return "abseil/" + label[5:].replace(":", "/")
+
+  def lib_and_transitive_deps(lib):
+    return list(sorted(set({lib} | set(lib_maps[lib].transitive_deps))))
+
+  def non_abseil_lib_and_transitive_deps(lib):
+    return [l for l in lib_and_transitive_deps(lib) if not is_absl_lib(l)]
+
+  def list_abseil_specs(lib):
+    # This returns a list of abseil specs which the given lib and
+    # its non-abseil transitive dependencies depend on.
+    # As a result, internal abseil libraries are excluded from the result.
+    absl_specs = set()
+    for lib_name in lib_and_transitive_deps(lib):
+      if is_absl_lib(lib_name): continue
+      for dep in lib_maps[lib_name].deps:
+        if is_absl_lib(dep):
+          absl_specs.add(get_absl_spec_name(dep))
+    return list(sorted(absl_specs))
+
+  def list_lib_files(lib, fields):
+    files = set()
+    for lib_name in non_abseil_lib_and_transitive_deps(lib):
+      lib = lib_maps[lib_name]
+      for field in fields:
+        files.update(lib.get(field, []))
+    return list(sorted(files))
+
+  grpc_private_files = list_lib_files("grpc", ("headers", "src"))
+  grpc_public_headers = list_lib_files("grpc", ("public_headers",))
+  grpc_private_headers = list_lib_files("grpc", ("headers",))
+  grpc_abseil_specs = list_abseil_specs("grpc")
+
+  grpc_cronet_files = list(sorted(
+    set(list_lib_files("grpc_cronet", ("src", "headers")))
+    - set(grpc_private_files)
+    - set([
+      # We do not need cronet dedicated plugin registry
+      "src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc",
+      # We do not need dummy cronet API for ObjC
+      "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc",
+    ])))
+  grpc_cronet_public_headers = list(sorted(
+    set(list_lib_files("grpc_cronet", ("public_headers",)))
+    - set(grpc_public_headers)))
+
+  grpc_test_util_files = list(sorted(
+    set(list_lib_files("end2end_tests", ("src", "headers")))
+    - set(grpc_private_files)
+    - set([
+      # Subprocess is not supported in tvOS and not needed by our tests.
+      "test/core/util/subprocess_posix.cc",
+    ])))
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-Core'
@@ -152,7 +162,7 @@
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
-    s.compiler_flags = '-DGRPC_ARES=0'
+    s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
     s.libraries = 'c++'
 
     # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -168,18 +178,21 @@
     s.subspec 'Interface' do |ss|
       ss.header_mappings_dir = 'include/grpc'
 
-      ss.source_files = ${ruby_multiline_list(grpc_public_headers(libs), 22)}
+      ss.source_files = ${ruby_multiline_list(grpc_public_headers, 22)}
     end
     s.subspec 'Implementation' do |ss|
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'BoringSSL-GRPC', '0.0.5'
+      abseil_version = '0.20190808.1'
+      % for abseil_spec in grpc_abseil_specs:
+      ss.dependency '${abseil_spec}', abseil_version
+      % endfor
       ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
-      ss.source_files = ${ruby_multiline_list(grpc_private_files(libs), 22)}
-
-      ss.private_header_files = ${ruby_multiline_list(grpc_private_headers(libs), 30)}
+      ss.source_files = ${ruby_multiline_list(grpc_private_files, 22)}
+      ss.private_header_files = ${ruby_multiline_list(grpc_private_headers, 30)}
     end
 
     # CFStream is now default. Leaving this subspec only for compatibility purpose.
@@ -189,7 +202,7 @@
 
     s.subspec 'Cronet-Interface' do |ss|
       ss.header_mappings_dir = 'include/grpc'
-      ss.source_files = ${ruby_multiline_list(grpc_cronet_public_headers(libs), 22)}
+      ss.source_files = ${ruby_multiline_list(grpc_cronet_public_headers, 22)}
     end
 
     s.subspec 'Cronet-Implementation' do |ss|
@@ -199,7 +212,7 @@
       ss.dependency "#{s.name}/Implementation", version
       ss.dependency "#{s.name}/Cronet-Interface", version
 
-      ss.source_files = ${ruby_multiline_list(grpc_cronet_files(libs), 22)}
+      ss.source_files = ${ruby_multiline_list(grpc_cronet_files, 22)}
     end
 
     s.subspec 'Tests' do |ss|
@@ -208,8 +221,7 @@
       ss.dependency "#{s.name}/Interface", version
       ss.dependency "#{s.name}/Implementation", version
 
-      ss.source_files = ${ruby_multiline_list(grpc_test_util_files(libs), 22)},
-                        ${ruby_multiline_list(end2end_tests_files(libs), 22)}
+      ss.source_files = ${ruby_multiline_list(grpc_test_util_files, 22)}
     end
 
     # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?

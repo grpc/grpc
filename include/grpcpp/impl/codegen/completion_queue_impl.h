@@ -56,9 +56,7 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
-namespace experimental {
 class ServerContextBase;
-}  // namespace experimental
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
@@ -277,7 +275,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   template <::grpc::StatusCode code>
   friend class ::grpc_impl::internal::ErrorMethodHandler;
   friend class ::grpc_impl::Server;
-  friend class ::grpc_impl::experimental::ServerContextBase;
+  friend class ::grpc_impl::ServerContextBase;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;

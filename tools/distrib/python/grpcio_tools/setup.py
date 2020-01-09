@@ -70,11 +70,10 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cc_test = subprocess.Popen(
-        ['cc', '-x', 'c++', '-std=c++11', '-'],
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE)
+    cc_test = subprocess.Popen(['cc', '-x', 'c++', '-std=c++11', '-'],
+                               stdin=PIPE,
+                               stdout=PIPE,
+                               stderr=PIPE)
     cc_test.communicate(input=code_test)
     return cc_test.returncode != 0
 
@@ -114,11 +113,9 @@ if EXTRA_ENV_LINK_ARGS is None:
             EXTRA_ENV_LINK_ARGS += ' -latomic'
     elif "win32" in sys.platform and sys.version_info < (3, 5):
         msvcr = cygwinccompiler.get_msvcr()[0]
-        # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
-        # influence on the linkage outcome on MinGW for non-C++ programs.
         EXTRA_ENV_LINK_ARGS += (
-            ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr} '
-            '-static'.format(msvcr=msvcr))
+            ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
+            ' -static -lshlwapi'.format(msvcr=msvcr))
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)

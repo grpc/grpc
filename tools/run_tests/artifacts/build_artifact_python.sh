@@ -22,6 +22,9 @@ export PYTHON=${PYTHON:-python}
 export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
+# Install Cython to avoid source wheel build failure.
+"${PIP}" install --upgrade cython
+
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
 # Use externally provided GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS value if set.

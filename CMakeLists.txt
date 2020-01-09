@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.26.0-dev")
+set(PACKAGE_VERSION       "1.27.0-dev")
 set(gRPC_CORE_VERSION     "9.0.0")
 set(gRPC_CORE_SOVERSION   "9")
-set(gRPC_CPP_VERSION      "1.26.0-dev")
+set(gRPC_CPP_VERSION      "1.27.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.26.0-dev")
+set(gRPC_CSHARP_VERSION   "2.27.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -55,7 +55,15 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(gRPC_INSTALL_default OFF)
 endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
-    "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
+    "Generate installation target")
+
+# We can install dependencies from submodules if we're running
+# CMake v3.13 or newer.
+if(CMAKE_VERSION VERSION_LESS 3.13)
+  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
+else()
+  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
+endif()
 
 # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
 # "module": build the dependency using sources from git submodule (under third_party)
@@ -87,6 +95,38 @@ else()
   set(gRPC_BENCHMARK_PROVIDER "none")
 endif()
 
+set(gRPC_ABSL_PROVIDER "module" CACHE STRING "Provider of absl library")
+set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
+
+set(gRPC_ABSL_USED_TARGETS
+  absl_algorithm
+  absl_atomic_hook
+  absl_bad_optional_access
+  absl_base
+  absl_base_internal
+  absl_bits
+  absl_compressed_tuple
+  absl_config
+  absl_core_headers
+  absl_dynamic_annotations
+  absl_endian
+  absl_inlined_vector
+  absl_inlined_vector_internal
+  absl_int128
+  absl_log_severity
+  absl_memory
+  absl_optional
+  absl_raw_logging_internal
+  absl_span
+  absl_spinlock_wait
+  absl_strings
+  absl_strings_internal
+  absl_throw_delegate
+  absl_type_traits
+  absl_utility
+  absl_meta
+)
+
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
 if(UNIX)
@@ -107,6 +147,7 @@ if(WIN32)
 endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 if(MSVC)
   include(cmake/msvc_static_runtime.cmake)
@@ -144,6 +185,7 @@ else()
   set(_gRPC_CORE_NOSTDCXX_FLAGS "")
 endif()
 
+include(cmake/abseil-cpp.cmake)
 include(cmake/address_sorting.cmake)
 include(cmake/benchmark.cmake)
 include(cmake/cares.cmake)
@@ -478,9 +520,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c init_test)
   add_dependencies(buildtests_c inproc_callback_test)
   add_dependencies(buildtests_c invalid_call_argument_test)
-  add_dependencies(buildtests_c json_rewrite)
-  add_dependencies(buildtests_c json_rewrite_test)
-  add_dependencies(buildtests_c json_stream_error_test)
   add_dependencies(buildtests_c json_test)
   add_dependencies(buildtests_c lame_client_test)
   add_dependencies(buildtests_c load_file_test)
@@ -582,10 +621,10 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c h2_sockpair_test)
   add_dependencies(buildtests_c h2_sockpair+trace_test)
   add_dependencies(buildtests_c h2_sockpair_1byte_test)
-  add_dependencies(buildtests_c h2_spiffe_test)
   add_dependencies(buildtests_c h2_ssl_test)
   add_dependencies(buildtests_c h2_ssl_cred_reload_test)
   add_dependencies(buildtests_c h2_ssl_proxy_test)
+  add_dependencies(buildtests_c h2_tls_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c h2_uds_test)
   endif()
@@ -640,6 +679,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx alts_security_connector_test)
   add_dependencies(buildtests_cxx alts_tsi_handshaker_test)
   add_dependencies(buildtests_cxx alts_tsi_utils_test)
+  add_dependencies(buildtests_cxx alts_util_test)
   add_dependencies(buildtests_cxx alts_zero_copy_grpc_protector_test)
   add_dependencies(buildtests_cxx async_end2end_test)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
@@ -738,6 +778,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx end2end_test)
   add_dependencies(buildtests_cxx error_details_test)
+  add_dependencies(buildtests_cxx eventmanager_libuv_test)
   add_dependencies(buildtests_cxx exception_test)
   add_dependencies(buildtests_cxx filter_end2end_test)
   add_dependencies(buildtests_cxx generic_end2end_test)
@@ -749,7 +790,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_fetch_oauth2)
   add_dependencies(buildtests_cxx grpc_linux_system_roots_test)
-  add_dependencies(buildtests_cxx grpc_spiffe_security_connector_test)
+  add_dependencies(buildtests_cxx grpc_tls_security_connector_test)
   add_dependencies(buildtests_cxx grpc_tool_test)
   add_dependencies(buildtests_cxx grpclb_api_test)
   add_dependencies(buildtests_cxx grpclb_end2end_test)
@@ -1044,6 +1085,9 @@ target_include_directories(gpr
 )
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::inlined_vector
+  absl::strings
+  absl::optional
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -1168,6 +1212,7 @@ add_library(grpc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -1222,7 +1267,6 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -1310,7 +1354,7 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
-  src/core/lib/security/credentials/tls/spiffe_credentials.cc
+  src/core/lib/security/credentials/tls/tls_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1320,7 +1364,7 @@ add_library(grpc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/ssl_utils_config.cc
-  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
+  src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1641,6 +1685,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -1695,7 +1740,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -1826,7 +1870,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
-  src/core/lib/security/credentials/tls/spiffe_credentials.cc
+  src/core/lib/security/credentials/tls/tls_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1836,7 +1880,7 @@ add_library(grpc_cronet
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/ssl_utils_config.cc
-  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
+  src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -2070,6 +2114,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2124,7 +2169,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -2413,6 +2457,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2467,7 +2512,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -2732,6 +2776,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2786,7 +2831,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -3246,6 +3290,7 @@ target_include_directories(dns_test_util
 target_link_libraries(dns_test_util
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -3388,6 +3433,7 @@ add_library(grpc++
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -3442,7 +3488,6 @@ add_library(grpc++
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -3814,6 +3859,68 @@ endforeach()
 
 if(gRPC_INSTALL)
   install(TARGETS grpc++ EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(grpc++_alts
+  src/cpp/common/alts_context.cc
+  src/cpp/common/alts_util.cc
+)
+
+set_target_properties(grpc++_alts PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_alts PROPERTIES COMPILE_PDB_NAME "grpc++_alts"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_alts.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpc++_alts
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(grpc++_alts
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+)
+
+foreach(_hdr
+  include/grpcpp/impl/codegen/security/auth_context.h
+  include/grpcpp/security/alts_context.h
+  include/grpcpp/security/alts_util.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+
+if(gRPC_INSTALL)
+  install(TARGETS grpc++_alts EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -4653,6 +4760,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/logical_thread.cc
+  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -4707,7 +4815,6 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -5820,15 +5927,6 @@ target_link_libraries(grpc_csharp_ext
   gpr
 )
 
-
-
-if(gRPC_INSTALL)
-  install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
 
 endif()
 
@@ -8465,87 +8563,6 @@ target_link_libraries(invalid_call_argument_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(json_rewrite
-  test/core/json/json_rewrite.cc
-)
-
-target_include_directories(json_rewrite
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(json_rewrite
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(json_rewrite_test
-  test/core/json/json_rewrite_test.cc
-)
-
-target_include_directories(json_rewrite_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(json_rewrite_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(json_stream_error_test
-  test/core/json/json_stream_error_test.cc
-)
-
-target_include_directories(json_stream_error_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(json_stream_error_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(json_test
   test/core/json/json_test.cc
 )
@@ -10314,6 +10331,46 @@ target_link_libraries(alts_tsi_utils_test
   alts_test_util
   gpr
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(alts_util_test
+  test/cpp/common/alts_util_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(alts_util_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_util_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++_alts
+  grpc++
+  grpc
+  gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -12535,6 +12592,42 @@ target_link_libraries(error_details_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(eventmanager_libuv_test
+  test/core/iomgr/poller/eventmanager_libuv_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(eventmanager_libuv_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(eventmanager_libuv_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(exception_test
   test/cpp/end2end/exception_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -13276,13 +13369,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_spiffe_security_connector_test
-  test/core/security/spiffe_security_connector_test.cc
+add_executable(grpc_tls_security_connector_test
+  test/core/security/tls_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_spiffe_security_connector_test
+target_include_directories(grpc_tls_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13299,7 +13392,7 @@ target_include_directories(grpc_spiffe_security_connector_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_spiffe_security_connector_test
+target_link_libraries(grpc_tls_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -17124,34 +17217,6 @@ target_link_libraries(h2_sockpair_1byte_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(h2_spiffe_test
-  test/core/end2end/fixtures/h2_spiffe.cc
-)
-
-target_include_directories(h2_spiffe_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(h2_spiffe_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(h2_ssl_test
   test/core/end2end/fixtures/h2_ssl.cc
 )
@@ -17225,6 +17290,34 @@ target_include_directories(h2_ssl_proxy_test
 )
 
 target_link_libraries(h2_ssl_proxy_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(h2_tls_test
+  test/core/end2end/fixtures/h2_tls.cc
+)
+
+target_include_directories(h2_tls_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(h2_tls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
@@ -18360,6 +18453,10 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/gRPCConfigVersion.cmake
   DESTINATION ${gRPC_INSTALL_CMAKEDIR}
 )
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findc-ares.cmake
+  DESTINATION ${gRPC_INSTALL_CMAKEDIR}/modules
+)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem
   DESTINATION ${gRPC_INSTALL_SHAREDIR})
@@ -18388,7 +18485,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr"
+  "-lgpr -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "gpr.pc")
 
@@ -18398,7 +18495,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc.pc")
 
@@ -18408,7 +18505,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure"
+  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc_unsecure.pc")
 
@@ -18418,7 +18515,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${PACKAGE_VERSION}"
   "grpc"
-  "-lgrpc++"
+  "-lgrpc++ -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++.pc")
 
@@ -18428,6 +18525,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${PACKAGE_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure"
+  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++_unsecure.pc")

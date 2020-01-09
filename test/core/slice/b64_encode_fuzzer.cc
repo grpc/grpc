@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "include/grpc/support/alloc.h"
 #include "src/core/lib/slice/b64.h"
 
 bool squelch = true;
@@ -28,7 +29,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (size < 2) return 0;
   const bool url_safe = static_cast<uint8_t>(0x100) < data[0];
   const bool multiline = static_cast<uint8_t>(0x100) < data[1];
-  grpc_base64_encode(reinterpret_cast<const char*>(data + 2), size - 2,
-                     url_safe, multiline);
+  char* res = grpc_base64_encode(reinterpret_cast<const char*>(data + 2),
+                                 size - 2, url_safe, multiline);
+  gpr_free(res);
   return 0;
 }

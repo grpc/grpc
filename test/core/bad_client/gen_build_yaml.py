@@ -12,10 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """Generates the appropriate build.json data for all the bad_client tests."""
-
 
 from __future__ import print_function
 import collections
@@ -41,47 +38,43 @@ BAD_CLIENT_TESTS = {
     'unknown_frame': default_test_options,
 }
 
+
 def main():
-  json = {
-      '#': 'generated with test/bad_client/gen_build_json.py',
-      'libs': [
-          {
+    json = {
+        '#':
+            'generated with test/bad_client/gen_build_json.py',
+        'libs': [{
             'name': 'bad_client_test',
             'build': 'private',
             'language': 'c++',
-            'src': [
-              'test/core/bad_client/bad_client.cc'
-            ],
-            'headers': [
-              'test/core/bad_client/bad_client.h'
-            ],
+            'src': ['test/core/bad_client/bad_client.cc'],
+            'headers': ['test/core/bad_client/bad_client.h'],
             'vs_proj_dir': 'test/bad_client',
+            'deps': ['grpc_test_util_unsecure', 'grpc_unsecure', 'gpr']
+        }],
+        'targets': [{
+            'name':
+                '%s_bad_client_test' % t,
+            'cpu_cost':
+                BAD_CLIENT_TESTS[t].cpu_cost,
+            'build':
+                'test',
+            'language':
+                'c++',
+            'secure':
+                False,
+            'src': ['test/core/bad_client/tests/%s.cc' % t],
+            'vs_proj_dir':
+                'test',
+            'exclude_iomgrs': ['uv'],
             'deps': [
-              'grpc_test_util_unsecure',
-              'grpc_unsecure',
-              'gpr'
+                'bad_client_test', 'grpc_test_util_unsecure', 'grpc_unsecure',
+                'gpr'
             ]
-          }],
-      'targets': [
-          {
-              'name': '%s_bad_client_test' % t,
-              'cpu_cost': BAD_CLIENT_TESTS[t].cpu_cost,
-              'build': 'test',
-              'language': 'c++',
-              'secure': False,
-              'src': ['test/core/bad_client/tests/%s.cc' % t],
-              'vs_proj_dir': 'test',
-              'exclude_iomgrs': ['uv'],
-              'deps': [
-                  'bad_client_test',
-                  'grpc_test_util_unsecure',
-                  'grpc_unsecure',
-                  'gpr'
-              ]
-          }
-      for t in sorted(BAD_CLIENT_TESTS.keys())]}
-  print(yaml.dump(json))
+        } for t in sorted(BAD_CLIENT_TESTS.keys())]
+    }
+    print(yaml.dump(json))
 
 
 if __name__ == '__main__':
-  main()
+    main()

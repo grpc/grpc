@@ -47,6 +47,14 @@ typedef enum {
 } tsi_result;
 
 typedef enum {
+  TSI_SECURITY_MIN,
+  TSI_SECURITY_NONE = TSI_SECURITY_MIN,
+  TSI_INTEGRITY_ONLY,
+  TSI_PRIVACY_AND_INTEGRITY,
+  TSI_SECURITY_MAX = TSI_PRIVACY_AND_INTEGRITY,
+} tsi_security_level;
+
+typedef enum {
   // Default option
   TSI_DONT_REQUEST_CLIENT_CERTIFICATE,
   TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
@@ -56,6 +64,7 @@ typedef enum {
 } tsi_client_certificate_request_type;
 
 const char* tsi_result_to_string(tsi_result result);
+const char* tsi_security_level_to_string(tsi_security_level security_level);
 
 /* --- tsi tracing --- */
 
@@ -184,6 +193,9 @@ void tsi_frame_protector_destroy(tsi_frame_protector* self);
 
 /* This property is of type TSI_PEER_PROPERTY_STRING.  */
 #define TSI_CERTIFICATE_TYPE_PEER_PROPERTY "certificate_type"
+
+/* This property represents security level of a channel. */
+#define TSI_SECURITY_LEVEL_PEER_PROPERTY "security_level"
 
 /* Property values may contain NULL characters just like C++ strings.
    The length field gives the length of the string. */

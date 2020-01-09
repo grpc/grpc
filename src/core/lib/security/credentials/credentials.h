@@ -225,7 +225,11 @@ void grpc_credentials_mdelem_array_destroy(grpc_credentials_mdelem_array* list);
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
-  explicit grpc_call_credentials(const char* type) : type_(type) {}
+  explicit grpc_call_credentials(
+      const char* type,
+      grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
+      : type_(type), min_security_level_(min_security_level) {}
+
   virtual ~grpc_call_credentials() = default;
 
   // Returns true if completed synchronously, in which case \a error will
@@ -244,10 +248,15 @@ struct grpc_call_credentials
   virtual void cancel_get_request_metadata(
       grpc_credentials_mdelem_array* md_array, grpc_error* error) = 0;
 
+  virtual grpc_security_level min_security_level() const {
+    return min_security_level_;
+  }
+
   const char* type() const { return type_; }
 
  private:
   const char* type_;
+  const grpc_security_level min_security_level_;
 };
 
 /* Metadata-only credentials with the specified key and value where

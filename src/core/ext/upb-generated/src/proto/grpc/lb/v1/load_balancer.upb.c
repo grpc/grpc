@@ -71,20 +71,22 @@ const upb_msglayout grpc_lb_v1_ClientStats_msginit = {
   UPB_SIZE(40, 48), 6, false,
 };
 
-static const upb_msglayout *const grpc_lb_v1_LoadBalanceResponse_submsgs[2] = {
+static const upb_msglayout *const grpc_lb_v1_LoadBalanceResponse_submsgs[3] = {
+  &grpc_lb_v1_FallbackResponse_msginit,
   &grpc_lb_v1_InitialLoadBalanceResponse_msginit,
   &grpc_lb_v1_ServerList_msginit,
 };
 
-static const upb_msglayout_field grpc_lb_v1_LoadBalanceResponse__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+static const upb_msglayout_field grpc_lb_v1_LoadBalanceResponse__fields[3] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
 };
 
 const upb_msglayout grpc_lb_v1_LoadBalanceResponse_msginit = {
   &grpc_lb_v1_LoadBalanceResponse_submsgs[0],
   &grpc_lb_v1_LoadBalanceResponse__fields[0],
-  UPB_SIZE(8, 16), 2, false,
+  UPB_SIZE(8, 16), 3, false,
 };
 
 static const upb_msglayout *const grpc_lb_v1_InitialLoadBalanceResponse_submsgs[1] = {
@@ -127,6 +129,12 @@ const upb_msglayout grpc_lb_v1_Server_msginit = {
   NULL,
   &grpc_lb_v1_Server__fields[0],
   UPB_SIZE(24, 48), 4, false,
+};
+
+const upb_msglayout grpc_lb_v1_FallbackResponse_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, false,
 };
 
 #include "upb/port_undef.inc"

@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import inspect
+
+
 # TODO(https://github.com/grpc/grpc/issues/20850) refactor this.
 _LOGGER = logging.getLogger(__name__)
 cdef int _EMPTY_FLAG = 0
@@ -23,12 +27,10 @@ cdef class _HandlerCallDetails:
         self.invocation_metadata = invocation_metadata
 
 
-class _ServicerContextPlaceHolder(object): pass
-
-
 cdef class RPCState:
 
-    def __cinit__(self):
+    def __cinit__(self, AioServer server):
+        self.server = server
         grpc_metadata_array_init(&self.request_metadata)
         grpc_call_details_init(&self.details)
 
@@ -43,12 +45,49 @@ cdef class RPCState:
             grpc_call_unref(self.call)
 
 
+cdef class _ServicerContext:
+    cdef RPCState _rpc_state
+    cdef object _loop
+    cdef bint _metadata_sent
+    cdef object _request_deserializer
+    cdef object _response_serializer
+
+    def __cinit__(self,
+                  RPCState rpc_state,
+                  object request_deserializer,
+                  object response_serializer,
+                  object loop):
+        self._rpc_state = rpc_state
+        self._request_deserializer = request_deserializer
+        self._response_serializer = response_serializer
+        self._loop = loop
+        self._metadata_sent = False
+
+    async def read(self):
+        cdef bytes raw_message = await _receive_message(self._rpc_state, self._loop)
+        return deserialize(self._request_deserializer,
+                           raw_message)
+
+    async def write(self, object message):
+        await _send_message(self._rpc_state,
+                            serialize(self._response_serializer, message),
+                            self._metadata_sent,
+                            self._loop)
+        if not self._metadata_sent:
+            self._metadata_sent = True
+
+    async def send_initial_metadata(self, tuple metadata):
+        if self._metadata_sent:
+            raise RuntimeError('Send initial metadata failed: already sent')
+        else:
+            _send_initial_metadata(self._rpc_state, self._loop)
+            self._metadata_sent = True
+
+
 cdef _find_method_handler(str method, list generic_handlers):
     # TODO(lidiz) connects Metadata to call details
-    cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(
-        method,
-        tuple()
-    )
+    cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(method,
+                                                                        None)
 
     for generic_handler in generic_handlers:
         method_handler = generic_handler.service(handler_call_details)
@@ -61,105 +100,154 @@ async def _handle_unary_unary_rpc(object method_handler,
                                   RPCState rpc_state,
                                   object loop):
     # Receives request message
-    cdef tuple receive_ops = (
-        ReceiveMessageOperation(_EMPTY_FLAGS),
-    )
-    await callback_start_batch(rpc_state, receive_ops, loop)
+    cdef bytes request_raw = await _receive_message(rpc_state, loop)
 
     # Deserializes the request message
-    cdef bytes request_raw = receive_ops[0].message()
-    cdef object request_message
-    if method_handler.request_deserializer:
-        request_message = method_handler.request_deserializer(request_raw)
-    else:
-        request_message = request_raw
+    cdef object request_message = deserialize(
+        method_handler.request_deserializer,
+        request_raw,
+    )
 
     # Executes application logic
-    cdef object response_message = await method_handler.unary_unary(request_message, _ServicerContextPlaceHolder())
+    cdef object response_message = await method_handler.unary_unary(
+        request_message,
+        _ServicerContext(
+            rpc_state,
+            None,
+            None,
+            loop,
+        ),
+    )
 
     # Serializes the response message
-    cdef bytes response_raw
-    if method_handler.response_serializer:
-        response_raw = method_handler.response_serializer(response_message)
-    else:
-        response_raw = response_message
+    cdef bytes response_raw = serialize(
+        method_handler.response_serializer,
+        response_message,
+    )
 
     # Sends response message
     cdef tuple send_ops = (
         SendStatusFromServerOperation(
-        tuple(), StatusCode.ok, b'', _EMPTY_FLAGS),
-        SendInitialMetadataOperation(tuple(), _EMPTY_FLAGS),
+            tuple(),
+            StatusCode.ok,
+            b'',
+            _EMPTY_FLAGS,
+        ),
+        SendInitialMetadataOperation(None, _EMPTY_FLAGS),
         SendMessageOperation(response_raw, _EMPTY_FLAGS),
     )
-    await callback_start_batch(rpc_state, send_ops, loop)
+    await execute_batch(rpc_state, send_ops, loop)
+
+
+async def _handle_unary_stream_rpc(object method_handler,
+                                   RPCState rpc_state,
+                                   object loop):
+    # Receives request message
+    cdef bytes request_raw = await _receive_message(rpc_state, loop)
+
+    # Deserializes the request message
+    cdef object request_message = deserialize(
+        method_handler.request_deserializer,
+        request_raw,
+    )
+
+    cdef _ServicerContext servicer_context = _ServicerContext(
+        rpc_state,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
+        loop,
+    )
+
+    cdef object async_response_generator
+    cdef object response_message
+    if inspect.iscoroutinefunction(method_handler.unary_stream):
+        # The handler uses reader / writer API, returns None.
+        await method_handler.unary_stream(
+            request_message,
+            servicer_context,
+        )
+    else:
+        # The handler uses async generator API
+        async_response_generator = method_handler.unary_stream(
+            request_message,
+            servicer_context,
+        )
+
+        # Consumes messages from the generator
+        async for response_message in async_response_generator:
+            if rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
+                # The async generator might yield much much later after the
+                # server is destroied. If we proceed, Core will crash badly.
+                _LOGGER.info('Aborting RPC due to server stop.')
+                return
+            else:
+                await servicer_context.write(response_message)
+
+    # Sends the final status of this RPC
+    cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
+        None,
+        StatusCode.ok,
+        b'',
+        _EMPTY_FLAGS,
+    )
+
+    cdef tuple ops = (op,)
+    await execute_batch(rpc_state, ops, loop)
+
+
+async def _handle_cancellation_from_core(object rpc_task,
+                                         RPCState rpc_state,
+                                         object loop):
+    cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
+    cdef tuple ops = (op,)
+
+    # Awaits cancellation from peer.
+    await execute_batch(rpc_state, ops, loop)
+    if op.cancelled() and not rpc_task.done():
+        # Injects `CancelledError` to halt the RPC coroutine
+        rpc_task.cancel()
+
+
+async def _schedule_rpc_coro(object rpc_coro,
+                             RPCState rpc_state,
+                             object loop):
+    # Schedules the RPC coroutine.
+    cdef object rpc_task = loop.create_task(rpc_coro)
+    await _handle_cancellation_from_core(rpc_task, rpc_state, loop)
 
 
 async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
     # Finds the method handler (application logic)
     cdef object method_handler = _find_method_handler(
         rpc_state.method().decode(),
-        generic_handlers
+        generic_handlers,
     )
     if method_handler is None:
         # TODO(lidiz) return unimplemented error to client side
         raise NotImplementedError()
 
     # TODO(lidiz) extend to all 4 types of RPC
-    if method_handler.request_streaming or method_handler.response_streaming:
-        raise NotImplementedError()
+    if not method_handler.request_streaming and method_handler.response_streaming:
+        await _handle_unary_stream_rpc(method_handler,
+                                       rpc_state,
+                                       loop)
+    elif not method_handler.request_streaming and not method_handler.response_streaming:
+        await _handle_unary_unary_rpc(method_handler,
+                                      rpc_state,
+                                      loop)
     else:
-        await _handle_unary_unary_rpc(
-            method_handler,
-            rpc_state,
-            loop
-        )
+        raise NotImplementedError()
 
 
 class _RequestCallError(Exception): pass
 
 cdef CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = CallbackFailureHandler(
-    'grpc_server_request_call', 'server shutdown', _RequestCallError)
-
-
-async def _server_call_request_call(Server server,
-                                    CallbackCompletionQueue cq,
-                                    object loop):
-    cdef grpc_call_error error
-    cdef RPCState rpc_state = RPCState()
-    cdef object future = loop.create_future()
-    cdef CallbackWrapper wrapper = CallbackWrapper(
-        future,
-        REQUEST_CALL_FAILURE_HANDLER)
-    # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
-    # when calling "await". This is an over-optimization by Cython.
-    cpython.Py_INCREF(wrapper)
-    error = grpc_server_request_call(
-        server.c_server, &rpc_state.call, &rpc_state.details,
-        &rpc_state.request_metadata,
-        cq.c_ptr(), cq.c_ptr(),
-        wrapper.c_functor()
-    )
-    if error != GRPC_CALL_OK:
-        raise RuntimeError("Error in _server_call_request_call: %s" % error)
-
-    await future
-    cpython.Py_DECREF(wrapper)
-    return rpc_state
-
-
-async def _handle_cancellation_from_core(object rpc_task,
-                                          RPCState rpc_state,
-                                          object loop):
-    cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
-    cdef tuple ops = (op,)
-    await callback_start_batch(rpc_state, ops, loop)
-    if op.cancelled() and not rpc_task.done():
-        rpc_task.cancel()
+    'grpc_server_request_call', None, _RequestCallError)
 
 
 cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_server_shutdown_and_notify',
-    'Unknown',
+    None,
     RuntimeError)
 
 
@@ -182,6 +270,7 @@ cdef class AioServer:
         self._generic_handlers = []
         self.add_generic_rpc_handlers(generic_handlers)
         self._serving_task = None
+        self._ongoing_rpc_tasks = set()
 
         self._shutdown_lock = asyncio.Lock(loop=self._loop)
         self._shutdown_completed = self._loop.create_future()
@@ -210,6 +299,29 @@ cdef class AioServer:
         return self._server.add_http2_port(address,
                                           server_credentials._credentials)
 
+    async def _request_call(self):
+        cdef grpc_call_error error
+        cdef RPCState rpc_state = RPCState(self)
+        cdef object future = self._loop.create_future()
+        cdef CallbackWrapper wrapper = CallbackWrapper(
+            future,
+            REQUEST_CALL_FAILURE_HANDLER)
+        # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
+        # when calling "await". This is an over-optimization by Cython.
+        cpython.Py_INCREF(wrapper)
+        error = grpc_server_request_call(
+            self._server.c_server, &rpc_state.call, &rpc_state.details,
+            &rpc_state.request_metadata,
+            self._cq.c_ptr(), self._cq.c_ptr(),
+            wrapper.c_functor()
+        )
+        if error != GRPC_CALL_OK:
+            raise RuntimeError("Error in grpc_server_request_call: %s" % error)
+
+        await future
+        cpython.Py_DECREF(wrapper)
+        return rpc_state
+
     async def _server_main_loop(self,
                                 object server_started):
         self._server.start()
@@ -221,21 +333,22 @@ cdef class AioServer:
             if self._status != AIO_SERVER_STATUS_RUNNING:
                 break
 
-            rpc_state = await _server_call_request_call(
-                self._server,
-                self._cq,
-                self._loop)
+            # Accepts new request from Core
+            rpc_state = await self._request_call()
 
-            rpc_task = self._loop.create_task(
-                _handle_rpc(
-                    self._generic_handlers,
-                    rpc_state,
-                    self._loop
-                )
-            )
+            # Creates the dedicated RPC coroutine. If we schedule it right now,
+            # there is no guarantee if the cancellation listening coroutine is
+            # ready or not. So, we should control the ordering by scheduling
+            # the coroutine onto event loop inside of the cancellation
+            # coroutine.
+            rpc_coro = _handle_rpc(self._generic_handlers,
+                                   rpc_state,
+                                   self._loop)
+
+            # Fires off a task that listens on the cancellation from client.
             self._loop.create_task(
-                _handle_cancellation_from_core(
-                    rpc_task,
+                _schedule_rpc_coro(
+                    rpc_coro,
                     rpc_state,
                     self._loop
                 )
@@ -282,7 +395,7 @@ cdef class AioServer:
             pass
 
     async def shutdown(self, grace):
-        """Gracefully shutdown the C-Core server.
+        """Gracefully shutdown the Core server.
 
         Application should only call shutdown once.
 
@@ -328,7 +441,7 @@ cdef class AioServer:
                 # Shuts down the completion queue
                 await self._cq.shutdown()
     
-    async def wait_for_termination(self, float timeout):
+    async def wait_for_termination(self, object timeout):
         if timeout is None:
             await self._shutdown_completed
         else:

@@ -27,41 +27,35 @@ from tests.interop import resources
 
 def _args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--server_host',
-        default="localhost",
-        type=str,
-        help='the host to which to connect')
-    parser.add_argument(
-        '--server_port',
-        type=int,
-        required=True,
-        help='the port to which to connect')
-    parser.add_argument(
-        '--test_case',
-        default='large_unary',
-        type=str,
-        help='the test case to execute')
-    parser.add_argument(
-        '--use_tls',
-        default=False,
-        type=resources.parse_bool,
-        help='require a secure connection')
-    parser.add_argument(
-        '--use_test_ca',
-        default=False,
-        type=resources.parse_bool,
-        help='replace platform root CAs with ca.pem')
-    parser.add_argument(
-        '--server_host_override',
-        type=str,
-        help='the server host to which to claim to connect')
-    parser.add_argument(
-        '--oauth_scope', type=str, help='scope for OAuth tokens')
-    parser.add_argument(
-        '--default_service_account',
-        type=str,
-        help='email address of the default service account')
+    parser.add_argument('--server_host',
+                        default="localhost",
+                        type=str,
+                        help='the host to which to connect')
+    parser.add_argument('--server_port',
+                        type=int,
+                        required=True,
+                        help='the port to which to connect')
+    parser.add_argument('--test_case',
+                        default='large_unary',
+                        type=str,
+                        help='the test case to execute')
+    parser.add_argument('--use_tls',
+                        default=False,
+                        type=resources.parse_bool,
+                        help='require a secure connection')
+    parser.add_argument('--use_test_ca',
+                        default=False,
+                        type=resources.parse_bool,
+                        help='replace platform root CAs with ca.pem')
+    parser.add_argument('--server_host_override',
+                        type=str,
+                        help='the server host to which to claim to connect')
+    parser.add_argument('--oauth_scope',
+                        type=str,
+                        help='scope for OAuth tokens')
+    parser.add_argument('--default_service_account',
+                        type=str,
+                        help='email address of the default service account')
     return parser.parse_args()
 
 

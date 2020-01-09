@@ -43,6 +43,12 @@ namespace grpc {
 namespace testing {
 namespace {
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
+using ::grpc::experimental::CallbackGenericService;
+using ::grpc::experimental::GenericCallbackServerContext;
+using ::grpc::experimental::ServerGenericBidiReactor;
+#endif
+
 void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 
 bool VerifyReturnSuccess(CompletionQueue* cq, int i) {
@@ -245,11 +251,10 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
                   : false;
   }
 
-  bool SetUpServer(
-      ::grpc::Service* service1, ::grpc::Service* service2,
-      AsyncGenericService* generic_service,
-      experimental::CallbackGenericService* callback_generic_service,
-      int max_message_size = 0) {
+  bool SetUpServer(::grpc::Service* service1, ::grpc::Service* service2,
+                   AsyncGenericService* generic_service,
+                   CallbackGenericService* callback_generic_service,
+                   int max_message_size = 0) {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
 
@@ -268,8 +273,12 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
       builder.RegisterAsyncGenericService(generic_service);
     }
     if (callback_generic_service) {
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      builder.RegisterCallbackGenericService(callback_generic_service);
+#else
       builder.experimental().RegisterCallbackGenericService(
           callback_generic_service);
+#endif
     }
 
     if (max_message_size != 0) {
@@ -807,13 +816,15 @@ TEST_F(HybridEnd2endTest, GenericEcho) {
 
 TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
   EchoTestService::WithGenericMethod_Echo<TestServiceImpl> service;
-  class GenericEchoService : public experimental::CallbackGenericService {
+  class GenericEchoService : public CallbackGenericService {
    private:
-    experimental::ServerGenericBidiReactor* CreateReactor(
-        experimental::GenericCallbackServerContext* context) override {
+    ServerGenericBidiReactor* CreateReactor(
+        GenericCallbackServerContext* context) override {
       EXPECT_EQ(context->method(), "/grpc.testing.EchoTestService/Echo");
+      gpr_log(GPR_DEBUG, "Constructor of generic service %d",
+              static_cast<int>(context->deadline().time_since_epoch().count()));
 
-      class Reactor : public experimental::ServerGenericBidiReactor {
+      class Reactor : public ServerGenericBidiReactor {
        public:
         Reactor() { StartRead(&request_); }
 

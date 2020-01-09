@@ -15,10 +15,11 @@
 @rem set path to python & mingw compiler
 set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 
-pip install --upgrade six
+python -m pip install --upgrade six
 @rem some artifacts are broken for setuptools 38.5.0. See https://github.com/grpc/grpc/issues/14317
-pip install --upgrade setuptools==38.2.4
-pip install -rrequirements.txt
+python -m pip install --upgrade setuptools==38.2.4
+python -m pip install --upgrade cython
+python -m pip install -rrequirements.txt --user
 
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 

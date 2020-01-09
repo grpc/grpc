@@ -187,10 +187,10 @@ class HttpProxyMapper : public ProxyMapperInterface {
     return false;
   }
 
-  bool MapAddress(const grpc_resolved_address& address,
-                  const grpc_channel_args* args,
-                  grpc_resolved_address** new_address,
-                  grpc_channel_args** new_args) override {
+  bool MapAddress(const grpc_resolved_address& /*address*/,
+                  const grpc_channel_args* /*args*/,
+                  grpc_resolved_address** /*new_address*/,
+                  grpc_channel_args** /*new_args*/) override {
     return false;
   }
 };
