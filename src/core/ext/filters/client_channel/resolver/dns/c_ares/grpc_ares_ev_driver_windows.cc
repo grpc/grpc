@@ -30,8 +30,8 @@
 #include <string.h>
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
@@ -97,7 +97,8 @@ class GrpcPolledFdWindows {
     WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY,
   };
 
-  GrpcPolledFdWindows(ares_socket_t as, RefCountedPtr<LogicalThread> combiner,
+  GrpcPolledFdWindows(ares_socket_t as,
+                      RefCountedPtr<LogicalThread> logical_thread,
                       int address_family, int socket_type)
       : read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
@@ -105,7 +106,7 @@ class GrpcPolledFdWindows {
         gotten_into_driver_list_(false),
         address_family_(address_family),
         socket_type_(socket_type),
-        combiner_(std::move(combiner)) {
+        logical_thread_(std::move(logical_thread)) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, as);
     winsocket_ = grpc_winsocket_create(as, name_);
   }
@@ -137,8 +138,8 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(!read_buf_has_data_);
     read_buf_ = GRPC_SLICE_MALLOC(4192);
     if (connect_done_) {
-      combiner_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
-                     DEBUG_LOCATION);
+      logical_thread_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
+                           DEBUG_LOCATION);
     } else {
       GPR_ASSERT(pending_continue_register_for_on_readable_locked_ == false);
       pending_continue_register_for_on_readable_locked_ = true;
@@ -197,8 +198,8 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (connect_done_) {
-      combiner_->Run([this]() { ContinueRegisterForOnWriteableLocked(); },
-                     DEBUG_LOCATION);
+      logical_thread_->Run([this]() { ContinueRegisterForOnWriteableLocked(); },
+                           DEBUG_LOCATION);
     } else {
       GPR_ASSERT(pending_continue_register_for_on_writeable_locked_ == false);
       pending_continue_register_for_on_writeable_locked_ = true;
@@ -416,7 +417,7 @@ class GrpcPolledFdWindows {
   static void OnTcpConnect(void* arg, grpc_error* error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
-    grpc_polled_fd->combiner_->Run(
+    grpc_polled_fd->logical_thread_->Run(
         Closure::ToFunction(
             GRPC_CLOSURE_INIT(&grpc_polled_fd->on_tcp_connect_locked_,
                               &GrpcPolledFdWindows::OnTcpConnectLocked,
@@ -465,12 +466,12 @@ class GrpcPolledFdWindows {
       wsa_connect_error_ = WSA_OPERATION_ABORTED;
     }
     if (pending_continue_register_for_on_readable_locked_) {
-      combiner_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
-                     DEBUG_LOCATION);
+      logical_thread_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
+                           DEBUG_LOCATION);
     }
     if (pending_continue_register_for_on_writeable_locked_) {
-      combiner_->Run([this]() { ContinueRegisterForOnWriteableLocked(); },
-                     DEBUG_LOCATION);
+      logical_thread_->Run([this]() { ContinueRegisterForOnWriteableLocked(); },
+                           DEBUG_LOCATION);
     }
   }
 
@@ -580,7 +581,7 @@ class GrpcPolledFdWindows {
 
   static void OnIocpReadable(void* arg, grpc_error* error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    polled_fd->combiner_->Run(
+    polled_fd->logical_thread_->Run(
         Closure::ToFunction(
             GRPC_CLOSURE_INIT(&polled_fd->outer_read_closure_,
                               &GrpcPolledFdWindows::OnIocpReadableLocked,
@@ -634,7 +635,7 @@ class GrpcPolledFdWindows {
 
   static void OnIocpWriteable(void* arg, grpc_error* error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    polled_fd->combiner_->Run(
+    polled_fd->logical_thread_->Run(
         Closure::ToFunction(
             GRPC_CLOSURE_INIT(&polled_fd->outer_write_closure_,
                               &GrpcPolledFdWindows::OnIocpWriteableLocked,
@@ -680,7 +681,7 @@ class GrpcPolledFdWindows {
   bool gotten_into_driver_list() const { return gotten_into_driver_list_; }
   void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
-  RefCountedPtr<LogicalThread> combiner_;
+  RefCountedPtr<LogicalThread> logical_thread_;
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
@@ -722,8 +723,8 @@ struct SockToPolledFdEntry {
  * with a GrpcPolledFdWindows factory and event driver */
 class SockToPolledFdMap {
  public:
-  SockToPolledFdMap(RefCountedPtr<LogicalThread> combiner)
-      : combiner_(std::move(combiner)) {}
+  SockToPolledFdMap(RefCountedPtr<LogicalThread> logical_thread)
+      : logical_thread_(std::move(logical_thread)) {}
 
   ~SockToPolledFdMap() { GPR_ASSERT(head_ == nullptr); }
 
@@ -781,7 +782,7 @@ class SockToPolledFdMap {
     }
     grpc_tcp_set_non_block(s);
     GrpcPolledFdWindows* polled_fd =
-        new GrpcPolledFdWindows(s, map->combiner_, af, type);
+        new GrpcPolledFdWindows(s, map->logical_thread_, af, type);
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
@@ -837,7 +838,7 @@ class SockToPolledFdMap {
 
  private:
   SockToPolledFdEntry* head_ = nullptr;
-  RefCountedPtr<LogicalThread> combiner_;
+  RefCountedPtr<LogicalThread> logical_thread_;
 };
 
 const struct ares_socket_functions custom_ares_sock_funcs = {
@@ -886,12 +887,12 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
-  GrpcPolledFdFactoryWindows(RefCountedPtr<LogicalThread> combiner)
-      : sock_to_polled_fd_map_(combiner) {}
+  GrpcPolledFdFactoryWindows(RefCountedPtr<LogicalThread> logical_thread)
+      : sock_to_polled_fd_map_(logical_thread) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      RefCountedPtr<LogicalThread> combiner) override {
+      RefCountedPtr<LogicalThread> logical_thread) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
@@ -909,8 +910,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    RefCountedPtr<LogicalThread> combiner) {
-  return MakeUnique<GrpcPolledFdFactoryWindows>(std::move(combiner));
+    RefCountedPtr<LogicalThread> logical_thread) {
+  return MakeUnique<GrpcPolledFdFactoryWindows>(std::move(logical_thread));
 }
 
 }  // namespace grpc_core

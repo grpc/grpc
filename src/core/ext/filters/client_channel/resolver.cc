@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/lib/iomgr/combiner.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
                                                            "resolver_refcount");
@@ -30,11 +29,11 @@ namespace grpc_core {
 // Resolver
 //
 
-Resolver::Resolver(RefCountedPtr<LogicalThread> combiner,
+Resolver::Resolver(RefCountedPtr<LogicalThread> logical_thread,
                    std::unique_ptr<ResultHandler> result_handler)
     : InternallyRefCounted(&grpc_trace_resolver_refcount),
       result_handler_(std::move(result_handler)),
-      combiner_(std::move(combiner)) {}
+      logical_thread_(std::move(logical_thread)) {}
 
 //
 // Resolver::Result

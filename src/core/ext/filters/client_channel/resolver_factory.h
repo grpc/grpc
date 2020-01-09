@@ -38,8 +38,8 @@ struct ResolverArgs {
   const grpc_channel_args* args = nullptr;
   /// Used to drive I/O in the name resolution process.
   grpc_pollset_set* pollset_set = nullptr;
-  /// The combiner under which all resolver calls will be run.
-  RefCountedPtr<LogicalThread> combiner;
+  /// The logical_thread under which all resolver calls will be run.
+  RefCountedPtr<LogicalThread> logical_thread;
   /// The result handler to be used by the resolver.
   std::unique_ptr<Resolver::ResultHandler> result_handler;
 };

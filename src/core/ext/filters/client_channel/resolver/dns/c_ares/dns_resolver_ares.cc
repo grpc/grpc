@@ -91,7 +91,7 @@ class AresDnsResolver : public Resolver {
   bool request_service_config_;
   /// pollset_set to drive the name resolution process
   grpc_pollset_set* interested_parties_;
-  /// closures used by the combiner
+  /// closures used by the logical_thread
   grpc_closure on_next_resolution_;
   grpc_closure on_resolved_;
   /// are we currently resolving?
@@ -120,7 +120,7 @@ class AresDnsResolver : public Resolver {
 };
 
 AresDnsResolver::AresDnsResolver(ResolverArgs args)
-    : Resolver(args.combiner, std::move(args.result_handler)),
+    : Resolver(args.logical_thread, std::move(args.result_handler)),
       backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
@@ -201,7 +201,7 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  r->combiner()->Run(
+  r->logical_thread()->Run(
       Closure::ToFunction(GRPC_CLOSURE_INIT(&r->on_next_resolution_,
                                             OnNextResolutionLocked, r, nullptr),
                           GRPC_ERROR_REF(error)),
@@ -327,7 +327,7 @@ char* ChooseServiceConfig(char* service_config_choice_json,
 
 void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  r->combiner()->Run(
+  r->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&r->on_resolved_, OnResolvedLocked, r, nullptr),
           GRPC_ERROR_REF(error)),
@@ -443,7 +443,7 @@ void AresDnsResolver::StartResolvingLocked() {
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
       &on_resolved_, &addresses_, enable_srv_queries_ /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr,
-      query_timeout_ms_, combiner());
+      query_timeout_ms_, logical_thread());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
                        this, pending_request_);

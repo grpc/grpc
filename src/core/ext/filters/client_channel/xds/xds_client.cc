@@ -46,7 +46,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -257,7 +257,8 @@ class XdsClient::ChannelState::StateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit StateWatcher(RefCountedPtr<ChannelState> parent)
-      : AsyncConnectivityStateWatcherInterface(parent->xds_client()->combiner_),
+      : AsyncConnectivityStateWatcherInterface(
+            parent->xds_client()->logical_thread_),
         parent_(std::move(parent)) {}
 
  private:
@@ -487,7 +488,7 @@ template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimer(
     void* arg, grpc_error* error) {
   RetryableCall* calld = static_cast<RetryableCall*>(arg);
-  calld->chand_->xds_client()->combiner_->Run(
+  calld->chand_->xds_client()->logical_thread_->Run(
       Closure::ToFunction(GRPC_CLOSURE_INIT(&calld->on_retry_timer_,
                                             OnRetryTimerLocked, calld, nullptr),
                           GRPC_ERROR_REF(error)),
@@ -633,7 +634,7 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
 void XdsClient::ChannelState::AdsCallState::OnResponseReceived(
     void* arg, grpc_error* error) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
-  ads_calld->xds_client()->combiner_->Run(
+  ads_calld->xds_client()->logical_thread_->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&ads_calld->on_response_received_,
                             OnResponseReceivedLocked, ads_calld, nullptr),
@@ -792,7 +793,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
 void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
     void* arg, grpc_error* error) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
-  ads_calld->xds_client()->combiner_->Run(
+  ads_calld->xds_client()->logical_thread_->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&ads_calld->on_status_received_,
                             OnStatusReceivedLocked, ads_calld, nullptr),
@@ -855,7 +856,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::
 void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimer(
     void* arg, grpc_error* error) {
   Reporter* self = static_cast<Reporter*>(arg);
-  self->xds_client()->combiner_->Run(
+  self->xds_client()->logical_thread_->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&self->on_next_report_timer_,
                             OnNextReportTimerLocked, self, nullptr),
@@ -917,7 +918,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
 void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDone(
     void* arg, grpc_error* error) {
   Reporter* self = static_cast<Reporter*>(arg);
-  self->xds_client()->combiner_->Run(
+  self->xds_client()->logical_thread_->Run(
       Closure::ToFunction(GRPC_CLOSURE_INIT(&self->on_report_done_,
                                             OnReportDoneLocked, self, nullptr),
                           GRPC_ERROR_REF(error)),
@@ -1087,7 +1088,7 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
 void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
     void* arg, grpc_error* error) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
-  lrs_calld->xds_client()->combiner_->Run(
+  lrs_calld->xds_client()->logical_thread_->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&lrs_calld->on_initial_request_sent_,
                             OnInitialRequestSentLocked, lrs_calld, nullptr),
@@ -1108,7 +1109,7 @@ void XdsClient::ChannelState::LrsCallState::OnInitialRequestSentLocked(
 void XdsClient::ChannelState::LrsCallState::OnResponseReceived(
     void* arg, grpc_error* error) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
-  lrs_calld->xds_client()->combiner_->Run(
+  lrs_calld->xds_client()->logical_thread_->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&lrs_calld->on_response_received_,
                             OnResponseReceivedLocked, lrs_calld, nullptr),
@@ -1209,7 +1210,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked(
 void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
     void* arg, grpc_error* error) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
-  lrs_calld->xds_client()->combiner_->Run(
+  lrs_calld->xds_client()->logical_thread_->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&lrs_calld->on_status_received_,
                             OnStatusReceivedLocked, lrs_calld, nullptr),
@@ -1263,13 +1264,13 @@ grpc_core::UniquePtr<char> GenerateBuildVersionString() {
 
 }  // namespace
 
-XdsClient::XdsClient(RefCountedPtr<LogicalThread> combiner,
+XdsClient::XdsClient(RefCountedPtr<LogicalThread> logical_thread,
                      grpc_pollset_set* interested_parties,
                      StringView server_name,
                      std::unique_ptr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : build_version_(GenerateBuildVersionString()),
-      combiner_(std::move(combiner)),
+      logical_thread_(std::move(logical_thread)),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
       server_name_(StringViewToCString(server_name)),
@@ -1291,8 +1292,9 @@ XdsClient::XdsClient(RefCountedPtr<LogicalThread> combiner,
     // TODO(juanlishen): Start LDS call and do not return service config
     // until we get the first LDS response.
     XdsClient* self = Ref().release();
-    combiner_->Run([self]() { NotifyOnServiceConfig(self, GRPC_ERROR_NONE); },
-                   DEBUG_LOCATION);
+    logical_thread_->Run(
+        [self]() { NotifyOnServiceConfig(self, GRPC_ERROR_NONE); },
+        DEBUG_LOCATION);
   }
 }
 

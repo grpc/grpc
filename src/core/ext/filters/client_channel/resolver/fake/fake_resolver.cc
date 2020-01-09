@@ -35,7 +35,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -94,7 +94,7 @@ class FakeResolver : public Resolver {
 };
 
 FakeResolver::FakeResolver(ResolverArgs args)
-    : Resolver(args.combiner, std::move(args.result_handler)),
+    : Resolver(args.logical_thread, std::move(args.result_handler)),
       response_generator_(
           FakeResolverResponseGenerator::GetFromArgs(args.args)) {
   // Channels sharing the same subchannels may have different resolver response
@@ -126,8 +126,8 @@ void FakeResolver::RequestReresolutionLocked() {
     if (!reresolution_closure_pending_) {
       reresolution_closure_pending_ = true;
       Ref().release();  // ref held by closure
-      combiner()->Run([this]() { ReturnReresolutionResult(this); },
-                      DEBUG_LOCATION);
+      logical_thread()->Run([this]() { ReturnReresolutionResult(this); },
+                            DEBUG_LOCATION);
     }
   }
 }
@@ -196,8 +196,8 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
   SetResponseArg* arg = new SetResponseArg();
   arg->resolver = std::move(resolver);
   arg->result = std::move(result);
-  arg->resolver->combiner()->Run([arg]() { SetResponseLocked(arg); },
-                                 DEBUG_LOCATION);
+  arg->resolver->logical_thread()->Run([arg]() { SetResponseLocked(arg); },
+                                       DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
@@ -222,7 +222,7 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
   arg->resolver = std::move(resolver);
   arg->result = std::move(result);
   arg->has_result = true;
-  arg->resolver->combiner()->Run(
+  arg->resolver->logical_thread()->Run(
       [arg]() { SetReresolutionResponseLocked(arg); }, DEBUG_LOCATION);
 }
 
@@ -235,7 +235,7 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
   }
   SetResponseArg* arg = new SetResponseArg();
   arg->resolver = std::move(resolver);
-  arg->resolver->combiner()->Run(
+  arg->resolver->logical_thread()->Run(
       [arg]() { SetReresolutionResponseLocked(arg); }, DEBUG_LOCATION);
 }
 
@@ -257,8 +257,8 @@ void FakeResolverResponseGenerator::SetFailure() {
   }
   SetResponseArg* arg = new SetResponseArg();
   arg->resolver = std::move(resolver);
-  arg->resolver->combiner()->Run([arg]() { SetFailureLocked(arg); },
-                                 DEBUG_LOCATION);
+  arg->resolver->logical_thread()->Run([arg]() { SetFailureLocked(arg); },
+                                       DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetFailureOnReresolution() {
@@ -271,8 +271,8 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
   SetResponseArg* arg = new SetResponseArg();
   arg->resolver = std::move(resolver);
   arg->immediate = false;
-  arg->resolver->combiner()->Run([arg]() { SetFailureLocked(arg); },
-                                 DEBUG_LOCATION);
+  arg->resolver->logical_thread()->Run([arg]() { SetFailureLocked(arg); },
+                                       DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetFakeResolver(
@@ -284,8 +284,8 @@ void FakeResolverResponseGenerator::SetFakeResolver(
     SetResponseArg* arg = new SetResponseArg();
     arg->resolver = resolver_->Ref();
     arg->result = std::move(result_);
-    resolver_->combiner()->Run([arg]() { SetResponseLocked(arg); },
-                               DEBUG_LOCATION);
+    resolver_->logical_thread()->Run([arg]() { SetResponseLocked(arg); },
+                                     DEBUG_LOCATION);
     has_result_ = false;
   }
 }

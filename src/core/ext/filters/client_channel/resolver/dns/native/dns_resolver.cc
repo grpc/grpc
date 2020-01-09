@@ -33,7 +33,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -97,7 +97,7 @@ class NativeDnsResolver : public Resolver {
 };
 
 NativeDnsResolver::NativeDnsResolver(ResolverArgs args)
-    : Resolver(args.combiner, std::move(args.result_handler)),
+    : Resolver(args.logical_thread, std::move(args.result_handler)),
       backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
@@ -149,7 +149,7 @@ void NativeDnsResolver::ShutdownLocked() {
 
 void NativeDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
-  r->combiner()->Run(
+  r->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&r->on_next_resolution_,
                             NativeDnsResolver::OnNextResolutionLocked, r,
@@ -169,7 +169,7 @@ void NativeDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
 
 void NativeDnsResolver::OnResolved(void* arg, grpc_error* error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
-  r->combiner()->Run(
+  r->logical_thread()->Run(
       Closure::ToFunction(
           GRPC_CLOSURE_INIT(&r->on_resolved_,
                             NativeDnsResolver::OnResolvedLocked, r, nullptr),

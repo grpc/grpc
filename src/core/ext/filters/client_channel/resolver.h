@@ -45,7 +45,7 @@ namespace grpc_core {
 /// DNS).
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
-/// combiner passed to the constructor.
+/// logical_thread passed to the constructor.
 class Resolver : public InternallyRefCounted<Resolver> {
  public:
   /// Results returned by the resolver.
@@ -115,30 +115,32 @@ class Resolver : public InternallyRefCounted<Resolver> {
   /// implementations.  At that point, this method can go away.
   virtual void ResetBackoffLocked() {}
 
-  // Note: This must be invoked while holding the combiner.
+  // Note: This must be invoked while holding the logical_thread.
   void Orphan() override {
     ShutdownLocked();
     Unref();
   }
 
  protected:
-  /// Does NOT take ownership of the reference to \a combiner.
-  // TODO(roth): Once we have a C++-like interface for combiners, this
+  /// Does NOT take ownership of the reference to \a logical_thread.
+  // TODO(roth): Once we have a C++-like interface for logical threads, this
   // API should change to take a RefCountedPtr<>, so that we always take
   // ownership of a new ref.
-  explicit Resolver(RefCountedPtr<LogicalThread> combiner,
+  explicit Resolver(RefCountedPtr<LogicalThread> logical_thread,
                     std::unique_ptr<ResultHandler> result_handler);
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;
 
-  RefCountedPtr<LogicalThread> combiner() const { return combiner_; }
+  RefCountedPtr<LogicalThread> logical_thread() const {
+    return logical_thread_;
+  }
 
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
   std::unique_ptr<ResultHandler> result_handler_;
-  RefCountedPtr<LogicalThread> combiner_;
+  RefCountedPtr<LogicalThread> logical_thread_;
 };
 
 }  // namespace grpc_core

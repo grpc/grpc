@@ -41,8 +41,9 @@ void ares_uv_poll_close_cb(uv_handle_t* handle) { delete handle; }
 
 class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
-  GrpcPolledFdLibuv(ares_socket_t as, RefCountedPtr<LogicalThread> combiner)
-      : as_(as), combiner_(std::move(combiner)) {
+  GrpcPolledFdLibuv(ares_socket_t as,
+                    RefCountedPtr<LogicalThread> logical_thread)
+      : as_(as), logical_thread_(std::move(logical_thread)) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, (intptr_t)as);
     handle_ = new uv_poll_t();
     uv_poll_init_socket(uv_default_loop(), handle_, as);
@@ -105,7 +106,7 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
   grpc_closure* read_closure_ = nullptr;
   grpc_closure* write_closure_ = nullptr;
   int poll_events_ = 0;
-  RefCountedPtr<LogicalThread> combiner_;
+  RefCountedPtr<LogicalThread> logical_thread_;
 };
 
 struct AresUvPollCbArg {
@@ -151,23 +152,23 @@ void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
   GrpcPolledFdLibuv* polled_fd =
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
   AresUvPollCbArg* arg = new AresUvPollCbArg(handle, status, events);
-  polled_fd->combiner_->Run([arg]() { ares_uv_poll_cb_locked(arg); },
-                            DEBUG_LOCATION);
+  polled_fd->logical_thread_->Run([arg]() { ares_uv_poll_cb_locked(arg); },
+                                  DEBUG_LOCATION);
 }
 
 class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
  public:
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      RefCountedPtr<LogicalThread> combiner) override {
-    return new GrpcPolledFdLibuv(as, combiner);
+      RefCountedPtr<LogicalThread> logical_thread) override {
+    return new GrpcPolledFdLibuv(as, logical_thread);
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {}
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    RefCountedPtr<LogicalThread> /*combiner*/) {
+    RefCountedPtr<LogicalThread> /*logical_thread*/) {
   return MakeUnique<GrpcPolledFdFactoryLibuv>();
 }
 

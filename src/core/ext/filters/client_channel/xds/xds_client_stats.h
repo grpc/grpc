@@ -137,21 +137,22 @@ class XdsClientStats {
     // If the refcount is 0, there won't be new calls recorded to the
     // LocalityStats, so the LocalityStats can be safely deleted when all the
     // in-progress calls have finished.
-    // Only be called from the control plane combiner.
+    // Only be called from the control plane logical_thread.
     void RefByPicker() { picker_refcount_.FetchAdd(1, MemoryOrder::ACQ_REL); }
-    // Might be called from the control plane combiner or the data plane
-    // combiner.
+    // Might be called from the control plane logical_thread or the data plane
+    // logical_thread.
     // TODO(juanlishen): Once https://github.com/grpc/grpc/pull/19390 is merged,
-    //  this method will also only be invoked in the control plane combiner.
-    //  We may then be able to simplify the LocalityStats' lifetime by making it
-    //  RefCounted<> and populating the protobuf in its dtor.
+    //  this method will also only be invoked in the control plane
+    //  logical_thread. We may then be able to simplify the LocalityStats'
+    //  lifetime by making it RefCounted<> and populating the protobuf in its
+    //  dtor.
     void UnrefByPicker() { picker_refcount_.FetchSub(1, MemoryOrder::ACQ_REL); }
-    // Only be called from the control plane combiner.
+    // Only be called from the control plane logical_thread.
     // The only place where the picker_refcount_ can be increased is
     // RefByPicker(), which also can only be called from the control plane
-    // combiner. Also, if the picker_refcount_ is 0, total_requests_in_progress_
-    // can't be increased from 0. So it's safe to delete the LocalityStats right
-    // after this method returns true.
+    // logical_thread. Also, if the picker_refcount_ is 0,
+    // total_requests_in_progress_ can't be increased from 0. So it's safe to
+    // delete the LocalityStats right after this method returns true.
     bool IsSafeToDelete() {
       return picker_refcount_.FetchAdd(0, MemoryOrder::ACQ_REL) == 0 &&
              total_requests_in_progress_.FetchAdd(0, MemoryOrder::ACQ_REL) == 0;
@@ -168,12 +169,12 @@ class XdsClientStats {
     Atomic<uint64_t> total_issued_requests_{0};
     // Protects load_metric_stats_. A mutex is necessary because the length of
     // load_metric_stats_ can be accessed by both the callback intercepting the
-    // call's recv_trailing_metadata (not from any combiner) and the load
-    // reporting thread (from the control plane combiner).
+    // call's recv_trailing_metadata (not from any logical_thread) and the load
+    // reporting thread (from the control plane logical_thread).
     Mutex load_metric_stats_mu_;
     LoadMetricMap load_metric_stats_;
-    // Can be accessed from either the control plane combiner or the data plane
-    // combiner.
+    // Can be accessed from either the control plane logical_thread or the data
+    // plane logical_thread.
     Atomic<uint8_t> picker_refcount_{0};
   };
 
@@ -219,7 +220,8 @@ class XdsClientStats {
   Atomic<uint64_t> total_dropped_requests_{0};
   // Protects dropped_requests_. A mutex is necessary because the length of
   // dropped_requests_ can be accessed by both the picker (from data plane
-  // combiner) and the load reporting thread (from the control plane combiner).
+  // logical_thread) and the load reporting thread (from the control plane
+  // logical_thread).
   Mutex dropped_requests_mu_;
   DroppedRequestsMap dropped_requests_;
   // The timestamp of last reporting. For the LB-policy-wide first report, the
