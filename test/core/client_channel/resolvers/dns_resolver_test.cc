@@ -25,10 +25,10 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/logical_thread.h"
 #include "test/core/util/test_config.h"
 
-static grpc_core::RefCountedPtr<grpc_core::LogicalThread>* g_combiner;
+static grpc_core::RefCountedPtr<grpc_core::LogicalThread>* g_logical_thread;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
@@ -44,7 +44,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
-  args.combiner = *g_combiner;
+  args.logical_thread = *g_logical_thread;
   args.result_handler = grpc_core::MakeUnique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -61,7 +61,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
-  args.combiner = *g_combiner;
+  args.logical_thread = *g_logical_thread;
   args.result_handler = grpc_core::MakeUnique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -75,8 +75,9 @@ int main(int argc, char** argv) {
   {
     grpc_core::ExecCtx exec_ctx;
     {
-      auto combiner = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
-      g_combiner = &combiner;
+      auto logical_thread =
+          grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+      g_logical_thread = &logical_thread;
 
       grpc_core::ResolverFactory* dns =
           grpc_core::ResolverRegistry::LookupResolverFactory("dns");

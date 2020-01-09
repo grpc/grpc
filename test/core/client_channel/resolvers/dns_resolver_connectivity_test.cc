@@ -33,7 +33,7 @@
 
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
-static grpc_core::RefCountedPtr<grpc_core::LogicalThread>* g_combiner;
+static grpc_core::RefCountedPtr<grpc_core::LogicalThread>* g_logical_thread;
 
 static void my_resolve_address(const char* addr, const char* /*default_port*/,
                                grpc_pollset_set* /*interested_parties*/,
@@ -66,7 +66,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     bool /*check_grpclb*/, char** /*service_config_json*/,
     int /*query_timeout_ms*/,
-    grpc_core::RefCountedPtr<grpc_core::LogicalThread> /*combiner*/) {
+    grpc_core::RefCountedPtr<grpc_core::LogicalThread> /*logical_thread*/) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error* error = GRPC_ERROR_NONE;
@@ -99,7 +99,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
-  args.combiner = *g_combiner;
+  args.logical_thread = *g_logical_thread;
   args.result_handler = std::move(result_handler);
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -163,8 +163,8 @@ int main(int argc, char** argv) {
   gpr_mu_init(&g_mu);
   {
     grpc_core::ExecCtx exec_ctx;
-    auto combiner = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
-    g_combiner = &combiner;
+    auto logical_thread = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+    g_logical_thread = &logical_thread;
     grpc_set_resolver_impl(&test_resolver);
     grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
     grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
