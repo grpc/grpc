@@ -29,7 +29,7 @@ from tests_aio.unit._test_base import AioTestBase
 _INVALID_BACKEND_ADDRESS = '0.0.0.1:2'
 
 
-class TestChannel(AioTestBase):
+class TestConnectivityState(AioTestBase):
 
     async def setUp(self):
         self._server_address, self._server = await start_test_server()

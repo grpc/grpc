@@ -5,6 +5,7 @@
   "unit.call_test.TestUnaryUnaryCall",
   "unit.channel_argument_test.TestChannelArgument",
   "unit.channel_test.TestChannel",
+  "unit.connectivity_test.TestConnectivityState",
   "unit.init_test.TestInsecureChannel",
   "unit.init_test.TestSecureChannel",
   "unit.interceptor_test.TestInterceptedUnaryUnaryCall",
