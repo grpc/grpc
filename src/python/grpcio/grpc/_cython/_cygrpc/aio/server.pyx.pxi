@@ -472,7 +472,7 @@ cdef class AioServer:
         # TODO(lidiz) if users create server, and then dealloc it immediately.
         # There is a potential memory leak of created Core server.
         if self._status != AIO_SERVER_STATUS_STOPPED:
-            _LOGGER.warn(
+            _LOGGER.warning(
                 '__dealloc__ called on running server %s with status %d',
                 self,
                 self._status

@@ -15,19 +15,17 @@
 
 import asyncio
 import logging
-import unittest
+import platform
+import random
 import socket
+import unittest
 
 import grpc
-import random
-
 from grpc.experimental import aio
-from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import test_pb2_grpc
-from tests.unit.framework.common import test_constants
-from tests_aio.unit._test_server import start_test_server
+
+from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests_aio.unit._test_base import AioTestBase
-# 100 servers in sequence
+from tests_aio.unit._test_server import start_test_server
 
 _RANDOM_SEED = 42
 
@@ -69,15 +67,18 @@ _INVALID_TEST_CHANNEL_ARGS = [
 
 
 async def test_if_reuse_port_enabled(server: aio.Server):
-    port = server.add_insecure_port('127.0.0.1:0')
+    port = server.add_insecure_port('localhost:0')
     await server.start()
 
     try:
-        another_socket = socket.socket(family=socket.AF_INET)
+        if socket.has_ipv6:
+            another_socket = socket.socket(family=socket.AF_INET6)
+        else:
+            another_socket = socket.socket(family=socket.AF_INET)
         another_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         another_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         another_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        another_socket.bind(('127.0.0.1', port))
+        another_socket.bind(('localhost', port))
     except OSError as e:
         assert 'Address already in use' in str(e)
         return False
@@ -93,6 +94,8 @@ class TestChannelArgument(AioTestBase):
         random.seed(_RANDOM_SEED)
 
     @unittest.skip('https://github.com/grpc/grpc/issues/20667')
+    @unittest.skipIf(platform.system() == 'Windows',
+                     'SO_REUSEPORT only available in Linux-like OS.')
     async def test_server_so_reuse_port_is_set_properly(self):
 
         async def test_body():
@@ -115,9 +118,11 @@ class TestChannelArgument(AioTestBase):
         await asyncio.gather(*(test_body() for _ in range(_NUM_SERVER_CREATED)))
 
     async def test_client(self):
+        # Do not segfault, or raise exception!
         aio.insecure_channel('[::]:0', options=_TEST_CHANNEL_ARGS)
 
     async def test_server(self):
+        # Do not segfault, or raise exception!
         aio.server(options=_TEST_CHANNEL_ARGS)
 
     async def test_invalid_client_args(self):
