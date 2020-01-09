@@ -537,7 +537,9 @@
   # Note that for testing purposes, one can do:
   #   make HAS_EMBEDDED_OPENSSL_ALPN=false
   # to emulate the fact we do not have OpenSSL in the third_party folder.
-  ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
+  ifneq ($(wildcard third_party/${openssl_fallback.extraction_dir}/libssl.a),)
+  HAS_EMBEDDED_OPENSSL_ALPN = third_party/${openssl_fallback.extraction_dir}
+  else ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
   HAS_EMBEDDED_OPENSSL_ALPN = false
   else
   CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)

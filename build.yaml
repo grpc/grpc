@@ -6263,6 +6263,10 @@ defaults:
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden
+openssl_fallback:
+  base_uri: https://openssl.org/source/old/1.0.2/
+  extraction_dir: openssl-1.0.2f
+  tarball: openssl-1.0.2f.tar.gz
 php_config_m4:
   deps:
   - grpc
