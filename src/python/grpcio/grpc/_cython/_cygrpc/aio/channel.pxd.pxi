@@ -17,3 +17,4 @@ cdef class AioChannel:
         grpc_channel * channel
         CallbackCompletionQueue cq
         bytes _target
+        object _loop
