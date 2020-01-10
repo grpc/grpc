@@ -15,14 +15,15 @@
 import contextlib
 import os
 import socket
+import errno
 
 _DEFAULT_SOCK_OPTION = socket.SO_REUSEADDR if os.name == 'nt' else socket.SO_REUSEPORT
-_UNRECOVERABLE_ERRORS = ('Address already in use',)
+_UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE, errno.ENOSR)
 
 
-def _exception_is_unrecoverable(e):
-    for error in _UNRECOVERABLE_ERRORS:
-        if error in str(e):
+def _is_unrecoverable_os_error(e):
+    for error in _UNRECOVERABLE_ERRNOS:
+        if error == e.errno:
             return True
     return False
 
@@ -61,9 +62,9 @@ def get_socket(bind_address='localhost',
             if listen:
                 sock.listen(1)
             return bind_address, sock.getsockname()[1], sock
-        except socket.error as socket_error:
+        except OSError as os_error:
             sock.close()
-            if _exception_is_unrecoverable(socket_error):
+            if _is_unrecoverable_os_error(os_error):
                 raise
             else:
                 continue
