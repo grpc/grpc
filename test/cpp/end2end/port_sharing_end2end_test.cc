@@ -341,24 +341,33 @@ std::vector<TestScenario> CreateTestScenarios() {
 
 TEST_P(PortSharingEnd2endTest, HandoffAndDirectCalls) {
   ResetStubs();
+  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   SendRpc(stub_handoff1_.get(), 5);
+  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   if (GetParam().server_has_port) {
     SendRpc(stub_direct_.get(), 5);
   }
+  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
 }
 
 TEST_P(PortSharingEnd2endTest, MultipleHandoff) {
+  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   for (int i = 0; i < 3; i++) {
     ResetStubs();
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     SendRpc(stub_handoff2_.get(), 1);
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
 }
 
 TEST_P(PortSharingEnd2endTest, TwoHandoffPorts) {
   for (int i = 0; i < 3; i++) {
     ResetStubs();
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     SendRpc(stub_handoff1_.get(), 5);
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     SendRpc(stub_handoff2_.get(), 5);
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
 }
 

@@ -222,7 +222,7 @@ void SetCredentialsProvider(CredentialsProvider* provider) {
 
 void WaitOnSpawnedThreads(CredentialsProvider* provider,
                           const grpc::string& credential_type) {
-  if (credential_type != grpc::testing::kSpiffeCredentialsType) {
+  if (credential_type.substr(0, 3) != grpc::testing::kSpiffeCredentialsType) {
     return;
   }
   if (provider != nullptr && provider->IsDefault()) {

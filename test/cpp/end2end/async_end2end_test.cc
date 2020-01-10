@@ -260,9 +260,11 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
     // Setup server
     BuildAndStartServer();
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
 
   void TearDown() override {
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;
@@ -271,8 +273,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ;
     stub_.reset();
     grpc_recycle_unused_port(port_);
-    // ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
-    //                 /*reset_server=*/true);
+    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
+                     /*reset_server=*/true);
   }
 
   void BuildAndStartServer() {
@@ -307,6 +309,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
                              : server_->InProcessChannel(args);
     WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
 
   void SendRpc(int num_rpcs) {
@@ -339,6 +342,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
       EXPECT_EQ(send_response.message(), recv_response.message());
       EXPECT_TRUE(recv_status.ok());
+      WaitOnSpawnedThreads(GetCredentialsProvider(),
+                           GetParam().credentials_type);
     }
   }
 

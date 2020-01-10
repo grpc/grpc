@@ -48,14 +48,19 @@ struct TlsThread {
 class TlsData {
  public:
   TlsData(grpc_ssl_client_certificate_request_type cert_request_type,
+          grpc_tls_server_verification_option server_verification_option,
           std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
           std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
           std::shared_ptr<TlsServerAuthorizationCheckConfig>
               server_authorization_check_config,
           std::vector<TlsThread*>* list)
-      : options(cert_request_type, key_materials_config,
-                credential_reload_config, server_authorization_check_config),
-        thread_list(list), key_materials(key_materials_config), credential_reload(credential_reload_config), server_authorization_check(server_authorization_check_config) {}
+      : options(cert_request_type, server_verification_option,
+                key_materials_config, credential_reload_config,
+                server_authorization_check_config),
+        thread_list(list),
+        key_materials(key_materials_config),
+        credential_reload(credential_reload_config),
+        server_authorization_check(server_authorization_check_config) {}
 
   ~TlsData() {}
 

@@ -281,7 +281,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (first_picked_port_ > 0) {
       grpc_recycle_unused_port(first_picked_port_);
     }
-    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true, /*reset_server=*/true);
+    ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
+                     /*reset_server=*/true);
   }
 
   void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
@@ -306,7 +307,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
     ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/false,
-                       /*reset_server=*/true);
+                     /*reset_server=*/true);
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
     if (GetParam().credentials_type != kInsecureCredentialsType) {
@@ -410,7 +411,6 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     DummyInterceptor::Reset();
-    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
 
   bool do_not_test_{false};

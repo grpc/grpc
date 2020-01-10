@@ -107,8 +107,9 @@ TlsData* CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
   if (!is_client) {
     /** There is no server authorization check done on the server-side. **/
     return new TlsData(
-        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, nullptr,
-        test_credential_reload_config, nullptr, nullptr);
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+        GRPC_TLS_SERVER_VERIFICATION, nullptr, test_credential_reload_config,
+        nullptr, nullptr);
   }
   /** Create a server authorization check config that is configured depending on
    *  the parameters |is_client| and |is_async|. **/
@@ -129,10 +130,10 @@ TlsData* CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
         ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
         sync_interface);
   }
-  return new TlsData(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
-                     nullptr, test_credential_reload_config,
-                     test_server_authorization_check_config,
-                     server_authz_thread_list);
+  return new TlsData(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+      GRPC_TLS_SERVER_VERIFICATION, nullptr, test_credential_reload_config,
+      test_server_authorization_check_config, server_authz_thread_list);
 }
 
 }  // namespace testing
