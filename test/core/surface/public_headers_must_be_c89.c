@@ -201,6 +201,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_local_server_credentials_create);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_verification_option);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_key_materials_config);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_credential_reload_config);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_authorization_check_config);

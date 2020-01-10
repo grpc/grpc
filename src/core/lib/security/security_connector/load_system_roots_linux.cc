@@ -21,7 +21,7 @@
 #include <grpc/slice_buffer.h>
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 
-#ifdef GPR_LINUX
+#if defined(GPR_LINUX) || defined(GPR_ANDROID)
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 
@@ -167,4 +167,4 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX */
+#endif /* GPR_LINUX || GPR_ANDROID */

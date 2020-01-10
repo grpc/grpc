@@ -21,15 +21,11 @@ from tests_aio.unit._test_base import AioTestBase
 
 class TestInsecureChannel(AioTestBase):
 
-    def test_insecure_channel(self):
+    async def test_insecure_channel(self):
+        server_target, _ = await start_test_server()  # pylint: disable=unused-variable
 
-        async def coro():
-            server_target, _ = await start_test_server()  # pylint: disable=unused-variable
-
-            channel = aio.insecure_channel(server_target)
-            self.assertIsInstance(channel, aio.Channel)
-
-        self.loop.run_until_complete(coro())
+        channel = aio.insecure_channel(server_target)
+        self.assertIsInstance(channel, aio.Channel)
 
 
 if __name__ == '__main__':

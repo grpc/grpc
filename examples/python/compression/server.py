@@ -60,10 +60,9 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
 
 def run_server(server_compression, no_compress_every_n, port):
-    server = grpc.server(
-        futures.ThreadPoolExecutor(),
-        compression=server_compression,
-        options=(('grpc.so_reuseport', 1),))
+    server = grpc.server(futures.ThreadPoolExecutor(),
+                         compression=server_compression,
+                         options=(('grpc.so_reuseport', 1),))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(
         Greeter(no_compress_every_n), server)
     address = '{}:{}'.format(_SERVER_HOST, port)
@@ -75,24 +74,21 @@ def run_server(server_compression, no_compress_every_n, port):
 
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
-    parser.add_argument(
-        '--server_compression',
-        default='none',
-        nargs='?',
-        choices=_COMPRESSION_OPTIONS.keys(),
-        help='The default compression method for the server.')
-    parser.add_argument(
-        '--no_compress_every_n',
-        type=int,
-        default=0,
-        nargs='?',
-        help='If set, every nth reply will be uncompressed.')
-    parser.add_argument(
-        '--port',
-        type=int,
-        default=50051,
-        nargs='?',
-        help='The port on which the server will listen.')
+    parser.add_argument('--server_compression',
+                        default='none',
+                        nargs='?',
+                        choices=_COMPRESSION_OPTIONS.keys(),
+                        help='The default compression method for the server.')
+    parser.add_argument('--no_compress_every_n',
+                        type=int,
+                        default=0,
+                        nargs='?',
+                        help='If set, every nth reply will be uncompressed.')
+    parser.add_argument('--port',
+                        type=int,
+                        default=50051,
+                        nargs='?',
+                        help='The port on which the server will listen.')
     args = parser.parse_args()
     run_server(_COMPRESSION_OPTIONS[args.server_compression],
                args.no_compress_every_n, args.port)

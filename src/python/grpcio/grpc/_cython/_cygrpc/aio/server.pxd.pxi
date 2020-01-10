@@ -20,6 +20,7 @@ cdef class _HandlerCallDetails:
 cdef class RPCState(GrpcCallWrapper):
     cdef grpc_call_details details
     cdef grpc_metadata_array request_metadata
+    cdef AioServer server
 
     cdef bytes method(self)
 
@@ -43,3 +44,4 @@ cdef class AioServer:
     cdef object _shutdown_completed  # asyncio.Future
     cdef CallbackWrapper _shutdown_callback_wrapper
     cdef object _crash_exception  # Exception
+    cdef set _ongoing_rpc_tasks

@@ -72,13 +72,13 @@ class CXXLanguage:
         #    able to use the test CA.
         return {
             'GRPC_DNS_RESOLVER':
-            'ares',
+                'ares',
             'GRPC_VERBOSITY':
-            'DEBUG',
+                'DEBUG',
             'GRPC_TRACE':
-            'client_channel,glb',
+                'client_channel,glb',
             'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-            '/var/local/git/grpc/src/core/tsi/test_creds/ca.pem',
+                '/var/local/git/grpc/src/core/tsi/test_creds/ca.pem',
         }
 
     def __str__(self):
@@ -106,21 +106,22 @@ class JavaLanguage:
             '-deststorepass changeit '
             '-noprompt')
         return [
-            'bash', '-c', ('{pem_to_der_cmd} && '
-                           '{keystore_import_cmd} && '
-                           './run-test-client.sh {java_client_args}').format(
-                               pem_to_der_cmd=pem_to_der_cmd,
-                               keystore_import_cmd=keystore_import_cmd,
-                               java_client_args=' '.join(args))
+            'bash', '-c',
+            ('{pem_to_der_cmd} && '
+             '{keystore_import_cmd} && '
+             './run-test-client.sh {java_client_args}').format(
+                 pem_to_der_cmd=pem_to_der_cmd,
+                 keystore_import_cmd=keystore_import_cmd,
+                 java_client_args=' '.join(args))
         ]
 
     def global_env(self):
         # 1) Enable grpclb
         # 2) Enable verbose logging
         return {
-            'JAVA_OPTS':
-            ('-Dio.grpc.internal.DnsNameResolverProvider.enable_grpclb=true '
-             '-Djava.util.logging.config.file=/var/local/grpc_java_logging/logconf.txt'
+            'JAVA_OPTS': (
+                '-Dio.grpc.internal.DnsNameResolverProvider.enable_grpclb=true '
+                '-Djava.util.logging.config.file=/var/local/grpc_java_logging/logconf.txt'
             )
         }
 
@@ -140,10 +141,11 @@ class GoLanguage:
         # that Go's GoogleDefaultCredentials can use it.
         # See https://golang.org/src/crypto/x509/root_linux.go.
         return [
-            'bash', '-c', ('cp /external_mount/src/core/tsi/test_creds/ca.pem '
-                           '/etc/ssl/certs/ca-certificates.crt && '
-                           '/go/bin/client {go_client_args}'
-                          ).format(go_client_args=' '.join(args))
+            'bash', '-c',
+            ('cp /external_mount/src/core/tsi/test_creds/ca.pem '
+             '/etc/ssl/certs/ca-certificates.crt && '
+             '/go/bin/client {go_client_args}').format(
+                 go_client_args=' '.join(args))
         ]
 
     def global_env(self):
@@ -212,8 +214,8 @@ def lb_client_interop_jobspec(language,
     # clients to use test CA's via alternate means.
     interop_only_options += ['--use_test_ca=false']
     client_args = language.client_cmd(interop_only_options)
-    container_name = dockerjob.random_name(
-        'lb_interop_client_%s' % language.safename)
+    container_name = dockerjob.random_name('lb_interop_client_%s' %
+                                           language.safename)
     docker_cmdline = docker_run_cmdline(
         client_args,
         environ=language.global_env(),
@@ -227,15 +229,13 @@ def lb_client_interop_jobspec(language,
             '{grpc_grpc_root_dir}:/external_mount:ro'.format(
                 grpc_grpc_root_dir=ROOT),
         ])
-    jobset.message(
-        'IDLE',
-        'docker_cmdline:\b|%s|' % ' '.join(docker_cmdline),
-        do_newline=True)
-    test_job = jobset.JobSpec(
-        cmdline=docker_cmdline,
-        shortname=('lb_interop_client:%s' % language),
-        timeout_seconds=_TEST_TIMEOUT,
-        kill_handler=_job_kill_handler)
+    jobset.message('IDLE',
+                   'docker_cmdline:\b|%s|' % ' '.join(docker_cmdline),
+                   do_newline=True)
+    test_job = jobset.JobSpec(cmdline=docker_cmdline,
+                              shortname=('lb_interop_client:%s' % language),
+                              timeout_seconds=_TEST_TIMEOUT,
+                              kill_handler=_job_kill_handler)
     test_job.container_name = container_name
     return test_job
 
@@ -246,8 +246,8 @@ def fallback_server_jobspec(transport_security, shortname):
         'bin/server',
         '--port=%d' % _FALLBACK_SERVER_PORT,
     ] + transport_security_to_args(transport_security)
-    return grpc_server_in_docker_jobspec(
-        server_cmdline=cmdline, shortname=shortname)
+    return grpc_server_in_docker_jobspec(server_cmdline=cmdline,
+                                         shortname=shortname)
 
 
 def backend_server_jobspec(transport_security, shortname):
@@ -256,8 +256,8 @@ def backend_server_jobspec(transport_security, shortname):
         'bin/server',
         '--port=%d' % _BACKEND_SERVER_PORT,
     ] + transport_security_to_args(transport_security)
-    return grpc_server_in_docker_jobspec(
-        server_cmdline=cmdline, shortname=shortname)
+    return grpc_server_in_docker_jobspec(server_cmdline=cmdline,
+                                         shortname=shortname)
 
 
 def grpclb_jobspec(transport_security, short_stream, backend_addrs, shortname):
@@ -269,8 +269,8 @@ def grpclb_jobspec(transport_security, short_stream, backend_addrs, shortname):
         '--short_stream=%s' % short_stream,
         '--service_name=%s' % _SERVICE_NAME,
     ] + transport_security_to_args(transport_security)
-    return grpc_server_in_docker_jobspec(
-        server_cmdline=cmdline, shortname=shortname)
+    return grpc_server_in_docker_jobspec(server_cmdline=cmdline,
+                                         shortname=shortname)
 
 
 def grpc_server_in_docker_jobspec(server_cmdline, shortname):
@@ -285,12 +285,12 @@ def grpc_server_in_docker_jobspec(server_cmdline, shortname):
         image=docker_images.get(_FAKE_SERVERS_SAFENAME),
         environ=environ,
         docker_args=['--name=%s' % container_name])
-    jobset.message(
-        'IDLE',
-        'docker_cmdline:\b|%s|' % ' '.join(docker_cmdline),
-        do_newline=True)
-    server_job = jobset.JobSpec(
-        cmdline=docker_cmdline, shortname=shortname, timeout_seconds=30 * 60)
+    jobset.message('IDLE',
+                   'docker_cmdline:\b|%s|' % ' '.join(docker_cmdline),
+                   do_newline=True)
+    server_job = jobset.JobSpec(cmdline=docker_cmdline,
+                                shortname=shortname,
+                                timeout_seconds=30 * 60)
     server_job.container_name = container_name
     return server_job
 
@@ -312,12 +312,12 @@ def dns_server_in_docker_jobspec(grpclb_ips, fallback_ips, shortname,
         cwd='/var/local/git/grpc',
         image=docker_images.get(_FAKE_SERVERS_SAFENAME),
         docker_args=['--name=%s' % container_name])
-    jobset.message(
-        'IDLE',
-        'docker_cmdline:\b|%s|' % ' '.join(docker_cmdline),
-        do_newline=True)
-    server_job = jobset.JobSpec(
-        cmdline=docker_cmdline, shortname=shortname, timeout_seconds=30 * 60)
+    jobset.message('IDLE',
+                   'docker_cmdline:\b|%s|' % ' '.join(docker_cmdline),
+                   do_newline=True)
+    server_job = jobset.JobSpec(cmdline=docker_cmdline,
+                                shortname=shortname,
+                                timeout_seconds=30 * 60)
     server_job.container_name = container_name
     return server_job
 
@@ -339,20 +339,18 @@ def build_interop_image_jobspec(lang_safename, basename_prefix='grpc_interop'):
 
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
-argp.add_argument(
-    '-l',
-    '--language',
-    choices=['all'] + sorted(_LANGUAGES),
-    nargs='+',
-    default=['all'],
-    help='Clients to run.')
+argp.add_argument('-l',
+                  '--language',
+                  choices=['all'] + sorted(_LANGUAGES),
+                  nargs='+',
+                  default=['all'],
+                  help='Clients to run.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
-argp.add_argument(
-    '-s',
-    '--scenarios_file',
-    default=None,
-    type=str,
-    help='File containing test scenarios as JSON configs.')
+argp.add_argument('-s',
+                  '--scenarios_file',
+                  default=None,
+                  type=str,
+                  help='File containing test scenarios as JSON configs.')
 argp.add_argument(
     '-n',
     '--scenario_name',
@@ -361,48 +359,43 @@ argp.add_argument(
     help=(
         'Useful for manual runs: specify the name of '
         'the scenario to run from scenarios_file. Run all scenarios if unset.'))
-argp.add_argument(
-    '--cxx_image_tag',
-    default=None,
-    type=str,
-    help=('Setting this skips the clients docker image '
-          'build step and runs the client from the named '
-          'image. Only supports running a one client language.'))
-argp.add_argument(
-    '--go_image_tag',
-    default=None,
-    type=str,
-    help=('Setting this skips the clients docker image build '
-          'step and runs the client from the named image. Only '
-          'supports running a one client language.'))
-argp.add_argument(
-    '--java_image_tag',
-    default=None,
-    type=str,
-    help=('Setting this skips the clients docker image build '
-          'step and runs the client from the named image. Only '
-          'supports running a one client language.'))
+argp.add_argument('--cxx_image_tag',
+                  default=None,
+                  type=str,
+                  help=('Setting this skips the clients docker image '
+                        'build step and runs the client from the named '
+                        'image. Only supports running a one client language.'))
+argp.add_argument('--go_image_tag',
+                  default=None,
+                  type=str,
+                  help=('Setting this skips the clients docker image build '
+                        'step and runs the client from the named image. Only '
+                        'supports running a one client language.'))
+argp.add_argument('--java_image_tag',
+                  default=None,
+                  type=str,
+                  help=('Setting this skips the clients docker image build '
+                        'step and runs the client from the named image. Only '
+                        'supports running a one client language.'))
 argp.add_argument(
     '--servers_image_tag',
     default=None,
     type=str,
     help=('Setting this skips the fake servers docker image '
           'build step and runs the servers from the named image.'))
-argp.add_argument(
-    '--no_skips',
-    default=False,
-    type=bool,
-    nargs='?',
-    const=True,
-    help=('Useful for manual runs. Setting this overrides test '
-          '"skips" configured in test scenarios.'))
-argp.add_argument(
-    '--verbose',
-    default=False,
-    type=bool,
-    nargs='?',
-    const=True,
-    help='Increase logging.')
+argp.add_argument('--no_skips',
+                  default=False,
+                  type=bool,
+                  nargs='?',
+                  const=True,
+                  help=('Useful for manual runs. Setting this overrides test '
+                        '"skips" configured in test scenarios.'))
+argp.add_argument('--verbose',
+                  default=False,
+                  type=bool,
+                  nargs='?',
+                  const=True,
+                  help='Increase logging.')
 args = argp.parse_args()
 
 docker_images = {}
@@ -435,22 +428,25 @@ if args.servers_image_tag:
 else:
     # Build the test servers in docker and save the fully
     # built image.
-    job = build_interop_image_jobspec(
-        _FAKE_SERVERS_SAFENAME, basename_prefix='lb_interop')
+    job = build_interop_image_jobspec(_FAKE_SERVERS_SAFENAME,
+                                      basename_prefix='lb_interop')
     build_jobs.append(job)
     docker_images[_FAKE_SERVERS_SAFENAME] = job.tag
 
 if build_jobs:
     jobset.message('START', 'Building interop docker images.', do_newline=True)
     print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
-    num_failures, _ = jobset.run(
-        build_jobs, newline_on_success=True, maxjobs=args.jobs)
+    num_failures, _ = jobset.run(build_jobs,
+                                 newline_on_success=True,
+                                 maxjobs=args.jobs)
     if num_failures == 0:
-        jobset.message(
-            'SUCCESS', 'All docker images built successfully.', do_newline=True)
+        jobset.message('SUCCESS',
+                       'All docker images built successfully.',
+                       do_newline=True)
     else:
-        jobset.message(
-            'FAILED', 'Failed to build interop docker images.', do_newline=True)
+        jobset.message('FAILED',
+                       'Failed to build interop docker images.',
+                       do_newline=True)
         sys.exit(1)
 
 
@@ -468,16 +464,16 @@ def wait_until_dns_server_is_up(dns_server_ip):
         if tcp_connect_subprocess.returncode == 0:
             print(('Health check: attempt to make an A-record '
                    'query to DNS server.'))
-            dns_resolver_subprocess = subprocess.Popen(
-                [
-                    os.path.join(os.getcwd(),
-                                 'test/cpp/naming/utils/dns_resolver.py'),
-                    '--qname', ('health-check-local-dns-server-is-alive.'
-                                'resolver-tests.grpctestingexp'),
-                    '--server_host', dns_server_ip, '--server_port',
-                    str(53)
-                ],
-                stdout=subprocess.PIPE)
+            dns_resolver_subprocess = subprocess.Popen([
+                os.path.join(os.getcwd(),
+                             'test/cpp/naming/utils/dns_resolver.py'),
+                '--qname',
+                ('health-check-local-dns-server-is-alive.'
+                 'resolver-tests.grpctestingexp'), '--server_host',
+                dns_server_ip, '--server_port',
+                str(53)
+            ],
+                                                       stdout=subprocess.PIPE)
             dns_resolver_stdout, _ = dns_resolver_subprocess.communicate()
             if dns_resolver_subprocess.returncode == 0:
                 if '123.123.123.123' in dns_resolver_stdout:
@@ -511,8 +507,8 @@ def run_one_scenario(scenario_config):
                 backend_config['transport_sec'], backend_shortname)
             backend_job = dockerjob.DockerJob(backend_spec)
             server_jobs[backend_shortname] = backend_job
-            backend_addrs.append('%s:%d' % (backend_job.ip_address(),
-                                            _BACKEND_SERVER_PORT))
+            backend_addrs.append(
+                '%s:%d' % (backend_job.ip_address(), _BACKEND_SERVER_PORT))
         # Start fallbacks
         for i in xrange(len(scenario_config['fallback_configs'])):
             fallback_config = scenario_config['fallback_configs'][i]
@@ -554,9 +550,9 @@ def run_one_scenario(scenario_config):
             # work for this test.
             if not args.no_skips and lang_name in scenario_config.get(
                     'skip_langs', []):
-                jobset.message('IDLE',
-                               'Skipping scenario: %s for language: %s\n' %
-                               (scenario_config['name'], lang_name))
+                jobset.message(
+                    'IDLE', 'Skipping scenario: %s for language: %s\n' %
+                    (scenario_config['name'], lang_name))
                 continue
             lang = _LANGUAGES[lang_name]
             test_job = lb_client_interop_jobspec(
@@ -565,22 +561,23 @@ def run_one_scenario(scenario_config):
                 docker_image=docker_images.get(lang.safename),
                 transport_security=scenario_config['transport_sec'])
             jobs.append(test_job)
-        jobset.message('IDLE', 'Jobs to run: \n%s\n' % '\n'.join(
-            str(job) for job in jobs))
-        num_failures, resultset = jobset.run(
-            jobs, newline_on_success=True, maxjobs=args.jobs)
+        jobset.message(
+            'IDLE', 'Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
+        num_failures, resultset = jobset.run(jobs,
+                                             newline_on_success=True,
+                                             maxjobs=args.jobs)
         report_utils.render_junit_xml_report(resultset, 'sponge_log.xml')
         if num_failures:
             suppress_server_logs = False
-            jobset.message(
-                'FAILED',
-                'Scenario: %s. Some tests failed' % scenario_config['name'],
-                do_newline=True)
+            jobset.message('FAILED',
+                           'Scenario: %s. Some tests failed' %
+                           scenario_config['name'],
+                           do_newline=True)
         else:
-            jobset.message(
-                'SUCCESS',
-                'Scenario: %s. All tests passed' % scenario_config['name'],
-                do_newline=True)
+            jobset.message('SUCCESS',
+                           'Scenario: %s. All tests passed' %
+                           scenario_config['name'],
+                           do_newline=True)
         return num_failures
     finally:
         # Check if servers are still running.
@@ -588,9 +585,8 @@ def run_one_scenario(scenario_config):
             if not job.is_running():
                 print('Server "%s" has exited prematurely.' % server)
         suppress_failure = suppress_server_logs and not args.verbose
-        dockerjob.finish_jobs(
-            [j for j in six.itervalues(server_jobs)],
-            suppress_failure=suppress_failure)
+        dockerjob.finish_jobs([j for j in six.itervalues(server_jobs)],
+                              suppress_failure=suppress_failure)
 
 
 num_failures = 0

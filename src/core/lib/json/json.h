@@ -24,7 +24,17 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "src/core/lib/json/json_common.h"
+/* The various json types. */
+typedef enum {
+  GRPC_JSON_OBJECT,
+  GRPC_JSON_ARRAY,
+  GRPC_JSON_STRING,
+  GRPC_JSON_NUMBER,
+  GRPC_JSON_TRUE,
+  GRPC_JSON_FALSE,
+  GRPC_JSON_NULL,
+  GRPC_JSON_TOP_LEVEL
+} grpc_json_type;
 
 /* A tree-like structure to hold json values. The key and value pointers
  * are not owned by it.

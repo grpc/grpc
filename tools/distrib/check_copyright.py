@@ -27,8 +27,10 @@ os.chdir(ROOT)
 
 # parse command line
 argp = argparse.ArgumentParser(description='copyright checker')
-argp.add_argument(
-    '-o', '--output', default='details', choices=['list', 'details'])
+argp.add_argument('-o',
+                  '--output',
+                  default='details',
+                  choices=['list', 'details'])
 argp.add_argument('-s', '--skips', default=0, action='store_const', const=1)
 argp.add_argument('-a', '--ancient', default=0, action='store_const', const=1)
 argp.add_argument('--precommit', default=False, action='store_true')
@@ -132,8 +134,8 @@ def log(cond, why, filename):
 ok = True
 filename_list = []
 try:
-    filename_list = subprocess.check_output(
-        FILE_LIST_COMMAND, shell=True).splitlines()
+    filename_list = subprocess.check_output(FILE_LIST_COMMAND,
+                                            shell=True).splitlines()
 except subprocess.CalledProcessError:
     sys.exit(0)
 

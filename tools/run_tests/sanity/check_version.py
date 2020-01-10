@@ -31,8 +31,8 @@ sys.path.insert(0, os.path.abspath('tools/buildgen/plugins'))
 from expand_version import Version
 
 try:
-    branch_name = subprocess.check_output(
-        'git rev-parse --abbrev-ref HEAD', shell=True)
+    branch_name = subprocess.check_output('git rev-parse --abbrev-ref HEAD',
+                                          shell=True)
 except:
     print('WARNING: not a git repository')
     branch_name = None
@@ -42,9 +42,8 @@ if branch_name is not None:
     if m:
         print('RELEASE branch')
         # version number should align with the branched version
-        check_version = lambda version: (
-          version.major == int(m.group(1)) and
-          version.minor == int(m.group(2)))
+        check_version = lambda version: (version.major == int(m.group(1)) and
+                                         version.minor == int(m.group(2)))
         warning = 'Version key "%%s" value "%%s" should have a major version %s and minor version %s' % (
             m.group(1), m.group(2))
     elif re.match(r'^debian/.*$', branch_name):

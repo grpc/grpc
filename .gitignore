@@ -21,6 +21,8 @@ py3[0-9]_gevent/
 py3[0-9]_native/
 a.out
 src/python/grpcio_*/LICENSE
+src/python/grpcio_status/grpc_status/google/rpc/status.proto
+.pytype
 
 # Node installation output
 node_modules

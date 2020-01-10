@@ -33,6 +33,10 @@
 #include <ext/spl/spl_exceptions.h>
 #include <zend_exceptions.h>
 
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+#include <pthread.h>
+#endif
+
 ZEND_DECLARE_MODULE_GLOBALS(grpc)
 static PHP_GINIT_FUNCTION(grpc);
 HashTable grpc_persistent_list;

@@ -39,7 +39,7 @@ python3 -m virtualenv $VIRTUALENV -p $(which python3)
 
 PYTHON=$VIRTUALENV/bin/python
 
-$PYTHON -m pip install --upgrade pip==18.1
+$PYTHON -m pip install --upgrade pip==19.3.1
 $PYTHON -m pip install --upgrade pylint==2.2.2
 
 EXIT=0

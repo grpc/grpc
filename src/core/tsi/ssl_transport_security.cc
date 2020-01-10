@@ -35,6 +35,7 @@
 #include <sys/socket.h>
 #endif
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -1024,6 +1025,29 @@ static void tsi_ssl_handshaker_factory_init(
   gpr_ref_init(&factory->refcount, 1);
 }
 
+/* Gets the X509 cert chain in PEM format as a tsi_peer_property. */
+tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
+                                           tsi_peer_property* property) {
+  BIO* bio = BIO_new(BIO_s_mem());
+  for (int i = 0; i < sk_X509_num(peer_chain); i++) {
+    if (!PEM_write_bio_X509(bio, sk_X509_value(peer_chain, i))) {
+      BIO_free(bio);
+      return TSI_INTERNAL_ERROR;
+    }
+  }
+  char* contents;
+  long len = BIO_get_mem_data(bio, &contents);
+  if (len <= 0) {
+    BIO_free(bio);
+    return TSI_INTERNAL_ERROR;
+  }
+  tsi_result result = tsi_construct_string_peer_property(
+      TSI_X509_PEM_CERT_CHAIN_PROPERTY, (const char*)contents,
+      static_cast<size_t>(len), property);
+  BIO_free(bio);
+  return result;
+}
+
 /* --- tsi_handshaker_result methods implementation. ---*/
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
@@ -1032,7 +1056,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
   unsigned int alpn_selected_len;
   const tsi_ssl_handshaker_result* impl =
       reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
-  // TODO(yihuazhang): Return a full certificate chain as a peer property.
   X509* peer_cert = SSL_get_peer_certificate(impl->ssl);
   if (peer_cert != nullptr) {
     result = peer_from_x509(peer_cert, 1, peer);
@@ -1047,10 +1070,14 @@ static tsi_result ssl_handshaker_result_extract_peer(
     SSL_get0_next_proto_negotiated(impl->ssl, &alpn_selected,
                                    &alpn_selected_len);
   }
-
+  // When called on the client side, the stack also contains the
+  // peer's certificate; When called on the server side,
+  // the peer's certificate is not present in the stack
+  STACK_OF(X509)* peer_chain = SSL_get_peer_cert_chain(impl->ssl);
   // 1 is for session reused property.
-  size_t new_property_count = peer->property_count + 1;
+  size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
+  if (peer_chain != nullptr) new_property_count++;
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
       gpr_zalloc(sizeof(*new_properties) * new_property_count));
   for (size_t i = 0; i < peer->property_count; i++) {
@@ -1058,7 +1085,12 @@ static tsi_result ssl_handshaker_result_extract_peer(
   }
   if (peer->properties != nullptr) gpr_free(peer->properties);
   peer->properties = new_properties;
-
+  // Add peer chain if available
+  if (peer_chain != nullptr) {
+    result = tsi_ssl_get_cert_chain_contents(
+        peer_chain, &peer->properties[peer->property_count]);
+    if (result == TSI_OK) peer->property_count++;
+  }
   if (alpn_selected != nullptr) {
     result = tsi_construct_string_peer_property(
         TSI_SSL_ALPN_SELECTED_PROTOCOL,
@@ -1067,6 +1099,13 @@ static tsi_result ssl_handshaker_result_extract_peer(
     if (result != TSI_OK) return result;
     peer->property_count++;
   }
+  // Add security_level peer property.
+  result = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+      &peer->properties[peer->property_count]);
+  if (result != TSI_OK) return result;
+  peer->property_count++;
 
   const char* session_reused = SSL_session_reused(impl->ssl) ? "true" : "false";
   result = tsi_construct_string_peer_property_from_cstring(
@@ -1733,7 +1772,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
-  SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+  if (options->skip_server_certificate_verification) {
+    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
+  } else {
+    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+  }
   /* TODO(jboeuf): Add revocation verification. */
 
   *factory = impl;

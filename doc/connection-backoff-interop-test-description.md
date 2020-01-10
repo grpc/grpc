@@ -3,7 +3,7 @@ Connection Backoff Interop Test Descriptions
 
 This test is to verify the client is reconnecting the server with correct
 backoffs as specified in
-[the spec](http://github.com/grpc/grpc/blob/master/doc/connection-backoff.md).
+[the spec](https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md).
 The test server has a port (control_port) running a rpc service for controlling
 the server and another port (retry_port) to close any incoming tcp connections.
 The test has the following flow:

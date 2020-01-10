@@ -127,6 +127,12 @@ void ServerTryCancelNonblocking(experimental::CallbackServerContext* context) {
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
                              EchoResponse* response) {
+  if (request->has_param() &&
+      request->param().server_notify_client_when_started()) {
+    signaller_.SignalClientThatRpcStarted();
+    signaller_.ServerWaitToContinue();
+  }
+
   // A bit of sleep to make sure that short deadline tests fail
   if (request->has_param() && request->param().server_sleep_us() > 0) {
     gpr_sleep_until(
@@ -416,19 +422,38 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         : service_(service), ctx_(ctx), req_(request), resp_(response) {
       // It should be safe to call IsCancelled here, even though we don't know
       // the result. Call it asynchronously to see if we trigger any data races.
+      // Join it in OnDone (technically that could be blocking but shouldn't be
+      // for very long).
       async_cancel_check_ = std::thread([this] { (void)ctx_->IsCancelled(); });
 
-      if (request->has_param() && request->param().server_sleep_us() > 0) {
+      started_ = true;
+
+      if (request->has_param() &&
+          request->param().server_notify_client_when_started()) {
+        service->signaller_.SignalClientThatRpcStarted();
+        // Block on the "wait to continue" decision in a different thread since
+        // we can't tie up an EM thread with blocking events. We can join it in
+        // OnDone since it would definitely be done by then.
+        rpc_wait_thread_ = std::thread([this] {
+          service_->signaller_.ServerWaitToContinue();
+          StartRpc();
+        });
+      } else {
+        StartRpc();
+      }
+    }
+
+    void StartRpc() {
+      if (req_->has_param() && req_->param().server_sleep_us() > 0) {
         // Set an alarm for that much time
         alarm_.experimental().Set(
             gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_micros(
-                             request->param().server_sleep_us(), GPR_TIMESPAN)),
+                         gpr_time_from_micros(req_->param().server_sleep_us(),
+                                              GPR_TIMESPAN)),
             [this](bool ok) { NonDelayed(ok); });
       } else {
         NonDelayed(true);
       }
-      started_ = true;
     }
     void OnSendInitialMetadataDone(bool ok) override {
       EXPECT_TRUE(ok);
@@ -448,6 +473,9 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       EXPECT_EQ(ctx_->IsCancelled(), on_cancel_invoked_);
       async_cancel_check_.join();
+      if (rpc_wait_thread_.joinable()) {
+        rpc_wait_thread_.join();
+      }
       delete this;
     }
 
@@ -575,6 +603,7 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
     bool started_{false};
     bool on_cancel_invoked_{false};
     std::thread async_cancel_check_;
+    std::thread rpc_wait_thread_;
   };
 
   return new Reactor(this, context, request, response);

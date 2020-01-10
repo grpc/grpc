@@ -50,6 +50,11 @@ static void validate_handshaker_peers(tsi_handshaker_result* result) {
   GPR_ASSERT(property != nullptr);
   GPR_ASSERT(memcmp(property->value.data, TSI_FAKE_CERTIFICATE_TYPE,
                     property->value.length) == 0);
+  property =
+      tsi_peer_get_property_by_name(&peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  GPR_ASSERT(property != nullptr);
+  GPR_ASSERT(memcmp(property->value.data, TSI_FAKE_SECURITY_LEVEL,
+                    property->value.length) == 0);
   tsi_peer_destruct(&peer);
 }
 

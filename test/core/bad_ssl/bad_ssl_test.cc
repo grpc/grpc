@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
   for (i = 3; i <= 4; i++) {
     grpc_init();
     run_test(args[2], i);
-    grpc_shutdown();
+    grpc_shutdown_blocking();
   }
 
   gpr_subprocess_interrupt(svr);

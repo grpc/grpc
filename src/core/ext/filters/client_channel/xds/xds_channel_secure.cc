@@ -67,12 +67,14 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
                                const grpc_channel_args& args) {
   grpc_channel_credentials* creds = nullptr;
   RefCountedPtr<grpc_channel_credentials> creds_to_unref;
-  if (!bootstrap.channel_creds().empty()) {
-    for (size_t i = 0; i < bootstrap.channel_creds().size(); ++i) {
-      if (strcmp(bootstrap.channel_creds()[i].type, "google_default") == 0) {
+  if (!bootstrap.server().channel_creds.empty()) {
+    for (size_t i = 0; i < bootstrap.server().channel_creds.size(); ++i) {
+      if (strcmp(bootstrap.server().channel_creds[i].type, "google_default") ==
+          0) {
         creds = grpc_google_default_credentials_create();
         break;
-      } else if (strcmp(bootstrap.channel_creds()[i].type, "fake") == 0) {
+      } else if (strcmp(bootstrap.server().channel_creds[i].type, "fake") ==
+                 0) {
         creds = grpc_fake_transport_security_credentials_create();
         break;
       }
@@ -83,7 +85,7 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
     creds = grpc_channel_credentials_find_in_args(&args);
     if (creds == nullptr) {
       // Built with security but parent channel is insecure.
-      return grpc_insecure_channel_create(bootstrap.server_uri(), &args,
+      return grpc_insecure_channel_create(bootstrap.server().server_uri, &args,
                                           nullptr);
     }
   }
@@ -91,7 +93,7 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
   grpc_channel* channel = grpc_secure_channel_create(
-      creds, bootstrap.server_uri(), new_args, nullptr);
+      creds, bootstrap.server().server_uri, new_args, nullptr);
   grpc_channel_args_destroy(new_args);
   return channel;
 }

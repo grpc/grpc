@@ -150,11 +150,6 @@ class CallbackWithSuccessTag
 
   CallbackWithSuccessTag() : call_(nullptr) {}
 
-  CallbackWithSuccessTag(grpc_call* call, std::function<void(bool)> f,
-                         CompletionQueueTag* ops, bool can_inline) {
-    Set(call, f, ops, can_inline);
-  }
-
   CallbackWithSuccessTag(const CallbackWithSuccessTag&) = delete;
   CallbackWithSuccessTag& operator=(const CallbackWithSuccessTag&) = delete;
 

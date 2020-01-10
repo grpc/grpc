@@ -92,6 +92,26 @@ int grpc_tls_credentials_options_set_cert_request_type(
   return 1;
 }
 
+int grpc_tls_credentials_options_set_server_verification_option(
+    grpc_tls_credentials_options* options,
+    grpc_tls_server_verification_option server_verification_option) {
+  if (options == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Invalid nullptr arguments to "
+            "grpc_tls_credentials_options_set_server_verification_option()");
+    return 0;
+  }
+  if (server_verification_option != GRPC_TLS_SERVER_VERIFICATION &&
+      options->server_authorization_check_config() == nullptr) {
+    gpr_log(GPR_ERROR,
+            "server_authorization_check_config needs to be specified when"
+            "server_verification_option is not GRPC_TLS_SERVER_VERIFICATION");
+    return 0;
+  }
+  options->set_server_verification_option(server_verification_option);
+  return 1;
+}
+
 int grpc_tls_credentials_options_set_key_materials_config(
     grpc_tls_credentials_options* options,
     grpc_tls_key_materials_config* config) {

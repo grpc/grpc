@@ -1,4 +1,4 @@
-#! /bin/bash -x
+#! /bin/bash
 # Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# The script to sanitize Bazel files
+# The script to check if Bazel files need to be formatted.
 
 GIT_ROOT="$(dirname "$0")/../../.."
-TMP_ROOT="/tmp/buildifier_grpc"
-rm -rf "${TMP_ROOT}"
-git clone -- "$GIT_ROOT" "$TMP_ROOT"
-buildifier -r -v -mode=diff $TMP_ROOT
+"$GIT_ROOT/tools/distrib/buildifier_format_code.sh" -mode=diff
 result=$?
 
 if [[ ${result} != 0 ]]; then
@@ -28,6 +25,7 @@ if [[ ${result} != 0 ]]; then
     echo ""
     echo "    tools/distrib/buildifier_format_code.sh"
     echo ""
+    exit 1
 else
     echo "==========BUILDIFIER CHECK PASSED=========="
 fi

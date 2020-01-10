@@ -25,24 +25,42 @@ namespace Grpc.HealthCheck.Tests
 {
     internal class TestResponseStreamWriter : IServerStreamWriter<HealthCheckResponse>
     {
-        private Channel<HealthCheckResponse> _channel;
+        private readonly Channel<HealthCheckResponse> _channel;
+        private readonly TaskCompletionSource<object> _startTcs;
 
-        public TestResponseStreamWriter(int maxCapacity = 1)
+        public TestResponseStreamWriter(int maxCapacity = 1, bool started = true)
         {
             _channel = System.Threading.Channels.Channel.CreateBounded<HealthCheckResponse>(new BoundedChannelOptions(maxCapacity) {
                 SingleReader = false,
                 SingleWriter = true,
                 FullMode = BoundedChannelFullMode.Wait
             });
+            if (!started)
+            {
+                _startTcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
         }
 
         public ChannelReader<HealthCheckResponse> WrittenMessagesReader => _channel.Reader;
 
         public WriteOptions WriteOptions { get; set; }
 
-        public Task WriteAsync(HealthCheckResponse message)
+        public async Task WriteAsync(HealthCheckResponse message)
         {
-            return _channel.Writer.WriteAsync(message).AsTask();
+            if (_startTcs != null)
+            {
+                await _startTcs.Task;
+            }
+
+            await _channel.Writer.WriteAsync(message);
+        }
+
+        public void Start()
+        {
+            if (_startTcs != null)
+            {
+                _startTcs.TrySetResult(null);
+            }
         }
 
         public void Complete()
