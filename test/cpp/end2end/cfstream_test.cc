@@ -489,7 +489,7 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   gpr_setenv("grpc_cfstream", "1");
   const auto result = RUN_ALL_TESTS();
   return result;
