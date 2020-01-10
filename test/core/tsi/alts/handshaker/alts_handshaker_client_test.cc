@@ -25,6 +25,7 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+#include "test/core/util/test_config.h"
 
 #define ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME "Hello Google"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME "bigtable.google.api.com"
@@ -494,7 +495,8 @@ static void schedule_request_grpc_call_failure_test() {
   destroy_config(config);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();
