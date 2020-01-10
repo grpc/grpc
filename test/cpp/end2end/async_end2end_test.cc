@@ -264,7 +264,6 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void TearDown() override {
-    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;
@@ -299,16 +298,12 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void ResetStub() {
     ChannelArguments args;
-    // ResetCredentials(GetCredentialsProvider(), /*reset_channel=*/true,
-    //                 /*reset_server=*/false);
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
         !(GetParam().inproc) ? ::grpc::CreateCustomChannel(
                                    server_address_.str(), channel_creds, args)
                              : server_->InProcessChannel(args);
-    // WaitOnSpawnedThreads(GetCredentialsProvider(),
-    // GetParam().credentials_type);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
     WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
@@ -343,8 +338,6 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
       EXPECT_EQ(send_response.message(), recv_response.message());
       EXPECT_TRUE(recv_status.ok());
-      WaitOnSpawnedThreads(GetCredentialsProvider(),
-                           GetParam().credentials_type);
     }
   }
 
