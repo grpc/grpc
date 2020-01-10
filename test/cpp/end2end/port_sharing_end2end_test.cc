@@ -263,11 +263,9 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
         GetParam().credentials_type, &args);
     channel_handoff1_ =
         CreateCustomChannel(tcp_server1_.address(), channel_creds, args);
-    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     stub_handoff1_ = EchoTestService::NewStub(channel_handoff1_);
     channel_handoff2_ =
         CreateCustomChannel(tcp_server2_.address(), channel_creds, args);
-    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
     stub_handoff2_ = EchoTestService::NewStub(channel_handoff2_);
     if (GetParam().server_has_port) {
       ChannelArguments direct_args;

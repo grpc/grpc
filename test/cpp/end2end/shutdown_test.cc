@@ -79,7 +79,10 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     return server;
   }
 
-  void TearDown() override { GPR_ASSERT(shutdown_); }
+  void TearDown() override {
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam());
+    GPR_ASSERT(shutdown_);
+  }
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
@@ -157,7 +160,6 @@ TEST_P(ShutdownTest, ShutdownTest) {
       std::chrono::system_clock::now() + std::chrono::microseconds(100);
   server_->Shutdown(deadline);
   EXPECT_GE(std::chrono::system_clock::now(), deadline);
-
   thr.join();
 }
 
