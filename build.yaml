@@ -1053,6 +1053,14 @@ filegroups:
   plugin: grpc_deadline_filter
   uses:
   - grpc_base
+- name: grpc_grpclb_balancer_addresses
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_health_upb
   headers:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
@@ -1108,6 +1116,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_grpclb_balancer_addresses
   - grpc_lb_upb
   - grpc_resolver_fake
 - name: grpc_lb_policy_grpclb_secure
@@ -1129,6 +1138,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_grpclb_balancer_addresses
   - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
@@ -1219,6 +1229,7 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_resolver_dns_selection
+  - grpc_grpclb_balancer_addresses
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
