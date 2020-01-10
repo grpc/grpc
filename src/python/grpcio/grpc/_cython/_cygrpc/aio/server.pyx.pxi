@@ -30,6 +30,7 @@ cdef class _HandlerCallDetails:
 cdef class RPCState:
 
     def __cinit__(self, AioServer server):
+        self.call = NULL
         self.server = server
         grpc_metadata_array_init(&self.request_metadata)
         grpc_call_details_init(&self.details)
