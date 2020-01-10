@@ -89,10 +89,10 @@ grpc_cc_library(
         "protobuf",
     ],
     deps = [
+        ":tls_test_credentials",
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
-        ":tls_test_credentials",
     ],
 )
 

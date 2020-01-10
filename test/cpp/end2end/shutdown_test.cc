@@ -88,6 +88,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
         GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args);
     channel_ = ::grpc::CreateCustomChannel(target, channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
   }
 
   string to_string(const int number) {
