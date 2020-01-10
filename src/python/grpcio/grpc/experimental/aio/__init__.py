@@ -11,18 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""gRPC's Asynchronous Python API."""
+"""gRPC's Asynchronous Python API.
+
+gRPC Async API objects may only be used on the thread on which they were
+created. AsyncIO doesn't provide thread safety for most of its APIs.
+"""
 
 import abc
 import six
 
 import grpc
-from grpc import _common
-from grpc._cython import cygrpc
 from grpc._cython.cygrpc import init_grpc_aio
 
-from ._call import AioRpcError
-from ._call import Call
+from ._base_call import RpcContext, Call, UnaryUnaryCall, UnaryStreamCall
 from ._channel import Channel
 from ._channel import UnaryUnaryMultiCallable
 from ._server import server
@@ -41,11 +42,12 @@ def insecure_channel(target, options=None, compression=None):
     Returns:
       A Channel.
     """
-    return Channel(target, ()
-                   if options is None else options, None, compression)
+    return Channel(target, () if options is None else options, None,
+                   compression)
 
 
 ###################################  __all__  #################################
 
-__all__ = ('AioRpcError', 'Call', 'init_grpc_aio', 'Channel',
-           'UnaryUnaryMultiCallable', 'insecure_channel', 'server')
+__all__ = ('RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall',
+           'init_grpc_aio', 'Channel', 'UnaryUnaryMultiCallable',
+           'insecure_channel', 'server')

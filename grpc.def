@@ -136,6 +136,7 @@ EXPORTS
     grpc_local_server_credentials_create
     grpc_tls_credentials_options_create
     grpc_tls_credentials_options_set_cert_request_type
+    grpc_tls_credentials_options_set_server_verification_option
     grpc_tls_credentials_options_set_key_materials_config
     grpc_tls_credentials_options_set_credential_reload_config
     grpc_tls_credentials_options_set_server_authorization_check_config

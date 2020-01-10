@@ -132,7 +132,8 @@ GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
 
 /** Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
-   this could result in an oauth2 token leak. */
+   this could result in an oauth2 token leak. The security level of the
+   resulting connection is GRPC_PRIVACY_AND_INTEGRITY. */
 GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(void);
 
 /** Callback for getting the SSL roots override from the application.
@@ -208,6 +209,7 @@ typedef struct {
 /** Deprecated in favor of grpc_ssl_server_credentials_create_ex. It will be
    removed after all of its call sites are migrated to
    grpc_ssl_server_credentials_create_ex. Creates an SSL credentials object.
+   The security level of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
      of the server root certificates. If this parameter is NULL, the
      implementation will first try to dereference the file pointed by the
@@ -239,6 +241,7 @@ GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
     const verify_peer_options* verify_options, void* reserved);
 
 /* Creates an SSL credentials object.
+   The security level of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
      of the server root certificates. If this parameter is NULL, the
      implementation will first try to dereference the file pointed by the
@@ -281,7 +284,8 @@ typedef struct grpc_call_credentials grpc_call_credentials;
    The creator of the credentials object is responsible for its release. */
 GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
 
-/** Creates a composite channel credentials object. */
+/** Creates a composite channel credentials object. The security level of
+ * resulting connection is determined by channel_creds. */
 GRPCAPI grpc_channel_credentials* grpc_composite_channel_credentials_create(
     grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
     void* reserved);
@@ -431,9 +435,11 @@ typedef struct {
   const char* type;
 } grpc_metadata_credentials_plugin;
 
-/** Creates a credentials object from a plugin. */
+/** Creates a credentials object from a plugin with a specified minimum security
+ * level. */
 GRPCAPI grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
-    grpc_metadata_credentials_plugin plugin, void* reserved);
+    grpc_metadata_credentials_plugin plugin,
+    grpc_security_level min_security_level, void* reserved);
 
 /** --- Secure channel creation. --- */
 
@@ -653,8 +659,9 @@ GRPCAPI void grpc_alts_credentials_options_destroy(
     grpc_alts_credentials_options* options);
 
 /**
- * This method creates an ALTS channel credential object. It is used for
- * experimental purpose for now and subject to change.
+ * This method creates an ALTS channel credential object. The security
+ * level of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
+ * It is used for experimental purpose for now and subject to change.
  *
  * - options: grpc ALTS credentials options instance for client.
  *
@@ -677,8 +684,10 @@ GRPCAPI grpc_server_credentials* grpc_alts_server_credentials_create(
 /** --- Local channel/server credentials --- **/
 
 /**
- * This method creates a local channel credential object. It is used for
- * experimental purpose for now and subject to change.
+ * This method creates a local channel credential object. The security level
+ * of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY for UDS and
+ * GRPC_SECURITY_NONE for LOCAL_TCP. It is used for experimental purpose
+ * for now and subject to change.
  *
  * - type: local connection type
  *
@@ -698,7 +707,7 @@ GRPCAPI grpc_channel_credentials* grpc_local_credentials_create(
 GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
     grpc_local_connect_type type);
 
-/** --- SPIFFE and HTTPS-based TLS channel/server credentials ---
+/** --- TLS channel/server credentials ---
  * It is used for experimental purpose for now and subject to change. */
 
 /** Config for TLS key materials. It is used for
@@ -730,6 +739,19 @@ GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
 GRPCAPI int grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
+
+/** Set grpc_tls_server_verification_option field in credentials options
+    with the provided server_verification_option. options should not be NULL.
+    This should be called only on the client side.
+    If grpc_tls_server_verification_option is not
+    GRPC_TLS_SERVER_VERIFICATION, use of a customer server
+    authorization check (grpc_tls_server_authorization_check_config)
+    will be mandatory.
+    It returns 1 on success and 0 on failure. It is used for
+    experimental purpose for now and subject to change. */
+GRPCAPI int grpc_tls_credentials_options_set_server_verification_option(
+    grpc_tls_credentials_options* options,
+    grpc_tls_server_verification_option server_verification_option);
 
 /** Set grpc_tls_key_materials_config field in credentials options
     with the provided config struct whose ownership is transferred.
@@ -902,6 +924,7 @@ struct grpc_tls_server_authorization_check_arg {
   int success;
   const char* target_name;
   const char* peer_cert;
+  const char* peer_cert_full_chain;
   grpc_status_code status;
   const char* error_details;
   grpc_tls_server_authorization_check_config* config;
@@ -938,11 +961,10 @@ grpc_tls_server_authorization_check_config_create(
                    grpc_tls_server_authorization_check_arg* arg),
     void (*destruct)(void* config_user_data));
 
-/** --- SPIFFE channel/server credentials --- **/
-
 /**
- * This method creates a TLS SPIFFE channel credential object.
- * It takes ownership of the options parameter.
+ * This method creates a TLS channel credential object.
+ * It takes ownership of the options parameter. The security level
+ * of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
  *
  * - options: grpc TLS credentials options instance.
  *
@@ -952,7 +974,7 @@ grpc_tls_server_authorization_check_config_create(
  * to change.
  */
 
-grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
+grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options);
 
 /**
@@ -966,7 +988,7 @@ grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
  * It is used for experimental purpose for now and subject
  * to change.
  */
-grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
+grpc_server_credentials* grpc_tls_server_credentials_create(
     grpc_tls_credentials_options* options);
 
 #ifdef __cplusplus

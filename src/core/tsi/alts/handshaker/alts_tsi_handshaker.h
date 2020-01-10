@@ -36,7 +36,7 @@
 #define TSI_ALTS_RPC_VERSIONS "rpc_versions"
 #define TSI_ALTS_CONTEXT "alts_context"
 
-const size_t kTsiAltsNumOfPeerProperties = 4;
+const size_t kTsiAltsNumOfPeerProperties = 5;
 
 typedef struct alts_tsi_handshaker alts_tsi_handshaker;
 

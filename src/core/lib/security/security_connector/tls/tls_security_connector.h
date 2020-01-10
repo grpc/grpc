@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_SPIFFE_SECURITY_CONNECTOR_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_SPIFFE_SECURITY_CONNECTOR_H
+#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H
+#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,27 +25,27 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
-#define GRPC_TLS_SPIFFE_TRANSPORT_SECURITY_TYPE "spiffe"
+#define GRPC_TLS_TRANSPORT_SECURITY_TYPE "tls"
 
 namespace grpc_core {
 
-// Spiffe channel security connector.
-class SpiffeChannelSecurityConnector final
+// TLS channel security connector.
+class TlsChannelSecurityConnector final
     : public grpc_channel_security_connector {
  public:
-  // static factory method to create a SPIFFE channel security connector.
+  // static factory method to create a TLS channel security connector.
   static grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  CreateSpiffeChannelSecurityConnector(
+  CreateTlsChannelSecurityConnector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name, const char* overridden_target_name,
       tsi_ssl_session_cache* ssl_session_cache);
 
-  SpiffeChannelSecurityConnector(
+  TlsChannelSecurityConnector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name, const char* overridden_target_name);
-  ~SpiffeChannelSecurityConnector() override;
+  ~TlsChannelSecurityConnector() override;
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* interested_parties,
@@ -105,18 +105,17 @@ class SpiffeChannelSecurityConnector final
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
 };
 
-// Spiffe server security connector.
-class SpiffeServerSecurityConnector final
-    : public grpc_server_security_connector {
+// TLS server security connector.
+class TlsServerSecurityConnector final : public grpc_server_security_connector {
  public:
-  // static factory method to create a SPIFFE server security connector.
+  // static factory method to create a TLS server security connector.
   static grpc_core::RefCountedPtr<grpc_server_security_connector>
-  CreateSpiffeServerSecurityConnector(
+  CreateTlsServerSecurityConnector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
-  explicit SpiffeServerSecurityConnector(
+  explicit TlsServerSecurityConnector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
-  ~SpiffeServerSecurityConnector() override;
+  ~TlsServerSecurityConnector() override;
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* interested_parties,
@@ -149,10 +148,10 @@ class SpiffeServerSecurityConnector final
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
-    const grpc_tls_credentials_options& options,
+    const grpc_tls_credentials_options& options, bool server_config,
     grpc_ssl_certificate_config_reload_status* status);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_SPIFFE_SECURITY_CONNECTOR_H \
+#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H \
         */

@@ -186,6 +186,11 @@ grpc::string TlsServerAuthorizationCheckArg::peer_cert() const {
   return cpp_peer_cert;
 }
 
+grpc::string TlsServerAuthorizationCheckArg::peer_cert_full_chain() const {
+  grpc::string cpp_peer_cert_full_chain(c_arg_->peer_cert_full_chain);
+  return cpp_peer_cert_full_chain;
+}
+
 grpc_status_code TlsServerAuthorizationCheckArg::status() const {
   return c_arg_->status;
 }
@@ -211,6 +216,11 @@ void TlsServerAuthorizationCheckArg::set_target_name(
 void TlsServerAuthorizationCheckArg::set_peer_cert(
     const grpc::string& peer_cert) {
   c_arg_->peer_cert = gpr_strdup(peer_cert.c_str());
+}
+
+void TlsServerAuthorizationCheckArg::set_peer_cert_full_chain(
+    const grpc::string& peer_cert_full_chain) {
+  c_arg_->peer_cert_full_chain = gpr_strdup(peer_cert_full_chain.c_str());
 }
 
 void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
@@ -247,11 +257,13 @@ TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {}
 /** gRPC TLS credential options API implementation **/
 TlsCredentialsOptions::TlsCredentialsOptions(
     grpc_ssl_client_certificate_request_type cert_request_type,
+    grpc_tls_server_verification_option server_verification_option,
     std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
     std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
     std::shared_ptr<TlsServerAuthorizationCheckConfig>
         server_authorization_check_config)
     : cert_request_type_(cert_request_type),
+      server_verification_option_(server_verification_option),
       key_materials_config_(std::move(key_materials_config)),
       credential_reload_config_(std::move(credential_reload_config)),
       server_authorization_check_config_(
@@ -272,6 +284,8 @@ TlsCredentialsOptions::TlsCredentialsOptions(
     grpc_tls_credentials_options_set_server_authorization_check_config(
         c_credentials_options_, server_authorization_check_config_->c_config());
   }
+  grpc_tls_credentials_options_set_server_verification_option(
+      c_credentials_options_, server_verification_option);
 }
 
 TlsCredentialsOptions::~TlsCredentialsOptions() {}

@@ -11,17 +11,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Exceptions for the aio version of the RPC calls."""
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-cdef class _AioRpcError(Exception):
-    cdef readonly:
-        tuple _initial_metadata
-        int _code
-        str _details
-        tuple _trailing_metadata
+licenses(["notice"])
 
-    cpdef tuple initial_metadata(self)
-    cpdef int code(self)
-    cpdef str details(self)
-    cpdef tuple trailing_metadata(self)
+grpc_package(
+    name = "test/core/iomgr/poller",
+    visibility = "public",
+)  # Used to test IO poller implementations.
+
+grpc_cc_test(
+    name = "eventmanager_libuv_test",
+    srcs = ["eventmanager_libuv_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:eventmanager_libuv",
+        "//:grpc_base_c",
+        "//test/core/util:grpc_test_util",
+    ],
+)

@@ -26,6 +26,13 @@ cdef class AioChannel:
     def close(self):
         grpc_channel_destroy(self.channel)
 
-    async def unary_unary(self, method, request, timeout, cancel_status):
-        call = _AioCall(self)
-        return await call.unary_unary(method, request, timeout, cancel_status)
+    def call(self,
+             bytes method,
+             object deadline):
+        """Assembles a Cython Call object.
+
+        Returns:
+          The _AioCall object.
+        """
+        cdef _AioCall call = _AioCall(self, deadline, method)
+        return call

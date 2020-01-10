@@ -50,6 +50,20 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
+/* set a socket to use zerocopy */
+grpc_error* grpc_set_socket_zerocopy(int fd) {
+#ifdef GRPC_LINUX_ERRQUEUE
+  const int enable = 1;
+  auto err = setsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
+  if (err != 0) {
+    return GRPC_OS_ERROR(errno, "setsockopt(SO_ZEROCOPY)");
+  }
+  return GRPC_ERROR_NONE;
+#else
+  return GRPC_OS_ERROR(ENOSYS, "setsockopt(SO_ZEROCOPY)");
+#endif
+}
+
 /* set a socket to non blocking mode */
 grpc_error* grpc_set_socket_nonblocking(int fd, int non_blocking) {
   int oldflags = fcntl(fd, F_GETFL, 0);

@@ -28,8 +28,8 @@ REQUIRED_FIELDS = ['name', 'doc']
 
 
 def make_type(name, fields):
-    return (collections.namedtuple(name, ' '.join(
-        list(set(REQUIRED_FIELDS + fields)))), [])
+    return (collections.namedtuple(
+        name, ' '.join(list(set(REQUIRED_FIELDS + fields)))), [])
 
 
 def c_str(s, encoding='ascii'):
@@ -353,10 +353,10 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
         print >> C, ("void grpc_stats_inc_%s(int value) {%s}") % (
             histogram.name.lower(), code)
 
-    print >> C, "const int grpc_stats_histo_buckets[%d] = {%s};" % (
-        len(inst_map['Histogram']), ','.join('%s' % x for x in histo_buckets))
-    print >> C, "const int grpc_stats_histo_start[%d] = {%s};" % (
-        len(inst_map['Histogram']), ','.join('%s' % x for x in histo_start))
+    print >> C, "const int grpc_stats_histo_buckets[%d] = {%s};" % (len(
+        inst_map['Histogram']), ','.join('%s' % x for x in histo_buckets))
+    print >> C, "const int grpc_stats_histo_start[%d] = {%s};" % (len(
+        inst_map['Histogram']), ','.join('%s' % x for x in histo_start))
     print >> C, "const int *const grpc_stats_histo_bucket_boundaries[%d] = {%s};" % (
         len(inst_map['Histogram']), ','.join(
             'grpc_stats_table_%d' % x for x in histo_bucket_boundaries))

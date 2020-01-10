@@ -58,23 +58,23 @@ XdsBootstrap::XdsBootstrap(grpc_slice contents, grpc_error** error)
     return;
   }
   InlinedVector<grpc_error*, 1> error_list;
-  bool seen_xds_server = false;
+  bool seen_xds_servers = false;
   bool seen_node = false;
   for (grpc_json* child = tree_->child; child != nullptr; child = child->next) {
     if (child->key == nullptr) {
       error_list.push_back(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON key is null"));
-    } else if (strcmp(child->key, "xds_server") == 0) {
-      if (child->type != GRPC_JSON_OBJECT) {
+    } else if (strcmp(child->key, "xds_servers") == 0) {
+      if (child->type != GRPC_JSON_ARRAY) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "\"xds_server\" field is not an object"));
+            "\"xds_servers\" field is not an array"));
       }
-      if (seen_xds_server) {
+      if (seen_xds_servers) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "duplicate \"xds_server\" field"));
+            "duplicate \"xds_servers\" field"));
       }
-      seen_xds_server = true;
-      grpc_error* parse_error = ParseXdsServer(child);
+      seen_xds_servers = true;
+      grpc_error* parse_error = ParseXdsServerList(child);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     } else if (strcmp(child->key, "node") == 0) {
       if (child->type != GRPC_JSON_OBJECT) {
@@ -90,9 +90,9 @@ XdsBootstrap::XdsBootstrap(grpc_slice contents, grpc_error** error)
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
-  if (!seen_xds_server) {
+  if (!seen_xds_servers) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"xds_server\" field not present"));
+        "\"xds_servers\" field not present"));
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing xds bootstrap file",
                                          &error_list);
@@ -103,47 +103,7 @@ XdsBootstrap::~XdsBootstrap() {
   grpc_slice_unref_internal(contents_);
 }
 
-grpc_error* XdsBootstrap::ParseXdsServer(grpc_json* json) {
-  InlinedVector<grpc_error*, 1> error_list;
-  server_uri_ = nullptr;
-  bool seen_channel_creds = false;
-  for (grpc_json* child = json->child; child != nullptr; child = child->next) {
-    if (child->key == nullptr) {
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON key is null"));
-    } else if (strcmp(child->key, "server_uri") == 0) {
-      if (child->type != GRPC_JSON_STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "\"server_uri\" field is not a string"));
-      }
-      if (server_uri_ != nullptr) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "duplicate \"server_uri\" field"));
-      }
-      server_uri_ = child->value;
-    } else if (strcmp(child->key, "channel_creds") == 0) {
-      if (child->type != GRPC_JSON_ARRAY) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "\"channel_creds\" field is not an array"));
-      }
-      if (seen_channel_creds) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "duplicate \"channel_creds\" field"));
-      }
-      seen_channel_creds = true;
-      grpc_error* parse_error = ParseChannelCredsArray(child);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
-    }
-  }
-  if (server_uri_ == nullptr) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"server_uri\" field not present"));
-  }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"xds_server\" object",
-                                       &error_list);
-}
-
-grpc_error* XdsBootstrap::ParseChannelCredsArray(grpc_json* json) {
+grpc_error* XdsBootstrap::ParseXdsServerList(grpc_json* json) {
   InlinedVector<grpc_error*, 1> error_list;
   size_t idx = 0;
   for (grpc_json *child = json->child; child != nullptr;
@@ -158,7 +118,81 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(grpc_json* json) {
       gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", idx);
       error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
     } else {
-      grpc_error* parse_error = ParseChannelCreds(child, idx);
+      grpc_error* parse_error = ParseXdsServer(child, idx);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"xds_servers\" array",
+                                       &error_list);
+}
+
+grpc_error* XdsBootstrap::ParseXdsServer(grpc_json* json, size_t idx) {
+  InlinedVector<grpc_error*, 1> error_list;
+  servers_.emplace_back();
+  XdsServer& server = servers_[servers_.size() - 1];
+  bool seen_channel_creds = false;
+  for (grpc_json* child = json->child; child != nullptr; child = child->next) {
+    if (child->key == nullptr) {
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON key is null"));
+    } else if (strcmp(child->key, "server_uri") == 0) {
+      if (child->type != GRPC_JSON_STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "\"server_uri\" field is not a string"));
+      }
+      if (server.server_uri != nullptr) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "duplicate \"server_uri\" field"));
+      }
+      server.server_uri = child->value;
+    } else if (strcmp(child->key, "channel_creds") == 0) {
+      if (child->type != GRPC_JSON_ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "\"channel_creds\" field is not an array"));
+      }
+      if (seen_channel_creds) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "duplicate \"channel_creds\" field"));
+      }
+      seen_channel_creds = true;
+      grpc_error* parse_error = ParseChannelCredsArray(child, &server);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  if (server.server_uri == nullptr) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "\"server_uri\" field not present"));
+  }
+  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
+  // string is not static in this case.
+  if (error_list.empty()) return GRPC_ERROR_NONE;
+  char* msg;
+  gpr_asprintf(&msg, "errors parsing index %" PRIuPTR, idx);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+  gpr_free(msg);
+  for (size_t i = 0; i < error_list.size(); ++i) {
+    error = grpc_error_add_child(error, error_list[i]);
+  }
+  return error;
+}
+
+grpc_error* XdsBootstrap::ParseChannelCredsArray(grpc_json* json,
+                                                 XdsServer* server) {
+  InlinedVector<grpc_error*, 1> error_list;
+  size_t idx = 0;
+  for (grpc_json *child = json->child; child != nullptr;
+       child = child->next, ++idx) {
+    if (child->key != nullptr) {
+      char* msg;
+      gpr_asprintf(&msg, "array element %" PRIuPTR " key is not null", idx);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+    }
+    if (child->type != GRPC_JSON_OBJECT) {
+      char* msg;
+      gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", idx);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+    } else {
+      grpc_error* parse_error = ParseChannelCreds(child, idx, server);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
@@ -166,7 +200,8 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(grpc_json* json) {
                                        &error_list);
 }
 
-grpc_error* XdsBootstrap::ParseChannelCreds(grpc_json* json, size_t idx) {
+grpc_error* XdsBootstrap::ParseChannelCreds(grpc_json* json, size_t idx,
+                                            XdsServer* server) {
   InlinedVector<grpc_error*, 1> error_list;
   ChannelCreds channel_creds;
   for (grpc_json* child = json->child; child != nullptr; child = child->next) {
@@ -195,7 +230,9 @@ grpc_error* XdsBootstrap::ParseChannelCreds(grpc_json* json, size_t idx) {
       channel_creds.config = child;
     }
   }
-  if (channel_creds.type != nullptr) channel_creds_.push_back(channel_creds);
+  if (channel_creds.type != nullptr) {
+    server->channel_creds.push_back(channel_creds);
+  }
   // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
   // string is not static in this case.
   if (error_list.empty()) return GRPC_ERROR_NONE;

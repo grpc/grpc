@@ -2,6 +2,7 @@
 # Install Python 3.8 for x64 and x86 in order to build wheels on Windows.
 
 Set-StrictMode -Version 2
+$ErrorActionPreference = 'Stop'
 
 # Avoid "Could not create SSL/TLS secure channel"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -33,43 +34,20 @@ function Install-Python {
         throw "The Python installation exited with error!"
     }
 
-    # Validates Python binary
     # NOTE(lidiz) Even if the install command finishes in the script, that
     # doesn't mean the Python installation is finished. If using "ps" to check
     # for running processes, you might see ongoing installers at this point.
     # So, we needs this "hack" to reliably validate that the Python binary is
     # functioning properly.
-    $ValidationStartTime = Get-Date
-    $EarlyExitDDL = $ValidationStartTime.addminutes(5)
-    $PythonBinary = "$PythonInstallPath\python.exe"
-    While ($True) {
-        $CurrentTime = Get-Date
-        if ($CurrentTime -ge $EarlyExitDDL) {
-            throw "Invalid Python installation! Timeout!"
-        }
-        & $PythonBinary -c 'print(42)'
-        if ($?) {
-            Write-Host "Python binary works properly."
-            break
-        }
-        Start-Sleep -Seconds 1
-    }
 
-    # Waits until the installer process is gone
-    $ValidationStartTime = Get-Date
-    $EarlyExitDDL = $ValidationStartTime.addminutes(5)
-    While ($True) {
-        $CurrentTime = Get-Date
-        if ($CurrentTime -ge $EarlyExitDDL) {
-            throw "Python installation process hangs!"
-        }
-        $InstallProcess = Get-Process -Name $PythonInstaller
-        if ($InstallProcess -eq $null) {
-            Write-Host "Installation process exits normally."
-            break
-        }
-        Start-Sleep -Seconds 1
-    }
+    # Wait for the installer process
+    Wait-Process -Name $PythonInstaller -Timeout 300
+    Write-Host "Installation process exits normally."
+
+    # Validate Python binary
+    $PythonBinary = "$PythonInstallPath\python.exe"
+    & $PythonBinary -c 'print(42)'
+    Write-Host "Python binary works properly."
 
     # Installs pip
     & $PythonBinary -m ensurepip --user

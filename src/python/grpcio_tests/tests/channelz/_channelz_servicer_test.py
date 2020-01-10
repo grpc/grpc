@@ -70,9 +70,9 @@ class _ChannelServerPair(object):
 
     def __init__(self):
         # Server will enable channelz service
-        self.server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=3),
-            options=_DISABLE_REUSE_PORT + _ENABLE_CHANNELZ)
+        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=3),
+                                  options=_DISABLE_REUSE_PORT +
+                                  _ENABLE_CHANNELZ)
         port = self.server.add_insecure_port('[::]:0')
         self.server.add_generic_rpc_handlers((_GenericHandler(),))
         self.server.start()
@@ -128,9 +128,9 @@ class ChannelzServicerTest(unittest.TestCase):
         self._pairs = []
         # This server is for Channelz info fetching only
         # It self should not enable Channelz
-        self._server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=3),
-            options=_DISABLE_REUSE_PORT + _DISABLE_CHANNELZ)
+        self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=3),
+                                   options=_DISABLE_REUSE_PORT +
+                                   _DISABLE_CHANNELZ)
         port = self._server.add_insecure_port('[::]:0')
         channelz.add_channelz_servicer(self._server)
         self._server.start()
@@ -264,8 +264,8 @@ class ChannelzServicerTest(unittest.TestCase):
             self.assertGreater(len(gtc_resp.channel[i].subchannel_ref), 0)
             gsc_resp = self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
-                    subchannel_id=gtc_resp.channel[i].subchannel_ref[
-                        0].subchannel_id))
+                    subchannel_id=gtc_resp.channel[i].subchannel_ref[0].
+                    subchannel_id))
             self.assertEqual(gtc_resp.channel[i].data.calls_started,
                              gsc_resp.subchannel.data.calls_started)
             self.assertEqual(gtc_resp.channel[i].data.calls_succeeded,
@@ -332,8 +332,8 @@ class ChannelzServicerTest(unittest.TestCase):
             self.assertGreater(len(gtc_resp.channel[i].subchannel_ref), 0)
             gsc_resp = self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
-                    subchannel_id=gtc_resp.channel[i].subchannel_ref[
-                        0].subchannel_id))
+                    subchannel_id=gtc_resp.channel[i].subchannel_ref[0].
+                    subchannel_id))
             self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
             gs_resp = self._channelz_stub.GetSocket(

@@ -68,13 +68,17 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_unary = None
         self.stream_stream = None
         if self.request_streaming and self.response_streaming:
-            self.stream_stream = lambda req, ctx: handle_stream_stream(test, req, ctx)
+            self.stream_stream = lambda req, ctx: handle_stream_stream(
+                test, req, ctx)
         elif self.request_streaming:
-            self.stream_unary = lambda req, ctx: handle_stream_unary(test, req, ctx)
+            self.stream_unary = lambda req, ctx: handle_stream_unary(
+                test, req, ctx)
         elif self.response_streaming:
-            self.unary_stream = lambda req, ctx: handle_unary_stream(test, req, ctx)
+            self.unary_stream = lambda req, ctx: handle_unary_stream(
+                test, req, ctx)
         else:
-            self.unary_unary = lambda req, ctx: handle_unary_unary(test, req, ctx)
+            self.unary_unary = lambda req, ctx: handle_unary_unary(
+                test, req, ctx)
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -188,8 +192,9 @@ class MetadataFlagsTest(unittest.TestCase):
     def test_call_wait_for_ready_disabled(self):
         for perform_call in _ALL_CALL_CASES:
             with create_dummy_channel() as channel:
-                self.check_connection_does_failfast(
-                    perform_call, channel, wait_for_ready=False)
+                self.check_connection_does_failfast(perform_call,
+                                                    channel,
+                                                    wait_for_ready=False)
 
     def test_call_wait_for_ready_enabled(self):
         # To test the wait mechanism, Python thread is required to make
@@ -220,8 +225,8 @@ class MetadataFlagsTest(unittest.TestCase):
 
             test_threads = []
             for perform_call in _ALL_CALL_CASES:
-                test_thread = threading.Thread(
-                    target=test_call, args=(perform_call,))
+                test_thread = threading.Thread(target=test_call,
+                                               args=(perform_call,))
                 test_thread.exception = None
                 test_thread.start()
                 test_threads.append(test_thread)
@@ -229,8 +234,8 @@ class MetadataFlagsTest(unittest.TestCase):
             # Start the server after the connections are waiting
             wg.wait()
             server = test_common.test_server(reuse_port=True)
-            server.add_generic_rpc_handlers((_GenericHandler(
-                weakref.proxy(self)),))
+            server.add_generic_rpc_handlers(
+                (_GenericHandler(weakref.proxy(self)),))
             server.add_insecure_port(addr)
             server.start()
 

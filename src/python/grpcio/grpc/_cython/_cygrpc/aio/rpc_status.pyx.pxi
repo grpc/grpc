@@ -14,18 +14,21 @@
 """Exceptions for the aio version of the RPC calls."""
 
 
-cdef class AioRpcError(Exception):
+cdef class AioRpcStatus(Exception):
 
-    def __cinit__(self, tuple initial_metadata, int code, str details, tuple trailing_metadata):
-        self._initial_metadata = initial_metadata
+    # The final status of gRPC is represented by three trailing metadata:
+    # `grpc-status`, `grpc-status-message`, abd `grpc-status-details`.
+    def __cinit__(self,
+                  grpc_status_code code,
+                  str details,
+                  tuple trailing_metadata,
+                  str debug_error_string):
         self._code = code
         self._details = details
         self._trailing_metadata = trailing_metadata
+        self._debug_error_string = debug_error_string
 
-    cpdef tuple initial_metadata(self):
-        return self._initial_metadata
-
-    cpdef int code(self):
+    cpdef grpc_status_code code(self):
         return self._code
 
     cpdef str details(self):
@@ -33,3 +36,9 @@ cdef class AioRpcError(Exception):
 
     cpdef tuple trailing_metadata(self):
         return self._trailing_metadata
+
+    cpdef str debug_error_string(self):
+        return self._debug_error_string
+
+    cdef grpc_status_code c_code(self):
+        return <grpc_status_code>self._code

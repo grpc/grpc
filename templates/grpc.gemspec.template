@@ -34,7 +34,7 @@
     s.add_dependency 'google-protobuf', '~> 3.8'
     s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
-    s.add_development_dependency 'bundler',            '~> 1.9'
+    s.add_development_dependency 'bundler',            '>= 1.9'
     s.add_development_dependency 'facter',             '~> 2.4'
     s.add_development_dependency 'logging',            '~> 2.0'
     s.add_development_dependency 'simplecov',          '~> 0.14.1'
@@ -49,10 +49,13 @@
     s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
   <%
     files = []
-    for lib in libs:
-      if lib.name in ruby_gem.get('deps', []):
-        for file in (lib.get('public_headers', []) + lib.headers + lib.src):
-          files.append(file)
+    ruby_deps = ruby_gem.get('deps', [])
+    lib_maps = {lib.name: lib for lib in libs}
+    for dep in ruby_deps[:]:
+      ruby_deps.extend(lib_maps[dep].transitive_deps)
+    for dep in ruby_deps:
+      lib = lib_maps[dep]
+      files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
     files = sorted(set(files))
   %>
     % for file in files:

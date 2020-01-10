@@ -158,6 +158,9 @@ config("grpc_config") {
         "src/core/lib/profiling/timers.h",
     ]
     deps = [
+        ":absl/container:inlined_vector",
+        ":absl/strings:strings",
+        ":absl/types:optional",
     ]
     
     public_configs = [
@@ -598,6 +601,8 @@ config("grpc_config") {
         "src/core/lib/iomgr/logical_thread.cc",
         "src/core/lib/iomgr/logical_thread.h",
         "src/core/lib/iomgr/nameser.h",
+        "src/core/lib/iomgr/poller/eventmanager_libuv.cc",
+        "src/core/lib/iomgr/poller/eventmanager_libuv.h",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.cc",
@@ -733,8 +738,8 @@ config("grpc_config") {
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
-        "src/core/lib/security/credentials/tls/spiffe_credentials.cc",
-        "src/core/lib/security/credentials/tls/spiffe_credentials.h",
+        "src/core/lib/security/credentials/tls/tls_credentials.cc",
+        "src/core/lib/security/credentials/tls/tls_credentials.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
@@ -753,8 +758,8 @@ config("grpc_config") {
         "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.h",
-        "src/core/lib/security/security_connector/tls/spiffe_security_connector.cc",
-        "src/core/lib/security/security_connector/tls/spiffe_security_connector.h",
+        "src/core/lib/security/security_connector/tls/tls_security_connector.cc",
+        "src/core/lib/security/security_connector/tls/tls_security_connector.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
@@ -1432,6 +1437,8 @@ config("grpc_config") {
         "src/core/lib/iomgr/logical_thread.cc",
         "src/core/lib/iomgr/logical_thread.h",
         "src/core/lib/iomgr/nameser.h",
+        "src/core/lib/iomgr/poller/eventmanager_libuv.cc",
+        "src/core/lib/iomgr/poller/eventmanager_libuv.h",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.cc",

@@ -25,7 +25,7 @@
 #include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 
-#include "src/core/lib/security/security_connector/tls/spiffe_security_connector.h"
+#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/test_config.h"
 
@@ -75,9 +75,9 @@ int CredReloadAsync(void* /*config_user_data*/,
 namespace grpc {
 namespace testing {
 
-class SpiffeSecurityConnectorTest : public ::testing::Test {
+class TlsSecurityConnectorTest : public ::testing::Test {
  protected:
-  SpiffeSecurityConnectorTest() {}
+  TlsSecurityConnectorTest() {}
   void SetUp() override {
     options_ = grpc_tls_credentials_options_create()->Ref();
     config_ = grpc_tls_key_materials_config_create()->Ref();
@@ -115,116 +115,116 @@ class SpiffeSecurityConnectorTest : public ::testing::Test {
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> config_;
 };
 
-TEST_F(SpiffeSecurityConnectorTest, NoKeysAndConfig) {
+TEST_F(TlsSecurityConnectorTest, NoKeysAndConfig) {
   grpc_ssl_certificate_config_reload_status reload_status;
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_FAILED_PRECONDITION);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, NoKeySuccessReload) {
+TEST_F(TlsSecurityConnectorTest, NoKeySuccessReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(SUCCESS);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, NoKeyFailReload) {
+TEST_F(TlsSecurityConnectorTest, NoKeyFailReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(FAIL);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_INTERNAL);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, NoKeyAsyncReload) {
+TEST_F(TlsSecurityConnectorTest, NoKeyAsyncReload) {
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetOptions(ASYNC);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, NoKeyUnchangedReload) {
+TEST_F(TlsSecurityConnectorTest, NoKeyUnchangedReload) {
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetOptions(UNCHANGED);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, WithKeyNoReload) {
+TEST_F(TlsSecurityConnectorTest, WithKeyNoReload) {
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, WithKeySuccessReload) {
+TEST_F(TlsSecurityConnectorTest, WithKeySuccessReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(SUCCESS);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, WithKeyFailReload) {
+TEST_F(TlsSecurityConnectorTest, WithKeyFailReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(FAIL);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, WithKeyAsyncReload) {
+TEST_F(TlsSecurityConnectorTest, WithKeyAsyncReload) {
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetOptions(ASYNC);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, WithKeyUnchangedReload) {
+TEST_F(TlsSecurityConnectorTest, WithKeyUnchangedReload) {
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetOptions(UNCHANGED);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
 }
 
-TEST_F(SpiffeSecurityConnectorTest, CreateChannelSecurityConnectorSuccess) {
+TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorSuccess) {
   SetOptions(SUCCESS);
   auto cred = std::unique_ptr<grpc_channel_credentials>(
-      grpc_tls_spiffe_credentials_create(options_.get()));
+      grpc_tls_credentials_create(options_.get()));
   const char* target_name = "some_target";
   grpc_channel_args* new_args = nullptr;
   auto connector =
@@ -233,39 +233,39 @@ TEST_F(SpiffeSecurityConnectorTest, CreateChannelSecurityConnectorSuccess) {
   grpc_channel_args_destroy(new_args);
 }
 
-TEST_F(SpiffeSecurityConnectorTest,
+TEST_F(TlsSecurityConnectorTest,
        CreateChannelSecurityConnectorFailNoTargetName) {
   SetOptions(SUCCESS);
   auto cred = std::unique_ptr<grpc_channel_credentials>(
-      grpc_tls_spiffe_credentials_create(options_.get()));
+      grpc_tls_credentials_create(options_.get()));
   grpc_channel_args* new_args = nullptr;
   auto connector =
       cred->create_security_connector(nullptr, nullptr, nullptr, &new_args);
   EXPECT_EQ(connector, nullptr);
 }
 
-TEST_F(SpiffeSecurityConnectorTest, CreateChannelSecurityConnectorFailInit) {
+TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailInit) {
   SetOptions(FAIL);
   auto cred = std::unique_ptr<grpc_channel_credentials>(
-      grpc_tls_spiffe_credentials_create(options_.get()));
+      grpc_tls_credentials_create(options_.get()));
   grpc_channel_args* new_args = nullptr;
   auto connector =
       cred->create_security_connector(nullptr, nullptr, nullptr, &new_args);
   EXPECT_EQ(connector, nullptr);
 }
 
-TEST_F(SpiffeSecurityConnectorTest, CreateServerSecurityConnectorSuccess) {
+TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorSuccess) {
   SetOptions(SUCCESS);
   auto cred = std::unique_ptr<grpc_server_credentials>(
-      grpc_tls_spiffe_server_credentials_create(options_.get()));
+      grpc_tls_server_credentials_create(options_.get()));
   auto connector = cred->create_security_connector();
   EXPECT_NE(connector, nullptr);
 }
 
-TEST_F(SpiffeSecurityConnectorTest, CreateServerSecurityConnectorFailInit) {
+TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorFailInit) {
   SetOptions(FAIL);
   auto cred = std::unique_ptr<grpc_server_credentials>(
-      grpc_tls_spiffe_server_credentials_create(options_.get()));
+      grpc_tls_server_credentials_create(options_.get()));
   auto connector = cred->create_security_connector();
   EXPECT_EQ(connector, nullptr);
 }

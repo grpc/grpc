@@ -1268,7 +1268,7 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p: creating channel to %s", this,
-            bootstrap_->server_uri());
+            bootstrap_->server().server_uri);
   }
   chand_ = MakeOrphanable<ChannelState>(
       Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel_args);
@@ -1301,7 +1301,7 @@ void XdsClient::WatchClusterData(
   w->OnClusterChanged(std::move(update));
 }
 
-void XdsClient::CancelClusterDataWatch(StringView cluster,
+void XdsClient::CancelClusterDataWatch(StringView /*cluster*/,
                                        ClusterWatcherInterface* watcher) {
   auto it = cluster_state_.cluster_watchers.find(watcher);
   if (it != cluster_state_.cluster_watchers.end()) {

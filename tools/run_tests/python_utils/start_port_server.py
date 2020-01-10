@@ -54,8 +54,8 @@ def start_port_server():
         running = (version >= current_version)
         if not running:
             logging.info('port_server version mismatch: killing the old one')
-            request.urlopen(
-                'http://localhost:%d/quitquitquit' % _PORT_SERVER_PORT).read()
+            request.urlopen('http://localhost:%d/quitquitquit' %
+                            _PORT_SERVER_PORT).read()
             time.sleep(1)
     if not running:
         fd, logfile = tempfile.mkstemp()
@@ -80,8 +80,10 @@ def start_port_server():
                 creationflags=0x00000008,  # detached process
                 close_fds=True)
         else:
-            port_server = subprocess.Popen(
-                args, env=env, preexec_fn=os.setsid, close_fds=True)
+            port_server = subprocess.Popen(args,
+                                           env=env,
+                                           preexec_fn=os.setsid,
+                                           close_fds=True)
         time.sleep(1)
         # ensure port server is up
         waits = 0
@@ -95,8 +97,8 @@ def start_port_server():
                 # try one final time: maybe another build managed to start one
                 time.sleep(1)
                 try:
-                    request.urlopen(
-                        'http://localhost:%d/get' % _PORT_SERVER_PORT).read()
+                    request.urlopen('http://localhost:%d/get' %
+                                    _PORT_SERVER_PORT).read()
                     logging.info(
                         'last ditch attempt to contact port server succeeded')
                     break
@@ -120,7 +122,8 @@ def start_port_server():
                 time.sleep(1)
                 waits += 1
             except:
-                logging.exception('error while contacting port server at "%s".'
-                                  'Will try killing it.', port_server_url)
+                logging.exception(
+                    'error while contacting port server at "%s".'
+                    'Will try killing it.', port_server_url)
                 port_server.kill()
                 raise
