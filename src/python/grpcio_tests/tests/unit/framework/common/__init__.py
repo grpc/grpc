@@ -21,13 +21,6 @@ _DEFAULT_SOCK_OPTION = socket.SO_REUSEADDR if os.name == 'nt' else socket.SO_REU
 _UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE, errno.ENOSR)
 
 
-def _is_unrecoverable_os_error(e):
-    for error in _UNRECOVERABLE_ERRNOS:
-        if error == e.errno:
-            return True
-    return False
-
-
 def get_socket(bind_address='localhost',
                port=0,
                listen=True,
@@ -38,7 +31,7 @@ def get_socket(bind_address='localhost',
 
     Args:
       bind_address: The host to which to bind.
-      port: The port to bind.
+      port: The port to which to bind.
       listen: A boolean value indicating whether or not to listen on the socket.
       sock_options: A sequence of socket options to apply to the socket.
 
@@ -64,7 +57,7 @@ def get_socket(bind_address='localhost',
             return bind_address, sock.getsockname()[1], sock
         except OSError as os_error:
             sock.close()
-            if _is_unrecoverable_os_error(os_error):
+            if os_error.errno in _UNRECOVERABLE_ERRNOS:
                 raise
             else:
                 continue
@@ -83,7 +76,7 @@ def bound_socket(bind_address='localhost',
 
     Args:
       bind_address: The host to which to bind.
-      port: The port to bind.
+      port: The port to which to bind.
       listen: A boolean value indicating whether or not to listen on the socket.
       sock_options: A sequence of socket options to apply to the socket.
 
