@@ -17,17 +17,27 @@ import os
 import socket
 
 _DEFAULT_SOCK_OPTION = socket.SO_REUSEADDR if os.name == 'nt' else socket.SO_REUSEPORT
+_UNRECOVERABLE_ERRORS = ('Address already in use',)
+
+
+def _exception_is_unrecoverable(e):
+    for error in _UNRECOVERABLE_ERRORS:
+        if error in str(e):
+            return True
+    return False
 
 
 def get_socket(bind_address='localhost',
+               port=0,
                listen=True,
                sock_options=(_DEFAULT_SOCK_OPTION,)):
-    """Opens a socket bound to an arbitrary port.
+    """Opens a socket.
 
     Useful for reserving a port for a system-under-test.
 
     Args:
       bind_address: The host to which to bind.
+      port: The port to bind.
       listen: A boolean value indicating whether or not to listen on the socket.
       sock_options: A sequence of socket options to apply to the socket.
 
@@ -47,19 +57,23 @@ def get_socket(bind_address='localhost',
             sock = socket.socket(address_family, socket.SOCK_STREAM)
             for sock_option in _sock_options:
                 sock.setsockopt(socket.SOL_SOCKET, sock_option, 1)
-            sock.bind((bind_address, 0))
+            sock.bind((bind_address, port))
             if listen:
                 sock.listen(1)
             return bind_address, sock.getsockname()[1], sock
-        except socket.error:
+        except socket.error as socket_error:
             sock.close()
-            continue
+            if _exception_is_unrecoverable(socket_error):
+                raise
+            else:
+                continue
     raise RuntimeError("Failed to bind to {} with sock_options {}".format(
         bind_address, sock_options))
 
 
 @contextlib.contextmanager
 def bound_socket(bind_address='localhost',
+                 port=0,
                  listen=True,
                  sock_options=(_DEFAULT_SOCK_OPTION,)):
     """Opens a socket bound to an arbitrary port.
@@ -68,6 +82,7 @@ def bound_socket(bind_address='localhost',
 
     Args:
       bind_address: The host to which to bind.
+      port: The port to bind.
       listen: A boolean value indicating whether or not to listen on the socket.
       sock_options: A sequence of socket options to apply to the socket.
 
@@ -77,6 +92,7 @@ def bound_socket(bind_address='localhost',
         - the port to which the socket is bound
     """
     host, port, sock = get_socket(bind_address=bind_address,
+                                  port=port,
                                   listen=listen,
                                   sock_options=sock_options)
     try:

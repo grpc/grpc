@@ -17,13 +17,13 @@ import asyncio
 import logging
 import platform
 import random
-import socket
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+from tests.unit.framework import common
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
@@ -71,21 +71,17 @@ async def test_if_reuse_port_enabled(server: aio.Server):
     await server.start()
 
     try:
-        if socket.has_ipv6:
-            another_socket = socket.socket(family=socket.AF_INET6)
-        else:
-            another_socket = socket.socket(family=socket.AF_INET)
-        another_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        another_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        another_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        another_socket.bind(('localhost', port))
+        with common.bound_socket(
+                bind_address='localhost',
+                port=port,
+                listen=False,
+        ) as (unused_host, bound_port):
+            assert bound_port == port
     except OSError as e:
         assert 'Address already in use' in str(e)
         return False
     else:
         return True
-    finally:
-        another_socket.close()
 
 
 class TestChannelArgument(AioTestBase):
