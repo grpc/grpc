@@ -13,7 +13,6 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
-import time
 from typing import Any, Optional, Sequence, Text, Tuple
 
 import grpc
@@ -225,50 +224,54 @@ class Channel:
         self._channel = cygrpc.AioChannel(_common.encode(target), options,
                                           credentials)
 
-    def check_connectivity_state(self, try_to_connect: bool = False
-                                ) -> grpc.ChannelConnectivity:
+    def get_state(self,
+                  try_to_connect: bool = False) -> grpc.ChannelConnectivity:
         """Check the connectivity state of a channel.
 
         This is an EXPERIMENTAL API.
 
+        It's the nature of connectivity states to change. The returned
+        connectivity state might become obsolete soon. Combining
+        "Channel.wait_for_state_change" we guarantee the convergence of
+        connectivity state between application and ground truth.
+
         Args:
-          try_to_connect: a bool indicate whether the Channel should try to connect to peer or not.
+          try_to_connect: a bool indicate whether the Channel should try to
+            connect to peer or not.
 
         Returns:
           A ChannelConnectivity object.
         """
         result = self._channel.check_connectivity_state(try_to_connect)
-        return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
+        return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY.get(
+            result)
 
-    async def watch_connectivity_state(
+    async def wait_for_state_change(
             self,
             last_observed_state: grpc.ChannelConnectivity,
-            timeout_seconds: Optional[float] = None,
-    ) -> Optional[grpc.ChannelConnectivity]:
-        """Watch for a change in connectivity state.
+    ) -> None:
+        """Wait for a change in connectivity state.
 
         This is an EXPERIMENTAL API.
 
-        Once the channel connectivity state is different from
-        last_observed_state, the function will return the new connectivity
-        state. If deadline expires BEFORE the state is changed, None will be
-        returned.
+        The function blocks until there is a change in the channel connectivity
+        state from the "last_observed_state". If the state is already
+        different, this function will return immediately.
+
+        There is an inherent race between the invocation of
+        "Channel.wait_for_state_change" and "Channel.get_state". The state can
+        arbitrary times during the race, so there is no way to observe every
+        state transition.
+
+        If there is a need to put a timeout for this function, please refer to
+        "asyncio.wait_for".
 
         Args:
-          try_to_connect: a bool indicate whether the Channel should try to connect to peer or not.
-
-        Returns:
-          A ChannelConnectivity object or None.
+          last_observed_state: A grpc.ChannelConnectivity object representing
+            the last known state.
         """
-        deadline = time.time(
-        ) + timeout_seconds if timeout_seconds is not None else None
-        result = await self._channel.watch_connectivity_state(
-            last_observed_state.value[0], deadline)
-        if result is None:
-            return None
-        else:
-            return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
-                result]
+        assert await self._channel.watch_connectivity_state(
+            last_observed_state.value[0], None)
 
     def unary_unary(
             self,

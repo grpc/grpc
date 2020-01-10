@@ -13,10 +13,14 @@
 # limitations under the License.
 
 
-class _WatchConnectivityFailed(Exception): pass
+class _WatchConnectivityFailed(Exception):
+    """Dedicated exception class for watch connectivity failed.
+
+    It might be failed due to deadline exceeded, or the channel is closing.
+    """
 cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailureHandler(
     'watch_connectivity_state',
-    'Maybe timed out.',
+    'Timed out or channel closed.',
     _WatchConnectivityFailed)
 
 
@@ -38,6 +42,7 @@ cdef class AioChannel:
                 channel_args.c_args(),
                 NULL)
         self._loop = asyncio.get_event_loop()
+        self._status = AIO_CHANNEL_STATUS_READY
 
     def __repr__(self):
         class_name = self.__class__.__name__
@@ -45,6 +50,7 @@ cdef class AioChannel:
         return f"<{class_name} {id_}>"
 
     def check_connectivity_state(self, bint try_to_connect):
+        """A Cython wrapper for Core's check connectivity state API."""
         return grpc_channel_check_connectivity_state(
             self.channel,
             try_to_connect,
@@ -53,12 +59,21 @@ cdef class AioChannel:
     async def watch_connectivity_state(self,
                                        grpc_connectivity_state last_observed_state,
                                        object deadline):
+        """Watch for one connectivity state change.
+
+        Keeps mirroring the behavior from Core, so we can easily switch to
+        other design of API if necessary.
+        """
+        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
+            # TODO(lidiz) switch to UsageError
+            raise RuntimeError('Channel is closed.')
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
 
         cdef object future = self._loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             _WATCH_CONNECTIVITY_FAILURE_HANDLER)
+        cpython.Py_INCREF(wrapper)
         grpc_channel_watch_connectivity_state(
             self.channel,
             last_observed_state,
@@ -66,15 +81,24 @@ cdef class AioChannel:
             self.cq.c_ptr(),
             wrapper.c_functor())
 
+        # NOTE(lidiz) The callback will be invoked after the channel is closed
+        # with a failure state. We need to keep wrapper alive until then, or we
+        # will observe a segfault.
+        def dealloc_wrapper(_):
+            cpython.Py_DECREF(wrapper)
+        future.add_done_callback(dealloc_wrapper)
+
         try:
             await future
         except _WatchConnectivityFailed:
-            return None
+            return False
         else:
-            return self.check_connectivity_state(False)
+            return True
+            
 
     def close(self):
         grpc_channel_destroy(self.channel)
+        self._status = AIO_CHANNEL_STATUS_DESTROYED
 
     def call(self,
              bytes method,
@@ -85,5 +109,8 @@ cdef class AioChannel:
         Returns:
           The _AioCall object.
         """
+        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
+            # TODO(lidiz) switch to UsageError
+            raise RuntimeError('Channel is closed.')
         cdef _AioCall call = _AioCall(self, deadline, method, credentials)
         return call
