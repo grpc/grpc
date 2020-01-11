@@ -240,8 +240,7 @@ class Channel:
         Returns: A ChannelConnectivity object.
         """
         result = self._channel.check_connectivity_state(try_to_connect)
-        return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY.get(
-            result)
+        return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
 
     async def wait_for_state_change(
             self,
