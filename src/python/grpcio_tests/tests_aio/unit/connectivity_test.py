@@ -100,9 +100,9 @@ class TestConnectivityState(AioTestBase):
         self.assertEqual(grpc.ChannelConnectivity.SHUTDOWN,
                          channel.get_state(False))
 
-        # It can raise Exception since it is an usage error, but it should not
+        # It can raise exceptions since it is an usage error, but it should not
         # segfault or abort.
-        with self.assertRaises(Exception):
+        with self.assertRaises(RuntimeError):
             await channel.wait_for_state_change(
                 grpc.ChannelConnectivity.SHUTDOWN)
 

@@ -230,17 +230,14 @@ class Channel:
 
         This is an EXPERIMENTAL API.
 
-        It's the nature of connectivity states to change. The returned
-        connectivity state might become obsolete soon. Combining
-        "Channel.wait_for_state_change" we guarantee the convergence of
-        connectivity state between application and ground truth.
+        If the channel reaches a stable connectivity state, it is guaranteed
+        that the return value of this function will eventually converge to that
+        state.
 
-        Args:
-          try_to_connect: a bool indicate whether the Channel should try to
-            connect to peer or not.
+        Args: try_to_connect: a bool indicate whether the Channel should try to
+          connect to peer or not.
 
-        Returns:
-          A ChannelConnectivity object.
+        Returns: A ChannelConnectivity object.
         """
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY.get(
@@ -260,8 +257,8 @@ class Channel:
 
         There is an inherent race between the invocation of
         "Channel.wait_for_state_change" and "Channel.get_state". The state can
-        arbitrary times during the race, so there is no way to observe every
-        state transition.
+        change arbitrary times during the race, so there is no way to observe
+        every state transition.
 
         If there is a need to put a timeout for this function, please refer to
         "asyncio.wait_for".
