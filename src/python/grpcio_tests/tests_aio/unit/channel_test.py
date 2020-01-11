@@ -91,7 +91,7 @@ class TestChannel(AioTestBase):
             )
 
             call = hi(messages_pb2.SimpleRequest(),
-                      timeout=UNARY_CALL_WITH_SLEEP_VALUE * 2)
+                      timeout=UNARY_CALL_WITH_SLEEP_VALUE * 5)
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
     async def test_unary_stream(self):

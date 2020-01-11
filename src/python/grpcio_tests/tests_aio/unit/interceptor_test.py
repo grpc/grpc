@@ -392,16 +392,14 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
     async def test_cancel_before_rpc(self):
 
         interceptor_reached = asyncio.Event()
+        wait_for_ever = self.loop.create_future()
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):
 
             async def intercept_unary_unary(self, continuation,
                                             client_call_details, request):
                 interceptor_reached.set()
-                await asyncio.sleep(0)
-
-                # This line should never be reached
-                raise Exception()
+                await wait_for_ever
 
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
@@ -433,6 +431,7 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
     async def test_cancel_after_rpc(self):
 
         interceptor_reached = asyncio.Event()
+        wait_for_ever = self.loop.create_future()
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):
 
@@ -441,10 +440,7 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 call = await continuation(client_call_details, request)
                 await call
                 interceptor_reached.set()
-                await asyncio.sleep(0)
-
-                # This line should never be reached
-                raise Exception()
+                await wait_for_ever
 
         async with aio.insecure_channel(self._server_target,
                                         interceptors=[Interceptor()
