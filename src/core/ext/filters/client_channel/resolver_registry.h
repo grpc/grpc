@@ -61,15 +61,17 @@ class ResolverRegistry {
   /// prepends default_prefix to target and tries again.
   /// If a resolver factory is found, uses it to instantiate a resolver and
   /// returns it; otherwise, returns nullptr.
-  /// \a args, \a pollset_set, and \a combiner are passed to the factory's
+  /// \a args, \a pollset_set, and \a logical_thread are passed to the factory's
   /// \a CreateResolver() method.
   /// \a args are the channel args to be included in resolver results.
   /// \a pollset_set is used to drive I/O in the name resolution process.
-  /// \a combiner is the combiner under which all resolver calls will be run.
-  /// \a result_handler is used to return results from the resolver.
+  /// \a logical_thread is the logical_thread under which all resolver calls
+  /// will be run. \a result_handler is used to return results from the
+  /// resolver.
   static OrphanablePtr<Resolver> CreateResolver(
       const char* target, const grpc_channel_args* args,
-      grpc_pollset_set* pollset_set, RefCountedPtr<LogicalThread> combiner,
+      grpc_pollset_set* pollset_set,
+      RefCountedPtr<LogicalThread> logical_thread,
       std::unique_ptr<Resolver::ResultHandler> result_handler);
 
   /// Returns the default authority to pass from a client for \a target.

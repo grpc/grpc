@@ -68,7 +68,7 @@ void LogicalThreadImpl::Orphan() {
     gpr_log(GPR_INFO, "LogicalThread::Orphan() %p", this);
   }
   size_t prev_size = size_.FetchSub(1);
-  if (prev_size == 0) {
+  if (prev_size == 1) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
       gpr_log(GPR_INFO, "  Destroying");
     }

@@ -907,7 +907,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         initial_state,
         grpc_core::UniquePtr<char>(
             gpr_strdup(health_check_service_name_.get())),
-        OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface>(
+        RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
   }
 
@@ -957,7 +957,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           replacement->last_seen_state(),
           grpc_core::UniquePtr<char>(
               gpr_strdup(health_check_service_name.get())),
-          OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface>(
+          RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
               replacement));
     }
     // Save the new health check service name.
@@ -1006,8 +1006,6 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
     ~WatcherWrapper() { parent_.reset(DEBUG_LOCATION, "WatcherWrapper"); }
 
-    void Orphan() override { Unref(); }
-
     void OnConnectivityStateChange(
         grpc_connectivity_state new_state,
         RefCountedPtr<ConnectedSubchannel> connected_subchannel) override {
@@ -1048,18 +1046,9 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           : parent_(std::move(parent)),
             state_(new_state),
             connected_subchannel_(std::move(connected_subchannel)) {
-        ExecCtx::Run(DEBUG_LOCATION,
-                     GRPC_CLOSURE_CREATE(
-                         [](void* arg, grpc_error* /*error*/) {
-                           Updater* self = static_cast<Updater*>(arg);
-                           self->parent_->parent_->chand_->logical_thread_->Run(
-                               [self]() {
-                                 self->ApplyUpdateInControlPlaneLogicalThread();
-                               },
-                               DEBUG_LOCATION);
-                         },
-                         this, nullptr),
-                     GRPC_ERROR_NONE);
+        parent_->parent_->chand_->logical_thread_->Run(
+            [this]() { ApplyUpdateInControlPlaneLogicalThread(); },
+            DEBUG_LOCATION);
       }
 
      private:

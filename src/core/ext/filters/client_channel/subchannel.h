@@ -176,7 +176,7 @@ class SubchannelCall {
 class Subchannel {
  public:
   class ConnectivityStateWatcherInterface
-      : public InternallyRefCounted<ConnectivityStateWatcherInterface> {
+      : public RefCounted<ConnectivityStateWatcherInterface> {
    public:
     virtual ~ConnectivityStateWatcherInterface() = default;
 
@@ -243,7 +243,7 @@ class Subchannel {
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
       grpc_core::UniquePtr<char> health_check_service_name,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+      RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
@@ -280,7 +280,7 @@ class Subchannel {
     ~ConnectivityStateWatcherList() { Clear(); }
 
     void AddWatcherLocked(
-        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+        RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
@@ -294,7 +294,7 @@ class Subchannel {
     // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
     // be a set instead of a map.
     std::map<ConnectivityStateWatcherInterface*,
-             OrphanablePtr<ConnectivityStateWatcherInterface>>
+             RefCountedPtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 
@@ -312,7 +312,7 @@ class Subchannel {
     void AddWatcherLocked(
         Subchannel* subchannel, grpc_connectivity_state initial_state,
         grpc_core::UniquePtr<char> health_check_service_name,
-        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+        RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const char* health_check_service_name,
                              ConnectivityStateWatcherInterface* watcher);
 
