@@ -18,7 +18,7 @@ import socket
 import errno
 
 _DEFAULT_SOCK_OPTION = socket.SO_REUSEADDR if os.name == 'nt' else socket.SO_REUSEPORT
-_UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE, errno.ENOSR)
+_UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE,)
 
 
 def get_socket(bind_address='localhost',
