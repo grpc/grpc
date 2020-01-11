@@ -94,7 +94,6 @@ cdef class AioChannel:
             return False
         else:
             return True
-            
 
     def close(self):
         grpc_channel_destroy(self.channel)
