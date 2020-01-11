@@ -25,6 +25,7 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -32,6 +33,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 /* Minimum and maximum protocol accepted versions. */
@@ -70,7 +72,10 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
-  grpc_stream_ref_init(rc, ir, cb, cb_arg)
+  do {                                                    \
+    grpc_stream_ref_init(rc, ir, cb, cb_arg);             \
+    (void)(objtype);                                      \
+  } while (0)
 #endif
 
 #ifndef NDEBUG
@@ -245,6 +250,18 @@ struct grpc_transport_stream_op_batch_payload {
     // The batch's on_complete will not be called until after the byte
     // stream is orphaned.
     grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message;
+    // Set by the transport if the stream has been closed for writes. If this
+    // is set and send message op is present, we set the operation to be a
+    // failure without sending a cancel OP down the stack. This is so that the
+    // status of the call does not get overwritten by the Cancel OP, which would
+    // be especially problematic if we had received a valid status from the
+    // server.
+    // For send_initial_metadata, it is fine for the status to be overwritten
+    // because at that point, the client will not have received a status.
+    // For send_trailing_metadata, we might overwrite the status if we have
+    // non-zero metadata to send. This is fine because the API does not allow
+    // the client to send trailing metadata.
+    bool stream_write_closed = false;
   } send_message;
 
   struct {
@@ -279,7 +296,7 @@ struct grpc_transport_stream_op_batch_payload {
   struct {
     grpc_metadata_batch* recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats* collect_stats = nullptr;
-    /** Should be enqueued when initial metadata is ready to be processed. */
+    /** Should be enqueued when trailing metadata is ready to be processed. */
     grpc_closure* recv_trailing_metadata_ready = nullptr;
   } recv_trailing_metadata;
 
@@ -308,8 +325,11 @@ typedef struct grpc_transport_op {
   /** Called when processing of this op is done. */
   grpc_closure* on_consumed = nullptr;
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
-  grpc_closure* on_connectivity_state_change = nullptr;
-  grpc_connectivity_state* connectivity_state = nullptr;
+  grpc_core::OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>
+      start_connectivity_watch;
+  grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
+  grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
+      nullptr;
   /** should the transport be disconnected
    * Error contract: the transport that gets this op must cause
    *                 disconnect_with_error to be unref'ed after processing it */

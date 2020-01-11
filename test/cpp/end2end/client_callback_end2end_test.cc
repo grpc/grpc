@@ -32,6 +32,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -168,7 +169,10 @@ class ClientCallbackEnd2endTest
 
   void TearDown() override {
     if (is_server_started_) {
-      server_->Shutdown();
+      // Although we would normally do an explicit shutdown, the server
+      // should also work correctly with just a destructor call. The regular
+      // end2end test uses explicit shutdown, so let this one just do reset.
+      server_.reset();
     }
     if (picked_port_ > 0) {
       grpc_recycle_unused_port(picked_port_);
@@ -325,8 +329,8 @@ class ClientCallbackEnd2endTest
           };
           activate_();
         }
-        void OnWriteDone(bool ok) override { StartWritesDone(); }
-        void OnReadDone(bool ok) override {
+        void OnWriteDone(bool /*ok*/) override { StartWritesDone(); }
+        void OnReadDone(bool /*ok*/) override {
           EchoResponse response;
           EXPECT_TRUE(ParseFromByteBuffer(&recv_buf_, &response));
           EXPECT_EQ(request_.message(), response.message());
@@ -372,6 +376,57 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpc) {
   MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcs(1, false);
+}
+
+TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  std::mutex mu1, mu2, mu3;
+  std::condition_variable cv;
+  bool done = false;
+  EchoRequest request1, request2, request3;
+  request1.set_message("Hello locked world1.");
+  request2.set_message("Hello locked world2.");
+  request3.set_message("Hello locked world3.");
+  EchoResponse response1, response2, response3;
+  ClientContext cli_ctx1, cli_ctx2, cli_ctx3;
+  {
+    std::lock_guard<std::mutex> l(mu1);
+    stub_->experimental_async()->Echo(
+        &cli_ctx1, &request1, &response1,
+        [this, &mu1, &mu2, &mu3, &cv, &done, &request1, &request2, &request3,
+         &response1, &response2, &response3, &cli_ctx2, &cli_ctx3](Status s1) {
+          std::lock_guard<std::mutex> l1(mu1);
+          EXPECT_TRUE(s1.ok());
+          EXPECT_EQ(request1.message(), response1.message());
+          // start the second level of nesting
+          std::unique_lock<std::mutex> l2(mu2);
+          this->stub_->experimental_async()->Echo(
+              &cli_ctx2, &request2, &response2,
+              [this, &mu2, &mu3, &cv, &done, &request2, &request3, &response2,
+               &response3, &cli_ctx3](Status s2) {
+                std::lock_guard<std::mutex> l2(mu2);
+                EXPECT_TRUE(s2.ok());
+                EXPECT_EQ(request2.message(), response2.message());
+                // start the third level of nesting
+                std::lock_guard<std::mutex> l3(mu3);
+                stub_->experimental_async()->Echo(
+                    &cli_ctx3, &request3, &response3,
+                    [&mu3, &cv, &done, &request3, &response3](Status s3) {
+                      std::lock_guard<std::mutex> l(mu3);
+                      EXPECT_TRUE(s3.ok());
+                      EXPECT_EQ(request3.message(), response3.message());
+                      done = true;
+                      cv.notify_all();
+                    });
+              });
+        });
+  }
+
+  std::unique_lock<std::mutex> l(mu3);
+  while (!done) {
+    cv.wait(l);
+  }
 }
 
 TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
@@ -776,6 +831,72 @@ TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
   };
 
   UnaryClient test{stub_.get()};
+  test.Await();
+  // Make sure that the server interceptors were not notified of a cancel
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
+TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
+  class UnaryClient : public grpc::experimental::ClientUnaryReactor {
+   public:
+    UnaryClient(grpc::GenericStub* stub, const grpc::string& method_name) {
+      cli_ctx_.AddMetadata("key1", "val1");
+      cli_ctx_.AddMetadata("key2", "val2");
+      request_.mutable_param()->set_echo_metadata_initially(true);
+      request_.set_message("Hello metadata");
+      send_buf_ = SerializeToByteBuffer(&request_);
+
+      stub->experimental().PrepareUnaryCall(&cli_ctx_, method_name,
+                                            send_buf_.get(), &recv_buf_, this);
+      StartCall();
+    }
+    void OnReadInitialMetadataDone(bool ok) override {
+      EXPECT_TRUE(ok);
+      EXPECT_EQ(1u, cli_ctx_.GetServerInitialMetadata().count("key1"));
+      EXPECT_EQ(
+          "val1",
+          ToString(cli_ctx_.GetServerInitialMetadata().find("key1")->second));
+      EXPECT_EQ(1u, cli_ctx_.GetServerInitialMetadata().count("key2"));
+      EXPECT_EQ(
+          "val2",
+          ToString(cli_ctx_.GetServerInitialMetadata().find("key2")->second));
+      initial_metadata_done_ = true;
+    }
+    void OnDone(const Status& s) override {
+      EXPECT_TRUE(initial_metadata_done_);
+      EXPECT_EQ(0u, cli_ctx_.GetServerTrailingMetadata().size());
+      EXPECT_TRUE(s.ok());
+      EchoResponse response;
+      EXPECT_TRUE(ParseFromByteBuffer(&recv_buf_, &response));
+      EXPECT_EQ(request_.message(), response.message());
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      cv_.notify_one();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        cv_.wait(l);
+      }
+    }
+
+   private:
+    EchoRequest request_;
+    std::unique_ptr<ByteBuffer> send_buf_;
+    ByteBuffer recv_buf_;
+    ClientContext cli_ctx_;
+    std::mutex mu_;
+    std::condition_variable cv_;
+    bool done_{false};
+    bool initial_metadata_done_{false};
+  };
+
+  UnaryClient test{generic_stub_.get(), kMethodName};
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
@@ -1285,6 +1406,11 @@ TEST_P(ClientCallbackEnd2endTest,
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  gpr_setenv("grpc_cfstream", "0");
+#endif
+
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types{
       GetCredentialsProvider()->GetSecureCredentialsTypeList()};
@@ -1318,15 +1444,18 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
 
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

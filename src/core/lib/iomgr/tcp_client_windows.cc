@@ -117,7 +117,7 @@ static void on_connect(void* acp, grpc_error* error) {
   async_connect_unlock_and_cleanup(ac, socket);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
 /* Tries to issue one async connection, then schedules both an IOCP
@@ -225,7 +225,7 @@ failure:
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
-  GRPC_CLOSURE_SCHED(on_done, final_error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, final_error);
 }
 
 grpc_tcp_client_vtable grpc_windows_tcp_client_vtable = {tcp_connect};

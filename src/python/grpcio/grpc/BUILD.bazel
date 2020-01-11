@@ -1,10 +1,12 @@
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-
 package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
+    data = [
+        "//:grpc",
+    ],
+    imports = ["../"],
     deps = [
         ":utilities",
         ":auth",
@@ -16,15 +18,11 @@ py_library(
         "//src/python/grpcio/grpc/_cython:cygrpc",
         "//src/python/grpcio/grpc/experimental",
         "//src/python/grpcio/grpc/framework",
-        requirement('six'),
+        "@six_archive//:six",
     ] + select({
-        "//conditions:default": [requirement('enum34'),],
+        "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],
     }),
-    data = [
-        "//:grpc",
-    ],
-    imports = ["../",],
 )
 
 py_library(
@@ -42,8 +40,8 @@ py_library(
     srcs = ["_channel.py"],
     deps = [
         ":common",
-        ":grpcio_metadata",
         ":compression",
+        ":grpcio_metadata",
     ],
 )
 
@@ -67,7 +65,7 @@ py_library(
     srcs = ["_plugin_wrapping.py"],
     deps = [
         ":common",
-    ]
+    ],
 )
 
 py_library(
@@ -87,4 +85,3 @@ py_library(
         ":common",
     ],
 )
-

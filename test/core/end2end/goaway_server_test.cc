@@ -47,9 +47,10 @@ static int g_resolve_port = -1;
 static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
-    grpc_combiner* combiner);
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
+    char** service_config_json, int query_timeout_ms,
+    grpc_core::Combiner* combiner);
 
 static void (*iomgr_cancel_ares_request_locked)(grpc_ares_request* request);
 
@@ -88,7 +89,7 @@ static void my_resolve_address(const char* addr, const char* default_port,
     (*addrs)->addrs[0].len = static_cast<socklen_t>(sizeof(*sa));
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
 static grpc_error* my_blocking_resolve_address(
@@ -104,13 +105,14 @@ static grpc_address_resolver_vtable test_resolver = {
 static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
-    grpc_combiner* combiner) {
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
+    char** service_config_json, int query_timeout_ms,
+    grpc_core::Combiner* combiner) {
   if (0 != strcmp(addr, "test")) {
     return iomgr_dns_lookup_ares_locked(
         dns_server, addr, default_port, interested_parties, on_done, addresses,
-        check_grpclb, service_config_json, query_timeout_ms, combiner);
+        balancer_addresses, service_config_json, query_timeout_ms, combiner);
   }
 
   grpc_error* error = GRPC_ERROR_NONE;
@@ -127,7 +129,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     (*addresses)->emplace_back(&sa, sizeof(sa), nullptr);
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
   return nullptr;
 }
 
@@ -185,13 +187,23 @@ int main(int argc, char** argv) {
   char* addr;
 
   grpc_channel_args client_args;
-  grpc_arg arg_array[1];
+  grpc_arg arg_array[2];
   arg_array[0].type = GRPC_ARG_INTEGER;
   arg_array[0].key =
       const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
   arg_array[0].value.integer = 1000;
+  /* When this test brings down server1 and then brings up server2,
+   * the targetted server port number changes, and the client channel
+   * needs to re-resolve to pick this up. This test requires that
+   * happen within 10 seconds, but gRPC's DNS resolvers rate limit
+   * resolution attempts to at most once every 30 seconds by default.
+   * So we tweak it for this test. */
+  arg_array[1].type = GRPC_ARG_INTEGER;
+  arg_array[1].key =
+      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
+  arg_array[1].value.integer = 1000;
   client_args.args = arg_array;
-  client_args.num_args = 1;
+  client_args.num_args = 2;
 
   /* create a channel that picks first amongst the servers */
   grpc_channel* chan =

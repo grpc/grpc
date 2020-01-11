@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <arpa/inet.h>
 #include <openssl/err.h>
@@ -229,6 +229,8 @@ static int verify_callback(const char* target_host, const char* target_pem,
 static void verify_destruct(void* userdata) { destruct_userdata = userdata; }
 
 int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment env(argc, argv);
+
   int userdata = 42;
   verify_peer_options verify_options;
 
@@ -268,8 +270,8 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_TCP */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_TCP */

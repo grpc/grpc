@@ -19,14 +19,16 @@ py_library(
     testonly = 1,
     srcs = ["wait_for_ready_example.py"],
     deps = [
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
     ],
 )
 
 py_test(
     name = "test/_wait_for_ready_example_test",
-    srcs = ["test/_wait_for_ready_example_test.py"],
-    deps = [":wait_for_ready_example",],
     size = "small",
+    srcs = ["test/_wait_for_ready_example_test.py"],
+    python_version = "PY3",
+    deps = [":wait_for_ready_example"],
 )

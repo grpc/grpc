@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <cstring>
 
-#include "src/core/lib/gprpp/abstract.h"
 #include "test/core/util/test_config.h"
 
 class A {
@@ -35,7 +34,6 @@ class A {
   virtual ~A() {}
   virtual const char* foo() { return "A_foo"; }
   virtual const char* bar() { return "A_bar"; }
-  GRPC_ABSTRACT_BASE_CLASS
 };
 
 class B : public A {

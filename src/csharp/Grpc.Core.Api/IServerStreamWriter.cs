@@ -1,4 +1,4 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
 
 // Copyright 2015 gRPC authors.
 //
@@ -27,7 +27,7 @@ namespace Grpc.Core
     /// <summary>
     /// A writable stream of messages that is used in server-side handlers.
     /// </summary>
-    public interface IServerStreamWriter<T> : IAsyncStreamWriter<T>
+    public interface IServerStreamWriter<in T> : IAsyncStreamWriter<T>
     {
         // TODO(jtattermusch): consider just using IAsyncStreamWriter instead of this interface.
     }

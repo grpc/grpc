@@ -2,7 +2,7 @@
 # Uses OWNERS files in different modules throughout the
 # repository as the source of truth for module ownership.
 /**/OWNERS @markdroth @nicolasnoble @a11r
-/bazel/** @nicolasnoble @jtattermusch @a11r @vjpai
+/bazel/** @nicolasnoble @jtattermusch @veblush @gnossen
 /cmake/** @jtattermusch @nicolasnoble @apolcyn
-/src/core/ext/filters/client_channel/** @markdroth @apolcyn @AspirinSJL
+/src/core/ext/filters/client_channel/** @markdroth
 /tools/dockerfile/** @jtattermusch @apolcyn @nicolasnoble

@@ -23,6 +23,8 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/surface/channel_stack_type.h"
+
 // Channel args are intentionally immutable, to avoid the need for locking.
 
 /** Copy the arguments in \a src into a new instance */
@@ -73,16 +75,38 @@ typedef struct grpc_integer_options {
   int max_value;
 } grpc_integer_options;
 
-/** Returns the value of \a arg, subject to the contraints in \a options. */
+/** Returns the value of \a arg, subject to the constraints in \a options. */
 int grpc_channel_arg_get_integer(const grpc_arg* arg,
                                  const grpc_integer_options options);
+/** Similar to the above, but needs to find the arg from \a args by the name
+ * first. */
+int grpc_channel_args_find_integer(const grpc_channel_args* args,
+                                   const char* name,
+                                   const grpc_integer_options options);
 
 /** Returns the value of \a arg if \a arg is of type GRPC_ARG_STRING.
     Otherwise, emits a warning log, and returns nullptr.
     If arg is nullptr, returns nullptr, and does not emit a warning. */
 char* grpc_channel_arg_get_string(const grpc_arg* arg);
-
+/** Similar to the above, but needs to find the arg from \a args by the name
+ * first. */
+char* grpc_channel_args_find_string(const grpc_channel_args* args,
+                                    const char* name);
+/** If \a arg is of type GRPC_ARG_INTEGER, returns true if it's non-zero.
+ * Returns \a default_value if \a arg is of other types. */
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
+/** Similar to the above, but needs to find the arg from \a args by the name
+ * first. */
+bool grpc_channel_args_find_bool(const grpc_channel_args* args,
+                                 const char* name, bool default_value);
+
+template <typename T>
+T* grpc_channel_args_find_pointer(const grpc_channel_args* args,
+                                  const char* name) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
+  return static_cast<T*>(arg->value.pointer.p);
+}
 
 // Helpers for creating channel args.
 grpc_arg grpc_channel_arg_string_create(char* name, char* value);
@@ -93,5 +117,17 @@ grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
 // Returns a string representing channel args in human-readable form.
 // Callers takes ownership of result.
 char* grpc_channel_args_string(const grpc_channel_args* args);
+
+// Takes ownership of the old_args
+typedef grpc_channel_args* (*grpc_channel_args_client_channel_creation_mutator)(
+    const char* target, grpc_channel_args* old_args,
+    grpc_channel_stack_type type);
+
+// Should be called only once globaly before grpc is init'ed.
+void grpc_channel_args_set_client_channel_creation_mutator(
+    grpc_channel_args_client_channel_creation_mutator cb);
+// This will be called at the creation of each channel.
+grpc_channel_args_client_channel_creation_mutator
+grpc_channel_args_get_client_channel_creation_mutator();
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */

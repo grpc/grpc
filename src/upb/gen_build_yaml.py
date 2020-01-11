@@ -16,51 +16,42 @@
 
 # TODO: This should ideally be in upb submodule to avoid hardcoding this here.
 
+from __future__ import print_function
 import re
 import os
 import sys
 import yaml
 
-srcs = [
-  "third_party/upb/google/protobuf/descriptor.upb.c",
-  "third_party/upb/upb/decode.c",
-  "third_party/upb/upb/def.c",
-  "third_party/upb/upb/encode.c",
-  "third_party/upb/upb/handlers.c",
-  "third_party/upb/upb/msg.c",
-  "third_party/upb/upb/msgfactory.c",
-  "third_party/upb/upb/sink.c",
-  "third_party/upb/upb/table.c",
-  "third_party/upb/upb/upb.c",
-]
-
-hdrs = [
-  "third_party/upb/google/protobuf/descriptor.upb.h",
-  "third_party/upb/upb/decode.h",
-  "third_party/upb/upb/def.h",
-  "third_party/upb/upb/encode.h",
-  "third_party/upb/upb/handlers.h",
-  "third_party/upb/upb/msg.h",
-  "third_party/upb/upb/msgfactory.h",
-  "third_party/upb/upb/sink.h",
-  "third_party/upb/upb/upb.h",
-]
-
-os.chdir(os.path.dirname(sys.argv[0])+'/../..')
-
 out = {}
 
 try:
-  out['libs'] = [{
-      'name': 'upb',
-      'defaults': 'upb',
-      'build': 'private',
-      'language': 'c',
-      'secure': 'no',
-      'src': srcs,
-      'headers': hdrs,
-  }]
+    out['libs'] = [{
+        'name':
+            'upb',
+        'build':
+            'all',
+        'language':
+            'c',
+        'src': [
+            "third_party/upb/upb/decode.c",
+            "third_party/upb/upb/encode.c",
+            "third_party/upb/upb/msg.c",
+            "third_party/upb/upb/port.c",
+            "third_party/upb/upb/table.c",
+            "third_party/upb/upb/upb.c",
+        ],
+        'headers': [
+            "third_party/upb/upb/decode.h",
+            "third_party/upb/upb/encode.h",
+            "third_party/upb/upb/generated_util.h",
+            "third_party/upb/upb/msg.h",
+            "third_party/upb/upb/port_def.inc",
+            "third_party/upb/upb/port_undef.inc",
+            "third_party/upb/upb/table.int.h",
+            "third_party/upb/upb/upb.h",
+        ],
+    }]
 except:
-  pass
+    pass
 
-print yaml.dump(out)
+print(yaml.dump(out))

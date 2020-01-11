@@ -18,14 +18,12 @@
 
 #import <Foundation/Foundation.h>
 
-@class GRPCProtoCall;
+#import <GRPCClient/GRPCCallOptions.h>
+#import "ProtoRPC.h"
+
 @protocol GRXWriteable;
 @class GRXWriter;
 @class GRPCCallOptions;
-@class GRPCProtoCall;
-@class GRPCUnaryProtoCall;
-@class GRPCStreamingProtoCall;
-@protocol GRPCProtoResponseHandler;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
@@ -38,15 +36,6 @@ __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoServ
     : (nonnull NSString *)packageName serviceName : (nonnull NSString *)serviceName callOptions
     : (nullable GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
 
-- (instancetype)initWithHost:(NSString *)host
-                 packageName:(NSString *)packageName
-                 serviceName:(NSString *)serviceName;
-
-- (GRPCProtoCall *)RPCToMethod:(NSString *)method
-                requestsWriter:(GRXWriter *)requestsWriter
-                 responseClass:(Class)responseClass
-            responsesWriteable:(id<GRXWriteable>)responsesWriteable;
-
 - (nullable GRPCUnaryProtoCall *)RPCToMethod:(nonnull NSString *)method
                                      message:(nonnull id)message
                              responseHandler:(nonnull id<GRPCProtoResponseHandler>)handler
@@ -57,6 +46,18 @@ __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoServ
                                  responseHandler:(nonnull id<GRPCProtoResponseHandler>)handler
                                      callOptions:(nullable GRPCCallOptions *)callOptions
                                    responseClass:(nonnull Class)responseClass;
+
+@end
+
+    @interface ProtoService(Legacy)
+
+    - (instancetype)initWithHost : (NSString *)host packageName
+    : (NSString *)packageName serviceName : (NSString *)serviceName;
+
+- (GRPCProtoCall *)RPCToMethod:(NSString *)method
+                requestsWriter:(GRXWriter *)requestsWriter
+                 responseClass:(Class)responseClass
+            responsesWriteable:(id<GRXWriteable>)responsesWriteable;
 
 @end
 

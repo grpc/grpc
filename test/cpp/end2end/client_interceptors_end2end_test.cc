@@ -190,8 +190,10 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
                                           EXPECT_EQ(resp_.message(), "Hello");
                                           methods->Hijack();
                                         });
-      // There isn't going to be any other interesting operation in this batch,
-      // so it is fine to return
+      // This is a Unary RPC and we have got nothing interesting to do in the
+      // PRE_SEND_CLOSE interception hook point for this interceptor, so let's
+      // return here. (We do not want to call methods->Proceed(). When the new
+      // RPC returns, we will call methods->Hijack() instead.)
       return;
     }
     if (methods->QueryInterceptionHookPoint(
@@ -505,7 +507,7 @@ class BidiStreamingRpcHijackingInterceptorFactory
 // single RPC should be made on the channel before calling the Verify methods.
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ClientRpcInfo* info) {
+  LoggingInterceptor(experimental::ClientRpcInfo* /*info*/) {
     pre_send_initial_metadata_ = false;
     pre_send_message_count_ = 0;
     pre_send_close_ = false;

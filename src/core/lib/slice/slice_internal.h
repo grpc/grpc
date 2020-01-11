@@ -30,12 +30,12 @@
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 // Interned slices have specific fast-path operations for hashing. To inline
 // these operations, we need to forward declare them here.
 extern uint32_t grpc_static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
-extern uint32_t g_hash_seed;
 
 // grpc_slice_refcount : A reference count for grpc_slice.
 //
@@ -95,6 +95,8 @@ extern uint32_t g_hash_seed;
 // In total, this saves us roughly 1-2% latency for unary calls, with smaller
 // calls benefitting. The effect is present, but not as useful, for larger calls
 // where the cost of sending the data dominates.
+// TODO(arjunroy): Investigate if this can be removed with strongly typed
+// grpc_slices.
 struct grpc_slice_refcount {
  public:
   enum class Type {
@@ -171,6 +173,17 @@ struct grpc_slice_refcount {
 
 namespace grpc_core {
 
+struct StaticSliceRefcount {
+  static grpc_slice_refcount kStaticSubRefcount;
+
+  StaticSliceRefcount(uint32_t index)
+      : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC),
+        index(index) {}
+
+  grpc_slice_refcount base;
+  const uint32_t index;
+};
+
 extern grpc_slice_refcount kNoopRefcount;
 
 struct InternedSliceRefcount {
@@ -200,23 +213,39 @@ struct InternedSliceRefcount {
 
 }  // namespace grpc_core
 
+inline size_t grpc_refcounted_slice_length(const grpc_slice& slice) {
+  GPR_DEBUG_ASSERT(slice.refcount != nullptr);
+  return slice.data.refcounted.length;
+}
+
+inline const uint8_t* grpc_refcounted_slice_data(const grpc_slice& slice) {
+  GPR_DEBUG_ASSERT(slice.refcount != nullptr);
+  return slice.data.refcounted.bytes;
+}
+
 inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
+  GPR_DEBUG_ASSERT(a.refcount != nullptr);
+  GPR_DEBUG_ASSERT(a.refcount == this);
   switch (ref_type_) {
     case Type::STATIC:
-      return GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b);
+      GPR_DEBUG_ASSERT(
+          (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b)) ==
+          (a.refcount == b.refcount));
     case Type::INTERNED:
       return a.refcount == b.refcount;
     case Type::NOP:
     case Type::REGULAR:
       break;
   }
-  if (GRPC_SLICE_LENGTH(a) != GRPC_SLICE_LENGTH(b)) return false;
-  if (GRPC_SLICE_LENGTH(a) == 0) return true;
-  return 0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
-                     GRPC_SLICE_LENGTH(a));
+  if (grpc_refcounted_slice_length(a) != GRPC_SLICE_LENGTH(b)) return false;
+  if (grpc_refcounted_slice_length(a) == 0) return true;
+  return 0 == memcmp(grpc_refcounted_slice_data(a), GRPC_SLICE_START_PTR(b),
+                     grpc_refcounted_slice_length(a));
 }
 
 inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
+  GPR_DEBUG_ASSERT(slice.refcount != nullptr);
+  GPR_DEBUG_ASSERT(slice.refcount == this);
   switch (ref_type_) {
     case Type::STATIC:
       return ::grpc_static_metadata_hash_values[GRPC_STATIC_METADATA_INDEX(
@@ -228,8 +257,9 @@ inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
     case Type::REGULAR:
       break;
   }
-  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice),
-                          g_hash_seed);
+  return gpr_murmur_hash3(grpc_refcounted_slice_data(slice),
+                          grpc_refcounted_slice_length(slice),
+                          grpc_core::g_hash_seed);
 }
 
 inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
@@ -297,7 +327,7 @@ inline uint32_t grpc_slice_hash_refcounted(const grpc_slice& s) {
 
 inline uint32_t grpc_slice_default_hash_internal(const grpc_slice& s) {
   return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
-                          g_hash_seed);
+                          grpc_core::g_hash_seed);
 }
 
 inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
@@ -314,17 +344,7 @@ grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
 
-inline grpc_slice grpc_slice_from_static_buffer_internal(const void* s,
-                                                         size_t len) {
-  grpc_slice slice;
-  slice.refcount = &grpc_core::kNoopRefcount;
-  slice.data.refcounted.bytes = (uint8_t*)s;
-  slice.data.refcounted.length = len;
-  return slice;
-}
-
-inline grpc_slice grpc_slice_from_static_string_internal(const char* s) {
-  return grpc_slice_from_static_buffer_internal(s, strlen(s));
-}
+grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
+    const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

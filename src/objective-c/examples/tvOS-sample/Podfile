@@ -1,0 +1,33 @@
+platform :tvos, '10.0'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+use_frameworks! if ENV['FRAMEWORKS'] != 'NO'
+
+ROOT_DIR = '../../../..'
+
+target 'tvOS-sample' do
+  pod 'gRPC-ProtoRPC', :path => ROOT_DIR
+  pod 'gRPC', :path => ROOT_DIR
+  pod 'gRPC-Core', :path => ROOT_DIR
+  pod 'gRPC-RxLibrary', :path => ROOT_DIR
+  pod 'RemoteTest', :path => "../RemoteTestClient"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{ROOT_DIR}/src/objective-c"
+end
+
+pre_install do |installer|
+  grpc_core_spec = installer.pod_targets.find{|t| t.name.start_with?('gRPC-Core')}.root_spec
+
+  src_root = "$(PODS_TARGET_SRCROOT)"
+  grpc_core_spec.pod_target_xcconfig = {
+    'GRPC_SRC_ROOT' => src_root,
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
+    'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
+    # If we don't set these two settings, `include/grpc/support/time.h` and
+    # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+    # build.
+    'USE_HEADERMAP' => 'NO',
+    'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+  }
+end
+

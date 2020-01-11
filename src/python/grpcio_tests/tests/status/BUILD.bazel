@@ -1,20 +1,21 @@
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("//bazel:python_rules.bzl", "py2and3_test")
 
 package(default_visibility = ["//visibility:public"])
 
-py_test(
+py2and3_test(
     name = "grpc_status_test",
-    srcs = ["_grpc_status_test.py"],
-    main = "_grpc_status_test.py",
     size = "small",
+    srcs = ["_grpc_status_test.py"],
+    imports = ["../../"],
+    main = "_grpc_status_test.py",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_status/grpc_status:grpc_status",
+        "//src/python/grpcio_status/grpc_status",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
-        "//src/python/grpcio_tests/tests/unit/framework/common:common",
-        requirement('protobuf'),
-        requirement('googleapis-common-protos'),
+        "//src/python/grpcio_tests/tests/unit/framework/common",
+        requirement("protobuf"),
+        requirement("googleapis-common-protos"),
     ],
-    imports = ["../../",],
 )

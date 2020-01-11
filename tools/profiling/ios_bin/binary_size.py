@@ -24,8 +24,8 @@ import sys
 from parse_link_map import parse_link_map
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests',
+                 'python_utils'))
 import check_on_pr
 
 # Only show diff 1KB or greater
@@ -36,11 +36,10 @@ size_labels = ('Core', 'ObjC', 'BoringSSL', 'Protobuf', 'Total')
 argp = argparse.ArgumentParser(
     description='Binary size diff of gRPC Objective-C sample')
 
-argp.add_argument(
-    '-d',
-    '--diff_base',
-    type=str,
-    help='Commit or branch to compare the current one to')
+argp.add_argument('-d',
+                  '--diff_base',
+                  type=str,
+                  help='Commit or branch to compare the current one to')
 
 args = argp.parse_args()
 
@@ -61,24 +60,23 @@ def get_size(where, frameworks):
         return parse_link_map(build_dir + link_map_filename)
     else:
         framework_dir = 'Build/Products/Release-iphoneos/Sample.app/Frameworks/'
-        boringssl_size = dir_size(
-            build_dir + framework_dir + 'openssl.framework')
+        boringssl_size = dir_size(build_dir + framework_dir +
+                                  'openssl.framework')
         core_size = dir_size(build_dir + framework_dir + 'grpc.framework')
         objc_size = dir_size(build_dir + framework_dir + 'GRPCClient.framework') + \
                     dir_size(build_dir + framework_dir + 'RxLibrary.framework') + \
                     dir_size(build_dir + framework_dir + 'ProtoRPC.framework')
-        protobuf_size = dir_size(
-            build_dir + framework_dir + 'Protobuf.framework')
-        app_size = dir_size(
-            build_dir + 'Build/Products/Release-iphoneos/Sample.app')
+        protobuf_size = dir_size(build_dir + framework_dir +
+                                 'Protobuf.framework')
+        app_size = dir_size(build_dir +
+                            'Build/Products/Release-iphoneos/Sample.app')
         return core_size, objc_size, boringssl_size, protobuf_size, app_size
 
 
 def build(where, frameworks):
     subprocess.check_call(['make', 'clean'])
-    shutil.rmtree(
-        'src/objective-c/examples/Sample/Build/Build-%s' % where,
-        ignore_errors=True)
+    shutil.rmtree('src/objective-c/examples/Sample/Build/Build-%s' % where,
+                  ignore_errors=True)
     subprocess.check_call(
         'CONFIG=opt EXAMPLE_PATH=src/objective-c/examples/Sample SCHEME=Sample FRAMEWORKS=%s ./build_one_example.sh'
         % ('YES' if frameworks else 'NO'),
@@ -100,14 +98,14 @@ for frameworks in [False, True]:
             ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
         subprocess.check_call(['git', 'checkout', '--', '.'])
         subprocess.check_call(['git', 'checkout', args.diff_base])
-        subprocess.check_call(['git', 'submodule', 'update'])
+        subprocess.check_call(['git', 'submodule', 'update', '--force'])
         try:
             build('old', frameworks)
             old_size = get_size('old', frameworks)
         finally:
             subprocess.check_call(['git', 'checkout', '--', '.'])
             subprocess.check_call(['git', 'checkout', where_am_i])
-            subprocess.check_call(['git', 'submodule', 'update'])
+            subprocess.check_call(['git', 'submodule', 'update', '--force'])
 
     text += ('***************FRAMEWORKS****************\n'
              if frameworks else '*****************STATIC******************\n')
@@ -115,9 +113,9 @@ for frameworks in [False, True]:
     text += row_format.format('New size', '', 'Old size')
     if old_size == None:
         for i in range(0, len(size_labels)):
-            text += ('\n'
-                     if i == len(size_labels) - 1 else '') + row_format.format(
-                         '{:,}'.format(new_size[i]), size_labels[i], '')
+            text += ('\n' if i == len(size_labels) -
+                     1 else '') + row_format.format('{:,}'.format(new_size[i]),
+                                                    size_labels[i], '')
     else:
         has_diff = False
         for i in range(0, len(size_labels) - 1):
@@ -129,8 +127,8 @@ for frameworks in [False, True]:
                 diff_sign = ' (<)'
             has_diff = True
             text += row_format.format('{:,}'.format(new_size[i]),
-                                      size_labels[i] + diff_sign, '{:,}'.format(
-                                          old_size[i]))
+                                      size_labels[i] + diff_sign,
+                                      '{:,}'.format(old_size[i]))
         i = len(size_labels) - 1
         if new_size[i] > old_size[i]:
             diff_sign = ' (>)'

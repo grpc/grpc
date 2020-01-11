@@ -3,15 +3,18 @@
     "Grpc.Core.Interceptors.Tests.ClientInterceptorTest",
     "Grpc.Core.Interceptors.Tests.ServerInterceptorTest",
     "Grpc.Core.Internal.Tests.AsyncCallServerTest",
+    "Grpc.Core.Internal.Tests.AsyncCallStateTest",
     "Grpc.Core.Internal.Tests.AsyncCallTest",
     "Grpc.Core.Internal.Tests.ChannelArgsSafeHandleTest",
     "Grpc.Core.Internal.Tests.CompletionQueueEventTest",
     "Grpc.Core.Internal.Tests.CompletionQueueSafeHandleTest",
     "Grpc.Core.Internal.Tests.DefaultDeserializationContextTest",
     "Grpc.Core.Internal.Tests.DefaultObjectPoolTest",
+    "Grpc.Core.Internal.Tests.DefaultSerializationContextTest",
     "Grpc.Core.Internal.Tests.FakeBufferReaderManagerTest",
     "Grpc.Core.Internal.Tests.MetadataArraySafeHandleTest",
     "Grpc.Core.Internal.Tests.ReusableSliceBufferTest",
+    "Grpc.Core.Internal.Tests.SliceBufferSafeHandleTest",
     "Grpc.Core.Internal.Tests.SliceTest",
     "Grpc.Core.Internal.Tests.TimespecTest",
     "Grpc.Core.Internal.Tests.WellKnownStringsTest",
@@ -66,7 +69,8 @@
     "Grpc.IntegrationTesting.InteropClientServerTest",
     "Grpc.IntegrationTesting.MetadataCredentialsTest",
     "Grpc.IntegrationTesting.RunnerClientServerTest",
-    "Grpc.IntegrationTesting.SslCredentialsTest"
+    "Grpc.IntegrationTesting.SslCredentialsTest",
+    "Grpc.IntegrationTesting.UnobservedTaskExceptionTest"
   ],
   "Grpc.Reflection.Tests": [
     "Grpc.Reflection.Tests.ReflectionClientServerTest",

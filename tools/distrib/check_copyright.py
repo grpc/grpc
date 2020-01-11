@@ -27,8 +27,10 @@ os.chdir(ROOT)
 
 # parse command line
 argp = argparse.ArgumentParser(description='copyright checker')
-argp.add_argument(
-    '-o', '--output', default='details', choices=['list', 'details'])
+argp.add_argument('-o',
+                  '--output',
+                  default='details',
+                  choices=['list', 'details'])
 argp.add_argument('-s', '--skips', default=0, action='store_const', const=1)
 argp.add_argument('-a', '--ancient', default=0, action='store_const', const=1)
 argp.add_argument('--precommit', default=False, action='store_true')
@@ -75,20 +77,6 @@ _EXEMPT = frozenset((
     'examples/python/multiplex/route_guide_pb2_grpc.py',
     'examples/python/route_guide/route_guide_pb2.py',
     'examples/python/route_guide/route_guide_pb2_grpc.py',
-    'src/core/ext/filters/client_channel/health/health.pb.h',
-    'src/core/ext/filters/client_channel/health/health.pb.c',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c',
-    'src/core/tsi/alts/handshaker/altscontext.pb.h',
-    'src/core/tsi/alts/handshaker/altscontext.pb.c',
-    'src/core/tsi/alts/handshaker/handshaker.pb.h',
-    'src/core/tsi/alts/handshaker/handshaker.pb.c',
-    'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
-    'src/core/tsi/alts/handshaker/transport_security_common.pb.c',
 
     # An older file originally from outside gRPC.
     'src/php/tests/bootstrap.php',
@@ -146,8 +134,8 @@ def log(cond, why, filename):
 ok = True
 filename_list = []
 try:
-    filename_list = subprocess.check_output(
-        FILE_LIST_COMMAND, shell=True).splitlines()
+    filename_list = subprocess.check_output(FILE_LIST_COMMAND,
+                                            shell=True).splitlines()
 except subprocess.CalledProcessError:
     sys.exit(0)
 

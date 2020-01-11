@@ -39,6 +39,8 @@ namespace Grpc.Core
 
         /// <summary>
         /// Creates a new <c>RpcException</c> associated with given status and message.
+        /// NOTE: the exception message is not sent to the remote peer. Use <c>status.Details</c> to pass error
+        /// details to the peer.
         /// </summary>
         /// <param name="status">Resulting status of a call.</param>
         /// <param name="message">The exception message.</param> 
@@ -57,6 +59,8 @@ namespace Grpc.Core
 
         /// <summary>
         /// Creates a new <c>RpcException</c> associated with given status, message and trailing response metadata.
+        /// NOTE: the exception message is not sent to the remote peer. Use <c>status.Details</c> to pass error
+        /// details to the peer.
         /// </summary>
         /// <param name="status">Resulting status of a call.</param>
         /// <param name="trailers">Response trailing metadata.</param>

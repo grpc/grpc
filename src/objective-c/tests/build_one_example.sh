@@ -31,14 +31,26 @@ cd $EXAMPLE_PATH
 
 # clean the directory
 rm -rf Pods
-rm -rf $SCHEME.xcworkspace
+rm -rf *.xcworkspace
 rm -f Podfile.lock
 
 pod install
 
 set -o pipefail
 XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
-xcodebuild \
+if [ "$SCHEME" == "tvOS-sample" ]; then
+  xcodebuild \
+    build \
+    -workspace *.xcworkspace \
+    -scheme $SCHEME \
+    -destination generic/platform=tvOS \
+    -derivedDataPath Build/Build \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v "^$" -
+else
+  xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
@@ -48,3 +60,5 @@ xcodebuild \
     CODE_SIGNING_REQUIRED=NO \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -
+fi
+

@@ -34,6 +34,7 @@
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 
 #include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -75,11 +76,11 @@ class CensusViewProvider {
  private:
   ViewDescriptorMap view_descriptor_map_;
   // Tag keys.
-  ::opencensus::stats::TagKey tag_key_token_;
-  ::opencensus::stats::TagKey tag_key_host_;
-  ::opencensus::stats::TagKey tag_key_user_id_;
-  ::opencensus::stats::TagKey tag_key_status_;
-  ::opencensus::stats::TagKey tag_key_metric_name_;
+  ::opencensus::tags::TagKey tag_key_token_;
+  ::opencensus::tags::TagKey tag_key_host_;
+  ::opencensus::tags::TagKey tag_key_user_id_;
+  ::opencensus::tags::TagKey tag_key_status_;
+  ::opencensus::tags::TagKey tag_key_metric_name_;
 };
 
 // The default implementation fetches the real stats from Census.

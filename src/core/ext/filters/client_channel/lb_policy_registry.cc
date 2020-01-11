@@ -34,7 +34,7 @@ class RegistryState {
   RegistryState() {}
 
   void RegisterLoadBalancingPolicyFactory(
-      UniquePtr<LoadBalancingPolicyFactory> factory) {
+      std::unique_ptr<LoadBalancingPolicyFactory> factory) {
     for (size_t i = 0; i < factories_.size(); ++i) {
       GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
     }
@@ -52,7 +52,7 @@ class RegistryState {
   }
 
  private:
-  InlinedVector<UniquePtr<LoadBalancingPolicyFactory>, 10> factories_;
+  InlinedVector<std::unique_ptr<LoadBalancingPolicyFactory>, 10> factories_;
 };
 
 RegistryState* g_state = nullptr;
@@ -64,16 +64,16 @@ RegistryState* g_state = nullptr;
 //
 
 void LoadBalancingPolicyRegistry::Builder::InitRegistry() {
-  if (g_state == nullptr) g_state = New<RegistryState>();
+  if (g_state == nullptr) g_state = new RegistryState();
 }
 
 void LoadBalancingPolicyRegistry::Builder::ShutdownRegistry() {
-  Delete(g_state);
+  delete g_state;
   g_state = nullptr;
 }
 
 void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-    UniquePtr<LoadBalancingPolicyFactory> factory) {
+    std::unique_ptr<LoadBalancingPolicyFactory> factory) {
   InitRegistry();
   g_state->RegisterLoadBalancingPolicyFactory(std::move(factory));
 }
@@ -117,8 +117,13 @@ namespace {
 grpc_json* ParseLoadBalancingConfigHelper(const grpc_json* lb_config_array,
                                           grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  if (lb_config_array == nullptr) {
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB config JSON tree is null");
+    return nullptr;
+  }
   char* error_msg;
-  if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
+  if (lb_config_array->type != GRPC_JSON_ARRAY) {
     gpr_asprintf(&error_msg, "field:%s error:type should be array",
                  lb_config_array->key);
     *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);

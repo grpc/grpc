@@ -24,8 +24,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
+
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/pollset.h"
 
 /* These trace flags default to 1. The corresponding lines are only traced
@@ -36,7 +37,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount;
 
 typedef struct grpc_cq_completion {
-  gpr_mpscq_node node;
+  grpc_core::ManualConstructor<grpc_core::MultiProducerSingleConsumerQueue>
+      node;
 
   /** user supplied tag */
   void* tag;

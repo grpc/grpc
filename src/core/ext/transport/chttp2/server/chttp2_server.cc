@@ -240,7 +240,7 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
 }
 
 /* Server callback: start listening on our ports */
-static void server_start_listener(grpc_server* server, void* arg,
+static void server_start_listener(grpc_server* /*server*/, void* arg,
                                   grpc_pollset** pollsets,
                                   size_t pollset_count) {
   server_state* state = static_cast<server_state*>(arg);
@@ -266,7 +266,8 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   // may do a synchronous unref.
   grpc_core::ExecCtx::Get()->Flush();
   if (destroy_done != nullptr) {
-    destroy_done->cb(destroy_done->cb_arg, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_done,
+                            GRPC_ERROR_REF(error));
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_channel_args_destroy(state->args);
@@ -276,7 +277,7 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void server_destroy_listener(grpc_server* server, void* arg,
+static void server_destroy_listener(grpc_server* /*server*/, void* arg,
                                     grpc_closure* destroy_done) {
   server_state* state = static_cast<server_state*>(arg);
   gpr_mu_lock(&state->mu);
@@ -317,7 +318,7 @@ static grpc_error* chttp2_server_add_acceptor(grpc_server* server,
   *arg_val = grpc_tcp_server_create_fd_handler(tcp_server);
 
   grpc_server_add_listener(server, state, server_start_listener,
-                           server_destroy_listener, /* socket_uuid */ 0);
+                           server_destroy_listener, /* node */ nullptr);
   return err;
 
 /* Error path: cleanup and return */
@@ -345,7 +346,6 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   grpc_error** errors = nullptr;
   size_t naddrs = 0;
   const grpc_arg* arg = nullptr;
-  intptr_t socket_uuid = 0;
 
   *port_num = -1;
 
@@ -413,15 +413,20 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
 
   arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
   if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    char* socket_name = nullptr;
+    gpr_asprintf(&socket_name, "chttp2 listener %s", addr);
     state->channelz_listen_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
-            grpc_core::UniquePtr<char>(gpr_strdup(addr)));
-    socket_uuid = state->channelz_listen_socket->uuid();
+            addr, socket_name);
+    // TODO(veblush): Remove this once gpr_asprintf is replaced by
+    // absl::StrFormat
+    gpr_free(socket_name);
   }
 
   /* Register with the server only upon success */
   grpc_server_add_listener(server, state, server_start_listener,
-                           server_destroy_listener, socket_uuid);
+                           server_destroy_listener,
+                           state->channelz_listen_socket);
   goto done;
 
 /* Error path: cleanup and return */

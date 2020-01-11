@@ -61,6 +61,11 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
+  /* Use the parameters to avoid unused-parameter warning.
+     (C89 parameters must be named.) */
+  (void)argc;
+  (void)argv;
+
   printf("%lx", (unsigned long) grpc_compression_algorithm_is_message);
   printf("%lx", (unsigned long) grpc_compression_algorithm_is_stream);
   printf("%lx", (unsigned long) grpc_compression_algorithm_parse);
@@ -196,11 +201,14 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_local_server_credentials_create);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_verification_option);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_key_materials_config);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_credential_reload_config);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_authorization_check_config);
   printf("%lx", (unsigned long) grpc_tls_key_materials_config_create);
   printf("%lx", (unsigned long) grpc_tls_key_materials_config_set_key_materials);
+  printf("%lx", (unsigned long) grpc_tls_key_materials_config_set_version);
+  printf("%lx", (unsigned long) grpc_tls_key_materials_config_get_version);
   printf("%lx", (unsigned long) grpc_tls_credential_reload_config_create);
   printf("%lx", (unsigned long) grpc_tls_server_authorization_check_config_create);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
@@ -275,8 +283,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_realloc);
   printf("%lx", (unsigned long) gpr_malloc_aligned);
   printf("%lx", (unsigned long) gpr_free_aligned);
-  printf("%lx", (unsigned long) gpr_set_allocation_functions);
-  printf("%lx", (unsigned long) gpr_get_allocation_functions);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
   printf("%lx", (unsigned long) gpr_strdup);

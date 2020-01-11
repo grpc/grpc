@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import argparse
 import logging
-import time
 from concurrent import futures
 import random
 
@@ -32,7 +31,6 @@ from examples import helloworld_pb2_grpc
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _RANDOM_FAILURE_RATE = 0.3
 
 
@@ -62,12 +60,11 @@ def create_server(addr, failure_rate):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--addr',
-        nargs=1,
-        type=str,
-        default='[::]:50051',
-        help='the address to listen on')
+    parser.add_argument('--addr',
+                        nargs=1,
+                        type=str,
+                        default='[::]:50051',
+                        help='the address to listen on')
     parser.add_argument(
         '--failure_rate',
         nargs=1,
@@ -78,11 +75,7 @@ def main():
 
     server = create_server(addr=args.addr, failure_rate=args.failure_rate)
     server.start()
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(0)
+    server.wait_for_termination()
 
 
 if __name__ == '__main__':

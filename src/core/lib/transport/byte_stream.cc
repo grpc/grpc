@@ -53,8 +53,8 @@ void SliceBufferByteStream::Orphan() {
   // filter stack.
 }
 
-bool SliceBufferByteStream::Next(size_t max_size_hint,
-                                 grpc_closure* on_complete) {
+bool SliceBufferByteStream::Next(size_t /*max_size_hint*/,
+                                 grpc_closure* /*on_complete*/) {
   GPR_DEBUG_ASSERT(backing_buffer_.count > 0);
   return true;
 }

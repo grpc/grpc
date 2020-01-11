@@ -61,7 +61,7 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
       // 3) The resulting slice is statically known.
       // 4) Said resulting slice is of length 0 ("").
       // This means 3 movs, instead of 10s of instructions and a strlen.
-      *slice = grpc_slice_from_static_string_internal("");
+      *slice = grpc_core::ExternallyManagedSlice("");
     }
     if (http_error != nullptr) {
       *http_error = GRPC_HTTP2_NO_ERROR;

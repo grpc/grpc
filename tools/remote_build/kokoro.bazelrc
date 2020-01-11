@@ -16,13 +16,12 @@
 
 import %workspace%/tools/remote_build/rbe_common.bazelrc
 
-build --remote_cache=remotebuildexecution.googleapis.com
-build --remote_executor=remotebuildexecution.googleapis.com
-build --tls_enabled=true
+build --remote_cache=grpcs://remotebuildexecution.googleapis.com
+build --remote_executor=grpcs://remotebuildexecution.googleapis.com
 
 build --auth_enabled=true
 
-build --bes_backend=buildeventservice.googleapis.com
+build --bes_backend=grpcs://buildeventservice.googleapis.com
 build --bes_timeout=600s
 build --project_id=grpc-testing
 

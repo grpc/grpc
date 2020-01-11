@@ -90,7 +90,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config config,
+static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_call* s;

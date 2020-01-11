@@ -30,7 +30,7 @@ sudo pip install tabulate
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 gem list bundler
-gem install bundler --no-ri --no-rdoc
+gem install bundler --no-document
 
 # Allow SSH to Kokoro performance workers without explicit key verification
 gsutil cp gs://grpc-testing-secrets/grpc_kokoro_performance_ssh_keys/id_rsa ~/.ssh

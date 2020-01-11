@@ -30,20 +30,20 @@ _SERVER_ADDR_TEMPLATE = 'localhost:%d'
 class AuthExampleTest(unittest.TestCase):
 
     def test_successful_call(self):
-        with customized_auth_server.run_server(0) as port:
+        with customized_auth_server.run_server(0) as (_, port):
             with customized_auth_client.create_client_channel(
                     _SERVER_ADDR_TEMPLATE % port) as channel:
                 customized_auth_client.send_rpc(channel)
         # No unhandled exception raised, test passed!
 
     def test_no_channel_credential(self):
-        with customized_auth_server.run_server(0) as port:
+        with customized_auth_server.run_server(0) as (_, port):
             with grpc.insecure_channel(_SERVER_ADDR_TEMPLATE % port) as channel:
                 resp = customized_auth_client.send_rpc(channel)
                 self.assertEqual(resp.code(), grpc.StatusCode.UNAVAILABLE)
 
     def test_no_call_credential(self):
-        with customized_auth_server.run_server(0) as port:
+        with customized_auth_server.run_server(0) as (_, port):
             channel_credential = grpc.ssl_channel_credentials(
                 _credentials.ROOT_CERTIFICATE)
             with grpc.secure_channel(_SERVER_ADDR_TEMPLATE % port,

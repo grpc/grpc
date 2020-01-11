@@ -97,7 +97,7 @@ static void verify(const verify_params params, const char* expected,
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
-  memset(&stats, 0, sizeof(stats));
+  stats = {};
   grpc_encode_header_options hopt = {
       0xdeadbeef,                      /* stream_id */
       params.eof,                      /* is_eof */
@@ -217,7 +217,7 @@ static void verify_table_size_change_match_elem_size(const char* key,
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
-  memset(&stats, 0, sizeof(stats));
+  stats = {};
   grpc_encode_header_options hopt = {
       0xdeadbeef,      /* stream_id */
       false,           /* is_eof */

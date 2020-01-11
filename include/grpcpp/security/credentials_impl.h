@@ -28,6 +28,7 @@
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments_impl.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
@@ -95,10 +96,10 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   // This function should have been a pure virtual function, but it is
   // implemented as a virtual function so that it does not break API.
   virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const grpc::string& target, const ChannelArguments& args,
+      const grpc::string& /*target*/, const ChannelArguments& /*args*/,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
-          interceptor_creators) {
+      /*interceptor_creators*/) {
     return nullptr;
   }
 };
@@ -228,9 +229,6 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
 /// Credentials for an unencrypted, unauthenticated channel
 std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
 
-/// Credentials for a channel using Cronet.
-std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
-
 /// User defined metadata credentials.
 class MetadataCredentialsPlugin {
  public:
@@ -323,6 +321,10 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options);
 
+std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin,
+    grpc_security_level min_security_level);
+
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {
   /// service accounts of target endpoint that will be acceptable
@@ -338,6 +340,10 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
 /// Builds Local Credentials.
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
+
+/// Builds TLS Credentials given TLS options.
+std::shared_ptr<ChannelCredentials> TlsCredentials(
+    const TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc_impl

@@ -19,6 +19,10 @@ py27_gevent/
 py27_native/
 py3[0-9]_gevent/
 py3[0-9]_native/
+a.out
+src/python/grpcio_*/LICENSE
+src/python/grpcio_status/grpc_status/google/rpc/status.proto
+.pytype
 
 # Node installation output
 node_modules
@@ -94,6 +98,7 @@ DerivedData
 # Objective-C generated files
 *.pbobjc.*
 *.pbrpc.*
+src/objective-c/**/Build
 
 # Cocoapods artifacts
 Pods/
@@ -139,13 +144,14 @@ bm_*.json
 
 # Visual Studio Code artifacts
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.history/
 
 # Clion artifacts
 cmake-build-debug/
 
 # Benchmark outputs
 BenchmarkDotNet.Artifacts/
+
+# pyenv config
+.python-version
+

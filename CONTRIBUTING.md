@@ -1,6 +1,8 @@
 # How to contribute
 
-We definitely welcome your patches and contributions to gRPC!
+We definitely welcome your patches and contributions to gRPC! Please read the gRPC
+organization's [governance rules](https://github.com/grpc/grpc-community/blob/master/governance.md)
+and [contribution guidelines](https://github.com/grpc/grpc-community/blob/master/CONTRIBUTING.md) before proceeding.
 
 If you are new to github, please start by reading [Pull Request
 howto](https://help.github.com/articles/about-pull-requests/)
@@ -70,6 +72,10 @@ How to get your contributions merged smoothly and quickly.
 - Don't fix code style and formatting unless you are already changing that line
   to address an issue.  PRs with irrelevant changes won't be merged.  If you do
   want to fix formatting or style, do that in a separate PR.
+
+- If you are adding a new file, make sure it has the copyright message template
+  at the top as a comment. You can copy over the message from an existing file
+  and update the year.
  
 - Unless your PR is trivial, you should expect there will be reviewer comments
   that you'll need to address before merging.  We expect you to be reasonably

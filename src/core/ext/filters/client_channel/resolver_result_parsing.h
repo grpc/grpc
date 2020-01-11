@@ -46,7 +46,7 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
 
   ClientChannelGlobalParsedConfig(
       RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config,
-      UniquePtr<char> parsed_deprecated_lb_policy,
+      grpc_core::UniquePtr<char> parsed_deprecated_lb_policy,
       const Optional<RetryThrottling>& retry_throttling,
       const char* health_check_service_name)
       : parsed_lb_config_(std::move(parsed_lb_config)),
@@ -72,7 +72,7 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
-  UniquePtr<char> parsed_deprecated_lb_policy_;
+  grpc_core::UniquePtr<char> parsed_deprecated_lb_policy_;
   Optional<RetryThrottling> retry_throttling_;
   const char* health_check_service_name_;
 };
@@ -89,7 +89,7 @@ class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
 
   ClientChannelMethodParsedConfig(grpc_millis timeout,
                                   const Optional<bool>& wait_for_ready,
-                                  UniquePtr<RetryPolicy> retry_policy)
+                                  std::unique_ptr<RetryPolicy> retry_policy)
       : timeout_(timeout),
         wait_for_ready_(wait_for_ready),
         retry_policy_(std::move(retry_policy)) {}
@@ -103,15 +103,15 @@ class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
  private:
   grpc_millis timeout_ = 0;
   Optional<bool> wait_for_ready_;
-  UniquePtr<RetryPolicy> retry_policy_;
+  std::unique_ptr<RetryPolicy> retry_policy_;
 };
 
 class ClientChannelServiceConfigParser : public ServiceConfig::Parser {
  public:
-  UniquePtr<ServiceConfig::ParsedConfig> ParseGlobalParams(
+  std::unique_ptr<ServiceConfig::ParsedConfig> ParseGlobalParams(
       const grpc_json* json, grpc_error** error) override;
 
-  UniquePtr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
+  std::unique_ptr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
       const grpc_json* json, grpc_error** error) override;
 
   static size_t ParserIndex();

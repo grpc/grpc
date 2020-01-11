@@ -46,7 +46,7 @@ typedef struct {
 
 struct grpc_chttp2_hpack_parser {
   /* user specified callback for each header output */
-  void (*on_header)(void* user_data, grpc_mdelem md);
+  grpc_error* (*on_header)(void* user_data, grpc_mdelem md);
   void* on_header_user_data;
 
   grpc_error* last_error;
@@ -69,6 +69,14 @@ struct grpc_chttp2_hpack_parser {
   grpc_chttp2_hpack_parser_string value;
   /* parsed index */
   uint32_t index;
+  /* When we parse a value string, we determine the metadata element for a
+     specific index, which we need again when we're finishing up with that
+     header. To avoid calculating the metadata element for that index a second
+     time at that stage, we cache (and invalidate) the element here. */
+  grpc_mdelem md_for_index;
+#ifndef NDEBUG
+  int64_t precomputed_md_index;
+#endif
   /* length of source bytes for the currently parsing string */
   uint32_t strlen;
   /* number of source bytes read for the currently parsing string */

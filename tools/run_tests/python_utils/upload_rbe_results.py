@@ -51,7 +51,7 @@ def _get_api_key():
     api_key_directory = os.getenv('KOKORO_GFILE_DIR')
     api_key_file = os.path.join(api_key_directory, 'resultstore_api_key')
     assert os.path.isfile(api_key_file), 'Must add --api_key arg if not on ' \
-     'Kokoro or Kokoro envrionment is not set up properly.'
+     'Kokoro or Kokoro environment is not set up properly.'
     with open(api_key_file, 'r') as f:
         return f.read().replace('\n', '')
 
@@ -84,15 +84,14 @@ def _upload_results_to_bq(rows):
       rows: A list of dictionaries containing data for each row to insert
   """
     bq = big_query_utils.create_big_query()
-    big_query_utils.create_partitioned_table(
-        bq,
-        _PROJECT_ID,
-        _DATASET_ID,
-        _TABLE_ID,
-        _RESULTS_SCHEMA,
-        _DESCRIPTION,
-        partition_type=_PARTITION_TYPE,
-        expiration_ms=_EXPIRATION_MS)
+    big_query_utils.create_partitioned_table(bq,
+                                             _PROJECT_ID,
+                                             _DATASET_ID,
+                                             _TABLE_ID,
+                                             _RESULTS_SCHEMA,
+                                             _DESCRIPTION,
+                                             partition_type=_PARTITION_TYPE,
+                                             expiration_ms=_EXPIRATION_MS)
 
     max_retries = 3
     for attempt in range(max_retries):
@@ -124,9 +123,7 @@ def _get_resultstore_data(api_key, invocation_id):
             url=
             'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes,actions.timing,actions.test_action'
             % (invocation_id, api_key, page_token),
-            headers={
-                'Content-Type': 'application/json'
-            })
+            headers={'Content-Type': 'application/json'})
         results = json.loads(urllib2.urlopen(req).read())
         all_actions.extend(results['actions'])
         if 'nextPageToken' not in results:
@@ -185,7 +182,7 @@ if __name__ == "__main__":
             # a close approximation.
             action['timing'] = {
                 'startTime':
-                resultstore_actions[index - 1]['timing']['startTime']
+                    resultstore_actions[index - 1]['timing']['startTime']
             }
         elif 'testSuite' not in action['testAction']:
             continue
@@ -208,22 +205,22 @@ if __name__ == "__main__":
                     'insertId': str(uuid.uuid4()),
                     'json': {
                         'job_name':
-                        os.getenv('KOKORO_JOB_NAME'),
+                            os.getenv('KOKORO_JOB_NAME'),
                         'build_id':
-                        os.getenv('KOKORO_BUILD_NUMBER'),
+                            os.getenv('KOKORO_BUILD_NUMBER'),
                         'build_url':
-                        'https://source.cloud.google.com/results/invocations/%s'
-                        % invocation_id,
+                            'https://source.cloud.google.com/results/invocations/%s'
+                            % invocation_id,
                         'test_target':
-                        action['id']['targetId'],
+                            action['id']['targetId'],
                         'test_case':
-                        test_case['testCase']['caseName'],
+                            test_case['testCase']['caseName'],
                         'result':
-                        result,
+                            result,
                         'timestamp':
-                        action['timing']['startTime'],
+                            action['timing']['startTime'],
                         'duration':
-                        _parse_test_duration(action['timing']['duration']),
+                            _parse_test_duration(action['timing']['duration']),
                     }
                 })
             except Exception as e:
@@ -233,20 +230,20 @@ if __name__ == "__main__":
                     'insertId': str(uuid.uuid4()),
                     'json': {
                         'job_name':
-                        os.getenv('KOKORO_JOB_NAME'),
+                            os.getenv('KOKORO_JOB_NAME'),
                         'build_id':
-                        os.getenv('KOKORO_BUILD_NUMBER'),
+                            os.getenv('KOKORO_BUILD_NUMBER'),
                         'build_url':
-                        'https://source.cloud.google.com/results/invocations/%s'
-                        % invocation_id,
+                            'https://source.cloud.google.com/results/invocations/%s'
+                            % invocation_id,
                         'test_target':
-                        action['id']['targetId'],
+                            action['id']['targetId'],
                         'test_case':
-                        'N/A',
+                            'N/A',
                         'result':
-                        'UNPARSEABLE',
+                            'UNPARSEABLE',
                         'timestamp':
-                        'N/A',
+                            'N/A',
                     }
                 })
 

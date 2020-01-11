@@ -130,7 +130,7 @@ namespace Math {
     {
       /// <summary>Creates a new client for Math</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public MathClient(grpc::Channel channel) : base(channel)
+      public MathClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for Math that uses a custom <c>CallInvoker</c>.</summary>

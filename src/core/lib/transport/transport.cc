@@ -50,10 +50,11 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
        cope with.
        Throw this over to the executor (on a core-owned thread) and process it
        there. */
-    refcount->destroy.scheduler =
-        grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT);
+    grpc_core::Executor::Run(&refcount->destroy, GRPC_ERROR_NONE);
+  } else {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
+                            GRPC_ERROR_NONE);
   }
-  GRPC_CLOSURE_SCHED(&refcount->destroy, GRPC_ERROR_NONE);
 }
 
 void slice_stream_destroy(void* arg) {
@@ -80,12 +81,12 @@ grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
 }
 
 #ifndef NDEBUG
-void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
+void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
                           grpc_iomgr_cb_func cb, void* cb_arg,
                           const char* object_type) {
   refcount->object_type = object_type;
 #else
-void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
+void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
                           grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
   GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
@@ -218,12 +219,13 @@ struct made_transport_op {
 
 static void destroy_made_transport_op(void* arg, grpc_error* error) {
   made_transport_op* op = static_cast<made_transport_op*>(arg);
-  GRPC_CLOSURE_SCHED(op->inner_on_complete, GRPC_ERROR_REF(error));
-  grpc_core::Delete<made_transport_op>(op);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->inner_on_complete,
+                          GRPC_ERROR_REF(error));
+  delete op;
 }
 
 grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
-  made_transport_op* op = grpc_core::New<made_transport_op>();
+  made_transport_op* op = new made_transport_op();
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_op, op,
                     grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
@@ -242,7 +244,7 @@ static void destroy_made_transport_stream_op(void* arg, grpc_error* error) {
   made_transport_stream_op* op = static_cast<made_transport_stream_op*>(arg);
   grpc_closure* c = op->inner_on_complete;
   gpr_free(op);
-  GRPC_CLOSURE_RUN(c, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_REF(error));
 }
 
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(

@@ -34,16 +34,8 @@
 [submodule "third_party/abseil-cpp"]
 	path = third_party/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp
-[submodule "third_party/libcxxabi"]
-	path = third_party/libcxxabi
-	url = https://github.com/llvm-mirror/libcxxabi.git
-	branch = release_60
-[submodule "third_party/libcxx"]
-	path = third_party/libcxx
-	url = https://github.com/llvm-mirror/libcxx.git
-	branch = release_60
-[submodule "third_party/data-plane-api"]
-	path = third_party/data-plane-api
+[submodule "third_party/envoy-api"]
+	path = third_party/envoy-api
 	url = https://github.com/envoyproxy/data-plane-api.git
 [submodule "third_party/googleapis"]
 	path = third_party/googleapis
@@ -51,6 +43,6 @@
 [submodule "third_party/protoc-gen-validate"]
 	path = third_party/protoc-gen-validate
 	url = https://github.com/envoyproxy/protoc-gen-validate.git
-[submodule "third_party/upb"]
-	path = third_party/upb
-	url = https://github.com/google/upb.git
+[submodule "third_party/udpa"]
+	path = third_party/udpa
+	url = https://github.com/cncf/udpa.git

@@ -32,7 +32,7 @@ struct grpc_auth_property_iterator;
 namespace grpc {
 class SecureAuthContext;
 
-typedef std::pair<grpc::string_ref, grpc::string_ref> AuthProperty;
+typedef std::pair<string_ref, string_ref> AuthProperty;
 
 class AuthPropertyIterator
     : public std::iterator<std::input_iterator_tag, const AuthProperty> {
@@ -86,8 +86,8 @@ class AuthContext {
 
   /// Mutation functions: should only be used by an AuthMetadataProcessor.
   virtual void AddProperty(const grpc::string& key,
-                           const grpc::string_ref& value) = 0;
-  virtual bool SetPeerIdentityPropertyName(const grpc::string& name) = 0;
+                           const string_ref& value) = 0;
+  virtual bool SetPeerIdentityPropertyName(const string& name) = 0;
 };
 
 }  // namespace grpc

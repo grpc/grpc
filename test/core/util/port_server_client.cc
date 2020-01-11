@@ -35,19 +35,19 @@
 #include "src/core/lib/http/httpcli.h"
 
 typedef struct freereq {
-  gpr_mu* mu;
-  grpc_polling_entity pops;
-  int done;
+  gpr_mu* mu = nullptr;
+  grpc_polling_entity pops = {};
+  int done = 0;
 } freereq;
 
-static void destroy_pops_and_shutdown(void* p, grpc_error* error) {
+static void destroy_pops_and_shutdown(void* p, grpc_error* /*error*/) {
   grpc_pollset* pollset =
       grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p));
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
 }
 
-static void freed_port_from_server(void* arg, grpc_error* error) {
+static void freed_port_from_server(void* arg, grpc_error* /*error*/) {
   freereq* pr = static_cast<freereq*>(arg);
   gpr_mu_lock(pr->mu);
   pr->done = 1;
@@ -68,9 +68,9 @@ void grpc_free_port_using_server(int port) {
 
   grpc_init();
 
-  memset(&pr, 0, sizeof(pr));
+  pr = {};
   memset(&req, 0, sizeof(req));
-  memset(&rsp, 0, sizeof(rsp));
+  rsp = {};
 
   grpc_pollset* pollset =
       static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
@@ -117,13 +117,13 @@ void grpc_free_port_using_server(int port) {
 }
 
 typedef struct portreq {
-  gpr_mu* mu;
-  grpc_polling_entity pops;
-  int port;
-  int retries;
-  char* server;
-  grpc_httpcli_context* ctx;
-  grpc_httpcli_response response;
+  gpr_mu* mu = nullptr;
+  grpc_polling_entity pops = {};
+  int port = 0;
+  int retries = 0;
+  char* server = nullptr;
+  grpc_httpcli_context* ctx = nullptr;
+  grpc_httpcli_response response = {};
 } portreq;
 
 static void got_port_from_server(void* arg, grpc_error* error) {
@@ -167,7 +167,7 @@ static void got_port_from_server(void* arg, grpc_error* error) {
     req.host = pr->server;
     req.http.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
-    memset(&pr->response, 0, sizeof(pr->response));
+    pr->response = {};
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("port_server_client/pick_retry");
     grpc_httpcli_get(pr->ctx, &pr->pops, resource_quota, &req,
@@ -202,7 +202,7 @@ int grpc_pick_port_using_server(void) {
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
-    memset(&pr, 0, sizeof(pr));
+    pr = {};
     memset(&req, 0, sizeof(req));
     grpc_pollset* pollset =
         static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));

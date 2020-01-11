@@ -68,7 +68,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void do_request_and_shutdown_server(grpc_end2end_test_config config,
+static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
                                            grpc_end2end_test_fixture* f,
                                            cq_verifier* cqv) {
   grpc_call* c;

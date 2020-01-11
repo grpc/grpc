@@ -24,10 +24,16 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "test/core/util/test_config.h"
 
-static grpc_combiner* g_combiner;
+static grpc_core::Combiner* g_combiner;
+
+class TestResultHandler : public grpc_core::Resolver::ResultHandler {
+  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
+  void ReturnError(grpc_error* /*error*/) override {}
+};
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,
                           const char* string) {
@@ -39,8 +45,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  args.result_handler =
-      grpc_core::MakeUnique<grpc_core::Resolver::ResultHandler>();
+  args.result_handler = grpc_core::MakeUnique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
@@ -57,8 +62,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  args.result_handler =
-      grpc_core::MakeUnique<grpc_core::Resolver::ResultHandler>();
+  args.result_handler = grpc_core::MakeUnique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);

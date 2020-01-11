@@ -79,6 +79,12 @@ static inline std::shared_ptr<ServerCredentials> LocalServerCredentials(
   return ::grpc_impl::experimental::LocalServerCredentials(type);
 }
 
+/// Builds TLS ServerCredentials given TLS options.
+static inline std::shared_ptr<ServerCredentials> TlsServerCredentials(
+    const ::grpc_impl::experimental::TlsCredentialsOptions& options) {
+  return ::grpc_impl::experimental::TlsServerCredentials(options);
+}
+
 }  // namespace experimental
 }  // namespace grpc
 

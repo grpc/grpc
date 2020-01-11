@@ -48,7 +48,7 @@ std::string as_string(const T& val) {
   return out.str();
 }
 
-static void sighandler(int sig) {
+static void sighandler(int /*sig*/) {
   const int errno_saved = errno;
   if (g_driver != nullptr) g_driver->Interrupt();
   for (int i = 0; i < kNumWorkers; ++i) {

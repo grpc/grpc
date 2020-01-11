@@ -91,11 +91,6 @@ InsecureChannelCredentials() {
   return ::grpc_impl::InsecureChannelCredentials();
 }
 
-static inline std::shared_ptr<grpc_impl::ChannelCredentials>
-CronetChannelCredentials(void* engine) {
-  return ::grpc_impl::CronetChannelCredentials(engine);
-}
-
 typedef ::grpc_impl::MetadataCredentialsPlugin MetadataCredentialsPlugin;
 
 static inline std::shared_ptr<grpc_impl::CallCredentials>
@@ -135,6 +130,11 @@ static inline std::shared_ptr<grpc_impl::ChannelCredentials> AltsCredentials(
 static inline std::shared_ptr<grpc_impl::ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type) {
   return ::grpc_impl::experimental::LocalCredentials(type);
+}
+
+static inline std::shared_ptr<grpc_impl::ChannelCredentials> TlsCredentials(
+    const ::grpc_impl::experimental::TlsCredentialsOptions& options) {
+  return ::grpc_impl::experimental::TlsCredentials(options);
 }
 
 }  // namespace experimental

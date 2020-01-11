@@ -58,6 +58,14 @@ grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
   return slice;
 }
 
+void grpc_chttp2_add_rst_stream_to_next_write(
+    grpc_chttp2_transport* t, uint32_t id, uint32_t code,
+    grpc_transport_one_way_stats* stats) {
+  t->num_pending_induced_frames++;
+  grpc_slice_buffer_add(&t->qbuf,
+                        grpc_chttp2_rst_stream_create(id, code, stats));
+}
+
 grpc_error* grpc_chttp2_rst_stream_parser_begin_frame(
     grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags) {
   if (length != 4) {

@@ -28,6 +28,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -41,6 +42,12 @@
 namespace grpc {
 namespace testing {
 namespace {
+
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
+using ::grpc::experimental::CallbackGenericService;
+using ::grpc::experimental::GenericCallbackServerContext;
+using ::grpc::experimental::ServerGenericBidiReactor;
+#endif
 
 void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 
@@ -79,7 +86,7 @@ void HandleEcho(Service* service, ServerCompletionQueue* cq, bool dup_service) {
 // that the req/resp are ByteBuffers
 template <class Service>
 void HandleRawEcho(Service* service, ServerCompletionQueue* cq,
-                   bool dup_service) {
+                   bool /*dup_service*/) {
   ServerContext srv_ctx;
   GenericServerAsyncResponseWriter response_writer(&srv_ctx);
   ByteBuffer recv_buffer;
@@ -218,7 +225,7 @@ void HandleGenericCall(AsyncGenericService* service,
 class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
+  Status Echo(ServerContext* /*context*/, const EchoRequest* request,
               EchoResponse* response) override {
     response->set_message(request->message() + "_dup");
     return Status::OK;
@@ -229,6 +236,13 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
  protected:
   HybridEnd2endTest() {}
 
+  static void SetUpTestCase() {
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    gpr_setenv("grpc_cfstream", "0");
+#endif
+  }
+
   void SetUp() override {
     inproc_ = (::testing::UnitTest::GetInstance()
                    ->current_test_info()
@@ -237,11 +251,10 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
                   : false;
   }
 
-  bool SetUpServer(
-      ::grpc::Service* service1, ::grpc::Service* service2,
-      AsyncGenericService* generic_service,
-      experimental::CallbackGenericService* callback_generic_service,
-      int max_message_size = 0) {
+  bool SetUpServer(::grpc::Service* service1, ::grpc::Service* service2,
+                   AsyncGenericService* generic_service,
+                   CallbackGenericService* callback_generic_service,
+                   int max_message_size = 0) {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
 
@@ -260,8 +273,12 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
       builder.RegisterAsyncGenericService(generic_service);
     }
     if (callback_generic_service) {
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      builder.RegisterCallbackGenericService(callback_generic_service);
+#else
       builder.experimental().RegisterCallbackGenericService(
           callback_generic_service);
+#endif
     }
 
     if (max_message_size != 0) {
@@ -558,7 +575,7 @@ class StreamedUnaryDupPkg
           TestServiceImplDupPkg> {
  public:
   Status StreamedEcho(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -596,7 +613,7 @@ class FullyStreamedUnaryDupPkg
     : public duplicate::EchoTestService::StreamedUnaryService {
  public:
   Status StreamedEcho(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -635,7 +652,7 @@ class SplitResponseStreamDupPkg
           WithSplitStreamingMethod_ResponseStream<TestServiceImplDupPkg> {
  public:
   Status StreamedResponseStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -675,7 +692,7 @@ class FullySplitStreamedDupPkg
     : public duplicate::EchoTestService::SplitStreamedService {
  public:
   Status StreamedResponseStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -714,7 +731,7 @@ TEST_F(HybridEnd2endTest,
 class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
  public:
   Status StreamedEcho(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -727,7 +744,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     return Status::OK;
   }
   Status StreamedResponseStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -799,16 +816,19 @@ TEST_F(HybridEnd2endTest, GenericEcho) {
 
 TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
   EchoTestService::WithGenericMethod_Echo<TestServiceImpl> service;
-  class GenericEchoService : public experimental::CallbackGenericService {
+  class GenericEchoService : public CallbackGenericService {
    private:
-    experimental::ServerGenericBidiReactor* CreateReactor() override {
-      class Reactor : public experimental::ServerGenericBidiReactor {
+    ServerGenericBidiReactor* CreateReactor(
+        GenericCallbackServerContext* context) override {
+      EXPECT_EQ(context->method(), "/grpc.testing.EchoTestService/Echo");
+      gpr_log(GPR_DEBUG, "Constructor of generic service %d",
+              static_cast<int>(context->deadline().time_since_epoch().count()));
+
+      class Reactor : public ServerGenericBidiReactor {
+       public:
+        Reactor() { StartRead(&request_); }
+
        private:
-        void OnStarted(GenericServerContext* ctx) override {
-          ctx_ = ctx;
-          EXPECT_EQ(ctx->method(), "/grpc.testing.EchoTestService/Echo");
-          StartRead(&request_);
-        }
         void OnDone() override { delete this; }
         void OnReadDone(bool ok) override {
           if (!ok) {
@@ -824,7 +844,6 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
           Finish(ok ? Status::OK
                     : Status(StatusCode::UNKNOWN, "Unexpected failure"));
         }
-        GenericServerContext* ctx_;
         ByteBuffer request_;
         ByteBuffer response_;
         std::atomic_int reads_complete_{0};
@@ -954,8 +973,8 @@ TEST_F(HybridEnd2endTest, GenericMethodWithoutGenericService) {
   EXPECT_EQ(nullptr, server_.get());
 }
 
-INSTANTIATE_TEST_CASE_P(HybridEnd2endTest, HybridEnd2endTest,
-                        ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(HybridEnd2endTest, HybridEnd2endTest,
+                         ::testing::Bool());
 
 }  // namespace
 }  // namespace testing

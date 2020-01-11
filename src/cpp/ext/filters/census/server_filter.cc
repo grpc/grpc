@@ -50,12 +50,12 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
   if (b->idx.named.grpc_trace_bin != nullptr) {
     sml->tracing_slice =
         grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_trace_bin->md));
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_trace_bin);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_TRACE_BIN);
   }
   if (b->idx.named.grpc_tags_bin != nullptr) {
     sml->census_proto =
         grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_tags_bin->md));
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_tags_bin);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_TAGS_BIN);
   }
 }
 
@@ -74,7 +74,8 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
   if ((*calld->recv_message_) != nullptr) {
     ++calld->recv_message_count_;
   }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_message_, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, calld->initial_on_done_recv_message_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
@@ -121,8 +122,9 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
     grpc_census_call_set_context(
         calld->gc_, reinterpret_cast<census_context*>(&calld->context_));
   }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_initial_metadata_,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->initial_on_done_recv_initial_metadata_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CensusServerCallData::StartTransportStreamOpBatch(
@@ -155,7 +157,8 @@ void CensusServerCallData::StartTransportStreamOpBatch(
               op->send_trailing_metadata()->batch(), &census_bin_,
               grpc_mdelem_from_slices(
                   GRPC_MDSTR_GRPC_SERVER_STATS_BIN,
-                  grpc_slice_from_copied_buffer(stats_buf_, len))));
+                  grpc_core::UnmanagedMemorySlice(stats_buf_, len)),
+              GRPC_BATCH_GRPC_SERVER_STATS_BIN));
     }
   }
   // Call next op.

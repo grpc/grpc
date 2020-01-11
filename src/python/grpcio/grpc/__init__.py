@@ -192,6 +192,9 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         If the computation has already completed, the callback will be called
         immediately.
 
+        Exceptions raised in the callback will be logged at ERROR level, but
+        will not terminate any threads of execution.
+
         Args:
           fn: A callable taking this Future object as its single parameter.
         """
@@ -339,8 +342,7 @@ class RpcContext(six.with_metaclass(abc.ABCMeta)):
           callback: A no-parameter callable to be called on RPC termination.
 
         Returns:
-          bool:
-            True if the callback was added and will be called later; False if
+          True if the callback was added and will be called later; False if
             the callback was not added and will not be called (because the RPC
             already terminated or some other reason).
         """
@@ -1160,7 +1162,13 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     @abc.abstractmethod
     def set_trailing_metadata(self, trailing_metadata):
-        """Sends the trailing metadata for the RPC.
+        """Sets the trailing metadata for the RPC.
+
+        Sets the trailing metadata to be sent upon completion of the RPC.
+
+        If this method is invoked multiple times throughout the lifetime of an
+        RPC, the value supplied in the final invocation will be the value sent
+        over the wire.
 
         This method need not be called by implementations if they have no
         metadata to add to what the gRPC runtime will transmit.
@@ -1285,6 +1293,7 @@ class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
 
 class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
     """Describes an RPC that has just arrived for service.
+
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
@@ -1381,12 +1390,10 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         This method may only be called before starting the server.
 
         Args:
-          address: The address for which to open a port.
-          if the port is 0, or not specified in the address, then gRPC runtime
-          will choose a port.
+          address: The address for which to open a port. If the port is 0,
+            or not specified in the address, then gRPC runtime will choose a port.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1404,7 +1411,6 @@ class Server(six.with_metaclass(abc.ABCMeta)):
           server_credentials: A ServerCredentials object.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1444,6 +1450,29 @@ class Server(six.with_metaclass(abc.ABCMeta)):
           A threading.Event that will be set when this Server has completely
           stopped, i.e. when running RPCs either complete or are aborted and
           all handlers have terminated.
+        """
+        raise NotImplementedError()
+
+    def wait_for_termination(self, timeout=None):
+        """Block current thread until the server stops.
+
+        This is an EXPERIMENTAL API.
+
+        The wait will not consume computational resources during blocking, and
+        it will block until one of the two following conditions are met:
+
+        1) The server is stopped or terminated;
+        2) A timeout occurs if timeout is not `None`.
+
+        The timeout argument works in the same way as `threading.Event.wait()`.
+        https://docs.python.org/3/library/threading.html#threading.Event.wait
+
+        Args:
+          timeout: A floating point number specifying a timeout for the
+            operation in seconds.
+
+        Returns:
+          A bool indicates if the operation times out.
         """
         raise NotImplementedError()
 
@@ -1560,7 +1589,7 @@ def ssl_channel_credentials(root_certificates=None,
       private_key: The PEM-encoded private key as a byte string, or None if no
         private key should be used.
       certificate_chain: The PEM-encoded certificate chain as a byte string
-        to use or or None if no certificate chain should be used.
+        to use or None if no certificate chain should be used.
 
     Returns:
       A ChannelCredentials for use with an SSL-enabled Channel.
@@ -1724,6 +1753,78 @@ def dynamic_ssl_server_credentials(initial_certificate_configuration,
             certificate_configuration_fetcher, require_client_authentication))
 
 
+@enum.unique
+class LocalConnectionType(enum.Enum):
+    """Types of local connection for local credential creation.
+
+    Attributes:
+      UDS: Unix domain socket connections
+      LOCAL_TCP: Local TCP connections.
+    """
+    UDS = _cygrpc.LocalConnectionType.uds
+    LOCAL_TCP = _cygrpc.LocalConnectionType.local_tcp
+
+
+def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+    """Creates a local ChannelCredentials used for local connections.
+
+    This is an EXPERIMENTAL API.
+
+    Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+    also UDS connections.
+
+    The connections created by local channel credentials are not
+    encrypted, but will be checked if they are local or not.
+    The UDS connections are considered secure by providing peer authentication
+    and data confidentiality while TCP connections are considered insecure.
+
+    It is allowed to transmit call credentials over connections created by
+    local channel credentials.
+
+    Local channel credentials are useful for 1) eliminating insecure_channel usage;
+    2) enable unit testing for call credentials without setting up secrets.
+
+    Args:
+      local_connect_type: Local connection type (either
+        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)
+
+    Returns:
+      A ChannelCredentials for use with a local Channel
+    """
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_local(local_connect_type.value))
+
+
+def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+    """Creates a local ServerCredentials used for local connections.
+
+    This is an EXPERIMENTAL API.
+
+    Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+    also UDS connections.
+
+    The connections created by local server credentials are not
+    encrypted, but will be checked if they are local or not.
+    The UDS connections are considered secure by providing peer authentication
+    and data confidentiality while TCP connections are considered insecure.
+
+    It is allowed to transmit call credentials over connections created by local
+    server credentials.
+
+    Local server credentials are useful for 1) eliminating insecure_channel usage;
+    2) enable unit testing for call credentials without setting up secrets.
+
+    Args:
+      local_connect_type: Local connection type (either
+        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)
+
+    Returns:
+      A ServerCredentials for use with a local Server
+    """
+    return ServerCredentials(
+        _cygrpc.server_credentials_local(local_connect_type.value))
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 
@@ -1757,8 +1858,8 @@ def insecure_channel(target, options=None, compression=None):
       A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
-    return _channel.Channel(target, ()
-                            if options is None else options, None, compression)
+    return _channel.Channel(target, () if options is None else options, None,
+                            compression)
 
 
 def secure_channel(target, credentials, options=None, compression=None):
@@ -1841,10 +1942,10 @@ def server(thread_pool,
       A Server object.
     """
     from grpc import _server  # pylint: disable=cyclic-import
-    return _server.create_server(thread_pool, ()
-                                 if handlers is None else handlers, ()
-                                 if interceptors is None else interceptors, ()
-                                 if options is None else options,
+    return _server.create_server(thread_pool,
+                                 () if handlers is None else handlers,
+                                 () if interceptors is None else interceptors,
+                                 () if options is None else options,
                                  maximum_concurrent_rpcs, compression)
 
 
@@ -1893,6 +1994,7 @@ __all__ = (
     'ClientCallDetails',
     'ServerCertificateConfiguration',
     'ServerCredentials',
+    'LocalConnectionType',
     'UnaryUnaryMultiCallable',
     'UnaryStreamMultiCallable',
     'StreamUnaryMultiCallable',
@@ -1919,6 +2021,8 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
+    'local_channel_credentials',
+    'local_server_credentials',
     'ssl_server_credentials',
     'ssl_server_certificate_configuration',
     'dynamic_ssl_server_credentials',

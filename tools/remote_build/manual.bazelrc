@@ -17,21 +17,19 @@
 
 import %workspace%/tools/remote_build/rbe_common.bazelrc
 
-build --remote_cache=remotebuildexecution.googleapis.com
-build --remote_executor=remotebuildexecution.googleapis.com
-build --tls_enabled=true
+build --remote_cache=grpcs://remotebuildexecution.googleapis.com
+build --remote_executor=grpcs://remotebuildexecution.googleapis.com
 
-# Enable authentication. This will pick up application default credentials by
-# default. You can use --auth_credentials=some_file.json to use a service
-# account credential instead.
+# Enable authentication. Bazel will use application default credentials
+# unless overridden by --google_credentials=service_account_credentials.json
 # How to setup credentials:
-# See https://cloud.google.com/remote-build-execution/docs/getting-started#set_credentials
+# https://cloud.google.com/remote-build-execution/docs/results-ui/getting-started-results-ui
 build --auth_enabled=true
 
 # Set flags for uploading to BES in order to view results in the Bazel Build
 # Results UI.
-build --bes_backend="buildeventservice.googleapis.com"
-build --bes_timeout=60s
+build --bes_backend=grpcs://buildeventservice.googleapis.com
+build --bes_timeout=600s
 build --bes_results_url="https://source.cloud.google.com/results/invocations/"
 build --project_id=grpc-testing
 

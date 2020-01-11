@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "src/core/lib/iomgr/tcp_posix.h"
 
@@ -191,9 +191,9 @@ static void read_cb(void* user_data, grpc_error* error) {
         GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
   } else {
+    gpr_mu_unlock(g_mu);
     grpc_endpoint_read(state->ep, &state->incoming, &state->read_cb,
                        /*urgent=*/false);
-    gpr_mu_unlock(g_mu);
   }
 }
 
@@ -472,7 +472,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   gpr_free(slices);
 }
 
-void on_fd_released(void* arg, grpc_error* errors) {
+void on_fd_released(void* arg, grpc_error* /*errors*/) {
   int* done = static_cast<int*>(arg);
   *done = 1;
   GPR_ASSERT(
@@ -618,7 +618,7 @@ static grpc_endpoint_test_config configs[] = {
     {"tcp/tcp_socketpair", create_fixture_tcp_socketpair, clean_up},
 };
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
@@ -645,8 +645,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_TCP */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_TCP */

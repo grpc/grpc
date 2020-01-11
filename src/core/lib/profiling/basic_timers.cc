@@ -287,7 +287,7 @@ void gpr_timers_global_init(void) {}
 
 void gpr_timers_global_destroy(void) {}
 
-void gpr_timers_set_log_filename(const char* filename) {}
+void gpr_timers_set_log_filename(const char* /*filename*/) {}
 
-void gpr_timer_set_enabled(int enabled) {}
+void gpr_timer_set_enabled(int /*enabled*/) {}
 #endif /* GRPC_BASIC_PROFILER */

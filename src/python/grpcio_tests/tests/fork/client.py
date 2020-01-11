@@ -30,26 +30,22 @@ def _args():
         raise argparse.ArgumentTypeError('Only true/false allowed')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--server_host',
-        default="localhost",
-        type=str,
-        help='the host to which to connect')
-    parser.add_argument(
-        '--server_port',
-        type=int,
-        required=True,
-        help='the port to which to connect')
-    parser.add_argument(
-        '--test_case',
-        default='large_unary',
-        type=str,
-        help='the test case to execute')
-    parser.add_argument(
-        '--use_tls',
-        default=False,
-        type=parse_bool,
-        help='require a secure connection')
+    parser.add_argument('--server_host',
+                        default="localhost",
+                        type=str,
+                        help='the host to which to connect')
+    parser.add_argument('--server_port',
+                        type=int,
+                        required=True,
+                        help='the port to which to connect')
+    parser.add_argument('--test_case',
+                        default='large_unary',
+                        type=str,
+                        help='the test case to execute')
+    parser.add_argument('--use_tls',
+                        default=False,
+                        type=parse_bool,
+                        help='require a secure connection')
     return parser.parse_args()
 
 

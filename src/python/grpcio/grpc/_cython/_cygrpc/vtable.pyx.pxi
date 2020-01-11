@@ -30,10 +30,7 @@ cdef int _compare_pointer(void* first_pointer, void* second_pointer):
   else:
     return 0
 
-
-cdef class _VTable:
-  def __cinit__(self):
-    self.c_vtable.copy = &_copy_pointer
-    self.c_vtable.destroy = &_destroy_pointer
-    self.c_vtable.cmp = &_compare_pointer
-
+cdef grpc_arg_pointer_vtable default_vtable
+default_vtable.copy = &_copy_pointer
+default_vtable.destroy = &_destroy_pointer
+default_vtable.cmp = &_compare_pointer

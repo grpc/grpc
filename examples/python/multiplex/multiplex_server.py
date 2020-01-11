@@ -26,8 +26,6 @@ import route_guide_pb2
 import route_guide_pb2_grpc
 import route_guide_resources
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-
 
 def _get_feature(feature_db, point):
     """Returns Feature at given location or None."""
@@ -50,8 +48,8 @@ def _get_distance(start, end):
     delta_lon_rad = math.radians(lon_2 - lon_1)
 
     a = (pow(math.sin(delta_lat_rad / 2), 2) +
-         (math.cos(lat_rad_1) * math.cos(lat_rad_2) * pow(
-             math.sin(delta_lon_rad / 2), 2)))
+         (math.cos(lat_rad_1) * math.cos(lat_rad_2) *
+          pow(math.sin(delta_lon_rad / 2), 2)))
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     R = 6371000
     # metres
@@ -106,11 +104,10 @@ class _RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             prev_point = point
 
         elapsed_time = time.time() - start_time
-        return route_guide_pb2.RouteSummary(
-            point_count=point_count,
-            feature_count=feature_count,
-            distance=int(distance),
-            elapsed_time=int(elapsed_time))
+        return route_guide_pb2.RouteSummary(point_count=point_count,
+                                            feature_count=feature_count,
+                                            distance=int(distance),
+                                            elapsed_time=int(elapsed_time))
 
     def RouteChat(self, request_iterator, context):
         prev_notes = []
@@ -129,11 +126,7 @@ def serve():
         _RouteGuideServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(0)
+    server.wait_for_termination()
 
 
 if __name__ == '__main__':

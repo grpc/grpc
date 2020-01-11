@@ -21,57 +21,37 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 
-// TODO(roth): In a subsequent PR, remove this from this API.
-class ConnectedSubchannelInterface
-    : public RefCounted<ConnectedSubchannelInterface> {
- public:
-  virtual const grpc_channel_args* args() const GRPC_ABSTRACT;
-
- protected:
-  template <typename TraceFlagT = TraceFlag>
-  explicit ConnectedSubchannelInterface(TraceFlagT* trace_flag = nullptr)
-      : RefCounted<ConnectedSubchannelInterface>(trace_flag) {}
-};
-
+// The interface for subchannels that is exposed to LB policy implementations.
 class SubchannelInterface : public RefCounted<SubchannelInterface> {
  public:
-  class ConnectivityStateWatcher {
+  class ConnectivityStateWatcherInterface {
    public:
-    virtual ~ConnectivityStateWatcher() = default;
+    virtual ~ConnectivityStateWatcherInterface() = default;
 
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a
     // given watcher instance at any given time.
-    //
-    // When the state changes to READY, connected_subchannel will
-    // contain a ref to the connected subchannel.  When it changes from
-    // READY to some other state, the implementation must release its
-    // ref to the connected subchannel.
     virtual void OnConnectivityStateChange(
-        grpc_connectivity_state new_state,
-        RefCountedPtr<ConnectedSubchannelInterface>
-            connected_subchannel)  // NOLINT
-        GRPC_ABSTRACT;
+        grpc_connectivity_state new_state) = 0;
 
     // TODO(roth): Remove this as soon as we move to EventManager-based
     // polling.
-    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual grpc_pollset_set* interested_parties() = 0;
   };
+
+  template <typename TraceFlagT = TraceFlag>
+  explicit SubchannelInterface(TraceFlagT* trace_flag = nullptr)
+      : RefCounted<SubchannelInterface>(trace_flag) {}
 
   virtual ~SubchannelInterface() = default;
 
   // Returns the current connectivity state of the subchannel.
-  virtual grpc_connectivity_state CheckConnectivityState(
-      RefCountedPtr<ConnectedSubchannelInterface>* connected_subchannel)
-      GRPC_ABSTRACT;
+  virtual grpc_connectivity_state CheckConnectivityState() = 0;
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered when the
@@ -86,26 +66,27 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // the previous watcher using CancelConnectivityStateWatch().
   virtual void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      UniquePtr<ConnectivityStateWatcher> watcher) GRPC_ABSTRACT;
+      std::unique_ptr<ConnectivityStateWatcherInterface> watcher) = 0;
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
-  virtual void CancelConnectivityStateWatch(ConnectivityStateWatcher* watcher)
-      GRPC_ABSTRACT;
+  virtual void CancelConnectivityStateWatch(
+      ConnectivityStateWatcherInterface* watcher) = 0;
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   // If the subchannel is currently in backoff delay due to a previously
   // failed attempt, the new connection attempt will not start until the
   // backoff delay has elapsed.
-  virtual void AttemptToConnect() GRPC_ABSTRACT;
+  virtual void AttemptToConnect() = 0;
 
   // Resets the subchannel's connection backoff state.  If AttemptToConnect()
   // has been called since the subchannel entered TRANSIENT_FAILURE state,
   // starts a new connection attempt immediately; otherwise, a new connection
   // attempt will be started as soon as AttemptToConnect() is called.
-  virtual void ResetBackoff() GRPC_ABSTRACT;
+  virtual void ResetBackoff() = 0;
 
-  GRPC_ABSTRACT_BASE_CLASS
+  // TODO(roth): Need a better non-grpc-specific abstraction here.
+  virtual const grpc_channel_args* channel_args() = 0;
 };
 
 }  // namespace grpc_core

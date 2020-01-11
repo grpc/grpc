@@ -84,7 +84,8 @@ static const tsi_zero_copy_grpc_protector_vtable
     local_zero_copy_grpc_protector_vtable = {
         local_zero_copy_grpc_protector_protect,
         local_zero_copy_grpc_protector_unprotect,
-        local_zero_copy_grpc_protector_destroy};
+        local_zero_copy_grpc_protector_destroy,
+        nullptr /* local_zero_copy_grpc_protector_max_frame_size */};
 
 tsi_result local_zero_copy_grpc_protector_create(
     tsi_zero_copy_grpc_protector** protector) {
@@ -104,12 +105,13 @@ tsi_result local_zero_copy_grpc_protector_create(
 /* --- tsi_handshaker_result methods implementation. --- */
 
 static tsi_result handshaker_result_extract_peer(
-    const tsi_handshaker_result* self, tsi_peer* peer) {
+    const tsi_handshaker_result* /*self*/, tsi_peer* /*peer*/) {
   return TSI_OK;
 }
 
 static tsi_result handshaker_result_create_zero_copy_grpc_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
+    const tsi_handshaker_result* self,
+    size_t* /*max_output_protected_frame_size*/,
     tsi_zero_copy_grpc_protector** protector) {
   if (self == nullptr || protector == nullptr) {
     gpr_log(GPR_ERROR,
@@ -157,10 +159,10 @@ static tsi_result create_handshaker_result(bool is_client,
 /* --- tsi_handshaker methods implementation. --- */
 
 static tsi_result handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** bytes_to_send,
+    tsi_handshaker* self, const unsigned char* /*received_bytes*/,
+    size_t /*received_bytes_size*/, const unsigned char** /*bytes_to_send*/,
     size_t* bytes_to_send_size, tsi_handshaker_result** result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data) {
+    tsi_handshaker_on_next_done_cb /*cb*/, void* /*user_data*/) {
   if (self == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to handshaker_next()");
     return TSI_INVALID_ARGUMENT;

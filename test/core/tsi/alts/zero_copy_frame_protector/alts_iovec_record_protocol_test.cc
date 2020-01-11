@@ -917,7 +917,7 @@ static void alts_iovec_record_protocol_mix_operations_tests() {
   alts_iovec_record_protocol_test_fixture_destroy(fixture_2);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   alts_iovec_record_protocol_random_seal_unseal_tests();
   alts_iovec_record_protocol_empty_seal_unseal_tests();
   alts_iovec_record_protocol_unsync_seal_unseal_tests();

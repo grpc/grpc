@@ -74,7 +74,9 @@ class ServicerContext(grpc.ServicerContext):
             _common.fuss_with_metadata(trailing_metadata))
 
     def abort(self, code, details):
-        raise NotImplementedError()
+        with self._rpc._condition:
+            self._rpc._abort(code, details)
+        raise Exception()
 
     def abort_with_status(self, status):
         raise NotImplementedError()

@@ -33,7 +33,7 @@ void ContextList::Append(ContextList** head, grpc_chttp2_stream* s) {
     return;
   }
   /* Create a new element in the list and add it at the front */
-  ContextList* elem = grpc_core::New<ContextList>();
+  ContextList* elem = new ContextList();
   elem->trace_context_ = get_copied_context_fn_g(s->context);
   elem->byte_offset_ = s->byte_counter;
   elem->next_ = *head;
@@ -46,12 +46,14 @@ void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
   ContextList* to_be_freed;
   while (head != nullptr) {
     if (write_timestamps_callback_g) {
-      ts->byte_offset = static_cast<uint32_t>(head->byte_offset_);
+      if (ts) {
+        ts->byte_offset = static_cast<uint32_t>(head->byte_offset_);
+      }
       write_timestamps_callback_g(head->trace_context_, ts, error);
     }
     to_be_freed = head;
     head = head->next_;
-    grpc_core::Delete(to_be_freed);
+    delete to_be_freed;
   }
 }
 

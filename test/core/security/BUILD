@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])  # Apache v2
 
@@ -25,6 +25,7 @@ grpc_fuzzer(
     srcs = ["alts_credentials_fuzzer.cc"],
     corpus = "corpus/alts_credentials_corpus",
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -37,6 +38,7 @@ grpc_fuzzer(
     srcs = ["ssl_server_fuzzer.cc"],
     corpus = "corpus/ssl_server_corpus",
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -58,6 +60,7 @@ grpc_cc_test(
     name = "auth_context_test",
     srcs = ["auth_context_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -77,9 +80,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "control_plane_credentials_test",
+    srcs = ["control_plane_credentials_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "json_token_test",
     srcs = ["json_token_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -91,6 +108,7 @@ grpc_cc_test(
     name = "jwt_verifier_test",
     srcs = ["jwt_verifier_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -236,6 +254,22 @@ grpc_cc_test(
         "//:grpc_secure",
         "//:tsi",
         "//:tsi_interface",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "tls_security_connector_test",
+    srcs = ["tls_security_connector_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
 )

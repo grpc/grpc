@@ -32,7 +32,7 @@
 
 static void BM_NoOpExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_core::ExecCtx exec_ctx;
   }
   track_counters.Finish(state);
@@ -42,7 +42,7 @@ BENCHMARK(BM_NoOpExecCtx);
 static void BM_WellFlushed(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -50,12 +50,12 @@ static void BM_WellFlushed(benchmark::State& state) {
 }
 BENCHMARK(BM_WellFlushed);
 
-static void DoNothing(void* arg, grpc_error* error) {}
+static void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 static void BM_ClosureInitAgainstExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_closure c;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     benchmark::DoNotOptimize(
         GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx));
   }
@@ -65,12 +65,12 @@ BENCHMARK(BM_ClosureInitAgainstExecCtx);
 
 static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create();
   grpc_closure c;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    benchmark::DoNotOptimize(GRPC_CLOSURE_INIT(
-        &c, DoNothing, nullptr, grpc_combiner_scheduler(combiner)));
+  for (auto _ : state) {
+    benchmark::DoNotOptimize(
+        GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, nullptr));
   }
   GRPC_COMBINER_UNREF(combiner, "finished");
 
@@ -78,25 +78,25 @@ static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureInitAgainstCombiner);
 
-static void BM_ClosureRunOnExecCtx(benchmark::State& state) {
+static void BM_ClosureRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_RUN(&c, GRPC_ERROR_NONE);
-    grpc_core::ExecCtx::Get()->Flush();
+  for (auto _ : state) {
+    grpc_core::Closure::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
   }
 
   track_counters.Finish(state);
 }
-BENCHMARK(BM_ClosureRunOnExecCtx);
+BENCHMARK(BM_ClosureRun);
 
 static void BM_ClosureCreateAndRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_RUN(
+  for (auto _ : state) {
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(DoNothing, nullptr, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
@@ -109,8 +109,9 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure c;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_RUN(
+  for (auto _ : state) {
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
@@ -124,8 +125,8 @@ static void BM_ClosureSchedOnExecCtx(benchmark::State& state) {
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_SCHED(&c, GRPC_ERROR_NONE);
+  for (auto _ : state) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -140,9 +141,9 @@ static void BM_ClosureSched2OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
+  for (auto _ : state) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -159,10 +160,10 @@ static void BM_ClosureSched3OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c3, GRPC_ERROR_NONE);
+  for (auto _ : state) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c3, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -176,7 +177,7 @@ static void BM_AcquireMutex(benchmark::State& state) {
   gpr_mu mu;
   gpr_mu_init(&mu);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     gpr_mu_lock(&mu);
     DoNothing(nullptr, GRPC_ERROR_NONE);
     gpr_mu_unlock(&mu);
@@ -193,7 +194,7 @@ static void BM_TryAcquireMutex(benchmark::State& state) {
   gpr_mu mu;
   gpr_mu_init(&mu);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     if (gpr_mu_trylock(&mu)) {
       DoNothing(nullptr, GRPC_ERROR_NONE);
       gpr_mu_unlock(&mu);
@@ -212,7 +213,7 @@ static void BM_AcquireSpinlock(benchmark::State& state) {
   // for comparison with the combiner stuff below
   gpr_spinlock mu = GPR_SPINLOCK_INITIALIZER;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     gpr_spinlock_lock(&mu);
     DoNothing(nullptr, GRPC_ERROR_NONE);
     gpr_spinlock_unlock(&mu);
@@ -227,7 +228,7 @@ static void BM_TryAcquireSpinlock(benchmark::State& state) {
   // for comparison with the combiner stuff below
   gpr_spinlock mu = GPR_SPINLOCK_INITIALIZER;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     if (gpr_spinlock_trylock(&mu)) {
       DoNothing(nullptr, GRPC_ERROR_NONE);
       gpr_spinlock_unlock(&mu);
@@ -242,12 +243,12 @@ BENCHMARK(BM_TryAcquireSpinlock);
 
 static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create();
   grpc_closure c;
-  GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
+  GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_SCHED(&c, GRPC_ERROR_NONE);
+  for (auto _ : state) {
+    combiner->Run(&c, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner, "finished");
@@ -258,15 +259,15 @@ BENCHMARK(BM_ClosureSchedOnCombiner);
 
 static void BM_ClosureSched2OnCombiner(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
-  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
-  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
+  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
+  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
+  for (auto _ : state) {
+    combiner->Run(&c1, GRPC_ERROR_NONE);
+    combiner->Run(&c2, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner, "finished");
@@ -277,18 +278,18 @@ BENCHMARK(BM_ClosureSched2OnCombiner);
 
 static void BM_ClosureSched3OnCombiner(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
   grpc_closure c3;
-  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
-  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
-  GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
+  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
+  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, nullptr);
+  GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c3, GRPC_ERROR_NONE);
+  for (auto _ : state) {
+    combiner->Run(&c1, GRPC_ERROR_NONE);
+    combiner->Run(&c2, GRPC_ERROR_NONE);
+    combiner->Run(&c3, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner, "finished");
@@ -299,18 +300,16 @@ BENCHMARK(BM_ClosureSched3OnCombiner);
 
 static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_combiner* combiner1 = grpc_combiner_create();
-  grpc_combiner* combiner2 = grpc_combiner_create();
+  grpc_core::Combiner* combiner1 = grpc_combiner_create();
+  grpc_core::Combiner* combiner2 = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
-  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr,
-                    grpc_combiner_scheduler(combiner1));
-  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr,
-                    grpc_combiner_scheduler(combiner2));
+  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
+  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
+  for (auto _ : state) {
+    combiner1->Run(&c1, GRPC_ERROR_NONE);
+    combiner2->Run(&c2, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner1, "finished");
@@ -322,26 +321,22 @@ BENCHMARK(BM_ClosureSched2OnTwoCombiners);
 
 static void BM_ClosureSched4OnTwoCombiners(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_combiner* combiner1 = grpc_combiner_create();
-  grpc_combiner* combiner2 = grpc_combiner_create();
+  grpc_core::Combiner* combiner1 = grpc_combiner_create();
+  grpc_core::Combiner* combiner2 = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
   grpc_closure c3;
   grpc_closure c4;
-  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr,
-                    grpc_combiner_scheduler(combiner1));
-  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr,
-                    grpc_combiner_scheduler(combiner2));
-  GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr,
-                    grpc_combiner_scheduler(combiner1));
-  GRPC_CLOSURE_INIT(&c4, DoNothing, nullptr,
-                    grpc_combiner_scheduler(combiner2));
+  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
+  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, nullptr);
+  GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, nullptr);
+  GRPC_CLOSURE_INIT(&c4, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c3, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c4, GRPC_ERROR_NONE);
+  for (auto _ : state) {
+    combiner1->Run(&c1, GRPC_ERROR_NONE);
+    combiner2->Run(&c2, GRPC_ERROR_NONE);
+    combiner1->Run(&c3, GRPC_ERROR_NONE);
+    combiner2->Run(&c4, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner1, "finished");
@@ -355,27 +350,28 @@ BENCHMARK(BM_ClosureSched4OnTwoCombiners);
 // the benchmark is complete
 class Rescheduler {
  public:
-  Rescheduler(benchmark::State& state, grpc_closure_scheduler* scheduler)
-      : state_(state) {
-    GRPC_CLOSURE_INIT(&closure_, Step, this, scheduler);
+  explicit Rescheduler(benchmark::State& state) : state_(state) {
+    GRPC_CLOSURE_INIT(&closure_, Step, this, nullptr);
   }
 
-  void ScheduleFirst() { GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE); }
+  void ScheduleFirst() {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+  }
 
-  void ScheduleFirstAgainstDifferentScheduler(
-      grpc_closure_scheduler* scheduler) {
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(Step, this, scheduler),
-                       GRPC_ERROR_NONE);
+  void ScheduleFirstAgainstDifferentScheduler() {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            GRPC_CLOSURE_CREATE(Step, this, nullptr),
+                            GRPC_ERROR_NONE);
   }
 
  private:
   benchmark::State& state_;
   grpc_closure closure_;
 
-  static void Step(void* arg, grpc_error* error) {
+  static void Step(void* arg, grpc_error* /*error*/) {
     Rescheduler* self = static_cast<Rescheduler*>(arg);
     if (self->state_.KeepRunning()) {
-      GRPC_CLOSURE_SCHED(&self->closure_, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_, GRPC_ERROR_NONE);
     }
   }
 };
@@ -383,38 +379,12 @@ class Rescheduler {
 static void BM_ClosureReschedOnExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  Rescheduler r(state, grpc_schedule_on_exec_ctx);
+  Rescheduler r(state);
   r.ScheduleFirst();
   grpc_core::ExecCtx::Get()->Flush();
   track_counters.Finish(state);
 }
 BENCHMARK(BM_ClosureReschedOnExecCtx);
-
-static void BM_ClosureReschedOnCombiner(benchmark::State& state) {
-  TrackCounters track_counters;
-  grpc_core::ExecCtx exec_ctx;
-  grpc_combiner* combiner = grpc_combiner_create();
-  Rescheduler r(state, grpc_combiner_scheduler(combiner));
-  r.ScheduleFirst();
-  grpc_core::ExecCtx::Get()->Flush();
-  GRPC_COMBINER_UNREF(combiner, "finished");
-
-  track_counters.Finish(state);
-}
-BENCHMARK(BM_ClosureReschedOnCombiner);
-
-static void BM_ClosureReschedOnCombinerFinally(benchmark::State& state) {
-  TrackCounters track_counters;
-  grpc_core::ExecCtx exec_ctx;
-  grpc_combiner* combiner = grpc_combiner_create();
-  Rescheduler r(state, grpc_combiner_finally_scheduler(combiner));
-  r.ScheduleFirstAgainstDifferentScheduler(grpc_combiner_scheduler(combiner));
-  grpc_core::ExecCtx::Get()->Flush();
-  GRPC_COMBINER_UNREF(combiner, "finished");
-
-  track_counters.Finish(state);
-}
-BENCHMARK(BM_ClosureReschedOnCombinerFinally);
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.

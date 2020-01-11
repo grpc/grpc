@@ -19,9 +19,12 @@
 #ifndef GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
 #define GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
 
+#include "src/core/ext/filters/client_channel/lb_policy.h"
+
 namespace grpc_core {
 
-typedef void (*InterceptRecvTrailingMetadataCallback)(void*);
+typedef void (*InterceptRecvTrailingMetadataCallback)(
+    void*, const LoadBalancingPolicy::BackendMetricData*);
 
 // Registers an LB policy called "intercept_trailing_metadata_lb" that
 // invokes cb with argument user_data when trailing metadata is received

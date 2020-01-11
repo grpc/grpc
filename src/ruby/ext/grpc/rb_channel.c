@@ -119,7 +119,7 @@ static void grpc_rb_channel_watch_connection_state_op_complete(
   GPR_ASSERT(!op->op.api_callback_args.called_back);
   op->op.api_callback_args.called_back = 1;
   op->op.api_callback_args.success = success;
-  // wake up the watch API call thats waiting on this op
+  // wake up the watch API call that's waiting on this op
   gpr_cv_broadcast(&global_connection_polling_cv);
 }
 

@@ -14,7 +14,7 @@
 
 # Docker file for building gRPC artifacts.
 
-FROM 32bit/debian:jessie
+FROM i386/debian:jessie
 RUN sed -i '/deb http:\/\/http.debian.net\/debian jessie-updates main/d' /etc/apt/sources.list
 
 # Install Git and basic packages.
@@ -50,7 +50,6 @@ RUN apt-get update && apt-get install -y \
 # Ruby dependencies
 
 # Install rvm
-# Install rvm
 RUN apt-get update && apt-get install -y gnupg2
 RUN gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
@@ -58,10 +57,11 @@ RUN \curl -sSL https://get.rvm.io | bash -s stable
 # Install Ruby 2.1
 RUN /bin/bash -l -c "rvm install ruby-2.1"
 RUN /bin/bash -l -c "rvm use --default ruby-2.1"
-RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
+RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-ri --no-rdoc"
+RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
+
 
 ##################
 # C# dependencies (needed to build grpc_csharp_ext)
@@ -71,6 +71,14 @@ RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
 RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+
+
+##################
+# Python AuditWheel dependencies (needed to check manylinux1 compatibility)
+
+RUN apt-get install -y python3 python3-pip
+RUN pip3 install auditwheel==2.1.1
+
 
 RUN mkdir /var/local/jenkins
 

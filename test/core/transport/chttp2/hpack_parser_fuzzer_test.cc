@@ -30,8 +30,11 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void onhdr(void* ud, grpc_mdelem md) { GRPC_MDELEM_UNREF(md); }
-static void dont_log(gpr_log_func_args* args) {}
+static grpc_error* onhdr(void* /*ud*/, grpc_mdelem md) {
+  GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_NONE;
+}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);

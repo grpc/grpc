@@ -67,7 +67,7 @@ namespace Grpc.Testing {
     {
       /// <summary>Creates a new client for ReportQpsScenarioService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public ReportQpsScenarioServiceClient(grpc::Channel channel) : base(channel)
+      public ReportQpsScenarioServiceClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for ReportQpsScenarioService that uses a custom <c>CallInvoker</c>.</summary>

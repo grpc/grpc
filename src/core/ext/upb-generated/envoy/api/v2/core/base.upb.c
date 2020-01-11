@@ -9,12 +9,12 @@
 #include <stddef.h>
 #include "upb/msg.h"
 #include "envoy/api/v2/core/base.upb.h"
+#include "envoy/api/v2/core/http_uri.upb.h"
+#include "envoy/type/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "validate/validate.upb.h"
-#include "gogoproto/gogo.upb.h"
-#include "envoy/type/percent.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -89,6 +89,21 @@ const upb_msglayout envoy_api_v2_core_RuntimeUInt32_msginit = {
   UPB_SIZE(16, 32), 2, false,
 };
 
+static const upb_msglayout *const envoy_api_v2_core_RuntimeFeatureFlag_submsgs[1] = {
+  &google_protobuf_BoolValue_msginit,
+};
+
+static const upb_msglayout_field envoy_api_v2_core_RuntimeFeatureFlag__fields[2] = {
+  {1, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
+};
+
+const upb_msglayout envoy_api_v2_core_RuntimeFeatureFlag_msginit = {
+  &envoy_api_v2_core_RuntimeFeatureFlag_submsgs[0],
+  &envoy_api_v2_core_RuntimeFeatureFlag__fields[0],
+  UPB_SIZE(16, 32), 2, false,
+};
+
 static const upb_msglayout_field envoy_api_v2_core_HeaderValue__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
   {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
@@ -116,6 +131,20 @@ const upb_msglayout envoy_api_v2_core_HeaderValueOption_msginit = {
   UPB_SIZE(8, 16), 2, false,
 };
 
+static const upb_msglayout *const envoy_api_v2_core_HeaderMap_submsgs[1] = {
+  &envoy_api_v2_core_HeaderValue_msginit,
+};
+
+static const upb_msglayout_field envoy_api_v2_core_HeaderMap__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
+};
+
+const upb_msglayout envoy_api_v2_core_HeaderMap_msginit = {
+  &envoy_api_v2_core_HeaderMap_submsgs[0],
+  &envoy_api_v2_core_HeaderMap__fields[0],
+  UPB_SIZE(4, 8), 1, false,
+};
+
 static const upb_msglayout_field envoy_api_v2_core_DataSource__fields[3] = {
   {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
   {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 12, 1},
@@ -126,6 +155,37 @@ const upb_msglayout envoy_api_v2_core_DataSource_msginit = {
   NULL,
   &envoy_api_v2_core_DataSource__fields[0],
   UPB_SIZE(16, 32), 3, false,
+};
+
+static const upb_msglayout *const envoy_api_v2_core_RemoteDataSource_submsgs[1] = {
+  &envoy_api_v2_core_HttpUri_msginit,
+};
+
+static const upb_msglayout_field envoy_api_v2_core_RemoteDataSource__fields[2] = {
+  {1, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
+};
+
+const upb_msglayout envoy_api_v2_core_RemoteDataSource_msginit = {
+  &envoy_api_v2_core_RemoteDataSource_submsgs[0],
+  &envoy_api_v2_core_RemoteDataSource__fields[0],
+  UPB_SIZE(16, 32), 2, false,
+};
+
+static const upb_msglayout *const envoy_api_v2_core_AsyncDataSource_submsgs[2] = {
+  &envoy_api_v2_core_DataSource_msginit,
+  &envoy_api_v2_core_RemoteDataSource_msginit,
+};
+
+static const upb_msglayout_field envoy_api_v2_core_AsyncDataSource__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+};
+
+const upb_msglayout envoy_api_v2_core_AsyncDataSource_msginit = {
+  &envoy_api_v2_core_AsyncDataSource_submsgs[0],
+  &envoy_api_v2_core_AsyncDataSource__fields[0],
+  UPB_SIZE(8, 16), 2, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_core_TransportSocket_submsgs[2] = {
@@ -173,6 +233,16 @@ const upb_msglayout envoy_api_v2_core_RuntimeFractionalPercent_msginit = {
   &envoy_api_v2_core_RuntimeFractionalPercent_submsgs[0],
   &envoy_api_v2_core_RuntimeFractionalPercent__fields[0],
   UPB_SIZE(16, 32), 2, false,
+};
+
+static const upb_msglayout_field envoy_api_v2_core_ControlPlane__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+};
+
+const upb_msglayout envoy_api_v2_core_ControlPlane_msginit = {
+  NULL,
+  &envoy_api_v2_core_ControlPlane__fields[0],
+  UPB_SIZE(8, 16), 1, false,
 };
 
 #include "upb/port_undef.inc"

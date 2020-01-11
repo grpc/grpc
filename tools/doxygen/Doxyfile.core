@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 7.0.0
+PROJECT_NUMBER         = 9.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -793,6 +793,7 @@ doc/interop-test-descriptions.md \
 doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
+doc/security_audit.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
 doc/server_side_auth.md \
@@ -801,6 +802,7 @@ doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/unit_testing.md \
+doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
 include/grpc/byte_buffer.h \

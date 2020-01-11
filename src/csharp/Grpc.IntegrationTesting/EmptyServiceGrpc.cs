@@ -49,7 +49,7 @@ namespace Grpc.Testing {
     {
       /// <summary>Creates a new client for EmptyService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public EmptyServiceClient(grpc::Channel channel) : base(channel)
+      public EmptyServiceClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for EmptyService that uses a custom <c>CallInvoker</c>.</summary>

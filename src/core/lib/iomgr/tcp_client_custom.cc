@@ -58,7 +58,7 @@ static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
   }
 }
 
-static void custom_close_callback(grpc_custom_socket* socket) {}
+static void custom_close_callback(grpc_custom_socket* /*socket*/) {}
 
 static void on_alarm(void* acp, grpc_error* error) {
   int done;
@@ -96,11 +96,12 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
     grpc_core::ExecCtx::Get()->Flush();
     custom_tcp_connect_cleanup(connect);
   }
-  GRPC_CLOSURE_SCHED(closure, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
 }
 
 static void custom_connect_callback(grpc_custom_socket* socket,
                                     grpc_error* error) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   if (grpc_core::ExecCtx::Get() == nullptr) {
     /* If we are being run on a thread which does not have an exec_ctx created
      * yet, we should create one. */

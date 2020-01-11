@@ -239,7 +239,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   void Ref() { refs_.Ref(); }
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      grpc_core::Delete(this);
+      delete this;
     }
   }
 
@@ -300,16 +300,12 @@ struct grpc_chttp2_transport {
 
   grpc_resource_user* resource_user;
 
-  grpc_combiner* combiner;
+  grpc_core::Combiner* combiner;
 
   grpc_closure* notify_on_receive_settings = nullptr;
 
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
-  /** is this the first write in a series of writes?
-      set when we initiate writing from idle, cleared when we
-      initiate writing from writing+more */
-  bool is_first_write_in_batch = false;
 
   /** is the transport destroying itself? */
   uint8_t destroying = false;
@@ -318,8 +314,6 @@ struct grpc_chttp2_transport {
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading = 1;
-
-  grpc_chttp2_optimization_target opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
 
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT] = {};
@@ -341,15 +335,13 @@ struct grpc_chttp2_transport {
       publish the accepted server stream */
   grpc_chttp2_stream** accepting_stream = nullptr;
 
-  struct {
-    /* accept stream callback */
-    void (*accept_stream)(void* user_data, grpc_transport* transport,
-                          const void* server_data);
-    void* accept_stream_user_data;
+  /* accept stream callback */
+  void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
+                           const void* server_data);
+  void* accept_stream_cb_user_data;
 
-    /** connectivity tracking */
-    grpc_connectivity_state_tracker state_tracker;
-  } channel_callback;
+  /** connectivity tracking */
+  grpc_core::ConnectivityStateTracker state_tracker;
 
   /** data to write now */
   grpc_slice_buffer outbuf;
@@ -467,6 +459,8 @@ struct grpc_chttp2_transport {
 
   /* next bdp ping timer */
   bool have_next_bdp_ping_timer = false;
+  /** If start_bdp_ping_locked has been called */
+  bool bdp_ping_started = false;
   grpc_timer next_bdp_ping_timer;
 
   /* keep-alive ping support */
@@ -488,11 +482,20 @@ struct grpc_chttp2_transport {
   grpc_millis keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls = false;
+  /** If start_keepalive_ping_locked has been called */
+  bool keepalive_ping_started = false;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
   grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
+  /** The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
+   * RST_STREAM) in the outgoing buffer (t->qbuf). If this number goes beyond
+   * DEFAULT_MAX_PENDING_INDUCED_FRAMES, we pause reading new frames. We would
+   * only continue reading when we are able to write to the socket again,
+   * thereby reducing the number of induced frames. */
+  uint32_t num_pending_induced_frames = 0;
+  bool reading_paused_on_pending_induced_frames = false;
 };
 
 typedef enum {
@@ -564,8 +567,6 @@ struct grpc_chttp2_stream {
   /** Are we buffering writes on this stream? If yes, we won't become writable
       until there's enough queued up in the flow_controlled_buffer */
   bool write_buffering = false;
-  /** Has trailing metadata been received. */
-  bool received_trailing_metadata = false;
 
   /* have we sent or received the EOS bit? */
   bool eos_received = false;
@@ -745,8 +746,11 @@ void grpc_chttp2_act_on_flowctl_action(
 
 /********* End of Flow Control ***************/
 
-grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport* t,
-                                                      uint32_t id);
+inline grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(
+    grpc_chttp2_transport* t, uint32_t id) {
+  return static_cast<grpc_chttp2_stream*>(
+      grpc_chttp2_stream_map_find(&t->stream_map, id));
+}
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id);
 
@@ -810,7 +814,7 @@ inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t,
                                         const char* reason, const char* file,
                                         int line) {
   if (t->refs.Unref(grpc_core::DebugLocation(file, line), reason)) {
-    grpc_core::Delete(t);
+    delete t;
   }
 }
 inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
@@ -823,7 +827,7 @@ inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
 #define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) grpc_chttp2_unref_transport(t)
 inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t) {
   if (t->refs.Unref()) {
-    grpc_core::Delete(t);
+    delete t;
   }
 }
 inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) {
@@ -861,5 +865,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
+
+void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error* error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

@@ -118,38 +118,62 @@ static double ServerIdleCpuTime(const ServerStats& s) {
 }
 static int Cores(int n) { return n; }
 
+static bool IsSuccess(const Status& s) {
+  if (s.ok()) return true;
+  // Since we shutdown servers and clients at the same time, they both can
+  // observe cancellation.  Thus, we consider CANCELLED as good status.
+  if (static_cast<StatusCode>(s.error_code()) == StatusCode::CANCELLED) {
+    return true;
+  }
+  // Since we shutdown servers and clients at the same time, server can close
+  // the socket before the client attempts to do that, and vice versa.  Thus
+  // receiving a "Socket closed" error is fine.
+  if (s.error_message() == "Socket closed") return true;
+  return false;
+}
+
 // Postprocess ScenarioResult and populate result summary.
 static void postprocess_scenario_result(ScenarioResult* result) {
+  // Get latencies from ScenarioResult latencies histogram and populate to
+  // result summary.
   Histogram histogram;
   histogram.MergeProto(result->latencies());
-
-  auto time_estimate = average(result->client_stats(), WallTime);
-  auto qps = histogram.Count() / time_estimate;
-  auto qps_per_server_core = qps / sum(result->server_cores(), Cores);
-
-  result->mutable_summary()->set_qps(qps);
-  result->mutable_summary()->set_qps_per_server_core(qps_per_server_core);
   result->mutable_summary()->set_latency_50(histogram.Percentile(50));
   result->mutable_summary()->set_latency_90(histogram.Percentile(90));
   result->mutable_summary()->set_latency_95(histogram.Percentile(95));
   result->mutable_summary()->set_latency_99(histogram.Percentile(99));
   result->mutable_summary()->set_latency_999(histogram.Percentile(99.9));
 
-  auto server_system_time = 100.0 *
-                            sum(result->server_stats(), ServerSystemTime) /
-                            sum(result->server_stats(), ServerWallTime);
-  auto server_user_time = 100.0 * sum(result->server_stats(), ServerUserTime) /
-                          sum(result->server_stats(), ServerWallTime);
-
-  auto client_system_time = 100.0 * sum(result->client_stats(), SystemTime) /
-                            sum(result->client_stats(), WallTime);
-  auto client_user_time = 100.0 * sum(result->client_stats(), UserTime) /
-                          sum(result->client_stats(), WallTime);
-
-  result->mutable_summary()->set_server_system_time(server_system_time);
-  result->mutable_summary()->set_server_user_time(server_user_time);
-  result->mutable_summary()->set_client_system_time(client_system_time);
-  result->mutable_summary()->set_client_user_time(client_user_time);
+  // Calculate qps and cpu load for each client and then aggregate results for
+  // all clients
+  double qps = 0;
+  double client_system_cpu_load = 0, client_user_cpu_load = 0;
+  for (size_t i = 0; i < result->client_stats_size(); i++) {
+    auto client_stat = result->client_stats(i);
+    qps += client_stat.latencies().count() / client_stat.time_elapsed();
+    client_system_cpu_load +=
+        client_stat.time_system() / client_stat.time_elapsed();
+    client_user_cpu_load +=
+        client_stat.time_user() / client_stat.time_elapsed();
+  }
+  // Calculate cpu load for each server and then aggregate results for all
+  // servers
+  double server_system_cpu_load = 0, server_user_cpu_load = 0;
+  for (size_t i = 0; i < result->server_stats_size(); i++) {
+    auto server_stat = result->server_stats(i);
+    server_system_cpu_load +=
+        server_stat.time_system() / server_stat.time_elapsed();
+    server_user_cpu_load +=
+        server_stat.time_user() / server_stat.time_elapsed();
+  }
+  result->mutable_summary()->set_qps(qps);
+  // Populate the percentage of cpu load to result summary.
+  result->mutable_summary()->set_server_system_time(100 *
+                                                    server_system_cpu_load);
+  result->mutable_summary()->set_server_user_time(100 * server_user_cpu_load);
+  result->mutable_summary()->set_client_system_time(100 *
+                                                    client_system_cpu_load);
+  result->mutable_summary()->set_client_user_time(100 * client_user_cpu_load);
 
   // For Non-linux platform, get_cpu_usage() is not implemented. Thus,
   // ServerTotalCpuTime and ServerIdleCpuTime are both 0.
@@ -162,6 +186,9 @@ static void postprocess_scenario_result(ScenarioResult* result) {
     result->mutable_summary()->set_server_cpu_usage(server_cpu_usage);
   }
 
+  // Calculate and populate successful request per second and failed requests
+  // per seconds to result summary.
+  auto time_estimate = average(result->client_stats(), WallTime);
   if (result->request_results_size() > 0) {
     int64_t successes = 0;
     int64_t failures = 0;
@@ -179,6 +206,9 @@ static void postprocess_scenario_result(ScenarioResult* result) {
                                                               time_estimate);
   }
 
+  // Fill in data for other metrics required in result summary
+  auto qps_per_server_core = qps / sum(result->server_cores(), Cores);
+  result->mutable_summary()->set_qps_per_server_core(qps_per_server_core);
   result->mutable_summary()->set_client_polls_per_request(
       sum(result->client_stats(), CliPollCount) / histogram.Count());
   result->mutable_summary()->set_server_polls_per_request(
@@ -463,6 +493,17 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Failed WritesDone for client %zu", i);
     }
   }
+  gpr_log(GPR_INFO, "Finishing servers");
+  for (size_t i = 0; i < num_servers; i++) {
+    auto server = &servers[i];
+    if (!server->stream->Write(server_mark)) {
+      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+    }
+    if (!server->stream->WritesDone()) {
+      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+    }
+  }
+
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     // Read the client final status
@@ -484,8 +525,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     Status s = client->stream->Finish();
-    result->add_client_success(s.ok());
-    if (!s.ok()) {
+    // Since we shutdown servers and clients at the same time, clients can
+    // observe cancellation.  Thus, we consider both OK and CANCELLED as good
+    // status.
+    const bool success = IsSuccess(s);
+    result->add_client_success(success);
+    if (!success) {
       gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
               s.error_message().c_str());
     }
@@ -499,16 +544,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
     rrc->set_count(it->second);
   }
 
-  gpr_log(GPR_INFO, "Finishing servers");
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
-    }
-    if (!server->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
-    }
-  }
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
@@ -525,8 +560,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     Status s = server->stream->Finish();
-    result->add_server_success(s.ok());
-    if (!s.ok()) {
+    // Since we shutdown servers and clients at the same time, servers can
+    // observe cancellation.  Thus, we consider both OK and CANCELLED as good
+    // status.
+    const bool success = IsSuccess(s);
+    result->add_server_success(success);
+    if (!success) {
       gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
               s.error_message().c_str());
     }

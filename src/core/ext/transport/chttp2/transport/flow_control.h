@@ -25,7 +25,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/pid_controller.h"
@@ -153,7 +152,7 @@ class TransportFlowControlBase {
   virtual bool flow_control_enabled() const { abort(); }
 
   // Called to check if the transport needs to send a WINDOW_UPDATE frame
-  virtual uint32_t MaybeSendUpdate(bool writing_anyway) { abort(); }
+  virtual uint32_t MaybeSendUpdate(bool /* writing_anyway */) { abort(); }
 
   // Using the protected members, returns and Action to be taken by the
   // tranport.
@@ -166,14 +165,14 @@ class TransportFlowControlBase {
 
   // Called to do bookkeeping when a stream owned by this transport sends
   // data on the wire
-  virtual void StreamSentData(int64_t size) { abort(); }
+  virtual void StreamSentData(int64_t /* size */) { abort(); }
 
   // Called to do bookkeeping when a stream owned by this transport receives
   // data from the wire. Also does error checking for frame size.
-  virtual grpc_error* RecvData(int64_t incoming_frame_size) { abort(); }
+  virtual grpc_error* RecvData(int64_t /* incoming_frame_size */) { abort(); }
 
   // Called to do bookkeeping when we receive a WINDOW_UPDATE frame.
-  virtual void RecvUpdate(uint32_t size) { abort(); }
+  virtual void RecvUpdate(uint32_t /* size */) { abort(); }
 
   // Returns the BdpEstimator held by this object. Caller is responsible for
   // checking for nullptr. TODO(ncteisen): consider fully encapsulating all
@@ -188,8 +187,6 @@ class TransportFlowControlBase {
   // Used in certain benchmarks in which we don't want FlowControl to be a
   // factor
   virtual void TestOnlyForceHugeWindow() {}
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   friend class ::grpc::testing::TrickledCHTTP2;
@@ -210,14 +207,14 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
   bool flow_control_enabled() const override { return false; }
 
   // Never do anything.
-  uint32_t MaybeSendUpdate(bool writing_anyway) override { return 0; }
+  uint32_t MaybeSendUpdate(bool /* writing_anyway */) override { return 0; }
   FlowControlAction MakeAction() override { return FlowControlAction(); }
   FlowControlAction PeriodicUpdate() override { return FlowControlAction(); }
-  void StreamSentData(int64_t size) override {}
-  grpc_error* RecvData(int64_t incoming_frame_size) override {
+  void StreamSentData(int64_t /* size */) override {}
+  grpc_error* RecvData(int64_t /* incoming_frame_size */) override {
     return GRPC_ERROR_NONE;
   }
-  void RecvUpdate(uint32_t size) override {}
+  void RecvUpdate(uint32_t /* size */) override {}
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
@@ -283,16 +280,12 @@ class TransportFlowControl final : public TransportFlowControlBase {
   void PreUpdateAnnouncedWindowOverIncomingWindow(int64_t delta) {
     if (delta > 0) {
       announced_stream_total_over_incoming_window_ -= delta;
-    } else {
-      announced_stream_total_under_incoming_window_ += -delta;
     }
   }
 
   void PostUpdateAnnouncedWindowOverIncomingWindow(int64_t delta) {
     if (delta > 0) {
       announced_stream_total_over_incoming_window_ += delta;
-    } else {
-      announced_stream_total_under_incoming_window_ -= -delta;
     }
   }
 
@@ -328,7 +321,6 @@ class TransportFlowControl final : public TransportFlowControlBase {
       we want to adjust incoming_window such that:
       incoming_window = total_over - max(bdp - total_under, 0) */
   int64_t announced_stream_total_over_incoming_window_ = 0;
-  int64_t announced_stream_total_under_incoming_window_ = 0;
 
   /** should we probe bdp? */
   const bool enable_bdp_probe_;
@@ -350,29 +342,31 @@ class StreamFlowControlBase {
   virtual ~StreamFlowControlBase() {}
 
   // Updates an action using the protected members.
-  virtual FlowControlAction UpdateAction(FlowControlAction action) { abort(); }
+  virtual FlowControlAction UpdateAction(FlowControlAction /* action */) {
+    abort();
+  }
 
   // Using the protected members, returns an Action for this stream to be
   // taken by the tranport.
   virtual FlowControlAction MakeAction() { abort(); }
 
   // Bookkeeping for when data is sent on this stream.
-  virtual void SentData(int64_t outgoing_frame_size) { abort(); }
+  virtual void SentData(int64_t /* outgoing_frame_size */) { abort(); }
 
   // Bookkeeping and error checking for when data is received by this stream.
-  virtual grpc_error* RecvData(int64_t incoming_frame_size) { abort(); }
+  virtual grpc_error* RecvData(int64_t /* incoming_frame_size */) { abort(); }
 
   // Called to check if this stream needs to send a WINDOW_UPDATE frame.
   virtual uint32_t MaybeSendUpdate() { abort(); }
 
   // Bookkeeping for receiving a WINDOW_UPDATE from for this stream.
-  virtual void RecvUpdate(uint32_t size) { abort(); }
+  virtual void RecvUpdate(uint32_t /* size */) { abort(); }
 
   // Bookkeeping for when a call pulls bytes out of the transport. At this
   // point we consider the data 'used' and can thus let out peer know we are
   // ready for more data.
-  virtual void IncomingByteStreamUpdate(size_t max_size_hint,
-                                        size_t have_already) {
+  virtual void IncomingByteStreamUpdate(size_t /* max_size_hint */,
+                                        size_t /* have_already */) {
     abort();
   }
 
@@ -384,8 +378,6 @@ class StreamFlowControlBase {
   int64_t remote_window_delta() { return remote_window_delta_; }
   int64_t local_window_delta() { return local_window_delta_; }
   int64_t announced_window_delta() { return announced_window_delta_; }
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   friend class ::grpc::testing::TrickledCHTTP2;
@@ -404,14 +396,14 @@ class StreamFlowControlDisabled : public StreamFlowControlBase {
     return action;
   }
   FlowControlAction MakeAction() override { return FlowControlAction(); }
-  void SentData(int64_t outgoing_frame_size) override {}
-  grpc_error* RecvData(int64_t incoming_frame_size) override {
+  void SentData(int64_t /* outgoing_frame_size */) override {}
+  grpc_error* RecvData(int64_t /* incoming_frame_size */) override {
     return GRPC_ERROR_NONE;
   }
   uint32_t MaybeSendUpdate() override { return 0; }
-  void RecvUpdate(uint32_t size) override {}
-  void IncomingByteStreamUpdate(size_t max_size_hint,
-                                size_t have_already) override {}
+  void RecvUpdate(uint32_t /* size */) override {}
+  void IncomingByteStreamUpdate(size_t /* max_size_hint */,
+                                size_t /* have_already */) override {}
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts

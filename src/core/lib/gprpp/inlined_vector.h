@@ -26,7 +26,18 @@
 
 #include "src/core/lib/gprpp/memory.h"
 
+#if GRPC_USE_ABSL
+#include "absl/container/inlined_vector.h"
+#endif
+
 namespace grpc_core {
+
+#if GRPC_USE_ABSL
+
+template <typename T, size_t N, typename A = std::allocator<T>>
+using InlinedVector = absl::InlinedVector<T, N, A>;
+
+#else
 
 // NOTE: We eventually want to use absl::InlinedVector here.  However,
 // there are currently build problems that prevent us from using absl.
@@ -100,19 +111,34 @@ class InlinedVector {
   bool operator==(const InlinedVector& other) const {
     if (size_ != other.size_) return false;
     for (size_t i = 0; i < size_; ++i) {
-      if (data()[i] != other.data()[i]) return false;
+      // Note that this uses == instead of != so that the data class doesn't
+      // have to implement !=.
+      if (!(data()[i] == other.data()[i])) return false;
     }
     return true;
   }
 
+  bool operator!=(const InlinedVector& other) const {
+    return !(*this == other);
+  }
+
   void reserve(size_t capacity) {
     if (capacity > capacity_) {
-      T* new_dynamic = static_cast<T*>(gpr_malloc(sizeof(T) * capacity));
+      T* new_dynamic =
+          std::alignment_of<T>::value == 0
+              ? static_cast<T*>(gpr_malloc(sizeof(T) * capacity))
+              : static_cast<T*>(gpr_malloc_aligned(
+                    sizeof(T) * capacity, std::alignment_of<T>::value));
       move_elements(data(), new_dynamic, size_);
-      gpr_free(dynamic_);
+      free_dynamic();
       dynamic_ = new_dynamic;
       capacity_ = capacity;
     }
+  }
+
+  void resize(size_t new_size) {
+    while (new_size > size_) emplace_back();
+    while (new_size < size_) pop_back();
   }
 
   template <typename... Args>
@@ -194,7 +220,17 @@ class InlinedVector {
       T& value = data()[i];
       value.~T();
     }
-    gpr_free(dynamic_);
+    free_dynamic();
+  }
+
+  void free_dynamic() {
+    if (dynamic_ != nullptr) {
+      if (std::alignment_of<T>::value == 0) {
+        gpr_free(dynamic_);
+      } else {
+        gpr_free_aligned(dynamic_);
+      }
+    }
   }
 
   typename std::aligned_storage<sizeof(T)>::type inline_[N];
@@ -202,6 +238,8 @@ class InlinedVector {
   size_t size_;
   size_t capacity_;
 };
+
+#endif
 
 }  // namespace grpc_core
 

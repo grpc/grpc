@@ -63,7 +63,7 @@ static void on_oauth2_response(void* arg, grpc_error* error) {
   gpr_mu_unlock(request->mu);
 }
 
-static void destroy_after_shutdown(void* pollset, grpc_error* error) {
+static void destroy_after_shutdown(void* pollset, grpc_error* /*error*/) {
   grpc_pollset_destroy(reinterpret_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }
@@ -71,7 +71,7 @@ static void destroy_after_shutdown(void* pollset, grpc_error* error) {
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {
   oauth2_request request;
-  memset(&request, 0, sizeof(request));
+  request = {};
   grpc_core::ExecCtx exec_ctx;
   grpc_closure destroy_after_shutdown_closure;
   grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};

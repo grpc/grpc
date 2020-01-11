@@ -16,9 +16,10 @@
 import grpc
 
 
-class _GenericClientInterceptor(
-        grpc.UnaryUnaryClientInterceptor, grpc.UnaryStreamClientInterceptor,
-        grpc.StreamUnaryClientInterceptor, grpc.StreamStreamClientInterceptor):
+class _GenericClientInterceptor(grpc.UnaryUnaryClientInterceptor,
+                                grpc.UnaryStreamClientInterceptor,
+                                grpc.StreamUnaryClientInterceptor,
+                                grpc.StreamStreamClientInterceptor):
 
     def __init__(self, interceptor_function):
         self._fn = interceptor_function

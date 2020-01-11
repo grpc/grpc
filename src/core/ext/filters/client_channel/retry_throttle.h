@@ -32,6 +32,7 @@ class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
  public:
   ServerRetryThrottleData(intptr_t max_milli_tokens, intptr_t milli_token_ratio,
                           ServerRetryThrottleData* old_throttle_data);
+  ~ServerRetryThrottleData();
 
   /// Records a failure.  Returns true if it's okay to send a retry.
   bool RecordFailure();
@@ -43,10 +44,6 @@ class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
   intptr_t milli_token_ratio() const { return milli_token_ratio_; }
 
  private:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
-  ~ServerRetryThrottleData();
-
   void GetReplacementThrottleDataIfNeeded(
       ServerRetryThrottleData** throttle_data);
 

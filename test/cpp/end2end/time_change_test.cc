@@ -34,7 +34,6 @@
 #include "test/cpp/util/subprocess.h"
 
 #include <gtest/gtest.h>
-#include <pthread.h>
 #include <sys/time.h>
 #include <thread>
 
@@ -129,25 +128,34 @@ class TimeChangeTest : public ::testing::Test {
  protected:
   TimeChangeTest() {}
 
-  void SetUp() {
+  static void SetUpTestCase() {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
-    auto addr = addr_stream.str();
+    server_address_ = addr_stream.str();
     server_.reset(new SubProcess({
         g_root + "/client_crash_test_server",
-        "--address=" + addr,
+        "--address=" + server_address_,
     }));
     GPR_ASSERT(server_);
-    channel_ = grpc::CreateChannel(addr, InsecureChannelCredentials());
+    // connect to server and make sure it's reachable.
+    auto channel =
+        grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+    GPR_ASSERT(channel);
+    EXPECT_TRUE(channel->WaitForConnected(
+        grpc_timeout_milliseconds_to_deadline(30000)));
+  }
+
+  static void TearDownTestCase() { server_.reset(); }
+
+  void SetUp() {
+    channel_ =
+        grpc::CreateChannel(server_address_, InsecureChannelCredentials());
     GPR_ASSERT(channel_);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  void TearDown() {
-    server_.reset();
-    reset_now_offset();
-  }
+  void TearDown() { reset_now_offset(); }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> CreateStub() {
     return grpc::testing::EchoTestService::NewStub(channel_);
@@ -159,10 +167,13 @@ class TimeChangeTest : public ::testing::Test {
   const int TIME_OFFSET2 = 5678;
 
  private:
-  std::unique_ptr<SubProcess> server_;
+  static std::string server_address_;
+  static std::unique_ptr<SubProcess> server_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
 };
+std::string TimeChangeTest::server_address_;
+std::unique_ptr<SubProcess> TimeChangeTest::server_;
 
 // Wall-clock time jumps forward on client before bidi stream is created
 TEST_F(TimeChangeTest, TimeJumpForwardBeforeStreamCreated) {
@@ -274,76 +285,6 @@ TEST_F(TimeChangeTest, TimeJumpBackAfterStreamCreated) {
   // time jumps back TIME_OFFSET1 milliseconds.
   set_now_offset(-TIME_OFFSET1);
 
-  request.set_message("World");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->WritesDone());
-  EXPECT_TRUE(stream->Read(&response));
-
-  auto status = stream->Finish();
-  EXPECT_TRUE(status.ok());
-}
-
-// Wall-clock time jumps forward on client before connection to server is up
-TEST_F(TimeChangeTest, TimeJumpForwardBeforeServerConnect) {
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(5000));
-  context.AddMetadata(kServerResponseStreamsToSend, "2");
-
-  auto channel = GetChannel();
-  GPR_ASSERT(channel);
-
-  // time jumps forward by TIME_OFFSET2 milliseconds
-  set_now_offset(TIME_OFFSET2);
-
-  auto ret =
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000));
-  // We use monotonic clock for pthread_cond_timedwait() deadline on linux, and
-  // realtime clock on other platforms - see gpr_cv_wait() in sync_posix.cc.
-  // So changes in system clock affect deadlines on non-linux platforms
-#ifdef GPR_LINUX
-  EXPECT_TRUE(ret);
-  auto stub = CreateStub();
-  auto stream = stub->BidiStream(&context);
-
-  request.set_message("Hello");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  request.set_message("World");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->WritesDone());
-  EXPECT_TRUE(stream->Read(&response));
-
-  auto status = stream->Finish();
-  EXPECT_TRUE(status.ok());
-#else
-  EXPECT_FALSE(ret);
-#endif
-}
-
-// Wall-clock time jumps back on client before connection to server is up
-TEST_F(TimeChangeTest, TimeJumpBackBeforeServerConnect) {
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(5000));
-  context.AddMetadata(kServerResponseStreamsToSend, "2");
-
-  auto channel = GetChannel();
-  GPR_ASSERT(channel);
-
-  // time jumps back by TIME_OFFSET2 milliseconds
-  set_now_offset(-TIME_OFFSET2);
-
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
-  auto stub = CreateStub();
-  auto stream = stub->BidiStream(&context);
-
-  request.set_message("Hello");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
   request.set_message("World");
   EXPECT_TRUE(stream->Write(request));
   EXPECT_TRUE(stream->WritesDone());

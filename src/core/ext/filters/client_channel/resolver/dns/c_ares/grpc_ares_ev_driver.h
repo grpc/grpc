@@ -23,7 +23,6 @@
 
 #include <ares.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
@@ -44,7 +43,7 @@ ares_channel* grpc_ares_ev_driver_get_channel_locked(
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
                                               int query_timeout_ms,
-                                              grpc_combiner* combiner,
+                                              grpc_core::Combiner* combiner,
                                               grpc_ares_request* request);
 
 /* Called back when all DNS lookups have completed. */
@@ -67,22 +66,18 @@ class GrpcPolledFd {
  public:
   virtual ~GrpcPolledFd() {}
   /* Called when c-ares library is interested and there's no pending callback */
-  virtual void RegisterForOnReadableLocked(grpc_closure* read_closure)
-      GRPC_ABSTRACT;
+  virtual void RegisterForOnReadableLocked(grpc_closure* read_closure) = 0;
   /* Called when c-ares library is interested and there's no pending callback */
-  virtual void RegisterForOnWriteableLocked(grpc_closure* write_closure)
-      GRPC_ABSTRACT;
+  virtual void RegisterForOnWriteableLocked(grpc_closure* write_closure) = 0;
   /* Indicates if there is data left even after just being read from */
-  virtual bool IsFdStillReadableLocked() GRPC_ABSTRACT;
+  virtual bool IsFdStillReadableLocked() = 0;
   /* Called once and only once. Must cause cancellation of any pending
    * read/write callbacks. */
-  virtual void ShutdownLocked(grpc_error* error) GRPC_ABSTRACT;
+  virtual void ShutdownLocked(grpc_error* error) = 0;
   /* Get the underlying ares_socket_t that this was created from */
-  virtual ares_socket_t GetWrappedAresSocketLocked() GRPC_ABSTRACT;
+  virtual ares_socket_t GetWrappedAresSocketLocked() = 0;
   /* A unique name, for logging */
-  virtual const char* GetName() GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual const char* GetName() = 0;
 };
 
 /* A GrpcPolledFdFactory is 1-to-1 with and owned by the
@@ -95,14 +90,12 @@ class GrpcPolledFdFactory {
   /* Creates a new wrapped fd for the current platform */
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      grpc_combiner* combiner) GRPC_ABSTRACT;
+      Combiner* combiner) = 0;
   /* Optionally configures the ares channel after creation */
-  virtual void ConfigureAresChannelLocked(ares_channel channel) GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
 
-UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner);
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner);
 
 }  // namespace grpc_core
 

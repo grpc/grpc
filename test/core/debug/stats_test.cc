@@ -135,8 +135,8 @@ TEST_P(HistogramTest, IncHistogram) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(HistogramTestCases, HistogramTest,
-                        ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
+INSTANTIATE_TEST_SUITE_P(HistogramTestCases, HistogramTest,
+                         ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
 
 }  // namespace testing
 }  // namespace grpc
@@ -151,5 +151,9 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
+#else
+  // Avoid unused parameter warning for conditional parameters.
+  (void)argc;
+  (void)argv;
 #endif
 }

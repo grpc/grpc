@@ -38,7 +38,7 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelImpl(
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args) {
   grpc::GrpcLibraryCodegen
-      init_lib;  // We need to call init in case of a bad creds.
+      init_lib;  // We need to call init in case of bad creds.
   return creds ? creds->CreateChannelImpl(target, args)
                : grpc::CreateChannelInternal(
                      "",
@@ -69,6 +69,8 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
+  grpc::GrpcLibraryCodegen
+      init_lib;  // We need to call init in case of bad creds.
   return creds ? creds->CreateChannelWithInterceptors(
                      target, args, std::move(interceptor_creators))
                : grpc::CreateChannelInternal(

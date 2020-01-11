@@ -16,6 +16,8 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict")
+
 alias(
     name = "rbe_windows",
     actual = ":rbe_windows_1803",
@@ -29,98 +31,9 @@ platform(
         "@bazel_tools//platforms:windows",
         "@bazel_tools//tools/cpp:msvc",
     ],
-    remote_execution_properties = """
-        properties: {
-          name: "container-image"
-          value:"docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:689b177e4a157c431c7077d19d043de27922c37de835031f29c9093b8d5c6370"
-        }
-        properties: {
-          name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-highmem-2"
-        }
-        properties:{
-            name: "OSFamily"
-            value: "Windows"
-        }
-
-        """,
-)
-
-# RBE Ubuntu16_04 r346485
-platform(
-    name = "rbe_ubuntu1604",
-    parents = ["@rbe_default//config:platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:standard",
-    ],
-    remote_execution_properties = """
-        {PARENT_REMOTE_EXECUTION_PROPERTIES}
-        properties: {
-          name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-highmem-2"
-        }
-        properties: {
-            name: "dockerSiblingContainers"
-            value: "false"
-        }
-        properties: {
-            name: "dockerNetwork"
-            value: "off"
-        }
-        properties: {
-            name: "dockerAddCapabilities"
-            value: "SYS_PTRACE"
-        }
-        properties: {
-            name: "dockerPrivileged"
-            value: "true"
-        }
-        """,
-)
-
-platform(
-    name = "rbe_ubuntu1604_large",
-    parents = ["@rbe_default//config:platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:large",
-    ],
-    remote_execution_properties = """
-        {PARENT_REMOTE_EXECUTION_PROPERTIES}
-        properties: {
-          name: "gceMachineType"  # Large machines for some resource demanding tests (TSAN).
-          value: "n1-standard-8"
-        }
-        properties: {
-            name: "dockerSiblingContainers"
-            value: "false"
-        }
-        properties: {
-            name: "dockerNetwork"
-            value: "off"
-        }
-        properties: {
-            name: "dockerAddCapabilities"
-            value: "SYS_PTRACE"
-        }
-        properties: {
-            name: "dockerPrivileged"
-            value: "true"
-        }
-    """,
-)
-
-platform(
-    name = "local",
-    parents = ["@bazel_tools//platforms:target_platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:standard",
-    ],
-)
-
-platform(
-    name = "local_large",
-    parents = ["@bazel_tools//platforms:target_platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:large",
-    ],
+    exec_properties = create_exec_properties_dict(
+        container_image = "docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e",
+        gce_machine_type = "n1-highmem-2",
+        os_family = "Windows",
+    ),
 )

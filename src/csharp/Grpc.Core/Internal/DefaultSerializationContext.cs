@@ -17,6 +17,8 @@
 #endregion
 
 using Grpc.Core.Utils;
+using System;
+using System.Buffers;
 using System.Threading;
 
 namespace Grpc.Core.Internal
@@ -27,7 +29,7 @@ namespace Grpc.Core.Internal
             new ThreadLocal<DefaultSerializationContext>(() => new DefaultSerializationContext(), false);
 
         bool isComplete;
-        byte[] payload;
+        SliceBufferSafeHandle sliceBuffer = SliceBufferSafeHandle.Create();
 
         public DefaultSerializationContext()
         {
@@ -38,25 +40,76 @@ namespace Grpc.Core.Internal
         {
             GrpcPreconditions.CheckState(!isComplete);
             this.isComplete = true;
-            this.payload = payload;
+
+            var destSpan = sliceBuffer.GetSpan(payload.Length);
+            payload.AsSpan().CopyTo(destSpan);
+            sliceBuffer.Advance(payload.Length);
+            sliceBuffer.Complete();
         }
 
-        internal byte[] GetPayload()
+        /// <summary>
+        /// Expose serializer as buffer writer
+        /// </summary>
+        public override IBufferWriter<byte> GetBufferWriter()
         {
-            return this.payload;
+            GrpcPreconditions.CheckState(!isComplete);
+            return sliceBuffer;
+        }
+
+        public override void SetPayloadLength(int payloadLength)
+        {
+            // Length is calculated using the buffer writer
+        }
+
+        /// <summary>
+        /// Complete the payload written so far.
+        /// </summary>
+        public override void Complete()
+        {
+            GrpcPreconditions.CheckState(!isComplete);
+            sliceBuffer.Complete();
+            this.isComplete = true;
+        }
+
+        internal SliceBufferSafeHandle GetPayload()
+        {
+            if (!isComplete)
+            {
+                // mimic the legacy behavior when byte[] was used to represent the payload.
+                throw new NullReferenceException("No payload was set. Complete() needs to be called before payload can be used.");
+            }
+            return sliceBuffer;
         }
 
         public void Reset()
         {
             this.isComplete = false;
-            this.payload = null;
+            this.sliceBuffer.Reset();
         }
 
-        public static DefaultSerializationContext GetInitializedThreadLocal()
+        // Get a cached thread local instance of deserialization context
+        // and wrap it in a disposable struct that allows easy resetting
+        // via "using" statement.
+        public static UsageScope GetInitializedThreadLocalScope()
         {
             var instance = threadLocalInstance.Value;
-            instance.Reset();
-            return instance;
+            return new UsageScope(instance);
+        }
+
+        public struct UsageScope : IDisposable
+        {
+            readonly DefaultSerializationContext context;
+
+            public UsageScope(DefaultSerializationContext context)
+            {
+                this.context = context;
+            }
+
+            public DefaultSerializationContext Context => context;
+            public void Dispose()
+            {
+                context.Reset();
+            }
         }
     }
 }

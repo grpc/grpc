@@ -310,7 +310,7 @@ static char* good_google_email_keys(void) {
 
 static grpc_httpcli_response http_response(int status, char* body) {
   grpc_httpcli_response response;
-  memset(&response, 0, sizeof(grpc_httpcli_response));
+  response = {};
   response.status = status;
   response.body = body;
   response.body_length = strlen(body);
@@ -318,15 +318,15 @@ static grpc_httpcli_response http_response(int status, char* body) {
 }
 
 static int httpcli_post_should_not_be_called(
-    const grpc_httpcli_request* request, const char* body_bytes,
-    size_t body_size, grpc_millis deadline, grpc_closure* on_done,
-    grpc_httpcli_response* response) {
+    const grpc_httpcli_request* /*request*/, const char* /*body_bytes*/,
+    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP POST should not be called" == nullptr);
   return 1;
 }
 
 static int httpcli_get_google_keys_for_email(
-    const grpc_httpcli_request* request, grpc_millis deadline,
+    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   *response = http_response(200, good_google_email_keys());
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
@@ -335,7 +335,7 @@ static int httpcli_get_google_keys_for_email(
                     "/robot/v1/metadata/x509/"
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -372,13 +372,13 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
 }
 
 static int httpcli_get_custom_keys_for_email(
-    const grpc_httpcli_request* request, grpc_millis deadline,
+    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/jwk/foo@bar.com") == 0);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -405,18 +405,18 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
 }
 
 static int httpcli_get_jwk_set(const grpc_httpcli_request* request,
-                               grpc_millis deadline, grpc_closure* on_done,
+                               grpc_millis /*deadline*/, grpc_closure* on_done,
                                grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/oauth2/v3/certs") == 0);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
 static int httpcli_get_openid_config(const grpc_httpcli_request* request,
-                                     grpc_millis deadline,
+                                     grpc_millis /*deadline*/,
                                      grpc_closure* on_done,
                                      grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_openid_config));
@@ -425,7 +425,7 @@ static int httpcli_get_openid_config(const grpc_httpcli_request* request,
   GPR_ASSERT(strcmp(request->http.path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override(httpcli_get_jwk_set,
                             httpcli_post_should_not_be_called);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -460,11 +460,11 @@ static void on_verification_key_retrieval_error(void* user_data,
 }
 
 static int httpcli_get_bad_json(const grpc_httpcli_request* request,
-                                grpc_millis deadline, grpc_closure* on_done,
+                                grpc_millis /*deadline*/, grpc_closure* on_done,
                                 grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -566,10 +566,9 @@ static void test_jwt_verifier_bad_signature(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
-static int httpcli_get_should_not_be_called(const grpc_httpcli_request* request,
-                                            grpc_millis deadline,
-                                            grpc_closure* on_done,
-                                            grpc_httpcli_response* response) {
+static int httpcli_get_should_not_be_called(
+    const grpc_httpcli_request* /*request*/, grpc_millis /*deadline*/,
+    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
   GPR_ASSERT(0);
   return 1;
 }

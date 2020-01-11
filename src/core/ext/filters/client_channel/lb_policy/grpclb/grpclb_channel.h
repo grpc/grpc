@@ -25,14 +25,21 @@
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 
+namespace grpc_core {
+
 /// Makes any necessary modifications to \a args for use in the grpclb
 /// balancer channel.
 ///
 /// Takes ownership of \a args.
 ///
 /// Caller takes ownership of the returned args.
-grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
-    const grpc_core::ServerAddressList& addresses, grpc_channel_args* args);
+grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
+    const ServerAddressList& addresses, grpc_channel_args* args);
+
+grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
+                                          const grpc_channel_args& args);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H \
         */

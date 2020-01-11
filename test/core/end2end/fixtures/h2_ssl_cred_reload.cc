@@ -29,7 +29,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -60,11 +60,10 @@ ssl_server_certificate_config_callback(
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data* ffd =
-      grpc_core::New<fullstack_secure_fixture_data>();
+  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   grpc_core::JoinHostPort(&ffd->localaddr, "localhost", port);
 
@@ -75,8 +74,9 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static void process_auth_failure(void* state, grpc_auth_context* ctx,
-                                 const grpc_metadata* md, size_t md_count,
+static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
+                                 const grpc_metadata* /*md*/,
+                                 size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
   GPR_ASSERT(state == nullptr);
@@ -114,7 +114,7 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  grpc_core::Delete(ffd);
+  delete ffd;
 }
 
 static void chttp2_init_client_simple_ssl_secure_fullstack(

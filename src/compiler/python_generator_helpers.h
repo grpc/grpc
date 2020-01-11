@@ -136,6 +136,16 @@ StringVector get_all_comments(const DescriptorType* descriptor) {
   return comments;
 }
 
+inline void Split(const grpc::string& s, char delim,
+                  std::vector<grpc::string>* append_to) {
+  auto current = s.begin();
+  while (current <= s.end()) {
+    auto next = std::find(current, s.end(), delim);
+    append_to->emplace_back(current, next);
+    current = next + 1;
+  }
+}
+
 }  // namespace
 
 }  // namespace grpc_python_generator

@@ -25,8 +25,33 @@
 
 #include <grpc/support/atm.h>
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+
+namespace grpc_core {
+// TODO(yashkt) : Remove this class and replace it with a class that does not
+// use ExecCtx
+class Combiner {
+ public:
+  void Run(grpc_closure* closure, grpc_error* error);
+  // TODO(yashkt) : Remove this method
+  void FinallyRun(grpc_closure* closure, grpc_error* error);
+  Combiner* next_combiner_on_this_exec_ctx = nullptr;
+  MultiProducerSingleConsumerQueue queue;
+  // either:
+  // a pointer to the initiating exec ctx if that is the only exec_ctx that has
+  // ever queued to this combiner, or NULL. If this is non-null, it's not
+  // dereferencable (since the initiating exec_ctx may have gone out of scope)
+  gpr_atm initiating_exec_ctx_or_null;
+  // state is:
+  // lower bit - zero if orphaned (STATE_UNORPHANED)
+  // other bits - number of items queued on the lock (STATE_ELEM_COUNT_LOW_BIT)
+  gpr_atm state;
+  bool time_to_execute_final_list = false;
+  grpc_closure_list final_list;
+  grpc_closure offload;
+  gpr_refcount refs;
+};
+}  // namespace grpc_core
 
 // Provides serialized access to some resource.
 // Each action queued on a combiner is executed serially in a borrowed thread.
@@ -35,7 +60,7 @@
 
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary
-grpc_combiner* grpc_combiner_create(void);
+grpc_core::Combiner* grpc_combiner_create(void);
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_ARGS \
@@ -52,12 +77,9 @@ grpc_combiner* grpc_combiner_create(void);
 
 // Ref/unref the lock, for when we're sharing the lock ownership
 // Prefer to use the macros above
-grpc_combiner* grpc_combiner_ref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS);
-void grpc_combiner_unref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS);
-// Fetch a scheduler to schedule closures against
-grpc_closure_scheduler* grpc_combiner_scheduler(grpc_combiner* lock);
-// Scheduler to execute \a action within the lock just prior to unlocking.
-grpc_closure_scheduler* grpc_combiner_finally_scheduler(grpc_combiner* lock);
+grpc_core::Combiner* grpc_combiner_ref(
+    grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
+void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 
 bool grpc_combiner_continue_exec_ctx();
 

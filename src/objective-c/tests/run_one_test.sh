@@ -20,12 +20,16 @@ set -ev
 
 cd $(dirname $0)
 
-BINDIR=../../../bins/$CONFIG
+BAZEL=../../../tools/bazel
 
-[ -f $BINDIR/interop_server ] || {
-    echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
-             "interop_server before calling this script."
-    exit 1
+INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
+
+[ -d Tests.xcworkspace ] || {
+    ./build_tests.sh
+}
+
+[ -f $INTEROP ] || {
+    BAZEL build //test/cpp/interop:interop_server
 }
 
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
@@ -36,10 +40,28 @@ BINDIR=../../../bins/$CONFIG
 PLAIN_PORT=$(curl localhost:32766/get)
 TLS_PORT=$(curl localhost:32766/get)
 
-$BINDIR/interop_server --port=$PLAIN_PORT --max_send_message_size=8388608 &
-$BINDIR/interop_server --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
+$INTEROP --port=$PLAIN_PORT --max_send_message_size=8388608 &
+$INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
-trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
+# Create loopback aliases for iOS performance tests
+if [ $SCHEME == PerfTests ] || [ $SCHEME == PerfTestsPosix ]; then
+for ((i=2;i<11;i++))
+do
+    sudo ifconfig lo0 alias 127.0.0.$i up
+done
+fi
+
+function finish {
+    if [ $SCHEME == PerfTests ] || [ $SCHEME == PerfTestsPosix ]; then
+    for ((i=2;i<11;i++))
+    do
+        sudo ifconfig lo0 -alias 127.0.0.$i
+    done
+    fi
+    kill -9 `jobs -p`
+    echo "EXIT TIME:  $(date)"
+}
+trap finish EXIT
 
 set -o pipefail
 
@@ -51,7 +73,10 @@ elif [ $PLATFORM == ios ]; then
 DESTINATION='name=iPhone 8'
 elif [ $PLATFORM == macos ]; then
 DESTINATION='platform=macOS'
+elif [ $PLATFORM == tvos ]; then
+DESTINATION='platform=tvOS Simulator,name=Apple TV'
 fi
+
 
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -64,3 +89,4 @@ xcodebuild \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+

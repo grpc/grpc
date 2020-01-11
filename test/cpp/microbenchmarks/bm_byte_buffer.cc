@@ -40,7 +40,7 @@ static void BM_ByteBuffer_Copy(benchmark::State& state) {
     slices.emplace_back(buf.get(), slice_size);
   }
   grpc::ByteBuffer bb(slices.data(), num_slices);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc::ByteBuffer cc(bb);
   }
 }
@@ -60,7 +60,7 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   grpc_byte_buffer_reader reader;
   GPR_ASSERT(
       g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
             &reader, &slice))) {
@@ -93,7 +93,7 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   grpc_byte_buffer_reader reader;
   GPR_ASSERT(
       g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
             &reader, &slice))) {

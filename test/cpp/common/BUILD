@@ -24,11 +24,36 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows RBE
     deps = [
         "//:grpc++_unsecure",
         "//test/core/util:grpc_test_util_unsecure",
     ],
-    tags = ["no_windows"],
+)
+
+grpc_cc_test(
+    name = "timer_test",
+    srcs = ["timer_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_jump_test",
+    srcs = ["time_jump_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual"],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_test(
@@ -37,6 +62,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",
@@ -50,6 +76,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",
@@ -62,6 +89,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",
@@ -76,6 +104,19 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "alts_util_test",
+    srcs = ["alts_util_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc++_alts",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

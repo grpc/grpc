@@ -1,0 +1,12 @@
+{
+  "name": "grpc-php/echo-example",
+  "require": {
+    "grpc/grpc": "^v1.22.0",
+    "google/protobuf": "^3.7.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "": "./"
+    }
+  }
+}

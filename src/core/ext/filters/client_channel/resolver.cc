@@ -30,8 +30,8 @@ namespace grpc_core {
 // Resolver
 //
 
-Resolver::Resolver(grpc_combiner* combiner,
-                   UniquePtr<ResultHandler> result_handler)
+Resolver::Resolver(Combiner* combiner,
+                   std::unique_ptr<ResultHandler> result_handler)
     : InternallyRefCounted(&grpc_trace_resolver_refcount),
       result_handler_(std::move(result_handler)),
       combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}

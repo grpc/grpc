@@ -24,14 +24,12 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"
-#include "test/core/util/memory_counters.h"
 
 bool squelch = true;
 bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   char* s;
-  grpc_core::testing::LeakDetector leak_detector(true);
   s = static_cast<char*>(gpr_malloc(size));
   memcpy(s, data, size);
   grpc_json* x;

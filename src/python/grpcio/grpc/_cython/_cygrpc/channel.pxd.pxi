@@ -69,7 +69,6 @@ cdef class SegregatedCall:
 cdef class Channel:
 
   cdef _ChannelState _state
-  cdef _VTable _vtable
 
   # TODO(https://github.com/grpc/grpc/issues/15662): Eliminate this.
   cdef tuple _arguments

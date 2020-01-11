@@ -15,30 +15,35 @@
 py_binary(
     name = "server",
     srcs = ["server.py"],
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
-    ],
+    python_version = "PY3",
     srcs_version = "PY2AND3",
+    deps = [
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
 )
 
 py_binary(
     name = "client",
     srcs = ["client.py"],
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
-    ],
+    python_version = "PY3",
     srcs_version = "PY2AND3",
+    deps = [
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
 )
 
 py_test(
     name = "test/compression_example_test",
-    srcs = ["test/compression_example_test.py"],
-    srcs_version = "PY2AND3",
-    data = [
-      ":client",
-      ":server",
-    ],
     size = "small",
+    srcs = ["test/compression_example_test.py"],
+    data = [
+        ":client",
+        ":server",
+    ],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
 )

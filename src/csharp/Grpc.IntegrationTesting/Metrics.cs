@@ -46,7 +46,7 @@ namespace Grpc.Testing {
   }
   #region Messages
   /// <summary>
-  /// Reponse message containing the gauge name and value
+  /// Response message containing the gauge name and value
   /// </summary>
   public sealed partial class GaugeResponse : pb::IMessage<GaugeResponse> {
     private static readonly pb::MessageParser<GaugeResponse> _parser = new pb::MessageParser<GaugeResponse>(() => new GaugeResponse());

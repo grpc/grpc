@@ -77,8 +77,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
 
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
-  Status Start(ServerContext* context, const ReconnectParams* request,
-               Empty* response) {
+  Status Start(ServerContext* /*context*/, const ReconnectParams* request,
+               Empty* /*response*/) {
     bool start_server = true;
     std::unique_lock<std::mutex> lock(mu_);
     while (serving_ && !shutdown_) {
@@ -105,7 +105,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     return Status::OK;
   }
 
-  Status Stop(ServerContext* context, const Empty* request,
+  Status Stop(ServerContext* /*context*/, const Empty* /*request*/,
               ReconnectInfo* response) {
     // extract timestamps and set response
     Verify(response);
@@ -176,7 +176,7 @@ void RunServer() {
   service.Shutdown();
 }
 
-static void sigint_handler(int x) { got_sigint = true; }
+static void sigint_handler(int /*x*/) { got_sigint = true; }
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);

@@ -20,6 +20,7 @@ from __future__ import print_function
 import logging
 import argparse
 import grpc
+
 from grpc_channelz.v1 import channelz_pb2
 from grpc_channelz.v1 import channelz_pb2_grpc
 
@@ -34,12 +35,11 @@ def run(addr):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--addr',
-        nargs=1,
-        type=str,
-        default='[::]:50051',
-        help='the address to request')
+    parser.add_argument('--addr',
+                        nargs=1,
+                        type=str,
+                        default='[::]:50051',
+                        help='the address to request')
     args = parser.parse_args()
     run(addr=args.addr)
 

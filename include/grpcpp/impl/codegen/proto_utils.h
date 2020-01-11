@@ -83,13 +83,8 @@ Status GenericDeserialize(ByteBuffer* buffer,
     if (!reader.status().ok()) {
       return reader.status();
     }
-    ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-    decoder.SetTotalBytesLimit(INT_MAX, INT_MAX);
-    if (!msg->ParseFromCodedStream(&decoder)) {
+    if (!msg->ParseFromZeroCopyStream(&reader)) {
       result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
-    }
-    if (!decoder.ConsumedEntireMessage()) {
-      result = Status(StatusCode::INTERNAL, "Did not read entire message");
     }
   }
   buffer->Clear();

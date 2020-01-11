@@ -20,26 +20,26 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
 bool leak_check = true;
 
-static void discard_write(grpc_slice slice) {}
+static void discard_write(grpc_slice /*slice*/) {}
 
 static void* tag(int n) { return (void*)static_cast<uintptr_t>(n); }
 static int detag(void* p) { return static_cast<int>((uintptr_t)p); }
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
-  grpc_core::testing::LeakDetector leak_detector(leak_check);
   grpc_init();
+  grpc_test_only_control_plane_credentials_force_init();
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
@@ -55,9 +55,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server* server = grpc_server_create(nullptr, nullptr);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    // TODO(ctiller): add registered methods (one for POST, one for PUT)
-    // void *registered_method =
-    //    grpc_server_register_method(server, "/reg", NULL, 0);
+    // TODO(ctiller): add more registered methods (one for POST, one for PUT)
+    grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
     grpc_transport* transport =
         grpc_create_chttp2_transport(nullptr, mock_endpoint, false);
@@ -134,6 +133,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_destroy(server);
     grpc_completion_queue_destroy(cq);
   }
+  grpc_test_only_control_plane_credentials_destroy();
   grpc_shutdown();
   return 0;
 }

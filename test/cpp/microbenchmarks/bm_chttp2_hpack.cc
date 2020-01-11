@@ -54,7 +54,7 @@ static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<grpc_chttp2_hpack_compressor> c(
       new grpc_chttp2_hpack_compressor);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_chttp2_hpack_compressor_init(c.get());
     grpc_chttp2_hpack_compressor_destroy(c.get());
     grpc_core::ExecCtx::Get()->Flush();
@@ -77,7 +77,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
       new grpc_chttp2_hpack_compressor);
   grpc_chttp2_hpack_compressor_init(c.get());
   grpc_transport_one_way_stats stats;
-  memset(&stats, 0, sizeof(stats));
+  stats = {};
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
@@ -127,15 +127,16 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
       new grpc_chttp2_hpack_compressor);
   grpc_chttp2_hpack_compressor_init(c.get());
   grpc_transport_one_way_stats stats;
-  memset(&stats, 0, sizeof(stats));
+  stats = {};
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
+    static constexpr int kEnsureMaxFrameAtLeast = 2;
     grpc_encode_header_options hopt = {
         static_cast<uint32_t>(state.iterations()),
         state.range(0) != 0,
         Fixture::kEnableTrueBinary,
-        static_cast<size_t>(state.range(1)),
+        static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
         &stats,
     };
     grpc_chttp2_encode_header(c.get(), nullptr, 0, &b, &hopt, &outbuf);
@@ -433,8 +434,15 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_chttp2_hpack_parser p;
-  while (state.KeepRunning()) {
+  // Initial destruction so we don't leak memory in the loop.
+  grpc_chttp2_hptbl_destroy(&p.table);
+  for (auto _ : state) {
     grpc_chttp2_hpack_parser_init(&p);
+    // Note that grpc_chttp2_hpack_parser_destroy frees the table dynamic
+    // elements so we need to recreate it here. In actual operation,
+    // new grpc_chttp2_hpack_parser_destroy allocates the table once
+    // and for all.
+    new (&p.table) grpc_chttp2_hptbl();
     grpc_chttp2_hpack_parser_destroy(&p);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -443,11 +451,12 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static void UnrefHeader(void* user_data, grpc_mdelem md) {
+static grpc_error* UnrefHeader(void* /*user_data*/, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_NONE;
 }
 
-template <class Fixture, void (*OnHeader)(void*, grpc_mdelem)>
+template <class Fixture, grpc_error* (*OnHeader)(void*, grpc_mdelem)>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
@@ -774,7 +783,7 @@ class RepresentativeServerTrailingMetadata {
 static void free_timeout(void* p) { gpr_free(p); }
 
 // Benchmark the current on_initial_header implementation
-static void OnInitialHeader(void* user_data, grpc_mdelem md) {
+static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
   // Setup for benchmark. This will bloat the absolute values of this benchmark
   grpc_chttp2_incoming_metadata_buffer buffer(
       static_cast<grpc_core::Arena*>(user_data));
@@ -820,10 +829,11 @@ static void OnInitialHeader(void* user_data, grpc_mdelem md) {
       GPR_ASSERT(0);
     }
   }
+  return GRPC_ERROR_NONE;
 }
 
 // Benchmark timeout handling
-static void OnHeaderTimeout(void* user_data, grpc_mdelem md) {
+static grpc_error* OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
     grpc_millis* cached_timeout =
         static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
@@ -851,6 +861,7 @@ static void OnHeaderTimeout(void* user_data, grpc_mdelem md) {
   } else {
     GPR_ASSERT(0);
   }
+  return GRPC_ERROR_NONE;
 }
 
 // Send the same deadline repeatedly

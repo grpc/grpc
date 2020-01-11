@@ -15,3 +15,18 @@
 
 These APIs are subject to be removed during any minor version release.
 """
+
+
+class ChannelOptions(object):
+    """Indicates a channel option unique to gRPC Python.
+
+     This enumeration is part of an EXPERIMENTAL API.
+
+     Attributes:
+       SingleThreadedUnaryStream: Perform unary-stream RPCs on a single thread.
+    """
+    SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
+
+
+class UsageError(Exception):
+    """Raised by the gRPC library to indicate usage not allowed by the API."""

@@ -42,7 +42,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '1.23.0-dev'
+  v = '1.27.0-dev'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC
@@ -96,6 +96,7 @@ Pod::Spec.new do |s|
   }
 
   repo_root = '../..'
+  bazel = "#{repo_root}/tools/bazel"
   plugin = 'grpc_objective_c_plugin'
 
   s.preserve_paths = plugin
@@ -106,6 +107,12 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
   s.tvos.deployment_target = '10.0'
+
+  # watchOS is disabled due to #20258.
+  # TODO (mxyan): Enable watchos when !ProtoCompiler.podspec is updated for
+  # support of watchos in the next release
+  # s.watchos.deployment_target = '4.0'
+
   # Restrict the gRPC runtime version to the one supported by this plugin.
   s.dependency 'gRPC-ProtoRPC', v
 
@@ -115,14 +122,7 @@ Pod::Spec.new do |s|
   # and, if absent, compile the plugin from the local sources.
   s.prepare_command = <<-CMD
     if [ ! -f #{plugin} ]; then
-      cd #{repo_root}
-      # This will build the plugin and put it in #{repo_root}/bins/opt.
-      #
-      # TODO(jcanizales): I reckon make will try to use locally-installed libprotoc (headers and
-      # library binary) if found, which _we do not want_. Find a way for this to always use the
-      # sources in the repo.
-      make #{plugin}
-      cd -
+      #{bazel} build //src/compiler:grpc_objective_c_plugin
     fi
   CMD
 end

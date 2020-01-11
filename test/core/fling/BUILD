@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/core/fling")
 
@@ -53,6 +53,7 @@ grpc_cc_test(
         ":fling_client",
         ":fling_server",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -68,6 +69,7 @@ grpc_cc_test(
         ":fling_client",
         ":fling_server",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",

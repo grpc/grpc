@@ -52,7 +52,7 @@ auto MakeVector(size_t length, F f) -> std::vector<decltype(f())> {
 class NoOpMutator {
  public:
   template <class ContextType>
-  NoOpMutator(ContextType* context) {}
+  NoOpMutator(ContextType* /*context*/) {}
 };
 
 template <int length>

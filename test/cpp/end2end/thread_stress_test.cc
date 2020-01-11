@@ -31,6 +31,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -56,7 +57,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
+  Status Echo(ServerContext* /*context*/, const EchoRequest* request,
               EchoResponse* response) override {
     response->set_message(request->message());
     return Status::OK;
@@ -66,7 +67,12 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 template <class Service>
 class CommonStressTest {
  public:
-  CommonStressTest() : kMaxMessageSize_(8192) {}
+  CommonStressTest() : kMaxMessageSize_(8192) {
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    gpr_setenv("grpc_cfstream", "0");
+#endif
+  }
   virtual ~CommonStressTest() {}
   virtual void SetUp() = 0;
   virtual void TearDown() = 0;
@@ -303,7 +309,7 @@ typedef ::testing::Types<
     CommonStressTestAsyncServer<CommonStressTestInproc<
         grpc::testing::EchoTestService::AsyncService, false>>>
     CommonTypes;
-TYPED_TEST_CASE(End2endTest, CommonTypes);
+TYPED_TEST_SUITE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> threads;
@@ -402,7 +408,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   int rpcs_outstanding_;
 };
 
-TYPED_TEST_CASE(AsyncClientEnd2endTest, CommonTypes);
+TYPED_TEST_SUITE(AsyncClientEnd2endTest, CommonTypes);
 TYPED_TEST(AsyncClientEnd2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> send_threads, completion_threads;

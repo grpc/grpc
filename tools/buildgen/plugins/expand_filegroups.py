@@ -55,6 +55,7 @@ def mako_plugin(dictionary):
     libs = dictionary.get('libs')
     targets = dictionary.get('targets')
     filegroups_list = dictionary.get('filegroups')
+    filegroups_set = set(fg['name'] for fg in filegroups_list)
     filegroups = {}
 
     for fg in filegroups_list:
@@ -78,8 +79,10 @@ def mako_plugin(dictionary):
         todo = todo[1:]
         # check all uses filegroups are present (if no, skip and come back later)
         skip = False
-        for uses in cur.get('uses', []):
-            if uses not in filegroups:
+        for use in cur.get('uses', []):
+            assert use in filegroups_set, (
+                "filegroup(%s) uses non-existent %s" % (cur['name'], use))
+            if use not in filegroups:
                 skip = True
         if skip:
             skips += 1
@@ -104,10 +107,12 @@ def mako_plugin(dictionary):
 
     # build reverse dependency map
     things = {}
-    for thing in dictionary['libs'] + dictionary['targets'] + dictionary['filegroups']:
+    for thing in dictionary['libs'] + dictionary['targets'] + dictionary[
+            'filegroups']:
         things[thing['name']] = thing
         thing['used_by'] = []
-    thing_deps = lambda t: t.get('uses', []) + t.get('filegroups', []) + t.get('deps', [])
+    thing_deps = lambda t: t.get('uses', []) + t.get('filegroups', []) + t.get(
+        'deps', [])
     for thing in things.itervalues():
         done = set()
         todo = thing_deps(thing)
@@ -147,7 +152,7 @@ def mako_plugin(dictionary):
                 lib[lst] = vals
             lib['plugins'] = plugins
         if lib.get('generate_plugin_registry', False):
-            lib['src'].append(
-                'src/core/plugin_registry/%s_plugin_registry.cc' % lib['name'])
+            lib['src'].append('src/core/plugin_registry/%s_plugin_registry.cc' %
+                              lib['name'])
         for lst in FILEGROUP_LISTS:
             lib[lst] = uniquify(lib.get(lst, []))

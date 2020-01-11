@@ -31,25 +31,17 @@ static bool grpc_gcp_rpc_protocol_versions_equal(
     grpc_gcp_rpc_protocol_versions* l_versions,
     grpc_gcp_rpc_protocol_versions* r_versions) {
   GPR_ASSERT(l_versions != nullptr && r_versions != nullptr);
-  if ((l_versions->has_max_rpc_version ^ r_versions->has_max_rpc_version) |
-      (l_versions->has_min_rpc_version ^ r_versions->has_min_rpc_version)) {
+  if ((l_versions->max_rpc_version.major !=
+       r_versions->max_rpc_version.major) ||
+      (l_versions->max_rpc_version.minor !=
+       r_versions->max_rpc_version.minor)) {
     return false;
   }
-  if (l_versions->has_max_rpc_version) {
-    if ((l_versions->max_rpc_version.major !=
-         r_versions->max_rpc_version.major) ||
-        (l_versions->max_rpc_version.minor !=
-         r_versions->max_rpc_version.minor)) {
-      return false;
-    }
-  }
-  if (l_versions->has_min_rpc_version) {
-    if ((l_versions->min_rpc_version.major !=
-         r_versions->min_rpc_version.major) ||
-        (l_versions->min_rpc_version.minor !=
-         r_versions->min_rpc_version.minor)) {
-      return false;
-    }
+  if ((l_versions->min_rpc_version.major !=
+       r_versions->min_rpc_version.major) ||
+      (l_versions->min_rpc_version.minor !=
+       r_versions->min_rpc_version.minor)) {
+    return false;
   }
   return true;
 }
@@ -61,25 +53,14 @@ static void test_success() {
       &version, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
       &version, kMinRpcVersionMajor, kMinRpcVersionMinor));
-  /* Serializes to raw bytes. */
-  size_t encoded_length =
-      grpc_gcp_rpc_protocol_versions_encode_length(&version);
-  uint8_t* encoded_bytes = static_cast<uint8_t*>(gpr_malloc(encoded_length));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode_to_raw_bytes(
-      &version, encoded_bytes, encoded_length));
-  grpc_slice encoded_slice;
   /* Serializes to grpc slice. */
+  grpc_slice encoded_slice;
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode(&version, &encoded_slice));
-  /* Checks serialized raw bytes and serialized grpc slice have same content. */
-  GPR_ASSERT(encoded_length == GRPC_SLICE_LENGTH(encoded_slice));
-  GPR_ASSERT(memcmp(encoded_bytes, GRPC_SLICE_START_PTR(encoded_slice),
-                    encoded_length) == 0);
   /* Deserializes and compares with the original version. */
   GPR_ASSERT(
       grpc_gcp_rpc_protocol_versions_decode(encoded_slice, &decoded_version));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_equal(&version, &decoded_version));
   grpc_slice_unref(encoded_slice);
-  gpr_free(encoded_bytes);
 }
 
 static void test_failure() {
@@ -90,24 +71,14 @@ static void test_failure() {
       nullptr, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
   GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_set_min(
       nullptr, kMinRpcVersionMajor, kMinRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode_length(nullptr) == 0);
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
       &version, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
       &version, kMinRpcVersionMajor, kMinRpcVersionMinor));
-  size_t encoded_length =
-      grpc_gcp_rpc_protocol_versions_encode_length(&version);
-  uint8_t* encoded_bytes = static_cast<uint8_t*>(gpr_malloc(encoded_length));
-  GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_encode_to_raw_bytes(
-      nullptr, encoded_bytes, encoded_length));
-  GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_encode_to_raw_bytes(
-      &version, nullptr, encoded_length));
-  GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_encode_to_raw_bytes(
-      &version, encoded_bytes, 0));
   GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_encode(nullptr, &encoded_slice));
   GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_encode(&version, nullptr));
   GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_decode(encoded_slice, nullptr));
-  /* Test for nanopb decode. */
+  /* Test for upb decode. */
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode(&version, &encoded_slice));
   grpc_slice bad_slice = grpc_slice_split_head(
       &encoded_slice, GRPC_SLICE_LENGTH(encoded_slice) - 1);
@@ -115,7 +86,6 @@ static void test_failure() {
   GPR_ASSERT(
       !grpc_gcp_rpc_protocol_versions_decode(bad_slice, &decoded_version));
   grpc_slice_unref(bad_slice);
-  gpr_free(encoded_bytes);
 }
 
 static void test_copy() {
@@ -185,7 +155,7 @@ static void test_check_failure() {
                  &highest_common_version) == 0);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   /* Run tests. */
   test_success();
   test_failure();

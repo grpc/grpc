@@ -28,103 +28,27 @@
 #include <memory>
 #include <utility>
 
-// Add this to a class that want to use Delete(), but has a private or
-// protected destructor.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE         \
-  template <typename _Delete_T, bool _Delete_can_be_null> \
-  friend void ::grpc_core::Delete(_Delete_T*);            \
-  template <typename _Delete_T>                           \
-  friend void ::grpc_core::Delete(_Delete_T*);
-
-// Add this to a class that want to use New(), but has a private or
-// protected constructor.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW      \
-  template <typename _New_T, typename... _New_Args> \
-  friend _New_T* grpc_core::New(_New_Args&&...);
-
 namespace grpc_core {
 
-// Alternative to new, since we cannot use it (for fear of libstdc++)
-template <typename T, typename... Args>
-inline T* New(Args&&... args) {
-  void* p = gpr_malloc(sizeof(T));
-  return new (p) T(std::forward<Args>(args)...);
-}
-
-// Alternative to delete, since we cannot use it (for fear of libstdc++)
-// We cannot add a default value for can_be_null, because they are used as
-// as friend template methods where we cannot define a default value.
-// Instead we simply define two variants, one with and one without the boolean
-// argument.
-template <typename T, bool can_be_null>
-inline void Delete(T* p) {
-  GPR_DEBUG_ASSERT(can_be_null || p != nullptr);
-  if (can_be_null && p == nullptr) return;
-  p->~T();
-  gpr_free(p);
-}
-template <typename T>
-inline void Delete(T* p) {
-  Delete<T, /*can_be_null=*/true>(p);
-}
-
-template <typename T>
-class DefaultDelete {
+class DefaultDeleteChar {
  public:
-  void operator()(T* p) {
-    // std::unique_ptr is gauranteed not to call the deleter
-    // if the pointer is nullptr.
-    Delete<T, /*can_be_null=*/false>(p);
+  void operator()(char* p) {
+    if (p == nullptr) return;
+    gpr_free(p);
   }
 };
 
-template <typename T, typename Deleter = DefaultDelete<T>>
-using UniquePtr = std::unique_ptr<T, Deleter>;
+// UniquePtr<T> is only allowed for char and UniquePtr<char> is deprecated
+// in favor of std::string. UniquePtr<char> is equivalent std::unique_ptr
+// except that it uses gpr_free for deleter.
+template <typename T>
+using UniquePtr = std::unique_ptr<T, DefaultDeleteChar>;
 
+// TODO(veblush): Replace this with absl::make_unique once abseil is added.
 template <typename T, typename... Args>
-inline UniquePtr<T> MakeUnique(Args&&... args) {
-  return UniquePtr<T>(New<T>(std::forward<Args>(args)...));
+inline std::unique_ptr<T> MakeUnique(Args&&... args) {
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
-
-// an allocator that uses gpr_malloc/gpr_free
-template <class T>
-class Allocator {
- public:
-  typedef T value_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef std::size_t size_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef std::false_type propagate_on_container_move_assignment;
-  template <class U>
-  struct rebind {
-    typedef Allocator<U> other;
-  };
-  typedef std::true_type is_always_equal;
-
-  pointer address(reference x) const { return &x; }
-  const_pointer address(const_reference x) const { return &x; }
-  pointer allocate(std::size_t n,
-                   std::allocator<void>::const_pointer hint = nullptr) {
-    return static_cast<pointer>(gpr_malloc(n * sizeof(T)));
-  }
-  void deallocate(T* p, std::size_t n) { gpr_free(p); }
-  size_t max_size() const {
-    return std::numeric_limits<size_type>::max() / sizeof(value_type);
-  }
-  void construct(pointer p, const_reference val) { new ((void*)p) T(val); }
-  template <class U, class... Args>
-  void construct(U* p, Args&&... args) {
-    ::new ((void*)p) U(std::forward<Args>(args)...);
-  }
-  void destroy(pointer p) { p->~T(); }
-  template <class U>
-  void destroy(U* p) {
-    p->~U();
-  }
-};
 
 }  // namespace grpc_core
 

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Buldigen generate grpc_shadow_boringssl headers
+"""Buildgen generate grpc_shadow_boringssl headers
 This script takes the list of symbols from
 src/objective-c/grpc_shadow_boringssl_symbols and populate them in
 settings.grpc_shadow_boringssl_symbols
@@ -24,7 +24,7 @@ def mako_plugin(dictionary):
     # Remove trailing '\n'
     symbols = [s.strip() for s in symbols]
     # Remove comments
-    symbols = [s for s in symbols if s[0] != '#']
+    symbols = [s for s in symbols if len(s) > 0 and s[0] != '#']
     # Remove the commit number
     del symbols[0]
 

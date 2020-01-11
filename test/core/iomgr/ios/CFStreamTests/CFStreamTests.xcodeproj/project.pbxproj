@@ -271,8 +271,6 @@
 					"$(inherited)",
 					"COCOAPODS=1",
 					"$(inherited)",
-					"PB_FIELD_32BIT=1",
-					"PB_NO_PACKED_STRUCTS=1",
 					"GRPC_CFSTREAM=1",
 				);
 				INFOPLIST_FILE = Info.plist;

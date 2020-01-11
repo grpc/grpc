@@ -1,9 +1,0 @@
-# Test that the generator options work as expected.
-
-Import("env")
-
-env.NanopbProto("options")
-env.Object('options.pb.c')
-
-env.Match(['options.pb.h', 'options.expected'])
-

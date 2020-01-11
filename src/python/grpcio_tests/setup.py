@@ -58,6 +58,7 @@ COMMAND_CLASS = {
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite,
     'test_gevent': commands.TestGevent,
+    'test_aio': commands.TestAio,
 }
 
 PACKAGE_DATA = {
@@ -66,9 +67,7 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests.protoc_plugin.protos.invocation_testing': [
-        'same.proto',
-    ],
+    'tests.protoc_plugin.protos.invocation_testing': ['same.proto',],
     'tests.protoc_plugin.protos.invocation_testing.split_messages': [
         'messages.proto',
     ],

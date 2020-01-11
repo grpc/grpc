@@ -124,7 +124,8 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
 static void finish_shutdown(grpc_tcp_server* s) {
   GPR_ASSERT(s->shutdown);
   if (s->shutdown_complete != nullptr) {
-    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
+                            GRPC_ERROR_NONE);
   }
 
   while (s->head) {
@@ -195,7 +196,7 @@ static void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_core::ExecCtx exec_ctx;
-    GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     grpc_core::ExecCtx::Get()->Flush();
     tcp_server_destroy(s);
   }
@@ -245,6 +246,7 @@ static void custom_accept_callback(grpc_custom_socket* socket,
 static void custom_accept_callback(grpc_custom_socket* socket,
                                    grpc_custom_socket* client,
                                    grpc_error* error) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_listener* sp = socket->listener;
   if (error != GRPC_ERROR_NONE) {
@@ -391,7 +393,7 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   socket->endpoint = nullptr;
   socket->listener = nullptr;
   socket->connector = nullptr;
-  grpc_custom_socket_vtable->init(socket, family);
+  error = grpc_custom_socket_vtable->init(socket, family);
 
   if (error == GRPC_ERROR_NONE) {
     error = add_socket_to_server(s, socket, addr, port_index, &sp);
@@ -438,13 +440,13 @@ static void tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
   }
 }
 
-static unsigned tcp_server_port_fd_count(grpc_tcp_server* s,
-                                         unsigned port_index) {
+static unsigned tcp_server_port_fd_count(grpc_tcp_server* /*s*/,
+                                         unsigned /*port_index*/) {
   return 0;
 }
 
-static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
-                              unsigned fd_index) {
+static int tcp_server_port_fd(grpc_tcp_server* /*s*/, unsigned /*port_index*/,
+                              unsigned /*fd_index*/) {
   return -1;
 }
 
@@ -458,7 +460,7 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
 }
 
 static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
-    grpc_tcp_server* s) {
+    grpc_tcp_server* /*s*/) {
   return nullptr;
 }
 

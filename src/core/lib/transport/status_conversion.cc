@@ -97,4 +97,4 @@ grpc_status_code grpc_http2_status_to_grpc_status(int status) {
   }
 }
 
-int grpc_status_to_http2_status(grpc_status_code status) { return 200; }
+int grpc_status_to_http2_status(grpc_status_code /*status*/) { return 200; }

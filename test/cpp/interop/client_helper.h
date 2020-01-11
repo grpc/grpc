@@ -92,7 +92,7 @@ class AdditionalMetadataInterceptorFactory
       : additional_metadata_(std::move(additional_metadata)) {}
 
   experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+      experimental::ClientRpcInfo* /*info*/) override {
     return new AdditionalMetadataInterceptor(additional_metadata_);
   }
 

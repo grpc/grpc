@@ -22,6 +22,8 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -214,6 +216,8 @@ void grpc_channel_args_destroy(grpc_channel_args* a) {
 
 int grpc_channel_args_compare(const grpc_channel_args* a,
                               const grpc_channel_args* b) {
+  if (a == nullptr && b == nullptr) return 0;
+  if (a == nullptr || b == nullptr) return a == nullptr ? -1 : 1;
   int c = GPR_ICMP(a->num_args, b->num_args);
   if (c != 0) return c;
   for (size_t i = 0; i < a->num_args; i++) {
@@ -255,6 +259,13 @@ int grpc_channel_arg_get_integer(const grpc_arg* arg,
   return arg->value.integer;
 }
 
+int grpc_channel_args_find_integer(const grpc_channel_args* args,
+                                   const char* name,
+                                   const grpc_integer_options options) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  return grpc_channel_arg_get_integer(arg, options);
+}
+
 char* grpc_channel_arg_get_string(const grpc_arg* arg) {
   if (arg == nullptr) return nullptr;
   if (arg->type != GRPC_ARG_STRING) {
@@ -262,6 +273,12 @@ char* grpc_channel_arg_get_string(const grpc_arg* arg) {
     return nullptr;
   }
   return arg->value.string;
+}
+
+char* grpc_channel_args_find_string(const grpc_channel_args* args,
+                                    const char* name) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  return grpc_channel_arg_get_string(arg);
 }
 
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value) {
@@ -280,6 +297,12 @@ bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value) {
               arg->key, arg->value.integer);
       return true;
   }
+}
+
+bool grpc_channel_args_find_bool(const grpc_channel_args* args,
+                                 const char* name, bool default_value) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  return grpc_channel_arg_get_bool(arg, default_value);
 }
 
 bool grpc_channel_args_want_minimal_stack(const grpc_channel_args* args) {
@@ -339,4 +362,18 @@ char* grpc_channel_args_string(const grpc_channel_args* args) {
       gpr_strjoin_sep(const_cast<const char**>(v.strs), v.count, ", ", nullptr);
   gpr_strvec_destroy(&v);
   return result;
+}
+
+namespace {
+grpc_channel_args_client_channel_creation_mutator g_mutator = nullptr;
+}  // namespace
+
+void grpc_channel_args_set_client_channel_creation_mutator(
+    grpc_channel_args_client_channel_creation_mutator cb) {
+  GPR_DEBUG_ASSERT(g_mutator == nullptr);
+  g_mutator = cb;
+}
+grpc_channel_args_client_channel_creation_mutator
+grpc_channel_args_get_client_channel_creation_mutator() {
+  return g_mutator;
 }

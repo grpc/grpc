@@ -27,8 +27,8 @@ const size_t kSmallOverflowSize = 1;
 const size_t kGcmCounterSize = 12;
 const size_t kGcmOverflowSize = 5;
 
-static bool do_bytes_represent_client(alts_counter* ctr, unsigned char* counter,
-                                      size_t size) {
+static bool do_bytes_represent_client(alts_counter* ctr,
+                                      unsigned char* /*counter*/, size_t size) {
   return (ctr->counter[size - 1] & 0x80) == 0x80;
 }
 
@@ -165,7 +165,7 @@ static void alts_counter_test_overflow_single_increment(bool is_client,
   alts_counter_destroy(ctr);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   alts_counter_test_input_sanity_check(kGcmCounterSize, kGcmOverflowSize);
   alts_counter_test_overflow_full_range(true, kSmallCounterSize,
                                         kSmallOverflowSize);

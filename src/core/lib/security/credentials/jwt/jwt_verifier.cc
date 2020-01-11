@@ -636,7 +636,7 @@ end:
   return result;
 }
 
-static void on_keys_retrieved(void* user_data, grpc_error* error) {
+static void on_keys_retrieved(void* user_data, grpc_error* /*error*/) {
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   grpc_json* json = json_from_http(&ctx->responses[HTTP_RESPONSE_KEYS]);
   EVP_PKEY* verification_key = nullptr;
@@ -676,7 +676,7 @@ end:
   verifier_cb_ctx_destroy(ctx);
 }
 
-static void on_openid_config_retrieved(void* user_data, grpc_error* error) {
+static void on_openid_config_retrieved(void* user_data, grpc_error* /*error*/) {
   const grpc_json* cur;
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   const grpc_http_response* response = &ctx->responses[HTTP_RESPONSE_OPENID];

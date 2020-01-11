@@ -40,7 +40,8 @@ namespace Grpc.Core.Tests
             Assert.Throws(typeof(ArgumentNullException), () => ChannelCredentials.Create(new FakeChannelCredentials(true), null));
 
             // forbid composing non-composable
-            Assert.Throws(typeof(ArgumentException), () => ChannelCredentials.Create(new FakeChannelCredentials(false), new FakeCallCredentials()));
+            var ex = Assert.Throws(typeof(ArgumentException), () => ChannelCredentials.Create(new FakeChannelCredentials(false), new FakeCallCredentials()));
+            Assert.AreEqual("CallCredentials can't be composed with FakeChannelCredentials. CallCredentials must be used with secure channel credentials like SslCredentials.", ex.Message);
         }
 
         [Test]
@@ -48,28 +49,9 @@ namespace Grpc.Core.Tests
         {
             // always returning the same native object is critical for subchannel sharing to work with secure channels
             var creds = new SslCredentials();
-            var nativeCreds1 = creds.GetNativeCredentials();
-            var nativeCreds2 = creds.GetNativeCredentials();
+            var nativeCreds1 = creds.ToNativeCredentials();
+            var nativeCreds2 = creds.ToNativeCredentials();
             Assert.AreSame(nativeCreds1, nativeCreds2);
-        }
-
-        [Test]
-        public void ChannelCredentials_CreateExceptionIsCached()
-        {
-            var creds = new ChannelCredentialsWithCreateNativeThrows();
-            var ex1 = Assert.Throws(typeof(Exception), () => creds.GetNativeCredentials());
-            var ex2 = Assert.Throws(typeof(Exception), () => creds.GetNativeCredentials());
-            Assert.AreSame(ex1, ex2);
-        }
-
-        internal class ChannelCredentialsWithCreateNativeThrows : ChannelCredentials
-        {
-            internal override bool IsComposable => false;
-
-            internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
-            {
-                throw new Exception("Creation of native credentials has failed on purpose.");
-            }
         }
     }
 }

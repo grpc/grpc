@@ -483,6 +483,7 @@ static const tsi_zero_copy_grpc_protector_vtable
         fake_zero_copy_grpc_protector_protect,
         fake_zero_copy_grpc_protector_unprotect,
         fake_zero_copy_grpc_protector_destroy,
+        nullptr /* fake_zero_copy_grpc_protector_max_frame_size */
 };
 
 /* --- tsi_handshaker_result methods implementation. ---*/
@@ -495,18 +496,23 @@ typedef struct {
 
 static tsi_result fake_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
-  /* Construct a tsi_peer with 1 property: certificate type. */
-  tsi_result result = tsi_construct_peer(1, peer);
+  /* Construct a tsi_peer with 1 property: certificate type, security_level. */
+  tsi_result result = tsi_construct_peer(2, peer);
   if (result != TSI_OK) return result;
   result = tsi_construct_string_peer_property_from_cstring(
       TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_FAKE_CERTIFICATE_TYPE,
       &peer->properties[0]);
   if (result != TSI_OK) tsi_peer_destruct(peer);
+  result = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_SECURITY_NONE), &peer->properties[1]);
+  if (result != TSI_OK) tsi_peer_destruct(peer);
   return result;
 }
 
 static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
+    const tsi_handshaker_result* /*self*/,
+    size_t* max_output_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
   *protector =
       tsi_create_fake_zero_copy_grpc_protector(max_output_protected_frame_size);
@@ -514,8 +520,8 @@ static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
 }
 
 static tsi_result fake_handshaker_result_create_frame_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
-    tsi_frame_protector** protector) {
+    const tsi_handshaker_result* /*self*/,
+    size_t* max_output_protected_frame_size, tsi_frame_protector** protector) {
   *protector = tsi_create_fake_frame_protector(max_output_protected_frame_size);
   return TSI_OK;
 }
@@ -669,7 +675,7 @@ static tsi_result fake_handshaker_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data) {
+    tsi_handshaker_on_next_done_cb /*cb*/, void* /*user_data*/) {
   /* Sanity check the arguments. */
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||

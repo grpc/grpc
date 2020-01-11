@@ -97,7 +97,7 @@ static callback_state* get_state_for_batch(
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */
-static void con_start_transport_stream_op_batch(
+static void connected_channel_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -137,15 +137,15 @@ static void con_start_transport_stream_op_batch(
   GRPC_CALL_COMBINER_STOP(calld->call_combiner, "passed batch to transport");
 }
 
-static void con_start_transport_op(grpc_channel_element* elem,
-                                   grpc_transport_op* op) {
+static void connected_channel_start_transport_op(grpc_channel_element* elem,
+                                                 grpc_transport_op* op) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_transport_perform_op(chand->transport, op);
 }
 
 /* Constructor for call_data */
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* connected_channel_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   calld->call_combiner = args->call_combiner;
@@ -166,9 +166,9 @@ static void set_pollset_or_pollset_set(grpc_call_element* elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* then_schedule_closure) {
+static void connected_channel_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* then_schedule_closure) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_transport_destroy_stream(chand->transport,
@@ -177,8 +177,8 @@ static void destroy_call_elem(grpc_call_element* elem,
 }
 
 /* Constructor for channel_data */
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* connected_channel_init_channel_elem(
+    grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_last);
   cd->transport = nullptr;
@@ -186,7 +186,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel_data */
-static void destroy_channel_elem(grpc_channel_element* elem) {
+static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   if (cd->transport) {
     grpc_transport_destroy(cd->transport);
@@ -194,20 +194,21 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 }
 
 /* No-op. */
-static void con_get_channel_info(grpc_channel_element* elem,
-                                 const grpc_channel_info* channel_info) {}
+static void connected_channel_get_channel_info(
+    grpc_channel_element* /*elem*/, const grpc_channel_info* /*channel_info*/) {
+}
 
 const grpc_channel_filter grpc_connected_filter = {
-    con_start_transport_stream_op_batch,
-    con_start_transport_op,
+    connected_channel_start_transport_stream_op_batch,
+    connected_channel_start_transport_op,
     sizeof(call_data),
-    init_call_elem,
+    connected_channel_init_call_elem,
     set_pollset_or_pollset_set,
-    destroy_call_elem,
+    connected_channel_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    con_get_channel_info,
+    connected_channel_init_channel_elem,
+    connected_channel_destroy_channel_elem,
+    connected_channel_get_channel_info,
     "connected",
 };
 

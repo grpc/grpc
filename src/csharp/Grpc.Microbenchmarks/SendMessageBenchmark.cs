@@ -36,7 +36,7 @@ namespace Grpc.Microbenchmarks
         [Params(0)]
         public int PayloadSize { get; set; }
 
-        const int Iterations = 1000000;  // High number to make the overhead of RunConcurrent negligible.
+        const int Iterations = 5 * 1000 * 1000;  // High number to make the overhead of RunConcurrent negligible.
         [Benchmark(OperationsPerInvoke = Iterations)]
         public void SendMessage()
         {
@@ -50,15 +50,21 @@ namespace Grpc.Microbenchmarks
             var call = CreateFakeCall(cq);
 
             var sendCompletionCallback = new NopSendCompletionCallback();
-            var payload = new byte[PayloadSize];
+            var sliceBuffer = SliceBufferSafeHandle.Create();
             var writeFlags = default(WriteFlags);
 
             for (int i = 0; i < Iterations; i++)
             {
-                call.StartSendMessage(sendCompletionCallback, payload, writeFlags, false);
+                // SendMessage steals the slices from the slice buffer, so we need to repopulate in each iteration.
+                sliceBuffer.Reset();
+                sliceBuffer.GetSpan(PayloadSize);
+                sliceBuffer.Advance(PayloadSize);
+
+                call.StartSendMessage(sendCompletionCallback, sliceBuffer, writeFlags, false);
                 var callback = completionRegistry.Extract(completionRegistry.LastRegisteredKey);
                 callback.OnComplete(true);
             }
+            sliceBuffer.Dispose();
             cq.Dispose();
         }
 

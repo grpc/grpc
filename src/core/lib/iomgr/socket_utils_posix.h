@@ -31,9 +31,21 @@
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
+#ifdef GRPC_LINUX_ERRQUEUE
+#ifndef SO_ZEROCOPY
+#define SO_ZEROCOPY 60
+#endif
+#ifndef SO_EE_ORIGIN_ZEROCOPY
+#define SO_EE_ORIGIN_ZEROCOPY 5
+#endif
+#endif /* ifdef GRPC_LINUX_ERRQUEUE */
+
 /* a wrapper for accept or accept4 */
 int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
                  int cloexec);
+
+/* set a socket to use zerocopy */
+grpc_error* grpc_set_socket_zerocopy(int fd);
 
 /* set a socket to non blocking mode */
 grpc_error* grpc_set_socket_nonblocking(int fd, int non_blocking);
@@ -90,6 +102,10 @@ grpc_error* grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 
 /* Tries to set the socket using a grpc_socket_mutator */
 grpc_error* grpc_set_socket_with_mutator(int fd, grpc_socket_mutator* mutator);
+
+/* Extracts the first socket mutator from args if any and applies on the fd. */
+grpc_error* grpc_apply_socket_mutator_in_args(int fd,
+                                              const grpc_channel_args* args);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 

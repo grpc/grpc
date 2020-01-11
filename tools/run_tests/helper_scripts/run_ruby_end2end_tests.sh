@@ -32,4 +32,7 @@ time ruby src/ruby/end2end/client_memory_usage_driver.rb || EXIT_CODE=1
 time ruby src/ruby/end2end/package_with_underscore_checker.rb || EXIT_CODE=1
 time ruby src/ruby/end2end/graceful_sig_handling_driver.rb || EXIT_CODE=1
 time ruby src/ruby/end2end/graceful_sig_stop_driver.rb || EXIT_CODE=1
+time ruby src/ruby/end2end/errors_load_before_grpc_lib.rb || EXIT_CODE=1
+time ruby src/ruby/end2end/logger_load_before_grpc_lib.rb || EXIT_CODE=1
+time ruby src/ruby/end2end/status_codes_load_before_grpc_lib.rb || EXIT_CODE=1
 exit $EXIT_CODE

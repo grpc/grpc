@@ -14,7 +14,7 @@
 
 @rem TODO(jtattermusch): make this generate less output
 @rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
-choco install bazel -y --version 0.24.1 --limit-output
+choco install bazel -y --version 1.0.0 --limit-output
 
 cd github/grpc
 set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
@@ -24,9 +24,13 @@ powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel
 set /p BAZEL_INVOCATION_ID=<%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
 
 @rem TODO(jtattermusch): windows RBE should be able to use the same credentials as Linux RBE.
-bazel --bazelrc=tools/remote_build/windows.bazelrc build --invocation_id="%BAZEL_INVOCATION_ID%" --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh :all --incompatible_disallow_filetype=false --google_credentials=%KOKORO_GFILE_DIR%/rbe-windows-credentials.json
+bazel --bazelrc=tools/remote_build/windows.bazelrc test --invocation_id="%BAZEL_INVOCATION_ID%" %BAZEL_FLAGS% --workspace_status_command=tools/remote_build/workspace_status_kokoro.bat --google_credentials=%KOKORO_GFILE_DIR%/rbe-windows-credentials.json //test/...
 set BAZEL_EXITCODE=%errorlevel%
 
-@rem TODO(jtattermusch): upload results to bigquery
+if not "%UPLOAD_TEST_RESULTS%"=="" (
+  @rem Sleep to let ResultStore finish writing results before querying
+  timeout /t 60 /nobreak
+  python ./tools/run_tests/python_utils/upload_rbe_results.py
+)
 
 exit /b %BAZEL_EXITCODE%

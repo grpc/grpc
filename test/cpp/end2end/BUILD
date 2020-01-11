@@ -67,6 +67,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_test_ios"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -89,6 +90,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
+        "no_test_ios",
+        "no_windows",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -99,7 +105,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -110,6 +115,11 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+    ],
+    tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
+        "no_test_ios",
+        "no_windows",
     ],
     deps = [
         "//:gpr",
@@ -166,6 +176,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "delegating_channel_test",
+    srcs = ["delegating_channel_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "client_interceptors_end2end_test",
     srcs = ["client_interceptors_end2end_test.cc"],
     external_deps = [
@@ -203,6 +231,7 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
@@ -245,6 +274,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "end2end_test",
     size = "large",
+    tags = ["no_test_ios"],
     deps = [
         ":end2end_test_lib",
         # DO NOT REMOVE THE grpc++ dependence below since the internal build
@@ -407,6 +437,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -415,6 +446,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//src/proto/grpc/testing/xds:orca_load_report_for_test_proto",
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
@@ -446,6 +478,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -463,20 +496,28 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "xds_end2end_test",
+    size = "large",
     srcs = ["xds_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],
+    shard_count = 10,
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
-        "//src/proto/grpc/lb/v1:load_balancer_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//src/proto/grpc/testing/xds:ads_for_test_proto",
+        "//src/proto/grpc/testing/xds:eds_for_test_proto",
+        "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -531,6 +572,11 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+    ],
+    tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
+        "no_test_ios",
+        "no_windows",
     ],
     deps = [
         "//:gpr",
@@ -590,6 +636,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],
     deps = [
         "//:grpcpp_server_load_reporting",
         "//src/proto/grpc/testing:echo_proto",
@@ -603,7 +653,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "no_test_ios",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -640,6 +693,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -650,16 +704,17 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
     name = "thread_stress_test",
-    timeout = "long",
+    size = "large",
     srcs = ["thread_stress_test.cc"],
     external_deps = [
         "gtest",
     ],
+    shard_count = 5,
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:gpr",
         "//:grpc",
@@ -678,7 +733,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual"],  # test requires root, won't work with bazel RBE
+    tags = [
+        "manual",
+        "no_test_android",
+        "no_test_ios",
+    ],  # test requires root, won't work with bazel RBE
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -700,8 +759,8 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
@@ -728,4 +787,3 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
-

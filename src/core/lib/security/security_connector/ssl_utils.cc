@@ -28,12 +28,12 @@
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
 /* -- Constants. -- */
@@ -44,17 +44,6 @@ static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 static const char* installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
-
-/** Config variable that points to the default SSL roots file. This file
-   must be a PEM encoded file with all the roots such as the one that can be
-   downloaded from https://pki.google.com/roots.pem.  */
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_default_ssl_roots_file_path, "",
-                                "Path to the default SSL roots file.");
-
-/** Config variable used as a flag to enable/disable loading system root
-    certificates from the OS trust store. */
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_not_use_system_ssl_roots, false,
-                              "Disable loading system root certificates.");
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
 #define TSI_OPENSSL_ALPN_SUPPORT 1
@@ -93,6 +82,30 @@ static void init_cipher_suites(void) {
 const char* grpc_get_ssl_cipher_suites(void) {
   gpr_once_init(&cipher_suites_once, init_cipher_suites);
   return cipher_suites;
+}
+
+grpc_security_level grpc_tsi_security_level_string_to_enum(
+    const char* security_level) {
+  if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
+    return GRPC_INTEGRITY_ONLY;
+  } else if (strcmp(security_level, "TSI_PRIVACY_AND_INTEGRITY") == 0) {
+    return GRPC_PRIVACY_AND_INTEGRITY;
+  }
+  return GRPC_SECURITY_NONE;
+}
+
+const char* grpc_security_level_to_string(grpc_security_level security_level) {
+  if (security_level == GRPC_PRIVACY_AND_INTEGRITY) {
+    return "GRPC_PRIVACY_AND_INTEGRITY";
+  } else if (security_level == GRPC_INTEGRITY_ONLY) {
+    return "GRPC_INTEGRITY_ONLY";
+  }
+  return "GRPC_SECURITY_NONE";
+}
+
+bool grpc_check_security_level(grpc_security_level channel_level,
+                               grpc_security_level call_cred_level) {
+  return static_cast<int>(channel_level) >= static_cast<int>(call_cred_level);
 }
 
 tsi_client_certificate_request_type
@@ -154,7 +167,7 @@ bool grpc_ssl_check_call_host(grpc_core::StringView host,
                               grpc_core::StringView target_name,
                               grpc_core::StringView overridden_target_name,
                               grpc_auth_context* auth_context,
-                              grpc_closure* on_call_host_checked,
+                              grpc_closure* /*on_call_host_checked*/,
                               grpc_error** error) {
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
@@ -200,13 +213,13 @@ int grpc_ssl_cmp_target_name(
     grpc_core::StringView target_name, grpc_core::StringView other_target_name,
     grpc_core::StringView overridden_target_name,
     grpc_core::StringView other_overridden_target_name) {
-  int c = target_name.cmp(other_target_name);
+  int c = target_name.compare(other_target_name);
   if (c != 0) return c;
-  return overridden_target_name.cmp(other_overridden_target_name);
+  return overridden_target_name.compare(other_overridden_target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
-    const tsi_peer* peer) {
+    const tsi_peer* peer, const char* transport_security_type) {
   size_t i;
   const char* peer_identity_property_name = nullptr;
 
@@ -216,7 +229,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-      GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+      transport_security_type);
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;
@@ -236,10 +249,18 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_X509_PEM_CERT_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(),
+                                     GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SSL_SESSION_REUSED_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_SSL_SESSION_REUSED_PROPERTY,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+          prop->value.data, prop->value.length);
     }
   }
   if (peer_identity_property_name != nullptr) {
@@ -283,6 +304,14 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
       } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_PEM_CERT_PROPERTY);
+      } else if (strcmp(prop->name,
+                        GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_SECURITY_LEVEL_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME) ==
+                 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_PEM_CERT_CHAIN_PROPERTY);
       }
     }
   }
@@ -295,6 +324,7 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
+    bool skip_server_certificate_verification,
     tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
@@ -325,6 +355,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   }
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.session_cache = ssl_session_cache;
+  options.skip_server_certificate_verification =
+      skip_server_certificate_verification;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -433,7 +465,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   const bool not_use_system_roots =
       GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
   // First try to load the roots from the configuration.
-  UniquePtr<char> default_root_certs_path =
+  grpc_core::UniquePtr<char> default_root_certs_path =
       GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
   if (strlen(default_root_certs_path.get()) > 0) {
     GRPC_LOG_IF_ERROR(

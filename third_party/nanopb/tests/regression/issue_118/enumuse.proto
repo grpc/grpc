@@ -1,7 +1,0 @@
-syntax = "proto2";
-
-import 'enumdef.proto';
-
-message MyMessage {
-	required MyEnum myenum = 1 [default = FOOBAR];
-}

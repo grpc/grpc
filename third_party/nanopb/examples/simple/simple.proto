@@ -1,9 +1,0 @@
-// A very simple protocol definition, consisting of only
-// one message.
-
-syntax = "proto2";
-
-message SimpleMessage {
-    required int32 lucky_number = 1;
-}
-

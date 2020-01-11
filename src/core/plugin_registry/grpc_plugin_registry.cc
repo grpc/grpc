@@ -34,6 +34,8 @@ void grpc_resolver_fake_init(void);
 void grpc_resolver_fake_shutdown(void);
 void grpc_lb_policy_grpclb_init(void);
 void grpc_lb_policy_grpclb_shutdown(void);
+void grpc_lb_policy_cds_init(void);
+void grpc_lb_policy_cds_shutdown(void);
 void grpc_lb_policy_xds_init(void);
 void grpc_lb_policy_xds_shutdown(void);
 void grpc_lb_policy_pick_first_init(void);
@@ -46,6 +48,10 @@ void grpc_resolver_dns_native_init(void);
 void grpc_resolver_dns_native_shutdown(void);
 void grpc_resolver_sockaddr_init(void);
 void grpc_resolver_sockaddr_shutdown(void);
+void grpc_resolver_xds_init(void);
+void grpc_resolver_xds_shutdown(void);
+void grpc_client_idle_filter_init(void);
+void grpc_client_idle_filter_shutdown(void);
 void grpc_max_age_filter_init(void);
 void grpc_max_age_filter_shutdown(void);
 void grpc_message_size_filter_init(void);
@@ -70,6 +76,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_resolver_fake_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
+  grpc_register_plugin(grpc_lb_policy_cds_init,
+                       grpc_lb_policy_cds_shutdown);
   grpc_register_plugin(grpc_lb_policy_xds_init,
                        grpc_lb_policy_xds_shutdown);
   grpc_register_plugin(grpc_lb_policy_pick_first_init,
@@ -82,6 +90,10 @@ void grpc_register_built_in_plugins(void) {
                        grpc_resolver_dns_native_shutdown);
   grpc_register_plugin(grpc_resolver_sockaddr_init,
                        grpc_resolver_sockaddr_shutdown);
+  grpc_register_plugin(grpc_resolver_xds_init,
+                       grpc_resolver_xds_shutdown);
+  grpc_register_plugin(grpc_client_idle_filter_init,
+                       grpc_client_idle_filter_shutdown);
   grpc_register_plugin(grpc_max_age_filter_init,
                        grpc_max_age_filter_shutdown);
   grpc_register_plugin(grpc_message_size_filter_init,

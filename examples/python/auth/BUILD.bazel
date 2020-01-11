@@ -16,8 +16,8 @@ filegroup(
     name = "_credentials_files",
     testonly = 1,
     srcs = [
-        "credentials/localhost.key",
         "credentials/localhost.crt",
+        "credentials/localhost.key",
         "credentials/root.crt",
     ],
 )
@@ -33,10 +33,12 @@ py_binary(
     name = "customized_auth_client",
     testonly = 1,
     srcs = ["customized_auth_client.py"],
+    python_version = "PY3",
     deps = [
         ":_credentials",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
     ],
 )
 
@@ -44,22 +46,24 @@ py_binary(
     name = "customized_auth_server",
     testonly = 1,
     srcs = ["customized_auth_server.py"],
+    python_version = "PY3",
     deps = [
         ":_credentials",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
-        
     ],
 )
 
 py_test(
     name = "_auth_example_test",
     srcs = ["test/_auth_example_test.py"],
+    python_version = "PY3",
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
+        ":_credentials",
         ":customized_auth_client",
         ":customized_auth_server",
-        ":_credentials",
+        "//examples:helloworld_py_pb2",
+        "//src/python/grpcio/grpc:grpcio",
     ],
 )

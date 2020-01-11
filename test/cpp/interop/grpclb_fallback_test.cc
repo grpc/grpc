@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <gflags/gflags.h>
@@ -67,6 +69,7 @@ DEFINE_string(
     "slow_fallback_after_startup : fallback after startup due to LB/backend "
     "addresses becoming blackholed;\n");
 
+#ifdef GRPC_HAVE_TCP_USER_TIMEOUT
 using grpc::testing::GrpclbRouteType;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
@@ -117,7 +120,7 @@ GrpclbRouteType DoWaitForReadyRPCAndGetPath(TestService::Stub* stub,
   return DoRPCAndGetPath(stub, deadline_seconds, WaitForReady);
 }
 
-bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* mutator) {
+bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* /*mutator*/) {
   int timeout = 20000;  // 20 seconds
   gpr_log(GPR_INFO, "Setting socket option TCP_USER_TIMEOUT on fd: %d", fd);
   if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
@@ -135,7 +138,8 @@ bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* mutator) {
   return true;
 }
 
-int TcpUserTimeoutCompare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
+int TcpUserTimeoutCompare(grpc_socket_mutator* /*a*/,
+                          grpc_socket_mutator* /*b*/) {
   return 0;
 }
 
@@ -270,3 +274,11 @@ int main(int argc, char** argv) {
     abort();
   }
 }
+#else
+int main(int argc, char** argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
+  gpr_log(GPR_ERROR,
+          "This test requires TCP_USER_TIMEOUT, which isn't available");
+  abort();
+}
+#endif  // GRPC_HAVE_TCP_USER_TIMEOUT

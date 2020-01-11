@@ -42,8 +42,10 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -52,6 +54,7 @@
 #include "src/cpp/server/secure_server_credentials.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/orca_load_report_for_test.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
@@ -94,15 +97,21 @@ grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
 // every call to the Echo RPC.
 class MyTestServiceImpl : public TestServiceImpl {
  public:
-  MyTestServiceImpl() : request_count_(0) {}
-
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    const udpa::data::orca::v1::OrcaLoadReport* load_report = nullptr;
     {
       grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
+      load_report = load_report_;
     }
     AddClient(context->peer());
+    if (load_report != nullptr) {
+      // TODO(roth): Once we provide a more standard server-side API for
+      // populating this data, use that API here.
+      context->AddTrailingMetadata("x-endpoint-load-metrics-bin",
+                                   load_report->SerializeAsString());
+    }
     return TestServiceImpl::Echo(context, request, response);
   }
 
@@ -121,6 +130,11 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
+  void set_load_report(udpa::data::orca::v1::OrcaLoadReport* load_report) {
+    grpc::internal::MutexLock lock(&mu_);
+    load_report_ = load_report;
+  }
+
  private:
   void AddClient(const grpc::string& client) {
     grpc::internal::MutexLock lock(&clients_mu_);
@@ -128,7 +142,8 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   grpc::internal::Mutex mu_;
-  int request_count_;
+  int request_count_ = 0;
+  const udpa::data::orca::v1::OrcaLoadReport* load_report_ = nullptr;
   grpc::internal::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
@@ -144,9 +159,11 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_ = std::move(other.response_generator_);
   }
 
-  void SetNextResolution(const std::vector<int>& ports) {
+  void SetNextResolution(const std::vector<int>& ports,
+                         const char* service_config_json = nullptr) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(BuildFakeResults(ports));
+    response_generator_->SetResponse(
+        BuildFakeResults(ports, service_config_json));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
@@ -165,7 +182,8 @@ class FakeResolverResponseGeneratorWrapper {
 
  private:
   static grpc_core::Resolver::Result BuildFakeResults(
-      const std::vector<int>& ports) {
+      const std::vector<int>& ports,
+      const char* service_config_json = nullptr) {
     grpc_core::Resolver::Result result;
     for (const int& port : ports) {
       char* lb_uri_str;
@@ -178,6 +196,11 @@ class FakeResolverResponseGeneratorWrapper {
                                     nullptr /* args */);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
+    }
+    if (service_config_json != nullptr) {
+      result.service_config = grpc_core::ServiceConfig::Create(
+          service_config_json, &result.service_config_error);
+      GPR_ASSERT(result.service_config != nullptr);
     }
     return result;
   }
@@ -198,6 +221,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    gpr_setenv("grpc_cfstream", "0");
+#endif
   }
 
   void SetUp() override { grpc_init(); }
@@ -209,7 +236,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
     // Explicitly destroy all the members so that we can make sure grpc_shutdown
     // has finished by the end of this function, and thus all the registered
     // LB policy factories are removed.
-    stub_.reset();
     servers_.clear();
     creds_.reset();
     grpc_shutdown_blocking();
@@ -373,26 +399,31 @@ class ClientLbEnd2endTest : public ::testing::Test {
     ResetCounters();
   }
 
-  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+  bool WaitForChannelState(
+      Channel* channel, std::function<bool(grpc_connectivity_state)> predicate,
+      bool try_to_connect = false, int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
-    grpc_connectivity_state state;
-    while ((state = channel->GetState(false /* try_to_connect */)) ==
-           GRPC_CHANNEL_READY) {
+    while (true) {
+      grpc_connectivity_state state = channel->GetState(try_to_connect);
+      if (predicate(state)) break;
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
     return true;
   }
 
+  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+    auto predicate = [](grpc_connectivity_state state) {
+      return state != GRPC_CHANNEL_READY;
+    };
+    return WaitForChannelState(channel, predicate, false, timeout_seconds);
+  }
+
   bool WaitForChannelReady(Channel* channel, int timeout_seconds = 5) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
-    grpc_connectivity_state state;
-    while ((state = channel->GetState(true /* try_to_connect */)) !=
-           GRPC_CHANNEL_READY) {
-      if (!channel->WaitForStateChange(state, deadline)) return false;
-    }
-    return true;
+    auto predicate = [](grpc_connectivity_state state) {
+      return state == GRPC_CHANNEL_READY;
+    };
+    return WaitForChannelState(channel, predicate, true, timeout_seconds);
   }
 
   bool SeenAllServers() {
@@ -421,7 +452,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   const grpc::string server_host_;
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
   const grpc::string kRequestMessage_;
   std::shared_ptr<ChannelCredentials> creds_;
@@ -1151,7 +1181,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   std::vector<int> ports;
-
   // Start with a single server.
   ports.emplace_back(servers_[0]->port_);
   response_generator.SetNextResolution(ports);
@@ -1162,7 +1191,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
   servers_[0]->service_.ResetCounters();
-
   // Shutdown one of the servers to be sent in the update.
   servers_[1]->Shutdown();
   ports.emplace_back(servers_[1]->port_);
@@ -1170,7 +1198,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   response_generator.SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
   WaitForServer(stub, 2, DEBUG_LOCATION);
-
   // Send three RPCs, one per server.
   for (size_t i = 0; i < kNumServers; ++i) SendRpc(stub);
   // The server in shutdown shouldn't receive any.
@@ -1252,6 +1279,63 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
     now = gpr_now(GPR_CLOCK_MONOTONIC);
   }
   ASSERT_GT(gpr_time_cmp(deadline, now), 0);
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinTransientFailure) {
+  // Start servers and create channel.  Channel should go to READY state.
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  // Now kill the servers.  The channel should transition to TRANSIENT_FAILURE.
+  // TODO(roth): This test should ideally check that even when the
+  // subchannels are in state CONNECTING for an extended period of time,
+  // we will still report TRANSIENT_FAILURE.  Unfortunately, we don't
+  // currently have a good way to get a subchannel to report CONNECTING
+  // for a long period of time, since the servers in this test framework
+  // are on the loopback interface, which will immediately return a
+  // "Connection refused" error, so the subchannels will only be in
+  // CONNECTING state very briefly.  When we have time, see if we can
+  // find a way to fix this.
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    servers_[i]->Shutdown();
+  }
+  auto predicate = [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+  };
+  EXPECT_TRUE(WaitForChannelState(channel.get(), predicate));
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinTransientFailureAtStartup) {
+  // Create channel and return servers that don't exist.  Channel should
+  // quickly transition into TRANSIENT_FAILURE.
+  // TODO(roth): This test should ideally check that even when the
+  // subchannels are in state CONNECTING for an extended period of time,
+  // we will still report TRANSIENT_FAILURE.  Unfortunately, we don't
+  // currently have a good way to get a subchannel to report CONNECTING
+  // for a long period of time, since the servers in this test framework
+  // are on the loopback interface, which will immediately return a
+  // "Connection refused" error, so the subchannels will only be in
+  // CONNECTING state very briefly.  When we have time, see if we can
+  // find a way to fix this.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution({
+      grpc_pick_unused_port_or_die(),
+      grpc_pick_unused_port_or_die(),
+      grpc_pick_unused_port_or_die(),
+  });
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    servers_[i]->Shutdown();
+  }
+  auto predicate = [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+  };
+  EXPECT_TRUE(WaitForChannelState(channel.get(), predicate, true));
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
@@ -1387,6 +1471,34 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
   EnableDefaultHealthCheckService(false);
 }
 
+TEST_F(ClientLbEnd2endTest,
+       RoundRobinWithHealthCheckingHandlesSubchannelFailure) {
+  EnableDefaultHealthCheckService(true);
+  // Start servers.
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  servers_[1]->SetServingStatus("health_check_service_name", true);
+  servers_[2]->SetServingStatus("health_check_service_name", true);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator, args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  WaitForServer(stub, 0, DEBUG_LOCATION);
+  // Stop server 0 and send a new resolver result to ensure that RR
+  // checks each subchannel's state.
+  servers_[0]->Shutdown();
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send a bunch more RPCs.
+  for (size_t i = 0; i < 100; i++) {
+    SendRpc(stub);
+  }
+}
+
 TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   EnableDefaultHealthCheckService(true);
   // Start server.
@@ -1467,6 +1579,60 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
   EnableDefaultHealthCheckService(false);
 }
 
+TEST_F(ClientLbEnd2endTest,
+       RoundRobinWithHealthCheckingServiceNameChangesAfterSubchannelsCreated) {
+  EnableDefaultHealthCheckService(true);
+  // Start server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  // Create a channel with health-checking enabled.
+  const char* kServiceConfigJson =
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}";
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  std::vector<int> ports = GetServersPorts();
+  response_generator.SetNextResolution(ports, kServiceConfigJson);
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get(), 1 /* timeout_seconds */));
+  // Send an update on the channel to change it to use a health checking
+  // service name that is not being reported as healthy.
+  const char* kServiceConfigJson2 =
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name2\"}}";
+  response_generator.SetNextResolution(ports, kServiceConfigJson2);
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
+}
+
+TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
+  // Start server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  // Set max idle time and build the channel.
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS, 1000);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  // The initial channel state should be IDLE.
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
+  // After sending RPC, channel state should be READY.
+  response_generator.SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  // After a period time not using the channel, the channel state should switch
+  // to IDLE.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1200));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
+  // Sending a new RPC should awake the IDLE channel.
+  response_generator.SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
  protected:
   void SetUp() override {
@@ -1482,16 +1648,42 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return trailers_intercepted_;
   }
 
+  const udpa::data::orca::v1::OrcaLoadReport* backend_load_report() {
+    grpc::internal::MutexLock lock(&mu_);
+    return load_report_.get();
+  }
+
  private:
-  static void ReportTrailerIntercepted(void* arg) {
+  static void ReportTrailerIntercepted(
+      void* arg, const grpc_core::LoadBalancingPolicy::BackendMetricData*
+                     backend_metric_data) {
     ClientLbInterceptTrailingMetadataTest* self =
         static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
     grpc::internal::MutexLock lock(&self->mu_);
     self->trailers_intercepted_++;
+    if (backend_metric_data != nullptr) {
+      self->load_report_.reset(new udpa::data::orca::v1::OrcaLoadReport);
+      self->load_report_->set_cpu_utilization(
+          backend_metric_data->cpu_utilization);
+      self->load_report_->set_mem_utilization(
+          backend_metric_data->mem_utilization);
+      self->load_report_->set_rps(backend_metric_data->requests_per_second);
+      for (const auto& p : backend_metric_data->request_cost) {
+        grpc_core::UniquePtr<char> name =
+            grpc_core::StringViewToCString(p.first);
+        (*self->load_report_->mutable_request_cost())[name.get()] = p.second;
+      }
+      for (const auto& p : backend_metric_data->utilization) {
+        grpc_core::UniquePtr<char> name =
+            grpc_core::StringViewToCString(p.first);
+        (*self->load_report_->mutable_utilization())[name.get()] = p.second;
+      }
+    }
   }
 
   grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
+  std::unique_ptr<udpa::data::orca::v1::OrcaLoadReport> load_report_;
 };
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
@@ -1510,6 +1702,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());
   EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(nullptr, backend_load_report());
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
@@ -1539,6 +1732,57 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   response_generator.SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("intercept_trailing_metadata_lb",
+            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(nullptr, backend_load_report());
+}
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
+  const int kNumServers = 1;
+  const int kNumRpcs = 10;
+  StartServers(kNumServers);
+  udpa::data::orca::v1::OrcaLoadReport load_report;
+  load_report.set_cpu_utilization(0.5);
+  load_report.set_mem_utilization(0.75);
+  load_report.set_rps(25);
+  auto* request_cost = load_report.mutable_request_cost();
+  (*request_cost)["foo"] = 0.8;
+  (*request_cost)["bar"] = 1.4;
+  auto* utilization = load_report.mutable_utilization();
+  (*utilization)["baz"] = 1.1;
+  (*utilization)["quux"] = 0.9;
+  for (const auto& server : servers_) {
+    server->service_.set_load_report(&load_report);
+  }
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel =
+      BuildChannel("intercept_trailing_metadata_lb", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+    auto* actual = backend_load_report();
+    ASSERT_NE(actual, nullptr);
+    // TODO(roth): Change this to use EqualsProto() once that becomes
+    // available in OSS.
+    EXPECT_EQ(actual->cpu_utilization(), load_report.cpu_utilization());
+    EXPECT_EQ(actual->mem_utilization(), load_report.mem_utilization());
+    EXPECT_EQ(actual->rps(), load_report.rps());
+    EXPECT_EQ(actual->request_cost().size(), load_report.request_cost().size());
+    for (const auto& p : actual->request_cost()) {
+      auto it = load_report.request_cost().find(p.first);
+      ASSERT_NE(it, load_report.request_cost().end());
+      EXPECT_EQ(it->second, p.second);
+    }
+    EXPECT_EQ(actual->utilization().size(), load_report.utilization().size());
+    for (const auto& p : actual->utilization()) {
+      auto it = load_report.utilization().find(p.first);
+      ASSERT_NE(it, load_report.utilization().end());
+      EXPECT_EQ(it->second, p.second);
+    }
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("intercept_trailing_metadata_lb",

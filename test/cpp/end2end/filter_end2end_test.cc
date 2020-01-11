@@ -99,8 +99,8 @@ int GetCallCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  grpc_error* Init(grpc_channel_element* elem,
-                   grpc_channel_element_args* args) {
+  grpc_error* Init(grpc_channel_element* /*elem*/,
+                   grpc_channel_element_args* /*args*/) {
     IncrementConnectionCounter();
     return GRPC_ERROR_NONE;
   }
@@ -122,9 +122,14 @@ class FilterEnd2endTest : public ::testing::Test {
   FilterEnd2endTest() : server_host_("localhost") {}
 
   static void SetUpTestCase() {
-    gpr_log(GPR_ERROR, "In SetUpTestCase");
-    grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
-        "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+    // Workaround for
+    // https://github.com/google/google-toolbox-for-mac/issues/242
+    static bool setup_done = false;
+    if (!setup_done) {
+      setup_done = true;
+      grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
+          "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+    }
   }
 
   void SetUp() override {

@@ -26,7 +26,9 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/iomgr/closure.h"
 
@@ -53,13 +55,14 @@ typedef struct grpc_combiner grpc_combiner;
    should not be counted by fork handlers */
 #define GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD 1
 
-extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
-
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles);
+grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles);
 
 namespace grpc_core {
+class Combiner;
 /** Execution context.
  *  A bag of data that collects information along a callstack.
  *  It is created on the stack at core entry points (public API or iomgr), and
@@ -133,9 +136,9 @@ class ExecCtx {
 
   struct CombinerData {
     /* currently active combiner: updated only via combiner.c */
-    grpc_combiner* active_combiner;
+    Combiner* active_combiner;
     /* last active combiner in the active combiner list */
-    grpc_combiner* last_combiner;
+    Combiner* last_combiner;
   };
 
   /** Only to be used by grpc-combiner code */
@@ -217,12 +220,17 @@ class ExecCtx {
     gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
   }
 
+  static void Run(const DebugLocation& location, grpc_closure* closure,
+                  grpc_error* error);
+
+  static void RunList(const DebugLocation& location, grpc_closure_list* list);
+
  protected:
   /** Check if ready to finish. */
   virtual bool CheckReadyToFinish() { return false; }
 
   /** Disallow delete on ExecCtx. */
-  static void operator delete(void* p) { abort(); }
+  static void operator delete(void* /* p */) { abort(); }
 
  private:
   /** Set exec_ctx_ to exec_ctx. */

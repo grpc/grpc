@@ -24,6 +24,10 @@
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/tsi/transport_security_interface.h"
 
+extern "C" {
+#include <openssl/x509.h>
+}
+
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
 #define TSI_X509_CERTIFICATE_TYPE "X509"
 
@@ -34,6 +38,8 @@
 #define TSI_SSL_SESSION_REUSED_PEER_PROPERTY "ssl_session_reused"
 
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
+
+#define TSI_X509_PEM_CERT_CHAIN_PROPERTY "x509_pem_cert_chain"
 
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
@@ -142,6 +148,9 @@ struct tsi_ssl_client_handshaker_options {
   /* ssl_session_cache is a cache for reusable client-side sessions. */
   tsi_ssl_session_cache* session_cache;
 
+  /* skip server certificate verification. */
+  bool skip_server_certificate_verification;
+
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
         pem_root_certs(nullptr),
@@ -149,7 +158,8 @@ struct tsi_ssl_client_handshaker_options {
         cipher_suites(nullptr),
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
-        session_cache(nullptr) {}
+        session_cache(nullptr),
+        skip_server_certificate_verification(false) {}
 };
 
 /* Creates a client handshaker factory.
@@ -260,8 +270,8 @@ struct tsi_ssl_server_handshaker_options {
      specified. If this parameter is 0, the other alpn parameters must be
      NULL. */
   uint16_t num_alpn_protocols;
-  /* session_ticket_key is optional key for encrypting session keys. If paramter
-     is not specified it must be NULL. */
+  /* session_ticket_key is optional key for encrypting session keys. If
+     parameter is not specified it must be NULL. */
   const char* session_ticket_key;
   /* session_ticket_key_size is a size of session ticket encryption key. */
   size_t session_ticket_key_size;
@@ -331,5 +341,13 @@ typedef struct {
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
     tsi_ssl_handshaker_factory* factory,
     tsi_ssl_handshaker_factory_vtable* new_vtable);
+
+/* Exposed for testing only. */
+tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
+    const char* pem_cert, tsi_peer* peer);
+
+/* Exposed for testing only. */
+tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
+                                           tsi_peer_property* property);
 
 #endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

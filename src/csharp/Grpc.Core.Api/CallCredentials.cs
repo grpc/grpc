@@ -51,8 +51,8 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Populates this call credential instances.
-        /// You never need to invoke this, part of internal implementation.
+        /// Populates call credentials configurator with this instance's configuration.
+        /// End users never need to invoke this method as it is part of internal implementation.
         /// </summary>
         public abstract void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state);
 

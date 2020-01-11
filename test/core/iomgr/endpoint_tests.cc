@@ -114,7 +114,16 @@ struct read_and_write_test_state {
   grpc_slice_buffer outgoing;
   grpc_closure done_read;
   grpc_closure done_write;
+  grpc_closure read_scheduler;
+  grpc_closure write_scheduler;
 };
+
+static void read_scheduler(void* data, grpc_error* /* error */) {
+  struct read_and_write_test_state* state =
+      static_cast<struct read_and_write_test_state*>(data);
+  grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
+                     /*urgent=*/false);
+}
 
 static void read_and_write_test_read_handler(void* data, grpc_error* error) {
   struct read_and_write_test_state* state =
@@ -129,9 +138,19 @@ static void read_and_write_test_read_handler(void* data, grpc_error* error) {
     GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
     gpr_mu_unlock(g_mu);
   } else if (error == GRPC_ERROR_NONE) {
-    grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
-                       /*urgent=*/false);
+    /* We perform many reads one after another. If grpc_endpoint_read and the
+     * read_handler are both run inline, we might end up growing the stack
+     * beyond the limit. Schedule the read on ExecCtx to avoid this. */
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->read_scheduler,
+                            GRPC_ERROR_NONE);
   }
+}
+
+static void write_scheduler(void* data, grpc_error* /* error */) {
+  struct read_and_write_test_state* state =
+      static_cast<struct read_and_write_test_state*>(data);
+  grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
+                      nullptr);
 }
 
 static void read_and_write_test_write_handler(void* data, grpc_error* error) {
@@ -151,8 +170,11 @@ static void read_and_write_test_write_handler(void* data, grpc_error* error) {
                                &state->current_write_data);
       grpc_slice_buffer_reset_and_unref(&state->outgoing);
       grpc_slice_buffer_addn(&state->outgoing, slices, nslices);
-      grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
-                          nullptr);
+      /* We perform many writes one after another. If grpc_endpoint_write and
+       * the write_handler are both run inline, we might end up growing the
+       * stack beyond the limit. Schedule the write on ExecCtx to avoid this. */
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->write_scheduler,
+                              GRPC_ERROR_NONE);
       gpr_free(slices);
       return;
     }
@@ -202,7 +224,11 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   state.write_done = 0;
   state.current_read_data = 0;
   state.current_write_data = 0;
+  GRPC_CLOSURE_INIT(&state.read_scheduler, read_scheduler, &state,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&state.done_read, read_and_write_test_read_handler, &state,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&state.write_scheduler, write_scheduler, &state,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&state.done_write, read_and_write_test_write_handler,
                     &state, grpc_schedule_on_exec_ctx);

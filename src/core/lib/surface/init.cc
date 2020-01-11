@@ -73,6 +73,7 @@ static void do_basic_init(void) {
   g_shutting_down = false;
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
+  grpc_core::grpc_executor_global_init();
   gpr_time_init();
   g_initializations = 0;
 }
@@ -134,6 +135,7 @@ void grpc_init(void) {
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     grpc_stats_init();
+    grpc_init_static_metadata_ctx();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
@@ -191,9 +193,11 @@ void grpc_shutdown_internal_locked(void) {
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   gpr_cv_broadcast(g_shutting_down_cv);
+  // Absolute last action will be to delete static metadata context.
+  grpc_destroy_static_metadata_ctx();
 }
 
-void grpc_shutdown_internal(void* ignored) {
+void grpc_shutdown_internal(void* /*ignored*/) {
   GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
   grpc_core::MutexLock lock(&g_init_mu);
   // We have released lock from the shutdown thread and it is possible that

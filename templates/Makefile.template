@@ -24,6 +24,9 @@
     import re
     import os
 
+    def is_absl_lib(target_name):
+      return target_name.startswith("absl/");
+
     proto_re = re.compile('(.*)\\.proto')
 
     def proto_to_cc(filename):
@@ -35,9 +38,9 @@
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
 
-    # warnings we'd like, but that dont exist in all compilers
-    PREFERRED_WARNINGS=['shadow', 'extra-semi']
-    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable', 'no-maybe-uninitialized']
+    # warnings we'd like, but that don't exist in all compilers
+    PREFERRED_WARNINGS=['extra-semi']
+    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable', 'no-maybe-uninitialized', 'no-unknown-warning-option']
 
     def warning_var(fmt, warning):
       return fmt % warning.replace('-', '_').replace('+', 'X').upper()
@@ -216,7 +219,7 @@
   HOST_LD ?= $(LD)
   HOST_LDXX ?= $(LDXX)
 
-  CFLAGS += -std=c99 -Wsign-conversion -Wconversion ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
+  CFLAGS += -std=c99 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
   CXXFLAGS += -std=c++11
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
@@ -321,7 +324,7 @@
   endif
 
   GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
-  GTEST_LIB += -lgflags
+  GTEST_LIB += -lgflags -std=c++11
   ifeq ($(V),1)
   E = @:
   Q =
@@ -374,7 +377,7 @@
   Description: $(PC_DESCRIPTION),\
   Version: $(CORE_VERSION),\
   Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires.private: $(PC_REQUIRES_PRIVATE),\
+  Requires: $(PC_REQUIRES),\
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
@@ -387,7 +390,7 @@
   Description: $(PC_DESCRIPTION),\
   Version: $(CPP_VERSION),\
   Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires.private: $(PC_REQUIRES_PRIVATE),\
+  Requires: $(PC_REQUIRES),\
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
@@ -400,7 +403,7 @@
   Description: $(PC_DESCRIPTION),\
   Version: $(CSHARP_VERSION),\
   Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires.private: $(PC_REQUIRES_PRIVATE),\
+  Requires: $(PC_REQUIRES),\
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
@@ -534,9 +537,7 @@
   # Note that for testing purposes, one can do:
   #   make HAS_EMBEDDED_OPENSSL_ALPN=false
   # to emulate the fact we do not have OpenSSL in the third_party folder.
-  ifneq ($(wildcard third_party/${openssl_fallback.extraction_dir}/libssl.a),)
-  HAS_EMBEDDED_OPENSSL_ALPN = third_party/${openssl_fallback.extraction_dir}
-  else ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
+  ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
   HAS_EMBEDDED_OPENSSL_ALPN = false
   else
   CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -612,6 +613,13 @@
   ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
   ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
   CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
+
+  GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+  GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+
+  UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
+  UPB_MERGE_OBJS = $(LIBUPB_OBJS)
+  UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
 
   ifeq ($(EMBED_CARES),true)
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
@@ -695,7 +703,7 @@
   PC_NAME = gpr
   PC_DESCRIPTION = gRPC platform support library
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GPR)
+  PC_REQUIRES = $(PC_REQUIRES_GPR)
   PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
   PC_LIB = -lgpr
   GPR_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -704,7 +712,7 @@
   PC_NAME = gRPC
   PC_DESCRIPTION = high performance general RPC framework
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+  PC_REQUIRES = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
   GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -713,7 +721,7 @@
   PC_NAME = gRPC unsecure
   PC_DESCRIPTION = high performance general RPC framework without SSL
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
+  PC_REQUIRES = gpr $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc_unsecure
   GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -781,7 +789,7 @@
   PC_NAME = gRPC++
   PC_DESCRIPTION = C++ wrapper for gRPC
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
+  PC_REQUIRES = grpc $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
   PC_LIB = -lgrpc++
   GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
@@ -790,7 +798,7 @@
   PC_NAME = gRPC++ unsecure
   PC_DESCRIPTION = C++ wrapper for gRPC without SSL
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
+  PC_REQUIRES = grpc_unsecure $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
   PC_LIB = -lgrpc++_unsecure
   GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
@@ -1462,6 +1470,32 @@
   % endif
   % endfor
 
+  # Add private ABSEIL target which contains all sources used by all baselib libraries.
+  <%
+    # Collect all abseil source and header files used by gpr, grpc, so on.
+    used_abseil_rules = set()
+    for lib in libs:
+      if lib.get("baselib"):
+        for dep in lib.transitive_deps:
+          if is_absl_lib(dep):
+            used_abseil_rules.add(dep)
+    used_abseil_srcs = []
+    used_abseil_hdrs = []
+    for lib in libs:
+      if lib.name in used_abseil_rules:
+        used_abseil_srcs.extend(lib.get("src", []))
+        used_abseil_hdrs.extend(lib.get("hdr", []))
+    # Create `grpc_abseil` rule with collected files.
+    lib_type = type(libs[0])
+    grpc_abseil_lib = lib_type({
+      "name": "grpc_abseil",
+      "build": "private",
+      "language": "c",
+      "src": sorted(used_abseil_srcs),
+      "hdr": sorted(used_abseil_hdrs),
+    })
+  %>
+  ${makelib(grpc_abseil_lib)}
 
   # All of the test targets, and protoc plugins
 
@@ -1527,7 +1561,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1545,10 +1579,12 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting']:
+  % if lib.name not in ['z', 'ares', 'address_sorting', 'upb', 'grpc_abseil']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
+  $(UPB_DEP) \
+  $(LIBGRPC_ABSEIL_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
@@ -1557,9 +1593,11 @@
    $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
+   $(LIBGRPC_ABSEIL_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
+   $(UPB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1571,9 +1609,11 @@
   	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
+   $(LIBGRPC_ABSEIL_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
+   $(UPB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1588,7 +1628,7 @@
     if lib.language == 'c++':
       ld = '$(LDXX)'
     else:
-      ld = '$(LD)'
+      ld = '$(LDXX)'
 
     out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
     out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
@@ -1596,20 +1636,22 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
     if lib.get('deps_linkage', None) == 'static':
       for dep in lib.get('deps', []):
+        if is_absl_lib(dep): continue
         lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
         common = common + ' ' + lib_archive
         lib_deps = lib_deps + ' ' + lib_archive
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
     else:
       for dep in lib.get('deps', []):
+        if is_absl_lib(dep): continue
         dep_lib = None
         for dl in libs:
           if dl.name == dep:
@@ -1623,7 +1665,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1757,7 +1799,9 @@
   % endif
   % endif
   % for dep in tgt.deps:
+  %  if not is_absl_lib(dep):
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
+  %  endif
   % endfor
 
   % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
@@ -1781,7 +1825,7 @@
   ## C-only targets specificities.
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(LD) $(LDFLAGS) \
+  	$(Q) $(LDXX) $(LDFLAGS) \
   % if not has_no_sources:
   $(${tgt.name.upper()}_OBJS)\
   % endif

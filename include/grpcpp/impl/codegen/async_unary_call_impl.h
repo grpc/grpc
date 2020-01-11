@@ -19,7 +19,6 @@
 #ifndef GRPCPP_IMPL_CODEGEN_ASYNC_UNARY_CALL_IMPL_H
 #define GRPCPP_IMPL_CODEGEN_ASYNC_UNARY_CALL_IMPL_H
 
-#include <assert.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_context_impl.h>
@@ -96,8 +95,8 @@ class ClientAsyncResponseReader final
     : public ClientAsyncResponseReaderInterface<R> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
-    assert(size == sizeof(ClientAsyncResponseReader));
+  static void operator delete(void* /*ptr*/, std::size_t size) {
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientAsyncResponseReader));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -105,10 +104,10 @@ class ClientAsyncResponseReader final
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   void StartCall() override {
-    assert(!started_);
+    GPR_CODEGEN_ASSERT(!started_);
     started_ = true;
     StartCallInternal();
   }
@@ -120,7 +119,7 @@ class ClientAsyncResponseReader final
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
   void ReadInitialMetadata(void* tag) override {
-    assert(started_);
+    GPR_CODEGEN_ASSERT(started_);
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     single_buf.set_output_tag(tag);
@@ -135,7 +134,7 @@ class ClientAsyncResponseReader final
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
   void Finish(R* msg, ::grpc::Status* status, void* tag) override {
-    assert(started_);
+    GPR_CODEGEN_ASSERT(started_);
     if (initial_metadata_read_) {
       finish_buf.set_output_tag(tag);
       finish_buf.RecvMessage(msg);
@@ -178,7 +177,7 @@ class ClientAsyncResponseReader final
 
   // disable operator new
   static void* operator new(std::size_t size);
-  static void* operator new(std::size_t size, void* p) { return p; }
+  static void* operator new(std::size_t /*size*/, void* p) { return p; }
 
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                               ::grpc::internal::CallOpSendMessage,
@@ -303,12 +302,12 @@ namespace std {
 template <class R>
 class default_delete<::grpc_impl::ClientAsyncResponseReader<R>> {
  public:
-  void operator()(void* p) {}
+  void operator()(void* /*p*/) {}
 };
 template <class R>
 class default_delete<::grpc_impl::ClientAsyncResponseReaderInterface<R>> {
  public:
-  void operator()(void* p) {}
+  void operator()(void* /*p*/) {}
 };
 }  // namespace std
 

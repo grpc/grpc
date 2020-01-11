@@ -1,4 +1,4 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
 
 // Copyright 2015 gRPC authors.
 //
@@ -28,7 +28,7 @@ namespace Grpc.Core
     /// Client-side writable stream of messages with Close capability.
     /// </summary>
     /// <typeparam name="T">The message type.</typeparam>
-    public interface IClientStreamWriter<T> : IAsyncStreamWriter<T>
+    public interface IClientStreamWriter<in T> : IAsyncStreamWriter<T>
     {
         /// <summary>
         /// Completes/closes the stream. Can only be called once there is no pending write. No writes should follow calling this.

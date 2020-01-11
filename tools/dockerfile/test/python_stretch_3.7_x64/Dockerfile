@@ -57,18 +57,15 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
-# Add Debian 'testing' repository
-RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
-RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
-
+# Add Debian 'buster' repository, we will need it for installing newer versions of python
+RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
+RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
-# Define the default command.
-CMD ["bash"]
 
 
-RUN apt-get update && apt-get -t testing install -y python3.7 python3-all-dev
+RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
 # for Python test coverage reporting

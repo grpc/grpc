@@ -136,18 +136,24 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
       PrintIncludes(printer.get(), params.additional_header_includes, false,
                     "");
     }
+    // TODO(vjpai): Remove port_platform.h from header list when callback API is
+    //              fully de-experimentalized since we will no longer be using
+    //              macros from it.
     static const char* headers_strs[] = {
         "functional",
+        "grpc/impl/codegen/port_platform.h",
         "grpcpp/impl/codegen/async_generic_service.h",
         "grpcpp/impl/codegen/async_stream.h",
         "grpcpp/impl/codegen/async_unary_call.h",
         "grpcpp/impl/codegen/client_callback.h",
         "grpcpp/impl/codegen/client_context.h",
         "grpcpp/impl/codegen/completion_queue.h",
-        "grpcpp/impl/codegen/method_handler_impl.h",
+        "grpcpp/impl/codegen/message_allocator.h",
+        "grpcpp/impl/codegen/method_handler.h",
         "grpcpp/impl/codegen/proto_utils.h",
         "grpcpp/impl/codegen/rpc_method.h",
         "grpcpp/impl/codegen/server_callback.h",
+        "grpcpp/impl/codegen/server_callback_handlers.h",
         "grpcpp/impl/codegen/server_context.h",
         "grpcpp/impl/codegen/service_type.h",
         "grpcpp/impl/codegen/status.h",
@@ -158,17 +164,6 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
     printer->Print(vars, "\n");
-    printer->Print(vars, "namespace grpc_impl {\n");
-    printer->Print(vars, "class CompletionQueue;\n");
-    printer->Print(vars, "class ServerCompletionQueue;\n");
-    printer->Print(vars, "class ServerContext;\n");
-    printer->Print(vars, "}  // namespace grpc_impl\n\n");
-    printer->Print(vars, "namespace grpc {\n");
-    printer->Print(vars, "namespace experimental {\n");
-    printer->Print(vars, "template <typename RequestT, typename ResponseT>\n");
-    printer->Print(vars, "class MessageAllocator;\n");
-    printer->Print(vars, "}  // namespace experimental\n");
-    printer->Print(vars, "}  // namespace grpc\n\n");
 
     vars["message_header_ext"] = params.message_header_extension.empty()
                                      ? kCppGeneratorMessageHeaderExt
@@ -584,7 +579,7 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
 
 void PrintHeaderClientMethodCallbackInterfacesStart(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<grpc::string, grpc::string>* /*vars*/) {
   // This declares the interface for the callback-based API. The components
   // are pure; even though this is new (post-1.0) API, it can be pure because
   // it is an entirely new interface that happens to be scoped within
@@ -599,10 +594,7 @@ void PrintHeaderClientMethodCallbackInterfacesStart(
 
 void PrintHeaderClientMethodCallbackInterfaces(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars, bool is_public) {
-  // Reserve is_public for future expansion
-  assert(is_public);
-
+    std::map<grpc::string, grpc::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -616,39 +608,77 @@ void PrintHeaderClientMethodCallbackInterfaces(
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) = 0;\n");
+    // TODO(vjpai): Remove experimental versions and macros when callback API is
+    //              fully de-experimentalized.
     printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "const $Request$* request, $Response$* response, "
-                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n");
+                   "::grpc::ClientUnaryReactor* reactor) = 0;\n"
+                   "#else\n"
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "const $Request$* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n"
+                   "#endif\n");
     printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "const ::grpc::ByteBuffer* request, $Response$* response, "
-                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n");
+                   "::grpc::ClientUnaryReactor* reactor) = 0;\n"
+                   "#else\n"
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "const ::grpc::ByteBuffer* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n"
+                   "#endif\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "$Response$* response, "
+                   "::grpc::ClientWriteReactor< $Request$>* "
+                   "reactor) = 0;\n"
+                   "#else\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "$Response$* response, "
                    "::grpc::experimental::ClientWriteReactor< $Request$>* "
-                   "reactor) = 0;\n");
+                   "reactor) = 0;\n"
+                   "#endif\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "$Request$* request, "
+                   "::grpc::ClientReadReactor< $Response$>* "
+                   "reactor) = 0;\n"
+                   "#else\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "$Request$* request, "
                    "::grpc::experimental::ClientReadReactor< $Response$>* "
-                   "reactor) = 0;\n");
+                   "reactor) = 0;\n"
+                   "#endif\n");
   } else if (method->BidiStreaming()) {
     printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "::grpc::ClientBidiReactor< "
+                   "$Request$,$Response$>* reactor) = 0;\n"
+                   "#else\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "::grpc::experimental::ClientBidiReactor< "
-                   "$Request$,$Response$>* reactor) = 0;\n");
+                   "$Request$,$Response$>* reactor) = 0;\n"
+                   "#endif\n");
   }
 }
 
 void PrintHeaderClientMethodCallbackInterfacesEnd(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<grpc::string, grpc::string>* /*vars*/) {
   printer->Outdent();
   printer->Print("};\n");
+  printer->Print(
+      "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+      "typedef class experimental_async_interface async_interface;\n"
+      "#endif\n");
 
   // Declare a function to give the async stub contents. It can't be pure
   // since this is a new API in StubInterface, but it is meaningless by default
@@ -656,13 +686,17 @@ void PrintHeaderClientMethodCallbackInterfacesEnd(
   // the callback functions therein), so make the default return value nullptr.
   // Intentionally include the word "class" to avoid possible shadowing.
   printer->Print(
+      "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+      "async_interface* async() { return experimental_async(); }\n"
+      "#endif\n");
+  printer->Print(
       "virtual class experimental_async_interface* experimental_async() { "
       "return nullptr; }\n");
 }
 
 void PrintHeaderClientMethodCallbackStart(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<grpc::string, grpc::string>* /*vars*/) {
   // This declares the stub entry for the callback-based API.
   printer->Print("class experimental_async final :\n");
   printer->Print("  public StubInterface::experimental_async_interface {\n");
@@ -670,13 +704,9 @@ void PrintHeaderClientMethodCallbackStart(
   printer->Indent();
 }
 
-void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
-                                     const grpc_generator::Method* method,
-                                     std::map<grpc::string, grpc::string>* vars,
-                                     bool is_public) {
-  // Reserve is_public for future expansion
-  assert(is_public);
-
+void PrintHeaderClientMethodCallback(
+    grpc_generator::Printer* printer, const grpc_generator::Method* method,
+    std::map<grpc::string, grpc::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -692,38 +722,70 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
                    "std::function<void(::grpc::Status)>) override;\n");
     printer->Print(
         *vars,
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
         "void $Method$(::grpc::ClientContext* context, "
         "const $Request$* request, $Response$* response, "
-        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n");
+        "::grpc::ClientUnaryReactor* reactor) override;\n"
+        "#else\n"
+        "void $Method$(::grpc::ClientContext* context, "
+        "const $Request$* request, $Response$* response, "
+        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n"
+        "#endif\n");
     printer->Print(
         *vars,
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
         "void $Method$(::grpc::ClientContext* context, "
         "const ::grpc::ByteBuffer* request, $Response$* response, "
-        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n");
+        "::grpc::ClientUnaryReactor* reactor) override;\n"
+        "#else\n"
+        "void $Method$(::grpc::ClientContext* context, "
+        "const ::grpc::ByteBuffer* request, $Response$* response, "
+        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n"
+        "#endif\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "void $Method$(::grpc::ClientContext* context, "
+                   "$Response$* response, "
+                   "::grpc::ClientWriteReactor< $Request$>* "
+                   "reactor) override;\n"
+                   "#else\n"
                    "void $Method$(::grpc::ClientContext* context, "
                    "$Response$* response, "
                    "::grpc::experimental::ClientWriteReactor< $Request$>* "
-                   "reactor) override;\n");
+                   "reactor) override;\n"
+                   "#endif\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "void $Method$(::grpc::ClientContext* context, "
+                   "$Request$* request, "
+                   "::grpc::ClientReadReactor< $Response$>* "
+                   "reactor) override;\n"
+                   "#else\n"
                    "void $Method$(::grpc::ClientContext* context, "
                    "$Request$* request, "
                    "::grpc::experimental::ClientReadReactor< $Response$>* "
-                   "reactor) override;\n");
+                   "reactor) override;\n"
+                   "#endif\n");
 
   } else if (method->BidiStreaming()) {
     printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "void $Method$(::grpc::ClientContext* context, "
+                   "::grpc::ClientBidiReactor< "
+                   "$Request$,$Response$>* reactor) override;\n"
+                   "#else\n"
                    "void $Method$(::grpc::ClientContext* context, "
                    "::grpc::experimental::ClientBidiReactor< "
-                   "$Request$,$Response$>* reactor) override;\n");
+                   "$Request$,$Response$>* reactor) override;\n"
+                   "#endif\n");
   }
 }
 
 void PrintHeaderClientMethodCallbackEnd(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<grpc::string, grpc::string>* /*vars*/) {
   printer->Outdent();
   printer->Print(" private:\n");
   printer->Indent();
@@ -794,8 +856,8 @@ void PrintHeaderServerAsyncMethodsHelper(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) override {\n"
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "$Response$* /*response*/) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -815,9 +877,9 @@ void PrintHeaderServerAsyncMethodsHelper(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, "
-        "::grpc::ServerReader< $Request$>* reader, "
-        "$Response$* response) override {\n"
+        "::grpc::ServerContext* /*context*/, "
+        "::grpc::ServerReader< $Request$>* /*reader*/, "
+        "$Response$* /*response*/) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -837,8 +899,8 @@ void PrintHeaderServerAsyncMethodsHelper(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) override "
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "::grpc::ServerWriter< $Response$>* /*writer*/) override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -860,8 +922,8 @@ void PrintHeaderServerAsyncMethodsHelper(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, "
-        "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) "
+        "::grpc::ServerContext* /*context*/, "
+        "::grpc::ServerReaderWriter< $Response$, $Request$>* /*stream*/) "
         " override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -896,7 +958,8 @@ void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
                  "class WithAsyncMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service *service) {}\n");
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
+      "{}\n");
   printer->Print(" public:\n");
   printer->Indent();
   printer->Print(*vars,
@@ -923,70 +986,97 @@ void PrintHeaderServerCallbackMethodsHelper(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) override {\n"
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "$Response$* /*response*/) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(
-        *vars,
-        "virtual void $Method$("
-        "::grpc::ServerContext* context, const $RealRequest$* request, "
-        "$RealResponse$* response, "
-        "::grpc::experimental::ServerCallbackRpcController* "
-        "controller) { controller->Finish(::grpc::Status("
-        "::grpc::StatusCode::UNIMPLEMENTED, \"\")); }\n");
+    printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "virtual ::grpc::ServerUnaryReactor* $Method$(\n"
+                   "  ::grpc::CallbackServerContext* /*context*/, "
+                   "const $RealRequest$* /*request*/, "
+                   "$RealResponse$* /*response*/)\n"
+                   "#else\n"
+                   "virtual ::grpc::experimental::ServerUnaryReactor* "
+                   "$Method$(\n"
+                   "  ::grpc::experimental::CallbackServerContext* "
+                   "/*context*/, const $RealRequest$* /*request*/, "
+                   "$RealResponse$* /*response*/)\n"
+                   "#endif\n"
+                   "  { return nullptr; }\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, "
-        "::grpc::ServerReader< $Request$>* reader, "
-        "$Response$* response) override {\n"
+        "::grpc::ServerContext* /*context*/, "
+        "::grpc::ServerReader< $Request$>* /*reader*/, "
+        "$Response$* /*response*/) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(
-        *vars,
-        "virtual ::grpc::experimental::ServerReadReactor< "
-        "$RealRequest$, $RealResponse$>* $Method$() {\n"
-        "  return new ::grpc_impl::internal::UnimplementedReadReactor<\n"
-        "    $RealRequest$, $RealResponse$>;}\n");
+    printer->Print(*vars,
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "virtual ::grpc::ServerReadReactor< "
+                   "$RealRequest$>* $Method$(\n"
+                   "  ::grpc::CallbackServerContext* "
+                   "/*context*/, $RealResponse$* /*response*/)\n"
+                   "#else\n"
+                   "virtual ::grpc::experimental::ServerReadReactor< "
+                   "$RealRequest$>* $Method$(\n"
+                   "  ::grpc::experimental::CallbackServerContext* "
+                   "/*context*/, $RealResponse$* /*response*/)\n"
+                   "#endif\n"
+                   "  { return nullptr; }\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) override "
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "::grpc::ServerWriter< $Response$>* /*writer*/) override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
     printer->Print(
         *vars,
-        "virtual ::grpc::experimental::ServerWriteReactor< "
-        "$RealRequest$, $RealResponse$>* $Method$() {\n"
-        "  return new ::grpc_impl::internal::UnimplementedWriteReactor<\n"
-        "    $RealRequest$, $RealResponse$>;}\n");
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "virtual ::grpc::ServerWriteReactor< $RealResponse$>* $Method$(\n"
+        "  ::grpc::CallbackServerContext* "
+        "/*context*/, const $RealRequest$* /*request*/)\n"
+        "#else\n"
+        "virtual ::grpc::experimental::ServerWriteReactor< $RealResponse$>* "
+        "$Method$(\n"
+        "  ::grpc::experimental::CallbackServerContext* "
+        "/*context*/, const $RealRequest$* /*request*/)\n"
+        "#endif\n"
+        "  { return nullptr; }\n");
   } else if (method->BidiStreaming()) {
     printer->Print(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, "
-        "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) "
+        "::grpc::ServerContext* /*context*/, "
+        "::grpc::ServerReaderWriter< $Response$, $Request$>* /*stream*/) "
         " override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
     printer->Print(
         *vars,
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "virtual ::grpc::ServerBidiReactor< $RealRequest$, $RealResponse$>* "
+        "$Method$(\n"
+        "  ::grpc::CallbackServerContext* /*context*/)\n"
+        "#else\n"
         "virtual ::grpc::experimental::ServerBidiReactor< "
-        "$RealRequest$, $RealResponse$>* $Method$() {\n"
-        "  return new ::grpc_impl::internal::UnimplementedBidiReactor<\n"
-        "    $RealRequest$, $RealResponse$>;}\n");
+        "$RealRequest$, $RealResponse$>* "
+        "$Method$(\n"
+        "  ::grpc::experimental::CallbackServerContext* /*context*/)\n"
+        "#endif\n"
+        "  { return nullptr; }\n");
   }
 }
 
@@ -1006,53 +1096,108 @@ void PrintHeaderServerMethodCallback(
       "class ExperimentalWithCallbackMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service *service) {}\n");
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
+      "{}\n");
   printer->Print(" public:\n");
   printer->Indent();
   printer->Print(*vars, "ExperimentalWithCallbackMethod_$Method$() {\n");
   if (method->NoStreaming()) {
     printer->Print(
         *vars,
-        "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
-        "    new ::grpc_impl::internal::CallbackUnaryHandler< "
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "  ::grpc::Service::\n"
+        "#else\n"
+        "  ::grpc::Service::experimental().\n"
+        "#endif\n"
+        "    MarkMethodCallback($Idx$,\n"
+        "      new ::grpc_impl::internal::CallbackUnaryHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this](::grpc::ServerContext* context,\n"
-        "             const $RealRequest$* request,\n"
-        "             $RealResponse$* response,\n"
-        "             ::grpc::experimental::ServerCallbackRpcController* "
-        "controller) {\n"
-        "               return this->$"
-        "Method$(context, request, response, controller);\n"
-        "             }));\n}\n");
+        "        [this](\n"
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "               ::grpc::CallbackServerContext*\n"
+        "#else\n"
+        "               ::grpc::experimental::CallbackServerContext*\n"
+        "#endif\n"
+        "                 context, "
+        "const $RealRequest$* "
+        "request, "
+        "$RealResponse$* response) { "
+        "return this->$Method$(context, request, response); }));}\n");
     printer->Print(*vars,
                    "void SetMessageAllocatorFor_$Method$(\n"
                    "    ::grpc::experimental::MessageAllocator< "
                    "$RealRequest$, $RealResponse$>* allocator) {\n"
+                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+                   "  ::grpc::internal::MethodHandler* const handler = "
+                   "::grpc::Service::GetHandler($Idx$);\n"
+                   "#else\n"
+                   "  ::grpc::internal::MethodHandler* const handler = "
+                   "::grpc::Service::experimental().GetHandler($Idx$);\n"
+                   "#endif\n"
                    "  static_cast<::grpc_impl::internal::CallbackUnaryHandler< "
-                   "$RealRequest$, $RealResponse$>*>(\n"
-                   "      ::grpc::Service::experimental().GetHandler($Idx$))\n"
+                   "$RealRequest$, $RealResponse$>*>(handler)\n"
                    "          ->SetMessageAllocator(allocator);\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
-        "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
-        "    new ::grpc_impl::internal::CallbackClientStreamingHandler< "
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "  ::grpc::Service::\n"
+        "#else\n"
+        "  ::grpc::Service::experimental().\n"
+        "#endif\n"
+        "    MarkMethodCallback($Idx$,\n"
+        "      new ::grpc_impl::internal::CallbackClientStreamingHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this] { return this->$Method$(); }));\n");
+        "        [this](\n"
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "               ::grpc::CallbackServerContext*\n"
+        "#else\n"
+        "               ::grpc::experimental::CallbackServerContext*\n"
+        "#endif\n"
+        "                 context, "
+        "$RealResponse$* "
+        "response) { "
+        "return this->$Method$(context, response); }));\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
-        "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
-        "    new ::grpc_impl::internal::CallbackServerStreamingHandler< "
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "  ::grpc::Service::\n"
+        "#else\n"
+        "  ::grpc::Service::experimental().\n"
+        "#endif\n"
+        "    MarkMethodCallback($Idx$,\n"
+        "      new ::grpc_impl::internal::CallbackServerStreamingHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this] { return this->$Method$(); }));\n");
+        "        [this](\n"
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "               ::grpc::CallbackServerContext*\n"
+        "#else\n"
+        "               ::grpc::experimental::CallbackServerContext*\n"
+        "#endif\n"
+        "                 context, "
+        "const $RealRequest$* "
+        "request) { "
+        "return this->$Method$(context, request); }));\n");
   } else if (method->BidiStreaming()) {
     printer->Print(
         *vars,
-        "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
-        "    new ::grpc_impl::internal::CallbackBidiHandler< "
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "  ::grpc::Service::\n"
+        "#else\n"
+        "  ::grpc::Service::experimental().\n"
+        "#endif\n"
+        "    MarkMethodCallback($Idx$,\n"
+        "      new ::grpc_impl::internal::CallbackBidiHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this] { return this->$Method$(); }));\n");
+        "        [this](\n"
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "               ::grpc::CallbackServerContext*\n"
+        "#else\n"
+        "               ::grpc::experimental::CallbackServerContext*\n"
+        "#endif\n"
+        "                 context) "
+        "{ return this->$Method$(context); }));\n");
   }
   printer->Print(*vars, "}\n");
   printer->Print(*vars,
@@ -1080,45 +1225,93 @@ void PrintHeaderServerMethodRawCallback(
                  "BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service *service) {}\n");
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
+      "{}\n");
   printer->Print(" public:\n");
   printer->Indent();
   printer->Print(*vars, "ExperimentalWithRawCallbackMethod_$Method$() {\n");
   if (method->NoStreaming()) {
     printer->Print(
         *vars,
-        "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
-        "    new ::grpc_impl::internal::CallbackUnaryHandler< "
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "  ::grpc::Service::\n"
+        "#else\n"
+        "  ::grpc::Service::experimental().\n"
+        "#endif\n"
+        "    MarkMethodRawCallback($Idx$,\n"
+        "      new ::grpc_impl::internal::CallbackUnaryHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this](::grpc::ServerContext* context,\n"
-        "             const $RealRequest$* request,\n"
-        "             $RealResponse$* response,\n"
-        "             ::grpc::experimental::ServerCallbackRpcController* "
-        "controller) {\n"
-        "               this->$"
-        "Method$(context, request, response, controller);\n"
-        "             }));\n");
+        "        [this](\n"
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "               ::grpc::CallbackServerContext*\n"
+        "#else\n"
+        "               ::grpc::experimental::CallbackServerContext*\n"
+        "#endif\n"
+        "                 context, "
+        "const $RealRequest$* "
+        "request, "
+        "$RealResponse$* response) { return "
+        "this->$Method$(context, request, response); }));\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
-        "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
-        "    new ::grpc_impl::internal::CallbackClientStreamingHandler< "
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "  ::grpc::Service::\n"
+        "#else\n"
+        "  ::grpc::Service::experimental().\n"
+        "#endif\n"
+        "    MarkMethodRawCallback($Idx$,\n"
+        "      new ::grpc_impl::internal::CallbackClientStreamingHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this] { return this->$Method$(); }));\n");
+        "        [this](\n"
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "               ::grpc::CallbackServerContext*\n"
+        "#else\n"
+        "               ::grpc::experimental::CallbackServerContext*\n"
+        "#endif\n"
+        "                 context, "
+        "$RealResponse$* response) "
+        "{ return this->$Method$(context, response); }));\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
-        "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
-        "    new ::grpc_impl::internal::CallbackServerStreamingHandler< "
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "  ::grpc::Service::\n"
+        "#else\n"
+        "  ::grpc::Service::experimental().\n"
+        "#endif\n"
+        "    MarkMethodRawCallback($Idx$,\n"
+        "      new ::grpc_impl::internal::CallbackServerStreamingHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this] { return this->$Method$(); }));\n");
+        "        [this](\n"
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "               ::grpc::CallbackServerContext*\n"
+        "#else\n"
+        "               ::grpc::experimental::CallbackServerContext*\n"
+        "#endif\n"
+        "                 context, "
+        "const"
+        "$RealRequest$* request) { return "
+        "this->$Method$(context, request); }));\n");
   } else if (method->BidiStreaming()) {
     printer->Print(
         *vars,
-        "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
-        "    new ::grpc_impl::internal::CallbackBidiHandler< "
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "  ::grpc::Service::\n"
+        "#else\n"
+        "  ::grpc::Service::experimental().\n"
+        "#endif\n"
+        "    MarkMethodRawCallback($Idx$,\n"
+        "      new ::grpc_impl::internal::CallbackBidiHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this] { return this->$Method$(); }));\n");
+        "        [this](\n"
+        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
+        "               ::grpc::CallbackServerContext*\n"
+        "#else\n"
+        "               ::grpc::experimental::CallbackServerContext*\n"
+        "#endif\n"
+        "                 context) "
+        "{ return this->$Method$(context); }));\n");
   }
   printer->Print(*vars, "}\n");
   printer->Print(*vars,
@@ -1143,7 +1336,7 @@ void PrintHeaderServerMethodStreamedUnary(
                    "public BaseClass {\n");
     printer->Print(
         " private:\n"
-        "  void BaseClassMustBeDerivedFromService(const Service *service) "
+        "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
         "{}\n");
     printer->Print(" public:\n");
     printer->Indent();
@@ -1164,8 +1357,8 @@ void PrintHeaderServerMethodStreamedUnary(
         *vars,
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) override {\n"
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "$Response$* /*response*/) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -1194,7 +1387,7 @@ void PrintHeaderServerMethodSplitStreaming(
                    "public BaseClass {\n");
     printer->Print(
         " private:\n"
-        "  void BaseClassMustBeDerivedFromService(const Service *service) "
+        "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
         "{}\n");
     printer->Print(" public:\n");
     printer->Indent();
@@ -1216,8 +1409,8 @@ void PrintHeaderServerMethodSplitStreaming(
         *vars,
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) override "
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "::grpc::ServerWriter< $Response$>* /*writer*/) override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -1245,7 +1438,8 @@ void PrintHeaderServerMethodGeneric(
                  "class WithGenericMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service *service) {}\n");
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
+      "{}\n");
   printer->Print(" public:\n");
   printer->Indent();
   printer->Print(*vars,
@@ -1261,8 +1455,8 @@ void PrintHeaderServerMethodGeneric(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) override {\n"
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "$Response$* /*response*/) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -1271,9 +1465,9 @@ void PrintHeaderServerMethodGeneric(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, "
-        "::grpc::ServerReader< $Request$>* reader, "
-        "$Response$* response) override {\n"
+        "::grpc::ServerContext* /*context*/, "
+        "::grpc::ServerReader< $Request$>* /*reader*/, "
+        "$Response$* /*response*/) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -1282,8 +1476,8 @@ void PrintHeaderServerMethodGeneric(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) override "
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "::grpc::ServerWriter< $Response$>* /*writer*/) override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -1293,8 +1487,8 @@ void PrintHeaderServerMethodGeneric(
         *vars,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, "
-        "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) "
+        "::grpc::ServerContext* /*context*/, "
+        "::grpc::ServerReaderWriter< $Response$, $Request$>* /*stream*/) "
         " override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -1318,7 +1512,8 @@ void PrintHeaderServerMethodRaw(grpc_generator::Printer* printer,
   printer->Print(*vars, "class WithRawMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service *service) {}\n");
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
+      "{}\n");
   printer->Print(" public:\n");
   printer->Indent();
   printer->Print(*vars,
@@ -1367,7 +1562,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   for (int i = 0; i < service->method_count(); ++i) {
     printer->Print(service->method(i)->GetLeadingComments("//").c_str());
     PrintHeaderClientMethodCallbackInterfaces(printer, service->method(i).get(),
-                                              vars, true);
+                                              vars);
     printer->Print(service->method(i)->GetTrailingComments("//").c_str());
   }
   PrintHeaderClientMethodCallbackInterfacesEnd(printer, vars);
@@ -1392,8 +1587,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   }
   PrintHeaderClientMethodCallbackStart(printer, vars);
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintHeaderClientMethodCallback(printer, service->method(i).get(), vars,
-                                    true);
+    PrintHeaderClientMethodCallback(printer, service->method(i).get(), vars);
   }
   PrintHeaderClientMethodCallbackEnd(printer, vars);
   printer->Outdent();
@@ -1452,6 +1646,20 @@ void PrintHeaderService(grpc_generator::Printer* printer,
     (*vars)["Idx"] = as_string(i);
     PrintHeaderServerMethodCallback(printer, service->method(i).get(), vars);
   }
+
+  printer->Print("#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n");
+  printer->Print("typedef ");
+
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["method_name"] = service->method(i)->name();
+    printer->Print(*vars, "ExperimentalWithCallbackMethod_$method_name$<");
+  }
+  printer->Print("Service");
+  for (int i = 0; i < service->method_count(); ++i) {
+    printer->Print(" >");
+  }
+  printer->Print(" CallbackService;\n");
+  printer->Print("#endif\n\n");
 
   printer->Print("typedef ");
 
@@ -1657,9 +1865,12 @@ grpc::string GetSourceIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/channel_interface.h",
         "grpcpp/impl/codegen/client_unary_call.h",
         "grpcpp/impl/codegen/client_callback.h",
-        "grpcpp/impl/codegen/method_handler_impl.h",
+        "grpcpp/impl/codegen/message_allocator.h",
+        "grpcpp/impl/codegen/method_handler.h",
         "grpcpp/impl/codegen/rpc_service_method.h",
         "grpcpp/impl/codegen/server_callback.h",
+        "grpcpp/impl/codegen/server_callback_handlers.h",
+        "grpcpp/impl/codegen/server_context.h",
         "grpcpp/impl/codegen/service_type.h",
         "grpcpp/impl/codegen/sync_stream.h"};
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));

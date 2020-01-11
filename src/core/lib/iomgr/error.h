@@ -73,6 +73,8 @@ typedef enum {
   GRPC_ERROR_INT_LIMIT,
   /// chttp2: did the error occur while a write was in progress
   GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
+  /// channel connectivity state associated with the error
+  GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE,
 
   /// Must always be last
   GRPC_ERROR_INT_MAX,

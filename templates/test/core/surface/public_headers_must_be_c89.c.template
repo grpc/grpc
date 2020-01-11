@@ -25,13 +25,15 @@
       if platform_identifier in hdr:
         return True
     return False
+  def is_cronet_header(hdr):
+    return "cronet" in hdr
   hdrs = set()
   pfx = 'include/'
   for lib in libs:
     if lib.language != 'c': continue
     for hdr in lib.get('public_headers', []):
       if is_platform_header(hdr): continue
-      if 'grpc_cronet.h' in hdr: continue
+      if is_cronet_header(hdr): continue
       assert(hdr[0:len(pfx)] == pfx)
       hdrs.add(hdr[len(pfx):])
   hdrs = sorted(list(hdrs))
@@ -48,6 +50,11 @@
   #include <stdio.h>
 
   int main(int argc, char **argv) {
+    /* Use the parameters to avoid unused-parameter warning.
+       (C89 parameters must be named.) */
+    (void)argc;
+    (void)argv;
+
     % for fn in fns:
     printf("%lx", (unsigned long) ${fn});
     % endfor

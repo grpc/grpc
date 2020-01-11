@@ -29,6 +29,7 @@
 extern grpc_core::TraceFlag grpc_http_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
 
 extern bool g_flow_control_enabled;
 

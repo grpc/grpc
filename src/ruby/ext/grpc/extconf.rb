@@ -60,6 +60,11 @@ unless windows
 end
 
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
+
+ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', 'ext-export')
+$LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if RUBY_PLATFORM =~ /linux/
+$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if RUBY_PLATFORM =~ /darwin/
+
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
   $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
@@ -71,6 +76,7 @@ if grpc_config == 'dbg'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
+$LDFLAGS << ' -static-libgcc -static-libstdc++' if RUBY_PLATFORM =~ /linux/
 $LDFLAGS << ' -static' if windows
 
 $CFLAGS << ' -std=c99 '

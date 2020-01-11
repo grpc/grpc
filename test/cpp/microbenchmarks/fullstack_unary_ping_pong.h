@@ -71,7 +71,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
                       fixture->cq(), tag(1));
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     recv_response.Clear();
     ClientContext cli_ctx;

@@ -57,23 +57,30 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
-# Add Debian 'testing' repository
-RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
-RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
-
+# Add Debian 'buster' repository, we will need it for installing newer versions of python
+RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
+RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
-# Define the default command.
-CMD ["bash"]
 
-RUN apt-get install -y jq zlib1g-dev libssl-dev
+#=================
+# Compile CPython 3.8.0b4 from source
 
-COPY get_cpython.sh /tmp
-RUN apt-get install -y jq build-essential libffi-dev && \
-  chmod +x /tmp/get_cpython.sh && \
-  /tmp/get_cpython.sh && \
-  rm /tmp/get_cpython.sh
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.8.0/Python-3.8.0b4.tgz && \
+    tar xzvf Python-3.8.0b4.tgz && \
+    cd Python-3.8.0b4 && \
+    ./configure && \
+    make install
+
+RUN cd /tmp && \
+    echo "b8f4f897df967014ddb42033b90c3058 Python-3.8.0b4.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
 
 RUN python3.8 -m ensurepip && \
     python3.8 -m pip install coverage
+

@@ -1,55 +1,47 @@
 workspace(name = "com_github_grpc_grpc")
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 grpc_deps()
 
 grpc_test_only_deps()
 
+load("//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+
+grpc_extra_deps()
+
 register_execution_platforms(
-    "//third_party/toolchains:local",
-    "//third_party/toolchains:local_large",
     "//third_party/toolchains:rbe_windows",
 )
 
 register_toolchains(
-    "//third_party/toolchains/bazel_0.23.2_rbe_windows:cc-toolchain-x64_windows",
+    "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
-git_repository(
-    name = "io_bazel_rules_python",
-    commit = "fdbb17a4118a1728d19e638a5291b4c4266ea5b8",
-    remote = "https://github.com/bazelbuild/rules_python.git",
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "custom_exec_properties")
+
+custom_exec_properties(
+    name = "grpc_custom_exec_properties",
+    constants = {
+        "LARGE_MACHINE": create_exec_properties_dict(gce_machine_type = "n1-standard-8"),
+    },
 )
-
-load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
-
-pip_import(
-    name = "grpc_python_dependencies",
-    requirements = "//:requirements.bazel.txt",
-)
-
-http_archive(
-    name = "cython",
-    build_file = "//third_party:cython.BUILD",
-    sha256 = "d68138a2381afbdd0876c3cb2a22389043fa01c4badede1228ee073032b07a27",
-    strip_prefix = "cython-c2b80d87658a8525ce091cbe146cb7eaa29fed5c",
-    urls = [
-        "https://github.com/cython/cython/archive/c2b80d87658a8525ce091cbe146cb7eaa29fed5c.tar.gz",
-    ],
-)
-
-load("//bazel:grpc_python_deps.bzl", "grpc_python_deps")
-
-grpc_python_deps()
 
 load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 
 # Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
+    exec_properties = create_exec_properties_dict(
+        docker_add_capabilities = "SYS_PTRACE",
+        docker_privileged = True,
+        # n1-highmem-2 is the default (small machine) machine type. Targets
+        # that want to use other machines (such as LARGE_MACHINE) will override
+        # this value.
+        gce_machine_type = "n1-highmem-2",
+    ),
+    # use exec_properties instead of deprecated remote_execution_properties
+    use_legacy_platform_definition = False,
 )
 
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
@@ -65,3 +57,16 @@ rbe_autoconfig(
         },
     ),
 )
+
+load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
+
+pip_import(
+    name = "grpc_python_dependencies",
+    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+)
+
+load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+
+pip_repositories()
+
+pip_install()

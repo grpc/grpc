@@ -49,6 +49,10 @@ class Atomic {
     storage_.store(val, static_cast<std::memory_order>(order));
   }
 
+  T Exchange(T desired, MemoryOrder order) {
+    return storage_.exchange(desired, static_cast<std::memory_order>(order));
+  }
+
   bool CompareExchangeWeak(T* expected, T desired, MemoryOrder success,
                            MemoryOrder failure) {
     return GPR_ATM_INC_CAS_THEN(storage_.compare_exchange_weak(

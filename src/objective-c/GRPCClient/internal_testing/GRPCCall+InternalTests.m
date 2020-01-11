@@ -20,7 +20,7 @@
 
 #import "GRPCCall+InternalTests.h"
 
-#import "../private/GRPCOpBatchLog.h"
+#import "../private/GRPCCore/GRPCOpBatchLog.h"
 
 @implementation GRPCCall (InternalTests)
 

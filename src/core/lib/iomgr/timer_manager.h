@@ -35,5 +35,7 @@ void grpc_timer_manager_set_threading(bool enabled);
 /* explicitly perform one tick of the timer system - for when threading is
  * disabled */
 void grpc_timer_manager_tick(void);
+/* get global counter that tracks timer wakeups */
+uint64_t grpc_timer_manager_get_wakeups_testonly(void);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H */

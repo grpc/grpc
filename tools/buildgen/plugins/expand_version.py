@@ -34,18 +34,22 @@ LANGUAGES = [
 
 class Version:
 
-    def __init__(self, s):
+    def __init__(self, version_str, override_major=None):
         self.tag = None
-        if '-' in s:
-            s, self.tag = s.split('-')
-        self.major, self.minor, self.patch = [int(x) for x in s.split('.')]
+        if '-' in version_str:
+            version_str, self.tag = version_str.split('-')
+        self.major, self.minor, self.patch = [
+            int(x) for x in version_str.split('.')
+        ]
+        if override_major:
+            self.major = override_major
 
     def __str__(self):
         """Version string in a somewhat idiomatic style for most languages"""
-        s = '%d.%d.%d' % (self.major, self.minor, self.patch)
+        version_str = '%d.%d.%d' % (self.major, self.minor, self.patch)
         if self.tag:
-            s += '-%s' % self.tag
-        return s
+            version_str += '-%s' % self.tag
+        return version_str
 
     def pep440(self):
         """Version string in Python PEP440 style"""
@@ -96,6 +100,12 @@ class Version:
         """Version string for PHP Composer package"""
         return '%d.%d.%d' % (self.major, self.minor, self.patch)
 
+    def php_current_version(self):
+        return '7.2'
+
+    def php_debian_version(self):
+        return 'stretch'
+
 
 def mako_plugin(dictionary):
     """Expand version numbers:
@@ -105,11 +115,15 @@ def mako_plugin(dictionary):
   """
 
     settings = dictionary['settings']
-    master_version = Version(settings['version'])
+    version_str = settings['version']
+    master_version = Version(version_str)
     settings['version'] = master_version
     for language in LANGUAGES:
         version_tag = '%s_version' % language
+        override_major = settings.get('%s_major_version' % language, None)
         if version_tag in settings:
-            settings[version_tag] = Version(settings[version_tag])
+            settings[version_tag] = Version(settings[version_tag],
+                                            override_major=override_major)
         else:
-            settings[version_tag] = master_version
+            settings[version_tag] = Version(version_str,
+                                            override_major=override_major)
