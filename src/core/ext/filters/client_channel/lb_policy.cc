@@ -104,12 +104,19 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   if (!exit_idle_called_) {
     exit_idle_called_ = true;
     auto* parent = parent_->Ref().release();  // ref held by lambda.
-    parent_->logical_thread()->Run(
-        [parent]() {
-          parent->ExitIdleLocked();
-          parent->Unref();
-        },
-        DEBUG_LOCATION);
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_CREATE(
+                     [](void* arg, grpc_error* /*error*/) {
+                       auto* parent = static_cast<LoadBalancingPolicy*>(arg);
+                       parent->logical_thread()->Run(
+                           [parent]() {
+                             parent->ExitIdleLocked();
+                             parent->Unref();
+                           },
+                           DEBUG_LOCATION);
+                     },
+                     parent, nullptr),
+                 GRPC_ERROR_NONE);
   }
   PickResult result;
   result.type = PickResult::PICK_QUEUE;
