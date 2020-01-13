@@ -17,14 +17,16 @@ import os
 import socket
 import errno
 
-_DEFAULT_SOCK_OPTION = socket.SO_REUSEADDR if os.name == 'nt' else socket.SO_REUSEPORT
-_UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE,)
+_DEFAULT_SOCK_OPTIONS = (socket.SO_REUSEADDR,
+                         socket.SO_REUSEPORT) if os.name != 'nt' else (
+                             socket.SO_REUSEADDR,)
+_UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE, errno.ENOSR)
 
 
 def get_socket(bind_address='localhost',
                port=0,
                listen=True,
-               sock_options=(_DEFAULT_SOCK_OPTION,)):
+               sock_options=_DEFAULT_SOCK_OPTIONS):
     """Opens a socket.
 
     Useful for reserving a port for a system-under-test.
@@ -69,7 +71,7 @@ def get_socket(bind_address='localhost',
 def bound_socket(bind_address='localhost',
                  port=0,
                  listen=True,
-                 sock_options=(_DEFAULT_SOCK_OPTION,)):
+                 sock_options=_DEFAULT_SOCK_OPTIONS):
     """Opens a socket bound to an arbitrary port.
 
     Useful for reserving a port for a system-under-test.
