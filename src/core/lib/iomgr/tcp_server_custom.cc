@@ -31,7 +31,6 @@
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
@@ -82,13 +81,13 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  s->so_reuseport = grpc_is_socket_reuse_port_supported();
+  // Let the implementation decide if so_reuseport should be enabled or not.
+  s->so_reuseport = true;
   s->resource_quota = grpc_resource_quota_create(nullptr);
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport = grpc_is_socket_reuse_port_supported() &&
-                          (args->args[i].value.integer != 0);
+        s->so_reuseport = args->args[i].value.integer != 0;
       } else {
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT

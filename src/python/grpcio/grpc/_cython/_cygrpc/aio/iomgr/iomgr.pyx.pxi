@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+import platform
+
 from cpython cimport Py_INCREF, Py_DECREF
 from libc cimport string
 
@@ -124,8 +126,9 @@ cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil
 
 def _asyncio_apply_socket_options(object s, int flags):
     s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEADDR, 1)
-    if GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT & flags:
-        s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEPORT, 1)
+    if platform.system() != 'Windows':
+        if GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT & flags:
+            s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEPORT, 1)
     s.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
 
