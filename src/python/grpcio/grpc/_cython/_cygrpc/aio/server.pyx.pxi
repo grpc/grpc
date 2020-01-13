@@ -157,10 +157,9 @@ cdef class _ServicerContext:
         return self._rpc_state.invocation_metadata()
 
 
-cdef _find_method_handler(str method, list generic_handlers):
-    # TODO(lidiz) connects Metadata to call details
+cdef _find_method_handler(str method, tuple metadata, list generic_handlers):
     cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(method,
-                                                                        None)
+                                                                        metadata)
 
     for generic_handler in generic_handlers:
         method_handler = generic_handler.service(handler_call_details)
@@ -459,6 +458,7 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
     # Finds the method handler (application logic)
     method_handler = _find_method_handler(
         rpc_state.method().decode(),
+        rpc_state.invocation_metadata(),
         generic_handlers,
     )
     if method_handler is None:
