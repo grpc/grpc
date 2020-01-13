@@ -18,29 +18,35 @@ from typing import Any, Optional, Sequence, Text, Tuple
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
+
 from . import _base_call
 from ._call import UnaryUnaryCall, UnaryStreamCall
+from ._interceptor import UnaryUnaryClientInterceptor, InterceptedUnaryUnaryCall
 from ._typing import (DeserializingFunction, MetadataType, SerializingFunction)
-
-
-def _timeout_to_deadline(loop: asyncio.AbstractEventLoop,
-                         timeout: Optional[float]) -> Optional[float]:
-    if timeout is None:
-        return None
-    return loop.time() + timeout
+from ._utils import _timeout_to_deadline
 
 
 class UnaryUnaryMultiCallable:
     """Factory an asynchronous unary-unary RPC stub call from client-side."""
 
+    _channel: cygrpc.AioChannel
+    _method: bytes
+    _request_serializer: SerializingFunction
+    _response_deserializer: DeserializingFunction
+    _interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
+    _loop: asyncio.AbstractEventLoop
+
     def __init__(self, channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction) -> None:
+                 response_deserializer: DeserializingFunction,
+                 interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
+                ) -> None:
         self._loop = asyncio.get_event_loop()
         self._channel = channel
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
+        self._interceptors = interceptors
 
     def __call__(self,
                  request: Any,
@@ -74,7 +80,6 @@ class UnaryUnaryMultiCallable:
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-
         if metadata:
             raise NotImplementedError("TODO: metadata not implemented yet")
 
@@ -88,16 +93,25 @@ class UnaryUnaryMultiCallable:
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
-        deadline = _timeout_to_deadline(self._loop, timeout)
-
-        return UnaryUnaryCall(
-            request,
-            deadline,
-            self._channel,
-            self._method,
-            self._request_serializer,
-            self._response_deserializer,
-        )
+        if not self._interceptors:
+            return UnaryUnaryCall(
+                request,
+                _timeout_to_deadline(timeout),
+                self._channel,
+                self._method,
+                self._request_serializer,
+                self._response_deserializer,
+            )
+        else:
+            return InterceptedUnaryUnaryCall(
+                self._interceptors,
+                request,
+                timeout,
+                self._channel,
+                self._method,
+                self._request_serializer,
+                self._response_deserializer,
+            )
 
 
 class UnaryStreamMultiCallable:
@@ -138,13 +152,7 @@ class UnaryStreamMultiCallable:
 
         Returns:
           A Call object instance which is an awaitable object.
-
-        Raises:
-          RpcError: Indicating that the RPC terminated with non-OK status. The
-            raised RpcError will also be a Call for the RPC affording the RPC's
-            metadata, status code, and details.
         """
-
         if metadata:
             raise NotImplementedError("TODO: metadata not implemented yet")
 
@@ -158,7 +166,7 @@ class UnaryStreamMultiCallable:
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
-        deadline = _timeout_to_deadline(self._loop, timeout)
+        deadline = _timeout_to_deadline(timeout)
 
         return UnaryStreamCall(
             request,
@@ -175,11 +183,14 @@ class Channel:
 
     A cygrpc.AioChannel-backed implementation.
     """
+    _channel: cygrpc.AioChannel
+    _unary_unary_interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
 
     def __init__(self, target: Text,
                  options: Optional[Sequence[Tuple[Text, Any]]],
                  credentials: Optional[grpc.ChannelCredentials],
-                 compression: Optional[grpc.Compression]):
+                 compression: Optional[grpc.Compression],
+                 interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]):
         """Constructor.
 
         Args:
@@ -188,8 +199,9 @@ class Channel:
           credentials: A cygrpc.ChannelCredentials or None.
           compression: An optional value indicating the compression method to be
             used over the lifetime of the channel.
+          interceptors: An optional list of interceptors that would be used for
+            intercepting any RPC executed with that channel.
         """
-
         if options:
             raise NotImplementedError("TODO: options not implemented yet")
 
@@ -198,6 +210,24 @@ class Channel:
 
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
+
+        if interceptors is None:
+            self._unary_unary_interceptors = None
+        else:
+            self._unary_unary_interceptors = list(
+                filter(
+                    lambda interceptor: isinstance(interceptor,
+                                                   UnaryUnaryClientInterceptor),
+                    interceptors))
+
+            invalid_interceptors = set(interceptors) - set(
+                self._unary_unary_interceptors)
+
+            if invalid_interceptors:
+                raise ValueError(
+                    "Interceptor must be "+\
+                    "UnaryUnaryClientInterceptors, the following are invalid: {}"\
+                    .format(invalid_interceptors))
 
         self._channel = cygrpc.AioChannel(_common.encode(target))
 
@@ -222,7 +252,8 @@ class Channel:
         """
         return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
                                        request_serializer,
-                                       response_deserializer)
+                                       response_deserializer,
+                                       self._unary_unary_interceptors)
 
     def unary_stream(
             self,

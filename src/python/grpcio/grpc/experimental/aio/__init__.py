@@ -18,18 +18,26 @@ created. AsyncIO doesn't provide thread safety for most of its APIs.
 """
 
 import abc
+from typing import Any, Optional, Sequence, Text, Tuple
 import six
 
 import grpc
 from grpc._cython.cygrpc import init_grpc_aio
 
 from ._base_call import RpcContext, Call, UnaryUnaryCall, UnaryStreamCall
+from ._call import AioRpcError
 from ._channel import Channel
 from ._channel import UnaryUnaryMultiCallable
+from ._interceptor import ClientCallDetails, UnaryUnaryClientInterceptor
+from ._interceptor import InterceptedUnaryUnaryCall
 from ._server import server
 
 
-def insecure_channel(target, options=None, compression=None):
+def insecure_channel(
+        target: Text,
+        options: Optional[Sequence[Tuple[Text, Any]]] = None,
+        compression: Optional[grpc.Compression] = None,
+        interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]] = None):
     """Creates an insecure asynchronous Channel to a server.
 
     Args:
@@ -38,16 +46,22 @@ def insecure_channel(target, options=None, compression=None):
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel. This is an EXPERIMENTAL option.
+      interceptors: An optional sequence of interceptors that will be executed for
+        any call executed with this channel.
 
     Returns:
       A Channel.
     """
-    return Channel(target, () if options is None else options, None,
-                   compression)
+    return Channel(target, () if options is None else options,
+                   None,
+                   compression,
+                   interceptors=interceptors)
 
 
 ###################################  __all__  #################################
 
-__all__ = ('RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall',
-           'init_grpc_aio', 'Channel', 'UnaryUnaryMultiCallable',
+__all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
+           'UnaryStreamCall', 'init_grpc_aio', 'Channel',
+           'UnaryUnaryMultiCallable', 'ClientCallDetails',
+           'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
            'insecure_channel', 'server')

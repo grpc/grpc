@@ -16,10 +16,13 @@ import asyncio
 import logging
 import datetime
 
+import grpc
 from grpc.experimental import aio
+from tests.unit.framework.common import test_constants
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
-from tests.unit.framework.common import test_constants
+
+UNARY_CALL_WITH_SLEEP_VALUE = 0.2
 
 
 class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
@@ -39,11 +42,34 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                                              body=b'\x00' *
                                              response_parameters.size))
 
+    # Next methods are extra ones that are registred programatically
+    # when the sever is instantiated. They are not being provided by
+    # the proto file.
+
+    async def UnaryCallWithSleep(self, request, context):
+        await asyncio.sleep(UNARY_CALL_WITH_SLEEP_VALUE)
+        return messages_pb2.SimpleResponse()
+
 
 async def start_test_server():
     server = aio.server(options=(('grpc.so_reuseport', 0),))
-    test_pb2_grpc.add_TestServiceServicer_to_server(_TestServiceServicer(),
-                                                    server)
+    servicer = _TestServiceServicer()
+    test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
+
+    # Add programatically extra methods not provided by the proto file
+    # that are used during the tests
+    rpc_method_handlers = {
+        'UnaryCallWithSleep':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.UnaryCallWithSleep,
+                request_deserializer=messages_pb2.SimpleRequest.FromString,
+                response_serializer=messages_pb2.SimpleResponse.
+                SerializeToString)
+    }
+    extra_handler = grpc.method_handlers_generic_handler(
+        'grpc.testing.TestService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((extra_handler,))
+
     port = server.add_insecure_port('[::]:0')
     await server.start()
     # NOTE(lidizheng) returning the server to prevent it from deallocation

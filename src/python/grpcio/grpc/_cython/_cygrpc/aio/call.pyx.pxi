@@ -15,6 +15,7 @@
 cimport cpython
 import grpc
 
+
 _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
 _EMPTY_METADATA = None
@@ -28,15 +29,16 @@ cdef class _AioCall:
                   AioChannel channel,
                   object deadline,
                   bytes method):
+        self.call = NULL
         self._channel = channel
         self._references = []
-        self._grpc_call_wrapper = GrpcCallWrapper()
         self._loop = asyncio.get_event_loop()
         self._create_grpc_call(deadline, method)
         self._is_locally_cancelled = False
 
     def __dealloc__(self):
-        self._destroy_grpc_call()
+        if self.call:
+            grpc_call_unref(self.call)
 
     def __repr__(self):
         class_name = self.__class__.__name__
@@ -61,7 +63,7 @@ cdef class _AioCall:
             <const char *> method,
             <size_t> len(method)
         )
-        self._grpc_call_wrapper.call = grpc_channel_create_call(
+        self.call = grpc_channel_create_call(
             self._channel.channel,
             NULL,
             _EMPTY_MASK,
@@ -72,10 +74,6 @@ cdef class _AioCall:
             NULL
         )
         grpc_slice_unref(method_slice)
-
-    cdef void _destroy_grpc_call(self):
-        """Destroys the corresponding Core object for this RPC."""
-        grpc_call_unref(self._grpc_call_wrapper.call)
 
     def cancel(self, AioRpcStatus status):
         """Cancels the RPC in Core with given RPC status.
@@ -97,7 +95,7 @@ cdef class _AioCall:
             c_details = <char *>details
             # By implementation, grpc_call_cancel_with_status always return OK
             error = grpc_call_cancel_with_status(
-                self._grpc_call_wrapper.call,
+                self.call,
                 status.c_code(),
                 c_details,
                 NULL,
@@ -105,7 +103,7 @@ cdef class _AioCall:
             assert error == GRPC_CALL_OK
         else:
             # By implementation, grpc_call_cancel always return OK
-            error = grpc_call_cancel(self._grpc_call_wrapper.call, NULL)
+            error = grpc_call_cancel(self.call, NULL)
             assert error == GRPC_CALL_OK
 
     async def unary_unary(self,
@@ -140,7 +138,7 @@ cdef class _AioCall:
 
         # Executes all operations in one batch.
         # Might raise CancelledError, handling it in Python UnaryUnaryCall.
-        await execute_batch(self._grpc_call_wrapper,
+        await execute_batch(self,
                             ops,
                             self._loop)
 
@@ -163,7 +161,7 @@ cdef class _AioCall:
         """Handles the status sent by peer once received."""
         cdef ReceiveStatusOnClientOperation op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
         cdef tuple ops = (op,)
-        await execute_batch(self._grpc_call_wrapper, ops, self._loop)
+        await execute_batch(self, ops, self._loop)
 
         # Halts if the RPC is locally cancelled
         if self._is_locally_cancelled:
@@ -186,7 +184,7 @@ cdef class _AioCall:
         # * The client application cancels;
         # * The server sends final status.
         received_message = await _receive_message(
-            self._grpc_call_wrapper,
+            self,
             self._loop
         )
         return received_message
@@ -217,12 +215,12 @@ cdef class _AioCall:
         )
 
         # Sends out the request message.
-        await execute_batch(self._grpc_call_wrapper,
+        await execute_batch(self,
                             outbound_ops,
                             self._loop)
 
         # Receives initial metadata.
         initial_metadata_observer(
-            await _receive_initial_metadata(self._grpc_call_wrapper,
+            await _receive_initial_metadata(self,
                                             self._loop),
         )

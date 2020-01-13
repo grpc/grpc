@@ -23,10 +23,12 @@ from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit.framework.common import test_constants
-from tests_aio.unit._test_server import start_test_server
+from tests_aio.unit._test_server import start_test_server, UNARY_CALL_WITH_SLEEP_VALUE
 from tests_aio.unit._test_base import AioTestBase
+from src.proto.grpc.testing import messages_pb2
 
 _UNARY_CALL_METHOD = '/grpc.testing.TestService/UnaryCall'
+_UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
 _STREAMING_OUTPUT_CALL_METHOD = '/grpc.testing.TestService/StreamingOutputCall'
 _NUM_STREAM_RESPONSES = 5
 _RESPONSE_PAYLOAD_SIZE = 42
@@ -51,7 +53,6 @@ class TestChannel(AioTestBase):
 
     async def test_unary_unary(self):
         async with aio.insecure_channel(self._server_target) as channel:
-            channel = aio.insecure_channel(self._server_target)
             hi = channel.unary_unary(
                 _UNARY_CALL_METHOD,
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
@@ -61,15 +62,16 @@ class TestChannel(AioTestBase):
             self.assertIsInstance(response, messages_pb2.SimpleResponse)
 
     async def test_unary_call_times_out(self):
-        async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
+        async with aio.insecure_channel(self._server_target) as channel:
             hi = channel.unary_unary(
-                _UNARY_CALL_METHOD,
+                _UNARY_CALL_METHOD_WITH_SLEEP,
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
                 response_deserializer=messages_pb2.SimpleResponse.FromString,
             )
 
             with self.assertRaises(grpc.RpcError) as exception_context:
-                await hi(messages_pb2.SimpleRequest(), timeout=1.0)
+                await hi(messages_pb2.SimpleRequest(),
+                         timeout=UNARY_CALL_WITH_SLEEP_VALUE / 2)
 
             _, details = grpc.StatusCode.DEADLINE_EXCEEDED.value  # pylint: disable=unused-variable
             self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
@@ -79,6 +81,18 @@ class TestChannel(AioTestBase):
             self.assertIsNotNone(exception_context.exception.initial_metadata())
             self.assertIsNotNone(
                 exception_context.exception.trailing_metadata())
+
+    async def test_unary_call_does_not_times_out(self):
+        async with aio.insecure_channel(self._server_target) as channel:
+            hi = channel.unary_unary(
+                _UNARY_CALL_METHOD_WITH_SLEEP,
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString,
+            )
+
+            call = hi(messages_pb2.SimpleRequest(),
+                      timeout=UNARY_CALL_WITH_SLEEP_VALUE * 5)
+            self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
     async def test_unary_stream(self):
         channel = aio.insecure_channel(self._server_target)
