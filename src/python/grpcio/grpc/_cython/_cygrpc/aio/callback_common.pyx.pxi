@@ -41,6 +41,9 @@ cdef class CallbackWrapper:
         # data path. We should make it as efficient as possible.
         self._reference_of_future = future
         self._reference_of_failure_handler = failure_handler
+        # NOTE(lidiz) We need to ensure when Core invokes our callback, the
+        # callback function itself is not deallocated. Othersise, we will get
+        # a segfault. We can view this as Core holding a ref.
         cpython.Py_INCREF(self)
 
     @staticmethod
