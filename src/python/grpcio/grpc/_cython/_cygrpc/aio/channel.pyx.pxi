@@ -73,20 +73,12 @@ cdef class AioChannel:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             _WATCH_CONNECTIVITY_FAILURE_HANDLER)
-        cpython.Py_INCREF(wrapper)
         grpc_channel_watch_connectivity_state(
             self.channel,
             last_observed_state,
             c_deadline,
             self.cq.c_ptr(),
             wrapper.c_functor())
-
-        # NOTE(lidiz) The callback will be invoked after the channel is closed
-        # with a failure state. We need to keep wrapper alive until then, or we
-        # will observe a segfault.
-        def dealloc_wrapper(_):
-            cpython.Py_DECREF(wrapper)
-        future.add_done_callback(dealloc_wrapper)
 
         try:
             await future

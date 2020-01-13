@@ -307,9 +307,6 @@ cdef class AioServer:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             REQUEST_CALL_FAILURE_HANDLER)
-        # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
-        # when calling "await". This is an over-optimization by Cython.
-        cpython.Py_INCREF(wrapper)
         error = grpc_server_request_call(
             self._server.c_server, &rpc_state.call, &rpc_state.details,
             &rpc_state.request_metadata,
@@ -320,7 +317,6 @@ cdef class AioServer:
             raise RuntimeError("Error in grpc_server_request_call: %s" % error)
 
         await future
-        cpython.Py_DECREF(wrapper)
         return rpc_state
 
     async def _server_main_loop(self,
