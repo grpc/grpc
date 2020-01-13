@@ -1012,9 +1012,9 @@ int main(int argc, char** argv) {
           "this system.");
   return 0;
 #endif
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
