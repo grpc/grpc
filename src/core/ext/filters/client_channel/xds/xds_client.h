@@ -116,6 +116,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const grpc_channel_args& args);
 
  private:
+  static const grpc_arg_pointer_vtable kXdsClientVtable;
+
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
   // TODO(roth): This is separate from the XdsClient object because it was
@@ -211,8 +213,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Only the watched EDS service names are stored.
   std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
       endpoint_map_;
-
-  static const grpc_arg_pointer_vtable kXdsClientVtable;
 
   grpc_core::UniquePtr<char> build_version_;
 
