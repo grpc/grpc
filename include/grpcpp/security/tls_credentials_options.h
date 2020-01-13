@@ -55,12 +55,12 @@ class TlsKeyMaterialsConfig {
   }
   int version() const { return version_; }
 
-  /** Setter for key materials that will be called by the user. The setter
-   *  takes ownership of the arguments to the config. **/
-  void set_pem_root_certs(grpc::string pem_root_certs);
+  /** Setter for key materials that will be called by the user. **/
+  void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(const PemKeyCertPair& pem_key_cert_pair);
-  void set_key_materials(grpc::string pem_root_certs,
-                         std::vector<PemKeyCertPair> pem_key_cert_pair_list);
+  void set_key_materials(
+      const grpc::string& pem_root_certs,
+      const std::vector<PemKeyCertPair>& pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; };
 
  private:

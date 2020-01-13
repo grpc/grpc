@@ -22,8 +22,8 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <memory>
-#include <thread>
 #include <vector>
+#include "src/core/lib/gprpp/thd.h"
 
 using ::grpc_impl::experimental::TlsCredentialReloadConfig;
 using ::grpc_impl::experimental::TlsCredentialsOptions;
@@ -36,12 +36,12 @@ namespace testing {
 struct TlsThread {
   void Join() {
     if (thread_started_) {
-      thread_.join();
+      thread_.Join();
       thread_started_ = false;
     }
   }
 
-  std::thread thread_;
+  grpc_core::Thread thread_;
   bool thread_started_ = false;
 };
 

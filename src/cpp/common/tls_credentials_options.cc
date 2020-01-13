@@ -25,20 +25,21 @@ namespace grpc_impl {
 namespace experimental {
 
 /** TLS key materials config API implementation **/
-void TlsKeyMaterialsConfig::set_pem_root_certs(grpc::string pem_root_certs) {
-  pem_root_certs_ = std::move(pem_root_certs);
+void TlsKeyMaterialsConfig::set_pem_root_certs(
+    const grpc::string& pem_root_certs) {
+  pem_root_certs_ = pem_root_certs;
 }
 
 void TlsKeyMaterialsConfig::add_pem_key_cert_pair(
     const PemKeyCertPair& pem_key_cert_pair) {
-  pem_key_cert_pair_list_.push_back(std::move(pem_key_cert_pair));
+  pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
 }
 
 void TlsKeyMaterialsConfig::set_key_materials(
-    grpc::string pem_root_certs,
-    std::vector<PemKeyCertPair> pem_key_cert_pair_list) {
-  pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
-  pem_root_certs_ = std::move(pem_root_certs);
+    const grpc::string& pem_root_certs,
+    const std::vector<PemKeyCertPair>& pem_key_cert_pair_list) {
+  pem_key_cert_pair_list_ = pem_key_cert_pair_list;
+  pem_root_certs_ = pem_root_certs;
 }
 
 /** TLS credential reload arg API implementation **/

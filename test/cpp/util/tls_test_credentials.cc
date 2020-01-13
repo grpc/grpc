@@ -17,13 +17,12 @@
  */
 
 #include "test/cpp/util/tls_test_credentials.h"
-#include <thread>
 #include "test/core/end2end/data/ssl_test_data.h"
 
 namespace grpc {
 namespace testing {
 
-class TestSyncTlsCredentialReload
+class TestTlsSyncCredentialReload
     : public ::grpc_impl::experimental::TlsCredentialReloadInterface {
   // Sync implementation.
   int Schedule(
@@ -40,7 +39,7 @@ class TestSyncTlsCredentialReload
   }
 };
 
-class TestSyncTlsServerAuthorizationCheck
+class TestTlsSyncServerAuthorizationCheck
     : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
   // Sync implementation.
   int Schedule(
@@ -52,24 +51,26 @@ class TestSyncTlsServerAuthorizationCheck
   }
 };
 
-static void TestAsyncTlsServerAuthorizationCheckCallback(
-    ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) {
+static void TestTlsAsyncServerAuthorizationCheckCallback(void* arg) {
   GPR_ASSERT(arg != nullptr);
-  arg->set_success(1);
-  arg->set_status(GRPC_STATUS_OK);
-  arg->OnServerAuthorizationCheckDoneCallback();
+  ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* tls_arg =
+      reinterpret_cast<
+          ::grpc_impl::experimental::TlsServerAuthorizationCheckArg*>(arg);
+  tls_arg->set_success(1);
+  tls_arg->set_status(GRPC_STATUS_OK);
+  tls_arg->OnServerAuthorizationCheckDoneCallback();
 }
 
-class TestAsyncTlsServerAuthorizationCheck
+class TestTlsAsyncServerAuthorizationCheck
     : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
  public:
-  ~TestAsyncTlsServerAuthorizationCheck() {
+  ~TestTlsAsyncServerAuthorizationCheck() {
     for (TlsThread* thread : thread_list_) {
       if (thread == nullptr) {
         continue;
       }
       if (thread->thread_started_) {
-        thread->thread_.join();
+        thread->thread_.Join();
       }
       delete thread;
     }
@@ -81,9 +82,11 @@ class TestAsyncTlsServerAuthorizationCheck
     GPR_ASSERT(arg != nullptr);
     TlsThread* tls_thread = new TlsThread();
     thread_list_.push_back(tls_thread);
-    tls_thread->thread_started_ = true;
     tls_thread->thread_ =
-        std::thread(TestAsyncTlsServerAuthorizationCheckCallback, arg);
+        grpc_core::Thread("Tls_async_server_authorization_check_test",
+                          &TestTlsAsyncServerAuthorizationCheckCallback, arg);
+    tls_thread->thread_.Start();
+    tls_thread->thread_started_ = true;
     return 1;
   }
 
@@ -97,9 +100,9 @@ class TestAsyncTlsServerAuthorizationCheck
 
 TlsData* CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
   /** Create a credential reload config that is configured using the
-   *  TestSyncTlsCredentialReload class. **/
-  std::shared_ptr<TestSyncTlsCredentialReload> credential_reload_interface(
-      new TestSyncTlsCredentialReload());
+   *  TestTlsSyncCredentialReload class. **/
+  std::shared_ptr<TestTlsSyncCredentialReload> credential_reload_interface(
+      new TestTlsSyncCredentialReload());
   std::shared_ptr<::grpc_impl::experimental::TlsCredentialReloadConfig>
       test_credential_reload_config(
           new ::grpc_impl::experimental::TlsCredentialReloadConfig(
@@ -117,15 +120,15 @@ TlsData* CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
       test_server_authorization_check_config;
   std::vector<TlsThread*>* server_authz_thread_list = nullptr;
   if (is_async) {
-    std::shared_ptr<TestAsyncTlsServerAuthorizationCheck> async_interface(
-        new TestAsyncTlsServerAuthorizationCheck());
+    std::shared_ptr<TestTlsAsyncServerAuthorizationCheck> async_interface(
+        new TestTlsAsyncServerAuthorizationCheck());
     test_server_authorization_check_config = std::make_shared<
         ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
         async_interface);
     server_authz_thread_list = async_interface->thread_list();
   } else {
-    std::shared_ptr<TestSyncTlsServerAuthorizationCheck> sync_interface(
-        new TestSyncTlsServerAuthorizationCheck());
+    std::shared_ptr<TestTlsSyncServerAuthorizationCheck> sync_interface(
+        new TestTlsSyncServerAuthorizationCheck());
     test_server_authorization_check_config = std::make_shared<
         ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
         sync_interface);
