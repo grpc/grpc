@@ -611,7 +611,7 @@ class StsTokenFetcherCredentials
     MaybeAddToBody(&body_strvec, "scope", scope_.get());
     MaybeAddToBody(&body_strvec, "requested_token_type",
                    requested_token_type_.get());
-    if (actor_token_path_ != nullptr) {
+    if ((actor_token_path_ != nullptr) && *actor_token_path_ != '\0') {
       err = LoadTokenFile(actor_token_path_.get(), &actor_token);
       if (err != GRPC_ERROR_NONE) return cleanup();
       MaybeAddToBody(
