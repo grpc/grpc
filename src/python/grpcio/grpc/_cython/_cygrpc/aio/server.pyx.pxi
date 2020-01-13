@@ -270,6 +270,10 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
                     'Abort error unexpectedly suppressed: %s',
                     traceback.format_exception(rpc_state.abort_exception)
                 )
+    except KeyboardInterrupt:
+        raise
+    except SystemExit:
+        raise
     except Exception as e:
         _LOGGER.exception(e)
         if not rpc_state.status_sent and rpc_state.server._status != AIO_SERVER_STATUS_STOPPED:
