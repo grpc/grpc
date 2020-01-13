@@ -63,6 +63,11 @@ def get_socket(bind_address='localhost',
                 raise
             else:
                 continue
+        # For PY2, socket.error is a child class of IOError; for PY3, it is
+        # pointing to OSError. We need this catch to make it 2/3 agnostic.
+        except socket.error:  # pylint: disable=duplicate-except
+            sock.close()
+            continue
     raise RuntimeError("Failed to bind to {} with sock_options {}".format(
         bind_address, sock_options))
 

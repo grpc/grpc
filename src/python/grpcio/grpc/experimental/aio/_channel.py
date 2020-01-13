@@ -13,7 +13,7 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
-from typing import Any, Optional, Text
+from typing import Any, Optional, Sequence, Text
 
 import grpc
 from grpc import _common
