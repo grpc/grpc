@@ -16,11 +16,11 @@
 class _WatchConnectivityFailed(Exception):
     """Dedicated exception class for watch connectivity failed.
 
-    It might be failed due to deadline exceeded, or the channel is closing.
+    It might be failed due to deadline exceeded.
     """
 cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailureHandler(
     'watch_connectivity_state',
-    'Timed out or channel closed.',
+    'Timed out',
     _WatchConnectivityFailed)
 
 

@@ -111,8 +111,12 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     if error != GRPC_CALL_OK:
         raise ExecuteBatchError("Failed grpc_call_start_batch: {}".format(error))
 
+    # NOTE(lidiz) Guard against CanceledError from future.
+    def dealloc_wrapper(_):
+        cpython.Py_DECREF(wrapper)
+    future.add_done_callback(dealloc_wrapper)
     await future
-    cpython.Py_DECREF(wrapper)
+
     cdef grpc_event c_event
     # Tag.event must be called, otherwise messages won't be parsed from C
     batch_operation_tag.event(c_event)
