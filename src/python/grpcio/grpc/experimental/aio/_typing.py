@@ -20,3 +20,4 @@ ResponseType = TypeVar('ResponseType')
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 MetadataType = Sequence[Tuple[Text, AnyStr]]
+ChannelArgumentType = Sequence[Tuple[Text, Any]]

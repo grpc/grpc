@@ -30,7 +30,7 @@ from ._channel import Channel
 from ._channel import UnaryUnaryMultiCallable
 from ._interceptor import ClientCallDetails, UnaryUnaryClientInterceptor
 from ._interceptor import InterceptedUnaryUnaryCall
-from ._server import server
+from ._server import server, Server
 
 
 def insecure_channel(
@@ -64,4 +64,4 @@ __all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
            'UnaryStreamCall', 'init_grpc_aio', 'Channel',
            'UnaryUnaryMultiCallable', 'ClientCallDetails',
            'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
-           'insecure_channel', 'server')
+           'insecure_channel', 'server', 'Server')
