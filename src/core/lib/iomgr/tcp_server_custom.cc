@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
@@ -72,6 +73,7 @@ struct grpc_tcp_server {
   grpc_closure* shutdown_complete;
 
   bool shutdown;
+  bool so_reuseport;
 
   grpc_resource_quota* resource_quota;
 };
@@ -80,9 +82,19 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
+  s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->resource_quota = grpc_resource_quota_create(nullptr);
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
-    if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
+    if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
+      if (args->args[i].type == GRPC_ARG_INTEGER) {
+        s->so_reuseport = grpc_is_socket_reuse_port_supported() &&
+                          (args->args[i].value.integer != 0);
+      } else {
+        gpr_free(s);
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
+                                                    " must be an integer");
+      }
+    } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
         grpc_resource_quota_unref_internal(s->resource_quota);
         s->resource_quota = grpc_resource_quota_ref_internal(
@@ -280,9 +292,15 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
   grpc_error* error;
   grpc_resolved_address sockname_temp;
 
-  // The last argument to uv_tcp_bind is flags
+  // NOTE(lidiz) The last argument is flags unused by other implementations.
+  // Use it to specify SO_REUSEPORT for Python IO managers.
+  int flags = 0;
+  if (s->so_reuseport) {
+    flags |= GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT;
+  }
+
   error = grpc_custom_socket_vtable->bind(socket, (grpc_sockaddr*)addr->addr,
-                                          addr->len, 0);
+                                          addr->len, flags);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }

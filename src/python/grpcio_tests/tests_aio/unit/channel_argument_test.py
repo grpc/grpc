@@ -89,7 +89,6 @@ class TestChannelArgument(AioTestBase):
     async def setUp(self):
         random.seed(_RANDOM_SEED)
 
-    @unittest.skip('https://github.com/grpc/grpc/issues/20667')
     @unittest.skipIf(platform.system() == 'Windows',
                      'SO_REUSEPORT only available in Linux-like OS.')
     async def test_server_so_reuse_port_is_set_properly(self):

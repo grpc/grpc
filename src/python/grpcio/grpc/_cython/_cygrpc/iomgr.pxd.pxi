@@ -54,6 +54,8 @@ cdef extern from "src/core/lib/iomgr/resolve_address_custom.h":
                                     grpc_error* error);
 
 cdef extern from "src/core/lib/iomgr/tcp_custom.h":
+  cdef int GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT
+
   struct grpc_custom_socket:
     void* impl
     # We don't care about the rest of the fields
