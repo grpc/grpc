@@ -270,9 +270,7 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
                     'Abort error unexpectedly suppressed: %s',
                     traceback.format_exception(rpc_state.abort_exception)
                 )
-    except KeyboardInterrupt:
-        raise
-    except SystemExit:
+    except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as e:
         _LOGGER.exception(e)
