@@ -36,7 +36,6 @@ cdef class _AioCall(GrpcCallWrapper):
         self._loop = asyncio.get_event_loop()
         self._create_grpc_call(deadline, method, call_credentials)
         self._is_locally_cancelled = False
-        self._status_received = asyncio.Event(loop=self._loop)
 
     def __dealloc__(self):
         if self.call:
@@ -118,6 +117,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
     async def unary_unary(self,
                           bytes request,
+                          tuple outbound_initial_metadata,
                           object initial_metadata_observer,
                           object status_observer):
         """Performs a unary unary RPC.
@@ -134,7 +134,7 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef tuple ops
 
         cdef SendInitialMetadataOperation initial_metadata_op = SendInitialMetadataOperation(
-            self._initial_metadata,
+            outbound_initial_metadata,
             GRPC_INITIAL_METADATA_USED_MASK)
         cdef SendMessageOperation send_message_op = SendMessageOperation(request, _EMPTY_FLAGS)
         cdef SendCloseFromClientOperation send_close_op = SendCloseFromClientOperation(_EMPTY_FLAGS)
@@ -151,6 +151,9 @@ cdef class _AioCall(GrpcCallWrapper):
         await execute_batch(self,
                             ops,
                             self._loop)
+
+        # Reports received initial metadata.
+        initial_metadata_observer(receive_initial_metadata_op.initial_metadata())
 
         status = AioRpcStatus(
             receive_status_on_client_op.code(),

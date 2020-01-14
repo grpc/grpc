@@ -40,7 +40,7 @@ cdef class RPCState:
         self.abort_exception = None
         self.metadata_sent = False
         self.status_sent = False
-        self.trailing_metadata = tuple()
+        self.trailing_metadata = _EMPTY_METADATA
 
     cdef bytes method(self):
         return _slice_bytes(self.details.method)
@@ -466,7 +466,7 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
         await _send_error_status_from_server(
             rpc_state,
             StatusCode.unimplemented,
-            b'Method not found!',
+            'Method not found!',
             _EMPTY_METADATA,
             rpc_state.metadata_sent,
             loop
