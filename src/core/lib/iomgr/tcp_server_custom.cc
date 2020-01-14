@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
@@ -81,19 +82,14 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  // Let the implementation decide if so_reuseport should be enabled or not.
+  // Let the implementation decide if so_reuseport can be enabled or not.
   s->so_reuseport = true;
   s->resource_quota = grpc_resource_quota_create(nullptr);
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
-    if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport = args->args[i].value.integer != 0;
-      } else {
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
-                                                    " must be an integer");
-      }
-    } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
+    if (!grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, 1)) {
+      s->so_reuseport = false;
+    }
+    if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
         grpc_resource_quota_unref_internal(s->resource_quota);
         s->resource_quota = grpc_resource_quota_ref_internal(
@@ -291,8 +287,8 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
   grpc_error* error;
   grpc_resolved_address sockname_temp;
 
-  // NOTE(lidiz) The last argument is flags unused by other implementations.
-  // Use it to specify SO_REUSEPORT for Python IO managers.
+  // NOTE(lidiz) The last argument is "flags" which is unused by other
+  // implementations. Python IO managers uses it to specify SO_REUSEPORT.
   int flags = 0;
   if (s->so_reuseport) {
     flags |= GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT;
