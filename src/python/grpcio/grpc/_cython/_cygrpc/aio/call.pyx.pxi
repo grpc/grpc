@@ -125,7 +125,7 @@ cdef class _AioCall(GrpcCallWrapper):
         if credentials is not None:
             set_credentials_error = grpc_call_set_credentials(self.call, credentials.c())
             if set_credentials_error != GRPC_CALL_OK:
-                raise Exception("Credentials couldn't have been set")
+                raise RuntimeError("Credentials couldn't have been set")
 
         grpc_slice_unref(method_slice)
 
@@ -178,7 +178,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
     def cancel(self, str details):
         """Cancels the RPC in Core with given RPC status.
-        
+
         Above abstractions must invoke this method to set Core objects into
         proper state.
         """
@@ -286,7 +286,7 @@ cdef class _AioCall(GrpcCallWrapper):
                           bytes request,
                           tuple outbound_initial_metadata):
         """Performs a unary unary RPC.
-        
+
         Args:
           request: the serialized requests in bytes.
           outbound_initial_metadata: optional outbound metadata.
