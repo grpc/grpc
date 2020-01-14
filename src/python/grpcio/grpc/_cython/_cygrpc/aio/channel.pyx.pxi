@@ -30,6 +30,10 @@ cdef class AioChannel:
             options = ()
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
         self._target = target
+        self.cq = CallbackCompletionQueue()
+        self._loop = asyncio.get_event_loop()
+        self._status = AIO_CHANNEL_STATUS_READY
+
         if credentials is None:
             self.channel = grpc_insecure_channel_create(
                 <char *>target,
@@ -38,11 +42,9 @@ cdef class AioChannel:
         else:
             self.channel = grpc_secure_channel_create(
                 <grpc_channel_credentials *> credentials.c(),
-                <char *> target,
+                <char *>target,
                 channel_args.c_args(),
                 NULL)
-        self._loop = asyncio.get_event_loop()
-        self._status = AIO_CHANNEL_STATUS_READY
 
     def __repr__(self):
         class_name = self.__class__.__name__
