@@ -14,7 +14,6 @@
 """Tests behavior of the Call classes."""
 
 import asyncio
-import datetime
 import logging
 import unittest
 
@@ -24,6 +23,7 @@ from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
+from tests.unit import resources
 
 from tests_aio.unit._test_server import start_test_server
 
@@ -34,6 +34,10 @@ _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 _RESPONSE_INTERVAL_US = test_constants.SHORT_TIMEOUT * 1000 * 1000
 _UNREACHABLE_TARGET = '0.1:1111'
 _INFINITE_INTERVAL_US = 2**31 - 1
+
+_PRIVATE_KEY = resources.private_key()
+_CERTIFICATE_CHAIN = resources.certificate_chain()
+_TEST_ROOT_CERTIFICATES = resources.test_root_certificates()
 
 
 class _MulticallableTestMixin():
@@ -202,6 +206,30 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
         with self.assertRaises(asyncio.CancelledError):
             await task
+
+    def test_call_credentials(self):   # FIXME
+
+        async def coro():
+            server_target, _ = await start_test_server(secure=True)  # pylint: disable=unused-variable
+            channel_credentials = grpc.ssl_channel_credentials(
+                root_certificates=_TEST_ROOT_CERTIFICATES,
+                private_key=_PRIVATE_KEY,
+                certificate_chain=_CERTIFICATE_CHAIN,
+            )
+
+            async with aio.secure_channel(server_target, channel_credentials) as channel:
+                hi = channel.unary_unary('/grpc.testing.TestService/UnaryCall',
+                                         request_serializer=messages_pb2.
+                                         SimpleRequest.SerializeToString,
+                                         response_deserializer=messages_pb2.
+                                         SimpleResponse.FromString)
+                call = hi(messages_pb2.SimpleRequest())  # , credentials=call_credentials)
+                response = await call
+
+                self.assertIsInstance(response, messages_pb2.SimpleResponse)
+                self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+        self.loop.run_until_complete(coro())
 
 
 class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
@@ -410,33 +438,6 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         with self.assertRaises(asyncio.CancelledError):
             await task
-
-    def test_call_credentials(self):
-
-        class DummyAuth(grpc.AuthMetadataPlugin):
-
-            def __call__(self, context, callback):
-                signature = context.method_name[::-1]
-                callback((("test", signature),), None)
-
-        async def coro():
-            server_target, _ = await start_test_server(secure=False)  # pylint: disable=unused-variable
-
-            async with aio.insecure_channel(server_target) as channel:
-                hi = channel.unary_unary('/grpc.testing.TestService/UnaryCall',
-                                         request_serializer=messages_pb2.
-                                         SimpleRequest.SerializeToString,
-                                         response_deserializer=messages_pb2.
-                                         SimpleResponse.FromString)
-                call_credentials = grpc.metadata_call_credentials(DummyAuth())
-                call = hi(messages_pb2.SimpleRequest(),
-                          credentials=call_credentials)
-                response = await call
-
-                self.assertIsInstance(response, messages_pb2.SimpleResponse)
-                self.assertEqual(await call.code(), grpc.StatusCode.OK)
-
-        self.loop.run_until_complete(coro())
 
     async def test_time_remaining(self):
         request = messages_pb2.StreamingOutputCallRequest()
