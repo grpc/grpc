@@ -33,9 +33,12 @@ cdef struct CallbackContext:
     #       invoked by Core.
     #     failure_handler: A CallbackFailureHandler object that called when Core
     #       returns 'success == 0' state.
+    #     wrapper: A self-reference to the CallbackWrapper to help life cycle
+    #       management.
     grpc_experimental_completion_queue_functor functor
     cpython.PyObject *waiter
     cpython.PyObject *failure_handler
+    cpython.PyObject *callback_wrapper
 
 
 cdef class CallbackWrapper:

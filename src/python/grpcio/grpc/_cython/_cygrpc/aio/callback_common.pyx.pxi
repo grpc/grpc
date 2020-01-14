@@ -36,10 +36,15 @@ cdef class CallbackWrapper:
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
         self.context.failure_handler = <cpython.PyObject*>failure_handler
+        self.context.callback_wrapper = <cpython.PyObject*>self
         # NOTE(lidiz) Not using a list here, because this class is critical in
         # data path. We should make it as efficient as possible.
         self._reference_of_future = future
         self._reference_of_failure_handler = failure_handler
+        # NOTE(lidiz) We need to ensure when Core invokes our callback, the
+        # callback function itself is not deallocated. Othersise, we will get
+        # a segfault. We can view this as Core holding a ref.
+        cpython.Py_INCREF(self)
 
     @staticmethod
     cdef void functor_run(
@@ -47,12 +52,12 @@ cdef class CallbackWrapper:
             int success):
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
-        if waiter.cancelled():
-            return
-        if success == 0:
-            (<CallbackFailureHandler>context.failure_handler).handle(waiter)
-        else:
-            waiter.set_result(None)
+        if not waiter.cancelled():
+            if success == 0:
+                (<CallbackFailureHandler>context.failure_handler).handle(waiter)
+            else:
+                waiter.set_result(None)
+        cpython.Py_DECREF(<object>context.callback_wrapper)
 
     cdef grpc_experimental_completion_queue_functor *c_functor(self):
         return &self.context.functor
@@ -99,9 +104,6 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
         CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
-    # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
-    # when calling "await". This is an over-optimization by Cython.
-    cpython.Py_INCREF(wrapper)
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
         batch_operation_tag.c_ops,
@@ -112,7 +114,7 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         raise ExecuteBatchError("Failed grpc_call_start_batch: {}".format(error))
 
     await future
-    cpython.Py_DECREF(wrapper)
+
     cdef grpc_event c_event
     # Tag.event must be called, otherwise messages won't be parsed from C
     batch_operation_tag.event(c_event)

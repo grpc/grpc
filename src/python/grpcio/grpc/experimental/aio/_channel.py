@@ -224,6 +224,51 @@ class Channel:
         self._channel = cygrpc.AioChannel(_common.encode(target), options,
                                           credentials)
 
+    def get_state(self,
+                  try_to_connect: bool = False) -> grpc.ChannelConnectivity:
+        """Check the connectivity state of a channel.
+
+        This is an EXPERIMENTAL API.
+
+        If the channel reaches a stable connectivity state, it is guaranteed
+        that the return value of this function will eventually converge to that
+        state.
+
+        Args: try_to_connect: a bool indicate whether the Channel should try to
+          connect to peer or not.
+
+        Returns: A ChannelConnectivity object.
+        """
+        result = self._channel.check_connectivity_state(try_to_connect)
+        return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
+
+    async def wait_for_state_change(
+            self,
+            last_observed_state: grpc.ChannelConnectivity,
+    ) -> None:
+        """Wait for a change in connectivity state.
+
+        This is an EXPERIMENTAL API.
+
+        The function blocks until there is a change in the channel connectivity
+        state from the "last_observed_state". If the state is already
+        different, this function will return immediately.
+
+        There is an inherent race between the invocation of
+        "Channel.wait_for_state_change" and "Channel.get_state". The state can
+        change arbitrary times during the race, so there is no way to observe
+        every state transition.
+
+        If there is a need to put a timeout for this function, please refer to
+        "asyncio.wait_for".
+
+        Args:
+          last_observed_state: A grpc.ChannelConnectivity object representing
+            the last known state.
+        """
+        assert await self._channel.watch_connectivity_state(
+            last_observed_state.value[0], None)
+
     def unary_unary(
             self,
             method: Text,

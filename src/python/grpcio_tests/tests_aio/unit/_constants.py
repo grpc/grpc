@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef enum AioChannelStatus:
-    AIO_CHANNEL_STATUS_UNKNOWN
-    AIO_CHANNEL_STATUS_READY
-    AIO_CHANNEL_STATUS_DESTROYED
-
-cdef class AioChannel:
-    cdef:
-        grpc_channel * channel
-        CallbackCompletionQueue cq
-        bytes _target
-        object _loop
-        AioChannelStatus _status
+UNREACHABLE_TARGET = '0.0.0.1:1111'
+UNARY_CALL_WITH_SLEEP_VALUE = 0.2
