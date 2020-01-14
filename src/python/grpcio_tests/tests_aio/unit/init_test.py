@@ -20,6 +20,12 @@ from grpc.experimental import aio
 from tests_aio.unit._test_server import start_test_server
 from tests_aio.unit._test_base import AioTestBase
 
+from tests.unit import resources
+
+_PRIVATE_KEY = resources.private_key()
+_CERTIFICATE_CHAIN = resources.certificate_chain()
+_TEST_ROOT_CERTIFICATES = resources.test_root_certificates()
+
 
 class TestInsecureChannel(AioTestBase):
 
@@ -37,8 +43,11 @@ class TestSecureChannel(AioTestBase):
 
         async def coro():
             server_target, _ = await start_test_server(secure=True)  # pylint: disable=unused-variable
-            credentials = grpc.local_channel_credentials(
-                grpc.LocalConnectionType.LOCAL_TCP)
+            credentials = grpc.ssl_channel_credentials(
+                root_certificates=_TEST_ROOT_CERTIFICATES,
+                private_key=_PRIVATE_KEY,
+                certificate_chain=_CERTIFICATE_CHAIN,
+            )
             secure_channel = aio.secure_channel(server_target, credentials)
 
             self.assertIsInstance(secure_channel, aio.Channel)
