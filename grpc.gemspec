@@ -38,7 +38,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 12.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.0'
-  s.add_development_dependency 'rake-compiler-dock', '~> 0.5.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.0'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7'

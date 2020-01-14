@@ -98,15 +98,15 @@ task 'dlls' do
   env += "V=#{verbose} "
   out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
-  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
-  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby' }
+  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
+  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
 
   [ w64, w32 ].each do |opt|
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
     env_comp += "LDXX=#{opt[:cross]}-g++ "
-    docker_for_windows "gem update --system --no-document && #{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}"
+    docker_for_windows "gem update --system --no-document && #{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}", opt[:platform]
   end
 
 end
@@ -128,7 +128,7 @@ task 'gem:native' do
     system "rake cross native gem RUBY_CC_VERSION=2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
     Rake::Task['dlls'].execute
-    docker_for_windows "gem update --system --no-document && bundle && rake cross native gem RUBY_CC_VERSION=2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    docker_for_windows "gem update --system --no-document && bundle && rake cross native gem RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}", 'x86-linux x86_64-linux'
   end
 end
 

@@ -41,16 +41,16 @@ def docker_for_windows_image()
   image_name
 end
 
-def docker_for_windows(args)
+def docker_for_windows(args, platform)
   require 'rake_compiler_dock'
 
   args = 'bash -l' if args.empty?
 
-  ENV['RAKE_COMPILER_DOCK_IMAGE'] = docker_for_windows_image
+  #ENV['RAKE_COMPILER_DOCK_IMAGE'] = docker_for_windows_image
 
-  RakeCompilerDock.sh args
+  RakeCompilerDock.sh args, platform: platform
 end
 
 if __FILE__ == $0
-  docker_for_windows $*.join(' ')
+  docker_for_windows $*.join(' '), 'x86-mingw32 x64-mingw32'
 end
