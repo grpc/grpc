@@ -123,9 +123,6 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
  protected:
   /// Does NOT take ownership of the reference to \a logical_thread.
-  // TODO(roth): Once we have a C++-like interface for logical threads, this
-  // API should change to take a RefCountedPtr<>, so that we always take
-  // ownership of a new ref.
   explicit Resolver(RefCountedPtr<LogicalThread> logical_thread,
                     std::unique_ptr<ResultHandler> result_handler);
 

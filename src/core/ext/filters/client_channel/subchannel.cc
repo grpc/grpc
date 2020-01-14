@@ -363,12 +363,35 @@ class Subchannel::ConnectedSubchannelStateWatcher
 };
 
 namespace {
-struct OnConnectivityStateChangeClosureArg {
-  Subchannel::ConnectivityStateWatcherInterface* watcher = nullptr;
-  ConnectedSubchannel* subchannel = nullptr;
-  grpc_connectivity_state state;
+// Deletes itself when done
+class AsyncWatcherNotifier {
+ public:
+  AsyncWatcherNotifier(
+      RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher,
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel,
+      grpc_connectivity_state state)
+      : watcher_(std::move(watcher)),
+        connected_subchannel_(std::move(connected_subchannel)),
+        state_(state) {
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_INIT(
+                     &closure_,
+                     [](void* arg, grpc_error* /*error*/) {
+                       auto* self = static_cast<AsyncWatcherNotifier*>(arg);
+                       self->watcher_->OnConnectivityStateChange(
+                           self->state_,
+                           std::move(self->connected_subchannel_));
+                       delete self;
+                     },
+                     this, nullptr),
+                 GRPC_ERROR_NONE);
+  }
+  RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher_;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  grpc_connectivity_state state_;
+  grpc_closure closure_;
 };
-};  // namespace
+}  // namespace
 
 //
 // Subchannel::ConnectivityStateWatcherList
@@ -387,28 +410,11 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     Subchannel* subchannel, grpc_connectivity_state state) {
   for (const auto& p : watchers_) {
-    auto* closure_arg = new OnConnectivityStateChangeClosureArg;
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     if (state == GRPC_CHANNEL_READY) {
-      closure_arg->subchannel = subchannel->connected_subchannel_->Ref()
-                                    .release();  // Ref owned by closure
+      connected_subchannel = subchannel->connected_subchannel_;
     }
-    closure_arg->watcher = p.second->Ref().release();  // Ref owned by closure.
-    closure_arg->state = state;
-    ExecCtx::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_CREATE(
-            [](void* arg, grpc_error* /*error*/) {
-              auto* closure_arg =
-                  static_cast<OnConnectivityStateChangeClosureArg*>(arg);
-              closure_arg->watcher->OnConnectivityStateChange(
-                  closure_arg->state,
-                  std::move(RefCountedPtr<ConnectedSubchannel>(
-                      closure_arg->subchannel)) /* ref passed */);
-              closure_arg->watcher->Unref();
-              delete closure_arg;
-            },
-            closure_arg, nullptr),
-        GRPC_ERROR_NONE);
+    new AsyncWatcherNotifier(p.second, connected_subchannel, state);
   }
 }
 
@@ -447,28 +453,11 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       grpc_connectivity_state initial_state,
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
     if (state_ != initial_state) {
-      auto* closure_arg = new OnConnectivityStateChangeClosureArg;
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel;
       if (state_ == GRPC_CHANNEL_READY) {
-        closure_arg->subchannel = subchannel_->connected_subchannel_->Ref()
-                                      .release();  // Ref owned by closure
+        connected_subchannel = subchannel_->connected_subchannel_;
       }
-      closure_arg->watcher = watcher->Ref().release();  // Ref owned by closure.
-      closure_arg->state = state_;
-      ExecCtx::Run(
-          DEBUG_LOCATION,
-          GRPC_CLOSURE_CREATE(
-              [](void* arg, grpc_error* /*error*/) {
-                auto* closure_arg =
-                    static_cast<OnConnectivityStateChangeClosureArg*>(arg);
-                closure_arg->watcher->OnConnectivityStateChange(
-                    closure_arg->state,
-                    std::move(RefCountedPtr<ConnectedSubchannel>(
-                        closure_arg->subchannel)) /* ref passed */);
-                closure_arg->watcher->Unref();
-                delete closure_arg;
-              },
-              closure_arg, nullptr),
-          GRPC_ERROR_NONE);
+      new AsyncWatcherNotifier(watcher, connected_subchannel, state_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
@@ -829,29 +818,7 @@ void Subchannel::WatchConnectivityState(
   }
   if (health_check_service_name == nullptr) {
     if (state_ != initial_state) {
-      auto* closure_arg = new OnConnectivityStateChangeClosureArg;
-      closure_arg->watcher = watcher->Ref().release();  // Ref owned by closure.
-      if (connected_subchannel_ != nullptr) {
-        closure_arg->subchannel =
-            connected_subchannel_->Ref().release();  // Ref owned by closure
-      }
-      closure_arg->state = state_;
-      ExecCtx::Run(
-          DEBUG_LOCATION,
-          GRPC_CLOSURE_CREATE(
-              [](void* arg, grpc_error* /*error*/) {
-                auto* closure_arg =
-                    static_cast<OnConnectivityStateChangeClosureArg*>(arg);
-                closure_arg->watcher->OnConnectivityStateChange(
-                    closure_arg->state,
-                    std::move(RefCountedPtr<ConnectedSubchannel>(
-                        closure_arg->subchannel)) /* ref passed */);
-                closure_arg->watcher->Unref();
-                delete closure_arg;
-              },
-              closure_arg, nullptr),
-          GRPC_ERROR_NONE);
-      watcher->OnConnectivityStateChange(state_, connected_subchannel_);
+      new AsyncWatcherNotifier(watcher, connected_subchannel_, state_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {

@@ -149,6 +149,9 @@ class ChannelData {
   RefCountedPtr<ServiceConfig> service_config() const {
     return service_config_;
   }
+  RefCountedPtr<LogicalThread> logical_thread() const {
+    return logical_thread_;
+  }
 
   RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
       SubchannelInterface* subchannel) const;
@@ -159,11 +162,12 @@ class ChannelData {
                                       grpc_connectivity_state* state,
                                       grpc_closure* on_complete,
                                       grpc_closure* watcher_timer_init) {
+    auto* watcher = new ExternalConnectivityWatcher(
+        this, pollent, state, on_complete, watcher_timer_init);
     MutexLock lock(&external_watchers_mu_);
     // Will be deleted when the watch is complete.
     GPR_ASSERT(external_watchers_[on_complete] == nullptr);
-    external_watchers_[on_complete] = new ExternalConnectivityWatcher(
-        this, pollent, state, on_complete, watcher_timer_init);
+    external_watchers_[on_complete] = watcher;
   }
 
   void RemoveExternalConnectivityWatcher(grpc_closure* on_complete,
@@ -1137,16 +1141,8 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
   grpc_polling_entity_add_to_pollset_set(&pollent_,
                                          chand_->interested_parties_);
   GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalConnectivityWatcher");
-  ExecCtx::Run(
-      DEBUG_LOCATION,
-      GRPC_CLOSURE_CREATE(
-          [](void* arg, grpc_error* /*error*/) {
-            auto* self = static_cast<ExternalConnectivityWatcher*>(arg);
-            self->chand_->logical_thread_->Run(
-                [self]() { self->AddWatcherLocked(); }, DEBUG_LOCATION);
-          },
-          this, nullptr),
-      GRPC_ERROR_NONE);
+  chand_->logical_thread_->Run([this]() { AddWatcherLocked(); },
+                               DEBUG_LOCATION);
 }
 
 ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
@@ -1928,16 +1924,7 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
   grpc_connectivity_state out = state_tracker_.state();
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(owning_stack_, "TryToConnect");
-    ExecCtx::Run(DEBUG_LOCATION,
-                 GRPC_CLOSURE_CREATE(
-                     [](void* arg, grpc_error* /*error*/) {
-                       auto* chand = static_cast<ChannelData*>(arg);
-                       chand->logical_thread_->Run(
-                           [chand]() { chand->TryToConnectLocked(); },
-                           DEBUG_LOCATION);
-                     },
-                     this, nullptr),
-                 GRPC_ERROR_NONE);
+    logical_thread_->Run([this]() { TryToConnectLocked(); }, DEBUG_LOCATION);
   }
   return out;
 }
@@ -3850,7 +3837,19 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
   // The incoming call will make the channel exit IDLE.
   if (chand->picker() == nullptr) {
     // Bounce into the control plane logical thread to exit IDLE.
-    chand->CheckConnectivityState(/*try_to_connect=*/true);
+    ExecCtx::Run(
+        DEBUG_LOCATION,
+        GRPC_CLOSURE_CREATE(
+            [](void* arg, grpc_error* /*error*/) {
+              auto* chand = static_cast<ChannelData*>(arg);
+              chand->logical_thread()->Run(
+                  [chand]() {
+                    chand->CheckConnectivityState(/*try_to_connect=*/true);
+                  },
+                  DEBUG_LOCATION);
+            },
+            chand, nullptr),
+        GRPC_ERROR_NONE);
     // Queue the pick, so that it will be attempted once the channel
     // becomes connected.
     AddCallToQueuedPicksLocked(elem);
