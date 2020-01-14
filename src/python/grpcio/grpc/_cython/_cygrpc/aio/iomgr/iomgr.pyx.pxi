@@ -125,7 +125,10 @@ cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil
 
 
 def _asyncio_apply_socket_options(object s, int flags):
+    # Turn SO_REUSEADDR on for TCP sockets; if we want to support UDS, we will
+    # need to update this function.
     s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEADDR, 1)
+    # SO_REUSEPORT only available in POSIX systems.
     if platform.system() != 'Windows':
         if GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT & flags:
             s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEPORT, 1)
