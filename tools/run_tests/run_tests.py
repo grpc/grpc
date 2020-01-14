@@ -705,11 +705,13 @@ class PythonLanguage(object):
         'native': 'src/python/grpcio_tests/tests/tests.json',
         'gevent': 'src/python/grpcio_tests/tests/tests.json',
         'asyncio': 'src/python/grpcio_tests/tests_aio/tests.json',
+        'eventlet': 'src/python/grpcio_tests/tests/tests.json',
     }
     _TEST_FOLDER = {
         'native': 'test',
         'gevent': 'test',
         'asyncio': 'test_aio',
+        'eventlet': 'test',
     }
 
     def configure(self, config, args):
@@ -810,6 +812,8 @@ class PythonLanguage(object):
             test_command = 'test_gevent'
         elif args.iomgr_platform == 'asyncio':
             test_command = 'test_aio'
+        elif args.iomgr_platform == 'eventlet':
+            test_command = 'test_eventlet'
         else:
             raise ValueError('Unsupported IO Manager platform: %s' %
                              args.iomgr_platform)
@@ -1464,7 +1468,7 @@ argp.add_argument(
     'Selects compiler to use. Allowed values depend on the platform and language.'
 )
 argp.add_argument('--iomgr_platform',
-                  choices=['native', 'uv', 'gevent', 'asyncio'],
+                  choices=['native', 'uv', 'gevent', 'asyncio', 'eventlet'],
                   default='native',
                   help='Selects iomgr platform to build on')
 argp.add_argument('--build_only',

@@ -173,6 +173,9 @@ case "$VENV" in
   *gevent*)
   $VENV_PYTHON -m pip install -U gevent
   ;;
+  *eventlet*)
+  $VENV_PYTHON -m pip install -U eventlet
+  ;;
 esac
 
 $VENV_PYTHON -m pip install --upgrade pip==19.3.1

@@ -60,6 +60,7 @@ COMMAND_CLASS = {
     'test_gevent': commands.TestGevent,
     'test_aio': commands.TestAio,
     'test_py3_only': commands.TestPy3Only,
+    'test_eventlet': commands.TestEventlet,
 }
 
 PACKAGE_DATA = {

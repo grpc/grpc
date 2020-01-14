@@ -37,6 +37,7 @@ include "_cygrpc/_hooks.pxd.pxi"
 include "_cygrpc/iomgr.pxd.pxi"
 
 include "_cygrpc/grpc_gevent.pxd.pxi"
+include "_cygrpc/grpc_eventlet.pxd.pxi"
 
 IF UNAME_SYSNAME != "Windows":
     include "_cygrpc/fork_posix.pxd.pxi"

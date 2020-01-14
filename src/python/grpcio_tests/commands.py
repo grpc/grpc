@@ -261,6 +261,55 @@ class TestGevent(setuptools.Command):
             sys.exit('Test failure')
 
 
+class TestEventlet(setuptools.Command):
+    BANNED_TESTS = (
+        # Fork support is not compatible with eventlet
+        'fork._fork_interop_test.ForkInteropTest',
+        # Banned due to lack of support in gRPC's local_check_peer for custom
+        # IO managers: https://github.com/grpc/grpc/issues/22020
+        'unit._local_credentials_test.LocalCredentialsTest',
+        # These seems to be flaky tests (only seen them fail once)
+        'unit._metadata_flags_test',
+        'unit._compression_test.CompressionTest',
+        # Test doesn't work with eventlet (same as gevent) for unknown reasons
+        'testing._client_test.ClientTest.test_infinite_request_stream_real_time',  # noqa
+    )
+    BANNED_WINDOWS_TESTS = (
+        # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
+        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',)
+    description = ('run tests with eventlet.  Assumes grpc and eventlet are '
+                   'installed')
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        # distutils requires this override.
+        pass
+
+    def run(self):
+        import eventlet
+        eventlet.monkey_patch()
+
+        import grpc.experimental.eventlet
+        grpc.experimental.eventlet.init_eventlet()
+
+        import tests
+        loader = tests.Loader()
+        loader.loadTestsFromNames(['tests'])
+        runner = tests.Runner()
+        skip = self.BANNED_TESTS
+        if sys.platform == 'win32':
+            skip += self.BANNED_WINDOWS_TESTS
+        runner.skip_tests(skip)
+
+        greenthread = eventlet.spawn(runner.run, loader.suite)
+        result = greenthread.wait()
+        if not result.wasSuccessful():
+            sys.exit('Test failure')
+
+
 class RunInterop(test.test):
 
     description = 'run interop test client/server'
