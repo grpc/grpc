@@ -14,6 +14,7 @@
 """Tests behavior of the grpc.aio.Channel class."""
 
 import logging
+import os
 import threading
 import unittest
 
@@ -82,6 +83,8 @@ class TestChannel(AioTestBase):
             self.assertIsNotNone(
                 exception_context.exception.trailing_metadata())
 
+    @unittest.skipIf(os.name == 'nt',
+            'TODO: https://github.com/grpc/grpc/issues/21658')
     async def test_unary_call_does_not_times_out(self):
         async with aio.insecure_channel(self._server_target) as channel:
             hi = channel.unary_unary(
