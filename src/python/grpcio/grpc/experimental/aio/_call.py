@@ -280,12 +280,11 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
 
     # pylint: disable=too-many-arguments
     def __init__(self, request: RequestType, deadline: Optional[float],
-                metadata: Optional[MetadataType],
+                 metadata: Optional[MetadataType],
                  credentials: Optional[grpc.CallCredentials],
                  channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
-        channel.call(method, deadline, credentials)
         super().__init__(channel.call(method, deadline, credentials))
         self._request = request
         self._metadata = metadata

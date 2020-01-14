@@ -106,15 +106,16 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
     def __init__(  # pylint: disable=R0913
             self, interceptors: Sequence[UnaryUnaryClientInterceptor],
             request: RequestType, timeout: Optional[float],
-            metadata: Optional[MetadataType], credentials: Optional[grpc.CallCredentials],
+            metadata: Optional[MetadataType],
+            credentials: Optional[grpc.CallCredentials],
             channel: cygrpc.AioChannel, method: bytes,
             request_serializer: SerializingFunction,
             response_deserializer: DeserializingFunction) -> None:
         self._channel = channel
         self._loop = asyncio.get_event_loop()
         self._interceptors_task = asyncio.ensure_future(
-            self._invoke(interceptors, method, timeout, metadata, credentials, request,
-                         request_serializer, response_deserializer))
+            self._invoke(interceptors, method, timeout, metadata, credentials,
+                         request, request_serializer, response_deserializer))
 
     def __del__(self):
         self.cancel()
@@ -153,7 +154,7 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
                     client_call_details.method, request_serializer,
                     response_deserializer)
 
-        client_call_details = ClientCallDetails(method, timeout, None,
+        client_call_details = ClientCallDetails(method, timeout, metadata,
                                                 credentials)
         return await _run_interceptor(iter(interceptors), client_call_details,
                                       request)
