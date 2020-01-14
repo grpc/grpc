@@ -70,6 +70,12 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
 }
 
 void TraceFlagList::Add(TraceFlag* flag) {
+  // TODO(yashykt): This loop is present to sidestep https://github.com/grpc/grpc/issues/21213. Remove it when either Makefile is fixed, or it's deprecated.
+  for (TraceFlag* t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+    if (t == flag) {
+      return;
+    }
+  }
   flag->next_tracer_ = root_tracer_;
   root_tracer_ = flag;
 }
