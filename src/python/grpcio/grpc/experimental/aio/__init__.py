@@ -22,15 +22,14 @@ from typing import Any, Optional, Sequence, Text, Tuple
 import six
 
 import grpc
-from grpc._cython.cygrpc import init_grpc_aio
+from grpc._cython.cygrpc import init_grpc_aio, AbortError
 
-from ._base_call import RpcContext, Call, UnaryUnaryCall, UnaryStreamCall
+from ._base_call import Call, RpcContext, UnaryStreamCall, UnaryUnaryCall
 from ._call import AioRpcError
-from ._channel import Channel
-from ._channel import UnaryUnaryMultiCallable
-from ._interceptor import ClientCallDetails, UnaryUnaryClientInterceptor
-from ._interceptor import InterceptedUnaryUnaryCall
-from ._server import server, Server
+from ._channel import Channel, UnaryUnaryMultiCallable
+from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
+                           UnaryUnaryClientInterceptor)
+from ._server import Server, server
 
 
 def insecure_channel(
@@ -87,4 +86,5 @@ __all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
            'UnaryStreamCall', 'init_grpc_aio', 'Channel',
            'UnaryUnaryMultiCallable', 'ClientCallDetails',
            'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
-           'insecure_channel', 'secure_channel', 'server')
+           'insecure_channel', 'secure_channel', 'server', 'Server',
+           'AbortError')

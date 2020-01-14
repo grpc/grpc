@@ -14,6 +14,7 @@
 
 
 import inspect
+import traceback
 
 
 # TODO(https://github.com/grpc/grpc/issues/20850) refactor this.
@@ -34,6 +35,9 @@ cdef class RPCState:
         self.server = server
         grpc_metadata_array_init(&self.request_metadata)
         grpc_call_details_init(&self.details)
+        self.abort_exception = None
+        self.metadata_sent = False
+        self.status_sent = False
 
     cdef bytes method(self):
       return _slice_bytes(self.details.method)
@@ -46,10 +50,25 @@ cdef class RPCState:
             grpc_call_unref(self.call)
 
 
+# TODO(lidiz) inherit this from Python level `AioRpcStatus`, we need to improve
+# current code structure to make it happen.
+class AbortError(Exception): pass
+
+
+def _raise_if_aborted(RPCState rpc_state):
+    """Raise AbortError if RPC is aborted.
+
+    Server method handlers may suppress the abort exception. We need to halt
+    the RPC execution in that case. This function needs to be called after
+    running application code.
+    """
+    if rpc_state.abort_exception is not None:
+        raise rpc_state.abort_exception
+
+
 cdef class _ServicerContext:
     cdef RPCState _rpc_state
     cdef object _loop
-    cdef bint _metadata_sent
     cdef object _request_deserializer
     cdef object _response_serializer
 
@@ -62,27 +81,56 @@ cdef class _ServicerContext:
         self._request_deserializer = request_deserializer
         self._response_serializer = response_serializer
         self._loop = loop
-        self._metadata_sent = False
 
     async def read(self):
+        if self._rpc_state.status_sent:
+            raise RuntimeError('RPC already finished.')
         cdef bytes raw_message = await _receive_message(self._rpc_state, self._loop)
         return deserialize(self._request_deserializer,
                            raw_message)
 
     async def write(self, object message):
+        if self._rpc_state.status_sent:
+            raise RuntimeError('RPC already finished.')
         await _send_message(self._rpc_state,
                             serialize(self._response_serializer, message),
-                            self._metadata_sent,
+                            self._rpc_state.metadata_sent,
                             self._loop)
-        if not self._metadata_sent:
-            self._metadata_sent = True
+        if not self._rpc_state.metadata_sent:
+            self._rpc_state.metadata_sent = True
 
     async def send_initial_metadata(self, tuple metadata):
-        if self._metadata_sent:
+        if self._rpc_state.status_sent:
+            raise RuntimeError('RPC already finished.')
+        elif self._rpc_state.metadata_sent:
             raise RuntimeError('Send initial metadata failed: already sent')
         else:
             _send_initial_metadata(self._rpc_state, self._loop)
-            self._metadata_sent = True
+            self._rpc_state.metadata_sent = True
+
+    async def abort(self,
+              object code,
+              str details='',
+              tuple trailing_metadata=_EMPTY_METADATA):
+        if self._rpc_state.abort_exception is not None:
+            raise RuntimeError('Abort already called!')
+        else:
+            # Keeps track of the exception object. After abort happen, the RPC
+            # should stop execution. However, if users decided to suppress it, it
+            # could lead to undefined behavior.
+            self._rpc_state.abort_exception = AbortError('Locally aborted.')
+
+            self._rpc_state.status_sent = True
+            await _send_error_status_from_server(
+                self._rpc_state,
+                code.value[0],
+                details,
+                trailing_metadata,
+                self._rpc_state.metadata_sent,
+                self._loop
+            )
+
+            raise self._rpc_state.abort_exception
 
 
 cdef _find_method_handler(str method, list generic_handlers):
@@ -120,6 +168,9 @@ async def _handle_unary_unary_rpc(object method_handler,
         ),
     )
 
+    # Raises exception if aborted
+    _raise_if_aborted(rpc_state)
+
     # Serializes the response message
     cdef bytes response_raw = serialize(
         method_handler.response_serializer,
@@ -137,6 +188,7 @@ async def _handle_unary_unary_rpc(object method_handler,
         SendInitialMetadataOperation(None, _EMPTY_FLAGS),
         SendMessageOperation(response_raw, _EMPTY_FLAGS),
     )
+    rpc_state.status_sent = True
     await execute_batch(rpc_state, send_ops, loop)
 
 
@@ -167,6 +219,9 @@ async def _handle_unary_stream_rpc(object method_handler,
             request_message,
             servicer_context,
         )
+
+        # Raises exception if aborted
+        _raise_if_aborted(rpc_state)
     else:
         # The handler uses async generator API
         async_response_generator = method_handler.unary_stream(
@@ -176,6 +231,9 @@ async def _handle_unary_stream_rpc(object method_handler,
 
         # Consumes messages from the generator
         async for response_message in async_response_generator:
+            # Raises exception if aborted
+            _raise_if_aborted(rpc_state)
+
             if rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
                 # The async generator might yield much much later after the
                 # server is destroied. If we proceed, Core will crash badly.
@@ -193,7 +251,38 @@ async def _handle_unary_stream_rpc(object method_handler,
     )
 
     cdef tuple ops = (op,)
+    rpc_state.status_sent = True
     await execute_batch(rpc_state, ops, loop)
+
+
+async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
+    try:
+        try:
+            await rpc_coro
+        except AbortError as e:
+            # Caught AbortError check if it is the same one
+            assert rpc_state.abort_exception is e, 'Abort error has been replaced!'
+            return
+        else:
+            # Check if the abort exception got suppressed
+            if rpc_state.abort_exception is not None:
+                _LOGGER.error(
+                    'Abort error unexpectedly suppressed: %s',
+                    traceback.format_exception(rpc_state.abort_exception)
+                )
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        _LOGGER.exception(e)
+        if not rpc_state.status_sent and rpc_state.server._status != AIO_SERVER_STATUS_STOPPED:
+            await _send_error_status_from_server(
+                rpc_state,
+                StatusCode.unknown,
+                '%s: %s' % (type(e), e),
+                _EMPTY_METADATA,
+                rpc_state.metadata_sent,
+                loop
+            )
 
 
 async def _handle_cancellation_from_core(object rpc_task,
@@ -213,7 +302,11 @@ async def _schedule_rpc_coro(object rpc_coro,
                              RPCState rpc_state,
                              object loop):
     # Schedules the RPC coroutine.
-    cdef object rpc_task = loop.create_task(rpc_coro)
+    cdef object rpc_task = loop.create_task(_handle_exceptions(
+        rpc_state,
+        rpc_coro,
+        loop,
+    ))
     await _handle_cancellation_from_core(rpc_task, rpc_state, loop)
 
 
@@ -224,14 +317,25 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
         generic_handlers,
     )
     if method_handler is None:
-        # TODO(lidiz) return unimplemented error to client side
-        raise NotImplementedError()
+        rpc_state.status_sent = True
+        await _send_error_status_from_server(
+            rpc_state,
+            StatusCode.unimplemented,
+            b'Method not found!',
+            _EMPTY_METADATA,
+            rpc_state.metadata_sent,
+            loop
+        )
+        return
 
     # TODO(lidiz) extend to all 4 types of RPC
     if not method_handler.request_streaming and method_handler.response_streaming:
-        await _handle_unary_stream_rpc(method_handler,
-                                       rpc_state,
-                                       loop)
+        try:
+            await _handle_unary_stream_rpc(method_handler,
+                                        rpc_state,
+                                        loop)
+        except Exception as e:
+            raise
     elif not method_handler.request_streaming and not method_handler.response_streaming:
         await _handle_unary_unary_rpc(method_handler,
                                       rpc_state,
