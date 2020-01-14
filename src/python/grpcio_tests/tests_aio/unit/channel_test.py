@@ -103,22 +103,6 @@ class TestChannel(AioTestBase):
                       timeout=UNARY_CALL_WITH_SLEEP_VALUE * 5)
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
-    async def test_unary_call_metadata(self):
-        async with aio.insecure_channel(self._server_target) as channel:
-            hi = channel.unary_unary(
-                _UNARY_CALL_METHOD,
-                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
-                response_deserializer=messages_pb2.SimpleResponse.FromString)
-            call = hi(messages_pb2.SimpleRequest(),
-                      metadata=_INVOCATION_METADATA)
-            initial_metadata = await call.initial_metadata()
-            trailing_metadata = await call.trailing_metadata()
-
-            self.assertIsInstance(initial_metadata, tuple)
-            self.assertEqual(_INVOCATION_METADATA[0], initial_metadata[0])
-            self.assertIsInstance(trailing_metadata, tuple)
-            self.assertEqual(_INVOCATION_METADATA[1], trailing_metadata[0])
-
     async def test_unary_stream(self):
         channel = aio.insecure_channel(self._server_target)
         stub = test_pb2_grpc.TestServiceStub(channel)
