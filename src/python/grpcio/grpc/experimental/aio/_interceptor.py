@@ -106,24 +106,25 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
     def __init__(  # pylint: disable=R0913
             self, interceptors: Sequence[UnaryUnaryClientInterceptor],
             request: RequestType, timeout: Optional[float],
+            credentials: Optional[grpc.CallCredentials],
             channel: cygrpc.AioChannel, method: bytes,
             request_serializer: SerializingFunction,
             response_deserializer: DeserializingFunction) -> None:
         self._channel = channel
         self._loop = asyncio.get_event_loop()
         self._interceptors_task = asyncio.ensure_future(
-            self._invoke(interceptors, method, timeout, request,
+            self._invoke(interceptors, method, timeout, credentials, request,
                          request_serializer, response_deserializer))
 
     def __del__(self):
         self.cancel()
 
-    async def _invoke(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
-                      method: bytes, timeout: Optional[float],
-                      request: RequestType,
-                      request_serializer: SerializingFunction,
-                      response_deserializer: DeserializingFunction
-                     ) -> UnaryUnaryCall:
+    async def _invoke(  # pylint: disable=R0913
+            self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+            method: bytes, timeout: Optional[float],
+            credentials: Optional[grpc.CallCredentials], request: RequestType,
+            request_serializer: SerializingFunction,
+            response_deserializer: DeserializingFunction) -> UnaryUnaryCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
@@ -147,10 +148,12 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             else:
                 return UnaryUnaryCall(
                     request, _timeout_to_deadline(client_call_details.timeout),
-                    self._channel, client_call_details.method,
-                    request_serializer, response_deserializer)
+                    client_call_details.credentials, self._channel,
+                    client_call_details.method, request_serializer,
+                    response_deserializer)
 
-        client_call_details = ClientCallDetails(method, timeout, None, None)
+        client_call_details = ClientCallDetails(method, timeout, None,
+                                                credentials)
         return await _run_interceptor(iter(interceptors), client_call_details,
                                       request)
 

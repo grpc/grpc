@@ -17,6 +17,7 @@ import logging
 import datetime
 
 import grpc
+
 from grpc.experimental import aio
 from tests.unit.framework.common import test_constants
 from src.proto.grpc.testing import messages_pb2
@@ -51,7 +52,7 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
         return messages_pb2.SimpleResponse()
 
 
-async def start_test_server():
+async def start_test_server(secure=False):
     server = aio.server(options=(('grpc.so_reuseport', 0),))
     servicer = _TestServiceServicer()
     test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
@@ -70,7 +71,13 @@ async def start_test_server():
         'grpc.testing.TestService', rpc_method_handlers)
     server.add_generic_rpc_handlers((extra_handler,))
 
-    port = server.add_insecure_port('[::]:0')
+    if secure:
+        server_credentials = grpc.local_server_credentials(
+            grpc.LocalConnectionType.LOCAL_TCP)
+        port = server.add_secure_port('[::]:0', server_credentials)
+    else:
+        port = server.add_insecure_port('[::]:0')
+
     await server.start()
     # NOTE(lidizheng) returning the server to prevent it from deallocation
     return 'localhost:%d' % port, server

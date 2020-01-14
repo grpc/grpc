@@ -398,6 +398,33 @@ class TestUnaryStreamCall(AioTestBase):
             with self.assertRaises(asyncio.CancelledError):
                 await task
 
+    def test_call_credentials(self):
+
+        class DummyAuth(grpc.AuthMetadataPlugin):
+
+            def __call__(self, context, callback):
+                signature = context.method_name[::-1]
+                callback((("test", signature),), None)
+
+        async def coro():
+            server_target, _ = await start_test_server(secure=False)  # pylint: disable=unused-variable
+
+            async with aio.insecure_channel(server_target) as channel:
+                hi = channel.unary_unary('/grpc.testing.TestService/UnaryCall',
+                                         request_serializer=messages_pb2.
+                                         SimpleRequest.SerializeToString,
+                                         response_deserializer=messages_pb2.
+                                         SimpleResponse.FromString)
+                call_credentials = grpc.metadata_call_credentials(DummyAuth())
+                call = hi(messages_pb2.SimpleRequest(),
+                          credentials=call_credentials)
+                response = await call
+
+                self.assertIsInstance(response, messages_pb2.SimpleResponse)
+                self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+        self.loop.run_until_complete(coro())
+
 
 if __name__ == '__main__':
     logging.basicConfig()

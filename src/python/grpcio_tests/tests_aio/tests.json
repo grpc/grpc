@@ -6,6 +6,7 @@
   "unit.channel_argument_test.TestChannelArgument",
   "unit.channel_test.TestChannel",
   "unit.init_test.TestInsecureChannel",
+  "unit.init_test.TestSecureChannel",
   "unit.interceptor_test.TestInterceptedUnaryUnaryCall",
   "unit.interceptor_test.TestUnaryUnaryClientInterceptor",
   "unit.server_test.TestServer"

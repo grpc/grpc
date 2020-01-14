@@ -260,16 +260,24 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     _call: asyncio.Task
     _cython_call: cygrpc._AioCall
 
-    def __init__(self, request: RequestType, deadline: Optional[float],
-                 channel: cygrpc.AioChannel, method: bytes,
-                 request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction) -> None:
+    def __init__(  # pylint: disable=R0913
+            self, request: RequestType, deadline: Optional[float],
+            credentials: Optional[grpc.CallCredentials],
+            channel: cygrpc.AioChannel, method: bytes,
+            request_serializer: SerializingFunction,
+            response_deserializer: DeserializingFunction) -> None:
         super().__init__()
         self._request = request
         self._channel = channel
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._cython_call = self._channel.call(method, deadline)
+
+        if credentials is not None:
+            grpc_credentials = credentials._credentials
+        else:
+            grpc_credentials = None
+        self._cython_call = self._channel.call(method, deadline,
+                                               grpc_credentials)
         self._call = self._loop.create_task(self._invoke())
 
     def __del__(self) -> None:
@@ -345,10 +353,12 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
     _send_unary_request_task: asyncio.Task
     _message_aiter: AsyncIterable[ResponseType]
 
-    def __init__(self, request: RequestType, deadline: Optional[float],
-                 channel: cygrpc.AioChannel, method: bytes,
-                 request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction) -> None:
+    def __init__(  # pylint: disable=R0913
+            self, request: RequestType, deadline: Optional[float],
+            credentials: Optional[grpc.CallCredentials],
+            channel: cygrpc.AioChannel, method: bytes,
+            request_serializer: SerializingFunction,
+            response_deserializer: DeserializingFunction) -> None:
         super().__init__()
         self._request = request
         self._channel = channel
@@ -357,7 +367,14 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         self._send_unary_request_task = self._loop.create_task(
             self._send_unary_request())
         self._message_aiter = self._fetch_stream_responses()
-        self._cython_call = self._channel.call(method, deadline)
+
+        if credentials is not None:
+            grpc_credentials = credentials._credentials
+        else:
+            grpc_credentials = None
+
+        self._cython_call = self._channel.call(method, deadline,
+                                               grpc_credentials)
 
     def __del__(self) -> None:
         if not self._status.done():

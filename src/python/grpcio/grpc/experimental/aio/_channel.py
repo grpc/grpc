@@ -85,13 +85,9 @@ class UnaryUnaryMultiCallable:
         if metadata:
             raise NotImplementedError("TODO: metadata not implemented yet")
 
-        if credentials:
-            raise NotImplementedError("TODO: credentials not implemented yet")
-
         if wait_for_ready:
             raise NotImplementedError(
                 "TODO: wait_for_ready not implemented yet")
-
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -99,6 +95,7 @@ class UnaryUnaryMultiCallable:
             return UnaryUnaryCall(
                 request,
                 _timeout_to_deadline(timeout),
+                credentials,
                 self._channel,
                 self._method,
                 self._request_serializer,
@@ -109,6 +106,7 @@ class UnaryUnaryMultiCallable:
                 self._interceptors,
                 request,
                 timeout,
+                credentials,
                 self._channel,
                 self._method,
                 self._request_serializer,
@@ -158,9 +156,6 @@ class UnaryStreamMultiCallable:
         if metadata:
             raise NotImplementedError("TODO: metadata not implemented yet")
 
-        if credentials:
-            raise NotImplementedError("TODO: credentials not implemented yet")
-
         if wait_for_ready:
             raise NotImplementedError(
                 "TODO: wait_for_ready not implemented yet")
@@ -173,6 +168,7 @@ class UnaryStreamMultiCallable:
         return UnaryStreamCall(
             request,
             deadline,
+            credentials,
             self._channel,
             self._method,
             self._request_serializer,
@@ -204,9 +200,6 @@ class Channel:
             intercepting any RPC executed with that channel.
         """
 
-        if credentials:
-            raise NotImplementedError("TODO: credentials not implemented yet")
-
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -228,7 +221,8 @@ class Channel:
                     "UnaryUnaryClientInterceptors, the following are invalid: {}"\
                     .format(invalid_interceptors))
 
-        self._channel = cygrpc.AioChannel(_common.encode(target), options)
+        self._channel = cygrpc.AioChannel(_common.encode(target), options,
+                                          credentials)
 
     def unary_unary(
             self,
