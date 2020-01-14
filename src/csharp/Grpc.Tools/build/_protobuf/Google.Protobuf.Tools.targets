@@ -242,6 +242,7 @@
     <ItemGroup>
       <Protobuf_Compile>
         <_OutputOptions Condition=" '%(Protobuf_Compile.Access)' == 'Internal' ">%(Protobuf_Compile._OutputOptions);internal_access</_OutputOptions>
+        <_OutputOptions Condition=" '%(Protobuf_Compile.UseBufferSerialization)' == 'true' ">%(Protobuf_Compile._OutputOptions);use_buffer_serialization</_OutputOptions>
       </Protobuf_Compile>
     </ItemGroup>
   </Target>

@@ -39,6 +39,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     bool generate_client = true;
     bool generate_server = true;
     bool internal_access = false;
+    bool use_buffer_serialization = false;
     for (size_t i = 0; i < options.size(); i++) {
       if (options[i].first == "no_client") {
         generate_client = false;
@@ -46,6 +47,8 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         generate_server = false;
       } else if (options[i].first == "internal_access") {
         internal_access = true;
+      } else if (options[i].first == "use_buffer_serialization") {
+        use_buffer_serialization = true;
       } else {
         *error = "Unknown generator option: " + options[i].first;
         return false;
@@ -53,7 +56,8 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     grpc::string code = grpc_csharp_generator::GetServices(
-        file, generate_client, generate_server, internal_access);
+        file, generate_client, generate_server, internal_access,
+        use_buffer_serialization);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
     }

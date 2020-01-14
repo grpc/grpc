@@ -334,7 +334,7 @@ The following metadata are recognized on the `<Protobuf>` items.
 
 __Notes__
 
-* __ProtoRoot__  
+* __ProtoRoot__
 For files _inside_ the project cone, `ProtoRoot` is set by default to the
 project directory. For every file _outside_ of the project directory, the value
 is set to this file's containing directory name, individually per file. If you
@@ -342,7 +342,7 @@ include a subtree of proto files that lies outside of the project directory, you
 need to set this metadatum. There is an example in this file above. The path in
 this variable is relative to the project directory.
 
-* __OutputDir__  
+* __OutputDir__
 The default value for this metadatum is the value of the property
 `Protobuf_OutputPath`. This property, in turn, unless you set it in your
 project, will be set to the value of the standard MSBuild property
@@ -350,10 +350,10 @@ project, will be set to the value of the standard MSBuild property
 outputs, such as "obj/Release/netstandard1.5/". The path in this property is
 considered relative to the project directory.
 
-* __GrpcOutputDir__  
+* __GrpcOutputDir__
 Unless explicitly set, will follow `OutputDir` for any given file.
 
-* __Access__  
+* __Access__
 Sets generated class access on _both_ generated message and gRPC stub classes.
 
 `grpc_csharp_plugin` command line options
@@ -367,12 +367,11 @@ to perform code generation. Here is an overview of the available `grpc_csharp_pl
 | no_client       | off       | Don't generate the client stub                           |
 | no_server       | off       | Don't generate the server-side stub                      |
 | internal_access | off       | Generate classes with "internal" visibility              |
-| lite_client     | off       | Generate client stubs that inherit from "LiteClientBase" |
 
 Note that the protocol buffer compiler has a special commandline syntax for plugin options.
 Example:
 ```
 protoc --plugin=protoc-gen-grpc=grpc_csharp_plugin --csharp_out=OUT_DIR \
-    --grpc_out=OUT_DIR --grpc_opt=lite_client,no_server \
+    --grpc_out=OUT_DIR --grpc_opt=no_server \
     -I INCLUDE_DIR foo.proto
 ```

@@ -671,7 +671,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
 
 void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool generate_client, bool generate_server,
-                     bool internal_access) {
+                     bool internal_access, bool use_buffer_serialization) {
   GenerateDocCommentBody(out, service);
   out->Print("$access_level$ static partial class $classname$\n",
              "access_level", GetAccessLevel(internal_access), "classname",
@@ -707,7 +707,8 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
 }  // anonymous namespace
 
 grpc::string GetServices(const FileDescriptor* file, bool generate_client,
-                         bool generate_server, bool internal_access) {
+                         bool generate_server, bool internal_access,
+                         bool use_buffer_serialization) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -749,7 +750,7 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
     }
     for (int i = 0; i < file->service_count(); i++) {
       GenerateService(&out, file->service(i), generate_client, generate_server,
-                      internal_access);
+                      internal_access, use_buffer_serialization);
     }
     if (file_namespace != "") {
       out.Outdent();
