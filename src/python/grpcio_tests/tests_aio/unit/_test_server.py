@@ -26,11 +26,12 @@ from tests_aio.unit._constants import UNARY_CALL_WITH_SLEEP_VALUE
 
 class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
-    async def UnaryCall(self, request, context):
+    async def UnaryCall(self, unused_request, unused_context):
         return messages_pb2.SimpleResponse()
 
     async def StreamingOutputCall(
-            self, request: messages_pb2.StreamingOutputCallRequest, context):
+            self, request: messages_pb2.StreamingOutputCallRequest,
+            unused_context):
         for response_parameters in request.response_parameters:
             if response_parameters.interval_us != 0:
                 await asyncio.sleep(
@@ -44,10 +45,29 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
     # Next methods are extra ones that are registred programatically
     # when the sever is instantiated. They are not being provided by
     # the proto file.
-
     async def UnaryCallWithSleep(self, request, context):
         await asyncio.sleep(UNARY_CALL_WITH_SLEEP_VALUE)
         return messages_pb2.SimpleResponse()
+
+    async def StreamingInputCall(self, request_async_iterator, unused_context):
+        aggregate_size = 0
+        async for request in request_async_iterator:
+            if request.payload is not None and request.payload.body:
+                aggregate_size += len(request.payload.body)
+        return messages_pb2.StreamingInputCallResponse(
+            aggregated_payload_size=aggregate_size)
+
+    async def FullDuplexCall(self, request_async_iterator, unused_context):
+        async for request in request_async_iterator:
+            for response_parameters in request.response_parameters:
+                if response_parameters.interval_us != 0:
+                    await asyncio.sleep(
+                        datetime.timedelta(microseconds=response_parameters.
+                                           interval_us).total_seconds())
+                yield messages_pb2.StreamingOutputCallResponse(
+                    payload=messages_pb2.Payload(type=request.payload.type,
+                                                 body=b'\x00' *
+                                                 response_parameters.size))
 
 
 async def start_test_server(secure=False):

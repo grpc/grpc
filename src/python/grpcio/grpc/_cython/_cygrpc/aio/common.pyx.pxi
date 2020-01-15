@@ -33,3 +33,24 @@ cdef bytes serialize(object serializer, object message):
         return serializer(message)
     else:
         return message
+
+
+class _EOF:
+
+    def __bool__(self):
+        return False
+    
+    def __len__(self):
+        return 0
+
+    def _repr(self) -> str:
+        return '<grpc.aio.EOF>'
+
+    def __repr__(self) -> str:
+        return self._repr()
+
+    def __str__(self) -> str:
+        return self._repr()
+
+
+EOF = _EOF()

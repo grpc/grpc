@@ -22,7 +22,7 @@ from typing import Any, Optional, Sequence, Text, Tuple
 import six
 
 import grpc
-from grpc._cython.cygrpc import init_grpc_aio, AbortError
+from grpc._cython.cygrpc import EOF, AbortError, init_grpc_aio
 
 from ._base_call import Call, RpcContext, UnaryStreamCall, UnaryUnaryCall
 from ._call import AioRpcError
@@ -86,5 +86,5 @@ __all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
            'UnaryStreamCall', 'init_grpc_aio', 'Channel',
            'UnaryUnaryMultiCallable', 'ClientCallDetails',
            'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
-           'insecure_channel', 'secure_channel', 'server', 'Server',
+           'insecure_channel', 'server', 'Server', 'EOF', 'secure_channel',
            'AbortError')

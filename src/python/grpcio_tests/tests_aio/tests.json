@@ -2,6 +2,8 @@
   "_sanity._sanity_test.AioSanityTest",
   "unit.abort_test.TestAbort",
   "unit.aio_rpc_error_test.TestAioRpcError",
+  "unit.call_test.TestStreamStreamCall",
+  "unit.call_test.TestStreamUnaryCall",
   "unit.call_test.TestUnaryStreamCall",
   "unit.call_test.TestUnaryUnaryCall",
   "unit.channel_argument_test.TestChannelArgument",
