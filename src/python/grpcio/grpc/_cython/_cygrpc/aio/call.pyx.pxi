@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-import grpc
-
 
 _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
