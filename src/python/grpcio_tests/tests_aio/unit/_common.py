@@ -16,7 +16,7 @@ from grpc.experimental.aio._typing import MetadataType, MetadatumType
 
 
 def seen_metadata(expected: MetadataType, actual: MetadataType):
-    return bool(set(expected) - set(actual))
+    return not bool(set(expected) - set(actual))
 
 
 def seen_metadatum(expected: MetadatumType, actual: MetadataType):

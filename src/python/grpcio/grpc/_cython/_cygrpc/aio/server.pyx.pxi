@@ -138,6 +138,9 @@ cdef class _ServicerContext:
             # could lead to undefined behavior.
             self._rpc_state.abort_exception = AbortError('Locally aborted.')
 
+            if trailing_metadata == _EMPTY_METADATA and self._rpc_state.trailing_metadata:
+                trailing_metadata = self._rpc_state.trailing_metadata
+
             self._rpc_state.status_sent = True
             await _send_error_status_from_server(
                 self._rpc_state,
@@ -210,8 +213,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     if not rpc_state.metadata_sent:
         finish_ops = prepend_send_initial_metadata_op(
             finish_ops,
-            None
-        )
+            None)
     rpc_state.metadata_sent = True
     rpc_state.status_sent = True
     await execute_batch(rpc_state, finish_ops, loop)
@@ -223,7 +225,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
                                                 _ServicerContext servicer_context,
                                                 object loop):
     """Finishes server method handler with multiple responses.
-    
+
     This function executes the application handler, and handles response
     sending, as well as errors. It is shared between unary-stream and
     stream-stream handlers.
@@ -261,7 +263,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
 
     # Sends the final status of this RPC
     cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
-        None,
+        rpc_state.trailing_metadata,
         StatusCode.ok,
         b'',
         _EMPTY_FLAGS,
@@ -422,8 +424,8 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
             await _send_error_status_from_server(
                 rpc_state,
                 StatusCode.unknown,
-                '%s: %s' % (type(e), e),
-                _EMPTY_METADATA,
+                'Unexpected %s: %s' % (type(e), e),
+                rpc_state.trailing_metadata,
                 rpc_state.metadata_sent,
                 loop
             )

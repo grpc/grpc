@@ -220,6 +220,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
     async def initiate_unary_stream(self,
                            bytes request,
+                           tuple outbound_initial_metadata,
                            object initial_metadata_observer,
                            object status_observer):
         """Implementation of the start of a unary-stream call."""
@@ -229,7 +230,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
         cdef tuple outbound_ops
         cdef Operation initial_metadata_op = SendInitialMetadataOperation(
-            _EMPTY_METADATA,
+            outbound_initial_metadata,
             GRPC_INITIAL_METADATA_USED_MASK)
         cdef Operation send_message_op = SendMessageOperation(
             request,
@@ -255,7 +256,7 @@ cdef class _AioCall(GrpcCallWrapper):
         )
 
     async def stream_unary(self,
-                           tuple metadata,
+                           tuple outbound_initial_metadata,
                            object metadata_sent_observer,
                            object initial_metadata_observer,
                            object status_observer):
@@ -267,7 +268,7 @@ cdef class _AioCall(GrpcCallWrapper):
         """
         # Sends out initial_metadata ASAP.
         await _send_initial_metadata(self,
-                                     metadata,
+                                     outbound_initial_metadata,
                                      self._loop)
         # Notify upper level that sending messages are allowed now.
         metadata_sent_observer()
@@ -304,7 +305,7 @@ cdef class _AioCall(GrpcCallWrapper):
             return None
 
     async def initiate_stream_stream(self,
-                           tuple metadata,
+                           tuple outbound_initial_metadata,
                            object metadata_sent_observer,
                            object initial_metadata_observer,
                            object status_observer):
@@ -320,7 +321,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
         # Sends out initial_metadata ASAP.
         await _send_initial_metadata(self,
-                                     metadata,
+                                     outbound_initial_metadata,
                                      self._loop)
         # Notify upper level that sending messages are allowed now.   
         metadata_sent_observer()

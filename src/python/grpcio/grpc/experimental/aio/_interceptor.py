@@ -103,13 +103,14 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
     _intercepted_call_created: asyncio.Event
     _interceptors_task: asyncio.Task
 
-    def __init__(  # pylint: disable=R0913
-            self, interceptors: Sequence[UnaryUnaryClientInterceptor],
-            request: RequestType, timeout: Optional[float],
-            metadata: MetadataType, credentials: Optional[grpc.CallCredentials],
-            channel: cygrpc.AioChannel, method: bytes,
-            request_serializer: SerializingFunction,
-            response_deserializer: DeserializingFunction) -> None:
+    # pylint: disable=too-many-arguments
+    def __init__(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+                 request: RequestType, timeout: Optional[float],
+                 metadata: MetadataType,
+                 credentials: Optional[grpc.CallCredentials],
+                 channel: cygrpc.AioChannel, method: bytes,
+                 request_serializer: SerializingFunction,
+                 response_deserializer: DeserializingFunction) -> None:
         self._channel = channel
         self._loop = asyncio.get_event_loop()
         self._interceptors_task = asyncio.ensure_future(
@@ -119,7 +120,8 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
     def __del__(self):
         self.cancel()
 
-    async def _invoke(  # pylint: disable=R0913
+    # pylint: disable=too-many-arguments
+    async def _invoke(
             self, interceptors: Sequence[UnaryUnaryClientInterceptor],
             method: bytes, timeout: Optional[float],
             metadata: Optional[MetadataType],
@@ -289,7 +291,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
         return None
 
     def __await__(self):
-        if False:  # pylint: disable=W0125
+        if False:  # pylint: disable=using-constant-test
             # This code path is never used, but a yield statement is needed
             # for telling the interpreter that __await__ is a generator.
             yield None
