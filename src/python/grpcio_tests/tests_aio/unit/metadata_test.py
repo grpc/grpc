@@ -23,6 +23,7 @@ import grpc
 from grpc.experimental import aio
 
 from tests_aio.unit._test_base import AioTestBase
+from tests_aio.unit import _common
 
 _TEST_CLIENT_TO_SERVER = '/test/TestClientToServer'
 _TEST_SERVER_TO_CLIENT = '/test/TestServerToClient'
@@ -69,21 +70,13 @@ _INVALID_METADATA_TEST_CASES = (
 )
 
 
-def _seen_metadata(expected, actual):
-    metadata_dict = dict(actual)
-    for metadatum in expected:
-        if metadata_dict.get(metadatum[0]) != metadatum[1]:
-            return False
-    return True
-
-
 class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
 
     @staticmethod
     async def _test_client_to_server(request, context):
         assert _REQUEST == request
-        assert _seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
-                              context.invocation_metadata())
+        assert _common.seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
+                             context.invocation_metadata())
         return _RESPONSE
 
     @staticmethod
@@ -120,8 +113,8 @@ class _TestGenericHandlerItself(grpc.GenericRpcHandler):
         return _RESPONSE
 
     def service(self, handler_details):
-        assert _seen_metadata(_INITIAL_METADATA_FOR_GENERIC_HANDLER,
-                              handler_details.invocation_metadata)
+        assert _common.seen_metadata(_INITIAL_METADATA_FOR_GENERIC_HANDLER,
+                             handler_details.invocation_metadata)
         return grpc.unary_unary_rpc_method_handler(self._method)
 
 
