@@ -605,7 +605,6 @@ filegroups:
   uses:
   - gpr_base_headers
   - grpc_base_headers
-  - grpc_client_channel
   - grpc_health_upb
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
