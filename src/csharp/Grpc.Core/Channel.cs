@@ -221,7 +221,7 @@ namespace Grpc.Core
         /// before shutting down the channel to ensure channel shutdown won't impact
         /// the outcome of those remote calls.
         /// </remarks>
-        public async Task ShutdownAsync()
+        public new async Task ShutdownAsync()
         {
             lock (myLock)
             {
@@ -244,6 +244,13 @@ namespace Grpc.Core
             }
 
             await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected override Task ShutdownAsyncCore()
+        {
+            // use the same behavior for ChannelBase.ShutdownAsync as for Channel.Shutdown()
+            return ShutdownAsync();
         }
 
         /// <summary>
