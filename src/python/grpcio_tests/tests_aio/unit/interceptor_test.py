@@ -24,7 +24,6 @@ from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 
-
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 _INITIAL_METADATA_TO_INJECT = (
     (_INITIAL_METADATA_KEY, 'extra info'),

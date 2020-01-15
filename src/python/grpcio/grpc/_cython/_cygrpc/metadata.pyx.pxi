@@ -41,7 +41,7 @@ cdef void _store_c_metadata(
       for index, (key, value) in enumerate(metadata):
         encoded_key = _encode(key)
         encoded_value = value if encoded_key[-4:] == b'-bin' else _encode(value)
-        if type(encoded_value) != bytes:
+        if not isinstance(encoded_value, bytes):
           raise TypeError('Binary metadata key="%s" expected bytes, got %s' % (
             key,
             type(encoded_value)

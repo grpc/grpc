@@ -76,7 +76,7 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
     async def _test_client_to_server(request, context):
         assert _REQUEST == request
         assert _common.seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
-                             context.invocation_metadata())
+                                     context.invocation_metadata())
         return _RESPONSE
 
     @staticmethod
@@ -114,7 +114,7 @@ class _TestGenericHandlerItself(grpc.GenericRpcHandler):
 
     def service(self, handler_details):
         assert _common.seen_metadata(_INITIAL_METADATA_FOR_GENERIC_HANDLER,
-                             handler_details.invocation_metadata)
+                                     handler_details.invocation_metadata)
         return grpc.unary_unary_rpc_method_handler(self._method)
 
 

@@ -197,24 +197,22 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     )
 
     # Assembles the batch operations
-    cdef Operation send_status_op = SendStatusFromServerOperation(
-        rpc_state.trailing_metadata,
-        StatusCode.ok,
-        b'',
-        _EMPTY_FLAGS,
-    )
     cdef tuple finish_ops
+    finish_ops = (
+        SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        SendStatusFromServerOperation(
+            rpc_state.trailing_metadata,
+            StatusCode.ok,
+            b'',
+            _EMPTY_FLAGS,
+        ),
+    )
     if not rpc_state.metadata_sent:
-        finish_ops = (
-            send_status_op,
-            SendInitialMetadataOperation(None, _EMPTY_FLAGS),
-            SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        finish_ops = prepend_send_initial_metadata_op(
+            finish_ops,
+            None
         )
-    else:
-        finish_ops = (
-            send_status_op,
-            SendMessageOperation(response_raw, _EMPTY_FLAGS),
-        )
+    rpc_state.metadata_sent = True
     rpc_state.status_sent = True
     await execute_batch(rpc_state, finish_ops, loop)
 
@@ -271,7 +269,11 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
 
     cdef tuple finish_ops = (op,)
     if not rpc_state.metadata_sent:
-        finish_ops = (op, SendInitialMetadataOperation(None, _EMPTY_FLAGS))
+        finish_ops = prepend_send_initial_metadata_op(
+            finish_ops,
+            None
+        )
+    rpc_state.metadata_sent = True
     rpc_state.status_sent = True
     await execute_batch(rpc_state, finish_ops, loop)
 
