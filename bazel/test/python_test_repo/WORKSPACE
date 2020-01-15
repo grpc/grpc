@@ -1,3 +1,12 @@
+# We use "local_repository()" to test against the checked-out version of gRPC
+# In real life, this would look like this instead:
+# http_archive(
+#     name = "com_github_grpc_grpc",
+#     urls = [
+#         "https://github.com/grpc/grpc/archive/YOUR_GRPC_COMMIT_SHA.tar.gz",
+#     ],
+#     strip_prefix = "grpc-YOUR_GRPC_COMMIT_SHA",
+# )
 local_repository(
     name = "com_github_grpc_grpc",
     path = "../../..",
