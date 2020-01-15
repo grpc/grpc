@@ -96,7 +96,7 @@ cdef class AioChannel:
     def call(self,
              bytes method,
              object deadline,
-             CallCredentials credentials):
+             object python_call_credentials):
         """Assembles a Cython Call object.
 
         Returns:
@@ -105,5 +105,12 @@ cdef class AioChannel:
         if self._status == AIO_CHANNEL_STATUS_DESTROYED:
             # TODO(lidiz) switch to UsageError
             raise RuntimeError('Channel is closed.')
-        cdef _AioCall call = _AioCall(self, deadline, method, credentials)
+
+        cdef CallCredentials cython_call_credentials
+        if python_call_credentials is not None:
+            cython_call_credentials = python_call_credentials._credentials
+        else:
+            cython_call_credentials = None
+
+        cdef _AioCall call = _AioCall(self, deadline, method, cython_call_credentials)
         return call

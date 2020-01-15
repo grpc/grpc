@@ -23,18 +23,18 @@ _EMPTY_METADATA = None
 _UNKNOWN_CANCELLATION_DETAILS = 'RPC cancelled for unknown reason.'
 
 
-cdef class _AioCall:
+cdef class _AioCall(GrpcCallWrapper):
 
     def __cinit__(self,
                   AioChannel channel,
                   object deadline,
                   bytes method,
-                  CallCredentials credentials):
+                  CallCredentials call_credentials):
         self.call = NULL
         self._channel = channel
         self._references = []
         self._loop = asyncio.get_event_loop()
-        self._create_grpc_call(deadline, method, credentials)
+        self._create_grpc_call(deadline, method, call_credentials)
         self._is_locally_cancelled = False
 
     def __dealloc__(self):
@@ -196,9 +196,25 @@ cdef class _AioCall:
             self,
             self._loop
         )
-        return received_message
+        if received_message:
+            return received_message
+        else:
+            return EOF
 
-    async def unary_stream(self,
+    async def send_serialized_message(self, bytes message):
+        """Sends one single raw message in bytes."""
+        await _send_message(self,
+                            message,
+                            True,
+                            self._loop)
+
+    async def send_receive_close(self):
+        """Half close the RPC on the client-side."""
+        cdef SendCloseFromClientOperation op = SendCloseFromClientOperation(_EMPTY_FLAGS)
+        cdef tuple ops = (op,)
+        await execute_batch(self, ops, self._loop)
+
+    async def initiate_unary_stream(self,
                            bytes request,
                            object initial_metadata_observer,
                            object status_observer):
@@ -227,6 +243,83 @@ cdef class _AioCall:
         await execute_batch(self,
                             outbound_ops,
                             self._loop)
+
+        # Receives initial metadata.
+        initial_metadata_observer(
+            await _receive_initial_metadata(self,
+                                            self._loop),
+        )
+
+    async def stream_unary(self,
+                           tuple metadata,
+                           object metadata_sent_observer,
+                           object initial_metadata_observer,
+                           object status_observer):
+        """Actual implementation of the complete unary-stream call.
+        
+        Needs to pay extra attention to the raise mechanism. If we want to
+        propagate the final status exception, then we have to raise it.
+        Othersize, it would end normally and raise `StopAsyncIteration()`.
+        """
+        # Sends out initial_metadata ASAP.
+        await _send_initial_metadata(self,
+                                     metadata,
+                                     self._loop)
+        # Notify upper level that sending messages are allowed now.
+        metadata_sent_observer()
+
+        # Receives initial metadata.
+        initial_metadata_observer(
+            await _receive_initial_metadata(self,
+                                            self._loop),
+        )
+
+        cdef tuple inbound_ops
+        cdef ReceiveMessageOperation receive_message_op = ReceiveMessageOperation(_EMPTY_FLAGS)
+        cdef ReceiveStatusOnClientOperation receive_status_on_client_op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
+        inbound_ops = (receive_message_op, receive_status_on_client_op)
+
+        # Executes all operations in one batch.
+        await execute_batch(self,
+                            inbound_ops,
+                            self._loop)
+
+        status = AioRpcStatus(
+            receive_status_on_client_op.code(),
+            receive_status_on_client_op.details(),
+            receive_status_on_client_op.trailing_metadata(),
+            receive_status_on_client_op.error_string(),
+        )
+        # Reports the final status of the RPC to Python layer. The observer
+        # pattern is used here to unify unary and streaming code path.
+        status_observer(status)
+
+        if status.code() == StatusCode.ok:
+            return receive_message_op.message()
+        else:
+            return None
+
+    async def initiate_stream_stream(self,
+                           tuple metadata,
+                           object metadata_sent_observer,
+                           object initial_metadata_observer,
+                           object status_observer):
+        """Actual implementation of the complete stream-stream call.
+
+        Needs to pay extra attention to the raise mechanism. If we want to
+        propagate the final status exception, then we have to raise it.
+        Othersize, it would end normally and raise `StopAsyncIteration()`.
+        """
+        # Peer may prematurely end this RPC at any point. We need a corutine
+        # that watches if the server sends the final status.
+        self._loop.create_task(self._handle_status_once_received(status_observer))
+
+        # Sends out initial_metadata ASAP.
+        await _send_initial_metadata(self,
+                                     metadata,
+                                     self._loop)
+        # Notify upper level that sending messages are allowed now.   
+        metadata_sent_observer()
 
         # Receives initial metadata.
         initial_metadata_observer(

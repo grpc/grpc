@@ -20,7 +20,8 @@ import traceback
 # TODO(https://github.com/grpc/grpc/issues/20850) refactor this.
 _LOGGER = logging.getLogger(__name__)
 cdef int _EMPTY_FLAG = 0
-
+# TODO(lidiz) Use a designated value other than None.
+cdef str _SERVER_STOPPED_DETAILS = 'Server already stopped.'
 
 cdef class _HandlerCallDetails:
     def __cinit__(self, str method, tuple invocation_metadata):
@@ -35,6 +36,7 @@ cdef class RPCState:
         self.server = server
         grpc_metadata_array_init(&self.request_metadata)
         grpc_call_details_init(&self.details)
+        self.client_closed = False
         self.abort_exception = None
         self.metadata_sent = False
         self.status_sent = False
@@ -83,13 +85,23 @@ cdef class _ServicerContext:
         self._loop = loop
 
     async def read(self):
+        cdef bytes raw_message
+        if self._rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
+            raise RuntimeError(_SERVER_STOPPED_DETAILS)
         if self._rpc_state.status_sent:
             raise RuntimeError('RPC already finished.')
-        cdef bytes raw_message = await _receive_message(self._rpc_state, self._loop)
-        return deserialize(self._request_deserializer,
-                           raw_message)
+        if self._rpc_state.client_closed:
+            return EOF
+        raw_message = await _receive_message(self._rpc_state, self._loop)
+        if raw_message is None:
+            return EOF
+        else:
+            return deserialize(self._request_deserializer,
+                            raw_message)
 
     async def write(self, object message):
+        if self._rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
+            raise RuntimeError(_SERVER_STOPPED_DETAILS)
         if self._rpc_state.status_sent:
             raise RuntimeError('RPC already finished.')
         await _send_message(self._rpc_state,
@@ -102,6 +114,8 @@ cdef class _ServicerContext:
     async def send_initial_metadata(self, tuple metadata):
         if self._rpc_state.status_sent:
             raise RuntimeError('RPC already finished.')
+        elif self._rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
+            raise RuntimeError(_SERVER_STOPPED_DETAILS)
         elif self._rpc_state.metadata_sent:
             raise RuntimeError('Send initial metadata failed: already sent')
         else:
@@ -145,27 +159,23 @@ cdef _find_method_handler(str method, list generic_handlers):
     return None
 
 
-async def _handle_unary_unary_rpc(object method_handler,
-                                  RPCState rpc_state,
-                                  object loop):
-    # Receives request message
-    cdef bytes request_raw = await _receive_message(rpc_state, loop)
-
-    # Deserializes the request message
-    cdef object request_message = deserialize(
-        method_handler.request_deserializer,
-        request_raw,
-    )
-
+async def _finish_handler_with_unary_response(RPCState rpc_state,
+                                              object unary_handler,
+                                              object request,
+                                              _ServicerContext servicer_context,
+                                              object response_serializer,
+                                              object loop):
+    """Finishes server method handler with a single response.
+    
+    This function executes the application handler, and handles response
+    sending, as well as errors. It is shared between unary-unary and
+    stream-unary handlers.
+    """
     # Executes application logic
-    cdef object response_message = await method_handler.unary_unary(
-        request_message,
-        _ServicerContext(
-            rpc_state,
-            None,
-            None,
-            loop,
-        ),
+    
+    cdef object response_message = await unary_handler(
+        request,
+        servicer_context,
     )
 
     # Raises exception if aborted
@@ -173,50 +183,50 @@ async def _handle_unary_unary_rpc(object method_handler,
 
     # Serializes the response message
     cdef bytes response_raw = serialize(
-        method_handler.response_serializer,
+        response_serializer,
         response_message,
     )
 
-    # Sends response message
-    cdef tuple send_ops = (
-        SendStatusFromServerOperation(
-            tuple(),
+    # Assembles the batch operations
+    cdef Operation send_status_op = SendStatusFromServerOperation(
+        tuple(),
             StatusCode.ok,
             b'',
             _EMPTY_FLAGS,
-        ),
-        SendInitialMetadataOperation(None, _EMPTY_FLAGS),
-        SendMessageOperation(response_raw, _EMPTY_FLAGS),
     )
+    cdef tuple finish_ops
+    if not rpc_state.metadata_sent:
+        finish_ops = (
+            send_status_op,
+            SendInitialMetadataOperation(None, _EMPTY_FLAGS),
+            SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        )
+    else:
+        finish_ops = (
+            send_status_op,
+            SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        )
     rpc_state.status_sent = True
-    await execute_batch(rpc_state, send_ops, loop)
+    await execute_batch(rpc_state, finish_ops, loop)
 
 
-async def _handle_unary_stream_rpc(object method_handler,
-                                   RPCState rpc_state,
-                                   object loop):
-    # Receives request message
-    cdef bytes request_raw = await _receive_message(rpc_state, loop)
-
-    # Deserializes the request message
-    cdef object request_message = deserialize(
-        method_handler.request_deserializer,
-        request_raw,
-    )
-
-    cdef _ServicerContext servicer_context = _ServicerContext(
-        rpc_state,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
-        loop,
-    )
-
+async def _finish_handler_with_stream_responses(RPCState rpc_state,
+                                                object stream_handler,
+                                                object request,
+                                                _ServicerContext servicer_context,
+                                                object loop):
+    """Finishes server method handler with multiple responses.
+    
+    This function executes the application handler, and handles response
+    sending, as well as errors. It is shared between unary-stream and
+    stream-stream handlers.
+    """
     cdef object async_response_generator
     cdef object response_message
-    if inspect.iscoroutinefunction(method_handler.unary_stream):
+    if inspect.iscoroutinefunction(stream_handler):
         # The handler uses reader / writer API, returns None.
-        await method_handler.unary_stream(
-            request_message,
+        await stream_handler(
+            request,
             servicer_context,
         )
 
@@ -224,8 +234,8 @@ async def _handle_unary_stream_rpc(object method_handler,
         _raise_if_aborted(rpc_state)
     else:
         # The handler uses async generator API
-        async_response_generator = method_handler.unary_stream(
-            request_message,
+        async_response_generator = stream_handler(
+            request,
             servicer_context,
         )
 
@@ -250,9 +260,132 @@ async def _handle_unary_stream_rpc(object method_handler,
         _EMPTY_FLAGS,
     )
 
-    cdef tuple ops = (op,)
+    cdef tuple finish_ops = (op,)
+    if not rpc_state.metadata_sent:
+        finish_ops = (op, SendInitialMetadataOperation(None, _EMPTY_FLAGS))
     rpc_state.status_sent = True
-    await execute_batch(rpc_state, ops, loop)
+    await execute_batch(rpc_state, finish_ops, loop)
+
+
+async def _handle_unary_unary_rpc(object method_handler,
+                                  RPCState rpc_state,
+                                  object loop):
+    # Receives request message
+    cdef bytes request_raw = await _receive_message(rpc_state, loop)
+
+    # Deserializes the request message
+    cdef object request_message = deserialize(
+        method_handler.request_deserializer,
+        request_raw,
+    )
+
+    # Creates a dedecated ServicerContext
+    cdef _ServicerContext servicer_context = _ServicerContext(
+        rpc_state,
+        None,
+        None,
+        loop,
+    )
+
+    # Finishes the application handler
+    await _finish_handler_with_unary_response(
+        rpc_state,
+        method_handler.unary_unary,
+        request_message,
+        servicer_context,
+        method_handler.response_serializer,
+        loop
+    )
+
+
+async def _handle_unary_stream_rpc(object method_handler,
+                                   RPCState rpc_state,
+                                   object loop):
+    # Receives request message
+    cdef bytes request_raw = await _receive_message(rpc_state, loop)
+
+    # Deserializes the request message
+    cdef object request_message = deserialize(
+        method_handler.request_deserializer,
+        request_raw,
+    )
+
+    # Creates a dedecated ServicerContext
+    cdef _ServicerContext servicer_context = _ServicerContext(
+        rpc_state,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
+        loop,
+    )
+
+    # Finishes the application handler
+    await _finish_handler_with_stream_responses(
+        rpc_state,
+        method_handler.unary_stream,
+        request_message,
+        servicer_context,
+        loop,
+    )
+
+
+async def _message_receiver(_ServicerContext servicer_context):
+    """Bridge between the async generator API and the reader-writer API."""
+    cdef object message
+    while True:
+        message = await servicer_context.read()
+        if message is not EOF:
+            yield message
+        else:
+            break
+
+
+async def _handle_stream_unary_rpc(object method_handler,
+                                   RPCState rpc_state,
+                                   object loop):
+    # Creates a dedecated ServicerContext
+    cdef _ServicerContext servicer_context = _ServicerContext(
+        rpc_state,
+        method_handler.request_deserializer,
+        None,
+        loop,
+    )
+
+    # Prepares the request generator
+    cdef object request_async_iterator = _message_receiver(servicer_context)
+
+    # Finishes the application handler
+    await _finish_handler_with_unary_response(
+        rpc_state,
+        method_handler.stream_unary,
+        request_async_iterator,
+        servicer_context,
+        method_handler.response_serializer,
+        loop
+    )
+
+
+async def _handle_stream_stream_rpc(object method_handler,
+                                    RPCState rpc_state,
+                                    object loop):
+    # Creates a dedecated ServicerContext
+    cdef _ServicerContext servicer_context = _ServicerContext(
+        rpc_state,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
+        loop,
+    )
+
+    # Prepares the request generator
+    cdef object request_async_iterator = _message_receiver(servicer_context)
+
+    # Finishes the application handler
+    await _finish_handler_with_stream_responses(
+        rpc_state,
+        method_handler.stream_stream,
+        request_async_iterator,
+        servicer_context,
+        loop,
+    )
 
 
 async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
@@ -293,6 +426,7 @@ async def _handle_cancellation_from_core(object rpc_task,
 
     # Awaits cancellation from peer.
     await execute_batch(rpc_state, ops, loop)
+    rpc_state.client_closed = True
     if op.cancelled() and not rpc_task.done():
         # Injects `CancelledError` to halt the RPC coroutine
         rpc_task.cancel()
@@ -311,8 +445,9 @@ async def _schedule_rpc_coro(object rpc_coro,
 
 
 async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
+    cdef object method_handler
     # Finds the method handler (application logic)
-    cdef object method_handler = _find_method_handler(
+    method_handler = _find_method_handler(
         rpc_state.method().decode(),
         generic_handlers,
     )
@@ -328,20 +463,33 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
         )
         return
 
-    # TODO(lidiz) extend to all 4 types of RPC
-    if not method_handler.request_streaming and method_handler.response_streaming:
-        try:
-            await _handle_unary_stream_rpc(method_handler,
+    # Handles unary-unary case
+    if not method_handler.request_streaming and not method_handler.response_streaming:
+        await _handle_unary_unary_rpc(method_handler,
                                         rpc_state,
                                         loop)
-        except Exception as e:
-            raise
-    elif not method_handler.request_streaming and not method_handler.response_streaming:
-        await _handle_unary_unary_rpc(method_handler,
-                                      rpc_state,
-                                      loop)
-    else:
-        raise NotImplementedError()
+        return
+
+    # Handles unary-stream case
+    if not method_handler.request_streaming and method_handler.response_streaming:
+        await _handle_unary_stream_rpc(method_handler,
+                                        rpc_state,
+                                        loop)
+        return
+
+    # Handles stream-unary case
+    if method_handler.request_streaming and not method_handler.response_streaming:
+        await _handle_stream_unary_rpc(method_handler,
+                                        rpc_state,
+                                        loop)
+        return
+
+    # Handles stream-stream case
+    if method_handler.request_streaming and method_handler.response_streaming:
+        await _handle_stream_stream_rpc(method_handler,
+                                        rpc_state,
+                                        loop)
+        return
 
 
 class _RequestCallError(Exception): pass

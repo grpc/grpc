@@ -13,14 +13,15 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
-from typing import Any, Optional, Sequence, Text
+from typing import Any, AsyncIterable, Optional, Sequence, Text
 
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
 
 from . import _base_call
-from ._call import UnaryStreamCall, UnaryUnaryCall
+from ._call import (StreamStreamCall, StreamUnaryCall, UnaryStreamCall,
+                    UnaryUnaryCall)
 from ._interceptor import (InterceptedUnaryUnaryCall,
                            UnaryUnaryClientInterceptor)
 from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
@@ -28,8 +29,16 @@ from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
 from ._utils import _timeout_to_deadline
 
 
-class UnaryUnaryMultiCallable:
-    """Factory an asynchronous unary-unary RPC stub call from client-side."""
+class _BaseMultiCallable:
+    """Base class of all multi callable objects.
+
+    Handles the initialization logic and stores common attributes.
+    """
+    _loop: asyncio.AbstractEventLoop
+    _channel: cygrpc.AioChannel
+    _method: bytes
+    _request_serializer: SerializingFunction
+    _response_deserializer: DeserializingFunction
 
     _channel: cygrpc.AioChannel
     _method: bytes
@@ -49,6 +58,10 @@ class UnaryUnaryMultiCallable:
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
         self._interceptors = interceptors
+
+
+class UnaryUnaryMultiCallable(_BaseMultiCallable):
+    """Factory an asynchronous unary-unary RPC stub call from client-side."""
 
     def __call__(self,
                  request: Any,
@@ -114,17 +127,8 @@ class UnaryUnaryMultiCallable:
             )
 
 
-class UnaryStreamMultiCallable:
-    """Afford invoking a unary-stream RPC from client-side in an asynchronous way."""
-
-    def __init__(self, channel: cygrpc.AioChannel, method: bytes,
-                 request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction) -> None:
-        self._channel = channel
-        self._method = method
-        self._request_serializer = request_serializer
-        self._response_deserializer = response_deserializer
-        self._loop = asyncio.get_event_loop()
+class UnaryStreamMultiCallable(_BaseMultiCallable):
+    """Affords invoking a unary-stream RPC from client-side in an asynchronous way."""
 
     def __call__(self,
                  request: Any,
@@ -167,6 +171,122 @@ class UnaryStreamMultiCallable:
 
         return UnaryStreamCall(
             request,
+            deadline,
+            credentials,
+            self._channel,
+            self._method,
+            self._request_serializer,
+            self._response_deserializer,
+        )
+
+
+class StreamUnaryMultiCallable(_BaseMultiCallable):
+    """Affords invoking a stream-unary RPC from client-side in an asynchronous way."""
+
+    def __call__(self,
+                 request_async_iterator: Optional[AsyncIterable[Any]] = None,
+                 timeout: Optional[float] = None,
+                 metadata: Optional[MetadataType] = None,
+                 credentials: Optional[grpc.CallCredentials] = None,
+                 wait_for_ready: Optional[bool] = None,
+                 compression: Optional[grpc.Compression] = None
+                ) -> _base_call.StreamUnaryCall:
+        """Asynchronously invokes the underlying RPC.
+
+        Args:
+          request: The request value for the RPC.
+          timeout: An optional duration of time in seconds to allow
+            for the RPC.
+          metadata: Optional :term:`metadata` to be transmitted to the
+            service-side of the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+
+        Returns:
+          A Call object instance which is an awaitable object.
+
+        Raises:
+          RpcError: Indicating that the RPC terminated with non-OK status. The
+            raised RpcError will also be a Call for the RPC affording the RPC's
+            metadata, status code, and details.
+        """
+
+        if metadata:
+            raise NotImplementedError("TODO: metadata not implemented yet")
+
+        if wait_for_ready:
+            raise NotImplementedError(
+                "TODO: wait_for_ready not implemented yet")
+
+        if compression:
+            raise NotImplementedError("TODO: compression not implemented yet")
+
+        deadline = _timeout_to_deadline(timeout)
+
+        return StreamUnaryCall(
+            request_async_iterator,
+            deadline,
+            credentials,
+            self._channel,
+            self._method,
+            self._request_serializer,
+            self._response_deserializer,
+        )
+
+
+class StreamStreamMultiCallable(_BaseMultiCallable):
+    """Affords invoking a stream-stream RPC from client-side in an asynchronous way."""
+
+    def __call__(self,
+                 request_async_iterator: Optional[AsyncIterable[Any]] = None,
+                 timeout: Optional[float] = None,
+                 metadata: Optional[MetadataType] = None,
+                 credentials: Optional[grpc.CallCredentials] = None,
+                 wait_for_ready: Optional[bool] = None,
+                 compression: Optional[grpc.Compression] = None
+                ) -> _base_call.StreamStreamCall:
+        """Asynchronously invokes the underlying RPC.
+
+        Args:
+          request: The request value for the RPC.
+          timeout: An optional duration of time in seconds to allow
+            for the RPC.
+          metadata: Optional :term:`metadata` to be transmitted to the
+            service-side of the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+
+        Returns:
+          A Call object instance which is an awaitable object.
+
+        Raises:
+          RpcError: Indicating that the RPC terminated with non-OK status. The
+            raised RpcError will also be a Call for the RPC affording the RPC's
+            metadata, status code, and details.
+        """
+
+        if metadata:
+            raise NotImplementedError("TODO: metadata not implemented yet")
+
+        if wait_for_ready:
+            raise NotImplementedError(
+                "TODO: wait_for_ready not implemented yet")
+
+        if compression:
+            raise NotImplementedError("TODO: compression not implemented yet")
+
+        deadline = _timeout_to_deadline(timeout)
+
+        return StreamStreamCall(
+            request_async_iterator,
             deadline,
             credentials,
             self._channel,
@@ -301,21 +421,27 @@ class Channel:
     ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
-                                        response_deserializer)
+                                        response_deserializer, None)
 
     def stream_unary(
             self,
             method: Text,
             request_serializer: Optional[SerializingFunction] = None,
-            response_deserializer: Optional[DeserializingFunction] = None):
-        """Placeholder method for stream-unary calls."""
+            response_deserializer: Optional[DeserializingFunction] = None
+    ) -> StreamUnaryMultiCallable:
+        return StreamUnaryMultiCallable(self._channel, _common.encode(method),
+                                        request_serializer,
+                                        response_deserializer, None)
 
     def stream_stream(
             self,
             method: Text,
             request_serializer: Optional[SerializingFunction] = None,
-            response_deserializer: Optional[DeserializingFunction] = None):
-        """Placeholder method for stream-stream calls."""
+            response_deserializer: Optional[DeserializingFunction] = None
+    ) -> StreamStreamMultiCallable:
+        return StreamStreamMultiCallable(self._channel, _common.encode(method),
+                                         request_serializer,
+                                         response_deserializer, None)
 
     async def _close(self):
         # TODO: Send cancellation status
