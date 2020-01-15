@@ -160,7 +160,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
     def service(self, handler_details):
         self._called.set_result(None)
-        return self._routing_table[handler_details.method]
+        return self._routing_table.get(handler_details.method)
 
     async def wait_for_call(self):
         await self._called
@@ -395,12 +395,11 @@ class TestServer(AioTestBase):
             await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
 
     async def test_unimplemented(self):
-        async with aio.insecure_channel(self._server_target) as channel:
-            call = channel.unary_unary(_UNIMPLEMENTED_METHOD)
-            with self.assertRaises(aio.AioRpcError) as exception_context:
-                await call(_REQUEST)
-            rpc_error = exception_context.exception
-            self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
+        call = self._channel.unary_unary(_UNIMPLEMENTED_METHOD)
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call(_REQUEST)
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
 
 
 if __name__ == '__main__':
