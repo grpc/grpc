@@ -86,7 +86,7 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   s->so_reuseport = true;
   s->resource_quota = grpc_resource_quota_create(nullptr);
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
-    if (!grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, 1)) {
+    if (!grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, true)) {
       s->so_reuseport = false;
     }
     if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
