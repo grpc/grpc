@@ -941,6 +941,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/charconv_bigint.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/charconv_parse.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/escaping.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/escaping.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/memutil.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/memutil.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/ostringstream.cc" role="src" />

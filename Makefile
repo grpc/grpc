@@ -8993,6 +8993,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
+    third_party/abseil-cpp/absl/strings/internal/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/memutil.cc \
     third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
     third_party/abseil-cpp/absl/strings/internal/utf8.cc \
@@ -23398,6 +23399,7 @@ third_party/abseil-cpp/absl/strings/charconv.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/escaping.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/internal/escaping.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/memutil.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/ostringstream.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/utf8.cc: $(OPENSSL_DEP)
