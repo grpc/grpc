@@ -86,8 +86,8 @@ RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt
 RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 
-# Install gcc-4.8 and other relevant items
-RUN apt-get update && apt-get -y install gcc-4.8 gcc-4.8-multilib g++-4.8 g++-4.8-multilib && apt-get clean
+# Install gcc-4.9 and other relevant items
+RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean
 
 # Define the default command.
 CMD ["bash"]
