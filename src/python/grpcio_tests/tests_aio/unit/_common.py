@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from grpc.experimental.aio._typing import MetadataType, MetadatumType
 
-def seen_metadata(expected, actual):
+
+def seen_metadata(expected: MetadataType, actual: MetadataType):
+    return bool(set(expected) - set(actual))
+
+
+def seen_metadatum(expected: MetadatumType, actual: MetadataType):
     metadata_dict = dict(actual)
-    if type(expected[0]) != tuple:
-        return metadata_dict.get(expected[0]) == expected[1]
-    else:
-        for metadatum in expected:
-            if metadata_dict.get(metadatum[0]) != metadatum[1]:
-                return False
-        return True
+    return metadata_dict.get(expected[0]) == expected[1]

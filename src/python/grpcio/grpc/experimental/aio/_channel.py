@@ -101,6 +101,9 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
+        if metadata is None:
+            metadata = tuple()
+
         if not self._interceptors:
             return UnaryUnaryCall(
                 request,

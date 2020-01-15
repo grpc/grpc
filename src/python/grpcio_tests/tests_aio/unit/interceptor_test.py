@@ -546,14 +546,11 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             async def intercept_unary_unary(self, continuation,
                                             client_call_details, request):
-                if client_call_details.metadata is not None:
-                    new_metadata = client_call_details.metadata + _INITIAL_METADATA_TO_INJECT
-                else:
-                    new_metadata = _INITIAL_METADATA_TO_INJECT
                 new_details = aio.ClientCallDetails(
                     method=client_call_details.method,
                     timeout=client_call_details.timeout,
-                    metadata=new_metadata,
+                    metadata=client_call_details.metadata +
+                    _INITIAL_METADATA_TO_INJECT,
                     credentials=client_call_details.credentials,
                 )
                 return await continuation(new_details, request)
@@ -566,13 +563,13 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             # Expected to see the echoed initial metadata
             self.assertTrue(
-                _common.seen_metadata(_INITIAL_METADATA_TO_INJECT[0], await
-                                      call.initial_metadata()))
+                _common.seen_metadatum(_INITIAL_METADATA_TO_INJECT[0], await
+                                       call.initial_metadata()))
 
             # Expected to see the echoed trailing metadata
             self.assertTrue(
-                _common.seen_metadata(_INITIAL_METADATA_TO_INJECT[1], await
-                                      call.trailing_metadata()))
+                _common.seen_metadatum(_INITIAL_METADATA_TO_INJECT[1], await
+                                       call.trailing_metadata()))
 
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 

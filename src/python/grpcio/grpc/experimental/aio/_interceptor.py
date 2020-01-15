@@ -106,8 +106,7 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
     def __init__(  # pylint: disable=R0913
             self, interceptors: Sequence[UnaryUnaryClientInterceptor],
             request: RequestType, timeout: Optional[float],
-            metadata: Optional[MetadataType],
-            credentials: Optional[grpc.CallCredentials],
+            metadata: MetadataType, credentials: Optional[grpc.CallCredentials],
             channel: cygrpc.AioChannel, method: bytes,
             request_serializer: SerializingFunction,
             response_deserializer: DeserializingFunction) -> None:
