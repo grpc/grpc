@@ -58,6 +58,14 @@ _INVALID_METADATA_TEST_CASES = (
         TypeError,
         (('normal', object()),),
     ),
+    (
+        TypeError,
+        object(),
+    ),
+    (
+        TypeError,
+        (object(),),
+    ),
 )
 
 
