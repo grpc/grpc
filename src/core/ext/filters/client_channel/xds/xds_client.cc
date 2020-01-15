@@ -1475,7 +1475,8 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      StringView server_name,
                      std::unique_ptr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
-    : build_version_(GenerateBuildVersionString()),
+    : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
+      build_version_(GenerateBuildVersionString()),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
@@ -1508,6 +1509,8 @@ XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
 void XdsClient::Orphan() {
   shutting_down_ = true;
   chand_.reset();
+  cluster_map_.clear();
+  endpoint_map_.clear();
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
 }
 
