@@ -233,7 +233,7 @@ class InlinedVector {
     }
   }
 
-  typename std::aligned_storage<sizeof(T)>::type inline_[N];
+  typename std::aligned_storage<sizeof(T), alignof(T)>::type inline_[N];
   T* dynamic_;
   size_t size_;
   size_t capacity_;
