@@ -62,11 +62,8 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
            const RefCountedPtr<LogicalThread>& logical_thread)
       : watcher_(std::move(watcher)), state_(state) {
     if (logical_thread != nullptr) {
-      logical_thread->Run(
-          Closure::ToFunction(
-              GRPC_CLOSURE_INIT(&closure_, SendNotification, this, nullptr),
-              GRPC_ERROR_NONE),
-          DEBUG_LOCATION);
+      logical_thread->Run([this]() { SendNotification(this, GRPC_ERROR_NONE); },
+                          DEBUG_LOCATION);
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);

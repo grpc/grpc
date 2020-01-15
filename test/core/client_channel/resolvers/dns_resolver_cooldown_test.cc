@@ -320,19 +320,16 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
-  {
-    grpc_core::ExecCtx exec_ctx;
-    auto logical_thread = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
-    g_logical_thread = &logical_thread;
+  auto logical_thread = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+  g_logical_thread = &logical_thread;
 
-    g_default_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
-    grpc_dns_lookup_ares_locked = test_dns_lookup_ares_locked;
-    default_resolve_address = grpc_resolve_address_impl;
-    grpc_set_resolver_impl(&test_resolver);
+  g_default_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
+  grpc_dns_lookup_ares_locked = test_dns_lookup_ares_locked;
+  default_resolve_address = grpc_resolve_address_impl;
+  grpc_set_resolver_impl(&test_resolver);
 
-    test_cooldown();
-    grpc_core::ExecCtx::Get()->Flush();
-  }
+  test_cooldown();
+
   grpc_shutdown_blocking();
   GPR_ASSERT(g_all_callbacks_invoked);
   return 0;

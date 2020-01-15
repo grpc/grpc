@@ -78,31 +78,29 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  {
-    grpc_core::ExecCtx exec_ctx;
-    auto logical_thread = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
-    g_logical_thread = &logical_thread;
 
-    grpc_core::ResolverFactory* ipv4 =
-        grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
-    grpc_core::ResolverFactory* ipv6 =
-        grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
+  auto logical_thread = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+  g_logical_thread = &logical_thread;
 
-    test_fails(ipv4, "ipv4:10.2.1.1");
-    test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
-    test_succeeds(ipv4, "ipv4:10.2.1.1:1234,127.0.0.1:4321");
-    test_fails(ipv4, "ipv4:10.2.1.1:123456");
-    test_fails(ipv4, "ipv4:www.google.com");
-    test_fails(ipv4, "ipv4:[");
-    test_fails(ipv4, "ipv4://8.8.8.8/8.8.8.8:8888");
+  grpc_core::ResolverFactory* ipv4 =
+      grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
+  grpc_core::ResolverFactory* ipv6 =
+      grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
 
-    test_fails(ipv6, "ipv6:[");
-    test_fails(ipv6, "ipv6:[::]");
-    test_succeeds(ipv6, "ipv6:[::]:1234");
-    test_fails(ipv6, "ipv6:[::]:123456");
-    test_fails(ipv6, "ipv6:www.google.com");
-    grpc_core::ExecCtx::Get()->Flush();
-  }
+  test_fails(ipv4, "ipv4:10.2.1.1");
+  test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
+  test_succeeds(ipv4, "ipv4:10.2.1.1:1234,127.0.0.1:4321");
+  test_fails(ipv4, "ipv4:10.2.1.1:123456");
+  test_fails(ipv4, "ipv4:www.google.com");
+  test_fails(ipv4, "ipv4:[");
+  test_fails(ipv4, "ipv4://8.8.8.8/8.8.8.8:8888");
+
+  test_fails(ipv6, "ipv6:[");
+  test_fails(ipv6, "ipv6:[::]");
+  test_succeeds(ipv6, "ipv6:[::]:1234");
+  test_fails(ipv6, "ipv6:[::]:123456");
+  test_fails(ipv6, "ipv6:www.google.com");
+
   grpc_shutdown();
 
   return 0;

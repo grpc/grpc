@@ -73,26 +73,22 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx exec_ctx;
-    {
-      auto logical_thread =
-          grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
-      g_logical_thread = &logical_thread;
+    auto logical_thread = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+    g_logical_thread = &logical_thread;
 
-      grpc_core::ResolverFactory* dns =
-          grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+    grpc_core::ResolverFactory* dns =
+        grpc_core::ResolverRegistry::LookupResolverFactory("dns");
 
-      test_succeeds(dns, "dns:10.2.1.1");
-      test_succeeds(dns, "dns:10.2.1.1:1234");
-      test_succeeds(dns, "dns:www.google.com");
-      test_succeeds(dns, "dns:///www.google.com");
-      grpc_core::UniquePtr<char> resolver =
-          GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-      if (gpr_stricmp(resolver.get(), "native") == 0) {
-        test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
-      } else {
-        test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
-      }
+    test_succeeds(dns, "dns:10.2.1.1");
+    test_succeeds(dns, "dns:10.2.1.1:1234");
+    test_succeeds(dns, "dns:www.google.com");
+    test_succeeds(dns, "dns:///www.google.com");
+    grpc_core::UniquePtr<char> resolver =
+        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+    if (gpr_stricmp(resolver.get(), "native") == 0) {
+      test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
+    } else {
+      test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
     }
   }
   grpc_shutdown();
