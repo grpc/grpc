@@ -55,7 +55,8 @@ class TlsKeyMaterialsConfig {
   }
   int version() const { return version_; }
 
-  /** Setter for key materials that will be called by the user. **/
+  /** Setter for key materials that will be called by the user. They do not take
+   *  ownership of the arguments. **/
   void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(const PemKeyCertPair& pem_key_cert_pair);
   void set_key_materials(
@@ -70,18 +71,18 @@ class TlsKeyMaterialsConfig {
 };
 
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. It is
- * used for experimental purposes for now and it is subject to change.
+ *  used for experimental purposes for now and it is subject to change.
  *
- * The credential reload arg contains all the info necessary to schedule/cancel
- * a credential reload request. The callback function must be called after
- * finishing the schedule operation. See the description of the
- * grpc_tls_credential_reload_arg struct in grpc_security.h for more details.
+ *  The credential reload arg contains all the info necessary to schedule/cancel
+ *  a credential reload request. The callback function must be called after
+ *  finishing the schedule operation. See the description of the
+ *  grpc_tls_credential_reload_arg struct in grpc_security.h for more details.
  * **/
 class TlsCredentialReloadArg {
  public:
   /** TlsCredentialReloadArg does not take ownership of the C arg that is passed
-   * to the constructor. One must remember to free any memory allocated to the C
-   * arg after using the setter functions below. **/
+   *  to the constructor. One must remember to free any memory allocated to the
+   * C arg after using the setter functions below. **/
   TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg);
   ~TlsCredentialReloadArg();
 
@@ -91,7 +92,8 @@ class TlsCredentialReloadArg {
   grpc_ssl_certificate_config_reload_status status() const;
   grpc::string error_details() const;
 
-  /** Setters for member fields. **/
+  /** Setters for member fields. They do not take ownership of the arguments.
+   * **/
   void set_cb_user_data(void* cb_user_data);
   void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(

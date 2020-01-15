@@ -83,16 +83,24 @@ void TlsCredentialReloadArg::set_pem_root_certs(
   c_arg_->key_materials_config->set_pem_root_certs(std::move(c_pem_root_certs));
 }
 
-void TlsCredentialReloadArg::add_pem_key_cert_pair(
+namespace {
+
+::grpc_core::PemKeyCertPair convert_to_core_pem_key_cert_pair(
     const TlsKeyMaterialsConfig::PemKeyCertPair& pem_key_cert_pair) {
   grpc_ssl_pem_key_cert_pair* ssl_pair =
       (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
           sizeof(grpc_ssl_pem_key_cert_pair));
   ssl_pair->private_key = gpr_strdup(pem_key_cert_pair.private_key.c_str());
   ssl_pair->cert_chain = gpr_strdup(pem_key_cert_pair.cert_chain.c_str());
-  ::grpc_core::PemKeyCertPair c_pem_key_cert_pair =
-      ::grpc_core::PemKeyCertPair(ssl_pair);
-  c_arg_->key_materials_config->add_pem_key_cert_pair(c_pem_key_cert_pair);
+  return ::grpc_core::PemKeyCertPair(ssl_pair);
+}
+
+}  //  namespace
+
+void TlsCredentialReloadArg::add_pem_key_cert_pair(
+    const TlsKeyMaterialsConfig::PemKeyCertPair& pem_key_cert_pair) {
+  c_arg_->key_materials_config->add_pem_key_cert_pair(
+      convert_to_core_pem_key_cert_pair(pem_key_cert_pair));
 }
 
 void TlsCredentialReloadArg::set_key_materials(
@@ -107,14 +115,8 @@ void TlsCredentialReloadArg::set_key_materials(
   ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
       c_pem_key_cert_pair_list;
   for (const auto& key_cert_pair : pem_key_cert_pair_list) {
-    grpc_ssl_pem_key_cert_pair* ssl_pair =
-        (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
-            sizeof(grpc_ssl_pem_key_cert_pair));
-    ssl_pair->private_key = gpr_strdup(key_cert_pair.private_key.c_str());
-    ssl_pair->cert_chain = gpr_strdup(key_cert_pair.cert_chain.c_str());
-    ::grpc_core::PemKeyCertPair c_pem_key_cert_pair =
-        ::grpc_core::PemKeyCertPair(ssl_pair);
-    c_pem_key_cert_pair_list.emplace_back(std::move(c_pem_key_cert_pair));
+    c_pem_key_cert_pair_list.emplace_back(
+        std::move(convert_to_core_pem_key_cert_pair(key_cert_pair)));
   }
   /** Populate the key materials config field of |c_arg_|. **/
   ::grpc_core::UniquePtr<char> c_pem_root_certs(
