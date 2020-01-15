@@ -3974,6 +3974,9 @@ endif()
 add_library(grpc++_alts
   src/cpp/common/alts_context.cc
   src/cpp/common/alts_util.cc
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
 )
 
 set_target_properties(grpc++_alts PROPERTIES
@@ -4009,6 +4012,8 @@ target_link_libraries(grpc++_alts
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  gpr
+  upb
 )
 
 foreach(_hdr

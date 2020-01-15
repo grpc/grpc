@@ -1819,10 +1819,15 @@
       'type': 'static_library',
       'dependencies': [
         'grpc++',
+        'gpr',
+        'upb',
       ],
       'sources': [
         'src/cpp/common/alts_context.cc',
         'src/cpp/common/alts_util.cc',
+        'src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c',
+        'src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c',
+        'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c',
       ],
     },
     {

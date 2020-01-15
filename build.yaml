@@ -1909,7 +1909,10 @@ libs:
   - src/cpp/common/alts_util.cc
   deps:
   - grpc++
+  - gpr
   baselib: true
+  filegroups:
+  - alts_upb
 - name: grpc++_core_stats
   build: private
   language: c++
