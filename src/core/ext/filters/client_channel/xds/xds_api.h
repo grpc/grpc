@@ -91,7 +91,7 @@ class XdsPriorityListUpdate {
 
 // There are two phases of accessing this class's content:
 // 1. to initialize in the control plane logical_thread;
-// 2. to use in the data plane logical_thread.
+// 2. to use in the data plane mutex.
 // So no additional synchronization is needed.
 class XdsDropConfig : public RefCounted<XdsDropConfig> {
  public:
@@ -113,7 +113,7 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
         DropCategory{std::move(name), parts_per_million});
   }
 
-  // The only method invoked from the data plane logical_thread.
+  // The only method invoked from the data plane mutex.
   bool ShouldDrop(const grpc_core::UniquePtr<char>** category_name) const;
 
   const DropCategoryList& drop_category_list() const {

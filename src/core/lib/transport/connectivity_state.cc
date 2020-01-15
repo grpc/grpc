@@ -59,10 +59,10 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
            grpc_connectivity_state state,
-           const RefCountedPtr<LogicalThread>& combiner)
+           const RefCountedPtr<LogicalThread>& logical_thread)
       : watcher_(std::move(watcher)), state_(state) {
-    if (combiner != nullptr) {
-      combiner->Run(
+    if (logical_thread != nullptr) {
+      logical_thread->Run(
           Closure::ToFunction(
               GRPC_CLOSURE_INIT(&closure_, SendNotification, this, nullptr),
               GRPC_ERROR_NONE),
@@ -92,7 +92,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
 
 void AsyncConnectivityStateWatcherInterface::Notify(
     grpc_connectivity_state state) {
-  new Notifier(Ref(), state, combiner_);  // Deletes itself when done.
+  new Notifier(Ref(), state, logical_thread_);  // Deletes itself when done.
 }
 
 //

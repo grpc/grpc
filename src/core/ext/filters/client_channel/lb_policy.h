@@ -242,7 +242,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// live in the LB policy object itself.
   ///
   /// Currently, pickers are always accessed from within the
-  /// client_channel data plane logical_thread, so they do not have to be
+  /// client_channel data plane mutex, so they do not have to be
   /// thread-safe.
   class SubchannelPicker {
    public:

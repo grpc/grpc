@@ -140,7 +140,7 @@ class XdsClientStats {
     // Only be called from the control plane logical_thread.
     void RefByPicker() { picker_refcount_.FetchAdd(1, MemoryOrder::ACQ_REL); }
     // Might be called from the control plane logical_thread or the data plane
-    // logical_thread.
+    // mutex.
     // TODO(juanlishen): Once https://github.com/grpc/grpc/pull/19390 is merged,
     //  this method will also only be invoked in the control plane
     //  logical_thread. We may then be able to simplify the LocalityStats'
@@ -220,7 +220,7 @@ class XdsClientStats {
   Atomic<uint64_t> total_dropped_requests_{0};
   // Protects dropped_requests_. A mutex is necessary because the length of
   // dropped_requests_ can be accessed by both the picker (from data plane
-  // logical_thread) and the load reporting thread (from the control plane
+  // mutex) and the load reporting thread (from the control plane
   // logical_thread).
   Mutex dropped_requests_mu_;
   DroppedRequestsMap dropped_requests_;

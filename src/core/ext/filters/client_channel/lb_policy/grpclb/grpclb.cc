@@ -246,7 +246,7 @@ class GrpcLb : public LoadBalancingPolicy {
     // should not be dropped.
     //
     // Note: This is called from the picker, so it will be invoked in
-    // the channel's data plane logical_thread, NOT the control plane
+    // the channel's data plane mutex, NOT the control plane
     // logical_thread.  It should not be accessed by any other part of the LB
     // policy.
     const char* ShouldDrop();
@@ -254,7 +254,7 @@ class GrpcLb : public LoadBalancingPolicy {
    private:
     std::vector<GrpcLbServer> serverlist_;
 
-    // Guarded by the channel's data plane logical_thread, NOT the control
+    // Guarded by the channel's data plane mutex, NOT the control
     // plane logical_thread.  It should not be accessed by anything but the
     // picker via the ShouldDrop() method.
     size_t drop_index_ = 0;

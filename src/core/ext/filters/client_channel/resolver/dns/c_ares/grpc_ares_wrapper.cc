@@ -695,9 +695,8 @@ typedef struct grpc_resolve_address_ares_request {
   grpc_ares_request* ares_request = nullptr;
 } grpc_resolve_address_ares_request;
 
-static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
-  grpc_resolve_address_ares_request* r =
-      static_cast<grpc_resolve_address_ares_request*>(arg);
+static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,
+                                      grpc_error* error) {
   gpr_free(r->ares_request);
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
   if (r->addresses == nullptr || r->addresses->empty()) {
@@ -718,17 +717,15 @@ static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done,
                           GRPC_ERROR_REF(error));
   delete r;
+  GRPC_ERROR_UNREF(error);
 }
 
 static void on_dns_lookup_done(void* arg, grpc_error* error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
-  r->logical_thread->Run(
-      grpc_core::Closure::ToFunction(
-          GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked,
-                            on_dns_lookup_done_locked, r, nullptr),
-          GRPC_ERROR_REF(error)),
-      DEBUG_LOCATION);
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  r->logical_thread->Run([r, error]() { on_dns_lookup_done_locked(r, error); },
+                         DEBUG_LOCATION);
 }
 
 static void grpc_resolve_address_invoke_dns_lookup_ares_locked(void* arg) {

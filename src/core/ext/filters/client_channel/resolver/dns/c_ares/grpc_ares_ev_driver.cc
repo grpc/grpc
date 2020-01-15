@@ -131,10 +131,11 @@ static void fd_node_shutdown_locked(fd_node* fdn, const char* reason) {
 }
 
 static void on_timeout(void* arg, grpc_error* error);
-static void on_timeout_locked(void* arg, grpc_error* error);
+static void on_timeout_locked(grpc_ares_ev_driver* arg, grpc_error* error);
 
 static void on_ares_backup_poll_alarm(void* arg, grpc_error* error);
-static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error);
+static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* arg,
+                                             grpc_error* error);
 
 static void noop_inject_channel_config(ares_channel /*channel*/) {}
 
@@ -232,16 +233,12 @@ static grpc_millis calculate_next_ares_backup_poll_alarm_ms(
 
 static void on_timeout(void* arg, grpc_error* error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
+  GRPC_ERROR_REF(error);  // ref owned by lambda
   driver->logical_thread->Run(
-      grpc_core::Closure::ToFunction(
-          GRPC_CLOSURE_INIT(&driver->on_timeout_locked, on_timeout_locked,
-                            driver, nullptr),
-          GRPC_ERROR_REF(error)),
-      DEBUG_LOCATION);
+      [driver, error]() { on_timeout_locked(driver, error); }, DEBUG_LOCATION);
 }
 
-static void on_timeout_locked(void* arg, grpc_error* error) {
-  grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
+static void on_timeout_locked(grpc_ares_ev_driver* driver, grpc_error* error) {
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p on_timeout_locked. driver->shutting_down=%d. "
       "err=%s",
@@ -250,15 +247,14 @@ static void on_timeout_locked(void* arg, grpc_error* error) {
     grpc_ares_ev_driver_shutdown_locked(driver);
   }
   grpc_ares_ev_driver_unref(driver);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void on_ares_backup_poll_alarm(void* arg, grpc_error* error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
+  GRPC_ERROR_REF(error);
   driver->logical_thread->Run(
-      grpc_core::Closure::ToFunction(
-          GRPC_CLOSURE_INIT(&driver->on_ares_backup_poll_alarm_locked,
-                            on_ares_backup_poll_alarm_locked, driver, nullptr),
-          GRPC_ERROR_REF(error)),
+      [driver, error]() { on_ares_backup_poll_alarm_locked(driver, error); },
       DEBUG_LOCATION);
 }
 
@@ -270,8 +266,8 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error* error) {
  *   b) when some time has passed without fd events having happened
  * For the latter, we use this backup poller. Also see
  * https://github.com/grpc/grpc/pull/17688 description for more details. */
-static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error) {
-  grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
+static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
+                                             grpc_error* error) {
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p on_ares_backup_poll_alarm_locked. "
       "driver->shutting_down=%d. "
@@ -304,10 +300,10 @@ static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error) {
     grpc_ares_notify_on_event_locked(driver);
   }
   grpc_ares_ev_driver_unref(driver);
+  GRPC_ERROR_UNREF(error);
 }
 
-static void on_readable_locked(void* arg, grpc_error* error) {
-  fd_node* fdn = static_cast<fd_node*>(arg);
+static void on_readable_locked(fd_node* fdn, grpc_error* error) {
   GPR_ASSERT(fdn->readable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
@@ -329,20 +325,16 @@ static void on_readable_locked(void* arg, grpc_error* error) {
   }
   grpc_ares_notify_on_event_locked(ev_driver);
   grpc_ares_ev_driver_unref(ev_driver);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void on_readable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   fdn->ev_driver->logical_thread->Run(
-      grpc_core::Closure::ToFunction(
-          GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable_locked, fdn,
-                            nullptr),
-          GRPC_ERROR_REF(error)),
-      DEBUG_LOCATION);
+      [fdn, error]() { on_readable_locked(fdn, error); }, DEBUG_LOCATION);
 }
 
-static void on_writable_locked(void* arg, grpc_error* error) {
-  fd_node* fdn = static_cast<fd_node*>(arg);
+static void on_writable_locked(fd_node* fdn, grpc_error* error) {
   GPR_ASSERT(fdn->writable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
@@ -362,16 +354,14 @@ static void on_writable_locked(void* arg, grpc_error* error) {
   }
   grpc_ares_notify_on_event_locked(ev_driver);
   grpc_ares_ev_driver_unref(ev_driver);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void on_writable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
+  GRPC_ERROR_REF(error);
   fdn->ev_driver->logical_thread->Run(
-      grpc_core::Closure::ToFunction(
-          GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable_locked, fdn,
-                            nullptr),
-          GRPC_ERROR_REF(error)),
-      DEBUG_LOCATION);
+      [fdn, error]() { on_writable_locked(fdn, error); }, DEBUG_LOCATION);
 }
 
 ares_channel* grpc_ares_ev_driver_get_channel_locked(

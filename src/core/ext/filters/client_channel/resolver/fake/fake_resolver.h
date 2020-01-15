@@ -30,47 +30,7 @@
 
 namespace grpc_core {
 
-class FakeResolverResponseGenerator;
-
-class FakeResolver : public Resolver {
- public:
-  explicit FakeResolver(ResolverArgs args);
-
-  void StartLocked() override;
-
-  void RequestReresolutionLocked() override;
-
- private:
-  friend class FakeResolverResponseGenerator;
-
-  virtual ~FakeResolver();
-
-  void ShutdownLocked() override;
-
-  void MaybeSendResultLocked();
-
-  void ReturnReresolutionResult();
-
-  // passed-in parameters
-  grpc_channel_args* channel_args_ = nullptr;
-  RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
-  // If has_next_result_ is true, next_result_ is the next resolution result
-  // to be returned.
-  bool has_next_result_ = false;
-  Result next_result_;
-  // Result to use for the pretended re-resolution in
-  // RequestReresolutionLocked().
-  bool has_reresolution_result_ = false;
-  Result reresolution_result_;
-  // True after the call to StartLocked().
-  bool started_ = false;
-  // True after the call to ShutdownLocked().
-  bool shutdown_ = false;
-  // if true, return failure
-  bool return_failure_ = false;
-  // pending re-resolution
-  bool reresolution_closure_pending_ = false;
-};
+class FakeResolver;
 
 /// A mechanism for generating responses for the fake resolver.
 /// An instance of this class is passed to the fake resolver via a channel
@@ -120,24 +80,6 @@ class FakeResolverResponseGenerator
   friend class FakeResolver;
   // Set the corresponding FakeResolver to this generator.
   void SetFakeResolver(RefCountedPtr<FakeResolver> resolver);
-
-  class ResponseSetter {
-   public:
-    explicit ResponseSetter(RefCountedPtr<FakeResolver> resolver,
-                            Resolver::Result result)
-        : resolver_(std::move(resolver)), result_(result) {}
-    void set_has_result() { has_result_ = true; }
-    void reset_immediate() { immediate_ = false; }
-    void SetResponseLocked();
-    void SetReresolutionResponseLocked();
-    void SetFailureLocked();
-
-   private:
-    RefCountedPtr<FakeResolver> resolver_;
-    Resolver::Result result_;
-    bool has_result_ = false;
-    bool immediate_ = true;
-  };
 
   // Mutex protecting the members below.
   Mutex mu_;

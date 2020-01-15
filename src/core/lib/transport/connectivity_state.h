@@ -72,14 +72,14 @@ class AsyncConnectivityStateWatcherInterface
   // If \a combiner is nullptr, then the notification will be scheduled on the
   // ExecCtx.
   explicit AsyncConnectivityStateWatcherInterface(
-      RefCountedPtr<LogicalThread> combiner = nullptr)
-      : combiner_(std::move(combiner)) {}
+      RefCountedPtr<LogicalThread> logical_thread = nullptr)
+      : logical_thread_(std::move(logical_thread)) {}
 
   // Invoked asynchronously when Notify() is called.
   virtual void OnConnectivityStateChange(grpc_connectivity_state new_state) = 0;
 
  private:
-  RefCountedPtr<LogicalThread> combiner_;
+  RefCountedPtr<LogicalThread> logical_thread_;
 };
 
 // Tracks connectivity state.  Maintains a list of watchers that are

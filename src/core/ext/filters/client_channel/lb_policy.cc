@@ -98,7 +98,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    the time this function returns, the pick will already have
   //    been processed, and we'll be trying to re-process the same
   //    pick again, leading to a crash.
-  // 2. We are currently running in the data plane logical_thread, but we
+  // 2. We are currently running in the data plane mutex, but we
   //    need to bounce into the control plane logical_thread to call
   //    ExitIdleLocked().
   if (!exit_idle_called_) {
