@@ -704,7 +704,19 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       is_first_message ? xds_client()->bootstrap_->node() : nullptr;
   const char* build_version =
       is_first_message ? xds_client()->build_version_.get() : nullptr;
-  if (type_url == kCdsTypeUrl) {
+  if (type_url == kLdsTypeUrl) {
+    request_payload_slice = XdsLdsRequestCreateAndEncode(
+        xds_client()->server_name_, node, build_version,
+        lds_version_.version_info, lds_version_.nonce, lds_version_.error);
+    lds_version_.error = GRPC_ERROR_NONE;
+    GRPC_ERROR_UNREF(error_for_unsupported_type);
+  } else if (type_url == kRdsTypeUrl) {
+    request_payload_slice = XdsRdsRequestCreateAndEncode(
+        xds_client()->route_config_name_, node, build_version,
+        rds_version_.version_info, rds_version_.nonce, rds_version_.error);
+    rds_version_.error = GRPC_ERROR_NONE;
+    GRPC_ERROR_UNREF(error_for_unsupported_type);
+  } else if (type_url == kCdsTypeUrl) {
     request_payload_slice = XdsCdsRequestCreateAndEncode(
         xds_client()->WatchedClusterNames(), node, build_version,
         cds_version_.version_info, cds_version_.nonce, cds_version_.error);
