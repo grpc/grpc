@@ -120,7 +120,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertTrue(call.cancelled())
         self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
         self.assertEqual(await call.details(),
-                            'Locally cancelled by application!')
+                         'Locally cancelled by application!')
 
     async def test_cancel_unary_unary_in_task(self):
         coro_started = asyncio.Event()
@@ -159,14 +159,13 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         self.assertFalse(call.cancelled())
 
         response = await call.read()
-        self.assertIs(type(response),
-                        messages_pb2.StreamingOutputCallResponse)
+        self.assertIs(type(response), messages_pb2.StreamingOutputCallResponse)
         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         self.assertTrue(call.cancel())
         self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
         self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION, await
-                            call.details())
+                         call.details())
         self.assertFalse(call.cancel())
 
         with self.assertRaises(asyncio.CancelledError):
@@ -188,8 +187,7 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         self.assertFalse(call.cancelled())
 
         response = await call.read()
-        self.assertIs(type(response),
-                        messages_pb2.StreamingOutputCallResponse)
+        self.assertIs(type(response), messages_pb2.StreamingOutputCallResponse)
         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         self.assertTrue(call.cancel())
@@ -225,7 +223,7 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
         self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION, await
-                            call.details())
+                         call.details())
 
     async def test_late_cancel_unary_stream(self):
         """Test cancellation after received all messages."""
@@ -233,8 +231,7 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         request = messages_pb2.StreamingOutputCallRequest()
         for _ in range(_NUM_STREAM_RESPONSES):
             request.response_parameters.append(
-                messages_pb2.ResponseParameters(
-                    size=_RESPONSE_PAYLOAD_SIZE,))
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
 
         # Invokes the actual RPC
         call = self._stub.StreamingOutputCall(request)
@@ -242,16 +239,15 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         for _ in range(_NUM_STREAM_RESPONSES):
             response = await call.read()
             self.assertIs(type(response),
-                            messages_pb2.StreamingOutputCallResponse)
-            self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
-                                len(response.payload.body))
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         # After all messages received, it is possible that the final state
         # is received or on its way. It's basically a data race, so our
         # expectation here is do not crash :)
         call.cancel()
         self.assertIn(await call.code(),
-                        [grpc.StatusCode.OK, grpc.StatusCode.CANCELLED])
+                      [grpc.StatusCode.OK, grpc.StatusCode.CANCELLED])
 
     async def test_too_many_reads_unary_stream(self):
         """Test calling read after received all messages fails."""
@@ -259,8 +255,7 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         request = messages_pb2.StreamingOutputCallRequest()
         for _ in range(_NUM_STREAM_RESPONSES):
             request.response_parameters.append(
-                messages_pb2.ResponseParameters(
-                    size=_RESPONSE_PAYLOAD_SIZE,))
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
 
         # Invokes the actual RPC
         call = self._stub.StreamingOutputCall(request)
@@ -268,9 +263,8 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         for _ in range(_NUM_STREAM_RESPONSES):
             response = await call.read()
             self.assertIs(type(response),
-                            messages_pb2.StreamingOutputCallResponse)
-            self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
-                                len(response.payload.body))
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
         self.assertIs(await call.read(), aio.EOF)
 
         # After the RPC is finished, further reads will lead to exception.
@@ -283,8 +277,7 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         request = messages_pb2.StreamingOutputCallRequest()
         for _ in range(_NUM_STREAM_RESPONSES):
             request.response_parameters.append(
-                messages_pb2.ResponseParameters(
-                    size=_RESPONSE_PAYLOAD_SIZE,))
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
 
         # Invokes the actual RPC
         call = self._stub.StreamingOutputCall(request)
@@ -292,9 +285,8 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         async for response in call:
             self.assertIs(type(response),
-                            messages_pb2.StreamingOutputCallResponse)
-            self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
-                                len(response.payload.body))
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
@@ -384,6 +376,35 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         self.loop.run_until_complete(coro())
 
+    async def test_time_remaining(self):
+        request = messages_pb2.StreamingOutputCallRequest()
+        # First message comes back immediately
+        request.response_parameters.append(
+            messages_pb2.ResponseParameters(
+                size=_RESPONSE_PAYLOAD_SIZE,
+                interval_us=_INFINITE_INTERVAL_US,
+            ))
+        # Second message comes back after a unit of wait time
+        request.response_parameters.append(
+            messages_pb2.ResponseParameters(
+                size=_RESPONSE_PAYLOAD_SIZE,
+                interval_us=_RESPONSE_INTERVAL_US,
+            ))
+
+        call = self._stub.StreamingOutputCall(
+            request, timeout=test_constants.SHORT_TIMEOUT*2)
+
+        response = await call.read()
+        self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+
+        remained_time = call.time_remaining()
+        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT//2)
+        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT*3//2)
+
+        response = await call.read()
+        self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
 
 class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 

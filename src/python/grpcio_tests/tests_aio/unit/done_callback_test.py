@@ -13,7 +13,6 @@
 # limitations under the License.
 """Testing the done callbacks mechanism."""
 
-
 # Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,7 +40,6 @@ from tests.unit.framework.common import test_constants
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests_aio.unit._test_server import start_test_server
 
-
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
@@ -49,10 +47,12 @@ _RESPONSE_PAYLOAD_SIZE = 42
 
 def _inject_callbacks(call):
     first_callback_ran = asyncio.Event()
+
     def first_callback(unused_call):
         first_callback_ran.set()
 
     second_callback_ran = asyncio.Event()
+
     def second_callback(unused_call):
         second_callback_ran.set()
 
@@ -61,9 +61,9 @@ def _inject_callbacks(call):
 
     async def validation():
         await asyncio.wait_for(
-            asyncio.gather(first_callback_ran.wait(), second_callback_ran.wait()),
-            test_constants.SHORT_TIMEOUT
-        )
+            asyncio.gather(first_callback_ran.wait(),
+                           second_callback_ran.wait()),
+            test_constants.SHORT_TIMEOUT)
 
     return validation()
 
