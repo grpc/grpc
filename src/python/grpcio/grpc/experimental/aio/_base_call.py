@@ -24,7 +24,7 @@ from typing import (Any, AsyncIterable, Awaitable, Callable, Generic, Optional,
 
 import grpc
 
-from ._typing import EOFType, MetadataType, RequestType, ResponseType
+from ._typing import EOFType, MetadataType, RequestType, ResponseType, DoneCallbackType
 
 __all__ = 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
@@ -73,11 +73,11 @@ class RpcContext(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def add_done_callback(self, callback: Callable[[Any], None]) -> None:
+    def add_done_callback(self, callback: DoneCallbackType) -> None:
         """Registers a callback to be called on RPC termination.
 
         Args:
-          callback: A callable object will be called with the context object as
+          callback: A callable object will be called with the call object as
           its only argument.
         """
 
