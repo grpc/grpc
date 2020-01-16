@@ -924,6 +924,8 @@ src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/parse_address.cc \
 src/core/ext/filters/client_channel/parse_address.h \
+src/core/ext/filters/client_channel/parse_address_novsock.cc \
+src/core/ext/filters/client_channel/parse_address_vsock.cc \
 src/core/ext/filters/client_channel/proxy_mapper.h \
 src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
 src/core/ext/filters/client_channel/proxy_mapper_registry.h \
@@ -1351,6 +1353,7 @@ src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/logical_thread.cc \
 src/core/lib/iomgr/logical_thread.h \
 src/core/lib/iomgr/nameser.h \
+src/core/lib/iomgr/novsock.cc \
 src/core/lib/iomgr/poller/eventmanager_libuv.cc \
 src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
@@ -1437,6 +1440,7 @@ src/core/lib/iomgr/udp_server.h \
 src/core/lib/iomgr/unix_sockets_posix.cc \
 src/core/lib/iomgr/unix_sockets_posix.h \
 src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+src/core/lib/iomgr/vsock.cc \
 src/core/lib/iomgr/wakeup_fd_eventfd.cc \
 src/core/lib/iomgr/wakeup_fd_nospecial.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.cc \

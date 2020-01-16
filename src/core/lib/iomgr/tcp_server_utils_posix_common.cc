@@ -152,7 +152,8 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
 
   GPR_ASSERT(fd >= 0);
 
-  if (so_reuseport && !grpc_is_unix_socket(addr)) {
+  if (so_reuseport && !grpc_is_unix_socket(addr) &&
+      !grpc_is_vsock(addr)) {
     err = grpc_set_socket_reuse_port(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
   }
@@ -169,7 +170,7 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
   if (err != GRPC_ERROR_NONE) goto error;
   err = grpc_set_socket_cloexec(fd, 1);
   if (err != GRPC_ERROR_NONE) goto error;
-  if (!grpc_is_unix_socket(addr)) {
+  if (!grpc_is_unix_socket(addr) && !grpc_is_vsock(addr)) {
     err = grpc_set_socket_low_latency(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);

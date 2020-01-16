@@ -505,7 +505,7 @@ static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
   sp = s->head;
   while (sp != nullptr) {
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
-        pollset_count > 1) {
+        !grpc_is_vsock(&sp->addr) && pollset_count > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "clone_port", clone_port(sp, (unsigned)(pollset_count - 1))));
       for (i = 0; i < pollset_count; i++) {
