@@ -3803,6 +3803,45 @@ endif
 endif
 
 
+LIBENGINE_PASSTHROUGH_SRC = \
+    test/core/end2end/engine_passthrough.cc \
+
+PUBLIC_HEADERS_C += \
+
+LIBENGINE_PASSTHROUGH_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBENGINE_PASSTHROUGH_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libengine_passthrough.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libengine_passthrough.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBENGINE_PASSTHROUGH_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libengine_passthrough.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libengine_passthrough.a $(LIBENGINE_PASSTHROUGH_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libengine_passthrough.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBENGINE_PASSTHROUGH_OBJS:.o=.dep)
+endif
+endif
+
+
 LIBGPR_SRC = \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
@@ -23361,6 +23400,7 @@ test/core/end2end/data/server1_cert.cc: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.cc: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.cc: $(OPENSSL_DEP)
 test/core/end2end/end2end_tests.cc: $(OPENSSL_DEP)
+test/core/end2end/engine_passthrough.cc: $(OPENSSL_DEP)
 test/core/end2end/tests/call_creds.cc: $(OPENSSL_DEP)
 test/core/security/oauth2_utils.cc: $(OPENSSL_DEP)
 test/core/tsi/alts/crypt/gsec_test_util.cc: $(OPENSSL_DEP)

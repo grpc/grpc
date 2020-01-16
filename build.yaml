@@ -1698,6 +1698,12 @@ libs:
   filegroups:
   - grpc_test_util_base
   secure: true
+- name: engine_passthrough
+  build: test
+  language: c
+  src:
+  - test/core/end2end/engine_passthrough.cc
+  dll: only
 - name: gpr
   build: all
   language: c
