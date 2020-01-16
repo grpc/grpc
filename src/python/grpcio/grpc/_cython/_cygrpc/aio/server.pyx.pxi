@@ -40,7 +40,7 @@ cdef class RPCState:
         self.abort_exception = None
         self.metadata_sent = False
         self.status_sent = False
-        self.trailing_metadata = _EMPTY_METADATA
+        self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
 
     cdef bytes method(self):
         return _slice_bytes(self.details.method)
@@ -129,7 +129,7 @@ cdef class _ServicerContext:
     async def abort(self,
               object code,
               str details='',
-              tuple trailing_metadata=_EMPTY_METADATA):
+              tuple trailing_metadata=_IMMUTABLE_EMPTY_METADATA):
         if self._rpc_state.abort_exception is not None:
             raise RuntimeError('Abort already called!')
         else:
@@ -138,7 +138,7 @@ cdef class _ServicerContext:
             # could lead to undefined behavior.
             self._rpc_state.abort_exception = AbortError('Locally aborted.')
 
-            if trailing_metadata == _EMPTY_METADATA and self._rpc_state.trailing_metadata:
+            if trailing_metadata == _IMMUTABLE_EMPTY_METADATA and self._rpc_state.trailing_metadata:
                 trailing_metadata = self._rpc_state.trailing_metadata
 
             self._rpc_state.status_sent = True
@@ -471,7 +471,7 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
             rpc_state,
             StatusCode.unimplemented,
             'Method not found!',
-            _EMPTY_METADATA,
+            _IMMUTABLE_EMPTY_METADATA,
             rpc_state.metadata_sent,
             loop
         )

@@ -28,6 +28,8 @@ from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
                       SerializingFunction)
 from ._utils import _timeout_to_deadline
 
+_IMMUTABLE_EMPTY_TUPLE = tuple()
+
 
 class _BaseMultiCallable:
     """Base class of all multi callable objects.
@@ -47,12 +49,14 @@ class _BaseMultiCallable:
     _interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
     _loop: asyncio.AbstractEventLoop
 
-    def __init__(self, channel: cygrpc.AioChannel, method: bytes,
+    def __init__(self, channel: cygrpc.AioChannel,
+                 method: bytes,
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction,
-                 interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
+                 interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]],
+                 loop: asyncio.AbstractEventLoop, 
                 ) -> None:
-        self._loop = asyncio.get_event_loop()
+        self._loop = loop
         self._channel = channel
         self._method = method
         self._request_serializer = request_serializer
@@ -102,31 +106,20 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             raise NotImplementedError("TODO: compression not implemented yet")
 
         if metadata is None:
-            metadata = tuple()
+            metadata = _IMMUTABLE_EMPTY_TUPLE
 
         if not self._interceptors:
-            return UnaryUnaryCall(
-                request,
-                _timeout_to_deadline(timeout),
-                metadata,
-                credentials,
-                self._channel,
-                self._method,
-                self._request_serializer,
-                self._response_deserializer,
-            )
+            return UnaryUnaryCall(request, _timeout_to_deadline(timeout),
+                                  metadata, credentials, self._channel,
+                                  self._method, self._request_serializer,
+                                  self._response_deserializer, self._loop)
         else:
-            return InterceptedUnaryUnaryCall(
-                self._interceptors,
-                request,
-                timeout,
-                metadata,
-                credentials,
-                self._channel,
-                self._method,
-                self._request_serializer,
-                self._response_deserializer,
-            )
+            return InterceptedUnaryUnaryCall(self._interceptors, request,
+                                             timeout, metadata, credentials,
+                                             self._channel, self._method,
+                                             self._request_serializer,
+                                             self._response_deserializer,
+                                             self._loop)
 
 
 class UnaryStreamMultiCallable(_BaseMultiCallable):
@@ -168,18 +161,12 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
 
         deadline = _timeout_to_deadline(timeout)
         if metadata is None:
-            metadata = tuple()
+            metadata = _IMMUTABLE_EMPTY_TUPLE
 
-        return UnaryStreamCall(
-            request,
-            deadline,
-            metadata,
-            credentials,
-            self._channel,
-            self._method,
-            self._request_serializer,
-            self._response_deserializer,
-        )
+        return UnaryStreamCall(request, deadline, metadata, credentials,
+                               self._channel, self._method,
+                               self._request_serializer,
+                               self._response_deserializer, self._loop)
 
 
 class StreamUnaryMultiCallable(_BaseMultiCallable):
@@ -225,18 +212,12 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
 
         deadline = _timeout_to_deadline(timeout)
         if metadata is None:
-            metadata = tuple()
+            metadata = _IMMUTABLE_EMPTY_TUPLE
 
-        return StreamUnaryCall(
-            request_async_iterator,
-            deadline,
-            metadata,
-            credentials,
-            self._channel,
-            self._method,
-            self._request_serializer,
-            self._response_deserializer,
-        )
+        return StreamUnaryCall(request_async_iterator, deadline, metadata,
+                               credentials, self._channel, self._method,
+                               self._request_serializer,
+                               self._response_deserializer, self._loop)
 
 
 class StreamStreamMultiCallable(_BaseMultiCallable):
@@ -282,18 +263,12 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
 
         deadline = _timeout_to_deadline(timeout)
         if metadata is None:
-            metadata = tuple()
+            metadata = _IMMUTABLE_EMPTY_TUPLE
 
-        return StreamStreamCall(
-            request_async_iterator,
-            deadline,
-            metadata,
-            credentials,
-            self._channel,
-            self._method,
-            self._request_serializer,
-            self._response_deserializer,
-        )
+        return StreamStreamCall(request_async_iterator, deadline, metadata,
+                                credentials, self._channel, self._method,
+                                self._request_serializer,
+                                self._response_deserializer, self._loop)
 
 
 class Channel:
@@ -301,6 +276,7 @@ class Channel:
 
     A cygrpc.AioChannel-backed implementation.
     """
+    _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _unary_unary_interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
 
@@ -341,8 +317,9 @@ class Channel:
                     "UnaryUnaryClientInterceptors, the following are invalid: {}"\
                     .format(invalid_interceptors))
 
+        self._loop = asyncio.get_event_loop()
         self._channel = cygrpc.AioChannel(_common.encode(target), options,
-                                          credentials)
+                                          credentials, self._loop)
 
     def get_state(self,
                   try_to_connect: bool = False) -> grpc.ChannelConnectivity:
@@ -408,10 +385,12 @@ class Channel:
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
         """
-        return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
+        return UnaryUnaryMultiCallable(self._channel,
+                                       _common.encode(method),
                                        request_serializer,
                                        response_deserializer,
-                                       self._unary_unary_interceptors)
+                                       self._unary_unary_interceptors,
+                                       self._loop)
 
     def unary_stream(
             self,
@@ -419,9 +398,11 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> UnaryStreamMultiCallable:
-        return UnaryStreamMultiCallable(self._channel, _common.encode(method),
+        return UnaryStreamMultiCallable(self._channel,
+                                        _common.encode(method),
                                         request_serializer,
-                                        response_deserializer, None)
+                                        response_deserializer,
+                                        None, self._loop)
 
     def stream_unary(
             self,
@@ -429,9 +410,11 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamUnaryMultiCallable:
-        return StreamUnaryMultiCallable(self._channel, _common.encode(method),
+        return StreamUnaryMultiCallable(self._channel,
+                                        _common.encode(method),
                                         request_serializer,
-                                        response_deserializer, None)
+                                        response_deserializer,
+                                        None, self._loop)
 
     def stream_stream(
             self,
@@ -439,9 +422,11 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamStreamMultiCallable:
-        return StreamStreamMultiCallable(self._channel, _common.encode(method),
+        return StreamStreamMultiCallable(self._channel,
+                                         _common.encode(method),
                                          request_serializer,
-                                         response_deserializer, None)
+                                         response_deserializer,
+                                         None, self._loop)
 
     async def _close(self):
         # TODO: Send cancellation status
