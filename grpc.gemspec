@@ -1089,6 +1089,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/evp/sign.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/ex_data.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/aes.c )
+  s.files += %w( third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/aes_nohw.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/internal.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/key_wrap.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/mode_wrappers.c )
