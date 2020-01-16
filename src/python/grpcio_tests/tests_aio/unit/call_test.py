@@ -380,9 +380,7 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         request = messages_pb2.StreamingOutputCallRequest()
         # First message comes back immediately
         request.response_parameters.append(
-            messages_pb2.ResponseParameters(
-                size=_RESPONSE_PAYLOAD_SIZE,
-            ))
+            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
         # Second message comes back after a unit of wait time
         request.response_parameters.append(
             messages_pb2.ResponseParameters(
@@ -391,25 +389,26 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
             ))
 
         call = self._stub.StreamingOutputCall(
-            request, timeout=test_constants.SHORT_TIMEOUT*2)
+            request, timeout=test_constants.SHORT_TIMEOUT * 2)
 
         response = await call.read()
         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         # Should be around the same as the timeout
         remained_time = call.time_remaining()
-        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT*3//2)
-        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT*2)
+        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT * 3 // 2)
+        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 2)
 
         response = await call.read()
         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         # Should be around the timeout minus a unit of wait time
         remained_time = call.time_remaining()
-        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT//2)
-        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT*3//2)
+        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT // 2)
+        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 3 // 2)
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
+
 
 class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 

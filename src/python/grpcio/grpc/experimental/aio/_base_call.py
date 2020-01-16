@@ -19,12 +19,12 @@ RPC, e.g. cancellation.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import (Any, AsyncIterable, Awaitable, Callable, Generic, Optional,
-                    Text, Union)
+from typing import AsyncIterable, Awaitable, Generic, Optional, Text, Union
 
 import grpc
 
-from ._typing import EOFType, MetadataType, RequestType, ResponseType, DoneCallbackType
+from ._typing import (DoneCallbackType, EOFType, MetadataType, RequestType,
+                      ResponseType)
 
 __all__ = 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
