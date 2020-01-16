@@ -71,6 +71,39 @@ class GenericStub final {
       grpc_impl::ClientContext* context, const grpc::string& method,
       CompletionQueue* cq, void* tag);
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  /// Setup and start a unary call to a named method \a method using
+  /// \a context and specifying the \a request and \a response buffers.
+  void UnaryCall(grpc_impl::ClientContext* context, const grpc::string& method,
+                 const grpc::ByteBuffer* request, grpc::ByteBuffer* response,
+                 std::function<void(grpc::Status)> on_completion) {
+    UnaryCallInternal(context, method, request, response,
+                      std::move(on_completion));
+  }
+
+  /// Setup a unary call to a named method \a method using
+  /// \a context and specifying the \a request and \a response buffers.
+  /// Like any other reactor-based RPC, it will not be activated until
+  /// StartCall is invoked on its reactor.
+  void PrepareUnaryCall(grpc_impl::ClientContext* context,
+                        const grpc::string& method,
+                        const grpc::ByteBuffer* request,
+                        grpc::ByteBuffer* response,
+                        grpc_impl::ClientUnaryReactor* reactor) {
+    PrepareUnaryCallInternal(context, method, request, response, reactor);
+  }
+
+  /// Setup a call to a named method \a method using \a context and tied to
+  /// \a reactor . Like any other bidi streaming RPC, it will not be activated
+  /// until StartCall is invoked on its reactor.
+  void PrepareBidiStreamingCall(
+      grpc_impl::ClientContext* context, const grpc::string& method,
+      grpc_impl::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
+          reactor) {
+    PrepareBidiStreamingCallInternal(context, method, reactor);
+  }
+#endif
+
   /// NOTE: class experimental_type is not part of the public API of this class
   /// TODO(vjpai): Move these contents to the public API of GenericStub when
   ///              they are no longer experimental
@@ -83,14 +116,23 @@ class GenericStub final {
     void UnaryCall(grpc_impl::ClientContext* context,
                    const grpc::string& method, const grpc::ByteBuffer* request,
                    grpc::ByteBuffer* response,
-                   std::function<void(grpc::Status)> on_completion);
+                   std::function<void(grpc::Status)> on_completion) {
+      stub_->UnaryCallInternal(context, method, request, response,
+                               std::move(on_completion));
+    }
 
-    /// Setup and start a unary call to a named method \a method using
+    /// Setup a unary call to a named method \a method using
     /// \a context and specifying the \a request and \a response buffers.
-    void UnaryCall(grpc_impl::ClientContext* context,
-                   const grpc::string& method, const grpc::ByteBuffer* request,
-                   grpc::ByteBuffer* response,
-                   grpc_impl::ClientUnaryReactor* reactor);
+    /// Like any other reactor-based RPC, it will not be activated until
+    /// StartCall is invoked on its reactor.
+    void PrepareUnaryCall(grpc_impl::ClientContext* context,
+                          const grpc::string& method,
+                          const grpc::ByteBuffer* request,
+                          grpc::ByteBuffer* response,
+                          grpc_impl::ClientUnaryReactor* reactor) {
+      stub_->PrepareUnaryCallInternal(context, method, request, response,
+                                      reactor);
+    }
 
     /// Setup a call to a named method \a method using \a context and tied to
     /// \a reactor . Like any other bidi streaming RPC, it will not be activated
@@ -98,7 +140,9 @@ class GenericStub final {
     void PrepareBidiStreamingCall(
         grpc_impl::ClientContext* context, const grpc::string& method,
         grpc_impl::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
-            reactor);
+            reactor) {
+      stub_->PrepareBidiStreamingCallInternal(context, method, reactor);
+    }
 
    private:
     GenericStub* stub_;
@@ -111,6 +155,23 @@ class GenericStub final {
 
  private:
   std::shared_ptr<grpc::ChannelInterface> channel_;
+
+  void UnaryCallInternal(grpc_impl::ClientContext* context,
+                         const grpc::string& method,
+                         const grpc::ByteBuffer* request,
+                         grpc::ByteBuffer* response,
+                         std::function<void(grpc::Status)> on_completion);
+
+  void PrepareUnaryCallInternal(grpc_impl::ClientContext* context,
+                                const grpc::string& method,
+                                const grpc::ByteBuffer* request,
+                                grpc::ByteBuffer* response,
+                                grpc_impl::ClientUnaryReactor* reactor);
+
+  void PrepareBidiStreamingCallInternal(
+      grpc_impl::ClientContext* context, const grpc::string& method,
+      grpc_impl::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
+          reactor);
 };
 
 }  // namespace grpc_impl

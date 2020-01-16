@@ -8,7 +8,7 @@ load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 
 # copybara:strip_for_google3_begin
 load("@bazel_skylib//lib:versions.bzl", "versions")
-load("@bazel_version//:bazel_version.bzl", "bazel_version")
+load("@upb_bazel_version//:bazel_version.bzl", "bazel_version")
 # copybara:strip_end
 
 # Generic support code #########################################################
@@ -279,6 +279,7 @@ _upb_proto_reflection_library_aspect = aspect(
         ),
         "_upb": attr.label_list(
             default = [
+                "//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
                 "//:upb",
                 "//:reflection",
             ],

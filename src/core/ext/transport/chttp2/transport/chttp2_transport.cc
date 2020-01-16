@@ -3008,8 +3008,8 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
     }
   } else if (s->read_closed) {
     if (bs->remaining_bytes_ != 0) {
-      s->byte_stream_error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
+      s->byte_stream_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "Truncated message", &s->read_closed_error, 1);
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
                               GRPC_ERROR_REF(s->byte_stream_error));
       if (s->data_parser.parsing_frame != nullptr) {

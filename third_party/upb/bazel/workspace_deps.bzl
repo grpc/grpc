@@ -4,11 +4,11 @@ load("//bazel:repository_defs.bzl", "bazel_version_repository")
 
 def upb_deps():
     bazel_version_repository(
-        name = "bazel_version",
+        name = "upb_bazel_version",
     )
 
     git_repository(
-        name = "absl",
+        name = "com_google_absl",
         commit = "070f6e47b33a2909d039e620c873204f78809492",
         remote = "https://github.com/abseil/abseil-cpp.git",
         shallow_since = "1541627663 -0500",

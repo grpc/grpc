@@ -18,6 +18,7 @@
 #ifndef GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 #define GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 
@@ -45,6 +46,35 @@ typedef enum {
   CANCEL_DURING_PROCESSING,
   CANCEL_AFTER_PROCESSING
 } ServerTryCancelRequestPhase;
+
+class TestServiceSignaller {
+ public:
+  void ClientWaitUntilRpcStarted() {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_rpc_started_.wait(lock, [this] { return rpc_started_; });
+  }
+  void ServerWaitToContinue() {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_server_continue_.wait(lock, [this] { return server_should_continue_; });
+  }
+  void SignalClientThatRpcStarted() {
+    std::unique_lock<std::mutex> lock(mu_);
+    rpc_started_ = true;
+    cv_rpc_started_.notify_one();
+  }
+  void SignalServerToContinue() {
+    std::unique_lock<std::mutex> lock(mu_);
+    server_should_continue_ = true;
+    cv_server_continue_.notify_one();
+  }
+
+ private:
+  std::mutex mu_;
+  std::condition_variable cv_rpc_started_;
+  bool rpc_started_ /* GUARDED_BY(mu_) */ = false;
+  std::condition_variable cv_server_continue_;
+  bool server_should_continue_ /* GUARDED_BY(mu_) */ = false;
+};
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
@@ -76,10 +106,13 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
+  void ClientWaitUntilRpcStarted() { signaller_.ClientWaitUntilRpcStarted(); }
+  void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
 
  private:
   bool signal_client_;
   std::mutex mu_;
+  TestServiceSignaller signaller_;
   std::unique_ptr<grpc::string> host_;
 };
 
@@ -114,10 +147,13 @@ class CallbackTestServiceImpl
     std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
+  void ClientWaitUntilRpcStarted() { signaller_.ClientWaitUntilRpcStarted(); }
+  void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
 
  private:
   bool signal_client_;
   std::mutex mu_;
+  TestServiceSignaller signaller_;
   std::unique_ptr<grpc::string> host_;
 };
 

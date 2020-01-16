@@ -33,48 +33,6 @@ grpc_fuzzer(
     ],
 )
 
-grpc_cc_binary(
-    name = "json_rewrite",
-    testonly = 1,
-    srcs = ["json_rewrite.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "json_rewrite_test",
-    srcs = ["json_rewrite_test.cc"],
-    data = [
-        "rewrite_test_input.json",
-        "rewrite_test_output_condensed.json",
-        "rewrite_test_output_indented.json",
-        ":json_stream_error_test",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "json_stream_error_test",
-    srcs = ["json_stream_error_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
 grpc_cc_test(
     name = "json_test",
     srcs = ["json_test.cc"],

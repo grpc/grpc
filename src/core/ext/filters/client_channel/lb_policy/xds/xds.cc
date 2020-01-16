@@ -162,6 +162,8 @@ class XdsLb : public LoadBalancingPolicy {
           pickers_(std::move(pickers)),
           drop_config_(xds_policy_->drop_config_) {}
 
+    ~LocalityPicker() { xds_policy_.reset(DEBUG_LOCATION, "LocalityPicker"); }
+
     PickResult Pick(PickArgs args) override;
 
    private:
@@ -286,6 +288,8 @@ class XdsLb : public LoadBalancingPolicy {
       };
 
       LocalityMap(RefCountedPtr<XdsLb> xds_policy, uint32_t priority);
+
+      ~LocalityMap() { xds_policy_.reset(DEBUG_LOCATION, "LocalityMap"); }
 
       void UpdateLocked(
           const XdsPriorityListUpdate::LocalityMap& locality_map_update);
@@ -614,6 +618,8 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
   explicit EndpointWatcher(RefCountedPtr<XdsLb> xds_policy)
       : xds_policy_(std::move(xds_policy)) {}
 
+  ~EndpointWatcher() { xds_policy_.reset(DEBUG_LOCATION, "EndpointWatcher"); }
+
   void OnEndpointChanged(EdsUpdate update) override {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO, "[xdslb %p] Received EDS update from xds client",
@@ -824,7 +830,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
                                             endpoint_watcher_);
     }
-    auto watcher = MakeUnique<EndpointWatcher>(Ref());
+    auto watcher =
+        MakeUnique<EndpointWatcher>(Ref(DEBUG_LOCATION, "EndpointWatcher"));
     endpoint_watcher_ = watcher.get();
     xds_client()->WatchEndpointData(StringView(eds_service_name()),
                                     std::move(watcher));
@@ -1091,7 +1098,7 @@ void XdsLb::PriorityList::MaybeCreateLocalityMapLocked(uint32_t priority) {
   // Exhausted priorities in the update.
   if (!priority_list_update().Contains(priority)) return;
   auto new_locality_map = new LocalityMap(
-      xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+LocalityMap"), priority);
+      xds_policy_->Ref(DEBUG_LOCATION, "LocalityMap"), priority);
   priorities_.emplace_back(OrphanablePtr<LocalityMap>(new_locality_map));
   new_locality_map->UpdateLocked(*priority_list_update().Find(priority));
 }
@@ -1160,7 +1167,6 @@ XdsLb::PriorityList::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
     gpr_log(GPR_INFO, "[xdslb %p] Creating priority %" PRIu32,
             xds_policy_.get(), priority_);
   }
-
   GRPC_CLOSURE_INIT(&on_failover_timer_, OnFailoverTimer, this,
                     grpc_schedule_on_exec_ctx);
   // Start the failover timer.
@@ -1247,9 +1253,10 @@ void XdsLb::PriorityList::LocalityMap::UpdateXdsPickerLocked() {
     picker_list.push_back(std::make_pair(end, locality->picker_wrapper()));
   }
   xds_policy()->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, MakeUnique<LocalityPicker>(
-                              xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+Picker"),
-                              std::move(picker_list)));
+      GRPC_CHANNEL_READY,
+      grpc_core::MakeUnique<LocalityPicker>(
+          xds_policy_->Ref(DEBUG_LOCATION, "LocalityPicker"),
+          std::move(picker_list)));
 }
 
 OrphanablePtr<XdsLb::PriorityList::LocalityMap::Locality>

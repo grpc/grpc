@@ -44,7 +44,7 @@ class GuardValidator(object):
         self.ifndef_re = re.compile(r'#ifndef ([A-Z][A-Z_1-9]*)')
         self.define_re = re.compile(r'#define ([A-Z][A-Z_1-9]*)')
         self.endif_c_re = re.compile(
-            r'#endif /\* ([A-Z][A-Z_1-9]*) (?:\\ *\n *)?\*/')
+            r'#endif /\* (?: *\\\n *)?([A-Z][A-Z_1-9]*) (?:\\\n *)?\*/$')
         self.endif_cpp_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
         self.failed = False
 
@@ -64,9 +64,10 @@ class GuardValidator(object):
                                                      build_valid_guard(fpath))
             return fcontents
 
-        print('{}: Wrong preprocessor guards (RE {}):'
-              '\n\tFound {}, expected {}').format(fpath, regexp.pattern,
-                                                  match_txt, correct)
+        print(
+            '{}: Wrong preprocessor guards (RE {}):'
+            '\n\tFound {}, expected {}').format(fpath, regexp.pattern,
+                                                match_txt, correct)
         if fix:
             print 'Fixing {}...\n'.format(fpath)
             fixed_fcontents = re.sub(match_txt, correct, fcontents)
@@ -121,15 +122,14 @@ class GuardValidator(object):
         # Is there a properly commented #endif?
         endif_re = self.endif_cpp_re if cpp_header else self.endif_c_re
         flines = fcontents.rstrip().splitlines()
-        match = endif_re.search('\n'.join(flines[-2:]))
+        match = endif_re.search('\n'.join(flines[-3:]))
         if not match:
             # No endif. Check if we have the last line as just '#endif' and if so
             # replace it with a properly commented one.
             if flines[-1] == '#endif':
-                flines[-1] = (
-                    '#endif' +
-                    ('  // {}\n'.format(valid_guard)
-                     if cpp_header else ' /* {} */\n'.format(valid_guard)))
+                flines[-1] = ('#endif' +
+                              ('  // {}\n'.format(valid_guard) if cpp_header
+                               else ' /* {} */\n'.format(valid_guard)))
                 if fix:
                     fcontents = '\n'.join(flines)
                     save(fpath, fcontents)
@@ -179,8 +179,8 @@ FILE_LIST_COMMAND = ' | '.join((git_command, grep_filter))
 ok = True
 filename_list = []
 try:
-    filename_list = subprocess.check_output(
-        FILE_LIST_COMMAND, shell=True).splitlines()
+    filename_list = subprocess.check_output(FILE_LIST_COMMAND,
+                                            shell=True).splitlines()
     # Filter out non-existent files (ie, file removed or renamed)
     filename_list = (f for f in filename_list if os.path.isfile(f))
 except subprocess.CalledProcessError:

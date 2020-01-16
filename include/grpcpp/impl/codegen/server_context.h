@@ -25,6 +25,12 @@ namespace grpc {
 
 typedef ::grpc_impl::ServerContext ServerContext;
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+typedef ::grpc_impl::ServerContextBase ServerContextBase;
+typedef ::grpc_impl::CallbackServerContext CallbackServerContext;
+#endif
+
+// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
 namespace experimental {
 
 typedef ::grpc_impl::ServerContextBase ServerContextBase;

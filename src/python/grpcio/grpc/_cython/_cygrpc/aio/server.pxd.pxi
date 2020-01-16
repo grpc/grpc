@@ -20,8 +20,18 @@ cdef class _HandlerCallDetails:
 cdef class RPCState(GrpcCallWrapper):
     cdef grpc_call_details details
     cdef grpc_metadata_array request_metadata
+    cdef AioServer server
+    # NOTE(lidiz) Under certain corner case, receiving the client close
+    # operation won't immediately fail ongoing RECV_MESSAGE operations. Here I
+    # added a flag to workaround this unexpected behavior.
+    cdef bint client_closed
+    cdef object abort_exception
+    cdef bint metadata_sent
+    cdef bint status_sent
+    cdef tuple trailing_metadata
 
     cdef bytes method(self)
+    cdef tuple invocation_metadata(self)
 
 
 cdef enum AioServerStatus:
@@ -43,3 +53,4 @@ cdef class AioServer:
     cdef object _shutdown_completed  # asyncio.Future
     cdef CallbackWrapper _shutdown_callback_wrapper
     cdef object _crash_exception  # Exception
+    cdef set _ongoing_rpc_tasks

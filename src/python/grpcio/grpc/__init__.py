@@ -1162,7 +1162,13 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     @abc.abstractmethod
     def set_trailing_metadata(self, trailing_metadata):
-        """Sends the trailing metadata for the RPC.
+        """Sets the trailing metadata for the RPC.
+
+        Sets the trailing metadata to be sent upon completion of the RPC.
+
+        If this method is invoked multiple times throughout the lifetime of an
+        RPC, the value supplied in the final invocation will be the value sent
+        over the wire.
 
         This method need not be called by implementations if they have no
         metadata to add to what the gRPC runtime will transmit.
@@ -1583,7 +1589,7 @@ def ssl_channel_credentials(root_certificates=None,
       private_key: The PEM-encoded private key as a byte string, or None if no
         private key should be used.
       certificate_chain: The PEM-encoded certificate chain as a byte string
-        to use or or None if no certificate chain should be used.
+        to use or None if no certificate chain should be used.
 
     Returns:
       A ChannelCredentials for use with an SSL-enabled Channel.
@@ -1852,8 +1858,8 @@ def insecure_channel(target, options=None, compression=None):
       A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
-    return _channel.Channel(target, ()
-                            if options is None else options, None, compression)
+    return _channel.Channel(target, () if options is None else options, None,
+                            compression)
 
 
 def secure_channel(target, credentials, options=None, compression=None):
@@ -1936,10 +1942,10 @@ def server(thread_pool,
       A Server object.
     """
     from grpc import _server  # pylint: disable=cyclic-import
-    return _server.create_server(thread_pool, ()
-                                 if handlers is None else handlers, ()
-                                 if interceptors is None else interceptors, ()
-                                 if options is None else options,
+    return _server.create_server(thread_pool,
+                                 () if handlers is None else handlers,
+                                 () if interceptors is None else interceptors,
+                                 () if options is None else options,
                                  maximum_concurrent_rpcs, compression)
 
 

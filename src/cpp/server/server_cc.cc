@@ -23,6 +23,7 @@
 #include <utility>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
@@ -111,6 +112,7 @@ class UnimplementedAsyncRequestContext {
 // de-experimentalized fully.
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 using ::grpc::experimental::CallbackGenericService;
+using ::grpc::experimental::CallbackServerContext;
 using ::grpc::experimental::GenericCallbackServerContext;
 #endif
 
@@ -551,9 +553,9 @@ class Server::CallbackRequestBase : public grpc::internal::CompletionQueueTag {
 template <class ServerContextType>
 class Server::CallbackRequest final : public Server::CallbackRequestBase {
  public:
-  static_assert(std::is_base_of<grpc::experimental::CallbackServerContext,
-                                ServerContextType>::value,
-                "ServerContextType must be derived from CallbackServerContext");
+  static_assert(
+      std::is_base_of<grpc::CallbackServerContext, ServerContextType>::value,
+      "ServerContextType must be derived from CallbackServerContext");
 
   // The constructor needs to know the server for this callback request and its
   // index in the server's request count array to allow for proper dynamic
@@ -807,8 +809,8 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 };
 
 template <>
-bool Server::CallbackRequest<grpc::experimental::CallbackServerContext>::
-    FinalizeResult(void** /*tag*/, bool* /*status*/) {
+bool Server::CallbackRequest<grpc::CallbackServerContext>::FinalizeResult(
+    void** /*tag*/, bool* /*status*/) {
   return false;
 }
 
@@ -817,6 +819,7 @@ bool Server::CallbackRequest<
     grpc::GenericCallbackServerContext>::FinalizeResult(void** /*tag*/,
                                                         bool* status) {
   if (*status) {
+    deadline_ = call_details_->deadline;
     // TODO(yangg) remove the copy here
     ctx_.method_ = grpc::StringFromCopiedSlice(call_details_->method);
     ctx_.host_ = grpc::StringFromCopiedSlice(call_details_->host);
@@ -827,8 +830,8 @@ bool Server::CallbackRequest<
 }
 
 template <>
-const char* Server::CallbackRequest<
-    grpc::experimental::CallbackServerContext>::method_name() const {
+const char* Server::CallbackRequest<grpc::CallbackServerContext>::method_name()
+    const {
   return method_->name();
 }
 
@@ -962,7 +965,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(
-    int max_receive_message_size, grpc::ChannelArguments* args,
+    grpc::ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec,
@@ -974,7 +977,7 @@ Server::Server(
         interceptor_creators)
     : acceptors_(std::move(acceptors)),
       interceptor_creators_(std::move(interceptor_creators)),
-      max_receive_message_size_(max_receive_message_size),
+      max_receive_message_size_(INT_MIN),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
       shutdown_(false),
@@ -1024,10 +1027,12 @@ Server::Server(
             static_cast<grpc::HealthCheckServiceInterface*>(
                 channel_args.args[i].value.pointer.p));
       }
-      break;
+    }
+    if (0 ==
+        strcmp(channel_args.args[i].key, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)) {
+      max_receive_message_size_ = channel_args.args[i].value.integer;
     }
   }
-
   server_ = grpc_server_create(&channel_args, nullptr);
 }
 
@@ -1140,7 +1145,7 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
         callback_reqs_to_start_.push_back(
-            new CallbackRequest<grpc::experimental::CallbackServerContext>(
+            new CallbackRequest<grpc::CallbackServerContext>(
                 this, method_index, method.get(), method_registration_tag));
       }
       // Enqueue it so that it will be Request'ed later after all request

@@ -47,6 +47,11 @@ struct VersionState {
   std::string version_info;
   // The nonce of the latest response.
   std::string nonce;
+  // The error message to be included in a NACK with the nonce. Consumed when a
+  // nonce is NACK'ed for the first time.
+  grpc_error* error = GRPC_ERROR_NONE;
+
+  ~VersionState() { GRPC_ERROR_UNREF(error); }
 };
 
 struct RdsUpdate {

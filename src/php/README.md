@@ -9,87 +9,43 @@ gRPC PHP installation instructions for Google Cloud Platform is in
 
 ## Environment
 
-### Prerequisite:
+### Prerequisites
 
-* `php` 5.5 or above, 7.0 or above
+* `php`: version 7.0 or above (PHP 5.x support will be deprecated some time
+in 2020).
 * `pecl`
 * `composer`
 * `phpunit` (optional)
 
-**Install PHP and PECL on Ubuntu/Debian:**
 
-For PHP5:
+## Install the _grpc_ extension
 
-```sh
-$ sudo apt-get install php5 php5-dev php-pear
-```
-
-For PHP7:
-
-```sh
-$ sudo apt-get install php7.0 php7.0-dev php-pear
-```
-or
-```sh
-$ sudo apt-get install php php-dev php-pear
-```
-
-**Install PHP and PECL on CentOS/RHEL 7:**
-```sh
-$ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-$ sudo rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-$ sudo yum install php56w php56w-devel php-pear phpunit gcc zlib-devel
-```
-
-**Install PHP and PECL on Mac:**
-```sh
-$ curl -O http://pear.php.net/go-pear.phar
-$ sudo php -d detect_unicode=0 go-pear.phar
-```
-
-**Install Composer (Linux or Mac):**
-```sh
-$ curl -sS https://getcomposer.org/installer | php
-$ sudo mv composer.phar /usr/local/bin/composer
-```
-
-**Install PHPUnit (Linux or Mac):**
-
-PHP tests currently require using an older version of PHPUnit
-
-```sh
-$ wget https://phar.phpunit.de/phpunit-5.7.27.phar
-$ chmod +x phpunit-5.7.27.phar
-$ sudo mv phpunit-5.7.27.phar /usr/local/bin/phpunit
-```
-
-## Install the gRPC PHP extension
-
-There are two ways to install gRPC PHP extension.
+There are two ways to install the `grpc` extension.
 * `pecl`
-* `build from source`
+* Build from source
 
-### Using PECL
+### Install from PECL
 
 ```sh
-sudo pecl install grpc
+$ [sudo] pecl install grpc
 ```
 
 or specific version
 
 ```sh
-sudo pecl install grpc-1.12.0
+$ [sudo] pecl install grpc-1.25.0
 ```
 
 Note: for users on CentOS/RHEL 6, unfortunately this step won’t work. 
 Please follow the instructions below to compile the PECL extension from source.
 
-#### Install on Windows
 
-You can download the pre-compiled gRPC extension from the PECL
-[website](https://pecl.php.net/package/grpc)
+### Install on Windows
 
-### Build from Source with gRPC C core library
+You can download the pre-compiled `grpc.dll` extension from the PECL
+[website](https://pecl.php.net/package/grpc).
+
+### Build from source
 
 Clone this repository
 
@@ -103,57 +59,64 @@ $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 $ cd grpc
 $ git submodule update --init
 $ make
-$ sudo make install
+$ [sudo] make install
 ```
 
-#### Build and install gRPC PHP extension
+#### Build and install the `grpc` extension
 
-Compile the gRPC PHP extension
+Compile the `grpc` extension from source
 
 ```sh
 $ cd grpc/src/php/ext/grpc
 $ phpize
 $ ./configure
 $ make
-$ sudo make install
+$ [sudo] make install
 ```
 
-This will compile and install the gRPC PHP extension into the 
+This will compile and install the `grpc` extension into the 
 standard PHP extension directory. You should be able to run 
-the [unit tests](#unit-tests), with the PHP extension installed.
+the [unit tests](#unit-tests), with the `grpc` extension installed.
 
 
 ### Update php.ini
 
-After installing the gRPC extension, make sure you add this line 
-to your `php.ini` file, (e.g. `/etc/php5/cli/php.ini`, 
-`/etc/php5/apache2/php.ini`, or `/usr/local/etc/php/5.6/php.ini`), 
-depending on where your PHP installation is.
+After installing the `grpc` extension, make sure you add this line to your
+`php.ini` file, depending on where your PHP installation is, to enable the
+`grpc` extension.
 
 ```sh
 extension=grpc.so
 ```
 
-**Add the gRPC PHP library as a Composer dependency**
+## Composer package
 
-You need to add this to your project's `composer.json` file.
+In addition to the `grpc` extension, you will need to install the `grpc/grpc`
+composer package as well. Add this to your project's `composer.json` file.
 
 ```
   "require": {
-    "grpc/grpc": "v1.12.0"
+    "grpc/grpc": "v1.25.0"
   }
 ```
 
 To run tests with generated stub code from `.proto` files, you will also 
-need the `composer` and `protoc` binaries. You can find out how to get these below.
+need the `composer` and `protoc` binaries. You can find out how to get these
+below.
 
-## Install other prerequisites for both Mac OS X and Linux
+## Protocol Buffers
 
-* `protoc: protobuf compiler`
-* `protobuf.so: protobuf runtime library`
-* `grpc_php_plugin: Generates PHP gRPC service interface out of Protobuf IDL`
+gRPC PHP supports
+[protocol buffers](https://developers.google.com/protocol-buffers)
+out-of-the-box. You will need the following things to get started:
 
-### Install Protobuf compiler
+* `protoc`: the protobuf compiler binary to generate PHP classes for your
+messages and service definition.
+* `grpc_php_plugin`: a plugin for `protoc` to generate the service stub
+classes.
+* `protobuf.so`: the `protobuf` extension runtime library.
+
+### `protoc` compiler
 
 If you don't have it already, you need to install the protobuf compiler
 `protoc`, version 3.5.0+ (the newer the better) for the current gRPC version.
@@ -161,7 +124,8 @@ If you installed already, make the protobuf version is compatible to the
 grpc version you installed. If you build grpc.so from the souce, you can check
 the version of grpc inside package.xml file.
 
-The compatibility between the grpc and protobuf version is listed as table below:
+The compatibility between the grpc and protobuf version is listed as table
+below:
 
 grpc | protobuf
 --- | --- 
@@ -186,11 +150,15 @@ v1.19.1 | 3.6.1
 v1.20.1 | 3.7.0
 v1.21.3 | 3.7.0
 v1.22.0 | 3.8.0
+v1.23.1 | 3.8.0
+v1.24.0 | 3.8.0
+v1.25.0 | 3.8.0
 
-If `protoc` hasn't been installed, you can download the `protoc` binaries from
-[the protocol buffers Github repository](https://github.com/google/protobuf/releases).
-Then unzip this file and update the environment variable `PATH` to include the path to 
-the protoc binary file.
+If `protoc` hasn't been installed, you can download the `protoc` binary from
+the protocol buffers
+[Github repository](https://github.com/google/protobuf/releases).
+Then unzip this file and update the environment variable `PATH` to include the
+path to the protoc binary file.
 
 If you really must compile `protoc` from source, you can run the following
 commands, but this is risky because there is no easy way to uninstall /
@@ -199,54 +167,21 @@ upgrade to a newer release.
 ```sh
 $ cd grpc/third_party/protobuf
 $ ./autogen.sh && ./configure && make
-$ sudo make install
+$ [sudo] make install
 ```
 
-### Protobuf Runtime library
+### `grpc_php_plugin` protoc plugin
 
-There are two protobuf runtime libraries to choose from. They are identical
-in terms of APIs offered. The C implementation provides better performance, 
-while the native implementation is easier to install. Make sure the installed 
-protobuf version works with grpc version.
-
-#### 1. C implementation (for better performance)
-
-``` sh
-$ sudo pecl install protobuf
-```
-or specific version
-
-``` sh
-$ sudo pecl install protobuf-3.5.1.1
-```
-
-Add this to your `php.ini` file:
-
-```sh
-extension=protobuf.so
-```
-
-#### 2. PHP implementation (for easier installation)
-
-Add this to your `composer.json` file:
-
-```
-  "require": {
-    "google/protobuf": "^v3.5.0"
-  }
-```
-
-### PHP Protoc Plugin
-
-You need the gRPC PHP protoc plugin to generate the client stub classes.
-It can generate server and client code from .proto service definitions.
+You need the `grpc_php_plugin` to generate the PHP client stub classes. This
+plugin works with the main `protoc` binary to generate classes that you can
+import into your project.
 
 It should already been compiled when you run `make` from the root directory
 of this repo. The plugin can be found in the `bins/opt` directory. We are
 planning to provide a better way to download and install the plugin
 in the future.
 
-You can also just build the gRPC PHP protoc plugin by running:
+You can also just build the `grpc_php_plugin` by running:
 
 ```sh
 $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
@@ -256,8 +191,55 @@ $ make grpc_php_plugin
 ```
 
 Plugin may use the new feature of the new protobuf version, thus please also
-make sure that the protobuf version installed is compatible with the grpc version 
-you build this plugin.
+make sure that the protobuf version installed is compatible with the grpc
+version you build this plugin.
+
+### `protobuf` runtime library
+
+There are two `protobuf` runtime libraries to choose from. They are identical
+in terms of APIs offered. The C implementation provides better performance, 
+while the native implementation is easier to install.
+
+#### C implementation (for better performance)
+
+Install the `protobuf` extension from PECL:
+
+``` sh
+$ [sudo] pecl install protobuf
+```
+or specific version
+
+``` sh
+$ [sudo] pecl install protobuf-3.8.0
+```
+
+And add this to your `php.ini` file:
+
+```sh
+extension=protobuf.so
+```
+
+#### PHP implementation (for easier installation)
+
+Or require the `google/protobuf` composer package. Add this to your
+`composer.json` file:
+
+```
+  "require": {
+    "google/protobuf": "^v3.8.0"
+  }
+```
+
+### Generate PHP classes from your service definition
+
+With all the above done, now you can define your message and service defintion
+in a `.proto` file and generate the corresponding PHP classes, which you can
+import into your project, with a command similar to the following:
+
+```
+$ protoc -I=. echo.proto --php_out=. --grpc_out=. \
+--plugin=protoc-gen-grpc=<path to grpc_php_plugin>
+```
 
 ## Unit Tests
 
@@ -320,137 +302,71 @@ $ cd grpc/src/php
 $ ./bin/run_gen_code_test.sh
 ```
 
-## Use the gRPC PHP extension with Apache
+## Apache, PHP-FPM and Nginx
 
-Install `apache2`, in addition to `php5` above
+For more information on how you can run the `grpc` library with Apache,
+PHP-FPM and Nginx, you can check out
+[this guide](https://github.com/grpc/grpc/tree/master/examples/php/echo).
+There you will find a series of Docker images where you can quickly run an
+end-to-end example.
 
-```sh
-$ sudo apt-get install apache2
-```
+## Misc Config Options
 
-Add this line to your `php.ini` file, e.g. `/etc/php5/apache2/php.ini`
-or `/etc/php/7.0/apache2/php.ini`
+### SSL credentials
 
-```sh
-extension=grpc.so
-```
-
-Restart apache
-
-```sh
-$ sudo service apache2 restart
-```
-
-Make sure the Node math server is still running, as above. 
-
-```sh
-$ cd grpc
-$ npm install
-$ node src/node/test/math/math_server.js
-```
-
-Make sure you have run `composer install` to generate the `vendor/autoload.php` file
-
-```sh
-$ cd grpc/src/php
-$ composer install
-```
-
-Make sure you have generated the client stubs
-
-```sh
-$ ./bin/generate_proto_php.sh
-```
-
-Copy the `math_client.php` file into your Apache document root, e.g.
-
-```sh
-$ cp tests/generated_code/math_client.php /var/www/html
-```
-
-You may have to fix the first line to point the includes to your installation:
-
-```php
-include 'vendor/autoload.php';
-```
-
-Connect to `localhost/math_client.php` in your browser, or run this from command line:
-
-```sh
-$ curl localhost/math_client.php
-```
-
-## Use the gRPC PHP extension with Nginx/PHP-FPM
-
-Install `nginx` and `php5-fpm`, in addition to `php5` above
-
-```sh
-$ sudo apt-get install nginx php5-fpm
-
-OR
-
-$ sudo apt-get install nginx php7.0-fpm
-```
-
-Add this line to your `php.ini` file, e.g. `/etc/php5/fpm/php.ini`
-
-```sh
-extension=grpc.so
-```
-
-Uncomment the following lines in your `/etc/nginx/sites-available/default` file:
+Here's how you can specify SSL credentials when creating your PHP client:
 
 ```
-location ~ \.php$ {
-    include snippets/fastcgi-php.conf;
-    fastcgi_pass unix:/var/run/php5-fpm.sock;
-}
+$client = new Helloworld\GreeterClient('localhost:50051', [
+    'credentials' => Grpc\ChannelCredentials::createSsl(
+        file_get_contents('<path to certificate>'))
+]);
 ```
 
-Restart nginx and php-fpm
+### pcntl_fork() support
 
-```sh
-$ sudo service nginx restart
-$ sudo service php5-fpm restart
+To make sure the `grpc` extension works with `pcntl_fork()` and related
+functions, add the following lines to your `php.ini` file:
+
+```
+grpc.enable_fork_support = 1
+grpc.poll_strategy = epoll1
 ```
 
-Make sure the Node math server is still running, as above. 
+### Tracing and Logging
 
-```sh
-$ cd grpc
-$ npm install
-$ node src/node/test/math/math_server.js
+To turn on gRPC tracing, add the following lines to your `php.ini` file. For
+all possible values of the `grpc.grpc.trace` option, please check
+[this doc](https://github.com/grpc/grpc/blob/master/doc/environment_variables.md).
+
+```
+grpc.grpc_verbosity=debug
+grpc.grpc_trace=all,-timer_check
+grpc.log_filename=/var/log/grpc.log
 ```
 
-Make sure you have run `composer install` to generate the `vendor/autoload.php` file
+### User agent string
 
-```sh
-$ cd grpc/src/php
-$ composer install
+You can customize the user agent string for your gRPC PHP client by specifying
+this `grpc.primary_user_agent` option when constructing your PHP client:
+
+```
+$client = new Helloworld\GreeterClient('localhost:50051', [
+    'credentials' => Grpc\ChannelCredentials::createInsecure(),
+    'grpc.primary_user_agent' => 'my-user-agent-identifier',
+]);
 ```
 
-Make sure you have generated the client stubs
+### Maximum message size
 
-```sh
-$ ./bin/generate_proto_php.sh
+To change the default maximum message size, specify this
+`grpc.max_receive_message_length` option when constructing your PHP client:
+
 ```
-
-Copy the `math_client.php` file into your Nginx document root, e.g.
-
-```sh
-$ cp tests/generated_code/math_client.php /var/www/html
-```
-
-You may have to fix the first line to point the includes to your installation:
-
-```php
-include 'vendor/autoload.php';
-```
-
-Connect to `localhost/math_client.php` in your browser, or run this from command line:
-
-```sh
-$ curl localhost/math_client.php
+$client = new Helloworld\GreeterClient('localhost:50051', [
+    'credentials' => Grpc\ChannelCredentials::createInsecure(),
+    'grpc.max_receive_message_length' => 8*1024*1024,
+]);
 ```
 
 [Node]:https://github.com/grpc/grpc/tree/master/src/node/examples

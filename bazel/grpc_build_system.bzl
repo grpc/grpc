@@ -85,23 +85,6 @@ def grpc_cc_library(
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
-    # This is a temporary solution to enable absl dependency only for
-    # Bazel-build with grpc_use_absl enabled to abseilfy in-house classes
-    # such as inlined_vector before absl is fully supported.
-    # When https://github.com/grpc/grpc/pull/20184 is merged, it will
-    # be removed.
-    more_external_deps = []
-    if name == "inlined_vector":
-        more_external_deps += select({
-            "//:grpc_use_absl": ["@com_google_absl//absl/container:inlined_vector"],
-            "//conditions:default": [],
-        })
-    if name == "gpr_base":
-        more_external_deps += select({
-            "//:grpc_use_absl": ["@com_google_absl//absl/strings:strings"],
-            "//conditions:default": [],
-        })
-
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -119,11 +102,11 @@ def grpc_cc_library(
                       "//conditions:default": [],
                   }) +
                   select({
-                      "//:grpc_use_absl": ["GRPC_USE_ABSL=1"],
+                      "//:grpc_disable_absl": ["GRPC_USE_ABSL=0"],
                       "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
-        deps = deps + _get_external_deps(external_deps) + more_external_deps,
+        deps = deps + _get_external_deps(external_deps),
         copts = copts,
         visibility = visibility,
         testonly = testonly,
@@ -193,6 +176,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
+
     # NOTE: these attributes won't be used for the poller-specific versions of a test
     # automatically, you need to set them explicitly (if applicable)
     args = {

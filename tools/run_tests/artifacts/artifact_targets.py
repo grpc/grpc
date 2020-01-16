@@ -83,16 +83,15 @@ def create_jobspec(name,
     else:
         environ['ARTIFACTS_OUT'] = os.path.join('artifacts', name)
 
-    jobspec = jobset.JobSpec(
-        cmdline=cmdline,
-        environ=environ,
-        shortname='build_artifact.%s' % (name),
-        timeout_seconds=timeout_seconds,
-        flake_retries=flake_retries,
-        timeout_retries=timeout_retries,
-        shell=shell,
-        cpu_cost=cpu_cost,
-        verbose_success=verbose_success)
+    jobspec = jobset.JobSpec(cmdline=cmdline,
+                             environ=environ,
+                             shortname='build_artifact.%s' % (name),
+                             timeout_seconds=timeout_seconds,
+                             flake_retries=flake_retries,
+                             timeout_retries=timeout_retries,
+                             shell=shell,
+                             cpu_cost=cpu_cost,
+                             verbose_success=verbose_success)
     return jobspec
 
 
@@ -162,8 +161,8 @@ class PythonArtifact:
 
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/grpc_artifact_python_%s_%s' % (self.platform,
-                                                                 self.arch),
+                'tools/dockerfile/grpc_artifact_python_%s_%s' %
+                (self.platform, self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
                 timeout_seconds=60 * 60,
@@ -178,14 +177,13 @@ class PythonArtifact:
             # seed.  We create a random temp-dir here
             dir = ''.join(
                 random.choice(string.ascii_uppercase) for _ in range(10))
-            return create_jobspec(
-                self.name, [
-                    'tools\\run_tests\\artifacts\\build_artifact_python.bat',
-                    self.py_version, '32' if self.arch == 'x86' else '64'
-                ],
-                environ=environ,
-                timeout_seconds=45 * 60,
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'tools\\run_tests\\artifacts\\build_artifact_python.bat',
+                self.py_version, '32' if self.arch == 'x86' else '64'
+            ],
+                                  environ=environ,
+                                  timeout_seconds=45 * 60,
+                                  use_workspace=True)
         else:
             environ['PYTHON'] = self.py_version
             environ['SKIP_PIP_INSTALL'] = 'TRUE'
@@ -243,21 +241,18 @@ class CSharpExtArtifact:
                 self.name,
                 'tools/dockerfile/grpc_artifact_android_ndk',
                 'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
-                environ={
-                    'ANDROID_ABI': self.arch_abi
-                })
+                environ={'ANDROID_ABI': self.arch_abi})
         elif self.arch == 'ios':
             return create_jobspec(
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
                 use_workspace=True)
         elif self.platform == 'windows':
-            return create_jobspec(
-                self.name, [
-                    'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
-                    self.arch
-                ],
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
+                self.arch
+            ],
+                                  use_workspace=True)
         else:
             if self.platform == 'linux':
                 cmake_arch_option = ''  # x64 is the default architecture
@@ -271,11 +266,9 @@ class CSharpExtArtifact:
                     cmake_arch_option = '-DOPENSSL_NO_ASM=ON'
                 return create_docker_jobspec(
                     self.name,
-                    'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+                    'tools/dockerfile/grpc_artifact_centos6_%s' % self.arch,
                     'tools/run_tests/artifacts/build_artifact_csharp.sh',
-                    environ={
-                        'CMAKE_ARCH_OPTION': cmake_arch_option
-                    })
+                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option})
             else:
                 cmake_arch_option = ''  # x64 is the default architecture
                 if self.arch == 'x86':
@@ -304,8 +297,9 @@ class PHPArtifact:
 
     def build_jobspec(self):
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_linux_{}'.format(
-                self.arch), 'tools/run_tests/artifacts/build_artifact_php.sh')
+            self.name,
+            'tools/dockerfile/grpc_artifact_centos6_{}'.format(self.arch),
+            'tools/run_tests/artifacts/build_artifact_php.sh')
 
 
 class ProtocArtifact:
@@ -362,8 +356,7 @@ class ProtocArtifact:
 def targets():
     """Gets list of supported targets"""
     return ([
-        Cls(platform, arch)
-        for Cls in (CSharpExtArtifact, ProtocArtifact)
+        Cls(platform, arch) for Cls in (CSharpExtArtifact, ProtocArtifact)
         for platform in ('linux', 'macos', 'windows') for arch in ('x86', 'x64')
     ] + [
         CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),

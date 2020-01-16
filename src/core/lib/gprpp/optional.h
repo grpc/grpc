@@ -21,6 +21,20 @@
 
 #include <grpc/support/port_platform.h>
 
+// TODO(yashykt): Remove false once migration to abseil is done.
+#if false && GRPC_USE_ABSL
+
+#include "absl/types/optional.h"
+
+namespace grpc_core {
+
+template <typename T>
+using Optional = absl::optional<T>;
+
+}  // namespace grpc_core
+
+#else
+
 #include <utility>
 
 namespace grpc_core {
@@ -54,5 +68,7 @@ class Optional {
 };
 
 } /* namespace grpc_core */
+
+#endif
 
 #endif /* GRPC_CORE_LIB_GPRPP_OPTIONAL_H */

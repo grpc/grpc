@@ -18,8 +18,20 @@ if(gRPC_ABSL_PROVIDER STREQUAL "module")
   endif()
   if(EXISTS "${ABSL_ROOT_DIR}/CMakeLists.txt")
     add_subdirectory(${ABSL_ROOT_DIR} third_party/abseil-cpp)
+    if(TARGET absl_base)
+      if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+        install(TARGETS ${gRPC_ABSL_USED_TARGETS} EXPORT gRPCTargets
+          RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+          LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR})
+      endif()
+    endif()
   else()
     message(WARNING "gRPC_ABSL_PROVIDER is \"module\" but ABSL_ROOT_DIR is wrong")
+  endif()
+  if(gRPC_INSTALL AND NOT _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ABSL_PROVIDER is \"module\" and CMake version (${CMAKE_VERSION}) is less than 3.13.")
+    set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_ABSL_PROVIDER STREQUAL "package")
   # Use "CONFIG" as there is no built-in cmake module for absl.

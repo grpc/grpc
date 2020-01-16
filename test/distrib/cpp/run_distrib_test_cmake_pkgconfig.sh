@@ -23,6 +23,13 @@ sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sou
 apt-get update
 apt-get install -t jessie-backports -y libssl-dev pkg-config
 
+# Install absl
+mkdir -p "third_party/abseil-cpp/cmake/build"
+pushd "third_party/abseil-cpp/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+make -j4 install
+popd
+
 # Install c-ares
 mkdir -p "third_party/cares/cares/cmake/build"
 pushd "third_party/cares/cares/cmake/build"
@@ -57,6 +64,7 @@ cmake \
   -DCMAKE_INSTALL_PREFIX=/usr/local/grpc \
   -DgRPC_INSTALL=ON \
   -DgRPC_BUILD_TESTS=OFF \
+  -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_CARES_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \

@@ -22,6 +22,31 @@
 #include <grpcpp/impl/codegen/client_callback_impl.h>
 
 namespace grpc {
+
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+template <class Response>
+using ClientCallbackReader = ::grpc_impl::ClientCallbackReader<Response>;
+
+template <class Request>
+using ClientCallbackWriter = ::grpc_impl::ClientCallbackWriter<Request>;
+
+template <class Request, class Response>
+using ClientCallbackReaderWriter =
+    ::grpc_impl::ClientCallbackReaderWriter<Request, Response>;
+
+template <class Response>
+using ClientReadReactor = ::grpc_impl::ClientReadReactor<Response>;
+
+template <class Request>
+using ClientWriteReactor = ::grpc_impl::ClientWriteReactor<Request>;
+
+template <class Request, class Response>
+using ClientBidiReactor = ::grpc_impl::ClientBidiReactor<Request, Response>;
+
+typedef ::grpc_impl::ClientUnaryReactor ClientUnaryReactor;
+#endif
+
+// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
 namespace experimental {
 
 template <class Response>
@@ -44,6 +69,7 @@ template <class Request, class Response>
 using ClientBidiReactor = ::grpc_impl::ClientBidiReactor<Request, Response>;
 
 typedef ::grpc_impl::ClientUnaryReactor ClientUnaryReactor;
+
 }  // namespace experimental
 }  // namespace grpc
 

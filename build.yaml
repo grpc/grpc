@@ -268,6 +268,10 @@ filegroups:
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
+  deps:
+  - absl/container:inlined_vector
+  - absl/strings:strings
+  - absl/types:optional
   uses:
   - gpr_base_headers
 - name: gpr_base_headers
@@ -623,7 +627,6 @@ filegroups:
   uses:
   - gpr_base_headers
   - grpc_base_headers
-  - grpc_client_channel
   - grpc_health_upb
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
@@ -714,6 +717,7 @@ filegroups:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/logical_thread.cc
+  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -768,7 +772,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/json/json.cc
   - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_string.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -895,6 +898,7 @@ filegroups:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/logical_thread.h
   - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -934,9 +938,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
-  - src/core/lib/json/json_common.h
-  - src/core/lib/json/json_reader.h
-  - src/core/lib/json/json_writer.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_hash_table.h
@@ -1073,6 +1074,14 @@ filegroups:
   plugin: grpc_deadline_filter
   uses:
   - grpc_base
+- name: grpc_grpclb_balancer_addresses
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_health_upb
   headers:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
@@ -1128,6 +1137,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_grpclb_balancer_addresses
   - grpc_lb_upb
   - grpc_resolver_fake
 - name: grpc_lb_policy_grpclb_secure
@@ -1149,6 +1159,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_grpclb_balancer_addresses
   - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
@@ -1239,6 +1250,7 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_resolver_dns_selection
+  - grpc_grpclb_balancer_addresses
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
@@ -1308,7 +1320,7 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
-  - src/core/lib/security/credentials/tls/spiffe_credentials.h
+  - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
@@ -1318,7 +1330,7 @@ filegroups:
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
   - src/core/lib/security/security_connector/ssl_utils.h
   - src/core/lib/security/security_connector/ssl_utils_config.h
-  - src/core/lib/security/security_connector/tls/spiffe_security_connector.h
+  - src/core/lib/security/security_connector/tls/tls_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_handshaker.h
@@ -1344,7 +1356,7 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
-  - src/core/lib/security/credentials/tls/spiffe_credentials.cc
+  - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1354,7 +1366,7 @@ filegroups:
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   - src/core/lib/security/security_connector/ssl_utils.cc
   - src/core/lib/security/security_connector/ssl_utils_config.cc
-  - src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
+  - src/core/lib/security/security_connector/tls/tls_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
@@ -1705,6 +1717,8 @@ libs:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
   - grpc
+  filegroups:
+  - grpc_test_util_base
   secure: true
 - name: gpr
   build: all
@@ -1872,6 +1886,8 @@ libs:
   - test/cpp/naming/dns_test_util.h
   src:
   - test/cpp/naming/dns_test_util.cc
+  deps:
+  - gpr
 - name: grpc++
   build: all
   language: c++
@@ -1903,6 +1919,22 @@ libs:
   - grpc++_codegen_proto
   - grpc++_codegen_base_src
   secure: check
+- name: grpc++_alts
+  build: all
+  language: c++
+  public_headers:
+  - include/grpcpp/impl/codegen/security/auth_context.h
+  - include/grpcpp/security/alts_context.h
+  - include/grpcpp/security/alts_util.h
+  src:
+  - src/cpp/common/alts_context.cc
+  - src/cpp/common/alts_util.cc
+  deps:
+  - grpc++
+  - gpr
+  baselib: true
+  filegroups:
+  - alts_upb
 - name: grpc++_core_stats
   build: private
   language: c++
@@ -3273,37 +3305,6 @@ targets:
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
-- name: json_rewrite
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/json/json_rewrite.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: json_rewrite_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_rewrite_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: json_stream_error_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_stream_error_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
 - name: json_test
   build: test
   language: c
@@ -4060,6 +4061,19 @@ targets:
   - alts_test_util
   - gpr
   - grpc
+- name: alts_util_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/common/alts_util_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++_alts
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
 - name: alts_zero_copy_grpc_protector_test
   build: test
   language: c++
@@ -4935,6 +4949,17 @@ targets:
   deps:
   - grpc++_error_details
   - grpc++
+- name: eventmanager_libuv_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/iomgr/poller/eventmanager_libuv_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
 - name: exception_test
   gtest: true
   build: test
@@ -5135,12 +5160,12 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-- name: grpc_spiffe_security_connector_test
+- name: grpc_tls_security_connector_test
   gtest: true
   build: test
   language: c++
   src:
-  - test/core/security/spiffe_security_connector_test.cc
+  - test/core/security/tls_security_connector_test.cc
   deps:
   - grpc_test_util
   - grpc++_test_util
@@ -6271,21 +6296,16 @@ defaults:
   global:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
+    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/upb
+      -Isrc/core/ext/upb-generated
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden
-openssl_fallback:
-  base_uri: https://openssl.org/source/old/1.0.2/
-  extraction_dir: openssl-1.0.2f
-  tarball: openssl-1.0.2f.tar.gz
 php_config_m4:
   deps:
   - grpc
-  - gpr
   - address_sorting
   - boringssl
-  - upb
   - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
@@ -6314,18 +6334,14 @@ php_config_m4:
 python_dependencies:
   deps:
   - grpc
-  - gpr
   - address_sorting
   - ares
   - boringssl
-  - upb
   - z
 ruby_gem:
   deps:
   - grpc
-  - gpr
   - address_sorting
   - ares
   - boringssl
-  - upb
   - z

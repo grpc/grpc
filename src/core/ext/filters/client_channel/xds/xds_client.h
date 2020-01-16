@@ -116,6 +116,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const grpc_channel_args& args);
 
  private:
+  static const grpc_arg_pointer_vtable kXdsClientVtable;
+
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
   // TODO(roth): This is separate from the XdsClient object because it was
@@ -219,7 +221,13 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   static void ChannelArgDestroy(void* p);
   static int ChannelArgCmp(void* p, void* q);
 
-  static const grpc_arg_pointer_vtable kXdsClientVtable;
+  std::string route_config_name_;
+  std::string cluster_name_;
+  // All the received clusters are cached, no matter they are watched or not.
+  std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
+  // Only the watched EDS service names are stored.
+  std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
+      endpoint_map_;
 
   grpc_core::UniquePtr<char> build_version_;
 
@@ -234,14 +242,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
-
-  std::string route_config_name_;
-  std::string cluster_name_;
-  // All the received clusters are cached, no matter they are watched or not.
-  std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
-  // Only the watched EDS service names are stored.
-  std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
-      endpoint_map_;
 
   bool shutting_down_ = false;
 };
