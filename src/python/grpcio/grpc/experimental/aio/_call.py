@@ -271,8 +271,6 @@ class Call(_base_call.Call):
         return self._repr()
 
 
-# TODO(https://github.com/grpc/grpc/issues/21623) remove this suppression
-# pylint: disable=abstract-method
 class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     """Object for managing unary-unary RPC calls.
 
@@ -344,8 +342,6 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         return response
 
 
-# TODO(https://github.com/grpc/grpc/issues/21623) remove this suppression
-# pylint: disable=abstract-method
 class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
     """Object for managing unary-stream RPC calls.
 
@@ -435,8 +431,6 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         return response_message
 
 
-# TODO(https://github.com/grpc/grpc/issues/21623) remove this suppression
-# pylint: disable=abstract-method
 class StreamUnaryCall(Call, _base_call.StreamUnaryCall):
     """Object for managing stream-unary RPC calls.
 
@@ -556,8 +550,6 @@ class StreamUnaryCall(Call, _base_call.StreamUnaryCall):
                 await self._raise_for_status()
 
 
-# TODO(https://github.com/grpc/grpc/issues/21623) remove this suppression
-# pylint: disable=abstract-method
 class StreamStreamCall(Call, _base_call.StreamStreamCall):
     """Object for managing stream-stream RPC calls.
 
