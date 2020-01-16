@@ -68,9 +68,15 @@ namespace Grpc.Core
         }
 
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected virtual Task ShutdownAsyncCore()
+        #pragma warning disable 1998
+        protected virtual async Task ShutdownAsyncCore()
         {
-            throw new NotImplementedException();
+            // default implementation is no-op for backwards compatibility, but all implementations
+            // are expected to override this method.
+
+            // warning 1998 is disabled to avoid needing TaskUtils.CompletedTask, which is
+            // only available in Grpc.Core
         }
+        #pragma warning restore 1998
     }
 }
