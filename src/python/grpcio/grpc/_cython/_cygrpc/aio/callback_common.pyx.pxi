@@ -120,6 +120,15 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     batch_operation_tag.event(c_event)
 
 
+cdef prepend_send_initial_metadata_op(tuple ops, tuple metadata):
+    # Eventually, this function should be the only function that produces
+    # SendInitialMetadataOperation. So we have more control over the flag.
+    return (SendInitialMetadataOperation(
+        metadata,
+        _EMPTY_FLAG
+    ),) + ops
+
+
 async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
                            object loop):
     """Retrives parsed messages from Core.
@@ -147,15 +156,9 @@ async def _send_message(GrpcCallWrapper grpc_call_wrapper,
                         bint metadata_sent,
                         object loop):
     cdef SendMessageOperation op = SendMessageOperation(message, _EMPTY_FLAG)
-    cdef tuple ops
-    if metadata_sent:
-        ops = (op,)
-    else:
-        ops = (
-            # Initial metadata must be sent before first outbound message.
-            SendInitialMetadataOperation(None, _EMPTY_FLAG),
-            op,
-        )
+    cdef tuple ops = (op,)
+    if not metadata_sent:
+        ops = prepend_send_initial_metadata_op(ops, None)
     await execute_batch(grpc_call_wrapper, ops, loop)
 
 
@@ -189,9 +192,7 @@ async def _send_error_status_from_server(GrpcCallWrapper grpc_call_wrapper,
         details,
         _EMPTY_FLAGS,
     )
-    cdef tuple ops
-    if metadata_sent:
-        ops = (op,)
-    else:
-        ops = (op, SendInitialMetadataOperation(None, _EMPTY_FLAG))
+    cdef tuple ops = (op,)
+    if not metadata_sent:
+        ops = prepend_send_initial_metadata_op(ops, None)
     await execute_batch(grpc_call_wrapper, ops, loop)

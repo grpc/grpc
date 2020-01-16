@@ -273,19 +273,21 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
     """
     _request: RequestType
+    _metadata: Optional[MetadataType]
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _call: asyncio.Task
 
     # pylint: disable=too-many-arguments
     def __init__(self, request: RequestType, deadline: Optional[float],
+                 metadata: MetadataType,
                  credentials: Optional[grpc.CallCredentials],
                  channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
-        channel.call(method, deadline, credentials)
         super().__init__(channel.call(method, deadline, credentials))
         self._request = request
+        self._metadata = metadata
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
         self._call = self._loop.create_task(self._invoke())
@@ -307,6 +309,7 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         try:
             serialized_response = await self._cython_call.unary_unary(
                 serialized_request,
+                self._metadata,
                 self._set_initial_metadata,
                 self._set_status,
             )
@@ -343,6 +346,7 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
     Returned when an instance of `UnaryStreamMultiCallable` object is called.
     """
     _request: RequestType
+    _metadata: MetadataType
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _send_unary_request_task: asyncio.Task
@@ -350,12 +354,14 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
 
     # pylint: disable=too-many-arguments
     def __init__(self, request: RequestType, deadline: Optional[float],
+                 metadata: MetadataType,
                  credentials: Optional[grpc.CallCredentials],
                  channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
         super().__init__(channel.call(method, deadline, credentials))
         self._request = request
+        self._metadata = metadata
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
         self._send_unary_request_task = self._loop.create_task(
@@ -374,7 +380,7 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
                                                self._request_serializer)
         try:
             await self._cython_call.initiate_unary_stream(
-                serialized_request, self._set_initial_metadata,
+                serialized_request, self._metadata, self._set_initial_metadata,
                 self._set_status)
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -442,13 +448,13 @@ class StreamUnaryCall(Call, _base_call.StreamUnaryCall):
     # pylint: disable=too-many-arguments
     def __init__(self,
                  request_async_iterator: Optional[AsyncIterable[RequestType]],
-                 deadline: Optional[float],
+                 deadline: Optional[float], metadata: MetadataType,
                  credentials: Optional[grpc.CallCredentials],
                  channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
         super().__init__(channel.call(method, deadline, credentials))
-        self._metadata = _EMPTY_METADATA
+        self._metadata = metadata
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
@@ -564,13 +570,13 @@ class StreamStreamCall(Call, _base_call.StreamStreamCall):
     # pylint: disable=too-many-arguments
     def __init__(self,
                  request_async_iterator: Optional[AsyncIterable[RequestType]],
-                 deadline: Optional[float],
+                 deadline: Optional[float], metadata: MetadataType,
                  credentials: Optional[grpc.CallCredentials],
                  channel: cygrpc.AioChannel, method: bytes,
                  request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction) -> None:
         super().__init__(channel.call(method, deadline, credentials))
-        self._metadata = _EMPTY_METADATA
+        self._metadata = metadata
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 

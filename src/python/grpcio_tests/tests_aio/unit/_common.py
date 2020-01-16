@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,16 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Common types for gRPC Async API"""
 
-from typing import Any, AnyStr, Callable, Sequence, Text, Tuple, TypeVar
-from grpc._cython.cygrpc import EOF
+from grpc.experimental.aio._typing import MetadataType, MetadatumType
 
-RequestType = TypeVar('RequestType')
-ResponseType = TypeVar('ResponseType')
-SerializingFunction = Callable[[Any], bytes]
-DeserializingFunction = Callable[[bytes], Any]
-MetadatumType = Tuple[Text, AnyStr]
-MetadataType = Sequence[MetadatumType]
-ChannelArgumentType = Sequence[Tuple[Text, Any]]
-EOFType = type(EOF)
+
+def seen_metadata(expected: MetadataType, actual: MetadataType):
+    return not bool(set(expected) - set(actual))
+
+
+def seen_metadatum(expected: MetadatumType, actual: MetadataType):
+    metadata_dict = dict(actual)
+    return metadata_dict.get(expected[0]) == expected[1]

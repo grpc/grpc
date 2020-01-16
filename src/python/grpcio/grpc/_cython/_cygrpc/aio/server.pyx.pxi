@@ -40,9 +40,13 @@ cdef class RPCState:
         self.abort_exception = None
         self.metadata_sent = False
         self.status_sent = False
+        self.trailing_metadata = _EMPTY_METADATA
 
     cdef bytes method(self):
-      return _slice_bytes(self.details.method)
+        return _slice_bytes(self.details.method)
+
+    cdef tuple invocation_metadata(self):
+        return _metadata(&self.request_metadata)
 
     def __dealloc__(self):
         """Cleans the Core objects."""
@@ -119,7 +123,7 @@ cdef class _ServicerContext:
         elif self._rpc_state.metadata_sent:
             raise RuntimeError('Send initial metadata failed: already sent')
         else:
-            _send_initial_metadata(self._rpc_state, self._loop)
+            await _send_initial_metadata(self._rpc_state, metadata, self._loop)
             self._rpc_state.metadata_sent = True
 
     async def abort(self,
@@ -134,6 +138,9 @@ cdef class _ServicerContext:
             # could lead to undefined behavior.
             self._rpc_state.abort_exception = AbortError('Locally aborted.')
 
+            if trailing_metadata == _EMPTY_METADATA and self._rpc_state.trailing_metadata:
+                trailing_metadata = self._rpc_state.trailing_metadata
+
             self._rpc_state.status_sent = True
             await _send_error_status_from_server(
                 self._rpc_state,
@@ -146,11 +153,16 @@ cdef class _ServicerContext:
 
             raise self._rpc_state.abort_exception
 
+    def set_trailing_metadata(self, tuple metadata):
+        self._rpc_state.trailing_metadata = metadata
 
-cdef _find_method_handler(str method, list generic_handlers):
-    # TODO(lidiz) connects Metadata to call details
+    def invocation_metadata(self):
+        return self._rpc_state.invocation_metadata()
+
+
+cdef _find_method_handler(str method, tuple metadata, list generic_handlers):
     cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(method,
-                                                                        None)
+                                                                        metadata)
 
     for generic_handler in generic_handlers:
         method_handler = generic_handler.service(handler_call_details)
@@ -188,24 +200,21 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     )
 
     # Assembles the batch operations
-    cdef Operation send_status_op = SendStatusFromServerOperation(
-        tuple(),
+    cdef tuple finish_ops
+    finish_ops = (
+        SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        SendStatusFromServerOperation(
+            rpc_state.trailing_metadata,
             StatusCode.ok,
             b'',
             _EMPTY_FLAGS,
+        ),
     )
-    cdef tuple finish_ops
     if not rpc_state.metadata_sent:
-        finish_ops = (
-            send_status_op,
-            SendInitialMetadataOperation(None, _EMPTY_FLAGS),
-            SendMessageOperation(response_raw, _EMPTY_FLAGS),
-        )
-    else:
-        finish_ops = (
-            send_status_op,
-            SendMessageOperation(response_raw, _EMPTY_FLAGS),
-        )
+        finish_ops = prepend_send_initial_metadata_op(
+            finish_ops,
+            None)
+    rpc_state.metadata_sent = True
     rpc_state.status_sent = True
     await execute_batch(rpc_state, finish_ops, loop)
 
@@ -216,7 +225,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
                                                 _ServicerContext servicer_context,
                                                 object loop):
     """Finishes server method handler with multiple responses.
-    
+
     This function executes the application handler, and handles response
     sending, as well as errors. It is shared between unary-stream and
     stream-stream handlers.
@@ -254,7 +263,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
 
     # Sends the final status of this RPC
     cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
-        None,
+        rpc_state.trailing_metadata,
         StatusCode.ok,
         b'',
         _EMPTY_FLAGS,
@@ -262,7 +271,11 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
 
     cdef tuple finish_ops = (op,)
     if not rpc_state.metadata_sent:
-        finish_ops = (op, SendInitialMetadataOperation(None, _EMPTY_FLAGS))
+        finish_ops = prepend_send_initial_metadata_op(
+            finish_ops,
+            None
+        )
+    rpc_state.metadata_sent = True
     rpc_state.status_sent = True
     await execute_batch(rpc_state, finish_ops, loop)
 
@@ -411,8 +424,8 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
             await _send_error_status_from_server(
                 rpc_state,
                 StatusCode.unknown,
-                '%s: %s' % (type(e), e),
-                _EMPTY_METADATA,
+                'Unexpected %s: %s' % (type(e), e),
+                rpc_state.trailing_metadata,
                 rpc_state.metadata_sent,
                 loop
             )
@@ -449,6 +462,7 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
     # Finds the method handler (application logic)
     method_handler = _find_method_handler(
         rpc_state.method().decode(),
+        rpc_state.invocation_metadata(),
         generic_handlers,
     )
     if method_handler is None:
@@ -456,7 +470,7 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
         await _send_error_status_from_server(
             rpc_state,
             StatusCode.unimplemented,
-            b'Method not found!',
+            'Method not found!',
             _EMPTY_METADATA,
             rpc_state.metadata_sent,
             loop

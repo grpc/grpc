@@ -31,6 +31,12 @@ from tests_aio.unit._test_server import start_test_server
 _UNARY_CALL_METHOD = '/grpc.testing.TestService/UnaryCall'
 _UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
 _STREAMING_OUTPUT_CALL_METHOD = '/grpc.testing.TestService/StreamingOutputCall'
+
+_INVOCATION_METADATA = (
+    ('initial-md-key', 'initial-md-value'),
+    ('trailing-md-key-bin', b'\x00\x02'),
+)
+
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42

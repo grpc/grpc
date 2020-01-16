@@ -103,25 +103,28 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
     _intercepted_call_created: asyncio.Event
     _interceptors_task: asyncio.Task
 
-    def __init__(  # pylint: disable=R0913
-            self, interceptors: Sequence[UnaryUnaryClientInterceptor],
-            request: RequestType, timeout: Optional[float],
-            credentials: Optional[grpc.CallCredentials],
-            channel: cygrpc.AioChannel, method: bytes,
-            request_serializer: SerializingFunction,
-            response_deserializer: DeserializingFunction) -> None:
+    # pylint: disable=too-many-arguments
+    def __init__(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+                 request: RequestType, timeout: Optional[float],
+                 metadata: MetadataType,
+                 credentials: Optional[grpc.CallCredentials],
+                 channel: cygrpc.AioChannel, method: bytes,
+                 request_serializer: SerializingFunction,
+                 response_deserializer: DeserializingFunction) -> None:
         self._channel = channel
         self._loop = asyncio.get_event_loop()
         self._interceptors_task = asyncio.ensure_future(
-            self._invoke(interceptors, method, timeout, credentials, request,
-                         request_serializer, response_deserializer))
+            self._invoke(interceptors, method, timeout, metadata, credentials,
+                         request, request_serializer, response_deserializer))
 
     def __del__(self):
         self.cancel()
 
-    async def _invoke(  # pylint: disable=R0913
+    # pylint: disable=too-many-arguments
+    async def _invoke(
             self, interceptors: Sequence[UnaryUnaryClientInterceptor],
             method: bytes, timeout: Optional[float],
+            metadata: Optional[MetadataType],
             credentials: Optional[grpc.CallCredentials], request: RequestType,
             request_serializer: SerializingFunction,
             response_deserializer: DeserializingFunction) -> UnaryUnaryCall:
@@ -148,11 +151,12 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             else:
                 return UnaryUnaryCall(
                     request, _timeout_to_deadline(client_call_details.timeout),
+                    client_call_details.metadata,
                     client_call_details.credentials, self._channel,
                     client_call_details.method, request_serializer,
                     response_deserializer)
 
-        client_call_details = ClientCallDetails(method, timeout, None,
+        client_call_details = ClientCallDetails(method, timeout, metadata,
                                                 credentials)
         return await _run_interceptor(iter(interceptors), client_call_details,
                                       request)
@@ -287,7 +291,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
         return None
 
     def __await__(self):
-        if False:  # pylint: disable=W0125
+        if False:  # pylint: disable=using-constant-test
             # This code path is never used, but a yield statement is needed
             # for telling the interpreter that __await__ is a generator.
             yield None

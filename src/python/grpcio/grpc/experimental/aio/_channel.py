@@ -95,19 +95,20 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if metadata:
-            raise NotImplementedError("TODO: metadata not implemented yet")
-
         if wait_for_ready:
             raise NotImplementedError(
                 "TODO: wait_for_ready not implemented yet")
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
+        if metadata is None:
+            metadata = tuple()
+
         if not self._interceptors:
             return UnaryUnaryCall(
                 request,
                 _timeout_to_deadline(timeout),
+                metadata,
                 credentials,
                 self._channel,
                 self._method,
@@ -119,6 +120,7 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
                 self._interceptors,
                 request,
                 timeout,
+                metadata,
                 credentials,
                 self._channel,
                 self._method,
@@ -157,9 +159,6 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
         Returns:
           A Call object instance which is an awaitable object.
         """
-        if metadata:
-            raise NotImplementedError("TODO: metadata not implemented yet")
-
         if wait_for_ready:
             raise NotImplementedError(
                 "TODO: wait_for_ready not implemented yet")
@@ -168,10 +167,13 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
             raise NotImplementedError("TODO: compression not implemented yet")
 
         deadline = _timeout_to_deadline(timeout)
+        if metadata is None:
+            metadata = tuple()
 
         return UnaryStreamCall(
             request,
             deadline,
+            metadata,
             credentials,
             self._channel,
             self._method,
@@ -214,10 +216,6 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-
-        if metadata:
-            raise NotImplementedError("TODO: metadata not implemented yet")
-
         if wait_for_ready:
             raise NotImplementedError(
                 "TODO: wait_for_ready not implemented yet")
@@ -226,10 +224,13 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             raise NotImplementedError("TODO: compression not implemented yet")
 
         deadline = _timeout_to_deadline(timeout)
+        if metadata is None:
+            metadata = tuple()
 
         return StreamUnaryCall(
             request_async_iterator,
             deadline,
+            metadata,
             credentials,
             self._channel,
             self._method,
@@ -272,10 +273,6 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-
-        if metadata:
-            raise NotImplementedError("TODO: metadata not implemented yet")
-
         if wait_for_ready:
             raise NotImplementedError(
                 "TODO: wait_for_ready not implemented yet")
@@ -284,10 +281,13 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             raise NotImplementedError("TODO: compression not implemented yet")
 
         deadline = _timeout_to_deadline(timeout)
+        if metadata is None:
+            metadata = tuple()
 
         return StreamStreamCall(
             request_async_iterator,
             deadline,
+            metadata,
             credentials,
             self._channel,
             self._method,

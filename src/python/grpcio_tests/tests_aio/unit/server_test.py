@@ -36,6 +36,7 @@ _STREAM_UNARY_EVILLY_MIXED = '/test/StreamUnaryEvillyMixed'
 _STREAM_STREAM_ASYNC_GEN = '/test/StreamStreamAsyncGen'
 _STREAM_STREAM_READER_WRITER = '/test/StreamStreamReaderWriter'
 _STREAM_STREAM_EVILLY_MIXED = '/test/StreamStreamEvillyMixed'
+_UNIMPLEMENTED_METHOD = '/test/UnimplementedMethod'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -159,7 +160,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
     def service(self, handler_details):
         self._called.set_result(None)
-        return self._routing_table[handler_details.method]
+        return self._routing_table.get(handler_details.method)
 
     async def wait_for_call(self):
         await self._called
@@ -392,6 +393,13 @@ class TestServer(AioTestBase):
         # Some proper exception should be raised.
         async with aio.insecure_channel('localhost:%d' % port) as channel:
             await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
+
+    async def test_unimplemented(self):
+        call = self._channel.unary_unary(_UNIMPLEMENTED_METHOD)
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call(_REQUEST)
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
 
 
 if __name__ == '__main__':
