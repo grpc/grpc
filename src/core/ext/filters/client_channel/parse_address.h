@@ -30,6 +30,11 @@
  * unix socket path. Returns true upon success. */
 bool grpc_parse_unix(const grpc_uri* uri, grpc_resolved_address* resolved_addr);
 
+/** Populate \a resolved_addr from \a uri, whose path is expected to contain a
+ * vsock specification. Returns true upon success. */
+bool grpc_parse_vsock(const grpc_uri* uri,
+                      grpc_resolved_address* resolved_addr);
+
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain an
  * IPv4 host:port pair. Returns true upon success. */
 bool grpc_parse_ipv4(const grpc_uri* uri, grpc_resolved_address* resolved_addr);

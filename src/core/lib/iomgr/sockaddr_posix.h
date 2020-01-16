@@ -48,6 +48,11 @@ typedef struct in6_addr grpc_in6_addr;
 #define GRPC_AF_INET AF_INET
 #define GRPC_AF_INET6 AF_INET6
 
+#ifdef GRPC_HAVE_LINUX_VSOCK
+#include <linux/vm_sockets.h>  // Needs to come after sys/socket.h
+#define GRPC_AF_VSOCK AF_VSOCK
+#endif /* GRPC_HAVE_LINUX_VSOCK */
+
 #define GRPC_AI_PASSIVE AI_PASSIVE
 
 #endif

@@ -924,6 +924,8 @@ src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/parse_address.cc \
 src/core/ext/filters/client_channel/parse_address.h \
+src/core/ext/filters/client_channel/parse_address_novsock.cc \
+src/core/ext/filters/client_channel/parse_address_vsock.cc \
 src/core/ext/filters/client_channel/proxy_mapper.h \
 src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
 src/core/ext/filters/client_channel/proxy_mapper_registry.h \
@@ -1375,6 +1377,8 @@ src/core/lib/iomgr/resolve_address_custom.cc \
 src/core/lib/iomgr/resolve_address_custom.h \
 src/core/lib/iomgr/resolve_address_posix.cc \
 src/core/lib/iomgr/resolve_address_windows.cc \
+src/core/lib/iomgr/resolve_vsock_fallback.cc \
+src/core/lib/iomgr/resolve_vsock_linux.cc \
 src/core/lib/iomgr/resource_quota.cc \
 src/core/lib/iomgr/resource_quota.h \
 src/core/lib/iomgr/sockaddr.h \

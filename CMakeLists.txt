@@ -1077,6 +1077,8 @@ add_library(alts_test_util
   src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/resolve_vsock_fallback.cc
+  src/core/lib/iomgr/resolve_vsock_linux.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
   src/core/lib/iomgr/socket_factory_posix.cc
@@ -1174,6 +1176,8 @@ add_library(alts_test_util
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
+  src/core/ext/filters/client_channel/parse_address_novsock.cc
+  src/core/ext/filters/client_channel/parse_address_vsock.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -1526,6 +1530,8 @@ add_library(grpc
   src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/resolve_vsock_fallback.cc
+  src/core/lib/iomgr/resolve_vsock_linux.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
   src/core/lib/iomgr/socket_factory_posix.cc
@@ -1723,6 +1729,8 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
+  src/core/ext/filters/client_channel/parse_address_novsock.cc
+  src/core/ext/filters/client_channel/parse_address_vsock.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -2000,6 +2008,8 @@ add_library(grpc_cronet
   src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/resolve_vsock_fallback.cc
+  src/core/lib/iomgr/resolve_vsock_linux.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
   src/core/lib/iomgr/socket_factory_posix.cc
@@ -2129,6 +2139,8 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
+  src/core/ext/filters/client_channel/parse_address_novsock.cc
+  src/core/ext/filters/client_channel/parse_address_vsock.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -2429,6 +2441,8 @@ add_library(grpc_test_util
   src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/resolve_vsock_fallback.cc
+  src/core/lib/iomgr/resolve_vsock_linux.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
   src/core/lib/iomgr/socket_factory_posix.cc
@@ -2526,6 +2540,8 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
+  src/core/ext/filters/client_channel/parse_address_novsock.cc
+  src/core/ext/filters/client_channel/parse_address_vsock.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -2772,6 +2788,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/resolve_vsock_fallback.cc
+  src/core/lib/iomgr/resolve_vsock_linux.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
   src/core/lib/iomgr/socket_factory_posix.cc
@@ -2869,6 +2887,8 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
+  src/core/ext/filters/client_channel/parse_address_novsock.cc
+  src/core/ext/filters/client_channel/parse_address_vsock.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -3091,6 +3111,8 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/resolve_vsock_fallback.cc
+  src/core/lib/iomgr/resolve_vsock_linux.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
   src/core/lib/iomgr/socket_factory_posix.cc
@@ -3223,6 +3245,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
+  src/core/ext/filters/client_channel/parse_address_novsock.cc
+  src/core/ext/filters/client_channel/parse_address_vsock.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc

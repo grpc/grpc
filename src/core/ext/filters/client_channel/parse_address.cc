@@ -222,6 +222,8 @@ bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
     return grpc_parse_ipv4(uri, resolved_addr);
   } else if (strcmp("ipv6", uri->scheme) == 0) {
     return grpc_parse_ipv6(uri, resolved_addr);
+  } else if (strcmp("vsock", uri->scheme) == 0) {
+    return grpc_parse_vsock(uri, resolved_addr);
   }
   gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme);
   return false;
