@@ -28,7 +28,7 @@ namespace Grpc.Testing {
             "DGdycGMudGVzdGluZyIyCglEZWJ1Z0luZm8SFQoNc3RhY2tfZW50cmllcxgB",
             "IAMoCRIOCgZkZXRhaWwYAiABKAkiUAoLRXJyb3JTdGF0dXMSDAoEY29kZRgB",
             "IAEoBRIVCg1lcnJvcl9tZXNzYWdlGAIgASgJEhwKFGJpbmFyeV9lcnJvcl9k",
-            "ZXRhaWxzGAMgASgJIqAECg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
+            "ZXRhaWxzGAMgASgJIssECg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
             "bmUYASABKAgSHgoWY2xpZW50X2NhbmNlbF9hZnRlcl91cxgCIAEoBRIeChZz",
             "ZXJ2ZXJfY2FuY2VsX2FmdGVyX3VzGAMgASgFEhUKDWVjaG9fbWV0YWRhdGEY",
             "BCABKAgSGgoSY2hlY2tfYXV0aF9jb250ZXh0GAUgASgIEh8KF3Jlc3BvbnNl",
@@ -40,21 +40,22 @@ namespace Grpc.Testing {
             "b3JfZGV0YWlscxgNIAEoCRIxCg5leHBlY3RlZF9lcnJvchgOIAEoCzIZLmdy",
             "cGMudGVzdGluZy5FcnJvclN0YXR1cxIXCg9zZXJ2ZXJfc2xlZXBfdXMYDyAB",
             "KAUSGwoTYmFja2VuZF9jaGFubmVsX2lkeBgQIAEoBRIfChdlY2hvX21ldGFk",
-            "YXRhX2luaXRpYWxseRgRIAEoCCJKCgtFY2hvUmVxdWVzdBIPCgdtZXNzYWdl",
-            "GAEgASgJEioKBXBhcmFtGAIgASgLMhsuZ3JwYy50ZXN0aW5nLlJlcXVlc3RQ",
-            "YXJhbXMiRgoOUmVzcG9uc2VQYXJhbXMSGAoQcmVxdWVzdF9kZWFkbGluZRgB",
-            "IAEoAxIMCgRob3N0GAIgASgJEgwKBHBlZXIYAyABKAkiTAoMRWNob1Jlc3Bv",
-            "bnNlEg8KB21lc3NhZ2UYASABKAkSKwoFcGFyYW0YAiABKAsyHC5ncnBjLnRl",
-            "c3RpbmcuUmVzcG9uc2VQYXJhbXNCA/gBAWIGcHJvdG8z"));
+            "YXRhX2luaXRpYWxseRgRIAEoCBIpCiFzZXJ2ZXJfbm90aWZ5X2NsaWVudF93",
+            "aGVuX3N0YXJ0ZWQYEiABKAgiSgoLRWNob1JlcXVlc3QSDwoHbWVzc2FnZRgB",
+            "IAEoCRIqCgVwYXJhbRgCIAEoCzIbLmdycGMudGVzdGluZy5SZXF1ZXN0UGFy",
+            "YW1zIkYKDlJlc3BvbnNlUGFyYW1zEhgKEHJlcXVlc3RfZGVhZGxpbmUYASAB",
+            "KAMSDAoEaG9zdBgCIAEoCRIMCgRwZWVyGAMgASgJIkwKDEVjaG9SZXNwb25z",
+            "ZRIPCgdtZXNzYWdlGAEgASgJEisKBXBhcmFtGAIgASgLMhwuZ3JwYy50ZXN0",
+            "aW5nLlJlc3BvbnNlUGFyYW1zQgP4AQFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx", "EchoMetadataInitially" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx", "EchoMetadataInitially", "ServerNotifyClientWhenStarted" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null, null)
           }));
     }
     #endregion
@@ -443,6 +444,7 @@ namespace Grpc.Testing {
       serverSleepUs_ = other.serverSleepUs_;
       backendChannelIdx_ = other.backendChannelIdx_;
       echoMetadataInitially_ = other.echoMetadataInitially_;
+      serverNotifyClientWhenStarted_ = other.serverNotifyClientWhenStarted_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -615,7 +617,7 @@ namespace Grpc.Testing {
     public const int ServerSleepUsFieldNumber = 15;
     private int serverSleepUs_;
     /// <summary>
-    /// Amount to sleep when invoking server
+    /// sleep when invoking server for deadline tests
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ServerSleepUs {
@@ -650,6 +652,17 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "server_notify_client_when_started" field.</summary>
+    public const int ServerNotifyClientWhenStartedFieldNumber = 18;
+    private bool serverNotifyClientWhenStarted_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool ServerNotifyClientWhenStarted {
+      get { return serverNotifyClientWhenStarted_; }
+      set {
+        serverNotifyClientWhenStarted_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as RequestParams);
@@ -680,6 +693,7 @@ namespace Grpc.Testing {
       if (ServerSleepUs != other.ServerSleepUs) return false;
       if (BackendChannelIdx != other.BackendChannelIdx) return false;
       if (EchoMetadataInitially != other.EchoMetadataInitially) return false;
+      if (ServerNotifyClientWhenStarted != other.ServerNotifyClientWhenStarted) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -703,6 +717,7 @@ namespace Grpc.Testing {
       if (ServerSleepUs != 0) hash ^= ServerSleepUs.GetHashCode();
       if (BackendChannelIdx != 0) hash ^= BackendChannelIdx.GetHashCode();
       if (EchoMetadataInitially != false) hash ^= EchoMetadataInitially.GetHashCode();
+      if (ServerNotifyClientWhenStarted != false) hash ^= ServerNotifyClientWhenStarted.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -784,6 +799,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(136, 1);
         output.WriteBool(EchoMetadataInitially);
       }
+      if (ServerNotifyClientWhenStarted != false) {
+        output.WriteRawTag(144, 1);
+        output.WriteBool(ServerNotifyClientWhenStarted);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -841,6 +860,9 @@ namespace Grpc.Testing {
         size += 2 + pb::CodedOutputStream.ComputeInt32Size(BackendChannelIdx);
       }
       if (EchoMetadataInitially != false) {
+        size += 2 + 1;
+      }
+      if (ServerNotifyClientWhenStarted != false) {
         size += 2 + 1;
       }
       if (_unknownFields != null) {
@@ -910,6 +932,9 @@ namespace Grpc.Testing {
       }
       if (other.EchoMetadataInitially != false) {
         EchoMetadataInitially = other.EchoMetadataInitially;
+      }
+      if (other.ServerNotifyClientWhenStarted != false) {
+        ServerNotifyClientWhenStarted = other.ServerNotifyClientWhenStarted;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -994,6 +1019,10 @@ namespace Grpc.Testing {
           }
           case 136: {
             EchoMetadataInitially = input.ReadBool();
+            break;
+          }
+          case 144: {
+            ServerNotifyClientWhenStarted = input.ReadBool();
             break;
           }
         }
