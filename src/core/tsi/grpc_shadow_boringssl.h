@@ -110,6 +110,7 @@
 #define aesni_gcm_decrypt GRPC_SHADOW_aesni_gcm_decrypt
 #define aesni_gcm_encrypt GRPC_SHADOW_aesni_gcm_encrypt
 #define aes_nohw_cbc_encrypt GRPC_SHADOW_aes_nohw_cbc_encrypt
+#define aes_nohw_ctr32_encrypt_blocks GRPC_SHADOW_aes_nohw_ctr32_encrypt_blocks
 #define aes_nohw_decrypt GRPC_SHADOW_aes_nohw_decrypt
 #define aes_nohw_encrypt GRPC_SHADOW_aes_nohw_encrypt
 #define aes_nohw_set_decrypt_key GRPC_SHADOW_aes_nohw_set_decrypt_key
@@ -1559,7 +1560,6 @@
 #define HRSS_generate_key GRPC_SHADOW_HRSS_generate_key
 #define HRSS_marshal_public_key GRPC_SHADOW_HRSS_marshal_public_key
 #define HRSS_parse_public_key GRPC_SHADOW_HRSS_parse_public_key
-#define HRSS_poly2_rotr_consttime GRPC_SHADOW_HRSS_poly2_rotr_consttime
 #define HRSS_poly3_invert GRPC_SHADOW_HRSS_poly3_invert
 #define HRSS_poly3_mul GRPC_SHADOW_HRSS_poly3_mul
 #define i2a_ACCESS_DESCRIPTION GRPC_SHADOW_i2a_ACCESS_DESCRIPTION
