@@ -762,7 +762,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
       continue;
     }
     // Update the cluster state.
-    cluster_state.update.set(std::move(cds_update));
+    cluster_state.update.emplace(std::move(cds_update));
     // Notify all watchers.
     for (const auto& p : cluster_state.watchers) {
       p.first->OnClusterChanged(cluster_state.update.value());

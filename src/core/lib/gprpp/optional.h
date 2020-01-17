@@ -46,13 +46,9 @@ class Optional {
  public:
   Optional() : value_() {}
 
-  void set(const T& val) {
-    value_ = val;
-    set_ = true;
-  }
-
-  void set(T&& val) {
-    value_ = std::move(val);
+  template <typename... Args>
+  void emplace(Args&&... args) {
+    value_ = T(std::forward<Args>(args)...);
     set_ = true;
   }
 
