@@ -131,7 +131,7 @@ def grpc_deps():
             name = "boringssl",
             # NOTE: This URL generates a tarball containing dynamic date
             # information, so the sha256 is not consistent.
-            url = "https://boringssl.googlesource.com/boringssl/+archive/b9f169e17e93376fabde492cd57b9ba251ebae8a.tar.gz",
+            url = "https://boringssl.googlesource.com/boringssl/+archive/1ef2e8834b845cb47dbdceec6a676722bcf0062b.tar.gz",
         )
 
     if "zlib" not in native.existing_rules():
