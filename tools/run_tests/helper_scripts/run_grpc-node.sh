@@ -27,4 +27,7 @@ rm -rf ./../grpc-node
 git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
 cd ./../grpc-node
 
+git fetch --tags --progress https://github.com/grpc/grpc-node.git +refs/pull/*:refs/remotes/origin/pr/*
+git checkout 58ecf72331a39ae1c928802ed4051154b92dedd8
+
 ./test-grpc-submodule.sh "$CURRENT_COMMIT"
