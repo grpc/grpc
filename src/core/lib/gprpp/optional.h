@@ -46,14 +46,11 @@ class Optional {
  public:
   Optional() : value_() {}
 
-  void set(const T& val) {
-    value_ = val;
+  template <typename... Args>
+  T& emplace(Args&&... args) {
+    value_ = T(std::forward<Args>(args)...);
     set_ = true;
-  }
-
-  void set(T&& val) {
-    value_ = std::move(val);
-    set_ = true;
+    return value_;
   }
 
   bool has_value() const { return set_; }

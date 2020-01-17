@@ -31,7 +31,7 @@ TEST(OptionalTest, BasicTest) {
   EXPECT_FALSE(opt_val.has_value());
   const int kTestVal = 123;
 
-  opt_val.set(kTestVal);
+  opt_val.emplace(kTestVal);
   EXPECT_TRUE(opt_val.has_value());
   EXPECT_EQ(opt_val.value(), kTestVal);
 
