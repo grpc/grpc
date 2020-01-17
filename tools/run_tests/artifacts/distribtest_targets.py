@@ -302,6 +302,8 @@ def targets():
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_fetchcontent'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_module_install'),
+        CppDistribTest('linux', 'x64', 'jessie',
+                       'cmake_module_install_pkgconfig'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_pkgconfig'),
         CppDistribTest('linux', 'x64', 'jessie', 'raspberry_pi'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
