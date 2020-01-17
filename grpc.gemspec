@@ -936,8 +936,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/charconv_bigint.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/charconv_parse.h )
-  s.files += %w( third_party/abseil-cpp/absl/strings/internal/escaping.cc )
-  s.files += %w( third_party/abseil-cpp/absl/strings/internal/escaping.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/memutil.cc )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/memutil.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/ostringstream.cc )
