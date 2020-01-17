@@ -1188,20 +1188,6 @@ add_library(alts_test_util
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -1264,7 +1250,8 @@ target_link_libraries(alts_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
-  upb
+  grpc_health_upb
+  envoy_orca_upb
 )
 
 foreach(_hdr
@@ -1316,6 +1303,55 @@ foreach(_hdr
 endforeach()
 
 endif()
+
+add_library(alts_upb
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+)
+
+set_target_properties(alts_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(alts_upb PROPERTIES COMPILE_PDB_NAME "alts_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/alts_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(alts_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(alts_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS alts_upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
 if(gRPC_BUILD_TESTS)
 
 add_library(engine_passthrough SHARED
@@ -1355,6 +1391,274 @@ target_link_libraries(engine_passthrough
 
 
 endif()
+
+add_library(envoy_ads_upb
+  src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
+  src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
+  src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
+)
+
+set_target_properties(envoy_ads_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(envoy_ads_upb PROPERTIES COMPILE_PDB_NAME "envoy_ads_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/envoy_ads_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(envoy_ads_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(envoy_ads_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  envoy_core_upb
+  envoy_type_upb
+  google_api_upb
+  proto_gen_validate_upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS envoy_ads_upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(envoy_core_upb
+  src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+)
+
+set_target_properties(envoy_core_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(envoy_core_upb PROPERTIES COMPILE_PDB_NAME "envoy_core_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/envoy_core_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(envoy_core_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(envoy_core_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  envoy_type_upb
+  google_api_upb
+  proto_gen_validate_upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS envoy_core_upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(envoy_orca_upb
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+)
+
+set_target_properties(envoy_orca_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(envoy_orca_upb PROPERTIES COMPILE_PDB_NAME "envoy_orca_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/envoy_orca_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(envoy_orca_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(envoy_orca_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  proto_gen_validate_upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS envoy_orca_upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(envoy_type_upb
+  src/core/ext/upb-generated/envoy/type/http.upb.c
+  src/core/ext/upb-generated/envoy/type/percent.upb.c
+  src/core/ext/upb-generated/envoy/type/range.upb.c
+)
+
+set_target_properties(envoy_type_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(envoy_type_upb PROPERTIES COMPILE_PDB_NAME "envoy_type_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/envoy_type_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(envoy_type_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(envoy_type_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  google_api_upb
+  proto_gen_validate_upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS envoy_type_upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(google_api_upb
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+)
+
+set_target_properties(google_api_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(google_api_upb PROPERTIES COMPILE_PDB_NAME "google_api_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/google_api_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(google_api_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(google_api_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS google_api_upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
 
 add_library(gpr
   src/core/lib/gpr/alloc.cc
@@ -1742,9 +2046,6 @@ add_library(grpc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/tsi/transport_security.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -1776,20 +2077,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1809,7 +2096,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/xds/xds_api.cc
@@ -1817,27 +2103,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
   src/core/ext/filters/client_channel/xds/xds_client.cc
   src/core/ext/filters/client_channel/xds/xds_client_stats.cc
-  src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
-  src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
-  src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
-  src/core/ext/upb-generated/envoy/type/http.upb.c
-  src/core/ext/upb-generated/envoy/type/percent.upb.c
-  src/core/ext/upb-generated/envoy/type/range.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
@@ -1901,7 +2166,12 @@ target_link_libraries(grpc
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  alts_upb
   upb
+  grpc_health_upb
+  envoy_orca_upb
+  grpc_lb_upb
+  envoy_ads_upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -2182,20 +2452,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -2259,9 +2515,6 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/tsi/transport_security.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -2312,6 +2565,9 @@ target_link_libraries(grpc_cronet
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  grpc_health_upb
+  envoy_orca_upb
+  alts_upb
   upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2355,6 +2611,101 @@ endforeach()
 
 if(gRPC_INSTALL)
   install(TARGETS grpc_cronet EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(grpc_health_upb
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+)
+
+set_target_properties(grpc_health_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_health_upb PROPERTIES COMPILE_PDB_NAME "grpc_health_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_health_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpc_health_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(grpc_health_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS grpc_health_upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(grpc_lb_upb
+  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+)
+
+set_target_properties(grpc_lb_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_lb_upb PROPERTIES COMPILE_PDB_NAME "grpc_lb_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_lb_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpc_lb_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(grpc_lb_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb
+  google_api_upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS grpc_lb_upb EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -2579,20 +2930,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2654,7 +2991,8 @@ target_link_libraries(grpc_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc
-  upb
+  grpc_health_upb
+  envoy_orca_upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util "-framework CoreFoundation")
@@ -2922,20 +3260,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2997,7 +3321,8 @@ target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_unsecure
-  upb
+  grpc_health_upb
+  envoy_orca_upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -3276,20 +3601,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -3313,33 +3624,11 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/xds/xds_channel.cc
   src/core/ext/filters/client_channel/xds/xds_client.cc
   src/core/ext/filters/client_channel/xds/xds_client_stats.cc
-  src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
-  src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
-  src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
-  src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
-  src/core/ext/upb-generated/envoy/type/http.upb.c
-  src/core/ext/upb-generated/envoy/type/percent.upb.c
-  src/core/ext/upb-generated/envoy/type/range.upb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
-  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -3389,6 +3678,10 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  grpc_health_upb
+  envoy_orca_upb
+  envoy_ads_upb
+  grpc_lb_upb
   upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -3442,6 +3735,54 @@ endforeach()
 
 if(gRPC_INSTALL)
   install(TARGETS grpc_unsecure EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(proto_gen_validate_upb
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+)
+
+set_target_properties(proto_gen_validate_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(proto_gen_validate_upb PROPERTIES COMPILE_PDB_NAME "proto_gen_validate_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/proto_gen_validate_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(proto_gen_validate_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(proto_gen_validate_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  google_api_upb
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS proto_gen_validate_upb EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -3689,7 +4030,6 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -3727,8 +4067,8 @@ target_link_libraries(grpc++
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
+  grpc_health_upb
   gpr
-  upb
 )
 
 foreach(_hdr
@@ -4016,9 +4356,6 @@ endif()
 add_library(grpc++_alts
   src/cpp/common/alts_context.cc
   src/cpp/common/alts_util.cc
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
 )
 
 set_target_properties(grpc++_alts PROPERTIES
@@ -4053,9 +4390,9 @@ target_link_libraries(grpc++_alts
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_upb
   grpc++
   gpr
-  upb
 )
 
 foreach(_hdr
@@ -4823,7 +5160,6 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4861,7 +5197,7 @@ target_link_libraries(grpc++_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_unsecure
-  upb
+  grpc_health_upb
 )
 
 foreach(_hdr

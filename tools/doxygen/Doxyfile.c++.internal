@@ -1064,8 +1064,6 @@ include/grpcpp/support/sync_stream_impl.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 src/core/ext/transport/inproc/inproc_transport.h \
-src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/channel_args.h \

@@ -60,17 +60,6 @@ filegroups:
   - tsi_interface
   - tsi
   - grpc_shadow_boringssl
-- name: alts_upb
-  headers:
-  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
-  src:
-  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  deps:
-  - upb
 - name: alts_util
   public_headers:
   - include/grpc/grpc_security.h
@@ -90,9 +79,9 @@ filegroups:
   - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   deps:
+  - alts_upb
   - upb
   uses:
-  - alts_upb
   - grpc_base
   - tsi_interface
 - name: census
@@ -109,101 +98,6 @@ filegroups:
   - test/core/util/cmdline.cc
   uses:
   - gpr_base_headers
-- name: envoy_ads_upb
-  headers:
-  - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h
-  - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h
-  - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h
-  src:
-  - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
-  - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
-  - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
-  uses:
-  - envoy_core_upb
-  - envoy_type_upb
-  - google_api_upb
-  - proto_gen_validate_upb
-- name: envoy_core_upb
-  headers:
-  - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h
-  - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h
-  src:
-  - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
-  - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
-  uses:
-  - envoy_type_upb
-  - google_api_upb
-  - proto_gen_validate_upb
-- name: envoy_orca_upb
-  headers:
-  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
-  src:
-  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  uses:
-  - proto_gen_validate_upb
-- name: envoy_type_upb
-  headers:
-  - src/core/ext/upb-generated/envoy/type/http.upb.h
-  - src/core/ext/upb-generated/envoy/type/percent.upb.h
-  - src/core/ext/upb-generated/envoy/type/range.upb.h
-  src:
-  - src/core/ext/upb-generated/envoy/type/http.upb.c
-  - src/core/ext/upb-generated/envoy/type/percent.upb.c
-  - src/core/ext/upb-generated/envoy/type/range.upb.c
-  uses:
-  - google_api_upb
-  - proto_gen_validate_upb
-- name: google_api_upb
-  headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
-  src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
-  deps:
-  - upb
 - name: gpr_base
   src:
   - src/core/lib/gpr/alloc.cc
@@ -602,10 +496,11 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  deps:
+  - grpc_health_upb
   uses:
   - gpr_base_headers
   - grpc_base_headers
-  - grpc_health_upb
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
   - grpc++_internal_hdrs_only
@@ -1020,12 +915,13 @@ filegroups:
   - src/core/ext/filters/client_channel/service_config.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
+  deps:
+  - grpc_health_upb
+  - envoy_orca_upb
   plugin: grpc_client_channel
   uses:
   - grpc_base
   - grpc_deadline_filter
-  - grpc_health_upb
-  - envoy_orca_upb
 - name: grpc_client_idle_filter
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -1060,13 +956,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-- name: grpc_health_upb
-  headers:
-  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
-  src:
-  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  deps:
-  - upb
 - name: grpc_http_filters
   headers:
   - src/core/ext/filters/http/client/http_client_filter.h
@@ -1110,13 +999,13 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   deps:
+  - grpc_lb_upb
   - upb
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
   - grpc_client_channel
   - grpc_grpclb_balancer_addresses
-  - grpc_lb_upb
   - grpc_resolver_fake
 - name: grpc_lb_policy_grpclb_secure
   headers:
@@ -1132,13 +1021,13 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   deps:
+  - grpc_lb_upb
   - upb
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
   - grpc_client_channel
   - grpc_grpclb_balancer_addresses
-  - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
 - name: grpc_lb_policy_pick_first
@@ -1183,15 +1072,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-- name: grpc_lb_upb
-  headers:
-  - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
-  src:
-  - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  deps:
-  - upb
-  uses:
-  - google_api_upb
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -1596,8 +1476,9 @@ filegroups:
   - src/core/ext/filters/client_channel/xds/xds_channel.cc
   - src/core/ext/filters/client_channel/xds/xds_client.cc
   - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
-  uses:
+  deps:
   - envoy_ads_upb
+  uses:
   - grpc_base
   - grpc_client_channel
 - name: grpc_xds_client_secure
@@ -1614,23 +1495,15 @@ filegroups:
   - src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
   - src/core/ext/filters/client_channel/xds/xds_client.cc
   - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
-  uses:
+  deps:
   - envoy_ads_upb
+  uses:
   - grpc_base
   - grpc_client_channel
   - grpc_secure
 - name: grpcpp_channelz_proto
   src:
   - src/proto/grpc/channelz/channelz.proto
-- name: proto_gen_validate_upb
-  headers:
-  - src/core/ext/upb-generated/gogoproto/gogo.upb.h
-  - src/core/ext/upb-generated/validate/validate.upb.h
-  src:
-  - src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  - src/core/ext/upb-generated/validate/validate.upb.c
-  uses:
-  - google_api_upb
 - name: transport_security_test_lib
   headers:
   - test/core/tsi/transport_security_test_lib.h
@@ -1698,12 +1571,142 @@ libs:
   filegroups:
   - grpc_test_util_base
   secure: true
+- name: alts_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  deps:
+  - upb
+  deps_linkage: static
+  secure: false
 - name: engine_passthrough
   build: test
   language: c
   src:
   - test/core/end2end/engine_passthrough.cc
   dll: only
+- name: envoy_ads_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h
+  - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h
+  - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
+  - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
+  - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
+  deps:
+  - envoy_core_upb
+  - envoy_type_upb
+  - google_api_upb
+  - proto_gen_validate_upb
+  deps_linkage: static
+  secure: false
+- name: envoy_core_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  deps:
+  - envoy_type_upb
+  - google_api_upb
+  - proto_gen_validate_upb
+  deps_linkage: static
+  secure: false
+- name: envoy_orca_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
+  src:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  deps:
+  - proto_gen_validate_upb
+  deps_linkage: static
+  secure: false
+- name: envoy_type_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/envoy/type/http.upb.h
+  - src/core/ext/upb-generated/envoy/type/percent.upb.h
+  - src/core/ext/upb-generated/envoy/type/range.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/type/http.upb.c
+  - src/core/ext/upb-generated/envoy/type/percent.upb.c
+  - src/core/ext/upb-generated/envoy/type/range.upb.c
+  deps:
+  - google_api_upb
+  - proto_gen_validate_upb
+  deps_linkage: static
+  secure: false
+- name: google_api_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  deps:
+  - upb
+  deps_linkage: static
+  secure: false
 - name: gpr
   build: all
   language: c
@@ -1762,6 +1765,29 @@ libs:
   platforms:
   - linux
   secure: true
+- name: grpc_health_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
+  src:
+  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  deps:
+  - upb
+  deps_linkage: static
+  secure: false
+- name: grpc_lb_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+  src:
+  - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  deps:
+  - upb
+  - google_api_upb
+  deps_linkage: static
+  secure: false
 - name: grpc_test_util
   build: private
   language: c
@@ -1821,6 +1847,19 @@ libs:
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
+  secure: false
+- name: proto_gen_validate_upb
+  build: all
+  language: c
+  headers:
+  - src/core/ext/upb-generated/gogoproto/gogo.upb.h
+  - src/core/ext/upb-generated/validate/validate.upb.h
+  src:
+  - src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  - src/core/ext/upb-generated/validate/validate.upb.c
+  deps:
+  - google_api_upb
+  deps_linkage: static
   secure: false
 - name: reconnect_server
   build: private
@@ -1914,11 +1953,10 @@ libs:
   - src/cpp/common/alts_context.cc
   - src/cpp/common/alts_util.cc
   deps:
+  - alts_upb
   - grpc++
   - gpr
   baselib: true
-  filegroups:
-  - alts_upb
 - name: grpc++_core_stats
   build: private
   language: c++
