@@ -55,8 +55,8 @@ class TlsKeyMaterialsConfig {
   }
   int version() const { return version_; }
 
-  /** Setter for key materials that will be called by the user. They do not take
-   *  ownership of the arguments. **/
+  /** Setter for key materials that will be called by the user. Ownership of the
+   * arguments will not be transferred. **/
   void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(const PemKeyCertPair& pem_key_cert_pair);
   void set_key_materials(
@@ -92,8 +92,8 @@ class TlsCredentialReloadArg {
   grpc_ssl_certificate_config_reload_status status() const;
   grpc::string error_details() const;
 
-  /** Setters for member fields. They do not take ownership of the arguments.
-   * **/
+  /** Setters for member fields. Ownership of the arguments will not be
+   *  transferred. **/
   void set_cb_user_data(void* cb_user_data);
   void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(
