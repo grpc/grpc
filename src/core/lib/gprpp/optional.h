@@ -47,7 +47,7 @@ class Optional {
   Optional() : value_() {}
 
   template <typename... Args>
-  void emplace(Args&&... args) {
+  T& emplace(Args&&... args) {
     value_ = T(std::forward<Args>(args)...);
     set_ = true;
   }
