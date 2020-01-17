@@ -520,7 +520,16 @@ _STREAM_OUTPUT_REQUEST_ONE_RESPONSE.response_parameters.append(
     messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
 
 
-class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
+class TestStreamStreamCall(AioTestBase):
+
+    async def setUp(self):
+        address, self._server = await start_test_server()
+        self._channel = aio.insecure_channel(address)
+        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+
+    async def tearDown(self):
+        await self._channel.close()
+        await self._server.stop(None)
 
     async def test_cancel(self):
         # Invokes the actual RPC
@@ -694,5 +703,5 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
