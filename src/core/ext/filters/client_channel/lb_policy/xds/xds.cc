@@ -762,8 +762,8 @@ void XdsLb::ShutdownLocked() {
           StringView(eds_service_name()), &client_stats_);
     }
     xds_client_from_channel_.reset();
-    xds_client_.reset();
   }
+  xds_client_.reset();
 }
 
 //
