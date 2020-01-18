@@ -17,11 +17,7 @@
 import pkg_resources
 import sys
 
-import os
-
 from grpc_tools import _protoc_compiler
-
-_SERVICE_MODULE_SUFFIX = "_pb2_grpc"
 
 
 def main(command_arguments):
@@ -33,26 +29,6 @@ def main(command_arguments):
   """
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
-
-
-if sys.version_info[0] > 2:
-    from google import protobuf
-
-    _protos = protobuf.protos
-
-    finder, _import_raw = protobuf.get_import_machinery(_SERVICE_MODULE_SUFFIX,
-                                                        _protoc_compiler.grpc_code_generator)
-
-    def _services(protobuf_path, include_paths=None):
-        protobuf.protos(protobuf_path, include_paths=include_paths)
-        return _import_raw(protobuf_path, include_paths=include_paths)
-
-    def _protos_and_services(protobuf_path, include_paths=None):
-        return (protobuf.protos(protobuf_path, include_paths=include_paths),
-                _services(protobuf_path, include_paths=include_paths))
-
-
-    sys.meta_path.extend([finder])
 
 
 if __name__ == '__main__':

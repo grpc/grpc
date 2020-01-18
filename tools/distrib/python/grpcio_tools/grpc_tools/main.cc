@@ -19,19 +19,6 @@
 
 #include "grpc_tools/main.h"
 
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/compiler/importer.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-
-#include <algorithm>
-#include <map>
-#include <string>
-#include <tuple>
-#include <unordered_set>
-#include <vector>
-
-namespace grpc_tools {
 int protoc_main(int argc, char* argv[]) {
   google::protobuf::compiler::CommandLineInterface cli;
   cli.AllowPlugins("protoc-");
@@ -49,4 +36,3 @@ int protoc_main(int argc, char* argv[]) {
 
   return cli.Run(argc, argv);
 }
-}  // end namespace grpc_tools

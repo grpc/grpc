@@ -12,24 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO: Manually format.
-
 from libc cimport stdlib
-from libcpp.vector cimport vector
-from libcpp.utility cimport pair
-from libcpp.string cimport string
 
-from cython.operator cimport dereference
-
-import warnings
-
-cdef extern from "src/compiler/python_generator.h" namespace "grpc_python_generator":
-  cppclass PythonGrpcGenerator:
-    pass
-
-cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
-  cdef PythonGrpcGenerator g_grpc_code_generator
-
+cdef extern from "grpc_tools/main.h":
   int protoc_main(int argc, char *argv[])
 
 def run_main(list args not None):
@@ -37,5 +22,3 @@ def run_main(list args not None):
   for i in range(len(args)):
     argv[i] = args[i]
   return protoc_main(len(args), argv)
-
-grpc_code_generator = int(<long>&g_grpc_code_generator)

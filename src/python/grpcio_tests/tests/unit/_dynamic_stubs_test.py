@@ -20,13 +20,11 @@ import sys
 import multiprocessing
 import functools
 
-# TODO: Support setup.py as test runner.
-
 
 @contextlib.contextmanager
-def _grpc_tools_unimportable():
+def _protobuf_unimportable():
     original_sys_path = sys.path
-    sys.path = [path for path in sys.path if "grpcio_tools" not in path]
+    sys.path = [path for path in sys.path if "protobuf" not in path]
     try:
         yield
     finally:
@@ -78,14 +76,17 @@ def _test_sunny_day():
             "tests/unit/data/foo/bar.proto")
         assert protos.BarMessage is not None
         assert services.BarStub is not None
+        sys.stderr.write("************ " + str(dir(services)) + "\n"); sys.stderr.flush()
+        bar_servicer = services.BarServicer()
+        print(bar_servicer)
     else:
         _assert_unimplemented("Python 3")
 
 
-def _test_grpc_tools_unimportable():
-    with _grpc_tools_unimportable():
+def _test_protobuf_unimportable():
+    with _protobuf_unimportable():
         if sys.version_info[0] == 3:
-            _assert_unimplemented("grpcio-tools")
+            _assert_unimplemented("protobuf")
         else:
             _assert_unimplemented("Python 3")
 
@@ -95,8 +96,8 @@ class DynamicStubTest(unittest.TestCase):
     def test_sunny_day(self):
         _run_in_subprocess(_test_sunny_day)
 
-    def test_grpc_tools_unimportable(self):
-        _run_in_subprocess(_test_grpc_tools_unimportable)
+    def test_protobuf_unimportable(self):
+        _run_in_subprocess(_test_protobuf_unimportable)
 
 
 if __name__ == "__main__":
