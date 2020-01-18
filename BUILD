@@ -1958,6 +1958,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "local_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/local/local_credentials.cc",
+        "src/core/lib/security/security_connector/local/local_security_connector.cc",
+        "src/core/lib/security/credentials/credentials.cc",
+        "src/core/lib/security/security_connector/security_connector.cc",
+        "src/core/lib/security/context/security_context.cc",
+        "src/core/lib/security/transport/secure_endpoint.cc",
+        "src/core/lib/security/transport/security_handshaker.cc",
+        "src/core/lib/security/transport/tsi_error.cc",
+        "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
+        "src/core/lib/security/security_connector/load_system_roots_linux.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/local/local_credentials.h",
+        "src/core/lib/security/security_connector/local/local_security_connector.h",
+        "src/core/lib/security/credentials/credentials.h",
+        "src/core/lib/security/security_connector/security_connector.h",
+        "src/core/lib/security/context/security_context.h",
+        "src/core/lib/security/transport/secure_endpoint.h",
+        "src/core/lib/security/transport/security_handshaker.h",
+        "src/core/lib/security/transport/tsi_error.h",
+        "src/core/lib/security/security_connector/load_system_roots.h",
+        "src/core/lib/security/security_connector/load_system_roots_linux.h",
+    ],
+    language = "c++",
+    deps = [
+        "tsi",
+    ],
+)
+
+grpc_cc_library(
     name = "alts_frame_protector",
     srcs = [
         "src/core/tsi/alts/crypt/aes_gcm.cc",
