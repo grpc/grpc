@@ -32,6 +32,7 @@ cdef class RPCState(GrpcCallWrapper):
 
     cdef bytes method(self)
     cdef tuple invocation_metadata(self)
+    cdef void raise_for_termination(self) except *
 
 
 cdef enum AioServerStatus:
