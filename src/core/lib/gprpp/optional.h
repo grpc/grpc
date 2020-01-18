@@ -21,8 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-// TODO(yashykt): Remove false once migration to abseil is done.
-#if false && GRPC_USE_ABSL
+#if GRPC_USE_ABSL
 
 #include "absl/types/optional.h"
 
