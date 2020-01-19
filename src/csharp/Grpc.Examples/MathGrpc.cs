@@ -34,6 +34,7 @@ namespace Math {
         {
           var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
           arg.WriteTo(ref writer);
+          writer.Flush();
           context.Complete();
         },
         context =>
@@ -49,6 +50,7 @@ namespace Math {
         {
           var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
           arg.WriteTo(ref writer);
+          writer.Flush();
           context.Complete();
         },
         context =>
@@ -64,6 +66,7 @@ namespace Math {
         {
           var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
           arg.WriteTo(ref writer);
+          writer.Flush();
           context.Complete();
         },
         context =>
@@ -79,6 +82,7 @@ namespace Math {
         {
           var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
           arg.WriteTo(ref writer);
+          writer.Flush();
           context.Complete();
         },
         context =>

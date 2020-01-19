@@ -346,6 +346,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
               "var writer = new global::Google.Protobuf.CodedOutputWriter("
               "context.GetBufferWriter());\n"
               "arg.WriteTo(ref writer);\n"
+              "writer.Flush();\n"
               "context.Complete();\n");
     out->Outdent();
     out->Print(

@@ -36,6 +36,7 @@ namespace Grpc.Testing {
         {
           var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
           arg.WriteTo(ref writer);
+          writer.Flush();
           context.Complete();
         },
         context =>
@@ -51,6 +52,7 @@ namespace Grpc.Testing {
         {
           var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
           arg.WriteTo(ref writer);
+          writer.Flush();
           context.Complete();
         },
         context =>

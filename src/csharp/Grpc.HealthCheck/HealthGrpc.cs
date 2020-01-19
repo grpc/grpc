@@ -37,6 +37,7 @@ namespace Grpc.Health.V1 {
         {
           var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
           arg.WriteTo(ref writer);
+          writer.Flush();
           context.Complete();
         },
         context =>
@@ -52,6 +53,7 @@ namespace Grpc.Health.V1 {
         {
           var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
           arg.WriteTo(ref writer);
+          writer.Flush();
           context.Complete();
         },
         context =>
