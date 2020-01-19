@@ -27,10 +27,73 @@ namespace Math {
   {
     static readonly string __ServiceName = "math.Math";
 
+    #if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION
+    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Math.DivArgs();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Math.DivReply();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_math_FibArgs = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Math.FibArgs();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_math_Num = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Math.Num();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    #else
     static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_math_FibArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.FibArgs.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Math.Num> __Marshaller_math_Num = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.Num.Parser.ParseFrom);
+    #endif
 
     static readonly grpc::Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new grpc::Method<global::Math.DivArgs, global::Math.DivReply>(
         grpc::MethodType.Unary,

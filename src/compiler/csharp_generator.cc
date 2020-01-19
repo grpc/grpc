@@ -323,8 +323,51 @@ std::vector<const Descriptor*> GetUsedMessages(
   return result;
 }
 
-void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
+void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
+                              bool use_buffer_serialization) {
   std::vector<const Descriptor*> used_messages = GetUsedMessages(service);
+  out->Print("#if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION\n");
+  // Generate buffer serialization marshallers
+  for (size_t i = 0; i < used_messages.size(); i++) {
+    const Descriptor* message = used_messages[i];
+    out->Print(
+        "static readonly grpc::Marshaller<$type$> $fieldname$ = \n",
+        "fieldname", GetMarshallerFieldName(message), "type",
+        GetClassName(message));
+    out->Indent();
+    out->Print(
+          "grpc::Marshallers.Create(\n");
+    out->Indent();
+    out->Print(
+            "(arg, context) =>\n"
+            "{\n");
+    out->Indent();
+    out->Print(
+              "var writer = new global::Google.Protobuf.CodedOutputWriter("
+              "context.GetBufferWriter());\n"
+              "arg.WriteTo(ref writer);\n"
+              "context.Complete();\n");
+    out->Outdent();
+    out->Print(
+            "},\n"
+            "context =>\n"
+            "{\n");
+    out->Indent();
+    out->Print(
+              "var result = new $type$();\n"
+              "var reader = new global::Google.Protobuf.CodedInputReader("
+              "context.PayloadAsReadOnlySequence());\n"
+              "result.MergeFrom(ref reader);\n"
+              "return result;\n",
+              "type", GetClassName(message));
+    out->Outdent();
+    out->Print(
+            "});\n");
+    out->Outdent();
+    out->Outdent();
+  }
+  out->Print("#else\n");
+  // Generate non buffer serialization marshallers
   for (size_t i = 0; i < used_messages.size(); i++) {
     const Descriptor* message = used_messages[i];
     out->Print(
@@ -335,7 +378,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
         "fieldname", GetMarshallerFieldName(message), "type",
         GetClassName(message));
   }
-  out->Print("\n");
+  out->Print("#endif\n\n");
 }
 
 void GenerateStaticMethodField(Printer* out, const MethodDescriptor* method) {
@@ -683,7 +726,7 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
              service->full_name());
   out->Print("\n");
 
-  GenerateMarshallerFields(out, service);
+  GenerateMarshallerFields(out, service, use_buffer_serialization);
   for (int i = 0; i < service->method_count(); i++) {
     GenerateStaticMethodField(out, service->method(i));
   }

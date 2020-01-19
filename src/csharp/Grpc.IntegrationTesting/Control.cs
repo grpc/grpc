@@ -3847,7 +3847,9 @@ namespace Grpc.Testing {
     public const int QpsFieldNumber = 1;
     private double qps_;
     /// <summary>
-    /// Total number of operations per second over all clients.
+    /// Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
+    /// For unary benchmarks, an operation is processing of a single unary RPC. 
+    /// For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Qps {
@@ -3861,7 +3863,7 @@ namespace Grpc.Testing {
     public const int QpsPerServerCoreFieldNumber = 2;
     private double qpsPerServerCore_;
     /// <summary>
-    /// QPS per one server core.
+    /// QPS per server core.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double QpsPerServerCore {
@@ -3875,7 +3877,10 @@ namespace Grpc.Testing {
     public const int ServerSystemTimeFieldNumber = 3;
     private double serverSystemTime_;
     /// <summary>
-    /// server load based on system_time (0.85 => 85%)
+    /// The total server cpu load based on system time across all server processes, expressed as percentage of a single cpu core.
+    /// For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
+    /// processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
+    /// Same explanation for the total client cpu load below.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerSystemTime {
@@ -3889,7 +3894,7 @@ namespace Grpc.Testing {
     public const int ServerUserTimeFieldNumber = 4;
     private double serverUserTime_;
     /// <summary>
-    /// server load based on user_time (0.85 => 85%)
+    /// The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerUserTime {
@@ -3903,7 +3908,7 @@ namespace Grpc.Testing {
     public const int ClientSystemTimeFieldNumber = 5;
     private double clientSystemTime_;
     /// <summary>
-    /// client load based on system_time (0.85 => 85%)
+    /// The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ClientSystemTime {
@@ -3917,7 +3922,7 @@ namespace Grpc.Testing {
     public const int ClientUserTimeFieldNumber = 6;
     private double clientUserTime_;
     /// <summary>
-    /// client load based on user_time (0.85 => 85%)
+    /// The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ClientUserTime {

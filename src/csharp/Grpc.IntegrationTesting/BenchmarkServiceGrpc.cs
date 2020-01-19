@@ -29,8 +29,41 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.BenchmarkService";
 
+    #if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION
+    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleRequest> __Marshaller_grpc_testing_SimpleRequest = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Grpc.Testing.SimpleRequest();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleResponse> __Marshaller_grpc_testing_SimpleResponse = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Grpc.Testing.SimpleResponse();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    #else
     static readonly grpc::Marshaller<global::Grpc.Testing.SimpleRequest> __Marshaller_grpc_testing_SimpleRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.SimpleRequest.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Grpc.Testing.SimpleResponse> __Marshaller_grpc_testing_SimpleResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.SimpleResponse.Parser.ParseFrom);
+    #endif
 
     static readonly grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_UnaryCall = new grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
         grpc::MethodType.Unary,

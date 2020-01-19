@@ -17,8 +17,8 @@
 set +e
 cd $(dirname $0)/../..
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
+PROTOC=C:/Users/johluo/.nuget/packages/grpc.tools/2.27.0-dev201912051123/tools/windows_x64/protoc.exe
+PLUGIN=protoc-gen-grpc="C:\Users\johluo\.nuget\packages\grpc.tools\2.27.0-dev201912051123\tools\windows_x64\grpc_csharp_plugin.exe"
 EXAMPLES_DIR=src/csharp/Grpc.Examples
 HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
 REFLECTION_DIR=src/csharp/Grpc.Reflection
@@ -29,7 +29,7 @@ $PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
     -I src/proto src/proto/grpc/health/v1/health.proto
-    
+
 $PROTOC --plugin=$PLUGIN --csharp_out=$REFLECTION_DIR --grpc_out=$REFLECTION_DIR \
     -I src/proto src/proto/grpc/reflection/v1alpha/reflection.proto
 

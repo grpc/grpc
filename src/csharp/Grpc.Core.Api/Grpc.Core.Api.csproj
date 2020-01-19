@@ -20,23 +20,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
-    <!-- C# 7.2 is required for Span/BufferWriter/ReadOnlySequence -->
-    <LangVersion>7.2</LangVersion>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>      
-  </PropertyGroup>
- 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <!-- C# 7.2 is required for Span/BufferWriter/ReadOnlySequence -->
-    <LangVersion>7.2</LangVersion>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <!-- Needed for netcoreapp2.1 to work correctly. .NET is not able to load the assembly without this -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2"/>
-  </ItemGroup>
-    
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
 
   <ItemGroup>

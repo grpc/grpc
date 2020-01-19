@@ -33,9 +33,57 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.MetricsService";
 
+    #if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION
+    static readonly grpc::Marshaller<global::Grpc.Testing.EmptyMessage> __Marshaller_grpc_testing_EmptyMessage = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Grpc.Testing.EmptyMessage();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    static readonly grpc::Marshaller<global::Grpc.Testing.GaugeResponse> __Marshaller_grpc_testing_GaugeResponse = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Grpc.Testing.GaugeResponse();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    static readonly grpc::Marshaller<global::Grpc.Testing.GaugeRequest> __Marshaller_grpc_testing_GaugeRequest = 
+      grpc::Marshallers.Create(
+        (arg, context) =>
+        {
+          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+          arg.WriteTo(ref writer);
+          context.Complete();
+        },
+        context =>
+        {
+          var result = new global::Grpc.Testing.GaugeRequest();
+          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
+          result.MergeFrom(ref reader);
+          return result;
+        });
+    #else
     static readonly grpc::Marshaller<global::Grpc.Testing.EmptyMessage> __Marshaller_grpc_testing_EmptyMessage = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.EmptyMessage.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Grpc.Testing.GaugeResponse> __Marshaller_grpc_testing_GaugeResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.GaugeResponse.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Grpc.Testing.GaugeRequest> __Marshaller_grpc_testing_GaugeRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.GaugeRequest.Parser.ParseFrom);
+    #endif
 
     static readonly grpc::Method<global::Grpc.Testing.EmptyMessage, global::Grpc.Testing.GaugeResponse> __Method_GetAllGauges = new grpc::Method<global::Grpc.Testing.EmptyMessage, global::Grpc.Testing.GaugeResponse>(
         grpc::MethodType.ServerStreaming,
