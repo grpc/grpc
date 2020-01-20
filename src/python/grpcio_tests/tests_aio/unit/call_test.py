@@ -48,6 +48,7 @@ class _MulticallableTestMixin():
 
 
 class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
+
     async def test_call_to_string(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 

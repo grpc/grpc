@@ -49,13 +49,15 @@ class _BaseMultiCallable:
     _interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
     _loop: asyncio.AbstractEventLoop
 
-    def __init__(self, channel: cygrpc.AioChannel,
-                 method: bytes,
-                 request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction,
-                 interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]],
-                 loop: asyncio.AbstractEventLoop, 
-                ) -> None:
+    def __init__(
+            self,
+            channel: cygrpc.AioChannel,
+            method: bytes,
+            request_serializer: SerializingFunction,
+            response_deserializer: DeserializingFunction,
+            interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]],
+            loop: asyncio.AbstractEventLoop,
+    ) -> None:
         self._loop = loop
         self._channel = channel
         self._method = method
@@ -385,8 +387,7 @@ class Channel:
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
         """
-        return UnaryUnaryMultiCallable(self._channel,
-                                       _common.encode(method),
+        return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
                                        request_serializer,
                                        response_deserializer,
                                        self._unary_unary_interceptors,
@@ -398,11 +399,9 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> UnaryStreamMultiCallable:
-        return UnaryStreamMultiCallable(self._channel,
-                                        _common.encode(method),
+        return UnaryStreamMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
-                                        response_deserializer,
-                                        None, self._loop)
+                                        response_deserializer, None, self._loop)
 
     def stream_unary(
             self,
@@ -410,11 +409,9 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamUnaryMultiCallable:
-        return StreamUnaryMultiCallable(self._channel,
-                                        _common.encode(method),
+        return StreamUnaryMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
-                                        response_deserializer,
-                                        None, self._loop)
+                                        response_deserializer, None, self._loop)
 
     def stream_stream(
             self,
@@ -422,11 +419,10 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamStreamMultiCallable:
-        return StreamStreamMultiCallable(self._channel,
-                                         _common.encode(method),
+        return StreamStreamMultiCallable(self._channel, _common.encode(method),
                                          request_serializer,
-                                         response_deserializer,
-                                         None, self._loop)
+                                         response_deserializer, None,
+                                         self._loop)
 
     async def _close(self):
         # TODO: Send cancellation status
