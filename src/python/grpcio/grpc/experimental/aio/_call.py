@@ -153,13 +153,11 @@ class Call(_base_call.Call):
     _loop: asyncio.AbstractEventLoop
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
-    _done_callbacks: List[DoneCallbackType]
 
     def __init__(self, cython_call: cygrpc._AioCall,
                  loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
         self._cython_call = cython_call
-        self._done_callbacks = []
 
     def __del__(self) -> None:
         if not self._cython_call.done():
