@@ -15,7 +15,7 @@
 
 import asyncio
 from functools import partial
-from typing import AsyncIterable, List, Dict, Optional
+from typing import AsyncIterable, Dict, Optional
 
 import grpc
 from grpc import _common
