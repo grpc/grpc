@@ -76,16 +76,20 @@ def _test_sunny_day():
             "tests/unit/data/foo/bar.proto")
         assert protos.BarMessage is not None
         assert services.BarStub is not None
+
         class CustomBarServicer(services.BarServicer):
+
             def GetBar(self, request, context):
                 return protos.BarMessage(a=request.a + request.a)
+
         from concurrent import futures
         server = grpc.server(futures.ThreadPoolExecutor())
         services.add_BarServicer_to_server(CustomBarServicer(), server)
         actual_port = server.add_insecure_port('localhost:0')
         server.start()
         msg_str = "bar"
-        with grpc.insecure_channel('localhost:{}'.format(actual_port)) as channel:
+        with grpc.insecure_channel(
+                'localhost:{}'.format(actual_port)) as channel:
             bar_stub = services.BarStub(channel)
             request = protos.BarMessage(a=msg_str)
             response = bar_stub.GetBar(request)

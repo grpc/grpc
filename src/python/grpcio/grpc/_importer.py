@@ -3,6 +3,7 @@
 import sys
 import six
 
+
 def _uninstalled_protos(*args, **kwargs):
     raise NotImplementedError(
         "Install the protobuf package to use the protos function.")
@@ -15,8 +16,7 @@ def _uninstalled_services(*args, **kwargs):
 
 def _uninstalled_protos_and_services(*args, **kwargs):
     raise NotImplementedError(
-        "Install the protobuf package to use the protos_and_services function."
-    )
+        "Install the protobuf package to use the protos_and_services function.")
 
 
 def _interpreter_version_protos(*args, **kwargs):
@@ -73,7 +73,8 @@ else:
         def _proto_file_to_module_name(proto_file):
             components = proto_file.split(os.path.sep)
             proto_base_name = os.path.splitext(components[-1])[0]
-            return ".".join(components[:-1] + [proto_base_name + _PROTO_MODULE_SUFFIX])
+            return ".".join(
+                components[:-1] + [proto_base_name + _PROTO_MODULE_SUFFIX])
 
         @contextlib.contextmanager
         def _augmented_syspath(new_paths):
@@ -104,9 +105,12 @@ else:
                 """
                 # NOTE(rbellevi): include_paths are propagated via sys.path.
                 proto_module = protos(self._protobuf_path)
-                file_descriptor = getattr(proto_module, _service_reflection.DESCRIPTOR_KEY)
-                for _, service_descriptor in six.iteritems(file_descriptor.services_by_name):
-                    _service_reflection.add_service_to_module(module, service_descriptor)
+                file_descriptor = getattr(proto_module,
+                                          _service_reflection.DESCRIPTOR_KEY)
+                for _, service_descriptor in six.iteritems(
+                        file_descriptor.services_by_name):
+                    _service_reflection.add_service_to_module(
+                        module, service_descriptor)
 
         class ProtoFinder(importlib.abc.MetaPathFinder):
 
@@ -120,9 +124,7 @@ else:
                         continue
                     else:
                         return importlib.machinery.ModuleSpec(
-                            fullname,
-                            ProtoLoader(fullname, filepath))
-
+                            fullname, ProtoLoader(fullname, filepath))
 
         def services(protobuf_path, *, include_paths=None):
             with _augmented_syspath(include_paths):
@@ -130,11 +132,9 @@ else:
                 module = importlib.import_module(module_name)
                 return module
 
-
         def protos_and_services(protobuf_path, *, include_paths=None):
             protos = protobuf.protos(protobuf_path, include_paths=include_paths)
             services_ = services(protobuf_path, include_paths=include_paths)
             return protos, services_
-
 
         sys.meta_path.extend([ProtoFinder()])
