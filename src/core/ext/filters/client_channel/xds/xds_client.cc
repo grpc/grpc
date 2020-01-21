@@ -616,12 +616,14 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
                     grpc_schedule_on_exec_ctx);
   bool initial_message = true;
-  if (xds_client()->route_config_name_.empty()) {
-    SendMessageLocked(kLdsTypeUrl, "", nullptr, initial_message);
-    initial_message = false;
-  } else if (xds_client()->cluster_name_.empty()) {
-    SendMessageLocked(kRdsTypeUrl, "", nullptr, initial_message);
-    initial_message = false;
+  if (xds_client()->service_config_watcher_ != nullptr) {
+    if (xds_client()->route_config_name_.empty()) {
+      SendMessageLocked(kLdsTypeUrl, "", nullptr, initial_message);
+      initial_message = false;
+    } else if (xds_client()->cluster_name_.empty()) {
+      SendMessageLocked(kRdsTypeUrl, "", nullptr, initial_message);
+      initial_message = false;
+    }
   }
   if (!xds_client()->cluster_map_.empty()) {
     SendMessageLocked(kCdsTypeUrl, "", nullptr, initial_message);

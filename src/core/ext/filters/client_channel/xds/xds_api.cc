@@ -230,7 +230,6 @@ grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-// FIXME: refactor out the node population and version/nonce setting part.
 grpc_slice XdsLdsRequestCreateAndEncode(const std::string& server_name,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
@@ -579,7 +578,7 @@ grpc_error* RouteConfigParse(
         "No prefix field found in RouteMatch.");
   }
   const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
-  if (upb_strview_eql(prefix, upb_strview_makez(""))) {
+  if (!upb_strview_eql(prefix, upb_strview_makez(""))) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Prefix is not empty string.");
   }
   if (!envoy_api_v2_route_Route_has_route(route)) {
