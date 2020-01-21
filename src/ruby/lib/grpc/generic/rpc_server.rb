@@ -392,7 +392,7 @@ module GRPC
       signals.each do |sig|
         # input validation
         if sig.class == String
-          sig.upcase!
+          sig = sig.upcase
           if sig.start_with?('SIG')
             # cut out the SIG prefix to see if valid signal
             sig = sig[3..-1]
