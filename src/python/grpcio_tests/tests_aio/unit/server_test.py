@@ -434,6 +434,7 @@ class TestServer(AioTestBase):
         # Don't segfault here
         self.assertEqual(grpc.StatusCode.UNKNOWN, await call.code())
 
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
