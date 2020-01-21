@@ -53,6 +53,7 @@ grpc_proto_library(
     ],
     has_services = True,
     well_known_protos = True,
+    deps = ["cds_for_test_proto"],
 )
 
 grpc_proto_library(
