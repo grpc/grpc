@@ -1,4 +1,16 @@
-# TODO: Flowerbox.
+# Copyright 2020, the gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import grpc
 
@@ -45,9 +57,6 @@ def get_servicer_type(service_descriptor):
 
     GenericServicer.__name__ = get_servicer_class_name(service_descriptor)
     GenericServicer.__qualname__ = GenericServicer.__name__
-    # TODO: Instances of this currently print out the following:
-    # <grpc._service_reflection.get_servicer_type.<locals>.GenericServicer object at 0x7fe66d85bfd0>
-    # Not good enough.
     return GenericServicer
 
 

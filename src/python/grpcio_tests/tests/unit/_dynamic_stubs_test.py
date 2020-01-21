@@ -85,11 +85,11 @@ def _test_sunny_day():
         from concurrent import futures
         server = grpc.server(futures.ThreadPoolExecutor())
         services.add_BarServicer_to_server(CustomBarServicer(), server)
-        actual_port = server.add_insecure_port('localhost:0')
+        actual_port = server.add_secure_port('localhost:0', grpc.local_server_credentials())
         server.start()
         msg_str = "bar"
-        with grpc.insecure_channel(
-                'localhost:{}'.format(actual_port)) as channel:
+        with grpc.secure_channel(
+              'localhost:{}'.format(actual_port), grpc.local_channel_credentials()) as channel:
             bar_stub = services.BarStub(channel)
             request = protos.BarMessage(a=msg_str)
             response = bar_stub.GetBar(request)
