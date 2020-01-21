@@ -19,6 +19,7 @@
 #include "test/cpp/end2end/test_service_impl.h"
 
 #include <grpc/support/log.h>
+#include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 #include <gtest/gtest.h>
@@ -120,7 +121,7 @@ void ServerTryCancel(ServerContext* context) {
 void ServerTryCancelNonblocking(experimental::CallbackServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
-  gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
+  gpr_log(GPR_INFO, "Server called TryCancelNB() to cancel the request");
 }
 
 }  // namespace
@@ -444,16 +445,20 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
     }
 
     void StartRpc() {
-      if (req_->has_param() && req_->param().server_sleep_us() > 0) {
-        // Set an alarm for that much time
-        alarm_.experimental().Set(
-            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_micros(req_->param().server_sleep_us(),
-                                              GPR_TIMESPAN)),
-            [this](bool ok) { NonDelayed(ok); });
-      } else {
-        NonDelayed(true);
+      {
+        std::lock_guard<std::mutex> l(alarm_mu_);
+        if (req_->has_param() && req_->param().server_sleep_us() > 0 &&
+            !dont_alarm_anymore_) {
+          // Set an alarm for that much time
+          alarm_.experimental().Set(
+              gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                           gpr_time_from_micros(req_->param().server_sleep_us(),
+                                                GPR_TIMESPAN)),
+              [this](bool ok) { NonDelayed(ok); });
+          return;
+        }
       }
+      NonDelayed(true);
     }
     void OnSendInitialMetadataDone(bool ok) override {
       EXPECT_TRUE(ok);
@@ -462,10 +467,12 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
     void OnCancel() override {
       EXPECT_TRUE(started_);
       EXPECT_TRUE(ctx_->IsCancelled());
-      // do the actual finish in the main handler only but use this as a chance
-      // to cancel any alarms.
-      alarm_.Cancel();
       on_cancel_invoked_ = true;
+      // Do the actual finish in the main handler only but use this as a chance
+      // to cancel any alarms.
+      std::lock_guard<std::mutex> l(alarm_mu_);
+      alarm_.Cancel();
+      dont_alarm_anymore_ = true;
     }
     void OnDone() override {
       if (req_->has_param() && req_->param().echo_metadata_initially()) {
@@ -523,12 +530,17 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         LoopUntilCancelled(req_->param().client_cancel_after_us());
         return;
       } else if (req_->has_param() && req_->param().server_cancel_after_us()) {
-        alarm_.experimental().Set(
-            gpr_time_add(
-                gpr_now(GPR_CLOCK_REALTIME),
-                gpr_time_from_micros(req_->param().server_cancel_after_us(),
-                                     GPR_TIMESPAN)),
-            [this](bool) { Finish(Status::CANCELLED); });
+        std::lock_guard<std::mutex> l(alarm_mu_);
+        if (dont_alarm_anymore_) {
+          Finish(Status::CANCELLED);
+        } else {
+          alarm_.experimental().Set(
+              gpr_time_add(
+                  gpr_now(GPR_CLOCK_REALTIME),
+                  gpr_time_from_micros(req_->param().server_cancel_after_us(),
+                                       GPR_TIMESPAN)),
+              [this](bool) { Finish(Status::CANCELLED); });
+        }
         return;
       } else if (!req_->has_param() || !req_->param().skip_cancelled_check()) {
         EXPECT_FALSE(ctx_->IsCancelled());
@@ -579,35 +591,43 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       Finish(Status::OK);
     }
     void LoopUntilCancelled(int loop_delay_us) {
-      if (!ctx_->IsCancelled()) {
-        alarm_.experimental().Set(
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(loop_delay_us, GPR_TIMESPAN)),
-            [this, loop_delay_us](bool ok) {
-              if (!ok) {
-                EXPECT_TRUE(ctx_->IsCancelled());
-              }
-              LoopUntilCancelled(loop_delay_us);
-            });
-      } else {
-        Finish(Status::CANCELLED);
+      {
+        std::lock_guard<std::mutex> l(alarm_mu_);
+        if (!ctx_->IsCancelled()) {
+          // dont_alarm_anymore_ wouldn't be set either since that is only set
+          // in OnCancel
+          EXPECT_FALSE(dont_alarm_anymore_);
+          alarm_.experimental().Set(
+              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                           gpr_time_from_micros(loop_delay_us, GPR_TIMESPAN)),
+              [this, loop_delay_us](bool ok) {
+                if (!ok) {
+                  EXPECT_TRUE(ctx_->IsCancelled());
+                }
+                LoopUntilCancelled(loop_delay_us);
+              });
+          return;
+        }
       }
+      Finish(Status::CANCELLED);
     }
 
     CallbackTestServiceImpl* const service_;
     experimental::CallbackServerContext* const ctx_;
     const EchoRequest* const req_;
     EchoResponse* const resp_;
-    Alarm alarm_;
-    bool initial_metadata_sent_{false};
-    bool started_{false};
-    bool on_cancel_invoked_{false};
+    std::mutex alarm_mu_;
+    bool dont_alarm_anymore_ /* GUARDED_BY(alarm_mu_) */ = false;
+    Alarm alarm_ /* GUARDED_BY(alarm_mu_) */;
+    bool initial_metadata_sent_ = false;
+    bool started_ = false;
+    bool on_cancel_invoked_ = false;
     std::thread async_cancel_check_;
     std::thread rpc_wait_thread_;
   };
 
   return new Reactor(this, context, request, response);
-}
+}  // namespace testing
 
 experimental::ServerUnaryReactor*
 CallbackTestServiceImpl::CheckClientInitialMetadata(
