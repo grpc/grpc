@@ -17,8 +17,6 @@ import inspect
 import traceback
 
 
-# TODO(https://github.com/grpc/grpc/issues/20850) refactor this.
-_LOGGER = logging.getLogger(__name__)
 cdef int _EMPTY_FLAG = 0
 # TODO(lidiz) Use a designated value other than None.
 cdef str _SERVER_STOPPED_DETAILS = 'Server already stopped.'
