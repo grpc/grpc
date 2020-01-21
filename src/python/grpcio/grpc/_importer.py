@@ -105,17 +105,8 @@ else:
                 # NOTE(rbellevi): include_paths are propagated via sys.path.
                 proto_module = protos(self._protobuf_path)
                 file_descriptor = getattr(proto_module, _service_reflection.DESCRIPTOR_KEY)
-                for service_name, service_descriptor in six.iteritems(file_descriptor.services_by_name):
-                    setattr(module,
-                            _service_reflection.get_stub_class_name(service_descriptor),
-                            _service_reflection.get_stub_type(service_descriptor))
-                    setattr(module,
-                            _service_reflection.get_servicer_class_name(service_descriptor),
-                            _service_reflection.get_servicer_type(service_descriptor))
-                    setattr(module,
-                            _service_reflection.get_servicer_addition_function_name(service_descriptor),
-                            _service_reflection.get_servicer_addition_function(service_descriptor))
-
+                for _, service_descriptor in six.iteritems(file_descriptor.services_by_name):
+                    _service_reflection.add_service_to_module(module, service_descriptor)
 
         class ProtoFinder(importlib.abc.MetaPathFinder):
 
