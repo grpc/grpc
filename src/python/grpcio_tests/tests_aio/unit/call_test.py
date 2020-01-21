@@ -49,6 +49,17 @@ class _MulticallableTestMixin():
 
 class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
+    async def test_call_to_string(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        self.assertTrue(str(call) is not None)
+        self.assertTrue(repr(call) is not None)
+
+        response = await call
+
+        self.assertTrue(str(call) is not None)
+        self.assertTrue(repr(call) is not None)
+
     async def test_call_ok(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
@@ -104,6 +115,65 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
     async def test_call_trailing_metadata_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
         self.assertEqual((), await call.trailing_metadata())
+
+    async def test_call_initial_metadata_cancelable(self):
+        coro_started = asyncio.Event()
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        async def coro():
+            coro_started.set()
+            await call.initial_metadata()
+
+        task = self.loop.create_task(coro())
+        await coro_started.wait()
+        task.cancel()
+
+        # Test that initial metadata can still be asked thought
+        # a cancellation happened with the previous task
+        self.assertEqual((), await call.initial_metadata())
+
+    async def test_call_initial_metadata_multiple_waiters(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        async def coro():
+            return await call.initial_metadata()
+
+        task1 = self.loop.create_task(coro())
+        task2 = self.loop.create_task(coro())
+
+        await call
+
+        self.assertEqual([(), ()], await asyncio.gather(*[task1, task2]))
+
+    async def test_call_code_cancelable(self):
+        coro_started = asyncio.Event()
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        async def coro():
+            coro_started.set()
+            await call.code()
+
+        task = self.loop.create_task(coro())
+        await coro_started.wait()
+        task.cancel()
+
+        # Test that code can still be asked thought
+        # a cancellation happened with the previous task
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+    async def test_call_code_multiple_waiters(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        async def coro():
+            return await call.code()
+
+        task1 = self.loop.create_task(coro())
+        task2 = self.loop.create_task(coro())
+
+        await call
+
+        self.assertEqual([grpc.StatusCode.OK, grpc.StatusCode.OK], await
+                         asyncio.gather(task1, task2))
 
     async def test_cancel_unary_unary(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())

@@ -25,13 +25,13 @@ cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailur
 
 
 cdef class AioChannel:
-    def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials):
+    def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials, object loop):
         if options is None:
             options = ()
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
         self._target = target
         self.cq = CallbackCompletionQueue()
-        self._loop = asyncio.get_event_loop()
+        self.loop = loop
         self._status = AIO_CHANNEL_STATUS_READY
 
         if credentials is None:
@@ -74,7 +74,7 @@ cdef class AioChannel:
             raise RuntimeError('Channel is closed.')
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
 
-        cdef object future = self._loop.create_future()
+        cdef object future = self.loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             _WATCH_CONNECTIVITY_FAILURE_HANDLER)
@@ -115,5 +115,4 @@ cdef class AioChannel:
         else:
             cython_call_credentials = None
 
-        cdef _AioCall call = _AioCall(self, deadline, method, cython_call_credentials)
-        return call
+        return _AioCall(self, deadline, method, cython_call_credentials)
