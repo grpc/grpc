@@ -1547,7 +1547,7 @@ using CdsTest = BasicTest;
 TEST_P(CdsTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::ACKED);
 }
@@ -1561,7 +1561,7 @@ TEST_P(CdsTest, WrongClusterType) {
       {{"application_target_name", std::move(cluster)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1575,7 +1575,7 @@ TEST_P(CdsTest, WrongEdsConfig) {
       {{"application_target_name", std::move(cluster)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1589,7 +1589,7 @@ TEST_P(CdsTest, WrongLbPolicy) {
       {{"application_target_name", std::move(cluster)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1603,7 +1603,7 @@ TEST_P(CdsTest, WrongLrsServer) {
       {{"application_target_name", std::move(cluster)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
 }

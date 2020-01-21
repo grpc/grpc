@@ -16,7 +16,7 @@
     <PackageReference Include="Grpc" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Auth" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Tools" Version="__GRPC_NUGET_VERSION__" />
-    <PackageReference Include="Google.Protobuf" Version="3.7.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.11.2" />
   </ItemGroup>
   
   <ItemGroup>
@@ -25,6 +25,6 @@
 
   <!-- Needed for the net45 build to work on Unix. See https://github.com/dotnet/designs/pull/33 -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0-preview.2" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 </Project>

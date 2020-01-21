@@ -105,26 +105,26 @@ namespace Grpc.Testing {
             "EARiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.PoissonParams), global::Grpc.Testing.PoissonParams.Parser, new[]{ "OfferedLoad" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClosedLoopParams), global::Grpc.Testing.ClosedLoopParams.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride", "CredType" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ChannelArg), global::Grpc.Testing.ChannelArg.Parser, new[]{ "Name", "StrValue", "IntValue" }, new[]{ "Value" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream", "UseCoalesceApi", "MedianLatencyCollectionIntervalMillis" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi", "ThreadsPerCq", "ResourceQuotaSize", "ChannelArgs" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerArgs), global::Grpc.Testing.ServerArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.CoreRequest), global::Grpc.Testing.CoreRequest.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.CoreResponse), global::Grpc.Testing.CoreResponse.Parser, new[]{ "Cores" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Void), global::Grpc.Testing.Void.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Scenario), global::Grpc.Testing.Scenario.Parser, new[]{ "Name", "ClientConfig", "NumClients", "ServerConfig", "NumServers", "WarmupSeconds", "BenchmarkSeconds", "SpawnLocalWorkerCount" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Scenarios), global::Grpc.Testing.Scenarios.Parser, new[]{ "Scenarios_" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResultSummary), global::Grpc.Testing.ScenarioResultSummary.Parser, new[]{ "Qps", "QpsPerServerCore", "ServerSystemTime", "ServerUserTime", "ClientSystemTime", "ClientUserTime", "Latency50", "Latency90", "Latency95", "Latency99", "Latency999", "ServerCpuUsage", "SuccessfulRequestsPerSecond", "FailedRequestsPerSecond", "ClientPollsPerRequest", "ServerPollsPerRequest", "ServerQueriesPerCpuSec", "ClientQueriesPerCpuSec" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResult), global::Grpc.Testing.ScenarioResult.Parser, new[]{ "Scenario", "Latencies", "ClientStats", "ServerStats", "ServerCores", "Summary", "ClientSuccess", "ServerSuccess", "RequestResults" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.PoissonParams), global::Grpc.Testing.PoissonParams.Parser, new[]{ "OfferedLoad" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClosedLoopParams), global::Grpc.Testing.ClosedLoopParams.Parser, null, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride", "CredType" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ChannelArg), global::Grpc.Testing.ChannelArg.Parser, new[]{ "Name", "StrValue", "IntValue" }, new[]{ "Value" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream", "UseCoalesceApi", "MedianLatencyCollectionIntervalMillis" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi", "ThreadsPerCq", "ResourceQuotaSize", "ChannelArgs" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerArgs), global::Grpc.Testing.ServerArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.CoreRequest), global::Grpc.Testing.CoreRequest.Parser, null, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.CoreResponse), global::Grpc.Testing.CoreResponse.Parser, new[]{ "Cores" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Void), global::Grpc.Testing.Void.Parser, null, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Scenario), global::Grpc.Testing.Scenario.Parser, new[]{ "Name", "ClientConfig", "NumClients", "ServerConfig", "NumServers", "WarmupSeconds", "BenchmarkSeconds", "SpawnLocalWorkerCount" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Scenarios), global::Grpc.Testing.Scenarios.Parser, new[]{ "Scenarios_" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResultSummary), global::Grpc.Testing.ScenarioResultSummary.Parser, new[]{ "Qps", "QpsPerServerCore", "ServerSystemTime", "ServerUserTime", "ClientSystemTime", "ClientUserTime", "Latency50", "Latency90", "Latency95", "Latency99", "Latency999", "ServerCpuUsage", "SuccessfulRequestsPerSecond", "FailedRequestsPerSecond", "ClientPollsPerRequest", "ServerPollsPerRequest", "ServerQueriesPerCpuSec", "ClientQueriesPerCpuSec" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResult), global::Grpc.Testing.ScenarioResult.Parser, new[]{ "Scenario", "Latencies", "ClientStats", "ServerStats", "ServerCores", "Summary", "ClientSuccess", "ServerSuccess", "RequestResults" }, null, null, null, null)
           }));
     }
     #endregion
@@ -1082,7 +1082,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "client_type" field.</summary>
     public const int ClientTypeFieldNumber = 2;
-    private global::Grpc.Testing.ClientType clientType_ = 0;
+    private global::Grpc.Testing.ClientType clientType_ = global::Grpc.Testing.ClientType.SyncClient;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ClientType ClientType {
       get { return clientType_; }
@@ -1148,7 +1148,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "rpc_type" field.</summary>
     public const int RpcTypeFieldNumber = 8;
-    private global::Grpc.Testing.RpcType rpcType_ = 0;
+    private global::Grpc.Testing.RpcType rpcType_ = global::Grpc.Testing.RpcType.Unary;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.RpcType RpcType {
       get { return rpcType_; }
@@ -1336,12 +1336,12 @@ namespace Grpc.Testing {
     public override int GetHashCode() {
       int hash = 1;
       hash ^= serverTargets_.GetHashCode();
-      if (ClientType != 0) hash ^= ClientType.GetHashCode();
+      if (ClientType != global::Grpc.Testing.ClientType.SyncClient) hash ^= ClientType.GetHashCode();
       if (securityParams_ != null) hash ^= SecurityParams.GetHashCode();
       if (OutstandingRpcsPerChannel != 0) hash ^= OutstandingRpcsPerChannel.GetHashCode();
       if (ClientChannels != 0) hash ^= ClientChannels.GetHashCode();
       if (AsyncClientThreads != 0) hash ^= AsyncClientThreads.GetHashCode();
-      if (RpcType != 0) hash ^= RpcType.GetHashCode();
+      if (RpcType != global::Grpc.Testing.RpcType.Unary) hash ^= RpcType.GetHashCode();
       if (loadParams_ != null) hash ^= LoadParams.GetHashCode();
       if (payloadConfig_ != null) hash ^= PayloadConfig.GetHashCode();
       if (histogramParams_ != null) hash ^= HistogramParams.GetHashCode();
@@ -1367,7 +1367,7 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       serverTargets_.WriteTo(output, _repeated_serverTargets_codec);
-      if (ClientType != 0) {
+      if (ClientType != global::Grpc.Testing.ClientType.SyncClient) {
         output.WriteRawTag(16);
         output.WriteEnum((int) ClientType);
       }
@@ -1387,7 +1387,7 @@ namespace Grpc.Testing {
         output.WriteRawTag(56);
         output.WriteInt32(AsyncClientThreads);
       }
-      if (RpcType != 0) {
+      if (RpcType != global::Grpc.Testing.RpcType.Unary) {
         output.WriteRawTag(64);
         output.WriteEnum((int) RpcType);
       }
@@ -1438,7 +1438,7 @@ namespace Grpc.Testing {
     public int CalculateSize() {
       int size = 0;
       size += serverTargets_.CalculateSize(_repeated_serverTargets_codec);
-      if (ClientType != 0) {
+      if (ClientType != global::Grpc.Testing.ClientType.SyncClient) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ClientType);
       }
       if (securityParams_ != null) {
@@ -1453,7 +1453,7 @@ namespace Grpc.Testing {
       if (AsyncClientThreads != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(AsyncClientThreads);
       }
-      if (RpcType != 0) {
+      if (RpcType != global::Grpc.Testing.RpcType.Unary) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) RpcType);
       }
       if (loadParams_ != null) {
@@ -1497,7 +1497,7 @@ namespace Grpc.Testing {
         return;
       }
       serverTargets_.Add(other.serverTargets_);
-      if (other.ClientType != 0) {
+      if (other.ClientType != global::Grpc.Testing.ClientType.SyncClient) {
         ClientType = other.ClientType;
       }
       if (other.securityParams_ != null) {
@@ -1515,7 +1515,7 @@ namespace Grpc.Testing {
       if (other.AsyncClientThreads != 0) {
         AsyncClientThreads = other.AsyncClientThreads;
       }
-      if (other.RpcType != 0) {
+      if (other.RpcType != global::Grpc.Testing.RpcType.Unary) {
         RpcType = other.RpcType;
       }
       if (other.loadParams_ != null) {
@@ -2178,7 +2178,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "server_type" field.</summary>
     public const int ServerTypeFieldNumber = 1;
-    private global::Grpc.Testing.ServerType serverType_ = 0;
+    private global::Grpc.Testing.ServerType serverType_ = global::Grpc.Testing.ServerType.SyncServer;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ServerType ServerType {
       get { return serverType_; }
@@ -2352,7 +2352,7 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (ServerType != 0) hash ^= ServerType.GetHashCode();
+      if (ServerType != global::Grpc.Testing.ServerType.SyncServer) hash ^= ServerType.GetHashCode();
       if (securityParams_ != null) hash ^= SecurityParams.GetHashCode();
       if (Port != 0) hash ^= Port.GetHashCode();
       if (AsyncServerThreads != 0) hash ^= AsyncServerThreads.GetHashCode();
@@ -2376,7 +2376,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (ServerType != 0) {
+      if (ServerType != global::Grpc.Testing.ServerType.SyncServer) {
         output.WriteRawTag(8);
         output.WriteEnum((int) ServerType);
       }
@@ -2422,7 +2422,7 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (ServerType != 0) {
+      if (ServerType != global::Grpc.Testing.ServerType.SyncServer) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ServerType);
       }
       if (securityParams_ != null) {
@@ -2462,7 +2462,7 @@ namespace Grpc.Testing {
       if (other == null) {
         return;
       }
-      if (other.ServerType != 0) {
+      if (other.ServerType != global::Grpc.Testing.ServerType.SyncServer) {
         ServerType = other.ServerType;
       }
       if (other.securityParams_ != null) {
@@ -3847,7 +3847,9 @@ namespace Grpc.Testing {
     public const int QpsFieldNumber = 1;
     private double qps_;
     /// <summary>
-    /// Total number of operations per second over all clients.
+    /// Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
+    /// For unary benchmarks, an operation is processing of a single unary RPC. 
+    /// For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Qps {
@@ -3861,7 +3863,7 @@ namespace Grpc.Testing {
     public const int QpsPerServerCoreFieldNumber = 2;
     private double qpsPerServerCore_;
     /// <summary>
-    /// QPS per one server core.
+    /// QPS per server core.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double QpsPerServerCore {
@@ -3875,7 +3877,10 @@ namespace Grpc.Testing {
     public const int ServerSystemTimeFieldNumber = 3;
     private double serverSystemTime_;
     /// <summary>
-    /// server load based on system_time (0.85 => 85%)
+    /// The total server cpu load based on system time across all server processes, expressed as percentage of a single cpu core.
+    /// For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
+    /// processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
+    /// Same explanation for the total client cpu load below.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerSystemTime {
@@ -3889,7 +3894,7 @@ namespace Grpc.Testing {
     public const int ServerUserTimeFieldNumber = 4;
     private double serverUserTime_;
     /// <summary>
-    /// server load based on user_time (0.85 => 85%)
+    /// The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerUserTime {
@@ -3903,7 +3908,7 @@ namespace Grpc.Testing {
     public const int ClientSystemTimeFieldNumber = 5;
     private double clientSystemTime_;
     /// <summary>
-    /// client load based on system_time (0.85 => 85%)
+    /// The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ClientSystemTime {
@@ -3917,7 +3922,7 @@ namespace Grpc.Testing {
     public const int ClientUserTimeFieldNumber = 6;
     private double clientUserTime_;
     /// <summary>
-    /// client load based on user_time (0.85 => 85%)
+    /// The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ClientUserTime {

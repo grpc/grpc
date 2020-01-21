@@ -354,9 +354,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   //     server
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
-  for (const auto& value : *sync_server_cqs) {
-    grpc_server_register_completion_queue(server->server_, value->cq(),
-                                          nullptr);
+  for (const auto& cq : *sync_server_cqs) {
+    grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
     has_frequently_polled_cqs = true;
   }
 
@@ -369,10 +368,12 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   // AddCompletionQueue() API. Some of them may not be frequently polled (i.e by
   // calling Next() or AsyncNext()) and hence are not safe to be used for
   // listening to incoming channels. Such completion queues must be registered
-  // as non-listening queues
-  for (const auto& value : cqs_) {
-    grpc_server_register_completion_queue(server->server_, value->cq(),
-                                          nullptr);
+  // as non-listening queues. In debug mode, these should have their server list
+  // tracked since these are provided the user and must be Shutdown by the user
+  // after the server is shutdown.
+  for (const auto& cq : cqs_) {
+    grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
+    cq->RegisterServer(server.get());
   }
 
   if (!has_frequently_polled_cqs) {

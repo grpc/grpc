@@ -35,33 +35,33 @@
 grpc_endpoint* grpc_tcp_client_create_from_fd(
     grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str);
 
-/* Return a configured, unbound, unconnected TCP client grpc_fd.
+/* Return a configured, unbound, unconnected TCP client fd.
 
    channel_args: may contain custom settings for the fd
    addr: the destination address
    mapped_addr: out parameter. addr mapped to an address appropriate to the
      type of socket FD created. For example, if addr is IPv4 and dual stack
      sockets are available, mapped_addr will be an IPv4-mapped IPv6 address
-   fdobj: out parameter. The new FD
+   fd: out parameter. The new FD
    Returns: error, if any. Out parameters are not set on error
 */
 grpc_error* grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
                                        const grpc_resolved_address* addr,
                                        grpc_resolved_address* mapped_addr,
-                                       grpc_fd** fdobj);
+                                       int* fd);
 
-/* Connect a configured TCP client grpc_fd.
+/* Connect a configured TCP client fd.
 
    interested_parties: a set of pollsets that would be interested in this
      connection being established (in order to continue their work
    closure: called when complete. On success, *ep will be set.
-   fdobj: an FD returned from grpc_tcp_client_prepare_fd(). Ownership is taken
+   fd: an FD returned from grpc_tcp_client_prepare_fd().
    channel_args: may contain custom settings for the endpoint
    deadline: connection deadline
    ep: out parameter. Set before closure is called if successful
 */
 void grpc_tcp_client_create_from_prepared_fd(
-    grpc_pollset_set* interested_parties, grpc_closure* closure, grpc_fd* fdobj,
+    grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
     const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
     grpc_millis deadline, grpc_endpoint** ep);
 
