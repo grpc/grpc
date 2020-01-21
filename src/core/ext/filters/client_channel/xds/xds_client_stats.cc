@@ -83,7 +83,8 @@ XdsClientStats::LocalityStats::GetSnapshotAndReset() {
       // related to a single reporting interval.
       total_requests_in_progress_.Load(MemoryOrder::RELAXED),
       GetAndResetCounter(&total_error_requests_),
-      GetAndResetCounter(&total_issued_requests_)};
+      GetAndResetCounter(&total_issued_requests_),
+      LoadMetricSnapshotMap{}};
   {
     MutexLock lock(&load_metric_stats_mu_);
     for (auto& p : load_metric_stats_) {
