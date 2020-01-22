@@ -24,7 +24,7 @@ HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
 REFLECTION_DIR=src/csharp/Grpc.Reflection
 TESTING_DIR=src/csharp/Grpc.IntegrationTesting
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
+$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR --grpc_opt=use_buffer_serialization \
     -I src/proto src/proto/math/math.proto
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \

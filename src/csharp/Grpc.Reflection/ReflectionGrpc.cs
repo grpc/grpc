@@ -29,32 +29,8 @@ namespace Grpc.Reflection.V1Alpha {
   {
     static readonly string __ServiceName = "grpc.reflection.v1alpha.ServerReflection";
 
-    #if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION
-    static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> __Marshaller_grpc_reflection_v1alpha_ServerReflectionRequest = 
-      grpc::Marshallers.Create(
-        (arg, context) =>
-        {
-          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
-          arg.WriteTo(ref writer);
-          writer.Flush();
-          context.Complete();
-        },
-        context => global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
-    static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Marshaller_grpc_reflection_v1alpha_ServerReflectionResponse = 
-      grpc::Marshallers.Create(
-        (arg, context) =>
-        {
-          var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
-          arg.WriteTo(ref writer);
-          writer.Flush();
-          context.Complete();
-        },
-        context => global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
-    #else
     static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> __Marshaller_grpc_reflection_v1alpha_ServerReflectionRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Marshaller_grpc_reflection_v1alpha_ServerReflectionResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser.ParseFrom);
-    #endif
-
     static readonly grpc::Method<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Method_ServerReflectionInfo = new grpc::Method<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse>(
         grpc::MethodType.DuplexStreaming,
         __ServiceName,

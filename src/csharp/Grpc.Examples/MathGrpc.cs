@@ -27,7 +27,6 @@ namespace Math {
   {
     static readonly string __ServiceName = "math.Math";
 
-    #if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION
     static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -68,13 +67,6 @@ namespace Math {
           context.Complete();
         },
         context => global::Math.Num.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
-    #else
-    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_math_FibArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.FibArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_math_Num = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.Num.Parser.ParseFrom);
-    #endif
-
     static readonly grpc::Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new grpc::Method<global::Math.DivArgs, global::Math.DivReply>(
         grpc::MethodType.Unary,
         __ServiceName,
