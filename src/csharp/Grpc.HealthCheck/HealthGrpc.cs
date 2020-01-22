@@ -40,13 +40,7 @@ namespace Grpc.Health.V1 {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Health.V1.HealthCheckRequest();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Health.V1.HealthCheckRequest.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Grpc.Health.V1.HealthCheckResponse> __Marshaller_grpc_health_v1_HealthCheckResponse = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -56,13 +50,7 @@ namespace Grpc.Health.V1 {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Health.V1.HealthCheckResponse();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Health.V1.HealthCheckResponse.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     #else
     static readonly grpc::Marshaller<global::Grpc.Health.V1.HealthCheckRequest> __Marshaller_grpc_health_v1_HealthCheckRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Health.V1.HealthCheckRequest.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Grpc.Health.V1.HealthCheckResponse> __Marshaller_grpc_health_v1_HealthCheckResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Health.V1.HealthCheckResponse.Parser.ParseFrom);

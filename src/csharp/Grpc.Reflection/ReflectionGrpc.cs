@@ -39,13 +39,7 @@ namespace Grpc.Reflection.V1Alpha {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Marshaller_grpc_reflection_v1alpha_ServerReflectionResponse = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -55,13 +49,7 @@ namespace Grpc.Reflection.V1Alpha {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Reflection.V1Alpha.ServerReflectionResponse();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     #else
     static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> __Marshaller_grpc_reflection_v1alpha_ServerReflectionRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Marshaller_grpc_reflection_v1alpha_ServerReflectionResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser.ParseFrom);

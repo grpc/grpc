@@ -37,13 +37,7 @@ namespace Math {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Math.DivArgs();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Math.DivArgs.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -53,13 +47,7 @@ namespace Math {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Math.DivReply();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Math.DivReply.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_math_FibArgs = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -69,13 +57,7 @@ namespace Math {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Math.FibArgs();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Math.FibArgs.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Math.Num> __Marshaller_math_Num = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -85,13 +67,7 @@ namespace Math {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Math.Num();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Math.Num.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     #else
     static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);

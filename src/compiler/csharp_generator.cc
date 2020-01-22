@@ -326,6 +326,9 @@ std::vector<const Descriptor*> GetUsedMessages(
 void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
                               bool use_buffer_serialization) {
   std::vector<const Descriptor*> used_messages = GetUsedMessages(service);
+  if (used_messages.size() == 0) {
+    return;
+  }
   out->Print("#if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION\n");
   // Generate buffer serialization marshallers
   for (size_t i = 0; i < used_messages.size(); i++) {
@@ -351,19 +354,8 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
     out->Outdent();
     out->Print(
             "},\n"
-            "context =>\n"
-            "{\n");
-    out->Indent();
-    out->Print(
-              "var result = new $type$();\n"
-              "var reader = new global::Google.Protobuf.CodedInputReader("
-              "context.PayloadAsReadOnlySequence());\n"
-              "result.MergeFrom(ref reader);\n"
-              "return result;\n",
-              "type", GetClassName(message));
-    out->Outdent();
-    out->Print(
-            "});\n");
+            "context => $type$.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));\n",
+            "type", GetClassName(message));
     out->Outdent();
     out->Outdent();
   }

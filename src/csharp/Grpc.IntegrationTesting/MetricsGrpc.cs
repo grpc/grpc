@@ -43,13 +43,7 @@ namespace Grpc.Testing {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Testing.EmptyMessage();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Testing.EmptyMessage.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Grpc.Testing.GaugeResponse> __Marshaller_grpc_testing_GaugeResponse = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -59,13 +53,7 @@ namespace Grpc.Testing {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Testing.GaugeResponse();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Testing.GaugeResponse.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Grpc.Testing.GaugeRequest> __Marshaller_grpc_testing_GaugeRequest = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -75,13 +63,7 @@ namespace Grpc.Testing {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Testing.GaugeRequest();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Testing.GaugeRequest.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     #else
     static readonly grpc::Marshaller<global::Grpc.Testing.EmptyMessage> __Marshaller_grpc_testing_EmptyMessage = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.EmptyMessage.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Grpc.Testing.GaugeResponse> __Marshaller_grpc_testing_GaugeResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.GaugeResponse.Parser.ParseFrom);

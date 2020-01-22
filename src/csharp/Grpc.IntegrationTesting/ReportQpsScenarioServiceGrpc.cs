@@ -39,13 +39,7 @@ namespace Grpc.Testing {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Testing.ScenarioResult();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Testing.ScenarioResult.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_grpc_testing_Void = 
       grpc::Marshallers.Create(
         (arg, context) =>
@@ -55,13 +49,7 @@ namespace Grpc.Testing {
           writer.Flush();
           context.Complete();
         },
-        context =>
-        {
-          var result = new global::Grpc.Testing.Void();
-          var reader = new global::Google.Protobuf.CodedInputReader(context.PayloadAsReadOnlySequence());
-          result.MergeFrom(ref reader);
-          return result;
-        });
+        context => global::Grpc.Testing.Void.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     #else
     static readonly grpc::Marshaller<global::Grpc.Testing.ScenarioResult> __Marshaller_grpc_testing_ScenarioResult = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ScenarioResult.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_grpc_testing_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Void.Parser.ParseFrom);
