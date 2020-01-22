@@ -28,12 +28,12 @@
 namespace grpc_core {
 
 enum class MemoryOrder {
-  RELAXED = std::memory_order_relaxed,
-  CONSUME = std::memory_order_consume,
-  ACQUIRE = std::memory_order_acquire,
-  RELEASE = std::memory_order_release,
-  ACQ_REL = std::memory_order_acq_rel,
-  SEQ_CST = std::memory_order_seq_cst
+  RELAXED = (int)std::memory_order_relaxed,
+  CONSUME = (int)std::memory_order_consume,
+  ACQUIRE = (int)std::memory_order_acquire,
+  RELEASE = (int)std::memory_order_release,
+  ACQ_REL = (int)std::memory_order_acq_rel,
+  SEQ_CST = (int)std::memory_order_seq_cst
 };
 
 template <typename T>
