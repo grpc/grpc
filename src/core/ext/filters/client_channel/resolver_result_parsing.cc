@@ -54,7 +54,7 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 
 void ClientChannelServiceConfigParser::Register() {
   g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
-      MakeUnique<ClientChannelServiceConfigParser>());
+      grpc_core::MakeUnique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -95,7 +95,7 @@ std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
     grpc_json* field, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   auto retry_policy =
-      MakeUnique<ClientChannelMethodParsedConfig::RetryPolicy>();
+      grpc_core::MakeUnique<ClientChannelMethodParsedConfig::RetryPolicy>();
   if (field->type != GRPC_JSON_OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:retryPolicy error:should be of type object");
@@ -438,7 +438,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel global parser",
                                          &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return MakeUnique<ClientChannelGlobalParsedConfig>(
+    return grpc_core::MakeUnique<ClientChannelGlobalParsedConfig>(
         std::move(parsed_lb_config), std::move(lb_policy_name),
         retry_throttling, health_check_service_name);
   }
@@ -491,8 +491,8 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return MakeUnique<ClientChannelMethodParsedConfig>(timeout, wait_for_ready,
-                                                       std::move(retry_policy));
+    return grpc_core::MakeUnique<ClientChannelMethodParsedConfig>(
+        timeout, wait_for_ready, std::move(retry_policy));
   }
   return nullptr;
 }

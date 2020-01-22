@@ -715,8 +715,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
-      state, MakeUnique<Picker>(parent_.get(), parent_->serverlist_,
-                                std::move(picker), std::move(client_stats)));
+      state, grpc_core::MakeUnique<Picker>(parent_.get(), parent_->serverlist_,
+                                           std::move(picker),
+                                           std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {

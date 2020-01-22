@@ -162,7 +162,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
     LoadBalancingPolicy::Args args;
     args.combiner = parent_->combiner();
     args.args = parent_->args_;
-    args.channel_control_helper = MakeUnique<Helper>(parent_->Ref());
+    args.channel_control_helper = grpc_core::MakeUnique<Helper>(parent_->Ref());
     parent_->child_policy_ =
         LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
             "xds_experimental", std::move(args));
@@ -186,7 +186,7 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
   if (parent_->child_policy_ == nullptr) {
     parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        MakeUnique<TransientFailurePicker>(error));
+        grpc_core::MakeUnique<TransientFailurePicker>(error));
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -287,7 +287,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
       xds_client_->CancelClusterDataWatch(StringView(old_config->cluster()),
                                           cluster_watcher_);
     }
-    auto watcher = MakeUnique<ClusterWatcher>(Ref());
+    auto watcher = grpc_core::MakeUnique<ClusterWatcher>(Ref());
     cluster_watcher_ = watcher.get();
     xds_client_->WatchClusterData(StringView(config_->cluster()),
                                   std::move(watcher));
