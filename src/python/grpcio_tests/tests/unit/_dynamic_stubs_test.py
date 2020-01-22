@@ -31,7 +31,6 @@ def _protobuf_unimportable():
         sys.path = original_sys_path
 
 
-# TODO: Dedupe with grpc_tools test?
 def _wrap_in_subprocess(error_queue, fn):
 
     @functools.wraps(fn)
