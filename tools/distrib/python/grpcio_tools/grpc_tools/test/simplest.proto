@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package grpc_tools.test.simplest;
-
-message SimplestMessage {
-  int64 i_definitely_dont_exist = 1;
-};
-

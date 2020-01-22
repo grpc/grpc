@@ -124,6 +124,6 @@ py2and3_test(
         "@six//:six",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/testing",
-        "//tools/distrib/python/grpcio_tools/grpc_tools",
+        "@com_google_protobuf//:protobuf_python",
     ],
 )

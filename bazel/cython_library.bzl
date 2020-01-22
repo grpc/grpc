@@ -6,7 +6,7 @@
 # been written at cython/cython and tensorflow/tensorflow. We branch from
 # Tensorflow's version as it is more actively maintained and works for gRPC
 # Python's needs.
-def pyx_library(name, deps = [], py_deps = [], srcs = [], includes = [], **kwargs):
+def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
     """Compiles a group of .pyx / .pxd / .py files.
 
     First runs Cython to create .cpp files for each input .pyx or .py + .pxd
@@ -20,8 +20,6 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], includes = [], **kwarg
         deps: C/C++ dependencies of the Cython (e.g. Numpy headers).
         py_deps: Pure Python dependencies of the final library.
         srcs: .py, .pyx, or .pxd files to either compile or pass through.
-        includes: A list of directories through which Cython will
-          search for C/C++ header files.
         **kwargs: Extra keyword arguments passed to the py_library.
     """
 
@@ -41,7 +39,6 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], includes = [], **kwarg
             pxd_srcs.append(src)
 
     # Invoke cython to produce the shared object libraries.
-    include_flags = " ".join(["-I{}".format(include) for include in includes])
     for filename in pyx_srcs:
         native.genrule(
             name = filename + "_cython_translation",
@@ -50,7 +47,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], includes = [], **kwarg
             # Optionally use PYTHON_BIN_PATH on Linux platforms so that python 3
             # works. Windows has issues with cython_binary so skip PYTHON_BIN_PATH.
             cmd =
-                "PYTHONHASHSEED=0 $(location @cython//:cython_binary) {} --cplus $(SRCS) --output-file $(OUTS)".format(include_flags),
+                "PYTHONHASHSEED=0 $(location @cython//:cython_binary) --cplus $(SRCS) --output-file $(OUTS)",
             tools = ["@cython//:cython_binary"] + pxd_srcs,
         )
 
@@ -63,7 +60,6 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], includes = [], **kwarg
             srcs = [stem + ".cpp"],
             deps = deps + ["@local_config_python//:python_headers"],
             linkshared = 1,
-            includes = includes,
         )
         shared_objects.append(shared_object_name)
 
