@@ -27,13 +27,21 @@ namespace Math {
   {
     static readonly string __ServiceName = "math.Math";
 
-    static void __Helper_WriteBufferMessage(global::Google.Protobuf.IBufferMessage message, global::Grpc.Core.SerializationContext context)
+    static void __Helper_WriteBufferMessage(global::Google.Protobuf.IMessage message, global::Grpc.Core.SerializationContext context)
     {
-      var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
-      message.WriteTo(ref writer);
-      writer.Flush();
-      context.Complete();
-    {
+      var bufferMessage = message as global::Google.Protobuf.IBufferMessage;
+      if (bufferMessage != null)
+      {
+        var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+        bufferMessage.WriteTo(ref writer);
+        writer.Flush();
+        context.Complete();
+      }
+      else
+      {
+        context.Complete(global::Google.Protobuf.MessageExtensions.ToByteArray(message));
+      }
+    }
 
     static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = grpc::Marshallers.Create(__Helper_WriteBufferMessage, context => global::Math.DivArgs.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));
     static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = grpc::Marshallers.Create(__Helper_WriteBufferMessage, context => global::Math.DivReply.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));

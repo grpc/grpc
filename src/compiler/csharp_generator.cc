@@ -330,19 +330,35 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
     // Generate buffer serialization marshallers
     out->Print(
         "static void __Helper_WriteBufferMessage("
-        "global::Google.Protobuf.IBufferMessage message, "
+        "global::Google.Protobuf.IMessage message, "
         "global::Grpc.Core.SerializationContext context)\n"
         "{\n");
     out->Indent();
     out->Print(
-          "var writer = new global::Google.Protobuf.CodedOutputWriter("
-          "context.GetBufferWriter());\n"
-          "message.WriteTo(ref writer);\n"
-          "writer.Flush();\n"
-          "context.Complete();\n");
+          "var bufferMessage = message as global::Google.Protobuf.IBufferMessage;\n"
+          "if (bufferMessage != null)\n"
+          "{\n");
+    out->Indent();
+    out->Print(
+            "var writer = new global::Google.Protobuf.CodedOutputWriter("
+            "context.GetBufferWriter());\n"
+            "bufferMessage.WriteTo(ref writer);\n"
+            "writer.Flush();\n"
+            "context.Complete();\n");
     out->Outdent();
     out->Print(
-        "{\n\n");
+          "}\n"
+          "else\n"
+          "{\n");
+    out->Indent();
+    out->Print(
+            "context.Complete(global::Google.Protobuf.MessageExtensions.ToByteArray(message));\n");
+    out->Outdent();
+    out->Print(
+          "}\n");
+    out->Outdent();
+    out->Print(
+        "}\n\n");
 
     for (size_t i = 0; i < used_messages.size(); i++) {
       const Descriptor* message = used_messages[i];
