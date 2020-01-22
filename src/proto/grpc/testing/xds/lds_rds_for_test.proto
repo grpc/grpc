@@ -42,8 +42,21 @@ message RouteAction {
     // Indicates the upstream cluster to which the request should be routed
     // to.
     string cluster = 1;
+
+    // Envoy will determine the cluster to route to by reading the value of the
+    // HTTP header named by cluster_header from the request headers. If the
+    // header is not found or the referenced cluster does not exist, Envoy will
+    // return a 404 response.
+    //
+    // .. attention::
+    //
+    //   Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1
+    //   *Host* header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+    string cluster_header = 2;
   }
 }
+
+message RedirectAction {}
 
 message Route {
    RouteMatch match = 1;
@@ -51,6 +64,9 @@ message Route {
    oneof action {
      // Route request to some upstream cluster.
      RouteAction route = 2;
+
+     // Return a redirect.
+     RedirectAction redirect = 3;
    }
 }
 
