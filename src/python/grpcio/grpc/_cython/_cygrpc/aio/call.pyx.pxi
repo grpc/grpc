@@ -36,6 +36,7 @@ cdef class _AioCall(GrpcCallWrapper):
         self._loop = asyncio.get_event_loop()
         self._create_grpc_call(deadline, method, call_credentials)
         self._is_locally_cancelled = False
+        self._deadline = deadline
 
     def __dealloc__(self):
         if self.call:
@@ -83,6 +84,12 @@ cdef class _AioCall(GrpcCallWrapper):
                 raise Exception("Credentials couldn't have been set")
 
         grpc_slice_unref(method_slice)
+
+    def time_remaining(self):
+        if self._deadline is None:
+            return None
+        else:
+            return max(0, self._deadline - time.time())
 
     def cancel(self, AioRpcStatus status):
         """Cancels the RPC in Core with given RPC status.

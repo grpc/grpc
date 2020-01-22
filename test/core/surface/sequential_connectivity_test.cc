@@ -35,7 +35,13 @@ typedef struct test_fixture {
   grpc_channel* (*create_channel)(const char* addr);
 } test_fixture;
 
+/* TODO(yashykt): When our macos testing infrastructure becomes good enough, we
+ * wouldn't need to reduce the number of connections on MacOS */
+#ifdef __APPLE__
+#define NUM_CONNECTIONS 100
+#else
 #define NUM_CONNECTIONS 1000
+#endif /* __APPLE__ */
 
 typedef struct {
   grpc_server* server;

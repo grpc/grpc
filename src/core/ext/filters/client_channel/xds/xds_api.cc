@@ -649,7 +649,7 @@ grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
       grpc_error* error =
           RouteConfigParse(route_config, expected_server_name, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
-      lds_update->rds_update.set(std::move(rds_update));
+      lds_update->rds_update.emplace(std::move(rds_update));
       const upb_strview route_config_name =
           envoy_api_v2_RouteConfiguration_name(route_config);
       lds_update->route_config_name =
@@ -782,7 +782,7 @@ grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "ConfigSource is not self.");
       }
-      cds_update.lrs_load_reporting_server_name.set("");
+      cds_update.lrs_load_reporting_server_name.emplace("");
     }
     upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
     cds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),

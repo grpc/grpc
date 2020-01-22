@@ -1720,6 +1720,12 @@ libs:
   filegroups:
   - grpc_test_util_base
   secure: true
+- name: engine_passthrough
+  build: test
+  language: c
+  src:
+  - test/core/end2end/engine_passthrough.cc
+  dll: only
 - name: gpr
   build: all
   language: c
@@ -6291,7 +6297,7 @@ defaults:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
     CFLAGS: -g
-    CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
+    CPPFLAGS: -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-exceptions
   global:
