@@ -48,8 +48,6 @@ def _interpreter_version_protos_and_services(*args, **kwargs):
     )
 
 
-# TODO: Remove the now-unnecessary implemenentation from grpc_tools.
-
 if sys.version_info[0] < 3:
     protos = _interpreter_version_protos
     services = _interpreter_version_services

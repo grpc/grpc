@@ -114,6 +114,7 @@ def grpc_deps():
         )
 
     if "com_google_protobuf" not in native.existing_rules():
+        # TODO: Update once https://github.com/protocolbuffers/protobuf/pull/7119 is merged.
         native.local_repository(
             name = "com_google_protobuf",
             path = "/usr/local/google/home/rbellevi/Dev/protobuf",

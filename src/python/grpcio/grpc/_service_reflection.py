@@ -39,15 +39,10 @@ class ReflectiveServicerType(type):
             context.set_details('Method not implemented!')
             raise NotImplementedError('Method not implemented!')
 
-        # TODO: Attach the proto-level service comment to the servicer class.
-
         for method_descriptor in service_descriptor.methods:
-            # TODO: Somehow get the proto-level comment attached to the
-            # documentation for this function. Perhaps check out how functools.wraps
-            # is implemented.
             setattr(cls, method_descriptor.name, _unimplemented_method)
 
-    # TODO: Add a comprehensive __str__/__repr__
+    # TODO: Add human-readable help text.
 
 
 def get_servicer_type(service_descriptor):
@@ -114,8 +109,6 @@ class ReflectiveStubType(type):
         service_descriptor = namespace[DESCRIPTOR_KEY]
 
         def _stub_init(self, channel):
-            # TODO: This can actually be done at class instantiation time, not
-            # stub instantiation time.
             for method_descriptor in getattr(self, DESCRIPTOR_KEY).methods:
                 handler = _get_handler(method_descriptor, channel)
                 setattr(self, method_descriptor.name, handler)
@@ -123,7 +116,7 @@ class ReflectiveStubType(type):
         super(ReflectiveStubType, cls).__init__(name, bases, namespace)
         setattr(cls, '__init__', _stub_init)
 
-    # TODO: Add a comprehensive __str__/__repr__
+    # TODO: Add human-readable help text.
 
 
 def get_stub_type(service_descriptor):
@@ -144,7 +137,6 @@ def get_servicer_addition_function_name(service_descriptor):
 def get_servicer_addition_function(service_descriptor):
 
     def _add_servicer_to_server(servicer, server):
-        # TODO: Move this reflection to class build time.
         rpc_method_handlers = {}
         for method_descriptor in service_descriptor.methods:
             method_handler_func_name = _get_arity(
