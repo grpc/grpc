@@ -326,6 +326,12 @@ std::vector<const Descriptor*> GetUsedMessages(
 void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
                               bool use_buffer_serialization) {
   std::vector<const Descriptor*> used_messages = GetUsedMessages(service);
+  if (used_messages.size() == 0)
+  {
+    out->Print("\n");
+    return;
+  }
+
   if (use_buffer_serialization) {
     // Generate buffer serialization marshallers
     out->Print(
@@ -335,6 +341,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
         "{\n");
     out->Indent();
     out->Print(
+          "#if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION\n"
           "var bufferMessage = message as global::Google.Protobuf.IBufferMessage;\n"
           "if (bufferMessage != null)\n"
           "{\n");
@@ -344,18 +351,31 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
             "context.GetBufferWriter());\n"
             "bufferMessage.WriteTo(ref writer);\n"
             "writer.Flush();\n"
-            "context.Complete();\n");
+            "context.Complete();\n"
+            "return;\n");
     out->Outdent();
     out->Print(
           "}\n"
-          "else\n"
-          "{\n");
-    out->Indent();
+          "#endif\n");
     out->Print(
-            "context.Complete(global::Google.Protobuf.MessageExtensions.ToByteArray(message));\n");
+          "context.Complete("
+          "global::Google.Protobuf.MessageExtensions.ToByteArray(message));\n");
     out->Outdent();
     out->Print(
-          "}\n");
+        "}\n\n");
+    out->Print(
+        "static T __Helper_ParseBufferMessage<T>("
+        "global::Grpc.Core.DeserializationContext context, "
+        "global::Google.Protobuf.MessageParser<T> parser) "
+        "where T : global::Google.Protobuf.IMessage<T>\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+          "#if !GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION\n"
+          "return parser.ParseFrom(context.PayloadAsReadOnlySequence());\n"
+          "#else\n"
+          "return parser.ParseFrom(context.PayloadAsNewBuffer());\n"
+          "#endif\n");
     out->Outdent();
     out->Print(
         "}\n\n");
@@ -365,8 +385,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
       out->Print(
           "static readonly grpc::Marshaller<$type$> $fieldname$ = "
           "grpc::Marshallers.Create(__Helper_WriteBufferMessage, "
-          "context => $type$.Parser.ParseFrom("
-          "context.PayloadAsReadOnlySequence()));\n",
+          "context => __Helper_ParseBufferMessage(context, $type$.Parser));\n",
           "fieldname", GetMarshallerFieldName(message), "type",
           GetClassName(message));
     }
