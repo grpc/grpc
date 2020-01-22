@@ -397,7 +397,7 @@ grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "ConfigSource is not self.");
       }
-      cds_update.lrs_load_reporting_server_name.set("");
+      cds_update.lrs_load_reporting_server_name.emplace("");
     }
     upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
     cds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),

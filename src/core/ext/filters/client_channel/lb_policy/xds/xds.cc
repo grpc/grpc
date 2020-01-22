@@ -746,19 +746,23 @@ void XdsLb::ShutdownLocked() {
   }
   fallback_policy_.reset();
   pending_fallback_policy_.reset();
-  // Cancel the endpoint watch here instead of in our dtor, because the
-  // watcher holds a ref to us.
-  xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
-                                        endpoint_watcher_);
-  if (config_->lrs_load_reporting_server_name().has_value()) {
-    // TODO(roth): We should pass the cluster name (in addition to the
-    // eds_service_name) when adding the client stats. To do so, we need to
-    // first find a way to plumb the cluster name down into this LB policy.
-    xds_client()->RemoveClientStats(
-        StringView(config_->lrs_load_reporting_server_name().value().c_str()),
-        StringView(eds_service_name()), &client_stats_);
+  // Cancel the endpoint watch here instead of in our dtor if we are using the
+  // XdsResolver, because the watcher holds a ref to us and we might not be
+  // destroying the Xds client leading to a situation where the Xds lb policy is
+  // never destroyed.
+  if (xds_client_from_channel_ != nullptr) {
+    xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
+                                          endpoint_watcher_);
+    if (config_->lrs_load_reporting_server_name().has_value()) {
+      // TODO(roth): We should pass the cluster name (in addition to the
+      // eds_service_name) when adding the client stats. To do so, we need to
+      // first find a way to plumb the cluster name down into this LB policy.
+      xds_client()->RemoveClientStats(
+          StringView(config_->lrs_load_reporting_server_name().value().c_str()),
+          StringView(eds_service_name()), &client_stats_);
+    }
+    xds_client_from_channel_.reset();
   }
-  xds_client_from_channel_.reset();
   xds_client_.reset();
 }
 
@@ -1886,7 +1890,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     if (error_list.empty()) {
       Optional<std::string> optional_lrs_load_reporting_server_name;
       if (lrs_load_reporting_server_name != nullptr) {
-        optional_lrs_load_reporting_server_name.set(
+        optional_lrs_load_reporting_server_name.emplace(
             std::string(lrs_load_reporting_server_name));
       }
       return MakeRefCounted<ParsedXdsConfig>(

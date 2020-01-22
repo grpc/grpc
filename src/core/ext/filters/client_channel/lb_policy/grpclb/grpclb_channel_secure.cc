@@ -27,7 +27,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -56,8 +55,8 @@ RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
         grpc_sockaddr_to_string(&addr_str, &addresses[i].address(), true) > 0);
     target_authority_entries[i].key = grpc_slice_from_copied_string(addr_str);
     gpr_free(addr_str);
-    const char* balancer_name =
-        FindGrpclbBalancerNameInChannelArgs(*addresses[i].args());
+    char* balancer_name = grpc_channel_arg_get_string(grpc_channel_args_find(
+        addresses[i].args(), GRPC_ARG_ADDRESS_BALANCER_NAME));
     target_authority_entries[i].value.reset(gpr_strdup(balancer_name));
   }
   RefCountedPtr<TargetAuthorityTable> target_authority_table =
