@@ -23,7 +23,9 @@ import itertools
 import logging
 import struct
 
-from examples.python.cancellation import hash_name_pb2
+import grpc
+
+protos = grpc.protos("hash_name.protos")
 
 _LOGGER = logging.getLogger(__name__)
 _BYTE_MAX = 255
@@ -127,22 +129,21 @@ def search(target,
     hashes_computed = 0
     for secret in _all_bytestrings():
         if stop_event.is_set():
-            raise StopIteration()  # pylint: disable=stop-iteration-return
+            return
         candidate_hash = _get_hash(secret)
         distance = _get_substring_hamming_distance(candidate_hash, target)
         if interesting_hamming_distance is not None and distance <= interesting_hamming_distance:
             # Surface interesting candidates, but don't stop.
-            yield hash_name_pb2.HashNameResponse(
+            yield protos.HashNameResponse(
                 secret=base64.b64encode(secret),
                 hashed_name=candidate_hash,
                 hamming_distance=distance)
         elif distance <= ideal_distance:
             # Yield ideal candidate and end the stream.
-            yield hash_name_pb2.HashNameResponse(
+            return protos.HashNameResponse(
                 secret=base64.b64encode(secret),
                 hashed_name=candidate_hash,
                 hamming_distance=distance)
-            raise StopIteration()  # pylint: disable=stop-iteration-return
         hashes_computed += 1
         if hashes_computed == maximum_hashes:
             raise ResourceLimitExceededError()
