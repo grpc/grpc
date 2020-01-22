@@ -328,33 +328,31 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
   std::vector<const Descriptor*> used_messages = GetUsedMessages(service);
   if (use_buffer_serialization) {
     // Generate buffer serialization marshallers
+    out->Print(
+        "static void __Helper_WriteBufferMessage("
+        "global::Google.Protobuf.IBufferMessage message, "
+        "global::Grpc.Core.SerializationContext context)\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+          "var writer = new global::Google.Protobuf.CodedOutputWriter("
+          "context.GetBufferWriter());\n"
+          "message.WriteTo(ref writer);\n"
+          "writer.Flush();\n"
+          "context.Complete();\n");
+    out->Outdent();
+    out->Print(
+        "{\n\n");
+
     for (size_t i = 0; i < used_messages.size(); i++) {
       const Descriptor* message = used_messages[i];
       out->Print(
-          "static readonly grpc::Marshaller<$type$> $fieldname$ = \n",
+          "static readonly grpc::Marshaller<$type$> $fieldname$ = "
+          "grpc::Marshallers.Create(__Helper_WriteBufferMessage, "
+          "context => $type$.Parser.ParseFrom("
+          "context.PayloadAsReadOnlySequence()));\n",
           "fieldname", GetMarshallerFieldName(message), "type",
           GetClassName(message));
-      out->Indent();
-      out->Print(
-            "grpc::Marshallers.Create(\n");
-      out->Indent();
-      out->Print(
-              "(arg, context) =>\n"
-              "{\n");
-      out->Indent();
-      out->Print(
-                "var writer = new global::Google.Protobuf.CodedOutputWriter("
-                "context.GetBufferWriter());\n"
-                "arg.WriteTo(ref writer);\n"
-                "writer.Flush();\n"
-                "context.Complete();\n");
-      out->Outdent();
-      out->Print(
-              "},\n"
-              "context => $type$.Parser.ParseFrom(context.PayloadAsReadOnlySequence()));\n",
-              "type", GetClassName(message));
-      out->Outdent();
-      out->Outdent();
     }
   }
   else {
@@ -370,6 +368,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
           GetClassName(message));
     }
   }
+  out->Print("\n");
 }
 
 void GenerateStaticMethodField(Printer* out, const MethodDescriptor* method) {

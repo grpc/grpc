@@ -31,6 +31,7 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.EmptyService";
 
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
