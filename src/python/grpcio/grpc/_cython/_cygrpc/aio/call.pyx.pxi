@@ -12,40 +12,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-import grpc
-
 
 _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
-_EMPTY_METADATA = None
+_IMMUTABLE_EMPTY_METADATA = tuple()
 
 _UNKNOWN_CANCELLATION_DETAILS = 'RPC cancelled for unknown reason.'
+_OK_CALL_REPRESENTATION = ('<{} of RPC that terminated with:\n'
+                           '\tstatus = {}\n'
+                           '\tdetails = "{}"\n'
+                           '>')
+
+_NON_OK_CALL_REPRESENTATION = ('<{} of RPC that terminated with:\n'
+                               '\tstatus = {}\n'
+                               '\tdetails = "{}"\n'
+                               '\tdebug_error_string = "{}"\n'
+                               '>')
 
 
 cdef class _AioCall(GrpcCallWrapper):
 
-    def __cinit__(self,
-                  AioChannel channel,
-                  object deadline,
-                  bytes method,
-                  CallCredentials call_credentials):
+    def __cinit__(self, AioChannel channel, object deadline,
+                  bytes method, CallCredentials call_credentials):
         self.call = NULL
         self._channel = channel
+        self._loop = channel.loop
         self._references = []
-        self._loop = asyncio.get_event_loop()
-        self._create_grpc_call(deadline, method, call_credentials)
+        self._status = None
+        self._initial_metadata = None
+        self._waiters_status = []
+        self._waiters_initial_metadata = []
+        self._done_callbacks = []
         self._is_locally_cancelled = False
         self._deadline = deadline
+        self._create_grpc_call(deadline, method, call_credentials)
 
     def __dealloc__(self):
         if self.call:
             grpc_call_unref(self.call)
 
-    def __repr__(self):
-        class_name = self.__class__.__name__
-        id_ = id(self)
-        return f"<{class_name} {id_}>"
+    def _repr(self) -> str:
+        """Assembles the RPC representation string."""
+        # This needs to be loaded at run time once everything
+        # has been loaded.
+        from grpc import _common
+
+        if not self.done():
+            return '<{} object>'.format(self.__class__.__name__)
+
+        if self._status.code() is StatusCode.ok:
+            return _OK_CALL_REPRESENTATION.format(
+                self.__class__.__name__,
+                _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[self._status.code()],
+                self._status.details())
+        else:
+            return _NON_OK_CALL_REPRESENTATION.format(
+                self.__class__.__name__,
+                self._status.details(),
+                _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[self._status.code()],
+                self._status.debug_error_string())
+
+    def __repr__(self) -> str:
+        return self._repr()
+
+    def __str__(self) -> str:
+        return self._repr()
 
     cdef void _create_grpc_call(self,
                                 object deadline,
@@ -85,13 +116,55 @@ cdef class _AioCall(GrpcCallWrapper):
 
         grpc_slice_unref(method_slice)
 
+    cdef void _set_status(self, AioRpcStatus status) except *:
+        cdef list waiters
+
+        if self._initial_metadata is None:
+            self._set_initial_metadata(_IMMUTABLE_EMPTY_METADATA)
+
+        self._status = status
+        waiters = self._waiters_status
+
+        # No more waiters should be expected since status
+        # has been set.
+        self._waiters_status = None
+
+        for waiter in waiters:
+            if not waiter.done():
+                waiter.set_result(None)
+
+        for callback in self._done_callbacks:
+            callback()
+
+    cdef void _set_initial_metadata(self, tuple initial_metadata) except *:
+        cdef list waiters
+
+        self._initial_metadata = initial_metadata
+
+        waiters = self._waiters_initial_metadata
+
+        # No more waiters should be expected since initial metadata
+        # has been set.
+        self._waiters_initial_metadata = None
+
+        for waiter in waiters:
+            if not waiter.done():
+                waiter.set_result(None)
+
+
+    def add_done_callback(self, callback):
+        if self.done():
+            callback()
+        else:
+            self._done_callbacks.append(callback)
+
     def time_remaining(self):
         if self._deadline is None:
             return None
         else:
             return max(0, self._deadline - time.time())
 
-    def cancel(self, AioRpcStatus status):
+    def cancel(self, str details):
         """Cancels the RPC in Core with given RPC status.
         
         Above abstractions must invoke this method to set Core objects into
@@ -99,44 +172,108 @@ cdef class _AioCall(GrpcCallWrapper):
         """
         self._is_locally_cancelled = True
 
-        cdef object details
+        cdef object details_bytes
         cdef char *c_details
         cdef grpc_call_error error
-        # Try to fetch application layer cancellation details in the future.
-        # * If cancellation details present, cancel with status;
-        # * If details not present, cancel with unknown reason.
-        if status is not None:
-            details = str_to_bytes(status.details())
-            self._references.append(details)
-            c_details = <char *>details
-            # By implementation, grpc_call_cancel_with_status always return OK
-            error = grpc_call_cancel_with_status(
-                self.call,
-                status.c_code(),
-                c_details,
-                NULL,
-            )
-            assert error == GRPC_CALL_OK
-        else:
-            # By implementation, grpc_call_cancel always return OK
-            error = grpc_call_cancel(self.call, NULL)
-            assert error == GRPC_CALL_OK
+
+        self._set_status(AioRpcStatus(
+            StatusCode.cancelled,
+            details,
+            None,
+            None,
+        ))
+
+        details_bytes = str_to_bytes(details)
+        self._references.append(details_bytes)
+        c_details = <char *>details_bytes
+        # By implementation, grpc_call_cancel_with_status always return OK
+        error = grpc_call_cancel_with_status(
+            self.call,
+            StatusCode.cancelled,
+            c_details,
+            NULL,
+        )
+        assert error == GRPC_CALL_OK
+
+    def done(self):
+        """Returns if the RPC call has finished.
+        
+        Checks if the status has been provided, either
+        because the RPC finished or because was cancelled..
+
+        Returns:
+            True if the RPC can be considered finished.
+        """
+        return self._status is not None
+
+    def cancelled(self):
+        """Returns if the RPC was cancelled.
+        
+        Returns:
+            True if the RPC was cancelled.
+        """
+        if not self.done():
+            return False
+
+        return self._status.code() == StatusCode.cancelled
+
+    async def status(self):
+        """Returns the status of the RPC call.
+        
+        It returns the finshed status of the RPC. If the RPC
+        has not finished yet this function will wait until the RPC
+        gets finished.
+
+        Returns:
+            Finished status of the RPC as an AioRpcStatus object.
+        """
+        if self._status is not None:
+            return self._status
+
+        future = self._loop.create_future()
+        self._waiters_status.append(future)
+        await future
+
+        return self._status
+
+    async def initial_metadata(self):
+        """Returns the initial metadata of the RPC call.
+        
+        If the initial metadata has not been received yet this function will
+        wait until the RPC gets finished.
+
+        Returns:
+            The tuple object with the initial metadata.
+        """
+        if self._initial_metadata is not None:
+            return self._initial_metadata
+
+        future = self._loop.create_future()
+        self._waiters_initial_metadata.append(future)
+        await future
+
+        return self._initial_metadata
+
+    def is_locally_cancelled(self):
+        """Returns if the RPC was cancelled locally.
+
+        Returns:
+            True when was cancelled locally, False when was cancelled remotelly or
+            is still ongoing.
+        """
+        if self._is_locally_cancelled:
+            return True
+
+        return False
 
     async def unary_unary(self,
                           bytes request,
-                          tuple outbound_initial_metadata,
-                          object initial_metadata_observer,
-                          object status_observer):
+                          tuple outbound_initial_metadata):
         """Performs a unary unary RPC.
         
         Args:
-          method: name of the calling method in bytes.
           request: the serialized requests in bytes.
-          deadline: optional deadline of the RPC in float.
-          cancellation_future: the future that meant to transport the
-            cancellation reason from the application layer.
-          initial_metadata_observer: a callback for received initial metadata.
-          status_observer: a callback for received final status.
+          outbound_initial_metadata: optional outbound metadata.
         """
         cdef tuple ops
 
@@ -159,25 +296,24 @@ cdef class _AioCall(GrpcCallWrapper):
                             ops,
                             self._loop)
 
-        # Reports received initial metadata.
-        initial_metadata_observer(receive_initial_metadata_op.initial_metadata())
+        self._set_initial_metadata(receive_initial_metadata_op.initial_metadata())
 
-        status = AioRpcStatus(
-            receive_status_on_client_op.code(),
+        cdef grpc_status_code code
+        code = receive_status_on_client_op.code()
+
+        self._set_status(AioRpcStatus(
+            code,
             receive_status_on_client_op.details(),
             receive_status_on_client_op.trailing_metadata(),
             receive_status_on_client_op.error_string(),
-        )
-        # Reports the final status of the RPC to Python layer. The observer
-        # pattern is used here to unify unary and streaming code path.
-        status_observer(status)
+        ))
 
-        if status.code() == StatusCode.ok:
+        if code == StatusCode.ok:
             return receive_message_op.message()
         else:
             return None
 
-    async def _handle_status_once_received(self, object status_observer):
+    async def _handle_status_once_received(self):
         """Handles the status sent by peer once received."""
         cdef ReceiveStatusOnClientOperation op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
         cdef tuple ops = (op,)
@@ -187,13 +323,12 @@ cdef class _AioCall(GrpcCallWrapper):
         if self._is_locally_cancelled:
             return
 
-        cdef AioRpcStatus status = AioRpcStatus(
+        self._set_status(AioRpcStatus(
             op.code(),
             op.details(),
             op.trailing_metadata(),
             op.error_string(),
-        )
-        status_observer(status)
+        ))
 
     async def receive_serialized_message(self):
         """Receives one single raw message in bytes."""
@@ -227,13 +362,11 @@ cdef class _AioCall(GrpcCallWrapper):
 
     async def initiate_unary_stream(self,
                            bytes request,
-                           tuple outbound_initial_metadata,
-                           object initial_metadata_observer,
-                           object status_observer):
+                           tuple outbound_initial_metadata):
         """Implementation of the start of a unary-stream call."""
         # Peer may prematurely end this RPC at any point. We need a corutine
         # that watches if the server sends the final status.
-        self._loop.create_task(self._handle_status_once_received(status_observer))
+        self._loop.create_task(self._handle_status_once_received())
 
         cdef tuple outbound_ops
         cdef Operation initial_metadata_op = SendInitialMetadataOperation(
@@ -257,16 +390,14 @@ cdef class _AioCall(GrpcCallWrapper):
                             self._loop)
 
         # Receives initial metadata.
-        initial_metadata_observer(
+        self._set_initial_metadata(
             await _receive_initial_metadata(self,
                                             self._loop),
         )
 
     async def stream_unary(self,
                            tuple outbound_initial_metadata,
-                           object metadata_sent_observer,
-                           object initial_metadata_observer,
-                           object status_observer):
+                           object metadata_sent_observer):
         """Actual implementation of the complete unary-stream call.
         
         Needs to pay extra attention to the raise mechanism. If we want to
@@ -281,9 +412,8 @@ cdef class _AioCall(GrpcCallWrapper):
         metadata_sent_observer()
 
         # Receives initial metadata.
-        initial_metadata_observer(
-            await _receive_initial_metadata(self,
-                                            self._loop),
+        self._set_initial_metadata(
+            await _receive_initial_metadata(self, self._loop)
         )
 
         cdef tuple inbound_ops
@@ -296,26 +426,24 @@ cdef class _AioCall(GrpcCallWrapper):
                             inbound_ops,
                             self._loop)
 
-        status = AioRpcStatus(
-            receive_status_on_client_op.code(),
+        cdef grpc_status_code code
+        code = receive_status_on_client_op.code()
+
+        self._set_status(AioRpcStatus(
+            code,
             receive_status_on_client_op.details(),
             receive_status_on_client_op.trailing_metadata(),
             receive_status_on_client_op.error_string(),
-        )
-        # Reports the final status of the RPC to Python layer. The observer
-        # pattern is used here to unify unary and streaming code path.
-        status_observer(status)
+        ))
 
-        if status.code() == StatusCode.ok:
+        if code == StatusCode.ok:
             return receive_message_op.message()
         else:
             return None
 
     async def initiate_stream_stream(self,
                            tuple outbound_initial_metadata,
-                           object metadata_sent_observer,
-                           object initial_metadata_observer,
-                           object status_observer):
+                           object metadata_sent_observer):
         """Actual implementation of the complete stream-stream call.
 
         Needs to pay extra attention to the raise mechanism. If we want to
@@ -324,7 +452,7 @@ cdef class _AioCall(GrpcCallWrapper):
         """
         # Peer may prematurely end this RPC at any point. We need a corutine
         # that watches if the server sends the final status.
-        self._loop.create_task(self._handle_status_once_received(status_observer))
+        self._loop.create_task(self._handle_status_once_received())
 
         # Sends out initial_metadata ASAP.
         await _send_initial_metadata(self,
@@ -334,7 +462,6 @@ cdef class _AioCall(GrpcCallWrapper):
         metadata_sent_observer()
 
         # Receives initial metadata.
-        initial_metadata_observer(
-            await _receive_initial_metadata(self,
-                                            self._loop),
+        self._set_initial_metadata(
+            await _receive_initial_metadata(self, self._loop)
         )

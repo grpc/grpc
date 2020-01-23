@@ -13,7 +13,6 @@
 # limitations under the License.
 # distutils: language=c++
 
-cimport cpython
 from libc cimport string
 import errno
 gevent_g = None

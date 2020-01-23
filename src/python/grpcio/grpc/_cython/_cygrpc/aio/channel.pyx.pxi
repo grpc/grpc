@@ -25,13 +25,13 @@ cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailur
 
 
 cdef class AioChannel:
-    def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials):
+    def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials, object loop):
         if options is None:
             options = ()
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
         self._target = target
         self.cq = CallbackCompletionQueue()
-        self._loop = asyncio.get_event_loop()
+        self.loop = loop
         self._status = AIO_CHANNEL_STATUS_READY
 
         if credentials is None:
@@ -53,10 +53,13 @@ cdef class AioChannel:
 
     def check_connectivity_state(self, bint try_to_connect):
         """A Cython wrapper for Core's check connectivity state API."""
-        return grpc_channel_check_connectivity_state(
-            self.channel,
-            try_to_connect,
-        )
+        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
+            return ConnectivityState.shutdown
+        else:
+            return grpc_channel_check_connectivity_state(
+                self.channel,
+                try_to_connect,
+            )
 
     async def watch_connectivity_state(self,
                                        grpc_connectivity_state last_observed_state,
@@ -71,7 +74,7 @@ cdef class AioChannel:
             raise RuntimeError('Channel is closed.')
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
 
-        cdef object future = self._loop.create_future()
+        cdef object future = self.loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             _WATCH_CONNECTIVITY_FAILURE_HANDLER)
@@ -90,8 +93,8 @@ cdef class AioChannel:
             return True
 
     def close(self):
-        grpc_channel_destroy(self.channel)
         self._status = AIO_CHANNEL_STATUS_DESTROYED
+        grpc_channel_destroy(self.channel)
 
     def call(self,
              bytes method,
@@ -112,5 +115,4 @@ cdef class AioChannel:
         else:
             cython_call_credentials = None
 
-        cdef _AioCall call = _AioCall(self, deadline, method, cython_call_credentials)
-        return call
+        return _AioCall(self, deadline, method, cython_call_credentials)

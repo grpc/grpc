@@ -56,6 +56,8 @@ To prepare for cmake + Microsoft Visual C++ compiler build
 - Install Visual Studio 2015 or 2017 (Visual C++ compiler will be used).
 - Install [Git](https://git-scm.com/).
 - Install [CMake](https://cmake.org/download/).
+- Install [Active State Perl](https://www.activestate.com/activeperl/) (`choco install activeperl`) - *required by boringssl*
+- Install [Go](https://golang.org/dl/) (`choco install golang`) - *required by boringssl*
 - Install [nasm](https://www.nasm.us/) and add it to `PATH` (`choco install nasm`) - *required by boringssl*
 - (Optional) Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
 

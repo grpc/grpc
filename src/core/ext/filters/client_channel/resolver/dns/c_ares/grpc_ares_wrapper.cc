@@ -33,7 +33,6 @@
 #include <grpc/support/time.h>
 
 #include <address_sorting/address_sorting.h>
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/string.h"
@@ -61,8 +60,6 @@ struct grpc_ares_request {
   grpc_closure* on_done;
   /** the pointer to receive the resolved addresses */
   std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
-  /** the pointer to receive the resolved balancer addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
   /** the pointer to receive the service config in JSON */
   char** service_config_json_out;
   /** the evernt driver used by this request */
@@ -187,17 +184,17 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     GRPC_CARES_TRACE_LOG(
         "request:%p on_hostbyname_done_locked host=%s ARES_SUCCESS", r,
         hr->host);
-    std::unique_ptr<ServerAddressList>* address_list_ptr =
-        hr->is_balancer ? r->balancer_addresses_out : r->addresses_out;
-    if (*address_list_ptr == nullptr) {
-      *address_list_ptr = grpc_core::MakeUnique<ServerAddressList>();
+    if (*r->addresses_out == nullptr) {
+      *r->addresses_out = grpc_core::MakeUnique<ServerAddressList>();
     }
-    ServerAddressList& addresses = **address_list_ptr;
+    ServerAddressList& addresses = **r->addresses_out;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
-      grpc_core::InlinedVector<grpc_arg, 1> args_to_add;
+      grpc_core::InlinedVector<grpc_arg, 2> args_to_add;
       if (hr->is_balancer) {
-        args_to_add.emplace_back(
-            grpc_core::CreateGrpclbBalancerNameArg(hr->host));
+        args_to_add.emplace_back(grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1));
+        args_to_add.emplace_back(grpc_channel_arg_string_create(
+            const_cast<char*>(GRPC_ARG_ADDRESS_BALANCER_NAME), hr->host));
       }
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, args_to_add.data(), args_to_add.size());
@@ -353,7 +350,7 @@ done:
 void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     grpc_ares_request* r, const char* dns_server, const char* name,
     const char* default_port, grpc_pollset_set* interested_parties,
-    int query_timeout_ms, grpc_core::Combiner* combiner) {
+    bool check_grpclb, int query_timeout_ms, grpc_core::Combiner* combiner) {
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_ares_hostbyname_request* hr = nullptr;
   ares_channel* channel = nullptr;
@@ -428,7 +425,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
                                        /*is_balancer=*/false);
   ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_locked,
                      hr);
-  if (r->balancer_addresses_out != nullptr) {
+  if (check_grpclb) {
     /* Query the SRV record */
     grpc_ares_request_ref_locked(r);
     char* service_name;
@@ -591,8 +588,7 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
     char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner) {
   grpc_ares_request* r =
@@ -600,7 +596,6 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   r->ev_driver = nullptr;
   r->on_done = on_done;
   r->addresses_out = addrs;
-  r->balancer_addresses_out = balancer_addrs;
   r->service_config_json_out = service_config_json;
   r->error = GRPC_ERROR_NONE;
   r->pending_queries = 0;
@@ -623,21 +618,20 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   // as to cut down on lookups over the network, especially in tests:
   // https://github.com/grpc/proposal/pull/79
   if (target_matches_localhost(name)) {
-    r->balancer_addresses_out = nullptr;
+    check_grpclb = false;
     r->service_config_json_out = nullptr;
   }
   // Look up name using c-ares lib.
   grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
-      r, dns_server, name, default_port, interested_parties, query_timeout_ms,
-      combiner);
+      r, dns_server, name, default_port, interested_parties, check_grpclb,
+      query_timeout_ms, combiner);
   return r;
 }
 
 grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
     char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
@@ -715,6 +709,7 @@ static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
         static_cast<grpc_resolved_address*>(gpr_zalloc(
             sizeof(grpc_resolved_address) * (*resolved_addresses)->naddrs));
     for (size_t i = 0; i < (*resolved_addresses)->naddrs; ++i) {
+      GPR_ASSERT(!(*r->addresses)[i].IsBalancer());
       memcpy(&(*resolved_addresses)->addrs[i], &(*r->addresses)[i].address(),
              sizeof(grpc_resolved_address));
     }
@@ -741,9 +736,9 @@ static void grpc_resolve_address_invoke_dns_lookup_ares_locked(
                     grpc_schedule_on_exec_ctx);
   r->ares_request = grpc_dns_lookup_ares_locked(
       nullptr /* dns_server */, r->name, r->default_port, r->interested_parties,
-      &r->on_dns_lookup_done_locked, &r->addresses,
-      nullptr /* balancer_addresses */, nullptr /* service_config_json */,
-      GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, r->combiner);
+      &r->on_dns_lookup_done_locked, &r->addresses, false /* check_grpclb */,
+      nullptr /* service_config_json */, GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS,
+      r->combiner);
 }
 
 static void grpc_resolve_address_ares_impl(const char* name,

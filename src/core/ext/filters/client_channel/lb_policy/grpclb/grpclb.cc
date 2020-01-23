@@ -73,7 +73,6 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
@@ -122,9 +121,9 @@ namespace {
 
 constexpr char kGrpclb[] = "grpclb";
 
-class ParsedGrpcLbConfig : public LoadBalancingPolicy::Config {
+class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit ParsedGrpcLbConfig(
+  explicit GrpcLbConfig(
       RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
       : child_policy_(std::move(child_policy)) {}
   const char* name() const override { return kGrpclb; }
@@ -716,8 +715,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
-      state, MakeUnique<Picker>(parent_.get(), parent_->serverlist_,
-                                std::move(picker), std::move(client_stats)));
+      state, grpc_core::MakeUnique<Picker>(parent_.get(), parent_->serverlist_,
+                                           std::move(picker),
+                                           std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -1268,11 +1268,25 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-ServerAddressList ExtractBalancerAddresses(const grpc_channel_args& args) {
-  const ServerAddressList* addresses =
-      FindGrpclbBalancerAddressesInChannelArgs(args);
-  if (addresses != nullptr) return *addresses;
-  return ServerAddressList();
+ServerAddressList ExtractBalancerAddresses(const ServerAddressList& addresses) {
+  ServerAddressList balancer_addresses;
+  for (size_t i = 0; i < addresses.size(); ++i) {
+    if (addresses[i].IsBalancer()) {
+      // Strip out the is_balancer channel arg, since we don't want to
+      // recursively use the grpclb policy in the channel used to talk to
+      // the balancers.  Note that we do NOT strip out the balancer_name
+      // channel arg, since we need that to set the authority correctly
+      // to talk to the balancers.
+      static const char* args_to_remove[] = {
+          GRPC_ARG_ADDRESS_IS_BALANCER,
+      };
+      balancer_addresses.emplace_back(
+          addresses[i].address(),
+          grpc_channel_args_copy_and_remove(addresses[i].args(), args_to_remove,
+                                            GPR_ARRAY_SIZE(args_to_remove)));
+    }
+  }
+  return balancer_addresses;
 }
 
 /* Returns the channel args for the LB channel, used to create a bidirectional
@@ -1434,7 +1448,7 @@ void GrpcLb::ResetBackoffLocked() {
 void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
   auto* grpclb_config =
-      static_cast<const ParsedGrpcLbConfig*>(args.config.get());
+      static_cast<const GrpcLbConfig*>(args.config.get());
   if (grpclb_config != nullptr) {
     child_policy_config_ = grpclb_config->child_policy();
   } else {
@@ -1478,25 +1492,27 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 // helpers for UpdateLocked()
 //
 
-ServerAddressList AddNullLbTokenToAddresses(
-    const ServerAddressList& addresses) {
+// Returns the backend addresses extracted from the given addresses.
+ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
   static const char* lb_token = "";
   grpc_arg arg = grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
       const_cast<char*>(lb_token), &lb_token_arg_vtable);
-  ServerAddressList addresses_out;
+  ServerAddressList backend_addresses;
   for (size_t i = 0; i < addresses.size(); ++i) {
-    addresses_out.emplace_back(
-        addresses[i].address(),
-        grpc_channel_args_copy_and_add(addresses[i].args(), &arg, 1));
+    if (!addresses[i].IsBalancer()) {
+      backend_addresses.emplace_back(
+          addresses[i].address(),
+          grpc_channel_args_copy_and_add(addresses[i].args(), &arg, 1));
+    }
   }
-  return addresses_out;
+  return backend_addresses;
 }
 
 void GrpcLb::ProcessAddressesAndChannelArgsLocked(
     const ServerAddressList& addresses, const grpc_channel_args& args) {
   // Update fallback address list.
-  fallback_backend_addresses_ = AddNullLbTokenToAddresses(addresses);
+  fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
@@ -1506,7 +1522,7 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   args_ = grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
-  ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
+  ServerAddressList balancer_addresses = ExtractBalancerAddresses(addresses);
   grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
       balancer_addresses, response_generator_.get(), &args);
   // Create balancer channel if needed.
@@ -1869,33 +1885,24 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kGrpclb; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const Json& json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-    if (json == nullptr) {
-      return RefCountedPtr<LoadBalancingPolicy::Config>(
-          new ParsedGrpcLbConfig(nullptr));
+    if (json.type() == Json::Type::JSON_NULL) {
+      return MakeRefCounted<GrpcLbConfig>(nullptr);
     }
-    InlinedVector<grpc_error*, 2> error_list;
+    std::vector<grpc_error*> error_list;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    for (const grpc_json* field = json->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr) continue;
-      if (strcmp(field->key, "childPolicy") == 0) {
-        if (child_policy != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:childPolicy error:Duplicate entry"));
-        }
-        grpc_error* parse_error = GRPC_ERROR_NONE;
-        child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
-        if (parse_error != GRPC_ERROR_NONE) {
-          error_list.push_back(parse_error);
-        }
+    auto it = json.object_value().find("childPolicy");
+    if (it != json.object_value().end()) {
+      grpc_error* parse_error = GRPC_ERROR_NONE;
+      child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+          it->second, &parse_error);
+      if (parse_error != GRPC_ERROR_NONE) {
+        error_list.push_back(parse_error);
       }
     }
     if (error_list.empty()) {
-      return RefCountedPtr<LoadBalancingPolicy::Config>(
-          new ParsedGrpcLbConfig(std::move(child_policy)));
+      return MakeRefCounted<GrpcLbConfig>(std::move(child_policy));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("GrpcLb Parser", &error_list);
       return nullptr;

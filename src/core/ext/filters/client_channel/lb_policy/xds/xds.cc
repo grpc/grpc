@@ -74,12 +74,12 @@ namespace {
 
 constexpr char kXds[] = "xds_experimental";
 
-class ParsedXdsConfig : public LoadBalancingPolicy::Config {
+class XdsConfig : public LoadBalancingPolicy::Config {
  public:
-  ParsedXdsConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
-                  RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy,
-                  std::string eds_service_name,
-                  Optional<std::string> lrs_load_reporting_server_name)
+  XdsConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
+            RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy,
+            std::string eds_service_name,
+            Optional<std::string> lrs_load_reporting_server_name)
       : child_policy_(std::move(child_policy)),
         fallback_policy_(std::move(fallback_policy)),
         eds_service_name_(std::move(eds_service_name)),
@@ -416,7 +416,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // Current channel args and config from the resolver.
   const grpc_channel_args* args_ = nullptr;
-  RefCountedPtr<ParsedXdsConfig> config_;
+  RefCountedPtr<XdsConfig> config_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -746,19 +746,23 @@ void XdsLb::ShutdownLocked() {
   }
   fallback_policy_.reset();
   pending_fallback_policy_.reset();
-  // Cancel the endpoint watch here instead of in our dtor, because the
-  // watcher holds a ref to us.
-  xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
-                                        endpoint_watcher_);
-  if (config_->lrs_load_reporting_server_name().has_value()) {
-    // TODO(roth): We should pass the cluster name (in addition to the
-    // eds_service_name) when adding the client stats. To do so, we need to
-    // first find a way to plumb the cluster name down into this LB policy.
-    xds_client()->RemoveClientStats(
-        StringView(config_->lrs_load_reporting_server_name().value().c_str()),
-        StringView(eds_service_name()), &client_stats_);
+  // Cancel the endpoint watch here instead of in our dtor if we are using the
+  // XdsResolver, because the watcher holds a ref to us and we might not be
+  // destroying the Xds client leading to a situation where the Xds lb policy is
+  // never destroyed.
+  if (xds_client_from_channel_ != nullptr) {
+    xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
+                                          endpoint_watcher_);
+    if (config_->lrs_load_reporting_server_name().has_value()) {
+      // TODO(roth): We should pass the cluster name (in addition to the
+      // eds_service_name) when adding the client stats. To do so, we need to
+      // first find a way to plumb the cluster name down into this LB policy.
+      xds_client()->RemoveClientStats(
+          StringView(config_->lrs_load_reporting_server_name().value().c_str()),
+          StringView(eds_service_name()), &client_stats_);
+    }
+    xds_client_from_channel_.reset();
   }
-  xds_client_from_channel_.reset();
   xds_client_.reset();
 }
 
@@ -830,8 +834,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
                                             endpoint_watcher_);
     }
-    auto watcher =
-        MakeUnique<EndpointWatcher>(Ref(DEBUG_LOCATION, "EndpointWatcher"));
+    auto watcher = grpc_core::MakeUnique<EndpointWatcher>(
+        Ref(DEBUG_LOCATION, "EndpointWatcher"));
     endpoint_watcher_ = watcher.get();
     xds_client()->WatchEndpointData(StringView(eds_service_name()),
                                     std::move(watcher));
@@ -1088,7 +1092,7 @@ void XdsLb::PriorityList::UpdateXdsPickerLocked() {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     xds_policy_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        MakeUnique<TransientFailurePicker>(error));
+        grpc_core::MakeUnique<TransientFailurePicker>(error));
     return;
   }
   priorities_[current_priority_]->UpdateXdsPickerLocked();
@@ -1179,8 +1183,9 @@ XdsLb::PriorityList::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
   // This is the first locality map ever created, report CONNECTING.
   if (priority_ == 0) {
     xds_policy_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, MakeUnique<QueuePicker>(xds_policy_->Ref(
-                                     DEBUG_LOCATION, "QueuePicker")));
+        GRPC_CHANNEL_CONNECTING,
+        grpc_core::MakeUnique<QueuePicker>(
+            xds_policy_->Ref(DEBUG_LOCATION, "QueuePicker")));
   }
 }
 
@@ -1816,9 +1821,9 @@ class XdsFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kXds; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const Json& json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-    if (json == nullptr) {
+    if (json.type() == Json::Type::JSON_NULL) {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1826,61 +1831,51 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
-    GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-    InlinedVector<grpc_error*, 3> error_list;
+    std::vector<grpc_error*> error_list;
+    // Child policy.
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
+    auto it = json.object_value().find("childPolicy");
+    if (it != json.object_value().end()) {
+      grpc_error* parse_error = GRPC_ERROR_NONE;
+      child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+          it->second, &parse_error);
+      if (child_policy == nullptr) {
+        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        error_list.push_back(parse_error);
+      }
+    }
+    // Fallback policy.
     RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy;
+    it = json.object_value().find("fallbackPolicy");
+    if (it != json.object_value().end()) {
+      grpc_error* parse_error = GRPC_ERROR_NONE;
+      fallback_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+          it->second, &parse_error);
+      if (fallback_policy == nullptr) {
+        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        error_list.push_back(parse_error);
+      }
+    }
+    // EDS service name.
     const char* eds_service_name = nullptr;
+    it = json.object_value().find("edsServiceName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:edsServiceName error:type should be string"));
+      } else {
+        eds_service_name = it->second.string_value().c_str();
+      }
+    }
+    // LRS load reporting server name.
     const char* lrs_load_reporting_server_name = nullptr;
-    for (const grpc_json* field = json->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr) continue;
-      if (strcmp(field->key, "childPolicy") == 0) {
-        if (child_policy != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:childPolicy error:Duplicate entry"));
-        }
-        grpc_error* parse_error = GRPC_ERROR_NONE;
-        child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
-        if (child_policy == nullptr) {
-          GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-          error_list.push_back(parse_error);
-        }
-      } else if (strcmp(field->key, "fallbackPolicy") == 0) {
-        if (fallback_policy != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:fallbackPolicy error:Duplicate entry"));
-        }
-        grpc_error* parse_error = GRPC_ERROR_NONE;
-        fallback_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
-        if (fallback_policy == nullptr) {
-          GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-          error_list.push_back(parse_error);
-        }
-      } else if (strcmp(field->key, "edsServiceName") == 0) {
-        if (eds_service_name != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:edsServiceName error:Duplicate entry"));
-        }
-        if (field->type != GRPC_JSON_STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:edsServiceName error:type should be string"));
-          continue;
-        }
-        eds_service_name = field->value;
-      } else if (strcmp(field->key, "lrsLoadReportingServerName") == 0) {
-        if (lrs_load_reporting_server_name != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:lrsLoadReportingServerName error:Duplicate entry"));
-        }
-        if (field->type != GRPC_JSON_STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:lrsLoadReportingServerName error:type should be string"));
-          continue;
-        }
-        lrs_load_reporting_server_name = field->value;
+    it = json.object_value().find("lrsLoadReportingServerName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:lrsLoadReportingServerName error:type should be string"));
+      } else {
+        lrs_load_reporting_server_name = it->second.string_value().c_str();
       }
     }
     if (error_list.empty()) {
@@ -1889,7 +1884,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         optional_lrs_load_reporting_server_name.emplace(
             std::string(lrs_load_reporting_server_name));
       }
-      return MakeRefCounted<ParsedXdsConfig>(
+      return MakeRefCounted<XdsConfig>(
           std::move(child_policy), std::move(fallback_policy),
           eds_service_name == nullptr ? "" : eds_service_name,
           std::move(optional_lrs_load_reporting_server_name));

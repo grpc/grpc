@@ -1594,7 +1594,8 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   // Instantiate resolving LB policy.
   LoadBalancingPolicy::Args lb_args;
   lb_args.combiner = combiner_;
-  lb_args.channel_control_helper = MakeUnique<ClientChannelControlHelper>(this);
+  lb_args.channel_control_helper =
+      grpc_core::MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
   grpc_core::UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(new ResolvingLoadBalancingPolicy(
@@ -1637,6 +1638,26 @@ void ChannelData::ProcessLbPolicy(
     const grpc_arg* channel_arg =
         grpc_channel_args_find(resolver_result.args, GRPC_ARG_LB_POLICY_NAME);
     local_policy_name = grpc_channel_arg_get_string(channel_arg);
+  }
+  // Special case: If at least one balancer address is present, we use
+  // the grpclb policy, regardless of what the resolver has returned.
+  bool found_balancer_address = false;
+  for (size_t i = 0; i < resolver_result.addresses.size(); ++i) {
+    const ServerAddress& address = resolver_result.addresses[i];
+    if (address.IsBalancer()) {
+      found_balancer_address = true;
+      break;
+    }
+  }
+  if (found_balancer_address) {
+    if (local_policy_name != nullptr &&
+        strcmp(local_policy_name, "grpclb") != 0) {
+      gpr_log(GPR_INFO,
+              "resolver requested LB policy %s but provided at least one "
+              "balancer address -- forcing use of grpclb LB policy",
+              local_policy_name);
+    }
+    local_policy_name = "grpclb";
   }
   // Use pick_first if nothing was specified and we didn't select grpclb
   // above.
@@ -1708,11 +1729,11 @@ bool ChannelData::ProcessResolverResultLocked(
       ((service_config == nullptr) !=
        (chand->saved_service_config_ == nullptr)) ||
       (service_config != nullptr &&
-       strcmp(service_config->service_config_json(),
-              chand->saved_service_config_->service_config_json()) != 0);
+       service_config->json_string() !=
+              chand->saved_service_config_->json_string());
   if (service_config_changed) {
     service_config_json.reset(gpr_strdup(
-        service_config != nullptr ? service_config->service_config_json()
+        service_config != nullptr ? service_config->json_string().c_str()
                                   : ""));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
@@ -1850,7 +1871,7 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
                                      MemoryOrder::RELEASE);
       chand->UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
-          MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
+          grpc_core::MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
               GRPC_ERROR_REF(op->disconnect_with_error)));
     }
   }

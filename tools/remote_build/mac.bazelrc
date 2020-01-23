@@ -4,6 +4,9 @@
 # but try to use RBE build cache and upload results
 # to ResultStore
 
+# don't use port server
+build --define GRPC_PORT_ISOLATED_RUNTIME=1
+
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
 # remote cache is needed not only for build speedup,

@@ -903,8 +903,6 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filte
 src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
-src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
@@ -1468,7 +1466,9 @@ src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.cc \
 src/core/lib/json/json.h \
 src/core/lib/json/json_reader.cc \
+src/core/lib/json/json_reader_new.cc \
 src/core/lib/json/json_writer.cc \
+src/core/lib/json/json_writer_new.cc \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \

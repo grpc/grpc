@@ -277,18 +277,18 @@ class ServerBidiReactor : public internal::ServerReactor {
 
   /// Initiate a write operation.
   ///
-  /// \param[in] resp The message to be written. The library takes temporary
-  ///                 ownership until OnWriteDone, at which point the
-  ///                 application regains ownership of resp.
+  /// \param[in] resp The message to be written. The library does not take
+  ///                 ownership but the caller must ensure that the message is
+  ///                 not deleted or modified until OnWriteDone is called.
   void StartWrite(const Response* resp) {
     StartWrite(resp, ::grpc::WriteOptions());
   }
 
   /// Initiate a write operation with specified options.
   ///
-  /// \param[in] resp The message to be written. The library takes temporary
-  ///                 ownership until OnWriteDone, at which point the
-  ///                 application regains ownership of resp.
+  /// \param[in] resp The message to be written. The library does not take
+  ///                 ownership but the caller must ensure that the message is
+  ///                 not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWrite(const Response* resp, ::grpc::WriteOptions options) {
     ServerCallbackReaderWriter<Request, Response>* stream =
@@ -313,9 +313,9 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// available. An RPC can either have StartWriteAndFinish or Finish, but not
   /// both.
   ///
-  /// \param[in] resp The message to be written. The library takes temporary
-  ///                 ownership until OnWriteDone, at which point the
-  ///                 application regains ownership of resp.
+  /// \param[in] resp The message to be written. The library does not take
+  ///                 ownership but the caller must ensure that the message is
+  ///                 not deleted or modified until OnDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   /// \param[in] s The status outcome of this RPC
   void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
@@ -340,9 +340,9 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// allow the library to schedule the actual write coalesced with the writing
   /// of trailing metadata (which takes place on a Finish call).
   ///
-  /// \param[in] resp The message to be written. The library takes temporary
-  ///                 ownership until OnWriteDone, at which point the
-  ///                 application regains ownership of resp.
+  /// \param[in] resp The message to be written. The library does not take
+  ///                 ownership but the caller must ensure that the message is
+  ///                 not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
     StartWrite(resp, std::move(options.set_last_message()));

@@ -170,7 +170,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.6'
+    ss.dependency 'BoringSSL-GRPC', '0.0.5'
     abseil_version = '0.20190808.1'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
@@ -205,8 +205,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
-                      'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc',
-                      'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc',
@@ -755,7 +753,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json.cc',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_reader.cc',
+                      'src/core/lib/json/json_reader_new.cc',
                       'src/core/lib/json/json_writer.cc',
+                      'src/core/lib/json/json_writer_new.cc',
                       'src/core/lib/profiling/basic_timers.cc',
                       'src/core/lib/profiling/stap_timers.cc',
                       'src/core/lib/profiling/timers.h',
@@ -993,7 +993,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
-                              'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
