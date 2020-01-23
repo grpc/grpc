@@ -18,7 +18,7 @@ py_library(
         "//src/python/grpcio/grpc/_cython:cygrpc",
         "//src/python/grpcio/grpc/experimental",
         "//src/python/grpcio/grpc/framework",
-        "@six_archive//:six",
+        "@six//:six",
     ] + select({
         "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],

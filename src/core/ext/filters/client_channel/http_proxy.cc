@@ -47,6 +47,7 @@ namespace {
  */
 char* GetHttpProxyServer(char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
+  grpc_uri* uri = nullptr;
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
@@ -58,7 +59,9 @@ char* GetHttpProxyServer(char** user_cred) {
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
   if (uri_str == nullptr) return nullptr;
-  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
+  // an emtpy value means "don't use proxy"
+  if (uri_str[0] == '\0') goto done;
+  uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
   if (uri == nullptr || uri->authority == nullptr) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
     goto done;

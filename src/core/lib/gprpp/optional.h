@@ -21,8 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-// TODO(yashykt): Remove false once migration to abseil is done.
-#if false && GRPC_USE_ABSL
+#if GRPC_USE_ABSL
 
 #include "absl/types/optional.h"
 
@@ -46,14 +45,11 @@ class Optional {
  public:
   Optional() : value_() {}
 
-  void set(const T& val) {
-    value_ = val;
+  template <typename... Args>
+  T& emplace(Args&&... args) {
+    value_ = T(std::forward<Args>(args)...);
     set_ = true;
-  }
-
-  void set(T&& val) {
-    value_ = std::move(val);
-    set_ = true;
+    return value_;
   }
 
   bool has_value() const { return set_; }

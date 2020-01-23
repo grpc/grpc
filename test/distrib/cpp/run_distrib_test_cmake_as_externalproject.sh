@@ -28,7 +28,6 @@ apt-get install -t jessie-backports -y libssl-dev
 # before starting the test.
 rm -r third_party/benchmark/* || true
 rm -r third_party/bloaty/* || true
-rm -r third_party/boringssl/* || true
 rm -r third_party/boringssl-with-bazel/* || true
 rm -r third_party/gflags/* || true
 rm -r third_party/googletest/* || true

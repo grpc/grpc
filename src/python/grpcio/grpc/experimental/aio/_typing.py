@@ -24,3 +24,4 @@ MetadatumType = Tuple[Text, AnyStr]
 MetadataType = Sequence[MetadatumType]
 ChannelArgumentType = Sequence[Tuple[Text, Any]]
 EOFType = type(EOF)
+DoneCallbackType = Callable[[Any], None]

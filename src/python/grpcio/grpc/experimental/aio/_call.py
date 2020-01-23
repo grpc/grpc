@@ -14,7 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-from typing import AsyncIterable, Awaitable, Dict, Optional
+from typing import AsyncIterable, Awaitable, List, Dict, Optional
 
 import grpc
 from grpc import _common
@@ -22,7 +22,7 @@ from grpc._cython import cygrpc
 
 from . import _base_call
 from ._typing import (DeserializingFunction, MetadataType, RequestType,
-                      ResponseType, SerializingFunction)
+                      ResponseType, SerializingFunction, DoneCallbackType)
 
 __all__ = 'AioRpcError', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
@@ -157,6 +157,7 @@ class Call(_base_call.Call):
     _initial_metadata: Awaitable[MetadataType]
     _locally_cancelled: bool
     _cython_call: cygrpc._AioCall
+    _done_callbacks: List[DoneCallbackType]
 
     def __init__(self, cython_call: cygrpc._AioCall) -> None:
         self._loop = asyncio.get_event_loop()
@@ -165,6 +166,7 @@ class Call(_base_call.Call):
         self._initial_metadata = self._loop.create_future()
         self._locally_cancelled = False
         self._cython_call = cython_call
+        self._done_callbacks = []
 
     def __del__(self) -> None:
         if not self._status.done():
@@ -192,11 +194,14 @@ class Call(_base_call.Call):
     def done(self) -> bool:
         return self._status.done()
 
-    def add_done_callback(self, unused_callback) -> None:
-        raise NotImplementedError()
+    def add_done_callback(self, callback: DoneCallbackType) -> None:
+        if self.done():
+            callback(self)
+        else:
+            self._done_callbacks.append(callback)
 
     def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
+        return self._cython_call.time_remaining()
 
     async def initial_metadata(self) -> MetadataType:
         return await self._initial_metadata
@@ -220,9 +225,7 @@ class Call(_base_call.Call):
     def _set_status(self, status: cygrpc.AioRpcStatus) -> None:
         """Private method to set final status of the RPC.
 
-        This method may be called multiple time due to data race between local
-        cancellation (by application) and Core receiving status from peer. We
-        make no promise here which one will win.
+        This method should only be invoked once.
         """
         # In case of local cancellation, flip the flag.
         if status.details() is _LOCAL_CANCELLATION_DETAILS:
@@ -235,6 +238,9 @@ class Call(_base_call.Call):
         # Sets final status
         self._status.set_result(status)
         self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()]
+
+        for callback in self._done_callbacks:
+            callback(self)
 
     async def _raise_for_status(self) -> None:
         if self._locally_cancelled:
@@ -265,8 +271,6 @@ class Call(_base_call.Call):
         return self._repr()
 
 
-# TODO(https://github.com/grpc/grpc/issues/21623) remove this suppression
-# pylint: disable=abstract-method
 class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
     """Object for managing unary-unary RPC calls.
 
@@ -338,8 +342,6 @@ class UnaryUnaryCall(Call, _base_call.UnaryUnaryCall):
         return response
 
 
-# TODO(https://github.com/grpc/grpc/issues/21623) remove this suppression
-# pylint: disable=abstract-method
 class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
     """Object for managing unary-stream RPC calls.
 
@@ -429,8 +431,6 @@ class UnaryStreamCall(Call, _base_call.UnaryStreamCall):
         return response_message
 
 
-# TODO(https://github.com/grpc/grpc/issues/21623) remove this suppression
-# pylint: disable=abstract-method
 class StreamUnaryCall(Call, _base_call.StreamUnaryCall):
     """Object for managing stream-unary RPC calls.
 
@@ -550,8 +550,6 @@ class StreamUnaryCall(Call, _base_call.StreamUnaryCall):
                 await self._raise_for_status()
 
 
-# TODO(https://github.com/grpc/grpc/issues/21623) remove this suppression
-# pylint: disable=abstract-method
 class StreamStreamCall(Call, _base_call.StreamStreamCall):
     """Object for managing stream-stream RPC calls.
 
