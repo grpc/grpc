@@ -272,8 +272,7 @@ void ServerContextBase::Clear() {
     grpc_call_unref(call);
   }
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
-    default_reactor_.~Reactor();
-    new (&default_reactor_) Reactor;
+    reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
     default_reactor_used_.store(false, std::memory_order_relaxed);
   }
   test_unary_.reset();

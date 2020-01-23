@@ -20,8 +20,10 @@
 #define GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_IMPL_H
 
 #include <atomic>
+#include <cassert>
 #include <map>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include <grpc/impl/codegen/port_platform.h>
@@ -301,8 +303,18 @@ class ServerContextBase {
   ///
   /// WARNING: This is experimental API and could be changed or removed.
   ::grpc_impl::ServerUnaryReactor* DefaultReactor() {
-    auto reactor = &default_reactor_;
+    Reactor* reactor = reinterpret_cast<Reactor*>(&default_reactor_);
+    if (test_unary_ != nullptr) {
+      return reactor;
+    }
+    new (reactor) Reactor;
+#ifndef NDEBUG
+    bool old = false;
+    assert(default_reactor_used_.compare_exchange_strong(
+        old, true, std::memory_order_relaxed));
+#else
     default_reactor_used_.store(true, std::memory_order_relaxed);
+#endif
     return reactor;
   }
 
@@ -445,7 +457,7 @@ class ServerContextBase {
    public:
     TestServerCallbackUnary(ServerContextBase* ctx,
                             std::function<void(::grpc::Status)> func)
-        : reactor_(&ctx->default_reactor_), func_(std::move(func)) {
+        : reactor_(ctx->DefaultReactor()), func_(std::move(func)) {
       this->BindReactor(reactor_);
     }
     void Finish(::grpc::Status s) override {
@@ -472,7 +484,8 @@ class ServerContextBase {
     const std::function<void(::grpc::Status s)> func_;
   };
 
-  Reactor default_reactor_;
+  typename std::aligned_storage<sizeof(Reactor), alignof(Reactor)>::type
+      default_reactor_;
   std::atomic_bool default_reactor_used_{false};
   std::unique_ptr<TestServerCallbackUnary> test_unary_;
 };
