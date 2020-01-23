@@ -135,12 +135,53 @@ else:
                             fullname, ProtoLoader(fullname, filepath))
 
         def services(protobuf_path, *, include_paths=None):
+            """Loads gRPC service classes and functions from a .proto file.
+
+            THIS IS AN EXPERIMENTAL API.
+
+            Returns a module object equivalent to a "_pb2_grpc.py" file.
+
+            Together with the google.protobuf.protos function, this enables
+            deployment of services without a code generation step beforehand.
+
+            Args:
+              protobuf_path: A string representing the path to the desired
+                ".proto" file.
+              include_paths: A sequence of strings which should be searched for
+                the ".proto" file. By default, the entries on sys.path are
+                searched.
+
+            Returns:
+              A module object containing servicers, stubs, and associated
+              functions for the requested ".proto" file.
+            """
             with _augmented_syspath(include_paths):
                 module_name = _proto_file_to_module_name(protobuf_path)
                 module = importlib.import_module(module_name)
                 return module
 
         def protos_and_services(protobuf_path, *, include_paths=None):
+            """Loads gRPC services and Protobuf messages from a .proto file
+
+            THIS IS AN EXPERIMENTAL API.
+
+            Equivalent to
+            ```
+            return google.protobuf.protos(protobuf_path, include_paths=include_paths),
+                    grpc.services(protobuf_path, include_paths=include_paths)
+            ```
+
+            Args:
+              protobuf_path: A string representing the path to the desired
+                ".proto" file.
+              include_paths: A sequence of strings which should be searched for
+                the ".proto" file. By default, the entries on sys.path are
+                searched.
+
+            Returns:
+              A 2-tuple of module objects. The first contains protocol buffer
+              message classes, while the other contains servicer classes.
+            """
             protos_ = protobuf.protos(
                 protobuf_path, include_paths=include_paths)
             services_ = services(protobuf_path, include_paths=include_paths)
