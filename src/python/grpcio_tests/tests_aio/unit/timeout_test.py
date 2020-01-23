@@ -36,7 +36,6 @@ _TEST_SLEEPY_STREAM_STREAM = '/test/Test/SleepyStreamStream'
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
 
-# logging.getLogger('asyncio').setLevel(logging.WARNING)
 
 class _GenericHandler(grpc.GenericRpcHandler):
 
