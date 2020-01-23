@@ -720,9 +720,6 @@ ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
 ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
 CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
-GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-
 UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
 UPB_MERGE_OBJS = $(LIBUPB_OBJS)
 UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
@@ -13959,75 +13956,6 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_NOSEC_TESTS_OBJS:.o=.dep)
-endif
-
-
-# Add private ABSEIL target which contains all sources used by all baselib libraries.
-
-
-
-LIBGRPC_ABSEIL_SRC = \
-    third_party/abseil-cpp/absl/base/dynamic_annotations.cc \
-    third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
-    third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
-    third_party/abseil-cpp/absl/base/internal/spinlock.cc \
-    third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc \
-    third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
-    third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
-    third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
-    third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
-    third_party/abseil-cpp/absl/base/log_severity.cc \
-    third_party/abseil-cpp/absl/numeric/int128.cc \
-    third_party/abseil-cpp/absl/strings/ascii.cc \
-    third_party/abseil-cpp/absl/strings/charconv.cc \
-    third_party/abseil-cpp/absl/strings/escaping.cc \
-    third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
-    third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
-    third_party/abseil-cpp/absl/strings/internal/escaping.cc \
-    third_party/abseil-cpp/absl/strings/internal/memutil.cc \
-    third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
-    third_party/abseil-cpp/absl/strings/internal/utf8.cc \
-    third_party/abseil-cpp/absl/strings/match.cc \
-    third_party/abseil-cpp/absl/strings/numbers.cc \
-    third_party/abseil-cpp/absl/strings/str_cat.cc \
-    third_party/abseil-cpp/absl/strings/str_replace.cc \
-    third_party/abseil-cpp/absl/strings/str_split.cc \
-    third_party/abseil-cpp/absl/strings/string_view.cc \
-    third_party/abseil-cpp/absl/strings/substitute.cc \
-    third_party/abseil-cpp/absl/types/bad_optional_access.cc \
-
-
-LIBGRPC_ABSEIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ABSEIL_SRC))))
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL.
-
-$(LIBDIR)/$(CONFIG)/libgrpc_abseil.a: openssl_dep_error
-
-
-else
-
-
-$(LIBDIR)/$(CONFIG)/libgrpc_abseil.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBGRPC_ABSEIL_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a $(LIBGRPC_ABSEIL_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-endif
-
-
-
-
-endif
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LIBGRPC_ABSEIL_OBJS:.o=.dep)
-endif
 endif
 
 

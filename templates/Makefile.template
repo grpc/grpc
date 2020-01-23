@@ -24,9 +24,6 @@
     import re
     import os
 
-    def is_absl_lib(target_name):
-      return target_name.startswith("absl/")
-
     proto_re = re.compile('(.*)\\.proto')
 
     def proto_to_cc(filename):
@@ -618,9 +615,6 @@
   ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
   CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
-  GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-  GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-
   UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
   UPB_MERGE_OBJS = $(LIBUPB_OBJS)
   UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
@@ -947,30 +941,24 @@
 
   static_c: pc_c pc_c_unsecure cache.mk \
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${make_target_name(lib.name)}.a\
-  % endif
   % endif
   % endfor
 
 
   static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
-  % endif
   % endif
   % endfor
 
 
   static_csharp: static_c \
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
-  % endif
   % endif
   % endfor
 
@@ -979,29 +967,23 @@
 
   shared_c: pc_c pc_c_unsecure cache.mk\
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${make_target_name(lib.name)}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)\
-  % endif
   % endif
   % endfor
 
   shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)\
-  % endif
   % endif
   % endfor
 
 
   shared_csharp: shared_c \
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)\
-  % endif
   % endif
   % endfor
 
@@ -1013,10 +995,8 @@
 
   privatelibs_c: \
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${make_target_name(lib.name)}.a\
-  % endif
   % endif
   % endfor
 
@@ -1031,20 +1011,16 @@
   ifeq ($(EMBED_OPENSSL),true)
   privatelibs_cxx: \
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
-  % endif
   % endif
   % endfor
 
   else
   privatelibs_cxx: \
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
-  % endif
   % endif
   % endfor
 
@@ -1168,13 +1144,11 @@
   strip-static_c: static_c
   ifeq ($(CONFIG),opt)
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[STRIP]   Stripping lib${lib.name}.a"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  % endif
   % endif
   % endif
   % endif
@@ -1184,12 +1158,10 @@
   strip-static_cxx: static_cxx
   ifeq ($(CONFIG),opt)
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping lib${lib.name}.a"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  % endif
   % endif
   % endif
   % endfor
@@ -1198,13 +1170,11 @@
   strip-shared_c: shared_c
   ifeq ($(CONFIG),opt)
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-  % endif
   % endif
   % endif
   % endif
@@ -1214,12 +1184,10 @@
   strip-shared_cxx: shared_cxx
   ifeq ($(CONFIG),opt)
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-  % endif
   % endif
   % endif
   % endfor
@@ -1228,12 +1196,10 @@
   strip-shared_csharp: shared_csharp
   ifeq ($(CONFIG),opt)
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "csharp":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
-  % endif
   % endif
   % endif
   % endfor
@@ -1367,7 +1333,6 @@
 
   install-static_c: static_c strip-static_c install-pkg-config_c
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1377,12 +1342,10 @@
   % endif
   % endif
   % endif
-  % endif
   % endfor
 
   install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
@@ -1390,12 +1353,10 @@
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
   % endif
   % endif
-  % endif
   % endfor
 
   <%def name="install_shared(lang_filter)">\
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1408,7 +1369,6 @@
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
   endif
-  % endif
   % endif
   % endif
   % endif
@@ -1469,37 +1429,8 @@
   # The various libraries
 
   % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   ${makelib(lib)}
-  % endif
   % endfor
-
-  # Add private ABSEIL target which contains all sources used by all baselib libraries.
-  <%
-    # Collect all abseil source and header files used by gpr, grpc, so on.
-    used_abseil_rules = set()
-    for lib in libs:
-      if lib.get("baselib"):
-        for dep in lib.transitive_deps:
-          if is_absl_lib(dep):
-            used_abseil_rules.add(dep)
-    used_abseil_srcs = []
-    used_abseil_hdrs = []
-    for lib in libs:
-      if lib.name in used_abseil_rules:
-        used_abseil_srcs.extend(lib.get("src", []))
-        used_abseil_hdrs.extend(lib.get("hdr", []))
-    # Create `grpc_abseil` rule with collected files.
-    lib_type = type(libs[0])
-    grpc_abseil_lib = lib_type({
-      "name": "grpc_abseil",
-      "build": "private",
-      "language": "c",
-      "src": sorted(used_abseil_srcs),
-      "hdr": sorted(used_abseil_hdrs),
-    })
-  %>
-  ${makelib(grpc_abseil_lib)}
 
   # All of the test targets, and protoc plugins
 
@@ -1587,7 +1518,7 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting', 'upb', 'grpc_abseil']:
+  % if lib.name not in ['z', 'ares', 'address_sorting', 'upb']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
