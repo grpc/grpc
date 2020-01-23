@@ -1730,7 +1730,7 @@ bool ChannelData::ProcessResolverResultLocked(
        (chand->saved_service_config_ == nullptr)) ||
       (service_config != nullptr &&
        service_config->json_string() !=
-              chand->saved_service_config_->json_string());
+           chand->saved_service_config_->json_string());
   if (service_config_changed) {
     service_config_json.reset(gpr_strdup(
         service_config != nullptr ? service_config->json_string().c_str()

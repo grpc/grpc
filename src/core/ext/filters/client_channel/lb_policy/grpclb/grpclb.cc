@@ -123,8 +123,7 @@ constexpr char kGrpclb[] = "grpclb";
 
 class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit GrpcLbConfig(
-      RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
+  explicit GrpcLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
       : child_policy_(std::move(child_policy)) {}
   const char* name() const override { return kGrpclb; }
 
@@ -1447,8 +1446,7 @@ void GrpcLb::ResetBackoffLocked() {
 
 void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
-  auto* grpclb_config =
-      static_cast<const GrpcLbConfig*>(args.config.get());
+  auto* grpclb_config = static_cast<const GrpcLbConfig*>(args.config.get());
   if (grpclb_config != nullptr) {
     child_policy_config_ = grpclb_config->child_policy();
   } else {
@@ -1898,7 +1896,10 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
       if (parse_error != GRPC_ERROR_NONE) {
-        error_list.push_back(parse_error);
+        std::vector<grpc_error*> child_errors;
+        child_errors.push_back(parse_error);
+        error_list.push_back(
+            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
     if (error_list.empty()) {

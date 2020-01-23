@@ -1841,7 +1841,10 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           it->second, &parse_error);
       if (child_policy == nullptr) {
         GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-        error_list.push_back(parse_error);
+        std::vector<grpc_error*> child_errors;
+        child_errors.push_back(parse_error);
+        error_list.push_back(
+            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
     // Fallback policy.
@@ -1853,7 +1856,10 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           it->second, &parse_error);
       if (fallback_policy == nullptr) {
         GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-        error_list.push_back(parse_error);
+        std::vector<grpc_error*> child_errors;
+        child_errors.push_back(parse_error);
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+            "field:fallbackPolicy", &child_errors));
       }
     }
     // EDS service name.

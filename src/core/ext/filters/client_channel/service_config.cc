@@ -52,8 +52,7 @@ RefCountedPtr<ServiceConfig> ServiceConfig::Create(StringView json_string,
 
 ServiceConfig::ServiceConfig(std::string json_string, Json json,
                              grpc_error** error)
-    : json_string_(std::move(json_string)),
-      json_(std::move(json)) {
+    : json_string_(std::move(json_string)), json_(std::move(json)) {
   GPR_DEBUG_ASSERT(error != nullptr);
   if (json_.type() != Json::Type::OBJECT) {
     *error =
@@ -136,8 +135,8 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigVectorTable(
   }
   // Add entry for each path.
   for (size_t i = 0; i < paths.size(); ++i) {
-    entries->push_back({grpc_slice_from_copied_string(paths[i].get()),
-                        vector_ptr});
+    entries->push_back(
+        {grpc_slice_from_copied_string(paths[i].get()), vector_ptr});
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
 }

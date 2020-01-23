@@ -39,8 +39,7 @@ constexpr char kCds[] = "cds_experimental";
 // Config for this LB policy.
 class CdsConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit CdsConfig(std::string cluster)
-      : cluster_(std::move(cluster)) {}
+  explicit CdsConfig(std::string cluster) : cluster_(std::move(cluster)) {}
   const std::string& cluster() const { return cluster_; }
   const char* name() const override { return kCds; }
 
@@ -119,9 +118,9 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
   }
   // Construct config for child policy.
   Json::Object child_config = {
-      {"edsServiceName", (cluster_data.eds_service_name.empty()
-                              ? parent_->config_->cluster()
-                              : cluster_data.eds_service_name)},
+      {"edsServiceName",
+       (cluster_data.eds_service_name.empty() ? parent_->config_->cluster()
+                                              : cluster_data.eds_service_name)},
   };
   if (cluster_data.lrs_load_reporting_server_name.has_value()) {
     child_config["lrsLoadReportingServerName"] =
@@ -276,8 +275,8 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
     }
     auto watcher = grpc_core::MakeUnique<ClusterWatcher>(Ref());
     cluster_watcher_ = watcher.get();
-    xds_client_->WatchClusterData(
-        StringView(config_->cluster().c_str()), std::move(watcher));
+    xds_client_->WatchClusterData(StringView(config_->cluster().c_str()),
+                                  std::move(watcher));
   }
 }
 

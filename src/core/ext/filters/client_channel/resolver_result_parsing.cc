@@ -328,7 +328,10 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
     parsed_lb_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
         it->second, &parse_error);
     if (parsed_lb_config == nullptr) {
-      error_list.push_back(parse_error);
+      std::vector<grpc_error*> lb_errors;
+      lb_errors.push_back(parse_error);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+          "field:loadBalancingConfig", &lb_errors));
     }
   }
   // Parse deprecated LB policy.
