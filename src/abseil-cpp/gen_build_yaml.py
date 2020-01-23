@@ -24,6 +24,5 @@ with open(BUILDS_YAML_PATH) as f:
 
 for build in builds:
     build['build'] = 'private'
-    build['build_system'] = []
     build['language'] = 'c'
 print(yaml.dump({'libs': builds}))

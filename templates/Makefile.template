@@ -25,7 +25,7 @@
     import os
 
     def is_absl_lib(target_name):
-      return target_name.startswith("absl/");
+      return target_name.startswith("absl/")
 
     proto_re = re.compile('(.*)\\.proto')
 
@@ -56,6 +56,10 @@
       'c++': 'CPP',
       'csharp': 'CSHARP'
     }
+
+    def make_target_name(lib_name):
+      return lib_name.replace("/", "__").replace(":", "__")
+
   %>
 
 
@@ -945,7 +949,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+   $(LIBDIR)/$(CONFIG)/lib${make_target_name(lib.name)}.a\
   % endif
   % endif
   % endfor
@@ -977,7 +981,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${make_target_name(lib.name)}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)\
   % endif
   % endif
   % endfor
@@ -1011,7 +1015,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+   $(LIBDIR)/$(CONFIG)/lib${make_target_name(lib.name)}.a\
   % endif
   % endif
   % endfor
@@ -1504,7 +1508,11 @@
   % endfor
 
   <%def name="makelib(lib)">
-  LIB${lib.name.upper()}_SRC = \\
+  <%
+    lib_target_name = make_target_name(lib.name)
+    lib_name_upper = lib_target_name.upper()
+  %>
+  LIB${lib_name_upper}_SRC = \\
 
   % for src in lib.src:
       ${proto_to_cc(src)} \\
@@ -1525,11 +1533,11 @@
   % endfor
   % endif
 
-  LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
+  LIB${lib_name_upper}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib_name_upper}_SRC))))
 
   % if lib.get('defaults', None):
   %  for name, value in defaults.get(lib.defaults).iteritems():
-  $(LIB${lib.name.upper()}_OBJS): ${name} += ${value}
+  $(LIB${lib_name_upper}_OBJS): ${name} += ${value}
   %  endfor
   % endif
 
@@ -1539,10 +1547,10 @@
 
   # You can't build secure libraries if you don't have OpenSSL.
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
+  $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a: openssl_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): openssl_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib_target_name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): openssl_dep_error
   % endif
 
   else
@@ -1552,16 +1560,16 @@
 
   # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
+  $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a: protobuf_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib_target_name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
   % endif
 
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
+  $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1569,31 +1577,29 @@
 
   # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
+  $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a: protobuf_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib_target_name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
   % endif
 
   else
 
   % endif
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
+  $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a: \
   % if lib.name not in ['z', 'ares', 'address_sorting', 'upb', 'grpc_abseil']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
   $(UPB_DEP) \
-  $(LIBGRPC_ABSEIL_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
   % endif
-   $(LIB${lib.name.upper()}_OBJS) \
+   $(LIB${lib_target_name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
-   $(LIBGRPC_ABSEIL_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
@@ -1605,11 +1611,10 @@
 
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
+  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a
+  	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a $(LIB${lib_name_upper}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
-   $(LIBGRPC_ABSEIL_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
@@ -1620,7 +1625,7 @@
   % endif
 
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib_target_name}.a
   endif
 
   <%
@@ -1630,42 +1635,40 @@
     else:
       ld = '$(LDXX)'
 
-    out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
-    out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
+    out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib_target_name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
+    out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib_target_name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
 
-    common = '$(LIB' + lib.name.upper() + '_OBJS)'
+    common = '$(LIB' + lib_name_upper + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
     if lib.get('deps_linkage', None) == 'static':
-      for dep in lib.get('deps', []):
-        if is_absl_lib(dep): continue
-        lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
+      for dep in lib.get('transitive_deps', []):
+        lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + make_target_name(dep) + '.a'
         common = common + ' ' + lib_archive
         lib_deps = lib_deps + ' ' + lib_archive
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
     else:
-      for dep in lib.get('deps', []):
-        if is_absl_lib(dep): continue
+      for dep in lib.get('transitive_deps', []):
         dep_lib = None
         for dl in libs:
           if dl.name == dep:
             dep_lib = dl
         assert dep_lib, 'lib %s not found (in %s)' % (dep, lib.name)
         link_libs = link_libs + ' -l' + dep
-        lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
-        mingw_libs = mingw_libs + ' -l' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ')-dll'
-        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ').$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
+        lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + make_target_name(dep) + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
+        mingw_libs = mingw_libs + ' -l' + make_target_name(dep) + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ')-dll'
+        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + make_target_name(dep) + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ').$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
 
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1691,20 +1694,20 @@
 
   % if lib.build == "all":
   ifeq ($(SYSTEM),MINGW32)
-  ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
+  ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib_name_upper}_OBJS) ${mingw_lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${mingw_libs}
   else
-  ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
+  ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib_name_upper}_OBJS) ${lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib_target_name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   else
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib_target_name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib_target_name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib_target_name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
   endif
   % endif
@@ -1725,7 +1728,7 @@
   ifneq ($(NO_SECURE),true)
   % endif
   ifneq ($(NO_DEPS),true)
-  -include $(LIB${lib.name.upper()}_OBJS:.o=.dep)
+  -include $(LIB${lib_name_upper}_OBJS:.o=.dep)
   endif
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   endif
@@ -1798,10 +1801,8 @@
   $(${tgt.name.upper()}_OBJS)\
   % endif
   % endif
-  % for dep in tgt.deps:
-  %  if not is_absl_lib(dep):
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
-  %  endif
+  % for dep in tgt.transitive_deps:
+   $(LIBDIR)/$(CONFIG)/lib${make_target_name(dep)}.a\
   % endfor
 
   % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
@@ -1830,8 +1831,8 @@
   $(${tgt.name.upper()}_OBJS)\
   % endif
   % endif
-  % for dep in tgt.deps:
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
+  % for dep in tgt.transitive_deps:
+   $(LIBDIR)/$(CONFIG)/lib${make_target_name(dep)}.a\
   % endfor
   % if tgt.language == "c++":
   % if tgt.build == 'protoc':
@@ -1875,8 +1876,8 @@
   % endif
   % for src in tgt.src:
   $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
-  % for dep in tgt.deps:
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
+  % for dep in tgt.transitive_deps:
+   $(LIBDIR)/$(CONFIG)/lib${make_target_name(dep)}.a\
   % endfor
 
   % if tgt.language == 'c89':
