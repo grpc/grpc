@@ -26,7 +26,7 @@ py_binary(
     srcs_version = "PY2AND3",
     data = ["hash_name.proto"],
     deps = [
-        "@six//:six",
+        "@six",
         "//src/python/grpcio/grpc:grpcio",
         "@com_google_protobuf//:protobuf_python",
     ],

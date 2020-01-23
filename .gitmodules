@@ -46,3 +46,6 @@
 [submodule "third_party/udpa"]
 	path = third_party/udpa
 	url = https://github.com/cncf/udpa.git
+[submodule "third_party/libuv"]
+	path = third_party/libuv
+	url = https://github.com/libuv/libuv.git

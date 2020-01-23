@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+import platform
+
 from cpython cimport Py_INCREF, Py_DECREF
 from libc cimport string
 
@@ -26,6 +28,7 @@ cdef grpc_socket_vtable asyncio_socket_vtable
 cdef grpc_custom_resolver_vtable asyncio_resolver_vtable
 cdef grpc_custom_timer_vtable asyncio_timer_vtable
 cdef grpc_custom_poller_vtable asyncio_pollset_vtable
+cdef bint so_reuse_port
 
 
 cdef grpc_error* asyncio_socket_init(
@@ -121,10 +124,14 @@ cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil
     return grpc_error_none()
 
 
-def _asyncio_apply_socket_options(object s, so_reuse_port=False):
-    # TODO(https://github.com/grpc/grpc/issues/20667)
-    # Connects the so_reuse_port option to channel arguments
+def _asyncio_apply_socket_options(object s, int flags):
+    # Turn SO_REUSEADDR on for TCP sockets; if we want to support UDS, we will
+    # need to update this function.
     s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEADDR, 1)
+    # SO_REUSEPORT only available in POSIX systems.
+    if platform.system() != 'Windows':
+        if GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT & flags:
+            s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEPORT, 1)
     s.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
 
@@ -141,7 +148,7 @@ cdef grpc_error* asyncio_socket_bind(
             family = native_socket.AF_INET
 
         socket = native_socket.socket(family=family)
-        _asyncio_apply_socket_options(socket)
+        _asyncio_apply_socket_options(socket, flags)
         socket.bind((host, port))
     except IOError as io_error:
         return socket_error("bind", str(io_error))

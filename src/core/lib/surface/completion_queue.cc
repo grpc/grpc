@@ -241,7 +241,14 @@ class CqEventQueue {
 };
 
 struct cq_next_data {
-  ~cq_next_data() { GPR_ASSERT(queue.num_items() == 0); }
+  ~cq_next_data() {
+    GPR_ASSERT(queue.num_items() == 0);
+#ifndef NDEBUG
+    if (pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) != 0) {
+      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+    }
+#endif
+  }
 
   /** Completed events for completion-queues of type GRPC_CQ_NEXT */
   CqEventQueue queue;
@@ -267,6 +274,11 @@ struct cq_pluck_data {
   ~cq_pluck_data() {
     GPR_ASSERT(completed_head.next ==
                reinterpret_cast<uintptr_t>(&completed_head));
+#ifndef NDEBUG
+    if (pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) != 0) {
+      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+    }
+#endif
   }
 
   /** Completed events for completion-queues of type GRPC_CQ_PLUCK */
@@ -298,6 +310,15 @@ struct cq_callback_data {
   cq_callback_data(
       grpc_experimental_completion_queue_functor* shutdown_callback)
       : shutdown_callback(shutdown_callback) {}
+
+  ~cq_callback_data() {
+#ifndef NDEBUG
+    if (pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) != 0) {
+      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+    }
+#endif
+  }
+
   /** No actual completed events queue, unlike other types */
 
   /** Number of pending events (+1 if we're not shutdown).
@@ -854,7 +875,8 @@ static void cq_end_op_for_callback(
   }
 
   auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(tag);
-  if (internal || grpc_iomgr_is_any_background_poller_thread()) {
+  if (internal || functor->inlineable ||
+      grpc_iomgr_is_any_background_poller_thread()) {
     grpc_core::ApplicationCallbackExecCtx::Enqueue(functor,
                                                    (error == GRPC_ERROR_NONE));
     GRPC_ERROR_UNREF(error);

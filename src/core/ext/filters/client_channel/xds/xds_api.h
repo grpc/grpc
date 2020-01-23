@@ -23,13 +23,46 @@
 
 #include <stdint.h>
 
+#include <set>
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
+#include "src/core/lib/gprpp/optional.h"
 
 namespace grpc_core {
+
+constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
+constexpr char kEdsTypeUrl[] =
+    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+
+// The version state for each specific ADS resource type.
+struct VersionState {
+  // The version of the latest response that is accepted and used.
+  std::string version_info;
+  // The nonce of the latest response.
+  std::string nonce;
+  // The error message to be included in a NACK with the nonce. Consumed when a
+  // nonce is NACK'ed for the first time.
+  grpc_error* error = GRPC_ERROR_NONE;
+
+  ~VersionState() { GRPC_ERROR_UNREF(error); }
+};
+
+struct CdsUpdate {
+  // The name to use in the EDS request.
+  // If empty, the cluster name will be used.
+  std::string eds_service_name;
+  // The LRS server to use for load reporting.
+  // If not set, load reporting will be disabled.
+  // If set to the empty string, will use the same server we obtained the CDS
+  // data from.
+  Optional<std::string> lrs_load_reporting_server_name;
+};
+
+using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
 
 class XdsPriorityListUpdate {
  public:
@@ -97,24 +130,22 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
  public:
   struct DropCategory {
     bool operator==(const DropCategory& other) const {
-      return strcmp(name.get(), other.name.get()) == 0 &&
-             parts_per_million == other.parts_per_million;
+      return name == other.name && parts_per_million == other.parts_per_million;
     }
 
-    grpc_core::UniquePtr<char> name;
+    std::string name;
     const uint32_t parts_per_million;
   };
 
   using DropCategoryList = InlinedVector<DropCategory, 2>;
 
-  void AddCategory(grpc_core::UniquePtr<char> name,
-                   uint32_t parts_per_million) {
+  void AddCategory(std::string name, uint32_t parts_per_million) {
     drop_category_list_.emplace_back(
         DropCategory{std::move(name), parts_per_million});
   }
 
   // The only method invoked from the data plane combiner.
-  bool ShouldDrop(const grpc_core::UniquePtr<char>** category_name) const;
+  bool ShouldDrop(const std::string** category_name) const;
 
   const DropCategoryList& drop_category_list() const {
     return drop_category_list_;
@@ -137,44 +168,53 @@ struct EdsUpdate {
   bool drop_all = false;
 };
 
-struct CdsUpdate {
-  // The name to use in the EDS request.
-  // If null, the cluster name will be used.
-  grpc_core::UniquePtr<char> eds_service_name;
-  // The LRS server to use for load reporting.
-  // If null, load reporting will be disabled.
-  // If set to the empty string, will use the same server we obtained
-  // the CDS data from.
-  grpc_core::UniquePtr<char> lrs_load_reporting_server_name;
-};
+using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 
-// Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name,
-                                        const XdsBootstrap::Node* node,
-                                        const char* build_version);
+// Creates a request to nack an unsupported resource type.
+// Takes ownership of \a error.
+grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
+    const std::string& type_url, const std::string& nonce, grpc_error* error);
 
-// Parses the EDS response and returns the args to update locality map. If there
-// is any error, the output update is invalid.
-grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         EdsUpdate* update);
+// Creates a CDS request querying \a cluster_names.
+// Takes ownership of \a error.
+grpc_slice XdsCdsRequestCreateAndEncode(
+    const std::set<StringView>& cluster_names, const XdsBootstrap::Node* node,
+    const char* build_version, const std::string& version,
+    const std::string& nonce, grpc_error* error);
+
+// Creates an EDS request querying \a eds_service_names.
+// Takes ownership of \a error.
+grpc_slice XdsEdsRequestCreateAndEncode(
+    const std::set<StringView>& eds_service_names,
+    const XdsBootstrap::Node* node, const char* build_version,
+    const std::string& version, const std::string& nonce, grpc_error* error);
+
+// Parses the ADS response and outputs the validated update for either CDS or
+// EDS. If the response can't be parsed at the top level, \a type_url will point
+// to an empty string; otherwise, it will point to the received data.
+grpc_error* XdsAdsResponseDecodeAndParse(
+    const grpc_slice& encoded_response,
+    const std::set<StringView>& expected_eds_service_names,
+    CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
+    std::string* version, std::string* nonce, std::string* type_url);
 
 // Creates an LRS request querying \a server_name.
-grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+grpc_slice XdsLrsRequestCreateAndEncode(const std::string& server_name,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version);
 
 // Creates an LRS request sending client-side load reports. If all the counters
-// in \a client_stats are zero, returns empty slice.
-grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
-                                        XdsClientStats* client_stats);
+// are zero, returns empty slice.
+grpc_slice XdsLrsRequestCreateAndEncode(
+    std::map<StringView /*cluster_name*/, std::set<XdsClientStats*>>
+        client_stats_map);
 
-// Parses the LRS response and returns \a cluster_name and \a
+// Parses the LRS response and returns \a
 // load_reporting_interval for client-side load reporting. If there is any
 // error, the output config is invalid.
-grpc_error* XdsLrsResponseDecodeAndParse(
-    const grpc_slice& encoded_response,
-    grpc_core::UniquePtr<char>* cluster_name,
-    grpc_millis* load_reporting_interval);
+grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         std::set<std::string>* cluster_names,
+                                         grpc_millis* load_reporting_interval);
 
 }  // namespace grpc_core
 

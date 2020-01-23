@@ -104,7 +104,7 @@ grpc_error* ServiceConfig::ParseGlobalParams(const grpc_json* json_tree) {
 grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigVectorTable(
     const grpc_json* json,
     SliceHashTable<const ParsedConfigVector*>::Entry* entries, size_t* idx) {
-  auto objs_vector = MakeUnique<ParsedConfigVector>();
+  auto objs_vector = grpc_core::MakeUnique<ParsedConfigVector>();
   InlinedVector<grpc_error*, 4> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
     grpc_error* parser_error = GRPC_ERROR_NONE;

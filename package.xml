@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.26.0dev</release>
-  <api>1.26.0dev</api>
+  <release>1.27.0dev</release>
+  <api>1.27.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.26.0 update
+- gRPC Core 1.27.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -96,7 +96,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_plugin.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.h" role="src" />
@@ -131,7 +130,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.h" role="src" />
@@ -541,7 +539,11 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/logical_thread.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/logical_thread.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/nameser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/poller/eventmanager_libuv.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/poller/eventmanager_libuv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.cc" role="src" />
@@ -634,12 +636,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
@@ -684,8 +682,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/spiffe_credentials.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/spiffe_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.cc" role="src" />
@@ -704,8 +702,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/tls_security_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/tls_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.cc" role="src" />
@@ -872,6 +870,110 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/version.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/algorithm/algorithm.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/attributes.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/call_once.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/casts.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/config.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/const_init.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/dynamic_annotations.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/dynamic_annotations.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/atomic_hook.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/bits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/cycleclock.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/cycleclock.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/endian.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/hide_ptr.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/identity.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/inline_variable.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/invoke.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/low_level_scheduling.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/per_thread_tls.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/raw_logging.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/raw_logging.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/scheduling_mode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/spinlock.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/spinlock.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/spinlock_akaros.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/spinlock_linux.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/spinlock_posix.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/spinlock_wait.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/spinlock_win32.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/sysinfo.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/sysinfo.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/thread_annotations.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/thread_identity.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/thread_identity.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/throw_delegate.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/throw_delegate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/tsan_mutex_interface.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/unaligned_access.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/log_severity.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/log_severity.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/macros.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/optimization.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/options.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/policy_checks.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/port.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/thread_annotations.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/inlined_vector.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/compressed_tuple.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/inlined_vector.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/memory/memory.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/meta/type_traits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128_have_intrinsic.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128_no_intrinsic.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/ascii.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/ascii.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/charconv.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/charconv.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/escaping.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/escaping.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/char_map.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/charconv_bigint.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/charconv_parse.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/escaping.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/escaping.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/memutil.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/memutil.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/ostringstream.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/ostringstream.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/resize_uninitialized.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/stl_type_traits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_join_internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_split_internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/utf8.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/utf8.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/match.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/match.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/numbers.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/numbers.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_cat.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_cat.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_join.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_replace.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_replace.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_split.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_split.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/string_view.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/string_view.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/strip.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_optional_access.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_optional_access.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/optional.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/span.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/optional.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/span.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/utility/utility.h" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting.c" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_posix.c" role="src" />

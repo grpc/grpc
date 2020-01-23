@@ -86,7 +86,7 @@ static tsi_result handshaker_result_extract_peer(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
-  GPR_ASSERT(kTsiAltsNumOfPeerProperties == 4);
+  GPR_ASSERT(kTsiAltsNumOfPeerProperties == 5);
   tsi_result ok = tsi_construct_peer(kTsiAltsNumOfPeerProperties, peer);
   int index = 0;
   if (ok != TSI_OK) {
@@ -127,6 +127,16 @@ static tsi_result handshaker_result_extract_peer(
       TSI_ALTS_CONTEXT,
       reinterpret_cast<char*>(GRPC_SLICE_START_PTR(result->serialized_context)),
       GRPC_SLICE_LENGTH(result->serialized_context), &peer->properties[index]);
+  if (ok != TSI_OK) {
+    tsi_peer_destruct(peer);
+    gpr_log(GPR_ERROR, "Failed to set tsi peer property");
+  }
+  index++;
+  GPR_ASSERT(&peer->properties[index] != nullptr);
+  ok = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+      &peer->properties[index]);
   if (ok != TSI_OK) {
     tsi_peer_destruct(peer);
     gpr_log(GPR_ERROR, "Failed to set tsi peer property");
@@ -267,10 +277,8 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   }
   upb_strview local_service_account =
       grpc_gcp_Identity_service_account(local_identity);
-  if (local_service_account.size == 0) {
-    gpr_log(GPR_ERROR, "Invalid local service account");
-    return TSI_FAILED_PRECONDITION;
-  }
+  // We don't check if local service account is empty here
+  // because local identity could be empty in certain situations.
   alts_tsi_handshaker_result* result =
       static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*result)));
   result->key_data =
@@ -292,7 +300,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   grpc_gcp_AltsContext_set_application_protocol(context, application_protocol);
   grpc_gcp_AltsContext_set_record_protocol(context, record_protocol);
   // ALTS currently only supports the security level of 2,
-  // which is "grpc_gcp_INTEGRITY_AND_PRIVACY"
+  // which is "grpc_gcp_INTEGRITY_AND_PRIVACY".
   grpc_gcp_AltsContext_set_security_level(context, 2);
   grpc_gcp_AltsContext_set_peer_service_account(context, peer_service_account);
   grpc_gcp_AltsContext_set_local_service_account(context,

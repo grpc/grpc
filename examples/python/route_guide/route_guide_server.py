@@ -47,8 +47,8 @@ def get_distance(start, end):
 
     # Formula is based on http://mathforum.org/library/drmath/view/51879.html
     a = (pow(math.sin(delta_lat_rad / 2), 2) +
-         (math.cos(lat_rad_1) * math.cos(lat_rad_2) * pow(
-             math.sin(delta_lon_rad / 2), 2)))
+         (math.cos(lat_rad_1) * math.cos(lat_rad_2) *
+          pow(math.sin(delta_lon_rad / 2), 2)))
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     R = 6371000
     # metres

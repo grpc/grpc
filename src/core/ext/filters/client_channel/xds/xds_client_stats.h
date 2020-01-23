@@ -38,46 +38,43 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   struct Less {
     bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
                     const RefCountedPtr<XdsLocalityName>& rhs) const {
-      int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
+      int cmp_result = lhs->region_.compare(rhs->region_);
       if (cmp_result != 0) return cmp_result < 0;
-      cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());
+      cmp_result = lhs->zone_.compare(rhs->zone_);
       if (cmp_result != 0) return cmp_result < 0;
-      return strcmp(lhs->sub_zone_.get(), rhs->sub_zone_.get()) < 0;
+      return lhs->sub_zone_.compare(rhs->sub_zone_) < 0;
     }
   };
 
-  XdsLocalityName(grpc_core::UniquePtr<char> region,
-                  grpc_core::UniquePtr<char> zone,
-                  grpc_core::UniquePtr<char> subzone)
+  XdsLocalityName(std::string region, std::string zone, std::string subzone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
         sub_zone_(std::move(subzone)) {}
 
   bool operator==(const XdsLocalityName& other) const {
-    return strcmp(region_.get(), other.region_.get()) == 0 &&
-           strcmp(zone_.get(), other.zone_.get()) == 0 &&
-           strcmp(sub_zone_.get(), other.sub_zone_.get()) == 0;
+    return region_ == other.region_ && zone_ == other.zone_ &&
+           sub_zone_ == other.sub_zone_;
   }
 
-  const char* region() const { return region_.get(); }
-  const char* zone() const { return zone_.get(); }
-  const char* sub_zone() const { return sub_zone_.get(); }
+  const std::string& region() const { return region_; }
+  const std::string& zone() const { return zone_; }
+  const std::string& sub_zone() const { return sub_zone_; }
 
   const char* AsHumanReadableString() {
     if (human_readable_string_ == nullptr) {
       char* tmp;
       gpr_asprintf(&tmp, "{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                   region_.get(), zone_.get(), sub_zone_.get());
+                   region_.c_str(), zone_.c_str(), sub_zone_.c_str());
       human_readable_string_.reset(tmp);
     }
     return human_readable_string_.get();
   }
 
  private:
-  grpc_core::UniquePtr<char> region_;
-  grpc_core::UniquePtr<char> zone_;
-  grpc_core::UniquePtr<char> sub_zone_;
-  grpc_core::UniquePtr<char> human_readable_string_;
+  std::string region_;
+  std::string zone_;
+  std::string sub_zone_;
+  UniquePtr<char> human_readable_string_;
 };
 
 // The stats classes (i.e., XdsClientStats, LocalityStats, and LoadMetric) can
@@ -112,10 +109,8 @@ class XdsClientStats {
       double total_metric_value_{0};
     };
 
-    using LoadMetricMap =
-        std::map<grpc_core::UniquePtr<char>, LoadMetric, StringLess>;
-    using LoadMetricSnapshotMap =
-        std::map<grpc_core::UniquePtr<char>, LoadMetric::Snapshot, StringLess>;
+    using LoadMetricMap = std::map<std::string, LoadMetric>;
+    using LoadMetricSnapshotMap = std::map<std::string, LoadMetric::Snapshot>;
 
     struct Snapshot {
       // TODO(juanlishen): Change this to const method when const_iterator is
@@ -187,8 +182,7 @@ class XdsClientStats {
   using LocalityStatsSnapshotMap =
       std::map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
                XdsLocalityName::Less>;
-  using DroppedRequestsMap =
-      std::map<grpc_core::UniquePtr<char>, uint64_t, StringLess>;
+  using DroppedRequestsMap = std::map<std::string, uint64_t>;
   using DroppedRequestsSnapshotMap = DroppedRequestsMap;
 
   struct Snapshot {
@@ -211,7 +205,7 @@ class XdsClientStats {
   RefCountedPtr<LocalityStats> FindLocalityStats(
       const RefCountedPtr<XdsLocalityName>& locality_name);
   void PruneLocalityStats();
-  void AddCallDropped(const grpc_core::UniquePtr<char>& category);
+  void AddCallDropped(const std::string& category);
 
  private:
   // The stats for each locality.

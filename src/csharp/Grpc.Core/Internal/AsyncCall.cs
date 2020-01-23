@@ -599,6 +599,7 @@ namespace Grpc.Core.Internal
             TaskCompletionSource<object> delayedStreamingWriteTcs = null;
 
             bool releasedResources;
+            bool origCancelRequested;
             lock (myLock)
             {
                 finished = true;
@@ -610,6 +611,7 @@ namespace Grpc.Core.Internal
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
+                origCancelRequested = cancelRequested;
             }
 
             if (releasedResources)
@@ -626,6 +628,14 @@ namespace Grpc.Core.Internal
             if (status.StatusCode != StatusCode.OK)
             {
                 streamingResponseCallFinishedTcs.SetException(new RpcException(status, receivedStatus.Trailers));
+                if (status.StatusCode == StatusCode.Cancelled || origCancelRequested)
+                {
+                    // Make sure the exception set to the Task is observed,
+                    // otherwise this can trigger "Unobserved exception" when the response stream
+                    // is not read until its end and the task created by the TCS is garbage collected.
+                    // See https://github.com/grpc/grpc/issues/17458
+                    var _ = streamingResponseCallFinishedTcs.Task.Exception;
+                }
                 return;
             }
 

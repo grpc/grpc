@@ -115,6 +115,11 @@ static const char test_signed_jwt[] =
     "U0MDcyZTViYTdmZDkwODg2YzcifQ";
 static const char test_signed_jwt_token_type[] =
     "urn:ietf:params:oauth:token-type:id_token";
+static const char test_signed_jwt2[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImY0OTRkN2M1YWU2MGRmOTcyNmM5YW"
+    "U2MDcyZTViYTdnZDkwODg5YzcifQ";
+static const char test_signed_jwt_token_type2[] =
+    "urn:ietf:params:oauth:token-type:jwt";
 static const char test_signed_jwt_path_prefix[] = "test_sign_jwt";
 
 static const char test_service_url[] = "https://foo.com/foo.v1";
@@ -399,6 +404,8 @@ static void test_google_iam_creds(void) {
   grpc_call_credentials* creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   run_request_metadata_test(creds, auth_md_ctx, state);
@@ -415,6 +422,8 @@ static void test_access_token_creds(void) {
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   GPR_ASSERT(strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   run_request_metadata_test(creds, auth_md_ctx, state);
   creds->Unref();
 }
@@ -469,12 +478,20 @@ static void test_oauth2_google_iam_composite_creds(void) {
                                             nullptr, nullptr};
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
       "authorization", test_oauth2_bearer_token, 0);
+
+  /* Check security level of fake credentials. */
+  GPR_ASSERT(oauth2_creds->min_security_level() == GRPC_SECURITY_NONE);
+
   grpc_call_credentials* google_iam_creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
   grpc_call_credentials* composite_creds =
       grpc_composite_call_credentials_create(oauth2_creds, google_iam_creds,
                                              nullptr);
+  /* Check security level of composite credentials. */
+  GPR_ASSERT(composite_creds->min_security_level() ==
+             GRPC_PRIVACY_AND_INTEGRITY);
+
   oauth2_creds->Unref();
   google_iam_creds->Unref();
   GPR_ASSERT(strcmp(composite_creds->type(),
@@ -531,6 +548,7 @@ static void test_channel_oauth2_google_iam_composite_creds(void) {
   grpc_call_credentials* google_iam_creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
+
   grpc_channel_credentials* channel_oauth2_iam_creds =
       grpc_composite_channel_credentials_create(channel_oauth2_creds,
                                                 google_iam_creds, nullptr);
@@ -599,6 +617,8 @@ static void test_compute_engine_creds_success() {
       grpc_google_compute_engine_credentials_create(nullptr);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http get should be called. */
   request_metadata_state* state =
@@ -690,6 +710,9 @@ static void test_refresh_token_creds_success(void) {
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
 
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+
   /* First request: http put should be called. */
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
@@ -747,8 +770,8 @@ static void test_valid_sts_creds_options(void) {
   grpc_core::StringView host;
   grpc_core::StringView port;
   GPR_ASSERT(grpc_core::SplitHostPort(sts_url->authority, &host, &port));
-  GPR_ASSERT(grpc_core::StringViewCmp(host, "foo.com") == 0);
-  GPR_ASSERT(grpc_core::StringViewCmp(port, "5555") == 0);
+  GPR_ASSERT(host == "foo.com");
+  GPR_ASSERT(port == "5555");
   grpc_uri_destroy(sts_url);
 }
 
@@ -841,8 +864,8 @@ static void test_invalid_sts_creds_options(void) {
 }
 
 static void validate_sts_token_http_request(const grpc_httpcli_request* request,
-                                            const char* body,
-                                            size_t body_size) {
+                                            const char* body, size_t body_size,
+                                            bool expect_actor_token) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
@@ -859,8 +882,15 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
                     test_signed_jwt) == 0);
   GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "subject_token_type"),
                     test_signed_jwt_token_type) == 0);
-  GPR_ASSERT(grpc_uri_get_query_arg(url, "actor_token") == nullptr);
-  GPR_ASSERT(grpc_uri_get_query_arg(url, "actor_token_type") == nullptr);
+  if (expect_actor_token) {
+    GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "actor_token"),
+                      test_signed_jwt2) == 0);
+    GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "actor_token_type"),
+                      test_signed_jwt_token_type2) == 0);
+  } else {
+    GPR_ASSERT(grpc_uri_get_query_arg(url, "actor_token") == nullptr);
+    GPR_ASSERT(grpc_uri_get_query_arg(url, "actor_token_type") == nullptr);
+  }
   grpc_uri_destroy(url);
   gpr_free(get_url_equivalent);
 
@@ -878,19 +908,29 @@ static int sts_token_httpcli_post_success(const grpc_httpcli_request* request,
                                           grpc_millis /*deadline*/,
                                           grpc_closure* on_done,
                                           grpc_httpcli_response* response) {
-  validate_sts_token_http_request(request, body, body_size);
+  validate_sts_token_http_request(request, body, body_size, true);
   *response = http_response(200, valid_sts_json_response);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
-static char* write_tmp_jwt_file(void) {
+static int sts_token_httpcli_post_success_no_actor_token(
+    const grpc_httpcli_request* request, const char* body, size_t body_size,
+    grpc_millis /*deadline*/, grpc_closure* on_done,
+    grpc_httpcli_response* response) {
+  validate_sts_token_http_request(request, body, body_size, false);
+  *response = http_response(200, valid_sts_json_response);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  return 1;
+}
+
+static char* write_tmp_jwt_file(const char* jwt_contents) {
   char* path;
   FILE* tmp = gpr_tmpfile(test_signed_jwt_path_prefix, &path);
   GPR_ASSERT(path != nullptr);
   GPR_ASSERT(tmp != nullptr);
-  size_t jwt_length = strlen(test_signed_jwt);
-  GPR_ASSERT(fwrite(test_signed_jwt, 1, jwt_length, tmp) == jwt_length);
+  size_t jwt_length = strlen(jwt_contents);
+  GPR_ASSERT(fwrite(jwt_contents, 1, jwt_length, tmp) == jwt_length);
   fclose(tmp);
   return path;
 }
@@ -901,20 +941,24 @@ static void test_sts_creds_success(void) {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  char* test_signed_jwt_path = write_tmp_jwt_file();
+  char* subject_token_path = write_tmp_jwt_file(test_signed_jwt);
+  char* actor_token_path = write_tmp_jwt_file(test_signed_jwt2);
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
       "resource",                  // resource
       "audience",                  // audience
       "scope",                     // scope
       "requested_token_type",      // requested_token_type
-      test_signed_jwt_path,        // subject_token_path
+      subject_token_path,          // subject_token_path
       test_signed_jwt_token_type,  // subject_token_type
-      nullptr,                     // actor_token_path
-      nullptr                      // actor_token_type
+      actor_token_path,            // actor_token_path
+      test_signed_jwt_token_type2  // actor_token_type
   };
   grpc_call_credentials* creds =
       grpc_sts_credentials_create(&valid_options, nullptr);
+
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
   request_metadata_state* state =
@@ -934,7 +978,53 @@ static void test_sts_creds_success(void) {
 
   creds->Unref();
   grpc_httpcli_set_override(nullptr, nullptr);
-  gpr_free(test_signed_jwt_path);
+  gpr_free(subject_token_path);
+  gpr_free(actor_token_path);
+}
+
+static void test_sts_creds_no_actor_token_success(void) {
+  grpc_core::ExecCtx exec_ctx;
+  expected_md emd[] = {
+      {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  char* subject_token_path = write_tmp_jwt_file(test_signed_jwt);
+  grpc_sts_credentials_options valid_options = {
+      test_sts_endpoint_url,       // sts_endpoint_url
+      "resource",                  // resource
+      "audience",                  // audience
+      "scope",                     // scope
+      "requested_token_type",      // requested_token_type
+      subject_token_path,          // subject_token_path
+      test_signed_jwt_token_type,  // subject_token_type
+      "",                          // actor_token_path
+      ""                           // actor_token_type
+  };
+  grpc_call_credentials* creds =
+      grpc_sts_credentials_create(&valid_options, nullptr);
+
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+
+  /* First request: http put should be called. */
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            sts_token_httpcli_post_success_no_actor_token);
+  run_request_metadata_test(creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  /* Second request: the cached token should be served directly. */
+  state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  run_request_metadata_test(creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  creds->Unref();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  gpr_free(subject_token_path);
 }
 
 static void test_sts_creds_load_token_failure(void) {
@@ -945,7 +1035,7 @@ static void test_sts_creds_load_token_failure(void) {
       nullptr, 0);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  char* test_signed_jwt_path = write_tmp_jwt_file();
+  char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
       test_sts_endpoint_url,       // sts_endpoint_url
       "resource",                  // resource
@@ -974,7 +1064,7 @@ static void test_sts_creds_http_failure(void) {
       nullptr, 0);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  char* test_signed_jwt_path = write_tmp_jwt_file();
+  char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
       "resource",                  // resource
@@ -1058,6 +1148,8 @@ static void test_jwt_creds_lifetime(void) {
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           grpc_max_auth_token_lifetime()) == 0);
+  /* Check security level. */
+  GPR_ASSERT(jwt_creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   grpc_call_credentials_release(jwt_creds);
 
   // Shorter lifetime.
@@ -1399,8 +1491,10 @@ static void test_metadata_plugin_success(void) {
   plugin.get_metadata = plugin_get_metadata_success;
   plugin.destroy = plugin_destroy;
 
-  grpc_call_credentials* creds =
-      grpc_metadata_credentials_create_from_plugin(plugin, nullptr);
+  grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   GPR_ASSERT(state == PLUGIN_INITIAL_STATE);
   run_request_metadata_test(creds, auth_md_ctx, md_state);
   GPR_ASSERT(state == PLUGIN_GET_METADATA_CALLED_STATE);
@@ -1427,8 +1521,8 @@ static void test_metadata_plugin_failure(void) {
   plugin.get_metadata = plugin_get_metadata_failure;
   plugin.destroy = plugin_destroy;
 
-  grpc_call_credentials* creds =
-      grpc_metadata_credentials_create_from_plugin(plugin, nullptr);
+  grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
   GPR_ASSERT(state == PLUGIN_INITIAL_STATE);
   run_request_metadata_test(creds, auth_md_ctx, md_state);
   GPR_ASSERT(state == PLUGIN_GET_METADATA_CALLED_STATE);
@@ -1440,16 +1534,32 @@ static void test_metadata_plugin_failure(void) {
 static void test_get_well_known_google_credentials_file_path(void) {
   char* path;
   char* home = gpr_getenv("HOME");
+  bool restore_home_env = false;
+#if defined(GRPC_BAZEL_BUILD) && \
+    (defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV))
+  // when running under bazel locally, the HOME variable is not set
+  // so we set it to some fake value
+  restore_home_env = true;
+  gpr_setenv("HOME", "/fake/home/for/bazel");
+#endif /* defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || \
+          defined(GPR_LINUX_ENV)) */
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path != nullptr);
   gpr_free(path);
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
+  restore_home_env = true;
   gpr_unsetenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path == nullptr);
-  gpr_setenv("HOME", home);
   gpr_free(path);
 #endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
+  if (restore_home_env) {
+    if (home) {
+      gpr_setenv("HOME", home);
+    } else {
+      gpr_unsetenv("HOME");
+    }
+  }
   gpr_free(home);
 }
 
@@ -1574,6 +1684,7 @@ int main(int argc, char** argv) {
   test_valid_sts_creds_options();
   test_invalid_sts_creds_options();
   test_sts_creds_success();
+  test_sts_creds_no_actor_token_success();
   test_sts_creds_load_token_failure();
   test_sts_creds_http_failure();
   test_jwt_creds_lifetime();

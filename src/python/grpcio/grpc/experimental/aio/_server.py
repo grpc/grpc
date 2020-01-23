@@ -74,8 +74,8 @@ class Server:
         Returns:
           An integer port on which the server will accept RPC requests.
         """
-        return self._server.add_secure_port(
-            _common.encode(address), server_credentials)
+        return self._server.add_secure_port(_common.encode(address),
+                                            server_credentials)
 
     async def start(self) -> None:
         """Starts this Server.
@@ -171,8 +171,7 @@ def server(migration_thread_pool=None,
     Returns:
       A Server object.
     """
-    return Server(migration_thread_pool, ()
-                  if handlers is None else handlers, ()
-                  if interceptors is None else interceptors, ()
-                  if options is None else options, maximum_concurrent_rpcs,
+    return Server(migration_thread_pool, () if handlers is None else handlers,
+                  () if interceptors is None else interceptors,
+                  () if options is None else options, maximum_concurrent_rpcs,
                   compression)

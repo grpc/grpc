@@ -70,18 +70,16 @@ def run_streaming_client(server_target, name, ideal_distance,
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
     parser.add_argument("name", type=str, help='The desired name.')
-    parser.add_argument(
-        "--ideal-distance",
-        default=0,
-        nargs='?',
-        type=int,
-        help="The desired Hamming distance.")
-    parser.add_argument(
-        '--server',
-        default='localhost:50051',
-        type=str,
-        nargs='?',
-        help='The host-port pair at which to reach the server.')
+    parser.add_argument("--ideal-distance",
+                        default=0,
+                        nargs='?',
+                        type=int,
+                        help="The desired Hamming distance.")
+    parser.add_argument('--server',
+                        default='localhost:50051',
+                        type=str,
+                        nargs='?',
+                        help='The host-port pair at which to reach the server.')
     parser.add_argument(
         '--show-inferior',
         default=None,

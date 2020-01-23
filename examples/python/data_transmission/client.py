@@ -30,8 +30,8 @@ def simple_method(stub):
     request = protos.Request(
         client_id=CLIENT_ID, request_data="called by Python client")
     response = stub.SimpleMethod(request)
-    print("resp from server(%d), the message=%s" % (response.server_id,
-                                                    response.response_data))
+    print("resp from server(%d), the message=%s" %
+          (response.server_id, response.response_data))
     print("--------------Call SimpleMethod Over---------------")
 
 
@@ -51,8 +51,8 @@ def client_streaming_method(stub):
             yield request
 
     response = stub.ClientStreamingMethod(request_messages())
-    print("resp from server(%d), the message=%s" % (response.server_id,
-                                                    response.response_data))
+    print("resp from server(%d), the message=%s" %
+          (response.server_id, response.response_data))
     print("--------------Call ClientStreamingMethod Over---------------")
 
 
@@ -65,8 +65,8 @@ def server_streaming_method(stub):
         client_id=CLIENT_ID, request_data="called by Python client")
     response_iterator = stub.ServerStreamingMethod(request)
     for response in response_iterator:
-        print("recv from server(%d), message=%s" % (response.server_id,
-                                                    response.response_data))
+        print("recv from server(%d), message=%s" %
+              (response.server_id, response.response_data))
 
     print("--------------Call ServerStreamingMethod Over---------------")
 
@@ -90,8 +90,8 @@ def bidirectional_streaming_method(stub):
 
     response_iterator = stub.BidirectionalStreamingMethod(request_messages())
     for response in response_iterator:
-        print("recv from server(%d), message=%s" % (response.server_id,
-                                                    response.response_data))
+        print("recv from server(%d), message=%s" %
+              (response.server_id, response.response_data))
 
     print("--------------Call BidirectionalStreamingMethod Over---------------")
 

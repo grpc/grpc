@@ -16,7 +16,7 @@
 
   FROM php:${settings.php_version.php_current_version()}-alpine3.9
 
-  RUN apk add autoconf g++ make zlib-dev git bash wget
+  RUN apk add autoconf g++ make zlib-dev git bash wget linux-headers
 
   ARG MAKEFLAGS=-j8
 

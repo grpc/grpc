@@ -329,9 +329,9 @@ class ClientChannelStressTest {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::ClientChannelStressTest test;
+  grpc_init();
   test.Run();
   grpc_shutdown();
   return 0;

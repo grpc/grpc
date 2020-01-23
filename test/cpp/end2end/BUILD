@@ -91,6 +91,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
     ],
@@ -116,6 +117,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
     ],
@@ -494,11 +496,12 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "xds_end2end_test",
-    timeout = "long",
+    size = "large",
     srcs = ["xds_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],
+    shard_count = 10,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -513,6 +516,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//src/proto/grpc/testing/xds:ads_for_test_proto",
+        "//src/proto/grpc/testing/xds:cds_for_test_proto",
         "//src/proto/grpc/testing/xds:eds_for_test_proto",
         "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//test/core/util:grpc_test_util",
@@ -571,6 +575,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
     ],
@@ -704,11 +709,12 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "thread_stress_test",
-    timeout = "long",
+    size = "large",
     srcs = ["thread_stress_test.cc"],
     external_deps = [
         "gtest",
     ],
+    shard_count = 5,
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:gpr",
@@ -730,6 +736,7 @@ grpc_cc_test(
     ],
     tags = [
         "manual",
+        "no_test_android",
         "no_test_ios",
     ],  # test requires root, won't work with bazel RBE
     deps = [

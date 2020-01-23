@@ -22,6 +22,9 @@ export PYTHON=${PYTHON:-python}
 export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
+# Install Cython to avoid source wheel build failure.
+"${PIP}" install --upgrade cython
+
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
 # Use externally provided GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS value if set.
@@ -134,7 +137,7 @@ fi
 
 # Ensure the generated artifacts are valid.
 "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv && "${PYTHON}" -m virtualenv venv; }
-venv/bin/python -m pip install twine
+venv/bin/python -m pip install "twine<=2.0"
 venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
 rm -rf venv/
 

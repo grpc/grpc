@@ -17,7 +17,7 @@ target 'CronetTests' do
   pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 
   pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
-  pod 'gRPC-C++',      :path => GRPC_LOCAL_SRC
+  pod 'gRPC-C++/Cronet-Implementation',      :path => GRPC_LOCAL_SRC
   pod 'gRPC-C++/Protobuf',       :path => GRPC_LOCAL_SRC
   pod 'RemoteTestCpp', :path => "RemoteTestClientCpp", :inhibit_warnings => true
 

@@ -197,12 +197,12 @@ class Subchannel {
   };
 
   // The ctor and dtor are not intended to use directly.
-  Subchannel(SubchannelKey* key, grpc_connector* connector,
+  Subchannel(SubchannelKey* key, OrphanablePtr<SubchannelConnector> connector,
              const grpc_channel_args* args);
   ~Subchannel();
 
   // Creates a subchannel given \a connector and \a args.
-  static Subchannel* Create(grpc_connector* connector,
+  static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
                             const grpc_channel_args* args);
 
   // Strong and weak refcounting.
@@ -365,9 +365,9 @@ class Subchannel {
   gpr_atm ref_pair_;
 
   // Connection states.
-  grpc_connector* connector_ = nullptr;
+  OrphanablePtr<SubchannelConnector> connector_;
   // Set during connection.
-  grpc_connect_out_args connecting_result_;
+  SubchannelConnector::Result connecting_result_;
   grpc_closure on_connecting_finished_;
   // Active connection, or null.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;

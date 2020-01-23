@@ -52,21 +52,6 @@ typedef struct grpc_closure_list {
  *              the closure scheduler will do that after the cb returns */
 typedef void (*grpc_iomgr_cb_func)(void* arg, grpc_error* error);
 
-typedef struct grpc_closure_scheduler grpc_closure_scheduler;
-
-typedef struct grpc_closure_scheduler_vtable {
-  /* NOTE: for all these functions, closure->scheduler == the scheduler that was
-           used to find this vtable */
-  void (*run)(grpc_closure* closure, grpc_error* error);
-  void (*sched)(grpc_closure* closure, grpc_error* error);
-  const char* name;
-} grpc_closure_scheduler_vtable;
-
-/** Abstract type that can schedule closures for execution */
-struct grpc_closure_scheduler {
-  const grpc_closure_scheduler_vtable* vtable;
-};
-
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {
   /** Once queued, next indicates the next queued closure; before then, scratch
@@ -84,10 +69,6 @@ struct grpc_closure {
 
   /** Arguments to be passed to "cb". */
   void* cb_arg;
-
-  /** Scheduler to schedule against: nullptr to schedule against current
-     execution context */
-  grpc_closure_scheduler* scheduler;
 
   /** Once queued, the result of the closure. Before then: scratch space */
   union {
@@ -110,16 +91,13 @@ struct grpc_closure {
 #ifndef NDEBUG
 inline grpc_closure* grpc_closure_init(const char* file, int line,
                                        grpc_closure* closure,
-                                       grpc_iomgr_cb_func cb, void* cb_arg,
-                                       grpc_closure_scheduler* scheduler) {
+                                       grpc_iomgr_cb_func cb, void* cb_arg) {
 #else
 inline grpc_closure* grpc_closure_init(grpc_closure* closure,
-                                       grpc_iomgr_cb_func cb, void* cb_arg,
-                                       grpc_closure_scheduler* scheduler) {
+                                       grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
   closure->cb = cb;
   closure->cb_arg = cb_arg;
-  closure->scheduler = scheduler;
   closure->error_data.error = GRPC_ERROR_NONE;
 #ifndef NDEBUG
   closure->scheduled = false;
@@ -135,10 +113,10 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
 /** Initializes \a closure with \a cb and \a cb_arg. Returns \a closure. */
 #ifndef NDEBUG
 #define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
-  grpc_closure_init(__FILE__, __LINE__, closure, cb, cb_arg, scheduler)
+  grpc_closure_init(__FILE__, __LINE__, closure, cb, cb_arg)
 #else
 #define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
-  grpc_closure_init(closure, cb, cb_arg, scheduler)
+  grpc_closure_init(closure, cb, cb_arg)
 #endif
 
 namespace closure_impl {
@@ -161,21 +139,19 @@ inline void closure_wrapper(void* arg, grpc_error* error) {
 
 #ifndef NDEBUG
 inline grpc_closure* grpc_closure_create(const char* file, int line,
-                                         grpc_iomgr_cb_func cb, void* cb_arg,
-                                         grpc_closure_scheduler* scheduler) {
+                                         grpc_iomgr_cb_func cb, void* cb_arg) {
 #else
-inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg,
-                                         grpc_closure_scheduler* scheduler) {
+inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
   closure_impl::wrapped_closure* wc =
       static_cast<closure_impl::wrapped_closure*>(gpr_malloc(sizeof(*wc)));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
 #ifndef NDEBUG
-  grpc_closure_init(file, line, &wc->wrapper, closure_impl::closure_wrapper, wc,
-                    scheduler);
+  grpc_closure_init(file, line, &wc->wrapper, closure_impl::closure_wrapper,
+                    wc);
 #else
-  grpc_closure_init(&wc->wrapper, closure_impl::closure_wrapper, wc, scheduler);
+  grpc_closure_init(&wc->wrapper, closure_impl::closure_wrapper, wc);
 #endif
   return &wc->wrapper;
 }
@@ -183,10 +159,10 @@ inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg,
 /* Create a heap allocated closure: try to avoid except for very rare events */
 #ifndef NDEBUG
 #define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
-  grpc_closure_create(__FILE__, __LINE__, cb, cb_arg, scheduler)
+  grpc_closure_create(__FILE__, __LINE__, cb, cb_arg)
 #else
 #define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
-  grpc_closure_create(cb, cb_arg, scheduler)
+  grpc_closure_create(cb, cb_arg)
 #endif
 
 #define GRPC_CLOSURE_LIST_INIT \
@@ -253,6 +229,7 @@ class Closure {
  public:
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error* error) {
+    (void)location;
     if (closure == nullptr) {
       GRPC_ERROR_UNREF(error);
       return;
@@ -275,45 +252,5 @@ class Closure {
   }
 };
 }  // namespace grpc_core
-
-#ifndef NDEBUG
-inline void grpc_closure_list_sched(const char* file, int line,
-                                    grpc_closure_list* list) {
-#else
-inline void grpc_closure_list_sched(grpc_closure_list* list) {
-#endif
-  grpc_closure* c = list->head;
-  while (c != nullptr) {
-    grpc_closure* next = c->next_data.next;
-#ifndef NDEBUG
-    if (c->scheduled) {
-      gpr_log(GPR_ERROR,
-              "Closure already scheduled. (closure: %p, created: [%s:%d], "
-              "previously scheduled at: [%s: %d] run?: %s",
-              c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated, c->run ? "true" : "false");
-      abort();
-    }
-    c->scheduled = true;
-    c->file_initiated = file;
-    c->line_initiated = line;
-    c->run = false;
-    GPR_ASSERT(c->cb != nullptr);
-#endif
-    c->scheduler->vtable->sched(c, c->error_data.error);
-    c = next;
-  }
-  list->head = list->tail = nullptr;
-}
-
-/** Schedule all closures in a list to be run. Does not need to be run from a
- * safe point. */
-#ifndef NDEBUG
-#define GRPC_CLOSURE_LIST_SCHED(closure_list) \
-  grpc_closure_list_sched(__FILE__, __LINE__, closure_list)
-#else
-#define GRPC_CLOSURE_LIST_SCHED(closure_list) \
-  grpc_closure_list_sched(closure_list)
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */

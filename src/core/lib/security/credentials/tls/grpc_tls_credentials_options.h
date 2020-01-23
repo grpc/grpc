@@ -234,6 +234,9 @@ struct grpc_tls_credentials_options
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
+  grpc_tls_server_verification_option server_verification_option() const {
+    return server_verification_option_;
+  }
   grpc_tls_key_materials_config* key_materials_config() const {
     return key_materials_config_.get();
   }
@@ -249,6 +252,10 @@ struct grpc_tls_credentials_options
   void set_cert_request_type(
       const grpc_ssl_client_certificate_request_type type) {
     cert_request_type_ = type;
+  }
+  void set_server_verification_option(
+      const grpc_tls_server_verification_option server_verification_option) {
+    server_verification_option_ = server_verification_option;
   }
   void set_key_materials_config(
       grpc_core::RefCountedPtr<grpc_tls_key_materials_config> config) {
@@ -266,6 +273,7 @@ struct grpc_tls_credentials_options
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_;
+  grpc_tls_server_verification_option server_verification_option_;
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
   grpc_core::RefCountedPtr<grpc_tls_credential_reload_config>
       credential_reload_config_;

@@ -23,62 +23,57 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/transport.h"
 
-typedef struct grpc_connector grpc_connector;
-typedef struct grpc_connector_vtable grpc_connector_vtable;
+namespace grpc_core {
 
-struct grpc_connector {
-  const grpc_connector_vtable* vtable;
-};
+// Interface for connection-establishment functionality.
+// Each transport that supports client channels (e.g., not inproc) must
+// supply an implementation of this.
+class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
+ public:
+  struct Args {
+    // Set of pollsets interested in this connection.
+    grpc_pollset_set* interested_parties;
+    // Deadline for connection.
+    grpc_millis deadline;
+    // Channel args to be passed to handshakers and transport.
+    const grpc_channel_args* channel_args;
+  };
 
-typedef struct {
-  /** set of pollsets interested in this connection */
-  grpc_pollset_set* interested_parties;
-  /** deadline for connection */
-  grpc_millis deadline;
-  /** channel arguments (to be passed to transport) */
-  const grpc_channel_args* channel_args;
-} grpc_connect_in_args;
+  struct Result {
+    // The connected transport.
+    grpc_transport* transport = nullptr;
+    // Channel args to be passed to filters.
+    const grpc_channel_args* channel_args = nullptr;
+    // Channelz socket node of the connected transport, if any.
+    RefCountedPtr<channelz::SocketNode> socket_node;
 
-typedef struct {
-  /** the connected transport */
-  grpc_transport* transport;
+    void Reset() {
+      transport = nullptr;
+      channel_args = nullptr;
+      socket_node.reset();
+    }
+  };
 
-  /** channel arguments (to be passed to the filters) */
-  grpc_channel_args* channel_args;
+  // Attempts to connect.
+  // When complete, populates *result and invokes notify.
+  // Only one connection attempt may be in progress at any one time.
+  virtual void Connect(const Args& args, Result* result,
+                       grpc_closure* notify) = 0;
 
-  /** channelz socket node of the connected transport. nullptr if not available
-   */
-  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket;
+  // Cancels any in-flight connection attempt and shuts down the
+  // connector.
+  virtual void Shutdown(grpc_error* error) = 0;
 
-  void reset() {
-    transport = nullptr;
-    channel_args = nullptr;
-    socket = nullptr;
+  void Orphan() override {
+    Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subchannel disconnected"));
+    Unref();
   }
-} grpc_connect_out_args;
-
-struct grpc_connector_vtable {
-  void (*ref)(grpc_connector* connector);
-  void (*unref)(grpc_connector* connector);
-  /** Implementation of grpc_connector_shutdown */
-  void (*shutdown)(grpc_connector* connector, grpc_error* why);
-  /** Implementation of grpc_connector_connect */
-  void (*connect)(grpc_connector* connector,
-                  const grpc_connect_in_args* in_args,
-                  grpc_connect_out_args* out_args, grpc_closure* notify);
 };
 
-grpc_connector* grpc_connector_ref(grpc_connector* connector);
-void grpc_connector_unref(grpc_connector* connector);
-/** Connect using the connector: max one outstanding call at a time */
-void grpc_connector_connect(grpc_connector* connector,
-                            const grpc_connect_in_args* in_args,
-                            grpc_connect_out_args* out_args,
-                            grpc_closure* notify);
-/** Cancel any pending connection */
-void grpc_connector_shutdown(grpc_connector* connector, grpc_error* why);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H */

@@ -1465,8 +1465,8 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   grpc_uri_destroy(uri);
   char* proxy_name = nullptr;
   grpc_channel_args* new_args = nullptr;
-  grpc_proxy_mappers_map_name(server_uri, args->channel_args, &proxy_name,
-                              &new_args);
+  ProxyMapperRegistry::MapName(server_uri, args->channel_args, &proxy_name,
+                               &new_args);
   target_uri_.reset(proxy_name != nullptr ? proxy_name
                                           : gpr_strdup(server_uri));
   channel_args_ = new_args != nullptr
@@ -1594,7 +1594,8 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   // Instantiate resolving LB policy.
   LoadBalancingPolicy::Args lb_args;
   lb_args.combiner = combiner_;
-  lb_args.channel_control_helper = MakeUnique<ClientChannelControlHelper>(this);
+  lb_args.channel_control_helper =
+      grpc_core::MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
   grpc_core::UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(new ResolvingLoadBalancingPolicy(
@@ -1870,7 +1871,7 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
                                      MemoryOrder::RELEASE);
       chand->UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
-          MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
+          grpc_core::MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
               GRPC_ERROR_REF(op->disconnect_with_error)));
     }
   }

@@ -33,7 +33,7 @@ py_library(
     name = "future",
     srcs = ["future.py"],
     deps = [
-        "@six//:six",
+        "@six",
     ],
 )
 
@@ -58,6 +58,6 @@ py_library(
     name = "stream",
     srcs = ["stream.py"],
     deps = [
-        "@six//:six",
+        "@six",
     ],
 )

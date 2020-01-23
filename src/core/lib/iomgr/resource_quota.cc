@@ -333,7 +333,7 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
       int64_t aborted_allocations = resource_user->outstanding_allocations;
       resource_user->outstanding_allocations = 0;
       resource_user->free_pool += aborted_allocations;
-      GRPC_CLOSURE_LIST_SCHED(&resource_user->on_allocated);
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
       ru_unref_by(resource_user, static_cast<gpr_atm>(aborted_allocations));
       continue;
@@ -359,7 +359,7 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
     if (resource_user->free_pool >= 0) {
       resource_user->allocating = false;
       resource_user->outstanding_allocations = 0;
-      GRPC_CLOSURE_LIST_SCHED(&resource_user->on_allocated);
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
     } else {
       rulist_add_head(resource_user, GRPC_RULIST_AWAITING_ALLOCATION);

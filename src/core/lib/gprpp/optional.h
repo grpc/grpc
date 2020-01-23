@@ -19,6 +19,23 @@
 #ifndef GRPC_CORE_LIB_GPRPP_OPTIONAL_H
 #define GRPC_CORE_LIB_GPRPP_OPTIONAL_H
 
+#include <grpc/support/port_platform.h>
+
+#if GRPC_USE_ABSL
+
+#include "absl/types/optional.h"
+
+namespace grpc_core {
+
+template <typename T>
+using Optional = absl::optional<T>;
+
+}  // namespace grpc_core
+
+#else
+
+#include <utility>
+
 namespace grpc_core {
 
 /* A make-shift alternative for absl::Optional. This can be removed in favor of
@@ -27,9 +44,12 @@ template <typename T>
 class Optional {
  public:
   Optional() : value_() {}
-  void set(const T& val) {
-    value_ = val;
+
+  template <typename... Args>
+  T& emplace(Args&&... args) {
+    value_ = T(std::forward<Args>(args)...);
     set_ = true;
+    return value_;
   }
 
   bool has_value() const { return set_; }
@@ -44,5 +64,7 @@ class Optional {
 };
 
 } /* namespace grpc_core */
+
+#endif
 
 #endif /* GRPC_CORE_LIB_GPRPP_OPTIONAL_H */

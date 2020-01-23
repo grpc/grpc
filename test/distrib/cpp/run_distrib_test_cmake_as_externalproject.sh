@@ -26,7 +26,6 @@ apt-get install -t jessie-backports -y libssl-dev
 # To increase the confidence that gRPC installation works without depending on
 # too many submodules unnecessarily, just wipe out contents of most submodules
 # before starting the test.
-rm -r third_party/abseil-cpp/* || true
 rm -r third_party/benchmark/* || true
 rm -r third_party/bloaty/* || true
 rm -r third_party/boringssl/* || true

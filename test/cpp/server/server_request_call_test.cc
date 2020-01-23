@@ -30,6 +30,7 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 #include <gtest/gtest.h>
 
@@ -158,6 +159,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
