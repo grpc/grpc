@@ -129,5 +129,21 @@ message ApiListener {
 message Listener {
   string name = 1;
 
-   ApiListener api_listener = 19;
+  // Used to represent an API listener, which is used in non-proxy clients. The type of API
+  // exposed to the non-proxy application depends on the type of API listener.
+  // When this field is set, no other field except for :ref:`name<envoy_api_field_Listener.name>`
+  // should be set.
+  //
+  // .. note::
+  //
+  //  Currently only one ApiListener can be installed; and it can only be done via bootstrap config,
+  //  not LDS.
+  //
+  // [#next-major-version: In the v3 API, instead of this messy approach where the socket
+  // listener fields are directly in the top-level Listener message and the API listener types
+  // are in the ApiListener message, the socket listener messages should be in their own message,
+  // and the top-level Listener should essentially be a oneof that selects between the
+  // socket listener and the various types of API listener. That way, a given Listener message
+  // can structurally only contain the fields of the relevant type.]
+  ApiListener api_listener = 19;
 }

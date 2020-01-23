@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <locale>
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
