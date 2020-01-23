@@ -614,7 +614,7 @@ class AdsServiceImpl : public AdsService {
 
   static Listener BuildListener(const RouteConfiguration& route_config) {
     HttpConnectionManager http_connection_manager;
-    http_connection_manager.mutable_route_config()->CopyFrom(route_config);
+    *(http_connection_manager.mutable_route_config()) = route_config;
     Listener listener;
     listener.set_name("application_target_name");
     listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -1480,6 +1480,20 @@ TEST_P(LdsTest, Vanilla) {
             AdsServiceImpl::ACKED);
 }
 
+// Tests that LDS client should send a NACK if there is no API listener in the
+// Listener in the LDS response.
+TEST_P(LdsTest, NoApiListener) {
+  auto listener = balancers_[0]->ads_service()->default_listener();
+  listener.clear_api_listener();
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name", listener}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
 // Tests that LDS client should send a NACK if the route_specifier in the
 // http_connection_manager is neither inlined route_config nor RDS.
 TEST_P(LdsTest, WrongRouteSpecifier) {
@@ -1492,7 +1506,7 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
       {{"application_target_name", std::move(listener)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1509,7 +1523,7 @@ TEST_P(LdsTest, NoMatchedDomain) {
         AdsServiceImpl::BuildListener(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1519,7 +1533,7 @@ TEST_P(LdsTest, NoMatchedDomain) {
 TEST_P(LdsTest, ChooseMatchedDomain) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
-  route_config.add_virtual_hosts()->CopyFrom(route_config.virtual_hosts(0));
+  *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   route_config.mutable_virtual_hosts(0)
@@ -1541,8 +1555,8 @@ TEST_P(LdsTest, ChooseMatchedDomain) {
 TEST_P(LdsTest, ChooseLastRoute) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)->add_routes()->CopyFrom(
-      route_config.virtual_hosts(0).routes(0));
+  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
+      route_config.virtual_hosts(0).routes(0);
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
@@ -1571,7 +1585,7 @@ TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
         AdsServiceImpl::BuildListener(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1587,7 +1601,7 @@ TEST_P(LdsTest, RouteHasNoRouteAction) {
         AdsServiceImpl::BuildListener(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1606,7 +1620,7 @@ TEST_P(LdsTest, RouteActionHasNoCluster) {
         AdsServiceImpl::BuildListener(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1635,7 +1649,7 @@ TEST_P(RdsTest, NoMatchedDomain) {
       {{"application_target_name", std::move(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1646,7 +1660,7 @@ TEST_P(RdsTest, ChooseMatchedDomain) {
   balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
-  route_config.add_virtual_hosts()->CopyFrom(route_config.virtual_hosts(0));
+  *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   route_config.mutable_virtual_hosts(0)
@@ -1668,8 +1682,8 @@ TEST_P(RdsTest, ChooseLastRoute) {
   balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)->add_routes()->CopyFrom(
-      route_config.virtual_hosts(0).routes(0));
+  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
+      route_config.virtual_hosts(0).routes(0);
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
@@ -1697,7 +1711,7 @@ TEST_P(RdsTest, RouteMatchHasNonemptyPrefix) {
       {{"application_target_name", std::move(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1713,7 +1727,7 @@ TEST_P(RdsTest, RouteHasNoRouteAction) {
       {{"application_target_name", std::move(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1732,7 +1746,7 @@ TEST_P(RdsTest, RouteActionHasNoCluster) {
       {{"application_target_name", std::move(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1757,7 +1771,7 @@ TEST_P(CdsTest, WrongClusterType) {
       {{"application_target_name", std::move(cluster)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1771,7 +1785,7 @@ TEST_P(CdsTest, WrongEdsConfig) {
       {{"application_target_name", std::move(cluster)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1785,7 +1799,7 @@ TEST_P(CdsTest, WrongLbPolicy) {
       {{"application_target_name", std::move(cluster)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
 }
@@ -1799,7 +1813,7 @@ TEST_P(CdsTest, WrongLrsServer) {
       {{"application_target_name", std::move(cluster)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
 }

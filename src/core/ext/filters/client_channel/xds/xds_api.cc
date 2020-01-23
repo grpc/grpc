@@ -19,7 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
-#include <locale>
+#include <cctype>
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -634,6 +634,10 @@ grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
     // Get api_listener and decode it to http_connection_manager.
     const envoy_config_listener_v2_ApiListener* api_listener =
         envoy_api_v2_Listener_api_listener(listener);
+    if (api_listener == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Listener doesn't have ApiListener.");
+    }
     const upb_strview encoded_api_listener = google_protobuf_Any_value(
         envoy_config_listener_v2_ApiListener_api_listener(api_listener));
     const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager*
