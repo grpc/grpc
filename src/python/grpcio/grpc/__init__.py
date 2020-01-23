@@ -28,7 +28,6 @@ try:
 except SyntaxError:
     pass
 
-
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 try:

@@ -95,7 +95,6 @@ else:
             finally:
                 sys.path = original_sys_path
 
-
         # NOTE(rbellevi): module_repr is an abstract method in Python 3.3 only,b
         #   but is still picked up by the linter.
         class ProtoLoader(importlib.abc.Loader):  # pylint: disable=abstract-method
@@ -114,7 +113,8 @@ else:
                 proto_module = protos(self._protobuf_path)
                 file_descriptor = getattr(proto_module,
                                           _service_reflection.DESCRIPTOR_KEY)
-                for service_descriptor in file_descriptor.services_by_name.values():
+                for service_descriptor in file_descriptor.services_by_name.values(
+                ):
                     _service_reflection.add_service_to_module(
                         module, service_descriptor)
 
@@ -141,7 +141,8 @@ else:
                 return module
 
         def protos_and_services(protobuf_path, *, include_paths=None):
-            protos_ = protobuf.protos(protobuf_path, include_paths=include_paths)
+            protos_ = protobuf.protos(
+                protobuf_path, include_paths=include_paths)
             services_ = services(protobuf_path, include_paths=include_paths)
             return protos_, services_
 

@@ -8,4 +8,5 @@ message BarMessage {
 
 service Bar {
   rpc GetBar(BarMessage) returns (BarMessage);
+  rpc CreateBar(BarMessage) returns (BarMessage);
 };
