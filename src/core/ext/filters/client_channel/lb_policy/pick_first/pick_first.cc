@@ -472,7 +472,7 @@ void PickFirst::PickFirstSubchannelData::
   }
 }
 
-class ParsedPickFirstConfig : public LoadBalancingPolicy::Config {
+class PickFirstConfig : public LoadBalancingPolicy::Config {
  public:
   const char* name() const override { return kPickFirst; }
 };
@@ -491,12 +491,8 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kPickFirst; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** /*error*/) const override {
-    if (json != nullptr) {
-      GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-    }
-    return RefCountedPtr<LoadBalancingPolicy::Config>(
-        new ParsedPickFirstConfig());
+      const Json& json, grpc_error** /*error*/) const override {
+    return MakeRefCounted<PickFirstConfig>();
   }
 };
 
