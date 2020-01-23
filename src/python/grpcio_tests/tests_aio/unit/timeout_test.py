@@ -85,7 +85,7 @@ async def _start_test_server():
     port = server.add_insecure_port('[::]:0')
     server.add_generic_rpc_handlers((_GenericHandler(),))
     await server.start()
-    return 'localhost:%d' % port, server
+    return f'localhost:{port}', server
 
 
 class TestTimeout(AioTestBase):
