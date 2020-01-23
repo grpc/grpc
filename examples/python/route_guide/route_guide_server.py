@@ -19,10 +19,10 @@ import math
 import logging
 
 import grpc
+import route_guide_resources
 
 protos, services = grpc.protos_and_services(
     "protos/route_guide.proto", include_paths=["../.."])
-import route_guide_resources
 
 
 def get_feature(feature_db, point):

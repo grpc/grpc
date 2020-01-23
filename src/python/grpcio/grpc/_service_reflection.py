@@ -28,7 +28,7 @@ class ReflectiveServicerType(type):
     """Metaclass for Servicer classes created at runtime from ServiceDescriptors
     """
 
-    def __init__(cls, name, bases, namespace):
+    def __init__(cls, unused_name, unused_bases, namespace):
         if DESCRIPTOR_KEY not in namespace:
             return
 
@@ -105,8 +105,6 @@ class ReflectiveStubType(type):
     def __init__(cls, name, bases, namespace):
         if DESCRIPTOR_KEY not in namespace:
             return
-
-        service_descriptor = namespace[DESCRIPTOR_KEY]
 
         def _stub_init(self, channel):
             for method_descriptor in getattr(self, DESCRIPTOR_KEY).methods:

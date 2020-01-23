@@ -23,6 +23,12 @@ import six
 from grpc._cython import cygrpc as _cygrpc
 from grpc import _compression
 
+try:
+    from grpc._importer import protos, services, protos_and_services
+except SyntaxError:
+    pass
+
+
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 try:
@@ -1966,8 +1972,6 @@ class Compression(enum.IntEnum):
     Deflate = _compression.Deflate
     Gzip = _compression.Gzip
 
-
-from grpc._importer import protos, services, protos_and_services
 
 ###################################  __all__  #################################
 

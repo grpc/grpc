@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import sys
-import six
 
 
 def _uninstalled_protos(*args, **kwargs):
@@ -96,7 +95,10 @@ else:
             finally:
                 sys.path = original_sys_path
 
-        class ProtoLoader(importlib.abc.Loader):
+
+        # NOTE(rbellevi): module_repr is an abstract method in Python 3.3 only,b
+        #   but is still picked up by the linter.
+        class ProtoLoader(importlib.abc.Loader):  # pylint: disable=abstract-method
 
             def __init__(self, module_name, protobuf_path):
                 self._module_name = module_name
@@ -105,11 +107,6 @@ else:
             def create_module(self, spec):
                 return None
 
-            def _generated_file_to_module_name(self, filepath):
-                components = filepath.split(os.path.sep)
-                return ".".join(
-                    components[:-1] + [os.path.splitext(components[-1])[0]])
-
             def exec_module(self, module):
                 """Instantiate a module identical to the generated version.
                 """
@@ -117,14 +114,15 @@ else:
                 proto_module = protos(self._protobuf_path)
                 file_descriptor = getattr(proto_module,
                                           _service_reflection.DESCRIPTOR_KEY)
-                for _, service_descriptor in six.iteritems(
-                        file_descriptor.services_by_name):
+                for service_descriptor in file_descriptor.services_by_name.values():
                     _service_reflection.add_service_to_module(
                         module, service_descriptor)
 
         class ProtoFinder(importlib.abc.MetaPathFinder):
 
-            def find_spec(self, fullname, path, target=None):
+            def find_spec(self, fullname, path, target=None):  # pylint: disable=no-self-use
+                del path
+                del target
                 filepath = _module_name_to_proto_file(fullname)
                 for search_path in sys.path:
                     try:
@@ -143,8 +141,8 @@ else:
                 return module
 
         def protos_and_services(protobuf_path, *, include_paths=None):
-            protos = protobuf.protos(protobuf_path, include_paths=include_paths)
+            protos_ = protobuf.protos(protobuf_path, include_paths=include_paths)
             services_ = services(protobuf_path, include_paths=include_paths)
-            return protos, services_
+            return protos_, services_
 
         sys.meta_path.extend([ProtoFinder()])

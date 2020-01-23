@@ -18,9 +18,10 @@ import logging
 
 import grpc
 
+from request_header_validator_interceptor import RequestHeaderValidatorInterceptor
+
 protos, services = grpc.protos_and_services(
     "protos/helloworld.protos", include_paths=["../../.."])
-from request_header_validator_interceptor import RequestHeaderValidatorInterceptor
 
 
 class Greeter(services.GreeterServicer):

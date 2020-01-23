@@ -140,10 +140,11 @@ def search(target,
                 hamming_distance=distance)
         elif distance <= ideal_distance:
             # Yield ideal candidate and end the stream.
-            return protos.HashNameResponse(
+            yield protos.HashNameResponse(
                 secret=base64.b64encode(secret),
                 hashed_name=candidate_hash,
                 hamming_distance=distance)
+            return
         hashes_computed += 1
         if hashes_computed == maximum_hashes:
             raise ResourceLimitExceededError()

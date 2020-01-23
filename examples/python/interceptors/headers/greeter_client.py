@@ -17,10 +17,10 @@ from __future__ import print_function
 import logging
 
 import grpc
+import header_manipulator_client_interceptor
 
 protos, services = grpc.protos_and_services(
     "protos/helloworld.protos", include_paths=["../../.."])
-import header_manipulator_client_interceptor
 
 
 def run():
