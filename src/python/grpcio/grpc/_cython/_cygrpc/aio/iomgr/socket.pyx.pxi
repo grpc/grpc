@@ -87,7 +87,7 @@ cdef class _AsyncioSocket:
         except Exception as e:
             error = True
             error_msg = "%s: %s" % (type(e), str(e))
-            _LOGGER.exception(e)
+            _LOGGER.debug(e)
         finally:
             self._task_read = None
 
@@ -167,6 +167,11 @@ cdef class _AsyncioSocket:
             self._py_socket.close()
 
     def _new_connection_callback(self, object reader, object writer):
+        # Close the connection if server is not started yet.
+        if self._grpc_accept_cb == NULL:
+            writer.close()
+            return
+
         client_socket = _AsyncioSocket.create(
             self._grpc_client_socket,
             reader,

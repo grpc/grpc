@@ -28,13 +28,6 @@ from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
 
-async def _block_until_certain_state(channel, expected_state):
-    state = channel.get_state()
-    while state != expected_state:
-        await channel.wait_for_state_change(state)
-        state = channel.get_state()
-
-
 class TestConnectivityState(AioTestBase):
 
     async def setUp(self):
@@ -52,7 +45,7 @@ class TestConnectivityState(AioTestBase):
 
             # Should not time out
             await asyncio.wait_for(
-                _block_until_certain_state(
+                _common.block_until_certain_state(
                     channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE),
                 test_constants.SHORT_TIMEOUT)
 
@@ -63,7 +56,7 @@ class TestConnectivityState(AioTestBase):
 
             # Should not time out
             await asyncio.wait_for(
-                _block_until_certain_state(channel,
+                _common.block_until_certain_state(channel,
                                            grpc.ChannelConnectivity.READY),
                 test_constants.SHORT_TIMEOUT)
 
@@ -75,7 +68,7 @@ class TestConnectivityState(AioTestBase):
             # If timed out, the function should return None.
             with self.assertRaises(asyncio.TimeoutError):
                 await asyncio.wait_for(
-                    _block_until_certain_state(channel,
+                    _common.block_until_certain_state(channel,
                                                grpc.ChannelConnectivity.READY),
                     test_constants.SHORT_TIMEOUT)
 

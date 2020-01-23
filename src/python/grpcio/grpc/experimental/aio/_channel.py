@@ -101,9 +101,6 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if wait_for_ready:
-            raise NotImplementedError(
-                "TODO: wait_for_ready not implemented yet")
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -112,12 +109,13 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
 
         if not self._interceptors:
             return UnaryUnaryCall(request, _timeout_to_deadline(timeout),
-                                  metadata, credentials, self._channel,
+                                  metadata, credentials, wait_for_ready, self._channel,
                                   self._method, self._request_serializer,
                                   self._response_deserializer, self._loop)
         else:
             return InterceptedUnaryUnaryCall(self._interceptors, request,
                                              timeout, metadata, credentials,
+                                             wait_for_ready,
                                              self._channel, self._method,
                                              self._request_serializer,
                                              self._response_deserializer,
@@ -154,10 +152,6 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
         Returns:
           A Call object instance which is an awaitable object.
         """
-        if wait_for_ready:
-            raise NotImplementedError(
-                "TODO: wait_for_ready not implemented yet")
-
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -165,7 +159,7 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
-        return UnaryStreamCall(request, deadline, metadata, credentials,
+        return UnaryStreamCall(request, deadline, metadata, credentials,wait_for_ready,
                                self._channel, self._method,
                                self._request_serializer,
                                self._response_deserializer, self._loop)
@@ -205,10 +199,6 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if wait_for_ready:
-            raise NotImplementedError(
-                "TODO: wait_for_ready not implemented yet")
-
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -217,7 +207,7 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
         return StreamUnaryCall(request_async_iterator, deadline, metadata,
-                               credentials, self._channel, self._method,
+                               credentials, wait_for_ready, self._channel, self._method,
                                self._request_serializer,
                                self._response_deserializer, self._loop)
 
@@ -256,10 +246,6 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if wait_for_ready:
-            raise NotImplementedError(
-                "TODO: wait_for_ready not implemented yet")
-
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -268,7 +254,7 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
         return StreamStreamCall(request_async_iterator, deadline, metadata,
-                                credentials, self._channel, self._method,
+                                credentials, wait_for_ready, self._channel, self._method,
                                 self._request_serializer,
                                 self._response_deserializer, self._loop)
 

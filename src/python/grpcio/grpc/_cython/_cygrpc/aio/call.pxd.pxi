@@ -40,6 +40,8 @@ cdef class _AioCall(GrpcCallWrapper):
         list _waiters_status
         list _waiters_initial_metadata
 
+        int _send_initial_metadata_flags
+
     cdef void _create_grpc_call(self, object timeout, bytes method, CallCredentials credentials) except *
     cdef void _set_status(self, AioRpcStatus status) except *
     cdef void _set_initial_metadata(self, tuple initial_metadata) except *

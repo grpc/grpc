@@ -87,7 +87,7 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                                                  response_parameters.size))
 
 
-async def start_test_server(secure=False):
+async def start_test_server(port=0, secure=False):
     server = aio.server(options=(('grpc.so_reuseport', 0),))
     servicer = _TestServiceServicer()
     test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
@@ -109,10 +109,11 @@ async def start_test_server(secure=False):
     if secure:
         server_credentials = grpc.local_server_credentials(
             grpc.LocalConnectionType.LOCAL_TCP)
-        port = server.add_secure_port('[::]:0', server_credentials)
+        port = server.add_secure_port(f'[::]:{port}', server_credentials)
     else:
-        port = server.add_insecure_port('[::]:0')
+        port = server.add_insecure_port(f'[::]:{port}')
 
     await server.start()
+
     # NOTE(lidizheng) returning the server to prevent it from deallocation
     return 'localhost:%d' % port, server
