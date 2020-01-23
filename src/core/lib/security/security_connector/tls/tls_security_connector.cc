@@ -112,6 +112,18 @@ grpc_status_code TlsFetchKeyMaterials(
   return status;
 }
 
+grpc_error* TlsCheckPeer(const char* peer_name, const tsi_peer* peer) {
+  /* Check the peer name if specified. */
+  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
+    char* msg;
+    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
+    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    gpr_free(msg);
+    return error;
+  }
+  return GRPC_ERROR_NONE;
+}
+
 TlsChannelSecurityConnector::TlsChannelSecurityConnector(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
@@ -180,6 +192,17 @@ void TlsChannelSecurityConnector::check_peer(
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   const TlsCredentials* creds =
       static_cast<const TlsCredentials*>(channel_creds());
+  if (creds->options().server_verification_option() ==
+      GRPC_TLS_SERVER_VERIFICATION) {
+    /* Do the default host name check if specifying the target name. */
+    error = TlsCheckPeer(target_name, &peer);
+    if (error != GRPC_ERROR_NONE) {
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+      tsi_peer_destruct(&peer);
+      return;
+    }
+  }
+  /* Do the custom server authorization check, if specified by the user. */
   const grpc_tls_server_authorization_check_config* config =
       creds->options().server_authorization_check_config();
   /* If server authorization config is not null, use it to perform
