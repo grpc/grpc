@@ -30,6 +30,7 @@ py_library(
     name = "importer",
     srcs = [
       "_importer.py",
+      "_importer_impl.py",
       "_service_reflection.py",
     ],
 )

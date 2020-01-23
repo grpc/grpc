@@ -11,7 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test of dynamic stub import API."""
+"""Test of dynamic stub import API.
+
+All gRPC imports in this module are done within a subprocess in order to ensure
+independence of test cases.
+"""
 
 import inspect
 import unittest
