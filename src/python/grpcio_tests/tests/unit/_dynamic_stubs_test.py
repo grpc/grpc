@@ -115,8 +115,8 @@ def _test_public_symbols():
     public_symbols = [
         symbol for symbol in dir(services) if not symbol.startswith("_")
     ]
-    expected_symbols = set(("BarServicer", "BarStub",
-                            "add_BarServicer_to_server"))
+    expected_symbols = set(
+        ("BarServicer", "BarStub", "add_BarServicer_to_server"))
     assert expected_symbols == set(public_symbols)
     servicer_methods = [
         symbol for symbol in dir(services.BarServicer)

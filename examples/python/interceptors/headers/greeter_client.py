@@ -19,8 +19,8 @@ import logging
 import grpc
 import header_manipulator_client_interceptor
 
-protos, services = grpc.protos_and_services(
-    "protos/helloworld.protos", include_paths=["../../.."])
+protos, services = grpc.protos_and_services("protos/helloworld.protos",
+                                            include_paths=["../../.."])
 
 
 def run():

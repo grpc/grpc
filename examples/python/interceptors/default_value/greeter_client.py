@@ -20,8 +20,8 @@ import grpc
 
 import default_value_client_interceptor
 
-protos, services = grpc.protos_and_services(
-    "protos/helloworld.proto", include_paths=["../../.."])
+protos, services = grpc.protos_and_services("protos/helloworld.proto",
+                                            include_paths=["../../.."])
 
 
 def run():

@@ -90,8 +90,8 @@ def _running_server(port, maximum_hashes):
     # threads.
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1),
                          maximum_concurrent_rpcs=1)
-    services.add_HashFinderServicer_to_server(
-        HashFinder(maximum_hashes), server)
+    services.add_HashFinderServicer_to_server(HashFinder(maximum_hashes),
+                                              server)
     address = '{}:{}'.format(_SERVER_HOST, port)
     actual_port = server.add_insecure_port(address)
     server.start()

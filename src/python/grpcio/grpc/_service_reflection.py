@@ -88,10 +88,9 @@ def _get_handler(method_descriptor, channel):
     output_class = sym_db.GetSymbol(output_descriptor.full_name)
     uri = '/{}/{}'.format(method_descriptor.containing_service.full_name,
                           method_descriptor.name)
-    return multicallable_func(
-        uri,
-        request_serializer=input_class.SerializeToString,
-        response_deserializer=output_class.FromString)
+    return multicallable_func(uri,
+                              request_serializer=input_class.SerializeToString,
+                              response_deserializer=output_class.FromString)
 
 
 def get_stub_class_name(service_descriptor):

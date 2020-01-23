@@ -31,8 +31,7 @@ def read_route_guide_database():
         for item in json.load(route_guide_db_file):
             feature = protos.Feature(
                 name=item["name"],
-                location=protos.Point(
-                    latitude=item["location"]["latitude"],
-                    longitude=item["location"]["longitude"]))
+                location=protos.Point(latitude=item["location"]["latitude"],
+                                      longitude=item["location"]["longitude"]))
             feature_list.append(feature)
     return feature_list

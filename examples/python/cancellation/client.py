@@ -33,10 +33,9 @@ _LOGGER = logging.getLogger(__name__)
 def run_unary_client(server_target, name, ideal_distance):
     with grpc.insecure_channel(server_target) as channel:
         stub = services.HashFinderStub(channel)
-        future = stub.Find.future(
-            protos.HashNameRequest(
-                desired_name=name, ideal_hamming_distance=ideal_distance),
-            wait_for_ready=True)
+        future = stub.Find.future(protos.HashNameRequest(
+            desired_name=name, ideal_hamming_distance=ideal_distance),
+                                  wait_for_ready=True)
 
         def cancel_request(unused_signum, unused_frame):
             future.cancel()
@@ -51,12 +50,11 @@ def run_streaming_client(server_target, name, ideal_distance,
                          interesting_distance):
     with grpc.insecure_channel(server_target) as channel:
         stub = services.HashFinderStub(channel)
-        result_generator = stub.FindRange(
-            protos.HashNameRequest(
-                desired_name=name,
-                ideal_hamming_distance=ideal_distance,
-                interesting_hamming_distance=interesting_distance),
-            wait_for_ready=True)
+        result_generator = stub.FindRange(protos.HashNameRequest(
+            desired_name=name,
+            ideal_hamming_distance=ideal_distance,
+            interesting_hamming_distance=interesting_distance),
+                                          wait_for_ready=True)
 
         def cancel_request(unused_signum, unused_frame):
             result_generator.cancel()
