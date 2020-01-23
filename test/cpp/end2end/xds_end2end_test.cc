@@ -402,7 +402,7 @@ class AdsServiceImpl : public AdsService {
         {"application_target_name", default_route_config_},
     };
     // Construct LDS response data (with inlined RDS result).
-    default_listener_.CopyFrom(BuildListener(default_route_config_));
+    default_listener_ = BuildListener(default_route_config_);
     lds_response_data_ = {
         {"application_target_name", default_listener_},
     };
@@ -1525,7 +1525,7 @@ TEST_P(LdsTest, ChooseMatchedDomain) {
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
-      ->set_cluster("irrelevant cluster");
+      ->mutable_cluster_header();
   balancers_[0]->ads_service()->SetLdsResponse(
       {{"application_target_name",
         AdsServiceImpl::BuildListener(route_config)}});
@@ -1533,8 +1533,6 @@ TEST_P(LdsTest, ChooseMatchedDomain) {
   SetNextResolutionForLbChannelAllBalancers();
   SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::ACKED);
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::ACKED);
 }
 
@@ -1548,7 +1546,7 @@ TEST_P(LdsTest, ChooseLastRoute) {
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
-      ->set_cluster("irrelevant cluster");
+      ->mutable_cluster_header();
   balancers_[0]->ads_service()->SetLdsResponse(
       {{"application_target_name",
         AdsServiceImpl::BuildListener(route_config)}});
@@ -1556,8 +1554,6 @@ TEST_P(LdsTest, ChooseLastRoute) {
   SetNextResolutionForLbChannelAllBalancers();
   SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::ACKED);
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::ACKED);
 }
 
@@ -1656,15 +1652,13 @@ TEST_P(RdsTest, ChooseMatchedDomain) {
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
-      ->set_cluster("irrelevant cluster");
+      ->mutable_cluster_header();
   balancers_[0]->ads_service()->SetRdsResponse(
       {{"application_target_name", std::move(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::ACKED);
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::ACKED);
 }
 
@@ -1679,15 +1673,13 @@ TEST_P(RdsTest, ChooseLastRoute) {
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
-      ->set_cluster("irrelevant cluster");
+      ->mutable_cluster_header();
   balancers_[0]->ads_service()->SetRdsResponse(
       {{"application_target_name", std::move(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::ACKED);
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::ACKED);
 }
 
