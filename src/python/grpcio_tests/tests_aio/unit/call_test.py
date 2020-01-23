@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests behavior of the grpc.aio.UnaryUnaryCall class."""
+"""Tests behavior of the Call classes."""
 
 import asyncio
 import datetime
