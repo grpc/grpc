@@ -360,12 +360,6 @@ def targets():
         CSharpExtArtifact('macos', 'ios'),
         # TODO(https://github.com/grpc/grpc/issues/20283)
         # Add manylinux2010_x86 targets once this issue is resolved.
-        PythonArtifact('manylinux1', 'x86', 'cp27-cp27m'),
-        PythonArtifact('manylinux1', 'x86', 'cp27-cp27mu'),
-        PythonArtifact('manylinux1', 'x86', 'cp35-cp35m'),
-        PythonArtifact('manylinux1', 'x86', 'cp36-cp36m'),
-        PythonArtifact('manylinux1', 'x86', 'cp37-cp37m'),
-        PythonArtifact('manylinux1', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
