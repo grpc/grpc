@@ -27,6 +27,7 @@
 #include <grpcpp/client_context.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/test_config.h"
@@ -159,6 +160,7 @@ bool ParseAdditionalMetadataFlag(
 }  // namespace
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;

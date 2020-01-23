@@ -89,7 +89,7 @@ void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
   xds_client_ = MakeOrphanable<XdsClient>(
       combiner(), interested_parties_, StringView(server_name_.get()),
-      MakeUnique<ServiceConfigWatcher>(Ref()), *args_, &error);
+      grpc_core::MakeUnique<ServiceConfigWatcher>(Ref()), *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "

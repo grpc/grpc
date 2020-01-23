@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import grpc
-import threading
-
 
 def _spawn_callback_in_thread(cb_func, args):
   ForkManagedThread(target=cb_func, args=args).start()

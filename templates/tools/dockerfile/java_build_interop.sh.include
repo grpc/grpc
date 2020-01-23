@@ -22,7 +22,7 @@ cp -r /var/local/jenkins/grpc-java /tmp/grpc-java
 cp -r /var/local/jenkins/service_account $HOME || true
 
 pushd /tmp/grpc-java
-./gradlew --no-daemon :grpc-interop-testing:installDist -PskipCodegen=true
+./gradlew --no-daemon :grpc-interop-testing:installDist -PskipCodegen=true -PskipAndroid=true
 
 mkdir -p /var/local/git/grpc-java/
 cp -r --parents -t /var/local/git/grpc-java/ ${'\\'}

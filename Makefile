@@ -3030,6 +3030,22 @@ $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc: src/proto/grpc/tes
 endif
 
 ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc: src/proto/grpc/testing/xds/cds_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/cds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc: protoc_dep_error
 else
@@ -3459,8 +3475,299 @@ endif
 LIBALTS_TEST_UTIL_SRC = \
     test/core/tsi/alts/crypt/gsec_test_util.cc \
     test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
+    test/core/end2end/cq_verifier.cc \
+    test/core/end2end/fixtures/http_proxy_fixture.cc \
+    test/core/end2end/fixtures/local_util.cc \
+    test/core/end2end/fixtures/proxy.cc \
+    test/core/iomgr/endpoint_tests.cc \
+    test/core/util/debugger_macros.cc \
+    test/core/util/fuzzer_util.cc \
+    test/core/util/grpc_profiler.cc \
+    test/core/util/histogram.cc \
+    test/core/util/memory_counters.cc \
+    test/core/util/mock_endpoint.cc \
+    test/core/util/parse_hexstring.cc \
+    test/core/util/passthru_endpoint.cc \
+    test/core/util/port.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
+    test/core/util/port_server_client.cc \
+    test/core/util/slice_splitter.cc \
+    test/core/util/subprocess_posix.cc \
+    test/core/util/subprocess_windows.cc \
+    test/core/util/test_config.cc \
+    test/core/util/test_lb_policies.cc \
+    test/core/util/tracer_util.cc \
+    test/core/util/trickle_endpoint.cc \
+    test/core/util/cmdline.cc \
+    src/core/lib/avl/avl.cc \
+    src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_stack.cc \
+    src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
+    src/core/lib/channel/channelz_registry.cc \
+    src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/handshaker.cc \
+    src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/status_util.cc \
+    src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_args.cc \
+    src/core/lib/compression/compression_internal.cc \
+    src/core/lib/compression/message_compress.cc \
+    src/core/lib/compression/stream_compression.cc \
+    src/core/lib/compression/stream_compression_gzip.cc \
+    src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/debug/stats.cc \
+    src/core/lib/debug/stats_data.cc \
+    src/core/lib/http/format_request.cc \
+    src/core/lib/http/httpcli.cc \
+    src/core/lib/http/parser.cc \
+    src/core/lib/iomgr/buffer_list.cc \
+    src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/cfstream_handle.cc \
+    src/core/lib/iomgr/combiner.cc \
+    src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_cfstream.cc \
+    src/core/lib/iomgr/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/endpoint_pair_uv.cc \
+    src/core/lib/iomgr/endpoint_pair_windows.cc \
+    src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_cfstream.cc \
+    src/core/lib/iomgr/ev_epoll1_linux.cc \
+    src/core/lib/iomgr/ev_epollex_linux.cc \
+    src/core/lib/iomgr/ev_poll_posix.cc \
+    src/core/lib/iomgr/ev_posix.cc \
+    src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/exec_ctx.cc \
+    src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
+    src/core/lib/iomgr/gethostname_fallback.cc \
+    src/core/lib/iomgr/gethostname_host_name_max.cc \
+    src/core/lib/iomgr/gethostname_sysconf.cc \
+    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
+    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
+    src/core/lib/iomgr/internal_errqueue.cc \
+    src/core/lib/iomgr/iocp_windows.cc \
+    src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
+    src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
+    src/core/lib/iomgr/iomgr_uv.cc \
+    src/core/lib/iomgr/iomgr_windows.cc \
+    src/core/lib/iomgr/is_epollexclusive_available.cc \
+    src/core/lib/iomgr/load_file.cc \
+    src/core/lib/iomgr/lockfree_event.cc \
+    src/core/lib/iomgr/logical_thread.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
+    src/core/lib/iomgr/polling_entity.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
+    src/core/lib/iomgr/pollset_set_windows.cc \
+    src/core/lib/iomgr/pollset_uv.cc \
+    src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
+    src/core/lib/iomgr/resolve_address_posix.cc \
+    src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resource_quota.cc \
+    src/core/lib/iomgr/sockaddr_utils.cc \
+    src/core/lib/iomgr/socket_factory_posix.cc \
+    src/core/lib/iomgr/socket_mutator.cc \
+    src/core/lib/iomgr/socket_utils_common_posix.cc \
+    src/core/lib/iomgr/socket_utils_linux.cc \
+    src/core/lib/iomgr/socket_utils_posix.cc \
+    src/core/lib/iomgr/socket_utils_uv.cc \
+    src/core/lib/iomgr/socket_utils_windows.cc \
+    src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
+    src/core/lib/iomgr/tcp_client_posix.cc \
+    src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
+    src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
+    src/core/lib/iomgr/tcp_server_posix.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_windows.cc \
+    src/core/lib/iomgr/tcp_uv.cc \
+    src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
+    src/core/lib/iomgr/timer_generic.cc \
+    src/core/lib/iomgr/timer_heap.cc \
+    src/core/lib/iomgr/timer_manager.cc \
+    src/core/lib/iomgr/timer_uv.cc \
+    src/core/lib/iomgr/udp_server.cc \
+    src/core/lib/iomgr/unix_sockets_posix.cc \
+    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
+    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
+    src/core/lib/iomgr/wakeup_fd_pipe.cc \
+    src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/json/json.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_writer.cc \
+    src/core/lib/slice/b64.cc \
+    src/core/lib/slice/percent_encoding.cc \
+    src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/byte_buffer.cc \
+    src/core/lib/surface/byte_buffer_reader.cc \
+    src/core/lib/surface/call.cc \
+    src/core/lib/surface/call_details.cc \
+    src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_init.cc \
+    src/core/lib/surface/channel_ping.cc \
+    src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/completion_queue.cc \
+    src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/event_string.cc \
+    src/core/lib/surface/lame_client.cc \
+    src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server.cc \
+    src/core/lib/surface/validate_metadata.cc \
+    src/core/lib/surface/version.cc \
+    src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/byte_stream.cc \
+    src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata.cc \
+    src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/pid_controller.cc \
+    src/core/lib/transport/static_metadata.cc \
+    src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
+    src/core/lib/transport/timeout_encoding.cc \
+    src/core/lib/transport/transport.cc \
+    src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
+    src/core/lib/debug/trace.cc \
+    src/core/ext/filters/client_channel/backend_metric.cc \
+    src/core/ext/filters/client_channel/backup_poller.cc \
+    src/core/ext/filters/client_channel/channel_connectivity.cc \
+    src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_channelz.cc \
+    src/core/ext/filters/client_channel/client_channel_factory.cc \
+    src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
+    src/core/ext/filters/client_channel/health/health_check_client.cc \
+    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
+    src/core/ext/filters/client_channel/http_proxy.cc \
+    src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy_registry.cc \
+    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
+    src/core/ext/filters/client_channel/parse_address.cc \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/resolver.cc \
+    src/core/ext/filters/client_channel/resolver_registry.cc \
+    src/core/ext/filters/client_channel/resolver_result_parsing.cc \
+    src/core/ext/filters/client_channel/resolving_lb_policy.cc \
+    src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/server_address.cc \
+    src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/subchannel.cc \
+    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
+    src/core/ext/upb-generated/validate/validate.upb.c \
+    src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/http.upb.c \
+    src/core/ext/upb-generated/google/protobuf/any.upb.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
+    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
+    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
+    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
+    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
+    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
+    src/core/ext/upb-generated/google/rpc/status.upb.c \
+    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
+    src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
+    src/core/ext/transport/chttp2/transport/context_list.cc \
+    src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame_data.cc \
+    src/core/ext/transport/chttp2/transport/frame_goaway.cc \
+    src/core/ext/transport/chttp2/transport/frame_ping.cc \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_settings.cc \
+    src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser.cc \
+    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
+    src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/stream_map.cc \
+    src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/http_filters_plugin.cc \
+    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/server/http_server_filter.cc \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd_id.h \
+    include/grpc/support/time.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
+    include/grpc/impl/codegen/gpr_slice.h \
+    include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
 
 LIBALTS_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBALTS_TEST_UTIL_SRC))))
 
@@ -3492,6 +3799,45 @@ endif
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBALTS_TEST_UTIL_OBJS:.o=.dep)
+endif
+endif
+
+
+LIBENGINE_PASSTHROUGH_SRC = \
+    test/core/end2end/engine_passthrough.cc \
+
+PUBLIC_HEADERS_C += \
+
+LIBENGINE_PASSTHROUGH_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBENGINE_PASSTHROUGH_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libengine_passthrough.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libengine_passthrough.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBENGINE_PASSTHROUGH_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libengine_passthrough.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libengine_passthrough.a $(LIBENGINE_PASSTHROUGH_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libengine_passthrough.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBENGINE_PASSTHROUGH_OBJS:.o=.dep)
 endif
 endif
 
@@ -5712,205 +6058,7 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
-    src/core/ext/filters/client_channel/http_proxy.cc \
-    src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_registry.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/parse_address.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
-    src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_registry.cc \
-    src/core/ext/filters/client_channel/resolver_result_parsing.cc \
-    src/core/ext/filters/client_channel/resolving_lb_policy.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/server_address.cc \
-    src/core/ext/filters/client_channel/service_config.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/lib/avl/avl.cc \
-    src/core/lib/backoff/backoff.cc \
-    src/core/lib/channel/channel_args.cc \
-    src/core/lib/channel/channel_stack.cc \
-    src/core/lib/channel/channel_stack_builder.cc \
-    src/core/lib/channel/channel_trace.cc \
-    src/core/lib/channel/channelz.cc \
-    src/core/lib/channel/channelz_registry.cc \
-    src/core/lib/channel/connected_channel.cc \
-    src/core/lib/channel/handshaker.cc \
-    src/core/lib/channel/handshaker_registry.cc \
-    src/core/lib/channel/status_util.cc \
-    src/core/lib/compression/compression.cc \
-    src/core/lib/compression/compression_args.cc \
-    src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/message_compress.cc \
-    src/core/lib/compression/stream_compression.cc \
-    src/core/lib/compression/stream_compression_gzip.cc \
-    src/core/lib/compression/stream_compression_identity.cc \
-    src/core/lib/debug/stats.cc \
-    src/core/lib/debug/stats_data.cc \
-    src/core/lib/http/format_request.cc \
-    src/core/lib/http/httpcli.cc \
-    src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
-    src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/cfstream_handle.cc \
-    src/core/lib/iomgr/combiner.cc \
-    src/core/lib/iomgr/endpoint.cc \
-    src/core/lib/iomgr/endpoint_cfstream.cc \
-    src/core/lib/iomgr/endpoint_pair_posix.cc \
-    src/core/lib/iomgr/endpoint_pair_uv.cc \
-    src/core/lib/iomgr/endpoint_pair_windows.cc \
-    src/core/lib/iomgr/error.cc \
-    src/core/lib/iomgr/error_cfstream.cc \
-    src/core/lib/iomgr/ev_epoll1_linux.cc \
-    src/core/lib/iomgr/ev_epollex_linux.cc \
-    src/core/lib/iomgr/ev_poll_posix.cc \
-    src/core/lib/iomgr/ev_posix.cc \
-    src/core/lib/iomgr/ev_windows.cc \
-    src/core/lib/iomgr/exec_ctx.cc \
-    src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
-    src/core/lib/iomgr/fork_posix.cc \
-    src/core/lib/iomgr/fork_windows.cc \
-    src/core/lib/iomgr/gethostname_fallback.cc \
-    src/core/lib/iomgr/gethostname_host_name_max.cc \
-    src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
-    src/core/lib/iomgr/iocp_windows.cc \
-    src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_custom.cc \
-    src/core/lib/iomgr/iomgr_internal.cc \
-    src/core/lib/iomgr/iomgr_posix.cc \
-    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
-    src/core/lib/iomgr/iomgr_uv.cc \
-    src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/is_epollexclusive_available.cc \
-    src/core/lib/iomgr/load_file.cc \
-    src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
-    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
-    src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset.cc \
-    src/core/lib/iomgr/pollset_custom.cc \
-    src/core/lib/iomgr/pollset_set.cc \
-    src/core/lib/iomgr/pollset_set_custom.cc \
-    src/core/lib/iomgr/pollset_set_windows.cc \
-    src/core/lib/iomgr/pollset_uv.cc \
-    src/core/lib/iomgr/pollset_windows.cc \
-    src/core/lib/iomgr/resolve_address.cc \
-    src/core/lib/iomgr/resolve_address_custom.cc \
-    src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_windows.cc \
-    src/core/lib/iomgr/resource_quota.cc \
-    src/core/lib/iomgr/sockaddr_utils.cc \
-    src/core/lib/iomgr/socket_factory_posix.cc \
-    src/core/lib/iomgr/socket_mutator.cc \
-    src/core/lib/iomgr/socket_utils_common_posix.cc \
-    src/core/lib/iomgr/socket_utils_linux.cc \
-    src/core/lib/iomgr/socket_utils_posix.cc \
-    src/core/lib/iomgr/socket_utils_uv.cc \
-    src/core/lib/iomgr/socket_utils_windows.cc \
-    src/core/lib/iomgr/socket_windows.cc \
-    src/core/lib/iomgr/tcp_client.cc \
-    src/core/lib/iomgr/tcp_client_cfstream.cc \
-    src/core/lib/iomgr/tcp_client_custom.cc \
-    src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_windows.cc \
-    src/core/lib/iomgr/tcp_custom.cc \
-    src/core/lib/iomgr/tcp_posix.cc \
-    src/core/lib/iomgr/tcp_server.cc \
-    src/core/lib/iomgr/tcp_server_custom.cc \
-    src/core/lib/iomgr/tcp_server_posix.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_windows.cc \
-    src/core/lib/iomgr/tcp_uv.cc \
-    src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
-    src/core/lib/iomgr/timer.cc \
-    src/core/lib/iomgr/timer_custom.cc \
-    src/core/lib/iomgr/timer_generic.cc \
-    src/core/lib/iomgr/timer_heap.cc \
-    src/core/lib/iomgr/timer_manager.cc \
-    src/core/lib/iomgr/timer_uv.cc \
-    src/core/lib/iomgr/udp_server.cc \
-    src/core/lib/iomgr/unix_sockets_posix.cc \
-    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
-    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
-    src/core/lib/iomgr/wakeup_fd_pipe.cc \
-    src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
-    src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_writer.cc \
-    src/core/lib/slice/b64.cc \
-    src/core/lib/slice/percent_encoding.cc \
-    src/core/lib/slice/slice.cc \
-    src/core/lib/slice/slice_buffer.cc \
-    src/core/lib/slice/slice_intern.cc \
-    src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/api_trace.cc \
-    src/core/lib/surface/byte_buffer.cc \
-    src/core/lib/surface/byte_buffer_reader.cc \
-    src/core/lib/surface/call.cc \
-    src/core/lib/surface/call_details.cc \
-    src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/channel.cc \
-    src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
-    src/core/lib/surface/channel_stack_type.cc \
-    src/core/lib/surface/completion_queue.cc \
-    src/core/lib/surface/completion_queue_factory.cc \
-    src/core/lib/surface/event_string.cc \
-    src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server.cc \
-    src/core/lib/surface/validate_metadata.cc \
-    src/core/lib/surface/version.cc \
-    src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/byte_stream.cc \
-    src/core/lib/transport/connectivity_state.cc \
-    src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
-    src/core/lib/transport/pid_controller.cc \
-    src/core/lib/transport/static_metadata.cc \
-    src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/status_metadata.cc \
-    src/core/lib/transport/timeout_encoding.cc \
-    src/core/lib/transport/transport.cc \
-    src/core/lib/transport/transport_op_string.cc \
-    src/core/lib/uri/uri_parser.cc \
-    src/core/lib/debug/trace.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
-    src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upb.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -6244,6 +6392,9 @@ endif
 LIBGRPC++_ALTS_SRC = \
     src/cpp/common/alts_context.cc \
     src/cpp/common/alts_util.cc \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
 
 PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
@@ -6285,18 +6436,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgpr$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgpr -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_alts.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_alts.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgpr -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).so
 endif
@@ -7017,205 +7168,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
-    src/core/ext/filters/client_channel/http_proxy.cc \
-    src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_registry.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/parse_address.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
-    src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_registry.cc \
-    src/core/ext/filters/client_channel/resolver_result_parsing.cc \
-    src/core/ext/filters/client_channel/resolving_lb_policy.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/server_address.cc \
-    src/core/ext/filters/client_channel/service_config.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/lib/avl/avl.cc \
-    src/core/lib/backoff/backoff.cc \
-    src/core/lib/channel/channel_args.cc \
-    src/core/lib/channel/channel_stack.cc \
-    src/core/lib/channel/channel_stack_builder.cc \
-    src/core/lib/channel/channel_trace.cc \
-    src/core/lib/channel/channelz.cc \
-    src/core/lib/channel/channelz_registry.cc \
-    src/core/lib/channel/connected_channel.cc \
-    src/core/lib/channel/handshaker.cc \
-    src/core/lib/channel/handshaker_registry.cc \
-    src/core/lib/channel/status_util.cc \
-    src/core/lib/compression/compression.cc \
-    src/core/lib/compression/compression_args.cc \
-    src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/message_compress.cc \
-    src/core/lib/compression/stream_compression.cc \
-    src/core/lib/compression/stream_compression_gzip.cc \
-    src/core/lib/compression/stream_compression_identity.cc \
-    src/core/lib/debug/stats.cc \
-    src/core/lib/debug/stats_data.cc \
-    src/core/lib/http/format_request.cc \
-    src/core/lib/http/httpcli.cc \
-    src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
-    src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/cfstream_handle.cc \
-    src/core/lib/iomgr/combiner.cc \
-    src/core/lib/iomgr/endpoint.cc \
-    src/core/lib/iomgr/endpoint_cfstream.cc \
-    src/core/lib/iomgr/endpoint_pair_posix.cc \
-    src/core/lib/iomgr/endpoint_pair_uv.cc \
-    src/core/lib/iomgr/endpoint_pair_windows.cc \
-    src/core/lib/iomgr/error.cc \
-    src/core/lib/iomgr/error_cfstream.cc \
-    src/core/lib/iomgr/ev_epoll1_linux.cc \
-    src/core/lib/iomgr/ev_epollex_linux.cc \
-    src/core/lib/iomgr/ev_poll_posix.cc \
-    src/core/lib/iomgr/ev_posix.cc \
-    src/core/lib/iomgr/ev_windows.cc \
-    src/core/lib/iomgr/exec_ctx.cc \
-    src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
-    src/core/lib/iomgr/fork_posix.cc \
-    src/core/lib/iomgr/fork_windows.cc \
-    src/core/lib/iomgr/gethostname_fallback.cc \
-    src/core/lib/iomgr/gethostname_host_name_max.cc \
-    src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
-    src/core/lib/iomgr/iocp_windows.cc \
-    src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_custom.cc \
-    src/core/lib/iomgr/iomgr_internal.cc \
-    src/core/lib/iomgr/iomgr_posix.cc \
-    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
-    src/core/lib/iomgr/iomgr_uv.cc \
-    src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/is_epollexclusive_available.cc \
-    src/core/lib/iomgr/load_file.cc \
-    src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
-    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
-    src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset.cc \
-    src/core/lib/iomgr/pollset_custom.cc \
-    src/core/lib/iomgr/pollset_set.cc \
-    src/core/lib/iomgr/pollset_set_custom.cc \
-    src/core/lib/iomgr/pollset_set_windows.cc \
-    src/core/lib/iomgr/pollset_uv.cc \
-    src/core/lib/iomgr/pollset_windows.cc \
-    src/core/lib/iomgr/resolve_address.cc \
-    src/core/lib/iomgr/resolve_address_custom.cc \
-    src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_windows.cc \
-    src/core/lib/iomgr/resource_quota.cc \
-    src/core/lib/iomgr/sockaddr_utils.cc \
-    src/core/lib/iomgr/socket_factory_posix.cc \
-    src/core/lib/iomgr/socket_mutator.cc \
-    src/core/lib/iomgr/socket_utils_common_posix.cc \
-    src/core/lib/iomgr/socket_utils_linux.cc \
-    src/core/lib/iomgr/socket_utils_posix.cc \
-    src/core/lib/iomgr/socket_utils_uv.cc \
-    src/core/lib/iomgr/socket_utils_windows.cc \
-    src/core/lib/iomgr/socket_windows.cc \
-    src/core/lib/iomgr/tcp_client.cc \
-    src/core/lib/iomgr/tcp_client_cfstream.cc \
-    src/core/lib/iomgr/tcp_client_custom.cc \
-    src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_windows.cc \
-    src/core/lib/iomgr/tcp_custom.cc \
-    src/core/lib/iomgr/tcp_posix.cc \
-    src/core/lib/iomgr/tcp_server.cc \
-    src/core/lib/iomgr/tcp_server_custom.cc \
-    src/core/lib/iomgr/tcp_server_posix.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_windows.cc \
-    src/core/lib/iomgr/tcp_uv.cc \
-    src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
-    src/core/lib/iomgr/timer.cc \
-    src/core/lib/iomgr/timer_custom.cc \
-    src/core/lib/iomgr/timer_generic.cc \
-    src/core/lib/iomgr/timer_heap.cc \
-    src/core/lib/iomgr/timer_manager.cc \
-    src/core/lib/iomgr/timer_uv.cc \
-    src/core/lib/iomgr/udp_server.cc \
-    src/core/lib/iomgr/unix_sockets_posix.cc \
-    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
-    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
-    src/core/lib/iomgr/wakeup_fd_pipe.cc \
-    src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
-    src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_writer.cc \
-    src/core/lib/slice/b64.cc \
-    src/core/lib/slice/percent_encoding.cc \
-    src/core/lib/slice/slice.cc \
-    src/core/lib/slice/slice_buffer.cc \
-    src/core/lib/slice/slice_intern.cc \
-    src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/api_trace.cc \
-    src/core/lib/surface/byte_buffer.cc \
-    src/core/lib/surface/byte_buffer_reader.cc \
-    src/core/lib/surface/call.cc \
-    src/core/lib/surface/call_details.cc \
-    src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/channel.cc \
-    src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
-    src/core/lib/surface/channel_stack_type.cc \
-    src/core/lib/surface/completion_queue.cc \
-    src/core/lib/surface/completion_queue_factory.cc \
-    src/core/lib/surface/event_string.cc \
-    src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server.cc \
-    src/core/lib/surface/validate_metadata.cc \
-    src/core/lib/surface/version.cc \
-    src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/byte_stream.cc \
-    src/core/lib/transport/connectivity_state.cc \
-    src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
-    src/core/lib/transport/pid_controller.cc \
-    src/core/lib/transport/static_metadata.cc \
-    src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/status_metadata.cc \
-    src/core/lib/transport/timeout_encoding.cc \
-    src/core/lib/transport/transport.cc \
-    src/core/lib/transport/transport_op_string.cc \
-    src/core/lib/uri/uri_parser.cc \
-    src/core/lib/debug/trace.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
-    src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upb.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -9098,6 +9051,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
+    third_party/abseil-cpp/absl/strings/internal/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/memutil.cc \
     third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
     third_party/abseil-cpp/absl/strings/internal/utf8.cc \
@@ -20715,6 +20669,7 @@ endif
 
 XDS_END2END_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc \
     test/cpp/end2end/xds_end2end_test.cc \
@@ -20750,6 +20705,8 @@ endif
 
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/ads_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/cds_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/eds_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/lrs_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
@@ -20763,7 +20720,7 @@ ifneq ($(NO_DEPS),true)
 -include $(XDS_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
 
 
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \
@@ -23443,6 +23400,7 @@ test/core/end2end/data/server1_cert.cc: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.cc: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.cc: $(OPENSSL_DEP)
 test/core/end2end/end2end_tests.cc: $(OPENSSL_DEP)
+test/core/end2end/engine_passthrough.cc: $(OPENSSL_DEP)
 test/core/end2end/tests/call_creds.cc: $(OPENSSL_DEP)
 test/core/security/oauth2_utils.cc: $(OPENSSL_DEP)
 test/core/tsi/alts/crypt/gsec_test_util.cc: $(OPENSSL_DEP)
@@ -23504,6 +23462,7 @@ third_party/abseil-cpp/absl/strings/charconv.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/escaping.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/internal/escaping.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/memutil.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/ostringstream.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/internal/utf8.cc: $(OPENSSL_DEP)

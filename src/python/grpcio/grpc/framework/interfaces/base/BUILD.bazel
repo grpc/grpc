@@ -14,7 +14,7 @@ py_library(
     srcs = ["base.py"],
     deps = [
         "//src/python/grpcio/grpc/framework/foundation:abandonment",
-        "//external:six",
+        "@six//:six",
     ] + select({
         "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],

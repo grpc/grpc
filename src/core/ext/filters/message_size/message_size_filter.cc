@@ -89,13 +89,13 @@ MessageSizeParser::ParsePerMethodParams(const grpc_json* json,
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     return nullptr;
   }
-  return MakeUnique<MessageSizeParsedConfig>(max_request_message_bytes,
-                                             max_response_message_bytes);
+  return grpc_core::MakeUnique<MessageSizeParsedConfig>(
+      max_request_message_bytes, max_response_message_bytes);
 }
 
 void MessageSizeParser::Register() {
   g_message_size_parser_index =
-      ServiceConfig::RegisterParser(MakeUnique<MessageSizeParser>());
+      ServiceConfig::RegisterParser(grpc_core::MakeUnique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }

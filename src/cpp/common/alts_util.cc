@@ -17,6 +17,7 @@
  */
 
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
 

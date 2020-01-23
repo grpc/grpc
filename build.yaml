@@ -605,7 +605,6 @@ filegroups:
   uses:
   - gpr_base_headers
   - grpc_base_headers
-  - grpc_client_channel
   - grpc_health_upb
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
@@ -1685,7 +1684,15 @@ libs:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
   - grpc
+  filegroups:
+  - grpc_test_util_base
   secure: true
+- name: engine_passthrough
+  build: test
+  language: c
+  src:
+  - test/core/end2end/engine_passthrough.cc
+  dll: only
 - name: gpr
   build: all
   language: c
@@ -1897,7 +1904,10 @@ libs:
   - src/cpp/common/alts_util.cc
   deps:
   - grpc++
+  - gpr
   baselib: true
+  filegroups:
+  - alts_upb
 - name: grpc++_core_stats
   build: private
   language: c++
@@ -6078,6 +6088,7 @@ targets:
   language: c++
   src:
   - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/cds_for_test.proto
   - src/proto/grpc/testing/xds/eds_for_test.proto
   - src/proto/grpc/testing/xds/lrs_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
