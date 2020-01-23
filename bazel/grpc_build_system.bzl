@@ -30,6 +30,13 @@ load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
 
+def if_windows(a):
+    return select({
+        "//:windows": a,
+        "//:windows_msvc": a,
+        "//conditions:default": [],
+    })
+
 def if_not_windows(a):
     return select({
         "//:windows": [],
@@ -81,7 +88,7 @@ def grpc_cc_library(
         copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
-    linkopts = if_not_windows(["-pthread"])
+    linkopts = if_not_windows(["-pthread"]) + if_windows(["-DEFAULTLIB:ws2_32.lib"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
