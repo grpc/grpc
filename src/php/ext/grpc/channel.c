@@ -206,7 +206,7 @@ target_bound_le_t* update_and_get_target_upper_bound(char* target, int bound) {
   php_grpc_int key_len = strlen(target);
   if (!(PHP_GRPC_PERSISTENT_LIST_FIND(&grpc_target_upper_bound_map, target,
       key_len, rsrc))) {
-    // Target is not not persisted.
+    // Target is not persisted.
     php_grpc_zend_resource new_rsrc;
     target_bound_status = malloc(sizeof(target_bound_le_t));
     if (bound == -1) {

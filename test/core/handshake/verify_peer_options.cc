@@ -228,7 +228,9 @@ static int verify_callback(const char* target_host, const char* target_pem,
 
 static void verify_destruct(void* userdata) { destruct_userdata = userdata; }
 
-int main(int /*argc*/, char* /*argv*/ []) {
+int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment env(argc, argv);
+
   int userdata = 42;
   verify_peer_options verify_options;
 

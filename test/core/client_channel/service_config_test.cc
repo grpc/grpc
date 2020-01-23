@@ -60,7 +60,7 @@ class TestParser1 : public ServiceConfig::Parser {
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(InvalidValueErrorMessage());
           return nullptr;
         }
-        return MakeUnique<TestParsedConfig1>(value);
+        return grpc_core::MakeUnique<TestParsedConfig1>(value);
       }
     }
     return nullptr;
@@ -97,7 +97,7 @@ class TestParser2 : public ServiceConfig::Parser {
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(InvalidValueErrorMessage());
           return nullptr;
         }
-        return MakeUnique<TestParsedConfig1>(value);
+        return grpc_core::MakeUnique<TestParsedConfig1>(value);
       }
     }
     return nullptr;
@@ -146,8 +146,10 @@ class ServiceConfigTest : public ::testing::Test {
   void SetUp() override {
     ServiceConfig::Shutdown();
     ServiceConfig::Init();
-    EXPECT_TRUE(ServiceConfig::RegisterParser(MakeUnique<TestParser1>()) == 0);
-    EXPECT_TRUE(ServiceConfig::RegisterParser(MakeUnique<TestParser2>()) == 1);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(
+                    grpc_core::MakeUnique<TestParser1>()) == 0);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(
+                    grpc_core::MakeUnique<TestParser2>()) == 1);
   }
 };
 
@@ -308,8 +310,10 @@ class ErroredParsersScopingTest : public ::testing::Test {
   void SetUp() override {
     ServiceConfig::Shutdown();
     ServiceConfig::Init();
-    EXPECT_TRUE(ServiceConfig::RegisterParser(MakeUnique<ErrorParser>()) == 0);
-    EXPECT_TRUE(ServiceConfig::RegisterParser(MakeUnique<ErrorParser>()) == 1);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(
+                    grpc_core::MakeUnique<ErrorParser>()) == 0);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(
+                    grpc_core::MakeUnique<ErrorParser>()) == 1);
   }
 };
 
@@ -354,8 +358,8 @@ class ClientChannelParserTest : public ::testing::Test {
     ServiceConfig::Shutdown();
     ServiceConfig::Init();
     EXPECT_TRUE(ServiceConfig::RegisterParser(
-                    MakeUnique<internal::ClientChannelServiceConfigParser>()) ==
-                0);
+                    grpc_core::MakeUnique<
+                        internal::ClientChannelServiceConfigParser>()) == 0);
   }
 };
 
@@ -922,8 +926,8 @@ class MessageSizeParserTest : public ::testing::Test {
   void SetUp() override {
     ServiceConfig::Shutdown();
     ServiceConfig::Init();
-    EXPECT_TRUE(
-        ServiceConfig::RegisterParser(MakeUnique<MessageSizeParser>()) == 0);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(
+                    grpc_core::MakeUnique<MessageSizeParser>()) == 0);
   }
 };
 
@@ -1012,9 +1016,9 @@ int main(int argc, char** argv) {
           "this system.");
   return 0;
 #endif
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;

@@ -15,8 +15,14 @@
 
 cimport cpython
 
-import os.path
+import logging
+import os
 import sys
+import threading
+import time
+
+import grpc
+
 try:
     import asyncio
 except ImportError:
@@ -24,6 +30,9 @@ except ImportError:
     # distributed without breaking none compatible Python versions. For now, if
     # Asyncio package is not available we just skip it.
     pass
+
+# The only copy of Python logger for the Cython extension
+_LOGGER = logging.getLogger(__name__)
 
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.

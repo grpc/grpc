@@ -1589,7 +1589,7 @@ def ssl_channel_credentials(root_certificates=None,
       private_key: The PEM-encoded private key as a byte string, or None if no
         private key should be used.
       certificate_chain: The PEM-encoded certificate chain as a byte string
-        to use or or None if no certificate chain should be used.
+        to use or None if no certificate chain should be used.
 
     Returns:
       A ChannelCredentials for use with an SSL-enabled Channel.

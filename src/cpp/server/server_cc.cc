@@ -1249,6 +1249,9 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
     }
 
     for (size_t i = 0; i < num_cqs; i++) {
+#ifndef NDEBUG
+      cq_list_.push_back(cqs[i]);
+#endif
       if (cqs[i]->IsFrequentlyPolled()) {
         new UnimplementedAsyncRequest(this, cqs[i]);
       }
@@ -1360,6 +1363,15 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
   shutdown_notified_ = true;
   shutdown_cv_.Broadcast();
+
+#ifndef NDEBUG
+  // Unregister this server with the CQs passed into it by the user so that
+  // those can be checked for properly-ordered shutdown.
+  for (auto* cq : cq_list_) {
+    cq->UnregisterServer(this);
+  }
+  cq_list_.clear();
+#endif
 }
 
 void Server::Wait() {

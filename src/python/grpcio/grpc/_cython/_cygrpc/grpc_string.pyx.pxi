@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-
-_LOGGER = logging.getLogger(__name__)
 
 # This function will ascii encode unicode string inputs if necessary.
 # In Python3, unicode strings are the default str type.

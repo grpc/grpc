@@ -54,7 +54,7 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 
 void ClientChannelServiceConfigParser::Register() {
   g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
-      MakeUnique<ClientChannelServiceConfigParser>());
+      grpc_core::MakeUnique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -95,7 +95,7 @@ std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
     grpc_json* field, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   auto retry_policy =
-      MakeUnique<ClientChannelMethodParsedConfig::RetryPolicy>();
+      grpc_core::MakeUnique<ClientChannelMethodParsedConfig::RetryPolicy>();
   if (field->type != GRPC_JSON_OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:retryPolicy error:should be of type object");
@@ -348,8 +348,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
                 "field:retryThrottling field:maxTokens error:Type should be "
                 "number"));
           } else {
-            max_milli_tokens.set(gpr_parse_nonnegative_int(sub_field->value) *
-                                 1000);
+            max_milli_tokens.emplace(
+                gpr_parse_nonnegative_int(sub_field->value) * 1000);
             if (max_milli_tokens.value() <= 0) {
               error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                   "field:retryThrottling field:maxTokens error:should be "
@@ -398,7 +398,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
                   "parsing"));
               continue;
             }
-            milli_token_ratio.set(
+            milli_token_ratio.emplace(
                 static_cast<int>((whole_value * multiplier) + decimal_value));
             if (milli_token_ratio.value() <= 0) {
               error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -421,7 +421,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
       } else {
         data.milli_token_ratio = milli_token_ratio.value();
       }
-      retry_throttling.set(data);
+      retry_throttling.emplace(data);
     }
     if (strcmp(field->key, "healthCheckConfig") == 0) {
       if (health_check_service_name != nullptr) {
@@ -438,7 +438,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel global parser",
                                          &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return MakeUnique<ClientChannelGlobalParsedConfig>(
+    return grpc_core::MakeUnique<ClientChannelGlobalParsedConfig>(
         std::move(parsed_lb_config), std::move(lb_policy_name),
         retry_throttling, health_check_service_name);
   }
@@ -461,9 +461,9 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
             "field:waitForReady error:Duplicate entry"));
       }  // Duplicate, continue parsing.
       if (field->type == GRPC_JSON_TRUE) {
-        wait_for_ready.set(true);
+        wait_for_ready.emplace(true);
       } else if (field->type == GRPC_JSON_FALSE) {
-        wait_for_ready.set(false);
+        wait_for_ready.emplace(false);
       } else {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:waitForReady error:Type should be true/false"));
@@ -491,8 +491,8 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return MakeUnique<ClientChannelMethodParsedConfig>(timeout, wait_for_ready,
-                                                       std::move(retry_policy));
+    return grpc_core::MakeUnique<ClientChannelMethodParsedConfig>(
+        timeout, wait_for_ready, std::move(retry_policy));
   }
   return nullptr;
 }
