@@ -37,47 +37,46 @@ _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
 
 
+async def _test_sleepy_unary_unary(unused_request, unused_context):
+    await asyncio.sleep(_SLEEP_TIME_UNIT_S)
+    return _RESPONSE
+
+
+async def _test_sleepy_unary_stream(unused_request, unused_context):
+    yield _RESPONSE
+    await asyncio.sleep(_SLEEP_TIME_UNIT_S)
+    yield _RESPONSE
+
+
+async def _test_sleepy_stream_unary(unused_request_iterator, context):
+    assert _REQUEST == await context.read()
+    await asyncio.sleep(_SLEEP_TIME_UNIT_S)
+    assert _REQUEST == await context.read()
+    return _RESPONSE
+
+
+async def _test_sleepy_stream_stream(unused_request_iterator, context):
+    assert _REQUEST == await context.read()
+    await asyncio.sleep(_SLEEP_TIME_UNIT_S)
+    await context.write(_RESPONSE)
+
+
+_ROUTING_TABLE = {
+    _TEST_SLEEPY_UNARY_UNARY:
+        grpc.unary_unary_rpc_method_handler(_test_sleepy_unary_unary),
+    _TEST_SLEEPY_UNARY_STREAM:
+        grpc.unary_stream_rpc_method_handler(_test_sleepy_unary_stream),
+    _TEST_SLEEPY_STREAM_UNARY:
+        grpc.stream_unary_rpc_method_handler(_test_sleepy_stream_unary),
+    _TEST_SLEEPY_STREAM_STREAM:
+        grpc.stream_stream_rpc_method_handler(_test_sleepy_stream_stream)
+}
+
+
 class _GenericHandler(grpc.GenericRpcHandler):
 
-    def __init__(self):
-        self._routing_table = {
-            _TEST_SLEEPY_UNARY_UNARY:
-                grpc.unary_unary_rpc_method_handler(self._test_sleepy_unary_unary
-                                                   ),
-            _TEST_SLEEPY_UNARY_STREAM:
-                grpc.unary_stream_rpc_method_handler(self._test_sleepy_unary_stream),
-            _TEST_SLEEPY_STREAM_UNARY:
-                grpc.stream_unary_rpc_method_handler(self._test_sleepy_stream_unary),
-            _TEST_SLEEPY_STREAM_STREAM:
-                grpc.stream_stream_rpc_method_handler(self._test_sleepy_stream_stream)
-        }
-
-    @staticmethod
-    async def _test_sleepy_unary_unary(unused_request, unused_context):
-        await asyncio.sleep(_SLEEP_TIME_UNIT_S)
-        return _RESPONSE
-
-    @staticmethod
-    async def _test_sleepy_unary_stream(unused_request, unused_context):
-        yield _RESPONSE
-        await asyncio.sleep(_SLEEP_TIME_UNIT_S)
-        yield _RESPONSE
-
-    @staticmethod
-    async def _test_sleepy_stream_unary(unused_request_iterator, context):
-        assert _REQUEST == await context.read()
-        await asyncio.sleep(_SLEEP_TIME_UNIT_S)
-        assert _REQUEST == await context.read()
-        return _RESPONSE
-
-    @staticmethod
-    async def _test_sleepy_stream_stream(unused_request_iterator, context):
-        assert _REQUEST == await context.read()
-        await asyncio.sleep(_SLEEP_TIME_UNIT_S)
-        await context.write(_RESPONSE)
-
     def service(self, handler_call_details):
-        return self._routing_table.get(handler_call_details.method)
+        return _ROUTING_TABLE.get(handler_call_details.method)
 
 
 async def _start_test_server():
@@ -100,13 +99,13 @@ class TestTimeout(AioTestBase):
 
     async def test_unary_unary_success_with_timeout(self):
         multicallable = self._client.unary_unary(_TEST_SLEEPY_UNARY_UNARY)
-        call = multicallable(_REQUEST, timeout=2*_SLEEP_TIME_UNIT_S)
+        call = multicallable(_REQUEST, timeout=2 * _SLEEP_TIME_UNIT_S)
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_unary_unary_deadline_exceeded(self):
         multicallable = self._client.unary_unary(_TEST_SLEEPY_UNARY_UNARY)
-        call = multicallable(_REQUEST, timeout=0.5*_SLEEP_TIME_UNIT_S)
+        call = multicallable(_REQUEST, timeout=0.5 * _SLEEP_TIME_UNIT_S)
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
@@ -116,14 +115,14 @@ class TestTimeout(AioTestBase):
 
     async def test_unary_stream_success_with_timeout(self):
         multicallable = self._client.unary_stream(_TEST_SLEEPY_UNARY_STREAM)
-        call = multicallable(_REQUEST, timeout=2*_SLEEP_TIME_UNIT_S)
+        call = multicallable(_REQUEST, timeout=2 * _SLEEP_TIME_UNIT_S)
         self.assertEqual(_RESPONSE, await call.read())
         self.assertEqual(_RESPONSE, await call.read())
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_unary_stream_deadline_exceeded(self):
         multicallable = self._client.unary_stream(_TEST_SLEEPY_UNARY_STREAM)
-        call = multicallable(_REQUEST, timeout=0.5*_SLEEP_TIME_UNIT_S)
+        call = multicallable(_REQUEST, timeout=0.5 * _SLEEP_TIME_UNIT_S)
         self.assertEqual(_RESPONSE, await call.read())
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
@@ -134,14 +133,14 @@ class TestTimeout(AioTestBase):
 
     async def test_stream_unary_success_with_timeout(self):
         multicallable = self._client.stream_unary(_TEST_SLEEPY_STREAM_UNARY)
-        call = multicallable(timeout=2*_SLEEP_TIME_UNIT_S)
+        call = multicallable(timeout=2 * _SLEEP_TIME_UNIT_S)
         await call.write(_REQUEST)
         await call.write(_REQUEST)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_stream_unary_deadline_exceeded(self):
         multicallable = self._client.stream_unary(_TEST_SLEEPY_STREAM_UNARY)
-        call = multicallable(timeout=0.5*_SLEEP_TIME_UNIT_S)
+        call = multicallable(timeout=0.5 * _SLEEP_TIME_UNIT_S)
 
         await call.write(_REQUEST)
         await call.write(_REQUEST)
@@ -154,14 +153,14 @@ class TestTimeout(AioTestBase):
 
     async def test_stream_stream_success_with_timeout(self):
         multicallable = self._client.stream_stream(_TEST_SLEEPY_STREAM_STREAM)
-        call = multicallable(timeout=2*_SLEEP_TIME_UNIT_S)
+        call = multicallable(timeout=2 * _SLEEP_TIME_UNIT_S)
         await call.write(_REQUEST)
         self.assertEqual(_RESPONSE, await call.read())
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_stream_stream_deadline_exceeded(self):
         multicallable = self._client.stream_stream(_TEST_SLEEPY_STREAM_STREAM)
-        call = multicallable(timeout=0.5*_SLEEP_TIME_UNIT_S)
+        call = multicallable(timeout=0.5 * _SLEEP_TIME_UNIT_S)
 
         await call.write(_REQUEST)
 
