@@ -146,6 +146,8 @@ class XdsClient::ChannelState::AdsCallState
     ~BufferedRequest() { GRPC_ERROR_UNREF(error); }
   };
 
+  void AcceptLdsUpdate(LdsUpdate lds_update, std::string new_version);
+  void AcceptRdsUpdate(RdsUpdate rds_update, std::string new_version);
   void AcceptCdsUpdate(CdsUpdateMap cds_update_map, std::string new_version);
   void AcceptEdsUpdate(EdsUpdateMap eds_update_map, std::string new_version);
 
@@ -183,6 +185,8 @@ class XdsClient::ChannelState::AdsCallState
   grpc_closure on_status_received_;
 
   // Version state.
+  VersionState lds_version_;
+  VersionState rds_version_;
   VersionState cds_version_;
   VersionState eds_version_;
 
@@ -617,6 +621,15 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
                     grpc_schedule_on_exec_ctx);
   bool initial_message = true;
+  if (xds_client()->service_config_watcher_ != nullptr) {
+    if (xds_client()->route_config_name_.empty()) {
+      SendMessageLocked(kLdsTypeUrl, "", nullptr, initial_message);
+      initial_message = false;
+    } else if (xds_client()->cluster_name_.empty()) {
+      SendMessageLocked(kRdsTypeUrl, "", nullptr, initial_message);
+      initial_message = false;
+    }
+  }
   if (!xds_client()->cluster_map_.empty()) {
     SendMessageLocked(kCdsTypeUrl, "", nullptr, initial_message);
     initial_message = false;
@@ -698,7 +711,19 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       is_first_message ? xds_client()->bootstrap_->node() : nullptr;
   const char* build_version =
       is_first_message ? xds_client()->build_version_.get() : nullptr;
-  if (type_url == kCdsTypeUrl) {
+  if (type_url == kLdsTypeUrl) {
+    request_payload_slice = XdsLdsRequestCreateAndEncode(
+        xds_client()->server_name_, node, build_version,
+        lds_version_.version_info, lds_version_.nonce, lds_version_.error);
+    lds_version_.error = GRPC_ERROR_NONE;
+    GRPC_ERROR_UNREF(error_for_unsupported_type);
+  } else if (type_url == kRdsTypeUrl) {
+    request_payload_slice = XdsRdsRequestCreateAndEncode(
+        xds_client()->route_config_name_, node, build_version,
+        rds_version_.version_info, rds_version_.nonce, rds_version_.error);
+    rds_version_.error = GRPC_ERROR_NONE;
+    GRPC_ERROR_UNREF(error_for_unsupported_type);
+  } else if (type_url == kCdsTypeUrl) {
     request_payload_slice = XdsCdsRequestCreateAndEncode(
         xds_client()->WatchedClusterNames(), node, build_version,
         cds_version_.version_info, cds_version_.nonce, cds_version_.error);
@@ -734,6 +759,83 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
             xds_client(), this, call_error);
     GPR_ASSERT(GRPC_CALL_OK == call_error);
   }
+}
+
+void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
+    LdsUpdate lds_update, std::string new_version) {
+  const std::string& cluster_name =
+      lds_update.rds_update.has_value()
+          ? lds_update.rds_update.value().cluster_name
+          : "";
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] LDS update received: "
+            "route_config_name=%s, "
+            "cluster_name=%s (empty if RDS is needed to obtain it)",
+            xds_client(), lds_update.route_config_name.c_str(),
+            cluster_name.c_str());
+  }
+  // Ignore identical update.
+  if (xds_client()->route_config_name_ == lds_update.route_config_name &&
+      xds_client()->cluster_name_ == cluster_name) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] LDS update identical to current, ignoring.",
+              xds_client());
+    }
+    return;
+  }
+  xds_client()->route_config_name_ = std::move(lds_update.route_config_name);
+  if (lds_update.rds_update.has_value()) {
+    // If cluster_name was found inlined in LDS response, notify the watcher
+    // immediately.
+    xds_client()->cluster_name_ =
+        std::move(lds_update.rds_update.value().cluster_name);
+    RefCountedPtr<ServiceConfig> service_config;
+    grpc_error* error = xds_client()->CreateServiceConfig(
+        xds_client()->cluster_name_, &service_config);
+    if (error == GRPC_ERROR_NONE) {
+      xds_client()->service_config_watcher_->OnServiceConfigChanged(
+          std::move(service_config));
+    } else {
+      xds_client()->service_config_watcher_->OnError(error);
+    }
+  } else {
+    // Send RDS request for dynamic resolution.
+    SendMessageLocked(kRdsTypeUrl, "", nullptr, false);
+  }
+  lds_version_.version_info = std::move(new_version);
+}
+
+void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
+    RdsUpdate rds_update, std::string new_version) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] RDS update received: "
+            "cluster_name=%s",
+            xds_client(), rds_update.cluster_name.c_str());
+  }
+  // Ignore identical update.
+  if (xds_client()->cluster_name_ == rds_update.cluster_name) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] RDS update identical to current, ignoring.",
+              xds_client());
+    }
+    return;
+  }
+  xds_client()->cluster_name_ = std::move(rds_update.cluster_name);
+  // Notify the watcher.
+  RefCountedPtr<ServiceConfig> service_config;
+  grpc_error* error = xds_client()->CreateServiceConfig(
+      xds_client()->cluster_name_, &service_config);
+  if (error == GRPC_ERROR_NONE) {
+    xds_client()->service_config_watcher_->OnServiceConfigChanged(
+        std::move(service_config));
+  } else {
+    xds_client()->service_config_watcher_->OnError(error);
+  }
+  rds_version_.version_info = std::move(new_version);
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
@@ -931,6 +1033,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   // mode. We will also need to cancel the timer when we receive a serverlist
   // from the balancer.
   // Parse the response.
+  LdsUpdate lds_update;
+  RdsUpdate rds_update;
   CdsUpdateMap cds_update_map;
   EdsUpdateMap eds_update_map;
   std::string version;
@@ -938,7 +1042,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   std::string type_url;
   // Note that XdsAdsResponseDecodeAndParse() also validate the response.
   grpc_error* parse_error = XdsAdsResponseDecodeAndParse(
-      response_slice, xds_client->EdsServiceNames(), &cds_update_map,
+      response_slice, xds_client->server_name_, xds_client->route_config_name_,
+      xds_client->EdsServiceNames(), &lds_update, &rds_update, &cds_update_map,
       &eds_update_map, &version, &nonce, &type_url);
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
@@ -948,7 +1053,15 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
     GRPC_ERROR_UNREF(parse_error);
   } else {
     // Update nonce and error.
-    if (type_url == kCdsTypeUrl) {
+    if (type_url == kLdsTypeUrl) {
+      ads_calld->lds_version_.nonce = nonce;
+      GRPC_ERROR_UNREF(ads_calld->lds_version_.error);
+      ads_calld->lds_version_.error = GRPC_ERROR_REF(parse_error);
+    } else if (type_url == kRdsTypeUrl) {
+      ads_calld->rds_version_.nonce = nonce;
+      GRPC_ERROR_UNREF(ads_calld->rds_version_.error);
+      ads_calld->rds_version_.error = GRPC_ERROR_REF(parse_error);
+    } else if (type_url == kCdsTypeUrl) {
       ads_calld->cds_version_.nonce = nonce;
       GRPC_ERROR_UNREF(ads_calld->cds_version_.error);
       ads_calld->cds_version_.error = GRPC_ERROR_REF(parse_error);
@@ -967,8 +1080,12 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
       ads_calld->SendMessageLocked(type_url, nonce, parse_error, false);
     } else {
       ads_calld->seen_response_ = true;
-      // Accept the (CDS or EDS) response.
-      if (type_url == kCdsTypeUrl) {
+      // Accept the ADS response according to the type_url.
+      if (type_url == kLdsTypeUrl) {
+        ads_calld->AcceptLdsUpdate(std::move(lds_update), std::move(version));
+      } else if (type_url == kRdsTypeUrl) {
+        ads_calld->AcceptRdsUpdate(std::move(rds_update), std::move(version));
+      } else if (type_url == kCdsTypeUrl) {
         ads_calld->AcceptCdsUpdate(std::move(cds_update_map),
                                    std::move(version));
       } else if (type_url == kEdsTypeUrl) {
@@ -976,7 +1093,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
                                    std::move(version));
       }
       // ACK the update.
-      ads_calld->SendMessageLocked(type_url, "", nullptr, false);
+      ads_calld->SendMessageLocked(type_url, nonce, nullptr, false);
       // Start load reporting if needed.
       auto& lrs_call = ads_calld->chand()->lrs_calld_;
       if (lrs_call != nullptr) {
@@ -1467,11 +1584,11 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 namespace {
 
-grpc_core::UniquePtr<char> GenerateBuildVersionString() {
+UniquePtr<char> GenerateBuildVersionString() {
   char* build_version_str;
   gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
                GPR_PLATFORM_STRING);
-  return grpc_core::UniquePtr<char>(build_version_str);
+  return UniquePtr<char>(build_version_str);
 }
 
 }  // namespace
@@ -1501,11 +1618,7 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
   chand_ = MakeOrphanable<ChannelState>(
       Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel_args);
   if (service_config_watcher_ != nullptr) {
-    // TODO(juanlishen): Start LDS call and do not return service config
-    // until we get the first LDS response.
-    GRPC_CLOSURE_INIT(&service_config_notify_, NotifyOnServiceConfig,
-                      Ref().release(), nullptr);
-    combiner_->Run(&service_config_notify_, GRPC_ERROR_NONE);
+    chand_->OnResourceNamesChanged(kLdsTypeUrl);
   }
 }
 
@@ -1613,6 +1726,25 @@ void XdsClient::ResetBackoff() {
   }
 }
 
+grpc_error* XdsClient::CreateServiceConfig(
+    const std::string& cluster_name,
+    RefCountedPtr<ServiceConfig>* service_config) const {
+  char* json;
+  gpr_asprintf(&json,
+               "{\n"
+               "  \"loadBalancingConfig\":[\n"
+               "    { \"cds_experimental\":{\n"
+               "      \"cluster\": \"%s\"\n"
+               "    } }\n"
+               "  ]\n"
+               "}",
+               cluster_name.c_str());
+  grpc_error* error = GRPC_ERROR_NONE;
+  *service_config = ServiceConfig::Create(json, &error);
+  gpr_free(json);
+  return error;
+}
+
 std::set<StringView> XdsClient::WatchedClusterNames() const {
   std::set<StringView> cluster_names;
   for (const auto& p : cluster_map_) {
@@ -1664,32 +1796,6 @@ void XdsClient::NotifyOnError(grpc_error* error) {
     }
   }
   GRPC_ERROR_UNREF(error);
-}
-
-void XdsClient::NotifyOnServiceConfig(void* arg, grpc_error* error) {
-  XdsClient* self = static_cast<XdsClient*>(arg);
-  // TODO(roth): When we add support for WeightedClusters, select the
-  // LB policy based on that functionality.
-  char* json;
-  gpr_asprintf(&json,
-               "{\n"
-               "  \"loadBalancingConfig\":[\n"
-               "    { \"cds_experimental\":{\n"
-               "      \"cluster\": \"%s\"\n"
-               "    } }\n"
-               "  ]\n"
-               "}",
-               self->server_name_.c_str());
-  RefCountedPtr<ServiceConfig> service_config =
-      ServiceConfig::Create(json, &error);
-  gpr_free(json);
-  if (error != GRPC_ERROR_NONE) {
-    self->service_config_watcher_->OnError(error);
-  } else {
-    self->service_config_watcher_->OnServiceConfigChanged(
-        std::move(service_config));
-  }
-  self->Unref();
 }
 
 void* XdsClient::ChannelArgCopy(void* p) {
