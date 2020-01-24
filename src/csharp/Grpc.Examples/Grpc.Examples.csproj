@@ -5,6 +5,8 @@
   <PropertyGroup>
     <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- TODO: Remove. Temporary sanity check -->
+    <DefineConstants>GOOGLE_PROTOBUF_DISABLE_BUFFER_SERIALIZATION</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
