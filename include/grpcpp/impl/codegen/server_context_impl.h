@@ -303,11 +303,12 @@ class ServerContextBase {
   ///
   /// WARNING: This is experimental API and could be changed or removed.
   ::grpc_impl::ServerUnaryReactor* DefaultReactor() {
-    Reactor* reactor = reinterpret_cast<Reactor*>(&default_reactor_);
+    // Short-circuit the case where a default reactor was already set up by
+    // the TestPeer.
     if (test_unary_ != nullptr) {
-      return reactor;
+      return reinterpret_cast<Reactor*>(&default_reactor_);
     }
-    new (reactor) Reactor;
+    new (&default_reactor_) Reactor;
 #ifndef NDEBUG
     bool old = false;
     assert(default_reactor_used_.compare_exchange_strong(
@@ -315,7 +316,7 @@ class ServerContextBase {
 #else
     default_reactor_used_.store(true, std::memory_order_relaxed);
 #endif
-    return reactor;
+    return reinterpret_cast<Reactor*>(&default_reactor_);
   }
 
   /// Constructors for use by derived classes
