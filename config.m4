@@ -155,9 +155,20 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
     src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
     src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
@@ -803,9 +814,15 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/cluster)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/core)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/endpoint)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/listener)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/route)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/filter/accesslog/v2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/listener/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/discovery/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/load_stats/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/matcher)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/gogoproto)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/protobuf)

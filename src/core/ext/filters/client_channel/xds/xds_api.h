@@ -34,6 +34,9 @@
 
 namespace grpc_core {
 
+constexpr char kLdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Listener";
+constexpr char kRdsTypeUrl[] =
+    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
 constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
@@ -50,6 +53,23 @@ struct VersionState {
 
   ~VersionState() { GRPC_ERROR_UNREF(error); }
 };
+
+struct RdsUpdate {
+  // The name to use in the CDS request.
+  std::string cluster_name;
+};
+
+struct LdsUpdate {
+  // The name to use in the RDS request.
+  std::string route_config_name;
+  // The name to use in the CDS request. Present if the LDS response has it
+  // inlined.
+  Optional<RdsUpdate> rds_update;
+};
+
+using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
+
+using RdsUpdateMap = std::map<std::string /*route_config_name*/, RdsUpdate>;
 
 struct CdsUpdate {
   // The name to use in the EDS request.
@@ -175,6 +195,24 @@ using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
     const std::string& type_url, const std::string& nonce, grpc_error* error);
 
+// Creates an LDS request querying \a server_name.
+// Takes ownership of \a error.
+grpc_slice XdsLdsRequestCreateAndEncode(const std::string& server_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version,
+                                        const std::string& version,
+                                        const std::string& nonce,
+                                        grpc_error* error);
+
+// Creates an RDS request querying \a route_config_name.
+// Takes ownership of \a error.
+grpc_slice XdsRdsRequestCreateAndEncode(const std::string& route_config_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version,
+                                        const std::string& version,
+                                        const std::string& nonce,
+                                        grpc_error* error);
+
 // Creates a CDS request querying \a cluster_names.
 // Takes ownership of \a error.
 grpc_slice XdsCdsRequestCreateAndEncode(
@@ -193,10 +231,12 @@ grpc_slice XdsEdsRequestCreateAndEncode(
 // EDS. If the response can't be parsed at the top level, \a type_url will point
 // to an empty string; otherwise, it will point to the received data.
 grpc_error* XdsAdsResponseDecodeAndParse(
-    const grpc_slice& encoded_response,
+    const grpc_slice& encoded_response, const std::string& expected_server_name,
+    const std::string& expected_route_config_name,
     const std::set<StringView>& expected_eds_service_names,
-    CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    std::string* version, std::string* nonce, std::string* type_url);
+    LdsUpdate* lds_update, RdsUpdate* rds_update, CdsUpdateMap* cds_update_map,
+    EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
+    std::string* type_url);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const std::string& server_name,
