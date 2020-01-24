@@ -345,9 +345,14 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
       // Don't want to pass down channelz node from parent; the balancer
       // channel will get its own.
       GRPC_ARG_CHANNELZ_CHANNEL_NODE,
+      // Keepalive interval.  We are explicitly setting our own value below.
+      GRPC_ARG_KEEPALIVE_TIME_MS,
   };
   // Channel args to add.
-  InlinedVector<grpc_arg, 2> args_to_add;
+  InlinedVector<grpc_arg, 3> args_to_add;
+  // Keepalive interval.
+  args_to_add.emplace_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 5000));
   // A channel arg indicating that the target is an xds server.
   // TODO(roth): Once we figure out our fallback and credentials story, decide
   // whether this is actually needed.  Note that it's currently used by the
