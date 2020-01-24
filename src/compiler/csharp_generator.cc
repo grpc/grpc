@@ -335,9 +335,9 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
   if (use_buffer_serialization) {
     // Generate buffer serialization marshallers
     out->Print(
-        "static void __Helper_WriteBufferMessage("
+        "static void __Helper_SerializeMessage("
         "global::Google.Protobuf.IMessage message, "
-        "global::Grpc.Core.SerializationContext context)\n"
+        "grpc::SerializationContext context)\n"
         "{\n");
     out->Indent();
     out->Print(
@@ -364,8 +364,8 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
     out->Print(
         "}\n\n");
     out->Print(
-        "static T __Helper_ParseBufferMessage<T>("
-        "global::Grpc.Core.DeserializationContext context, "
+        "static T __Helper_DeserializeMessage<T>("
+        "grpc::DeserializationContext context, "
         "global::Google.Protobuf.MessageParser<T> parser) "
         "where T : global::Google.Protobuf.IMessage<T>\n"
         "{\n");
@@ -384,8 +384,8 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
       const Descriptor* message = used_messages[i];
       out->Print(
           "static readonly grpc::Marshaller<$type$> $fieldname$ = "
-          "grpc::Marshallers.Create(__Helper_WriteBufferMessage, "
-          "context => __Helper_ParseBufferMessage(context, $type$.Parser));\n",
+          "grpc::Marshallers.Create(__Helper_SerializeMessage, "
+          "context => __Helper_DeserializeMessage(context, $type$.Parser));\n",
           "fieldname", GetMarshallerFieldName(message), "type",
           GetClassName(message));
     }
