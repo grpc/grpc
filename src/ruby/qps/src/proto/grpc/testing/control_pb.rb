@@ -162,27 +162,27 @@ end
 
 module Grpc
   module Testing
-    PoissonParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PoissonParams").msgclass
-    ClosedLoopParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClosedLoopParams").msgclass
-    LoadParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadParams").msgclass
-    SecurityParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SecurityParams").msgclass
-    ChannelArg = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ChannelArg").msgclass
-    ClientConfig = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfig").msgclass
-    ClientStatus = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientStatus").msgclass
-    Mark = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Mark").msgclass
-    ClientArgs = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientArgs").msgclass
-    ServerConfig = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerConfig").msgclass
-    ServerArgs = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerArgs").msgclass
-    ServerStatus = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerStatus").msgclass
-    CoreRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.CoreRequest").msgclass
-    CoreResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.CoreResponse").msgclass
-    Void = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Void").msgclass
-    Scenario = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Scenario").msgclass
-    Scenarios = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Scenarios").msgclass
-    ScenarioResultSummary = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ScenarioResultSummary").msgclass
-    ScenarioResult = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ScenarioResult").msgclass
-    ClientType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientType").enummodule
-    ServerType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerType").enummodule
-    RpcType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.RpcType").enummodule
+    PoissonParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PoissonParams").msgclass
+    ClosedLoopParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClosedLoopParams").msgclass
+    LoadParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadParams").msgclass
+    SecurityParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SecurityParams").msgclass
+    ChannelArg = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ChannelArg").msgclass
+    ClientConfig = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfig").msgclass
+    ClientStatus = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientStatus").msgclass
+    Mark = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Mark").msgclass
+    ClientArgs = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientArgs").msgclass
+    ServerConfig = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerConfig").msgclass
+    ServerArgs = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerArgs").msgclass
+    ServerStatus = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerStatus").msgclass
+    CoreRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.CoreRequest").msgclass
+    CoreResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.CoreResponse").msgclass
+    Void = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Void").msgclass
+    Scenario = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Scenario").msgclass
+    Scenarios = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Scenarios").msgclass
+    ScenarioResultSummary = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ScenarioResultSummary").msgclass
+    ScenarioResult = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ScenarioResult").msgclass
+    ClientType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientType").enummodule
+    ServerType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerType").enummodule
+    RpcType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.RpcType").enummodule
   end
 end

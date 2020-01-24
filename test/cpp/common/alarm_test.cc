@@ -304,6 +304,26 @@ TEST(AlarmTest, CallbackCancellation) {
       [c] { return c->completed; }));
 }
 
+TEST(AlarmTest, CallbackCancellationLocked) {
+  Alarm alarm;
+
+  auto c = std::make_shared<Completion>();
+  alarm.experimental().Set(
+      std::chrono::system_clock::now() + std::chrono::seconds(10),
+      [c](bool ok) {
+        EXPECT_FALSE(ok);
+        std::lock_guard<std::mutex> l(c->mu);
+        c->completed = true;
+        c->cv.notify_one();
+      });
+  std::unique_lock<std::mutex> l(c->mu);
+  alarm.Cancel();
+
+  EXPECT_TRUE(c->cv.wait_until(
+      l, std::chrono::system_clock::now() + std::chrono::seconds(1),
+      [c] { return c->completed; }));
+}
+
 TEST(AlarmTest, SetDestruction) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);

@@ -479,7 +479,7 @@ class StreamWriteContext {
         "send_initial_metadata_finished");
   }
 
-  bool compressed_data_buffer_len() {
+  size_t compressed_data_buffer_len() {
     return s_->stream_compression_method ==
                    GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
                ? 0

@@ -209,18 +209,18 @@ class ClientBidiReactor {
   /// Initiate a write operation (or post it for later initiation if StartCall
   /// has not yet been invoked).
   ///
-  /// \param[in] req The message to be written. The library takes temporary
-  ///                ownership until OnWriteDone, at which point the application
-  ///                regains ownership of msg.
+  /// \param[in] req The message to be written. The library does not take
+  ///                ownership but the caller must ensure that the message is
+  ///                not deleted or modified until OnWriteDone is called.
   void StartWrite(const Request* req) {
     StartWrite(req, ::grpc::WriteOptions());
   }
 
   /// Initiate/post a write operation with specified options.
   ///
-  /// \param[in] req The message to be written. The library takes temporary
-  ///                ownership until OnWriteDone, at which point the application
-  ///                regains ownership of msg.
+  /// \param[in] req The message to be written. The library does not take
+  ///                ownership but the caller must ensure that the message is
+  ///                not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWrite(const Request* req, ::grpc::WriteOptions options) {
     stream_->Write(req, std::move(options));
@@ -231,9 +231,9 @@ class ClientBidiReactor {
   /// Note that calling this means that no more calls to StartWrite,
   /// StartWriteLast, or StartWritesDone are allowed.
   ///
-  /// \param[in] req The message to be written. The library takes temporary
-  ///                ownership until OnWriteDone, at which point the application
-  ///                regains ownership of msg.
+  /// \param[in] req The message to be written. The library does not take
+  ///                ownership but the caller must ensure that the message is
+  ///                not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWriteLast(const Request* req, ::grpc::WriteOptions options) {
     StartWrite(req, std::move(options.set_last_message()));

@@ -45,6 +45,7 @@
 extern "C" {
 #include <openssl/bio.h>
 #include <openssl/crypto.h> /* For OPENSSL_free */
+#include <openssl/engine.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
@@ -136,6 +137,9 @@ typedef struct {
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
+#ifndef OPENSSL_IS_BORINGSSL
+static const char kSslEnginePrefix[] = "engine:";
+#endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000
 static gpr_mu* g_openssl_mutexes = nullptr;
@@ -562,9 +566,84 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
   return result;
 }
 
-/* Loads an in-memory PEM private key into the SSL context. */
-static tsi_result ssl_ctx_use_private_key(SSL_CTX* context, const char* pem_key,
-                                          size_t pem_key_size) {
+#ifndef OPENSSL_IS_BORINGSSL
+static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
+                                                 const char* pem_key,
+                                                 size_t pem_key_size) {
+  tsi_result result = TSI_OK;
+  EVP_PKEY* private_key = nullptr;
+  ENGINE* engine = nullptr;
+  char* engine_name = nullptr;
+  // Parse key which is in following format engine:<engine_id>:<key_id>
+  do {
+    char* engine_start = (char*)pem_key + strlen(kSslEnginePrefix);
+    char* engine_end = (char*)strchr(engine_start, ':');
+    if (engine_end == nullptr) {
+      result = TSI_INVALID_ARGUMENT;
+      break;
+    }
+    char* key_id = engine_end + 1;
+    int engine_name_length = engine_end - engine_start;
+    if (engine_name_length == 0) {
+      result = TSI_INVALID_ARGUMENT;
+      break;
+    }
+    engine_name = static_cast<char*>(gpr_zalloc(engine_name_length + 1));
+    memcpy(engine_name, engine_start, engine_name_length);
+    gpr_log(GPR_DEBUG, "ENGINE key: %s", engine_name);
+    ENGINE_load_dynamic();
+    engine = ENGINE_by_id(engine_name);
+    if (engine == nullptr) {
+      // If not available at ENGINE_DIR, use dynamic to load from
+      // current working directory.
+      engine = ENGINE_by_id("dynamic");
+      if (engine == nullptr) {
+        gpr_log(GPR_ERROR, "Cannot load dynamic engine");
+        result = TSI_INVALID_ARGUMENT;
+        break;
+      }
+      if (!ENGINE_ctrl_cmd_string(engine, "ID", engine_name, 0) ||
+          !ENGINE_ctrl_cmd_string(engine, "DIR_LOAD", "2", 0) ||
+          !ENGINE_ctrl_cmd_string(engine, "DIR_ADD", ".", 0) ||
+          !ENGINE_ctrl_cmd_string(engine, "LIST_ADD", "1", 0) ||
+          !ENGINE_ctrl_cmd_string(engine, "LOAD", NULL, 0)) {
+        gpr_log(GPR_ERROR, "Cannot find engine");
+        result = TSI_INVALID_ARGUMENT;
+        break;
+      }
+    }
+    if (!ENGINE_set_default(engine, ENGINE_METHOD_ALL)) {
+      gpr_log(GPR_ERROR, "ENGINE_set_default with ENGINE_METHOD_ALL failed");
+      result = TSI_INVALID_ARGUMENT;
+      break;
+    }
+    if (!ENGINE_init(engine)) {
+      gpr_log(GPR_ERROR, "ENGINE_init failed");
+      result = TSI_INVALID_ARGUMENT;
+      break;
+    }
+    private_key = ENGINE_load_private_key(engine, key_id, 0, 0);
+    if (private_key == nullptr) {
+      gpr_log(GPR_ERROR, "ENGINE_load_private_key failed");
+      result = TSI_INVALID_ARGUMENT;
+      break;
+    }
+    if (!SSL_CTX_use_PrivateKey(context, private_key)) {
+      gpr_log(GPR_ERROR, "SSL_CTX_use_PrivateKey failed");
+      result = TSI_INVALID_ARGUMENT;
+      break;
+    }
+  } while (0);
+  if (engine != nullptr) ENGINE_free(engine);
+  if (private_key != nullptr) EVP_PKEY_free(private_key);
+  if (engine_name != nullptr) gpr_free(engine_name);
+  return result;
+}
+#endif /* OPENSSL_IS_BORINGSSL */
+
+static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
+                                              const char* pem_key,
+                                              size_t pem_key_size) {
   tsi_result result = TSI_OK;
   EVP_PKEY* private_key = nullptr;
   BIO* pem;
@@ -585,6 +664,20 @@ static tsi_result ssl_ctx_use_private_key(SSL_CTX* context, const char* pem_key,
   if (private_key != nullptr) EVP_PKEY_free(private_key);
   BIO_free(pem);
   return result;
+}
+
+/* Loads an in-memory PEM private key into the SSL context. */
+static tsi_result ssl_ctx_use_private_key(SSL_CTX* context, const char* pem_key,
+                                          size_t pem_key_size) {
+// BoringSSL does not have ENGINE support
+#ifndef OPENSSL_IS_BORINGSSL
+  if (strncmp(pem_key, kSslEnginePrefix, strlen(kSslEnginePrefix)) == 0) {
+    return ssl_ctx_use_engine_private_key(context, pem_key, pem_key_size);
+  } else
+#endif /* OPENSSL_IS_BORINGSSL */
+  {
+    return ssl_ctx_use_pem_private_key(context, pem_key, pem_key_size);
+  }
 }
 
 /* Loads in-memory PEM verification certs into the SSL context and optionally

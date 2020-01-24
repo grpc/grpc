@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.8'
+  s.add_dependency 'google-protobuf', '~> 3.11'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -313,12 +313,34 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/lds.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/lds.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/rds.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/rds.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/route/route.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/srds.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/api/v2/srds.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/http.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/type/http.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/string.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/string.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/percent.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/type/percent.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/range.upb.c )
@@ -934,6 +956,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/charconv_bigint.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/charconv_parse.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/escaping.cc )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/escaping.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/memutil.cc )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/memutil.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/ostringstream.cc )
