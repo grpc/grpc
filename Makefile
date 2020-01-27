@@ -562,7 +562,7 @@ OPENSSL_LIBS = ssl crypto
 endif
 
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -g -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
+BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -g -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 CARES_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/c-ares.c -lcares $(LDFLAGS)
@@ -643,7 +643,7 @@ endif
 # Note that for testing purposes, one can do:
 #   make HAS_EMBEDDED_OPENSSL_ALPN=false
 # to emulate the fact we do not have OpenSSL in the third_party folder.
-ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
+ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
 else
 CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -769,7 +769,7 @@ OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
 # need to prefix these to ensure overriding system libraries
-CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
+CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)
 else ifneq ($(EMBED_OPENSSL),false)
 OPENSSL_DEP += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
 OPENSSL_MERGE_LIBS += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
@@ -3062,6 +3062,22 @@ $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc: src/proto/grpc/tes
 endif
 
 ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc: protoc_dep_error
 else
@@ -4290,6 +4306,15 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
     src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
     src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
@@ -4300,6 +4325,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
@@ -5727,6 +5754,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
     src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
     src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
@@ -5737,6 +5773,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
@@ -8155,276 +8193,276 @@ endif
 
 
 LIBBORINGSSL_SRC = \
-    src/boringssl/err_data.c \
-    third_party/boringssl/crypto/asn1/a_bitstr.c \
-    third_party/boringssl/crypto/asn1/a_bool.c \
-    third_party/boringssl/crypto/asn1/a_d2i_fp.c \
-    third_party/boringssl/crypto/asn1/a_dup.c \
-    third_party/boringssl/crypto/asn1/a_enum.c \
-    third_party/boringssl/crypto/asn1/a_gentm.c \
-    third_party/boringssl/crypto/asn1/a_i2d_fp.c \
-    third_party/boringssl/crypto/asn1/a_int.c \
-    third_party/boringssl/crypto/asn1/a_mbstr.c \
-    third_party/boringssl/crypto/asn1/a_object.c \
-    third_party/boringssl/crypto/asn1/a_octet.c \
-    third_party/boringssl/crypto/asn1/a_print.c \
-    third_party/boringssl/crypto/asn1/a_strnid.c \
-    third_party/boringssl/crypto/asn1/a_time.c \
-    third_party/boringssl/crypto/asn1/a_type.c \
-    third_party/boringssl/crypto/asn1/a_utctm.c \
-    third_party/boringssl/crypto/asn1/a_utf8.c \
-    third_party/boringssl/crypto/asn1/asn1_lib.c \
-    third_party/boringssl/crypto/asn1/asn1_par.c \
-    third_party/boringssl/crypto/asn1/asn_pack.c \
-    third_party/boringssl/crypto/asn1/f_enum.c \
-    third_party/boringssl/crypto/asn1/f_int.c \
-    third_party/boringssl/crypto/asn1/f_string.c \
-    third_party/boringssl/crypto/asn1/tasn_dec.c \
-    third_party/boringssl/crypto/asn1/tasn_enc.c \
-    third_party/boringssl/crypto/asn1/tasn_fre.c \
-    third_party/boringssl/crypto/asn1/tasn_new.c \
-    third_party/boringssl/crypto/asn1/tasn_typ.c \
-    third_party/boringssl/crypto/asn1/tasn_utl.c \
-    third_party/boringssl/crypto/asn1/time_support.c \
-    third_party/boringssl/crypto/base64/base64.c \
-    third_party/boringssl/crypto/bio/bio.c \
-    third_party/boringssl/crypto/bio/bio_mem.c \
-    third_party/boringssl/crypto/bio/connect.c \
-    third_party/boringssl/crypto/bio/fd.c \
-    third_party/boringssl/crypto/bio/file.c \
-    third_party/boringssl/crypto/bio/hexdump.c \
-    third_party/boringssl/crypto/bio/pair.c \
-    third_party/boringssl/crypto/bio/printf.c \
-    third_party/boringssl/crypto/bio/socket.c \
-    third_party/boringssl/crypto/bio/socket_helper.c \
-    third_party/boringssl/crypto/bn_extra/bn_asn1.c \
-    third_party/boringssl/crypto/bn_extra/convert.c \
-    third_party/boringssl/crypto/buf/buf.c \
-    third_party/boringssl/crypto/bytestring/asn1_compat.c \
-    third_party/boringssl/crypto/bytestring/ber.c \
-    third_party/boringssl/crypto/bytestring/cbb.c \
-    third_party/boringssl/crypto/bytestring/cbs.c \
-    third_party/boringssl/crypto/bytestring/unicode.c \
-    third_party/boringssl/crypto/chacha/chacha.c \
-    third_party/boringssl/crypto/cipher_extra/cipher_extra.c \
-    third_party/boringssl/crypto/cipher_extra/derive_key.c \
-    third_party/boringssl/crypto/cipher_extra/e_aesccm.c \
-    third_party/boringssl/crypto/cipher_extra/e_aesctrhmac.c \
-    third_party/boringssl/crypto/cipher_extra/e_aesgcmsiv.c \
-    third_party/boringssl/crypto/cipher_extra/e_chacha20poly1305.c \
-    third_party/boringssl/crypto/cipher_extra/e_null.c \
-    third_party/boringssl/crypto/cipher_extra/e_rc2.c \
-    third_party/boringssl/crypto/cipher_extra/e_rc4.c \
-    third_party/boringssl/crypto/cipher_extra/e_tls.c \
-    third_party/boringssl/crypto/cipher_extra/tls_cbc.c \
-    third_party/boringssl/crypto/cmac/cmac.c \
-    third_party/boringssl/crypto/conf/conf.c \
-    third_party/boringssl/crypto/cpu-aarch64-fuchsia.c \
-    third_party/boringssl/crypto/cpu-aarch64-linux.c \
-    third_party/boringssl/crypto/cpu-arm-linux.c \
-    third_party/boringssl/crypto/cpu-arm.c \
-    third_party/boringssl/crypto/cpu-intel.c \
-    third_party/boringssl/crypto/cpu-ppc64le.c \
-    third_party/boringssl/crypto/crypto.c \
-    third_party/boringssl/crypto/curve25519/spake25519.c \
-    third_party/boringssl/crypto/dh/check.c \
-    third_party/boringssl/crypto/dh/dh.c \
-    third_party/boringssl/crypto/dh/dh_asn1.c \
-    third_party/boringssl/crypto/dh/params.c \
-    third_party/boringssl/crypto/digest_extra/digest_extra.c \
-    third_party/boringssl/crypto/dsa/dsa.c \
-    third_party/boringssl/crypto/dsa/dsa_asn1.c \
-    third_party/boringssl/crypto/ec_extra/ec_asn1.c \
-    third_party/boringssl/crypto/ec_extra/ec_derive.c \
-    third_party/boringssl/crypto/ecdh_extra/ecdh_extra.c \
-    third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c \
-    third_party/boringssl/crypto/engine/engine.c \
-    third_party/boringssl/crypto/err/err.c \
-    third_party/boringssl/crypto/evp/digestsign.c \
-    third_party/boringssl/crypto/evp/evp.c \
-    third_party/boringssl/crypto/evp/evp_asn1.c \
-    third_party/boringssl/crypto/evp/evp_ctx.c \
-    third_party/boringssl/crypto/evp/p_dsa_asn1.c \
-    third_party/boringssl/crypto/evp/p_ec.c \
-    third_party/boringssl/crypto/evp/p_ec_asn1.c \
-    third_party/boringssl/crypto/evp/p_ed25519.c \
-    third_party/boringssl/crypto/evp/p_ed25519_asn1.c \
-    third_party/boringssl/crypto/evp/p_rsa.c \
-    third_party/boringssl/crypto/evp/p_rsa_asn1.c \
-    third_party/boringssl/crypto/evp/p_x25519.c \
-    third_party/boringssl/crypto/evp/p_x25519_asn1.c \
-    third_party/boringssl/crypto/evp/pbkdf.c \
-    third_party/boringssl/crypto/evp/print.c \
-    third_party/boringssl/crypto/evp/scrypt.c \
-    third_party/boringssl/crypto/evp/sign.c \
-    third_party/boringssl/crypto/ex_data.c \
-    third_party/boringssl/crypto/fipsmodule/bcm.c \
-    third_party/boringssl/crypto/fipsmodule/fips_shared_support.c \
-    third_party/boringssl/crypto/fipsmodule/is_fips.c \
-    third_party/boringssl/crypto/hkdf/hkdf.c \
-    third_party/boringssl/crypto/hrss/hrss.c \
-    third_party/boringssl/crypto/lhash/lhash.c \
-    third_party/boringssl/crypto/mem.c \
-    third_party/boringssl/crypto/obj/obj.c \
-    third_party/boringssl/crypto/obj/obj_xref.c \
-    third_party/boringssl/crypto/pem/pem_all.c \
-    third_party/boringssl/crypto/pem/pem_info.c \
-    third_party/boringssl/crypto/pem/pem_lib.c \
-    third_party/boringssl/crypto/pem/pem_oth.c \
-    third_party/boringssl/crypto/pem/pem_pk8.c \
-    third_party/boringssl/crypto/pem/pem_pkey.c \
-    third_party/boringssl/crypto/pem/pem_x509.c \
-    third_party/boringssl/crypto/pem/pem_xaux.c \
-    third_party/boringssl/crypto/pkcs7/pkcs7.c \
-    third_party/boringssl/crypto/pkcs7/pkcs7_x509.c \
-    third_party/boringssl/crypto/pkcs8/p5_pbev2.c \
-    third_party/boringssl/crypto/pkcs8/pkcs8.c \
-    third_party/boringssl/crypto/pkcs8/pkcs8_x509.c \
-    third_party/boringssl/crypto/poly1305/poly1305.c \
-    third_party/boringssl/crypto/poly1305/poly1305_arm.c \
-    third_party/boringssl/crypto/poly1305/poly1305_vec.c \
-    third_party/boringssl/crypto/pool/pool.c \
-    third_party/boringssl/crypto/rand_extra/deterministic.c \
-    third_party/boringssl/crypto/rand_extra/forkunsafe.c \
-    third_party/boringssl/crypto/rand_extra/fuchsia.c \
-    third_party/boringssl/crypto/rand_extra/rand_extra.c \
-    third_party/boringssl/crypto/rand_extra/windows.c \
-    third_party/boringssl/crypto/rc4/rc4.c \
-    third_party/boringssl/crypto/refcount_c11.c \
-    third_party/boringssl/crypto/refcount_lock.c \
-    third_party/boringssl/crypto/rsa_extra/rsa_asn1.c \
-    third_party/boringssl/crypto/rsa_extra/rsa_print.c \
-    third_party/boringssl/crypto/siphash/siphash.c \
-    third_party/boringssl/crypto/stack/stack.c \
-    third_party/boringssl/crypto/thread.c \
-    third_party/boringssl/crypto/thread_none.c \
-    third_party/boringssl/crypto/thread_pthread.c \
-    third_party/boringssl/crypto/thread_win.c \
-    third_party/boringssl/crypto/x509/a_digest.c \
-    third_party/boringssl/crypto/x509/a_sign.c \
-    third_party/boringssl/crypto/x509/a_strex.c \
-    third_party/boringssl/crypto/x509/a_verify.c \
-    third_party/boringssl/crypto/x509/algorithm.c \
-    third_party/boringssl/crypto/x509/asn1_gen.c \
-    third_party/boringssl/crypto/x509/by_dir.c \
-    third_party/boringssl/crypto/x509/by_file.c \
-    third_party/boringssl/crypto/x509/i2d_pr.c \
-    third_party/boringssl/crypto/x509/rsa_pss.c \
-    third_party/boringssl/crypto/x509/t_crl.c \
-    third_party/boringssl/crypto/x509/t_req.c \
-    third_party/boringssl/crypto/x509/t_x509.c \
-    third_party/boringssl/crypto/x509/t_x509a.c \
-    third_party/boringssl/crypto/x509/x509.c \
-    third_party/boringssl/crypto/x509/x509_att.c \
-    third_party/boringssl/crypto/x509/x509_cmp.c \
-    third_party/boringssl/crypto/x509/x509_d2.c \
-    third_party/boringssl/crypto/x509/x509_def.c \
-    third_party/boringssl/crypto/x509/x509_ext.c \
-    third_party/boringssl/crypto/x509/x509_lu.c \
-    third_party/boringssl/crypto/x509/x509_obj.c \
-    third_party/boringssl/crypto/x509/x509_r2x.c \
-    third_party/boringssl/crypto/x509/x509_req.c \
-    third_party/boringssl/crypto/x509/x509_set.c \
-    third_party/boringssl/crypto/x509/x509_trs.c \
-    third_party/boringssl/crypto/x509/x509_txt.c \
-    third_party/boringssl/crypto/x509/x509_v3.c \
-    third_party/boringssl/crypto/x509/x509_vfy.c \
-    third_party/boringssl/crypto/x509/x509_vpm.c \
-    third_party/boringssl/crypto/x509/x509cset.c \
-    third_party/boringssl/crypto/x509/x509name.c \
-    third_party/boringssl/crypto/x509/x509rset.c \
-    third_party/boringssl/crypto/x509/x509spki.c \
-    third_party/boringssl/crypto/x509/x_algor.c \
-    third_party/boringssl/crypto/x509/x_all.c \
-    third_party/boringssl/crypto/x509/x_attrib.c \
-    third_party/boringssl/crypto/x509/x_crl.c \
-    third_party/boringssl/crypto/x509/x_exten.c \
-    third_party/boringssl/crypto/x509/x_info.c \
-    third_party/boringssl/crypto/x509/x_name.c \
-    third_party/boringssl/crypto/x509/x_pkey.c \
-    third_party/boringssl/crypto/x509/x_pubkey.c \
-    third_party/boringssl/crypto/x509/x_req.c \
-    third_party/boringssl/crypto/x509/x_sig.c \
-    third_party/boringssl/crypto/x509/x_spki.c \
-    third_party/boringssl/crypto/x509/x_val.c \
-    third_party/boringssl/crypto/x509/x_x509.c \
-    third_party/boringssl/crypto/x509/x_x509a.c \
-    third_party/boringssl/crypto/x509v3/pcy_cache.c \
-    third_party/boringssl/crypto/x509v3/pcy_data.c \
-    third_party/boringssl/crypto/x509v3/pcy_lib.c \
-    third_party/boringssl/crypto/x509v3/pcy_map.c \
-    third_party/boringssl/crypto/x509v3/pcy_node.c \
-    third_party/boringssl/crypto/x509v3/pcy_tree.c \
-    third_party/boringssl/crypto/x509v3/v3_akey.c \
-    third_party/boringssl/crypto/x509v3/v3_akeya.c \
-    third_party/boringssl/crypto/x509v3/v3_alt.c \
-    third_party/boringssl/crypto/x509v3/v3_bcons.c \
-    third_party/boringssl/crypto/x509v3/v3_bitst.c \
-    third_party/boringssl/crypto/x509v3/v3_conf.c \
-    third_party/boringssl/crypto/x509v3/v3_cpols.c \
-    third_party/boringssl/crypto/x509v3/v3_crld.c \
-    third_party/boringssl/crypto/x509v3/v3_enum.c \
-    third_party/boringssl/crypto/x509v3/v3_extku.c \
-    third_party/boringssl/crypto/x509v3/v3_genn.c \
-    third_party/boringssl/crypto/x509v3/v3_ia5.c \
-    third_party/boringssl/crypto/x509v3/v3_info.c \
-    third_party/boringssl/crypto/x509v3/v3_int.c \
-    third_party/boringssl/crypto/x509v3/v3_lib.c \
-    third_party/boringssl/crypto/x509v3/v3_ncons.c \
-    third_party/boringssl/crypto/x509v3/v3_ocsp.c \
-    third_party/boringssl/crypto/x509v3/v3_pci.c \
-    third_party/boringssl/crypto/x509v3/v3_pcia.c \
-    third_party/boringssl/crypto/x509v3/v3_pcons.c \
-    third_party/boringssl/crypto/x509v3/v3_pku.c \
-    third_party/boringssl/crypto/x509v3/v3_pmaps.c \
-    third_party/boringssl/crypto/x509v3/v3_prn.c \
-    third_party/boringssl/crypto/x509v3/v3_purp.c \
-    third_party/boringssl/crypto/x509v3/v3_skey.c \
-    third_party/boringssl/crypto/x509v3/v3_sxnet.c \
-    third_party/boringssl/crypto/x509v3/v3_utl.c \
-    third_party/boringssl/ssl/bio_ssl.cc \
-    third_party/boringssl/ssl/d1_both.cc \
-    third_party/boringssl/ssl/d1_lib.cc \
-    third_party/boringssl/ssl/d1_pkt.cc \
-    third_party/boringssl/ssl/d1_srtp.cc \
-    third_party/boringssl/ssl/dtls_method.cc \
-    third_party/boringssl/ssl/dtls_record.cc \
-    third_party/boringssl/ssl/handoff.cc \
-    third_party/boringssl/ssl/handshake.cc \
-    third_party/boringssl/ssl/handshake_client.cc \
-    third_party/boringssl/ssl/handshake_server.cc \
-    third_party/boringssl/ssl/s3_both.cc \
-    third_party/boringssl/ssl/s3_lib.cc \
-    third_party/boringssl/ssl/s3_pkt.cc \
-    third_party/boringssl/ssl/ssl_aead_ctx.cc \
-    third_party/boringssl/ssl/ssl_asn1.cc \
-    third_party/boringssl/ssl/ssl_buffer.cc \
-    third_party/boringssl/ssl/ssl_cert.cc \
-    third_party/boringssl/ssl/ssl_cipher.cc \
-    third_party/boringssl/ssl/ssl_file.cc \
-    third_party/boringssl/ssl/ssl_key_share.cc \
-    third_party/boringssl/ssl/ssl_lib.cc \
-    third_party/boringssl/ssl/ssl_privkey.cc \
-    third_party/boringssl/ssl/ssl_session.cc \
-    third_party/boringssl/ssl/ssl_stat.cc \
-    third_party/boringssl/ssl/ssl_transcript.cc \
-    third_party/boringssl/ssl/ssl_versions.cc \
-    third_party/boringssl/ssl/ssl_x509.cc \
-    third_party/boringssl/ssl/t1_enc.cc \
-    third_party/boringssl/ssl/t1_lib.cc \
-    third_party/boringssl/ssl/tls13_both.cc \
-    third_party/boringssl/ssl/tls13_client.cc \
-    third_party/boringssl/ssl/tls13_enc.cc \
-    third_party/boringssl/ssl/tls13_server.cc \
-    third_party/boringssl/ssl/tls_method.cc \
-    third_party/boringssl/ssl/tls_record.cc \
-    third_party/boringssl/third_party/fiat/curve25519.c \
+    third_party/boringssl-with-bazel/err_data.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_dup.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_gentm.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_i2d_fp.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_int.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_mbstr.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_print.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_utf8.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_int.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_string.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_new.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_typ.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_utl.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/time_support.c \
+    third_party/boringssl-with-bazel/src/crypto/base64/base64.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/connect.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/fd.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/file.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/hexdump.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/pair.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/printf.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.c \
+    third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.c \
+    third_party/boringssl-with-bazel/src/crypto/buf/buf.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/ber.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbb.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbs.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/unicode.c \
+    third_party/boringssl-with-bazel/src/crypto/chacha/chacha.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/derive_key.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesccm.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesctrhmac.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesgcmsiv.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_chacha20poly1305.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_null.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc2.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc4.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_tls.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.c \
+    third_party/boringssl-with-bazel/src/crypto/cmac/cmac.c \
+    third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-arm.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-intel.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-ppc64le.c \
+    third_party/boringssl-with-bazel/src/crypto/crypto.c \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
+    third_party/boringssl-with-bazel/src/crypto/dh/check.c \
+    third_party/boringssl-with-bazel/src/crypto/dh/dh.c \
+    third_party/boringssl-with-bazel/src/crypto/dh/dh_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/dh/params.c \
+    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.c \
+    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/engine/engine.c \
+    third_party/boringssl-with-bazel/src/crypto/err/err.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/digestsign.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/print.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/scrypt.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/sign.c \
+    third_party/boringssl-with-bazel/src/crypto/ex_data.c \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.c \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/is_fips.c \
+    third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c \
+    third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
+    third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
+    third_party/boringssl-with-bazel/src/crypto/mem.c \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj.c \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj_xref.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_all.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_info.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_oth.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pk8.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pkey.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_xaux.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/p5_pbev2.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305.c \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_arm.c \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.c \
+    third_party/boringssl-with-bazel/src/crypto/pool/pool.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
+    third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount_c11.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount_lock.c \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
+    third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
+    third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
+    third_party/boringssl-with-bazel/src/crypto/thread.c \
+    third_party/boringssl-with-bazel/src/crypto/thread_none.c \
+    third_party/boringssl-with-bazel/src/crypto/thread_pthread.c \
+    third_party/boringssl-with-bazel/src/crypto/thread_win.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_file.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_d2.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_def.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_r2x.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_req.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_set.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_txt.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_v3.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vfy.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vpm.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509cset.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509name.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509rset.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509spki.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_algor.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_all.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_crl.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_exten.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_info.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_name.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_pkey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_req.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_sig.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_spki.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_cache.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_data.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_map.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_node.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_tree.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akeya.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_alt.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bitst.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_conf.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_cpols.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_crld.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_extku.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_genn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ia5.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_info.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_int.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ncons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ocsp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pci.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcia.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pku.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_sxnet.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c \
+    third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_pkt.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_srtp.cc \
+    third_party/boringssl-with-bazel/src/ssl/dtls_method.cc \
+    third_party/boringssl-with-bazel/src/ssl/dtls_record.cc \
+    third_party/boringssl-with-bazel/src/ssl/handoff.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake_client.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake_server.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_pkt.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_aead_ctx.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_asn1.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_buffer.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_cert.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_cipher.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_file.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_key_share.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_privkey.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_session.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_stat.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_transcript.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_versions.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_x509.cc \
+    third_party/boringssl-with-bazel/src/ssl/t1_enc.cc \
+    third_party/boringssl-with-bazel/src/ssl/t1_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_client.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_enc.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
+    third_party/boringssl-with-bazel/src/third_party/fiat/curve25519.c \
 
 PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
-$(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(LIBBORINGSSL_OBJS): CXXFLAGS += -fno-exceptions
 $(LIBBORINGSSL_OBJS): CFLAGS += -g
 
@@ -8446,16 +8484,16 @@ endif
 
 
 LIBBORINGSSL_TEST_UTIL_SRC = \
-    third_party/boringssl/crypto/test/file_test.cc \
-    third_party/boringssl/crypto/test/malloc.cc \
-    third_party/boringssl/crypto/test/test_util.cc \
-    third_party/boringssl/crypto/test/wycheproof_util.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/file_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/malloc.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/test_util.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/wycheproof_util.cc \
 
 PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TEST_UTIL_SRC))))
 
-$(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(LIBBORINGSSL_TEST_UTIL_OBJS): CXXFLAGS += -fno-exceptions
 $(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS += -g
 
@@ -20669,6 +20707,7 @@ XDS_END2END_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc \
     test/cpp/end2end/xds_end2end_test.cc \
 
@@ -20707,6 +20746,8 @@ $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/cds_for_test.o:  $(LIBDIR)/$(CONF
 
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/eds_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/lds_rds_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/lrs_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
@@ -20718,7 +20759,7 @@ ifneq ($(NO_DEPS),true)
 -include $(XDS_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
 
 
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \
@@ -20758,19 +20799,19 @@ endif
 
 
 BORINGSSL_SSL_TEST_SRC = \
-    third_party/boringssl/crypto/test/abi_test.cc \
-    third_party/boringssl/crypto/test/gtest_main.cc \
-    third_party/boringssl/ssl/span_test.cc \
-    third_party/boringssl/ssl/ssl_c_test.c \
-    third_party/boringssl/ssl/ssl_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/abi_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/gtest_main.cc \
+    third_party/boringssl-with-bazel/src/ssl/span_test.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_c_test.c \
+    third_party/boringssl-with-bazel/src/ssl/ssl_test.cc \
 
 BORINGSSL_SSL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SSL_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CXXFLAGS)
 $(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
@@ -20789,18 +20830,18 @@ $(BINDIR)/$(CONFIG)/boringssl_ssl_test: $(PROTOBUF_DEP) $(BORINGSSL_SSL_TEST_OBJ
 
 endif
 
-$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS += -fno-exceptions
 $(BORINGSSL_SSL_TEST_OBJS): CFLAGS += -g
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/abi_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/abi_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/ssl/span_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/ssl/span_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/ssl/ssl_c_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/ssl/ssl_c_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/ssl/ssl_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/ssl/ssl_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 deps_boringssl_ssl_test: $(BORINGSSL_SSL_TEST_OBJS:.o=.dep)
 
@@ -20810,75 +20851,75 @@ endif
 
 
 BORINGSSL_CRYPTO_TEST_SRC = \
-    src/boringssl/crypto_test_data.cc \
-    third_party/boringssl/crypto/abi_self_test.cc \
-    third_party/boringssl/crypto/asn1/asn1_test.cc \
-    third_party/boringssl/crypto/base64/base64_test.cc \
-    third_party/boringssl/crypto/bio/bio_test.cc \
-    third_party/boringssl/crypto/buf/buf_test.cc \
-    third_party/boringssl/crypto/bytestring/bytestring_test.cc \
-    third_party/boringssl/crypto/chacha/chacha_test.cc \
-    third_party/boringssl/crypto/cipher_extra/aead_test.cc \
-    third_party/boringssl/crypto/cipher_extra/cipher_test.cc \
-    third_party/boringssl/crypto/cmac/cmac_test.cc \
-    third_party/boringssl/crypto/compiler_test.cc \
-    third_party/boringssl/crypto/constant_time_test.cc \
-    third_party/boringssl/crypto/cpu-arm-linux_test.cc \
-    third_party/boringssl/crypto/curve25519/ed25519_test.cc \
-    third_party/boringssl/crypto/curve25519/spake25519_test.cc \
-    third_party/boringssl/crypto/curve25519/x25519_test.cc \
-    third_party/boringssl/crypto/dh/dh_test.cc \
-    third_party/boringssl/crypto/digest_extra/digest_test.cc \
-    third_party/boringssl/crypto/dsa/dsa_test.cc \
-    third_party/boringssl/crypto/ecdh_extra/ecdh_test.cc \
-    third_party/boringssl/crypto/err/err_test.cc \
-    third_party/boringssl/crypto/evp/evp_extra_test.cc \
-    third_party/boringssl/crypto/evp/evp_test.cc \
-    third_party/boringssl/crypto/evp/pbkdf_test.cc \
-    third_party/boringssl/crypto/evp/scrypt_test.cc \
-    third_party/boringssl/crypto/fipsmodule/aes/aes_test.cc \
-    third_party/boringssl/crypto/fipsmodule/bn/bn_test.cc \
-    third_party/boringssl/crypto/fipsmodule/ec/ec_test.cc \
-    third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64_test.cc \
-    third_party/boringssl/crypto/fipsmodule/ecdsa/ecdsa_test.cc \
-    third_party/boringssl/crypto/fipsmodule/md5/md5_test.cc \
-    third_party/boringssl/crypto/fipsmodule/modes/gcm_test.cc \
-    third_party/boringssl/crypto/fipsmodule/rand/ctrdrbg_test.cc \
-    third_party/boringssl/crypto/fipsmodule/sha/sha_test.cc \
-    third_party/boringssl/crypto/hkdf/hkdf_test.cc \
-    third_party/boringssl/crypto/hmac_extra/hmac_test.cc \
-    third_party/boringssl/crypto/hrss/hrss_test.cc \
-    third_party/boringssl/crypto/impl_dispatch_test.cc \
-    third_party/boringssl/crypto/lhash/lhash_test.cc \
-    third_party/boringssl/crypto/obj/obj_test.cc \
-    third_party/boringssl/crypto/pem/pem_test.cc \
-    third_party/boringssl/crypto/pkcs7/pkcs7_test.cc \
-    third_party/boringssl/crypto/pkcs8/pkcs12_test.cc \
-    third_party/boringssl/crypto/pkcs8/pkcs8_test.cc \
-    third_party/boringssl/crypto/poly1305/poly1305_test.cc \
-    third_party/boringssl/crypto/pool/pool_test.cc \
-    third_party/boringssl/crypto/rand_extra/rand_test.cc \
-    third_party/boringssl/crypto/refcount_test.cc \
-    third_party/boringssl/crypto/rsa_extra/rsa_test.cc \
-    third_party/boringssl/crypto/self_test.cc \
-    third_party/boringssl/crypto/siphash/siphash_test.cc \
-    third_party/boringssl/crypto/stack/stack_test.cc \
-    third_party/boringssl/crypto/test/abi_test.cc \
-    third_party/boringssl/crypto/test/file_test_gtest.cc \
-    third_party/boringssl/crypto/test/gtest_main.cc \
-    third_party/boringssl/crypto/thread_test.cc \
-    third_party/boringssl/crypto/x509/x509_test.cc \
-    third_party/boringssl/crypto/x509/x509_time_test.cc \
-    third_party/boringssl/crypto/x509v3/tab_test.cc \
-    third_party/boringssl/crypto/x509v3/v3name_test.cc \
+    third_party/boringssl-with-bazel/crypto_test_data.cc \
+    third_party/boringssl-with-bazel/src/crypto/abi_self_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/base64/base64_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/buf/buf_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/bytestring_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/chacha/chacha_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/aead_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/cmac/cmac_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/compiler_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/constant_time_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/ed25519_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/x25519_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh/dh_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/err/err_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_extra_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/scrypt_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/aes_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bn/bn_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/ec_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/p256-x86_64_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/ecdsa/ecdsa_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/md5/md5_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/modes/gcm_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/rand/ctrdrbg_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/sha_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/hmac_extra/hmac_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/hrss/hrss_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/impl_dispatch_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/lhash/lhash_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs12_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pool/pool_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/refcount_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/self_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/siphash/siphash_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/stack/stack_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/abi_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/file_test_gtest.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/gtest_main.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_time_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/tab_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3name_test.cc \
 
 BORINGSSL_CRYPTO_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CRYPTO_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_CRYPTO_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_CRYPTO_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CRYPTO_TEST_OBJS): CFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CRYPTO_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CXXFLAGS)
 $(BORINGSSL_CRYPTO_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
@@ -20897,130 +20938,130 @@ $(BINDIR)/$(CONFIG)/boringssl_crypto_test: $(PROTOBUF_DEP) $(BORINGSSL_CRYPTO_TE
 
 endif
 
-$(BORINGSSL_CRYPTO_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CRYPTO_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(BORINGSSL_CRYPTO_TEST_OBJS): CXXFLAGS += -fno-exceptions
 $(BORINGSSL_CRYPTO_TEST_OBJS): CFLAGS += -g
-$(OBJDIR)/$(CONFIG)/src/boringssl/crypto_test_data.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/crypto_test_data.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/abi_self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/abi_self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/asn1/asn1_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/asn1/asn1_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/base64/base64_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/base64/base64_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/bio/bio_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/bio/bio_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/buf/buf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/buf/buf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/bytestring/bytestring_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/bytestring/bytestring_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/chacha/chacha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/chacha/chacha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/cipher_extra/aead_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/cipher_extra/aead_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/cipher_extra/cipher_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/cmac/cmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/cmac/cmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/compiler_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/compiler_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/constant_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/constant_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/cpu-arm-linux_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/curve25519/ed25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/curve25519/ed25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/curve25519/spake25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/curve25519/x25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/curve25519/x25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/dh/dh_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/dh/dh_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/digest_extra/digest_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/dsa/dsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/dsa/dsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/ecdh_extra/ecdh_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/err/err_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/err/err_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/evp/evp_extra_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/evp/evp_extra_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/evp/evp_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/evp/evp_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/evp/pbkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/evp/pbkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/evp/scrypt_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/evp/scrypt_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/aes/aes_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/aes_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/bn/bn_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/bn/bn_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/ec/ec_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/ec_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/p256-x86_64_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/ecdsa/ecdsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/ecdsa/ecdsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/md5/md5_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/md5/md5_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/modes/gcm_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/modes/gcm_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/rand/ctrdrbg_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/rand/ctrdrbg_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/sha/sha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/sha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/hkdf/hkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/hmac_extra/hmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hmac_extra/hmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/hrss/hrss_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hrss/hrss_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/impl_dispatch_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/impl_dispatch_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/lhash/lhash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/lhash/lhash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/obj/obj_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/obj/obj_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pem/pem_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pem/pem_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pkcs7/pkcs7_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pkcs8/pkcs12_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs12_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pkcs8/pkcs8_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/poly1305/poly1305_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pool/pool_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pool/pool_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/rand_extra/rand_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/refcount_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/refcount_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/rsa_extra/rsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/siphash/siphash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/siphash/siphash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/stack/stack_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/stack/stack_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/abi_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/abi_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/file_test_gtest.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/file_test_gtest.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/thread_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/thread_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509/x509_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509/x509_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509/x509_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509/x509_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509v3/tab_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509v3/tab_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509v3/v3name_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509v3/v3name_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 deps_boringssl_crypto_test: $(BORINGSSL_CRYPTO_TEST_OBJS:.o=.dep)
 

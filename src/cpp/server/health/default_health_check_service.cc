@@ -182,8 +182,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::StartServingThread() {
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
-  HealthCheckServiceImpl* service =
-      reinterpret_cast<HealthCheckServiceImpl*>(arg);
+  HealthCheckServiceImpl* service = static_cast<HealthCheckServiceImpl*>(arg);
   void* tag;
   bool ok;
   while (true) {

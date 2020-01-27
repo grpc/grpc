@@ -47,6 +47,16 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "lds_rds_for_test_proto",
+    srcs = [
+        "lds_rds_for_test.proto",
+    ],
+    has_services = True,
+    well_known_protos = True,
+    deps = ["cds_for_test_proto"],
+)
+
+grpc_proto_library(
     name = "lrs_for_test_proto",
     srcs = [
         "lrs_for_test.proto",

@@ -116,8 +116,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const grpc_channel_args& args);
 
  private:
-  static const grpc_arg_pointer_vtable kXdsClientVtable;
-
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
   // TODO(roth): This is separate from the XdsClient object because it was
@@ -193,9 +191,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
-  // TODO(juanlishen): Once we implement LDS support, this can be a
-  // normal method instead of a closure callback.
-  static void NotifyOnServiceConfig(void* arg, grpc_error* error);
+  grpc_error* CreateServiceConfig(
+      const std::string& cluster_name,
+      RefCountedPtr<ServiceConfig>* service_config) const;
 
   std::set<StringView> WatchedClusterNames() const;
 
@@ -208,11 +206,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   static void ChannelArgDestroy(void* p);
   static int ChannelArgCmp(void* p, void* q);
 
-  // All the received clusters are cached, no matter they are watched or not.
-  std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
-  // Only the watched EDS service names are stored.
-  std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
-      endpoint_map_;
+  static const grpc_arg_pointer_vtable kXdsClientVtable;
 
   grpc_core::UniquePtr<char> build_version_;
 
@@ -221,14 +215,20 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
 
-  std::string server_name_;
+  const std::string server_name_;
+
   std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
-  // TODO(juanlishen): Once we implement LDS support, this will no
-  // longer be needed.
-  grpc_closure service_config_notify_;
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
+
+  std::string route_config_name_;
+  std::string cluster_name_;
+  // All the received clusters are cached, no matter they are watched or not.
+  std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
+  // Only the watched EDS service names are stored.
+  std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
+      endpoint_map_;
 
   bool shutting_down_ = false;
 };
