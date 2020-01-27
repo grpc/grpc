@@ -230,15 +230,15 @@ class Call:
 
 
 class _UnaryResponseMixin(Call):
-    _call_finisher: asyncio.Task
+    _call_response: asyncio.Task
 
     def _init_unary_response_mixin(self,
                                    response_coro: Awaitable[ResponseType]):
-        self._call_finisher = self._loop.create_task(response_coro)
+        self._call_response = self._loop.create_task(response_coro)
 
     def cancel(self) -> bool:
         if super().cancel():
-            self._call_finisher.cancel()
+            self._call_response.cancel()
             return True
         else:
             return False
@@ -246,7 +246,7 @@ class _UnaryResponseMixin(Call):
     def __await__(self) -> ResponseType:
         """Wait till the ongoing RPC request finishes."""
         try:
-            response = yield from self._call_finisher
+            response = yield from self._call_response
         except asyncio.CancelledError:
             # Even if we caught all other CancelledError, there is still
             # this corner case. If the application cancels immediately after
@@ -260,15 +260,15 @@ class _UnaryResponseMixin(Call):
 
 class _StreamResponseMixin(Call):
     _message_aiter: AsyncIterable[ResponseType]
-    _prerequisite: asyncio.Task
+    _preparation: asyncio.Task
 
-    def _init_stream_response_mixin(self, prerequisite: asyncio.Task):
+    def _init_stream_response_mixin(self, preparation: asyncio.Task):
         self._message_aiter = None
-        self._prerequisite = prerequisite
+        self._preparation = preparation
 
     def cancel(self) -> bool:
         if super().cancel():
-            self._prerequisite.cancel()
+            self._preparation.cancel()
             return True
         else:
             return False
@@ -286,7 +286,7 @@ class _StreamResponseMixin(Call):
 
     async def _read(self) -> ResponseType:
         # Wait for the request being sent
-        await self._prerequisite
+        await self._preparation
 
         # Reads response message from Core
         try:
@@ -389,7 +389,6 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
     """
     _request: RequestType
-    _call: asyncio.Task
 
     # pylint: disable=too-many-arguments
     def __init__(self, request: RequestType, deadline: Optional[float],
