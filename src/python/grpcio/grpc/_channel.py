@@ -1240,6 +1240,7 @@ def _spawn_delivery(state, callbacks):
                                                      state.connectivity,
                                                      callbacks,
                                                  ))
+    delivering_thread.setDaemon(True)
     delivering_thread.start()
     state.delivering = True
 
