@@ -32,8 +32,11 @@ _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
 
+
 async def _perform_unary_unary(stub, wait_for_ready):
-    await stub.UnaryCall(messages_pb2.SimpleRequest(), timeout=test_constants.SHORT_TIMEOUT, wait_for_ready=wait_for_ready)
+    await stub.UnaryCall(messages_pb2.SimpleRequest(),
+                         timeout=test_constants.SHORT_TIMEOUT,
+                         wait_for_ready=wait_for_ready)
 
 
 async def _perform_unary_stream(stub, wait_for_ready):
@@ -42,7 +45,9 @@ async def _perform_unary_stream(stub, wait_for_ready):
         request.response_parameters.append(
             messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
 
-    call = stub.StreamingOutputCall(request, timeout=test_constants.SHORT_TIMEOUT, wait_for_ready=wait_for_ready)
+    call = stub.StreamingOutputCall(request,
+                                    timeout=test_constants.SHORT_TIMEOUT,
+                                    wait_for_ready=wait_for_ready)
 
     for _ in range(_NUM_STREAM_RESPONSES):
         await call.read()
@@ -57,11 +62,14 @@ async def _perform_stream_unary(stub, wait_for_ready):
         for _ in range(_NUM_STREAM_RESPONSES):
             yield request
 
-    await stub.StreamingInputCall(gen(), timeout=test_constants.SHORT_TIMEOUT, wait_for_ready=wait_for_ready)
+    await stub.StreamingInputCall(gen(),
+                                  timeout=test_constants.SHORT_TIMEOUT,
+                                  wait_for_ready=wait_for_ready)
 
 
 async def _perform_stream_stream(stub, wait_for_ready):
-    call = stub.FullDuplexCall(timeout=test_constants.SHORT_TIMEOUT, wait_for_ready=wait_for_ready)
+    call = stub.FullDuplexCall(timeout=test_constants.SHORT_TIMEOUT,
+                               wait_for_ready=wait_for_ready)
 
     request = messages_pb2.StreamingOutputCallRequest()
     request.response_parameters.append(
@@ -117,8 +125,7 @@ class TestWaitForReady(AioTestBase):
 
                 # Wait for TRANSIENT_FAILURE, and RPC is not aborting
                 await _common.block_until_certain_state(
-                    self._channel,
-                    grpc.ChannelConnectivity.TRANSIENT_FAILURE)
+                    self._channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE)
 
                 try:
                     # Start the server

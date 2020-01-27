@@ -23,6 +23,7 @@ import grpc
 from grpc.experimental import aio
 
 from tests.unit.framework.common import test_constants
+from tests_aio.unit import _common
 from tests_aio.unit._constants import UNREACHABLE_TARGET
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
@@ -56,8 +57,8 @@ class TestConnectivityState(AioTestBase):
 
             # Should not time out
             await asyncio.wait_for(
-                _common.block_until_certain_state(channel,
-                                           grpc.ChannelConnectivity.READY),
+                _common.block_until_certain_state(
+                    channel, grpc.ChannelConnectivity.READY),
                 test_constants.SHORT_TIMEOUT)
 
     async def test_timeout(self):
@@ -68,8 +69,8 @@ class TestConnectivityState(AioTestBase):
             # If timed out, the function should return None.
             with self.assertRaises(asyncio.TimeoutError):
                 await asyncio.wait_for(
-                    _common.block_until_certain_state(channel,
-                                               grpc.ChannelConnectivity.READY),
+                    _common.block_until_certain_state(
+                        channel, grpc.ChannelConnectivity.READY),
                     test_constants.SHORT_TIMEOUT)
 
     async def test_shutdown(self):

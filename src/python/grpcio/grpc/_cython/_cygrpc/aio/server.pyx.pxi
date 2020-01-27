@@ -125,7 +125,7 @@ cdef class _ServicerContext:
         if self._rpc_state.metadata_sent:
             raise RuntimeError('Send initial metadata failed: already sent')
         else:
-            await _send_initial_metadata(self._rpc_state, metadata, self._loop)
+            await _send_initial_metadata(self._rpc_state, metadata, _EMPTY_FLAG, self._loop)
             self._rpc_state.metadata_sent = True
 
     async def abort(self,

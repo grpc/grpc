@@ -109,17 +109,16 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
 
         if not self._interceptors:
             return UnaryUnaryCall(request, _timeout_to_deadline(timeout),
-                                  metadata, credentials, wait_for_ready, self._channel,
-                                  self._method, self._request_serializer,
+                                  metadata, credentials, wait_for_ready,
+                                  self._channel, self._method,
+                                  self._request_serializer,
                                   self._response_deserializer, self._loop)
         else:
-            return InterceptedUnaryUnaryCall(self._interceptors, request,
-                                             timeout, metadata, credentials,
-                                             wait_for_ready,
-                                             self._channel, self._method,
-                                             self._request_serializer,
-                                             self._response_deserializer,
-                                             self._loop)
+            return InterceptedUnaryUnaryCall(
+                self._interceptors, request, timeout, metadata, credentials,
+                wait_for_ready, self._channel, self._method,
+                self._request_serializer, self._response_deserializer,
+                self._loop)
 
 
 class UnaryStreamMultiCallable(_BaseMultiCallable):
@@ -159,8 +158,8 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
-        return UnaryStreamCall(request, deadline, metadata, credentials,wait_for_ready,
-                               self._channel, self._method,
+        return UnaryStreamCall(request, deadline, metadata, credentials,
+                               wait_for_ready, self._channel, self._method,
                                self._request_serializer,
                                self._response_deserializer, self._loop)
 
@@ -207,8 +206,8 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
         return StreamUnaryCall(request_async_iterator, deadline, metadata,
-                               credentials, wait_for_ready, self._channel, self._method,
-                               self._request_serializer,
+                               credentials, wait_for_ready, self._channel,
+                               self._method, self._request_serializer,
                                self._response_deserializer, self._loop)
 
 
@@ -254,8 +253,8 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
         return StreamStreamCall(request_async_iterator, deadline, metadata,
-                                credentials, wait_for_ready, self._channel, self._method,
-                                self._request_serializer,
+                                credentials, wait_for_ready, self._channel,
+                                self._method, self._request_serializer,
                                 self._response_deserializer, self._loop)
 
 
