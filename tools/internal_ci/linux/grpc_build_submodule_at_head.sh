@@ -25,8 +25,12 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # Submodule name is passed as the RUN_TESTS_FLAGS variable
 SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
 
+# Name of branch to checkout is passed as BAZEL_FLAGS variable
+# If unset, "master" is used by default.
+SUBMODULE_BRANCH_NAME="${BAZEL_FLAGS:-master}"
+
 # Update submodule to be tested at HEAD
-(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout origin/master)
+(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout "origin/${SUBMODULE_BRANCH_NAME}")
 
 echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMODULE_NAME}'"
 echo "If a test breaks, either"
