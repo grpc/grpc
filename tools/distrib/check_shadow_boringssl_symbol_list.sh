@@ -24,9 +24,9 @@ boringssl_podspec_original="../../src/objective-c/BoringSSL-GRPC.podspec"
 symbol_list="../../src/objective-c/grpc_shadow_boringssl_symbol_list"
 
 # Check BoringSSL version matches
-ver1=$(git submodule |grep "boringssl " | awk '{print $1}' | head -n 1)
+ver1=$(git submodule | grep "boringssl-with-bazel " | awk '{print $1}' | head -n 1)
 ver2=$(cat $boringssl_podspec_original | grep ':commit =>' | sed -E 's/.*"(.*)".*/\1/g')
 ver3=$(cat $symbol_list | sed -n '2 p')
-[ $ver1 == $ver2 ] && [ $ver1 == $ver3 ] || { echo "BoringSSL submodule (third_party/boringssl), BoringSSL podspec (src/objective-c/BoringSSL.podspec), and BoringSSL symbol list (src/objective-c/grpc_shadow_boringssl_symbol_list) commit do not match." ; echo "BoringSSL submodule: $ver1" ; echo "BoringSSL podspec: $ver2" ;  echo "BoringSSL symbol list: $ver3" ; exit 1 ; }
+[ $ver1 == $ver2 ] && [ $ver1 == $ver3 ] || { echo "BoringSSL submodule (third_party/boringssl-with-bazel), BoringSSL podspec (src/objective-c/BoringSSL.podspec), and BoringSSL symbol list (src/objective-c/grpc_shadow_boringssl_symbol_list) commit do not match." ; echo "BoringSSL submodule: $ver1" ; echo "BoringSSL podspec: $ver2" ;  echo "BoringSSL symbol list: $ver3" ; exit 1 ; }
 
 exit 0
