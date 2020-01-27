@@ -427,6 +427,7 @@ class AdsServiceImpl : public AdsService {
     const std::string version_str = "version_1";
     const std::string nonce_str = "nonce_1";
     grpc_core::MutexLock lock(&ads_mu_);
+    if (lds_ignore_) return;
     if (lds_response_state_ == NOT_SENT) {
       DiscoveryResponse response;
       response.set_type_url(kLdsTypeUrl);
@@ -452,6 +453,7 @@ class AdsServiceImpl : public AdsService {
     const std::string version_str = "version_1";
     const std::string nonce_str = "nonce_1";
     grpc_core::MutexLock lock(&ads_mu_);
+    if (rds_ignore_) return;
     if (rds_response_state_ == NOT_SENT) {
       DiscoveryResponse response;
       response.set_type_url(kRdsTypeUrl);
@@ -477,6 +479,7 @@ class AdsServiceImpl : public AdsService {
     const std::string version_str = "version_1";
     const std::string nonce_str = "nonce_1";
     grpc_core::MutexLock lock(&ads_mu_);
+    if (cds_ignore_) return;
     if (cds_response_state_ == NOT_SENT) {
       DiscoveryResponse response;
       response.set_type_url(kCdsTypeUrl);
@@ -503,6 +506,7 @@ class AdsServiceImpl : public AdsService {
     std::vector<ResponseDelayPair> responses_and_delays;
     {
       grpc_core::MutexLock lock(&ads_mu_);
+      if (eds_ignore_) return;
       responses_and_delays = eds_responses_and_delays_;
     }
     // Send response.
@@ -538,8 +542,13 @@ class AdsServiceImpl : public AdsService {
       // resource names). It's not causing a big problem now but should be
       // fixed.
       bool eds_sent = false;
+      bool seen_first_request = false;
       while (!eds_sent || cds_response_state_ == SENT) {
         if (!stream->Read(&request)) return;
+        if (!seen_first_request) {
+          EXPECT_TRUE(request.has_node());
+          seen_first_request = true;
+        }
         if (request.type_url() == kLdsTypeUrl) {
           HandleLdsRequest(&request, stream);
         } else if (request.type_url() == kRdsTypeUrl) {
@@ -585,22 +594,30 @@ class AdsServiceImpl : public AdsService {
     lds_response_data_ = std::move(lds_response_data);
   }
 
+  void set_lds_ignore() { lds_ignore_ = true; }
+
   void SetRdsResponse(
       std::map<std::string /*route_config_name*/, RouteConfiguration>
           rds_response_data) {
     rds_response_data_ = std::move(rds_response_data);
   }
 
+  void set_rds_ignore() { rds_ignore_ = true; }
+
   void SetCdsResponse(
       std::map<std::string /*cluster_name*/, Cluster> cds_response_data) {
     cds_response_data_ = std::move(cds_response_data);
   }
+
+  void set_cds_ignore() { cds_ignore_ = true; }
 
   void AddEdsResponse(const DiscoveryResponse& response, int send_after_ms) {
     grpc_core::MutexLock lock(&ads_mu_);
     eds_responses_and_delays_.push_back(
         std::make_pair(response, send_after_ms));
   }
+
+  void set_eds_ignore() { eds_ignore_ = true; }
 
   void SetLdsToUseDynamicRds() {
     auto listener = default_listener_;
@@ -701,17 +718,21 @@ class AdsServiceImpl : public AdsService {
   Listener default_listener_;
   std::map<std::string /*server_name*/, Listener> lds_response_data_;
   ResponseState lds_response_state_ = NOT_SENT;
+  bool lds_ignore_ = false;
   // RDS response data.
   RouteConfiguration default_route_config_;
   std::map<std::string /*route_config_name*/, RouteConfiguration>
       rds_response_data_;
   ResponseState rds_response_state_ = NOT_SENT;
+  bool rds_ignore_ = false;
   // CDS response data.
   Cluster default_cluster_;
   std::map<std::string /*cluster_name*/, Cluster> cds_response_data_;
   ResponseState cds_response_state_ = NOT_SENT;
+  bool cds_ignore_ = false;
   // EDS response data.
   std::vector<ResponseDelayPair> eds_responses_and_delays_;
+  bool eds_ignore_ = false;
 };
 
 class LrsServiceImpl : public LrsService {
@@ -895,7 +916,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0, int failover_timeout = 0,
-                 const grpc::string& expected_targets = "") {
+                 const grpc::string& expected_targets = "",
+                 int xds_resource_does_not_exist_timeout = 0) {
     ChannelArguments args;
     // TODO(juanlishen): Add setter to ChannelArguments.
     if (fallback_timeout > 0) {
@@ -903,6 +925,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS, failover_timeout);
+    }
+    if (xds_resource_does_not_exist_timeout > 0) {
+      args.SetInt(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
+                  xds_resource_does_not_exist_timeout);
     }
     // If the parent channel is using the fake resolver, we inject the
     // response generator for the parent here, and then SetNextResolution()
@@ -1625,6 +1651,15 @@ TEST_P(LdsTest, RouteActionHasNoCluster) {
             AdsServiceImpl::NACKED);
 }
 
+// Tests that LDS client times out when no response received.
+TEST_P(LdsTest, Timeout) {
+  ResetStub(0, 0, "", 500);
+  balancers_[0]->ads_service()->set_lds_ignore();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
 using RdsTest = BasicTest;
 
 // Tests that RDS client should send an ACK upon correct RDS response.
@@ -1751,6 +1786,16 @@ TEST_P(RdsTest, RouteActionHasNoCluster) {
             AdsServiceImpl::NACKED);
 }
 
+// Tests that RDS client times out when no response received.
+TEST_P(RdsTest, Timeout) {
+  ResetStub(0, 0, "", 500);
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  balancers_[0]->ads_service()->set_rds_ignore();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
 using CdsTest = BasicTest;
 
 // Tests that CDS client should send an ACK upon correct CDS response.
@@ -1816,6 +1861,27 @@ TEST_P(CdsTest, WrongLrsServer) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
+}
+
+// Tests that CDS client times out when no response received.
+TEST_P(CdsTest, Timeout) {
+  ResetStub(0, 0, "", 500);
+  balancers_[0]->ads_service()->set_cds_ignore();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+using EdsTest = BasicTest;
+
+// TODO(roth): Add tests showing that RPCs fail when EDS data is invalid.
+
+TEST_P(EdsTest, Timeout) {
+  ResetStub(0, 0, "", 500);
+  balancers_[0]->ads_service()->set_eds_ignore();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
 }
 
 using LocalityMapTest = BasicTest;
@@ -3027,6 +3093,13 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, RdsTest,
 
 // CDS depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(XdsTest, CdsTest,
+                         ::testing::Values(TestType(true, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
+
+// EDS could be tested with or without XdsResolver, but the tests would
+// be the same either way, so we test it only with XdsResolver.
+INSTANTIATE_TEST_SUITE_P(XdsTest, EdsTest,
                          ::testing::Values(TestType(true, false),
                                            TestType(true, true)),
                          &TestTypeName);
