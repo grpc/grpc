@@ -676,7 +676,7 @@ TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
       server_authorization_check_config);
   std::shared_ptr<grpc_impl::ChannelCredentials> channel_credentials =
       grpc::experimental::TlsCredentials(options);
-  GPR_ASSERT(channel_credentials != nullptr);
+  GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
 // This test demonstrates how the TLS credentials will be used to create
@@ -692,7 +692,7 @@ TEST_F(CredentialsTest, LoadTlsServerCredentials) {
       GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config, nullptr);
   std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
       grpc::experimental::TlsServerCredentials(options);
-  // GPR_ASSERT(server_credentials != nullptr);
+  GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
 TEST_F(CredentialsTest, TlsCredentialReloadConfigErrorMessages) {
