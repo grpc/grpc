@@ -573,6 +573,100 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
+    async def test_add_done_callback_before_finishes(self):
+        called = False
+        interceptor_can_continue = asyncio.Event()
+
+        def callback(call):
+            nonlocal called
+            called = True
+
+        class Interceptor(aio.UnaryUnaryClientInterceptor):
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
+
+                await interceptor_can_continue.wait()
+                call = await continuation(client_call_details, request)
+                return call
+
+        async with aio.insecure_channel(self._server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
+
+            multicallable = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = multicallable(messages_pb2.SimpleRequest())
+            call.add_done_callback(callback)
+            interceptor_can_continue.set()
+            await call
+
+            self.assertTrue(called)
+
+    async def test_add_done_callback_after_finishes(self):
+        called = False
+
+        def callback(call):
+            nonlocal called
+            called = True
+
+        class Interceptor(aio.UnaryUnaryClientInterceptor):
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
+
+                call = await continuation(client_call_details, request)
+                return call
+
+        async with aio.insecure_channel(self._server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
+
+            multicallable = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = multicallable(messages_pb2.SimpleRequest())
+
+            await call
+
+            call.add_done_callback(callback)
+
+            self.assertTrue(called)
+
+    async def test_add_done_callback_after_finishes_before_await(self):
+        called = False
+
+        def callback(call):
+            nonlocal called
+            called = True
+
+        class Interceptor(aio.UnaryUnaryClientInterceptor):
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
+
+                call = await continuation(client_call_details, request)
+                return call
+
+        async with aio.insecure_channel(self._server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
+
+            multicallable = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = multicallable(messages_pb2.SimpleRequest())
+
+            call.add_done_callback(callback)
+
+            await call
+
+            self.assertTrue(called)
+
 
 if __name__ == '__main__':
     logging.basicConfig()
