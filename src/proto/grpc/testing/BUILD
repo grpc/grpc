@@ -26,9 +26,10 @@ grpc_package(
 exports_files([
     "echo.proto",
     "echo_messages.proto",
-    "test.proto",
     "empty.proto",
     "messages.proto",
+    "simple_messages.proto",
+    "test.proto",
 ])
 
 grpc_proto_library(
