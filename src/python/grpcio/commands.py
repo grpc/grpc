@@ -215,6 +215,8 @@ class BuildExt(build_ext.build_ext):
             """Test if default compiler is okay with specifying c++ version
             when invoked in C mode. GCC is okay with this, while clang is not.
             """
+            if platform.system() != 'Windows':
+                return False
             # TODO(lidiz) Remove the generated a.out for success tests.
             cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
                                        stdin=subprocess.PIPE,
@@ -232,21 +234,20 @@ class BuildExt(build_ext.build_ext):
         #   If we are not using a permissive compiler that's OK with being
         #   passed wrong std flags, swap out compile function by adding a filter
         #   for it.
-        if platform.system() != 'Windows':
-            if not compiler_ok_with_extra_std():
-                old_compile = self.compiler._compile
+        if not compiler_ok_with_extra_std():
+            old_compile = self.compiler._compile
 
-                def new_compile(obj, src, ext, cc_args, extra_postargs,
-                                pp_opts):
-                    if src[-2:] == '.c':
-                        extra_postargs = [
-                            arg for arg in extra_postargs
-                            if not '-std=c++' in arg
-                        ]
-                    return old_compile(obj, src, ext, cc_args, extra_postargs,
-                                       pp_opts)
+            def new_compile(obj, src, ext, cc_args, extra_postargs,
+                            pp_opts):
+                if src[-2:] == '.c':
+                    extra_postargs = [
+                        arg for arg in extra_postargs
+                        if not '-std=c++' in arg
+                    ]
+                return old_compile(obj, src, ext, cc_args, extra_postargs,
+                                    pp_opts)
 
-                self.compiler._compile = new_compile
+            self.compiler._compile = new_compile
 
         compiler = self.compiler.compiler_type
         if compiler in BuildExt.C_OPTIONS:
