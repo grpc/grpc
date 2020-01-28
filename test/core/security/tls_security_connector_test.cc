@@ -255,21 +255,21 @@ TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailInit) {
   EXPECT_EQ(connector, nullptr);
 }
 
-TEST_F(TlsSecurityConnectorTest, TlsCheckPeerSuccess) {
+TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameSuccess) {
   const char* target_name = "foo.test.google.fr";
   tsi_peer peer;
   GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, target_name,
                  &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_core::TlsCheckPeer(target_name, &peer);
+  grpc_error* error = grpc_core::TlsCheckHostName(target_name, &peer);
   tsi_peer_destruct(&peer);
   EXPECT_EQ(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
   options_->Unref();
 }
 
-TEST_F(TlsSecurityConnectorTest, TlsCheckPeerFail) {
+TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
   const char* target_name = "foo.test.google.fr";
   const char* another_name = "bar.test.google.fr";
   tsi_peer peer;
@@ -277,7 +277,7 @@ TEST_F(TlsSecurityConnectorTest, TlsCheckPeerFail) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, another_name,
                  &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_core::TlsCheckPeer(target_name, &peer);
+  grpc_error* error = grpc_core::TlsCheckHostName(target_name, &peer);
   tsi_peer_destruct(&peer);
   EXPECT_NE(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);

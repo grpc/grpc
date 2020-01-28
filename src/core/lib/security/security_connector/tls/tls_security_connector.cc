@@ -112,7 +112,7 @@ grpc_status_code TlsFetchKeyMaterials(
   return status;
 }
 
-grpc_error* TlsCheckPeer(const char* peer_name, const tsi_peer* peer) {
+grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
@@ -195,7 +195,7 @@ void TlsChannelSecurityConnector::check_peer(
   if (creds->options().server_verification_option() ==
       GRPC_TLS_SERVER_VERIFICATION) {
     /* Do the default host name check if specifying the target name. */
-    error = TlsCheckPeer(target_name, &peer);
+    error = TlsCheckHostName(target_name, &peer);
     if (error != GRPC_ERROR_NONE) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
       tsi_peer_destruct(&peer);

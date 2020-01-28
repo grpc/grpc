@@ -151,9 +151,9 @@ grpc_status_code TlsFetchKeyMaterials(
     const grpc_tls_credentials_options& options, bool server_config,
     grpc_ssl_certificate_config_reload_status* status);
 
-// TlsCheckPeer checks if |peer_name| matches the identity information
+// TlsCheckHostName checks if |peer_name| matches the identity information
 // contained in |peer|. This is AKA hostname check.
-grpc_error* TlsCheckPeer(const char* peer_name, const tsi_peer* peer);
+grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
 
 }  // namespace grpc_core
 
