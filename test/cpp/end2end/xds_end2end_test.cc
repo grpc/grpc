@@ -94,7 +94,6 @@ using ::envoy::api::v2::FractionalPercent;
 using ::envoy::api::v2::HttpConnectionManager;
 using ::envoy::api::v2::Listener;
 using ::envoy::api::v2::RouteConfiguration;
-using ::envoy::api::v2::VirtualHost;
 using ::envoy::service::discovery::v2::AggregatedDiscoveryService;
 using ::envoy::service::load_stats::v2::ClusterStats;
 using ::envoy::service::load_stats::v2::LoadReportingService;
