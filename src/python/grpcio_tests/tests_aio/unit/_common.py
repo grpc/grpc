@@ -30,7 +30,5 @@ async def block_until_certain_state(channel: aio.Channel,
                                     expected_state: grpc.ChannelConnectivity):
     state = channel.get_state()
     while state != expected_state:
-        import logging
-        logging.debug('Get %s want %s', state, expected_state)
         await channel.wait_for_state_change(state)
         state = channel.get_state()

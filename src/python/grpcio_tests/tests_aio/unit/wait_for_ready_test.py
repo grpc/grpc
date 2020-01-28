@@ -35,7 +35,7 @@ _RESPONSE_PAYLOAD_SIZE = 42
 
 async def _perform_unary_unary(stub, wait_for_ready):
     await stub.UnaryCall(messages_pb2.SimpleRequest(),
-                         timeout=test_constants.SHORT_TIMEOUT,
+                         timeout=test_constants.LONG_TIMEOUT,
                          wait_for_ready=wait_for_ready)
 
 
@@ -46,7 +46,7 @@ async def _perform_unary_stream(stub, wait_for_ready):
             messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
 
     call = stub.StreamingOutputCall(request,
-                                    timeout=test_constants.SHORT_TIMEOUT,
+                                    timeout=test_constants.LONG_TIMEOUT,
                                     wait_for_ready=wait_for_ready)
 
     for _ in range(_NUM_STREAM_RESPONSES):
@@ -63,12 +63,12 @@ async def _perform_stream_unary(stub, wait_for_ready):
             yield request
 
     await stub.StreamingInputCall(gen(),
-                                  timeout=test_constants.SHORT_TIMEOUT,
+                                  timeout=test_constants.LONG_TIMEOUT,
                                   wait_for_ready=wait_for_ready)
 
 
 async def _perform_stream_stream(stub, wait_for_ready):
-    call = stub.FullDuplexCall(timeout=test_constants.SHORT_TIMEOUT,
+    call = stub.FullDuplexCall(timeout=test_constants.LONG_TIMEOUT,
                                wait_for_ready=wait_for_ready)
 
     request = messages_pb2.StreamingOutputCallRequest()
@@ -112,12 +112,15 @@ class TestWaitForReady(AioTestBase):
                 self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
     async def test_call_wait_for_ready_default(self):
+        """RPC should fail immediately after connection failed."""
         await self._connection_fails_fast(None)
 
     async def test_call_wait_for_ready_disabled(self):
+        """RPC should fail immediately after connection failed."""
         await self._connection_fails_fast(False)
 
     async def test_call_wait_for_ready_enabled(self):
+        """RPC will wait until the connection is ready."""
         for action in _RPC_ACTIONS:
             with self.subTest(name=action.__name__):
                 # Starts the RPC
