@@ -15,7 +15,7 @@ Other should follow the user instructions. See the [How to use](https://github.c
 If you plan to build from source and run tests, install the following as well:
 ```sh
  $ [sudo] apt-get install libgflags-dev libgtest-dev
- $ [sudo] apt-get install clang-5.0 libc++-dev
+ $ [sudo] apt-get install clang-5.0 libc++-dev cmake
 ```
 
 ## MacOS
