@@ -152,15 +152,10 @@ class PythonArtifact:
             environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
 
-            if self.platform == 'manylinux1':
-                # manylinux1 currently has too old version of gcc
-                # so we need to use this workaround to avoid
-                # the "SSE2 instruction set not enabled" boringssl build error
-                # https://gcc.gnu.org/ml/gcc-patches/2013-04/msg00740.html
-                environ['CFLAGS'] += ' -msse2'
-
             return create_docker_jobspec(
                 self.name,
+                # NOTE(rbellevi): Do *not* update this without also ensuring the
+                # base_docker_image attribute is accurate.
                 'tools/dockerfile/grpc_artifact_python_%s_%s' %
                 (self.platform, self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
@@ -365,12 +360,6 @@ def targets():
         CSharpExtArtifact('macos', 'ios'),
         # TODO(https://github.com/grpc/grpc/issues/20283)
         # Add manylinux2010_x86 targets once this issue is resolved.
-        PythonArtifact('manylinux1', 'x86', 'cp27-cp27m'),
-        PythonArtifact('manylinux1', 'x86', 'cp27-cp27mu'),
-        PythonArtifact('manylinux1', 'x86', 'cp35-cp35m'),
-        PythonArtifact('manylinux1', 'x86', 'cp36-cp36m'),
-        PythonArtifact('manylinux1', 'x86', 'cp37-cp37m'),
-        PythonArtifact('manylinux1', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
@@ -383,12 +372,6 @@ def targets():
         PythonArtifact('linux_extra', 'armv6', '2.7'),
         PythonArtifact('linux_extra', 'armv6', '3.5'),
         PythonArtifact('linux_extra', 'armv6', '3.6'),
-        PythonArtifact('manylinux1', 'x64', 'cp27-cp27m'),
-        PythonArtifact('manylinux1', 'x64', 'cp27-cp27mu'),
-        PythonArtifact('manylinux1', 'x64', 'cp35-cp35m'),
-        PythonArtifact('manylinux1', 'x64', 'cp36-cp36m'),
-        PythonArtifact('manylinux1', 'x64', 'cp37-cp37m'),
-        PythonArtifact('manylinux1', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x64', 'cp27-cp27m'),
         PythonArtifact('manylinux2010', 'x64', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
