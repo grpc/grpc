@@ -32,14 +32,11 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -62,9 +59,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-#define GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS 10000
-#define GRPC_XDS_DEFAULT_LOCALITY_RETENTION_INTERVAL_MS (15 * 60 * 1000)
-#define GRPC_XDS_DEFAULT_FAILOVER_TIMEOUT_MS 10000
+#define GRPC_NON_LEAF_WRR_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
 
 namespace grpc_core {
 
@@ -120,9 +115,9 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
   // child's picker.
   class WeightedPicker : public SubchannelPicker {
    public:
-    // Maintains a weighted list of pickers from each locality that is in
+    // Maintains a weighted list of pickers from each child that is in
     // ready state. The first element in the pair represents the end of a
-    // range proportional to the locality's weight. The start of the range
+    // range proportional to the child's weight. The start of the range
     // is the previous value in the vector and is 0 for the first element.
     using PickerList =
         InlinedVector<std::pair<uint32_t,
@@ -139,17 +134,15 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
     PickerList pickers_;
   };
 
-// FIXME: rename to WeightedChild
-  // Each Locality holds a ref to its parent NonLeafWrrLb.
-  class Locality : public InternallyRefCounted<Locality> {
+  // Each WeightedChild holds a ref to its parent NonLeafWrrLb.
+  class WeightedChild : public InternallyRefCounted<WeightedChild> {
    public:
-    explicit Locality(RefCountedPtr<NonLeafWrrLb> non_leaf_wrr_policy);
-    ~Locality();
+    WeightedChild(RefCountedPtr<NonLeafWrrLb> non_leaf_wrr_policy, std::string name);
+    ~WeightedChild();
 
     void Orphan() override;
 
-    void UpdateLocked(NonLeafWrrLbConfig::ChildConfig config);
-    void ShutdownLocked();
+    void UpdateLocked(const NonLeafWrrLbConfig::ChildConfig& config);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -164,19 +157,16 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
    private:
     class Helper : public ChannelControlHelper {
      public:
-      explicit Helper(RefCountedPtr<Locality> locality)
-          : locality_(std::move(locality)) {}
+      explicit Helper(RefCountedPtr<WeightedChild> weighted_child)
+          : weighted_child_(std::move(weighted_child)) {}
 
-      ~Helper() { locality_.reset(DEBUG_LOCATION, "Helper"); }
+      ~Helper() { child_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           const grpc_channel_args& args) override;
       void UpdateState(grpc_connectivity_state state,
                        std::unique_ptr<SubchannelPicker> picker) override;
-// FIXME: implement this
-      // This is a no-op, because we get the addresses from the xds
-      // client, which is a watch-based API.
-      void RequestReresolution() override {}
+      void RequestReresolution() override;
       void AddTraceEvent(TraceSeverity severity, StringView message) override;
       void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
@@ -184,7 +174,7 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
       bool CalledByPendingChild() const;
       bool CalledByCurrentChild() const;
 
-      RefCountedPtr<Locality> locality_;
+      RefCountedPtr<WeightedChild> weighted_child_;
       LoadBalancingPolicy* child_ = nullptr;
     };
 
@@ -199,6 +189,7 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
 
     // The owning LB policy.
     RefCountedPtr<NonLeafWrrLb> non_leaf_wrr_policy_;
+    const std::string name_;
 
     uint32_t weight_;
 
@@ -215,21 +206,11 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
     bool shutdown_ = false;
   };
 
-// FIXME: remove
-  // Each LocalityMap holds a ref to the NonLeafWrrLb.
-  class LocalityMap : public InternallyRefCounted<LocalityMap> {
-   public:
-    void UpdateLocked(
-        const XdsPriorityListUpdate::LocalityMap& locality_map_update);
-  };
-
   ~NonLeafWrrLb();
 
   void ShutdownLocked() override;
 
-  void UpdateXdsPickerLocked();
-  void OnLocalityStateUpdateLocked();
-  void UpdateConnectivityStateLocked();
+  void UpdateStateLocked();
 
   const grpc_millis child_retention_interval_ms_;
 
@@ -241,7 +222,8 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // Children.
-  std::map<std::string, OrphanablePtr<Locality>> localities_;
+// FIXME: maybe key this by StringView, with string stored in value obj?
+  std::map<std::string, OrphanablePtr<WeightedChild>> localities_;
 };
 
 //
@@ -289,7 +271,7 @@ NonLeafWrrLb::NonLeafWrrLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       child_retention_interval_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS,
-          {GRPC_XDS_DEFAULT_LOCALITY_RETENTION_INTERVAL_MS, 0, INT_MAX})) {}
+          {GRPC_NON_LEAF_WRR_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})) {}
 
 NonLeafWrrLb::~NonLeafWrrLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
@@ -316,6 +298,7 @@ void NonLeafWrrLb::ResetBackoffLocked() {
 }
 
 void NonLeafWrrLb::UpdateLocked(UpdateArgs args) {
+  if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
     gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] Received update", this);
   }
@@ -325,103 +308,57 @@ void NonLeafWrrLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  // Update priority list.
-  UpdatePrioritiesLocked();
-}
-
-//
-// NonLeafWrrLb::LocalityMap
-//
-
-void NonLeafWrrLb::LocalityMap::UpdateLocked(
-    const XdsPriorityListUpdate::LocalityMap& locality_map_update) {
-  if (non_leaf_wrr_policy_->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] Start Updating priority %" PRIu32,
-            non_leaf_wrr_policy(), priority_);
-  }
-  // Maybe reactivate the locality map in case all the active locality maps have
-  // failed.
-  MaybeReactivateLocked();
-  // Remove (later) the localities not in locality_map_update.
+  // Deactivate the localities not in the new config.
   for (auto iter = localities_.begin(); iter != localities_.end();) {
-    const auto& name = iter->first;
-    Locality* locality = iter->second.get();
-    if (locality_map_update.Contains(name)) {
+    const std::string& name = iter->first;
+    WeightedChild* child = iter->second.get();
+    if (config_->weight_map().find(name) != config_->weight_map().end()) {
       ++iter;
       continue;
     }
     if (non_leaf_wrr_policy()->child_retention_interval_ms_ == 0) {
       iter = localities_.erase(iter);
     } else {
-      locality->DeactivateLocked();
+      child->DeactivateLocked();
       ++iter;
     }
   }
-  // Add or update the localities in locality_map_update.
-  for (const auto& p : locality_map_update.localities) {
-    const auto& name = p.first;
-    const auto& locality_update = p.second;
-    OrphanablePtr<Locality>& locality = localities_[name];
-    if (locality == nullptr) {
-      // Move from another locality map if possible.
-      locality = non_leaf_wrr_policy_->ExtractLocalityLocked(name, priority_);
-      if (locality != nullptr) {
-        locality->set_locality_map(
-            Ref(DEBUG_LOCATION, "LocalityMap+Locality_move"));
-      } else {
-        locality = MakeOrphanable<Locality>(
-            Ref(DEBUG_LOCATION, "LocalityMap+Locality"), name);
-      }
+  // Add or update the localities in the new config.
+  for (const auto& p : config_->weight_map()) {
+    const std::string& name = p.first;
+    const NonLeafWrrLbConfig::ChildConfig& config = p.second;
+    OrphanablePtr<WeightedChild>& child = localities_[name];
+    if (child == nullptr) {
+      child = MakeOrphanable<WeightedChild>(
+          Ref(DEBUG_LOCATION, "WeightedChild"), name);
     }
-    // Keep a copy of serverlist in the update so that we can compare it
-    // with the future ones.
-    locality->UpdateLocked(locality_update.lb_weight,
-                           locality_update.serverlist);
+    child->UpdateLocked(config);
   }
 }
 
-void NonLeafWrrLb::UpdateXdsPickerLocked() {
-  // Construct a new xds picker which maintains a map of all locality pickers
-  // that are ready. Each locality is represented by a portion of the range
+void NonLeafWrrLb::UpdateStateLocked() {
+  // Construct a new picker which maintains a map of all child pickers
+  // that are ready. Each child is represented by a portion of the range
   // proportional to its weight, such that the total range is the sum of the
-  // weights of all localities.
+  // weights of all children.
   WeightedPicker::PickerList picker_list;
   uint32_t end = 0;
-  for (const auto& p : localities_) {
-    const auto& locality_name = p.first;
-    const Locality* locality = p.second.get();
-    // Skip the localities that are not in the latest locality map update.
-    if (!locality_map_update()->Contains(locality_name)) continue;
-    if (locality->connectivity_state() != GRPC_CHANNEL_READY) continue;
-    end += locality->weight();
-    picker_list.push_back(std::make_pair(end, locality->picker_wrapper()));
-  }
-  non_leaf_wrr_policy()->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY,
-      grpc_core::MakeUnique<WeightedPicker>(
-          non_leaf_wrr_policy_->Ref(DEBUG_LOCATION, "WeightedPicker"),
-          std::move(picker_list)));
-}
-
-void NonLeafWrrLb::OnLocalityStateUpdateLocked() {
-  UpdateConnectivityStateLocked();
-  non_leaf_wrr_policy_->UpdateXdsPickerLocked();
-}
-
-void NonLeafWrrLb::UpdateConnectivityStateLocked() {
-  size_t num_ready = 0;
+  // Also count the number of children in each state, to determine the
+  // overall state.
   size_t num_connecting = 0;
   size_t num_idle = 0;
   size_t num_transient_failures = 0;
   for (const auto& p : localities_) {
-    const auto& locality_name = p.first;
-    const Locality* locality = p.second.get();
-    // Skip the localities that are not in the latest locality map update.
-    if (!locality_map_update()->Contains(locality_name)) continue;
-    switch (locality->connectivity_state()) {
+    const auto& child_name = p.first;
+    const WeightedChild* child = p.second.get();
+    // Skip the localities that are not in the latest update.
+    if (config_->weight_map().find(child_name) == config_->weight_map().end()) {
+      continue;
+    }
+    switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
-        ++num_ready;
+        end += child->weight();
+        picker_list.push_back(std::make_pair(end, child->picker_wrapper()));
         break;
       }
       case GRPC_CHANNEL_CONNECTING: {
@@ -440,7 +377,7 @@ void NonLeafWrrLb::UpdateConnectivityStateLocked() {
         GPR_UNREACHABLE_CODE(return );
     }
   }
-  if (num_ready > 0) {
+  if (picker_list.size() > 0) {
     connectivity_state_ = GRPC_CHANNEL_READY;
   } else if (num_connecting > 0) {
     connectivity_state_ = GRPC_CHANNEL_CONNECTING;
@@ -450,37 +387,71 @@ void NonLeafWrrLb::UpdateConnectivityStateLocked() {
     connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
+    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] connectivity changed to %s",
+            this, ConnectivityStateName(connectivity_state_));
+  }
+  if (connectivity_state_ == GRPC_CHANNEL_READY) {
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY,
+        grpc_core::MakeUnique<WeightedPicker>(
+            Ref(DEBUG_LOCATION, "WeightedPicker"), std::move(picker_list)));
+  }
+}
+
+//
+// NonLeafWrrLb::WeightedChild
+//
+
+NonLeafWrrLb::WeightedChild::WeightedChild(
+    RefCountedPtr<NonLeafWrrLb> non_leaf_wrr_policy, std::string name)
+    : non_leaf_wrr_policy_(std::move(non_leaf_wrr_policy)),
+      name_(std::move(name)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
+    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] created WeightedChild %p for %s",
+            non_leaf_wrr_policy_.get(), this, name_.c_str());
+  }
+}
+
+NonLeafWrrLb::WeightedChild::~WeightedChild() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
     gpr_log(GPR_INFO,
-            "[non_leaf_wrr_lb %p] Priority %" PRIu32 " (%p) connectivity changed to %s",
-            non_leaf_wrr_policy(), priority_, this,
-            ConnectivityStateName(connectivity_state_));
+            "[non_leaf_wrr_lb %p] WeightedChild %p %s: destroying child",
+            non_leaf_wrr_policy_.get(), this, name_.c_str());
   }
+  non_leaf_wrr_policy_.reset(DEBUG_LOCATION, "WeightedChild");
 }
 
-//
-// NonLeafWrrLb::Locality
-//
-
-NonLeafWrrLb::Locality::Locality(
-    RefCountedPtr<NonLeafWrrLb> non_leaf_wrr_policy)
-    : non_leaf_wrr_policy_(std::move(non_leaf_wrr_policy)) {
+void NonLeafWrrLb::WeightedChild::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] created Locality %p for %s",
-            non_leaf_wrr_policy_.get(), this, name_->AsHumanReadableString());
+    gpr_log(GPR_INFO,
+            "[non_leaf_wrr_lb %p] WeightedChild %p %s: shutting down child",
+            non_leaf_wrr_policy_.get(), this, name_.c_str());
   }
+  // Remove the child policy's interested_parties pollset_set from the
+  // xDS policy.
+  grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                   non_leaf_wrr_policy_->interested_parties());
+  child_policy_.reset();
+  if (pending_child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(
+        pending_child_policy_->interested_parties(),
+        non_leaf_wrr_policy_->interested_parties());
+    pending_child_policy_.reset();
+  }
+  // Drop our ref to the child's picker, in case it's holding a ref to
+  // the child.
+  picker_wrapper_.reset();
+  if (delayed_removal_timer_callback_pending_) {
+    grpc_timer_cancel(&delayed_removal_timer_);
+  }
+  shutdown_ = true;
+  Unref();
 }
 
-NonLeafWrrLb::Locality::~Locality() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] Locality %p %s: destroying locality",
-            non_leaf_wrr_policy(), this, name_->AsHumanReadableString());
-  }
-  locality_map_.reset(DEBUG_LOCATION, "Locality");
-}
-
-grpc_channel_args* NonLeafWrrLb::Locality::CreateChildPolicyArgsLocked(
+grpc_channel_args* NonLeafWrrLb::WeightedChild::CreateChildPolicyArgsLocked(
     const grpc_channel_args* args_in) {
   const grpc_arg args_to_add[] = {
+// FIXME: where should this be set?  EDS policy, probably?
       // A channel arg indicating if the target is a backend inferred from a
       // grpclb load balancer.
       grpc_channel_arg_integer_create(
@@ -496,7 +467,7 @@ grpc_channel_args* NonLeafWrrLb::Locality::CreateChildPolicyArgsLocked(
 }
 
 OrphanablePtr<LoadBalancingPolicy>
-NonLeafWrrLb::Locality::CreateChildPolicyLocked(
+NonLeafWrrLb::WeightedChild::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
   Helper* helper = new Helper(this->Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
@@ -509,38 +480,39 @@ NonLeafWrrLb::Locality::CreateChildPolicyLocked(
           name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR,
-            "[non_leaf_wrr_lb %p] Locality %p %s: failure creating child policy %s",
-            non_leaf_wrr_policy(), this, name_->AsHumanReadableString(), name);
+            "[non_leaf_wrr_lb %p] WeightedChild %p %s: failure creating child "
+            "policy %s",
+            non_leaf_wrr_policy_.get(), this, name_.c_str(), name);
     return nullptr;
   }
   helper->set_child(lb_policy.get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
     gpr_log(GPR_INFO,
-            "[non_leaf_wrr_lb %p] Locality %p %s: Created new child policy %s (%p)",
-            non_leaf_wrr_policy(), this, name_->AsHumanReadableString(), name,
+            "[non_leaf_wrr_lb %p] WeightedChild %p %s: Created new child policy "
+            "%s (%p)",
+            non_leaf_wrr_policy_.get(), this, name_.c_str(), name,
             lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // xDS LB, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
-                                   non_leaf_wrr_policy()->interested_parties());
+                                   non_leaf_wrr_policy_->interested_parties());
   return lb_policy;
 }
 
-void NonLeafWrrLb::Locality::UpdateLocked(uint32_t locality_weight,
-                                                ServerAddressList serverlist) {
-  if (non_leaf_wrr_policy()->shutting_down_) return;
-  // Update locality weight.
-  weight_ = locality_weight;
+void NonLeafWrrLb::WeightedChild::UpdateLocked(
+    const NonLeafWrrLbConfig::ChildConfig& config) {
+  if (non_leaf_wrr_policy_->shutting_down_) return;
+  // Update child weight.
+  weight_ = config.weight;
   if (delayed_removal_timer_callback_pending_) {
     grpc_timer_cancel(&delayed_removal_timer_);
   }
   // Construct update args.
   UpdateArgs update_args;
-  update_args.addresses = std::move(serverlist);
-  update_args.config = non_leaf_wrr_policy()->config_->child_policy();
-  update_args.args = CreateChildPolicyArgsLocked(non_leaf_wrr_policy()->args_);
+  update_args.config = config.config;
+  update_args.args = CreateChildPolicyArgsLocked(non_leaf_wrr_policy_->args_);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -610,8 +582,9 @@ void NonLeafWrrLb::Locality::UpdateLocked(uint32_t locality_weight,
     // pending_child_policy_ (cases 2b and 3b).
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
       gpr_log(GPR_INFO,
-              "[non_leaf_wrr_lb %p] Locality %p %s: Creating new %schild policy %s",
-              non_leaf_wrr_policy(), this, name_->AsHumanReadableString(),
+              "[non_leaf_wrr_lb %p] WeightedChild %p %s: Creating new %schild "
+              "policy %s",
+              non_leaf_wrr_policy_.get(), this, name_.c_str(),
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
     auto& lb_policy =
@@ -629,156 +602,131 @@ void NonLeafWrrLb::Locality::UpdateLocked(uint32_t locality_weight,
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] Locality %p %s: Updating %schild policy %p",
-            non_leaf_wrr_policy(), this, name_->AsHumanReadableString(),
+    gpr_log(GPR_INFO,
+            "[non_leaf_wrr_lb %p] WeightedChild %p %s: Updating %schild policy %p",
+            non_leaf_wrr_policy_.get(), this, name_.c_str(),
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
   policy_to_update->UpdateLocked(std::move(update_args));
 }
 
-void NonLeafWrrLb::Locality::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] Locality %p %s: shutting down locality",
-            non_leaf_wrr_policy(), this, name_->AsHumanReadableString());
-  }
-  // Remove the child policy's interested_parties pollset_set from the
-  // xDS policy.
-  grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-                                   non_leaf_wrr_policy()->interested_parties());
-  child_policy_.reset();
-  if (pending_child_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(
-        pending_child_policy_->interested_parties(),
-        non_leaf_wrr_policy()->interested_parties());
-    pending_child_policy_.reset();
-  }
-  // Drop our ref to the child's picker, in case it's holding a ref to
-  // the child.
-  picker_wrapper_.reset();
-  if (delayed_removal_timer_callback_pending_) {
-    grpc_timer_cancel(&delayed_removal_timer_);
-  }
-  shutdown_ = true;
-}
-
-void NonLeafWrrLb::Locality::ResetBackoffLocked() {
+void NonLeafWrrLb::WeightedChild::ResetBackoffLocked() {
   child_policy_->ResetBackoffLocked();
   if (pending_child_policy_ != nullptr) {
     pending_child_policy_->ResetBackoffLocked();
   }
 }
 
-void NonLeafWrrLb::Locality::Orphan() {
-  ShutdownLocked();
-  Unref();
-}
-
-void NonLeafWrrLb::Locality::DeactivateLocked() {
+void NonLeafWrrLb::WeightedChild::DeactivateLocked() {
   // If already deactivated, don't do that again.
   if (weight_ == 0) return;
-  // Set the locality weight to 0 so that future xds picker won't contain this
-  // locality.
+  // Set the child weight to 0 so that future picker won't contain this child.
   weight_ = 0;
-  // Start a timer to delete the locality.
-  Ref(DEBUG_LOCATION, "Locality+timer").release();
+  // Start a timer to delete the child.
+  Ref(DEBUG_LOCATION, "WeightedChild+timer").release();
   GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(
       &delayed_removal_timer_,
-      ExecCtx::Get()->Now() + non_leaf_wrr_policy()->child_retention_interval_ms_,
+      ExecCtx::Get()->Now() +
+          non_leaf_wrr_policy_->child_retention_interval_ms_,
       &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }
 
-void NonLeafWrrLb::Locality::OnDelayedRemovalTimer(void* arg,
-                                                         grpc_error* error) {
-  Locality* self = static_cast<Locality*>(arg);
-  self->non_leaf_wrr_policy()->combiner()->Run(
+void NonLeafWrrLb::WeightedChild::OnDelayedRemovalTimer(void* arg,
+                                                   grpc_error* error) {
+  WeightedChild* self = static_cast<WeightedChild*>(arg);
+  self->non_leaf_wrr_policy_->combiner()->Run(
       GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
                         OnDelayedRemovalTimerLocked, self, nullptr),
       GRPC_ERROR_REF(error));
 }
 
-void NonLeafWrrLb::Locality::OnDelayedRemovalTimerLocked(
+void NonLeafWrrLb::WeightedChild::OnDelayedRemovalTimerLocked(
     void* arg, grpc_error* error) {
-  Locality* self = static_cast<Locality*>(arg);
+  WeightedChild* self = static_cast<WeightedChild*>(arg);
   self->delayed_removal_timer_callback_pending_ = false;
   if (error == GRPC_ERROR_NONE && !self->shutdown_ && self->weight_ == 0) {
-    self->locality_map_->localities_.erase(self->name_);
+    self->non_leaf_wrr_policy_->localities_.erase(self->name_);
   }
-  self->Unref(DEBUG_LOCATION, "Locality+timer");
+  self->Unref(DEBUG_LOCATION, "WeightedChild+timer");
 }
 
 //
-// NonLeafWrrLb::Locality::Helper
+// NonLeafWrrLb::WeightedChild::Helper
 //
 
-bool NonLeafWrrLb::Locality::Helper::CalledByPendingChild() const {
+bool NonLeafWrrLb::WeightedChild::Helper::CalledByPendingChild() const {
   GPR_ASSERT(child_ != nullptr);
-  return child_ == locality_->pending_child_policy_.get();
+  return child_ == weighted_child_->pending_child_policy_.get();
 }
 
-bool NonLeafWrrLb::Locality::Helper::CalledByCurrentChild() const {
+bool NonLeafWrrLb::WeightedChild::Helper::CalledByCurrentChild() const {
   GPR_ASSERT(child_ != nullptr);
-  return child_ == locality_->child_policy_.get();
+  return child_ == weighted_child_->child_policy_.get();
 }
 
 RefCountedPtr<SubchannelInterface>
-NonLeafWrrLb::Locality::Helper::CreateSubchannel(
+NonLeafWrrLb::WeightedChild::Helper::CreateSubchannel(
     const grpc_channel_args& args) {
-  if (locality_->non_leaf_wrr_policy()->shutting_down_ ||
+  if (weighted_child_->non_leaf_wrr_policy_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return nullptr;
   }
-  return locality_->non_leaf_wrr_policy()->channel_control_helper()->CreateSubchannel(
+  return weighted_child_->non_leaf_wrr_policy_->channel_control_helper()->CreateSubchannel(
       args);
 }
 
-void NonLeafWrrLb::Locality::Helper::UpdateState(
+void NonLeafWrrLb::WeightedChild::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
-  if (locality_->non_leaf_wrr_policy()->shutting_down_) return;
+  if (weighted_child_->non_leaf_wrr_policy_->shutting_down_) return;
   // If this request is from the pending child policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingChild()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
       gpr_log(GPR_INFO,
-              "[non_leaf_wrr_lb %p helper %p] pending child policy %p reports state=%s",
-              locality_->non_leaf_wrr_policy(), this,
-              locality_->pending_child_policy_.get(),
+              "[non_leaf_wrr_lb %p helper %p] pending child policy %p reports "
+              "state=%s",
+              weighted_child_->non_leaf_wrr_policy_.get(), this,
+              weighted_child_->pending_child_policy_.get(),
               ConnectivityStateName(state));
     }
     if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(
-        locality_->child_policy_->interested_parties(),
-        locality_->non_leaf_wrr_policy()->interested_parties());
-    locality_->child_policy_ = std::move(locality_->pending_child_policy_);
+        weighted_child_->child_policy_->interested_parties(),
+        weighted_child_->non_leaf_wrr_policy_->interested_parties());
+    weighted_child_->child_policy_ =
+        std::move(weighted_child_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
     // This request is from an outdated child, so ignore it.
     return;
   }
-  // Cache the picker and its state in the locality.
-  // TODO(roth): If load reporting is not configured, we should ideally
-  // pass a null LocalityStats ref to the EndpointPickerWrapper and have it
-  // not collect any stats, since they're not going to be used.  This would
-  // require recreating all of the pickers whenever we get a config update.
-  locality_->picker_wrapper_ = MakeRefCounted<EndpointPickerWrapper>(
-      std::move(picker),
-      locality_->non_leaf_wrr_policy()->client_stats_.FindLocalityStats(
-          locality_->name_));
-  locality_->connectivity_state_ = state;
-  // Notify the locality map.
-  locality_->locality_map_->OnLocalityStateUpdateLocked();
+  // Cache the picker and its state in the WeightedChild.
+  weighted_child_->picker_wrapper_ =
+      MakeRefCounted<ChildPickerWrapper>(std::move(picker));
+  weighted_child_->connectivity_state_ = state;
+  // Notify the LB policy.
+  weighted_child_->non_leaf_wrr_policy_->UpdateStateLocked();
 }
 
-void NonLeafWrrLb::Locality::Helper::AddTraceEvent(TraceSeverity severity,
-                                                         StringView message) {
-  if (locality_->non_leaf_wrr_policy()->shutting_down_ ||
+void NonLeafWrrLb::WeightedChild::Helper::RequestReresolution() {
+  if (weighted_child_->non_leaf_wrr_policy_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return;
   }
-  locality_->non_leaf_wrr_policy()->channel_control_helper()->AddTraceEvent(severity,
-                                                                   message);
+  weighted_child_->non_leaf_wrr_policy_->channel_control_helper()->RequestReresolution();
+}
+
+void NonLeafWrrLb::WeightedChild::Helper::AddTraceEvent(TraceSeverity severity,
+                                                        StringView message) {
+  if (weighted_child_->non_leaf_wrr_policy_->shutting_down_ ||
+      (!CalledByPendingChild() && !CalledByCurrentChild())) {
+    return;
+  }
+  weighted_child_->non_leaf_wrr_policy_->channel_control_helper()->AddTraceEvent(
+      severity, message);
 }
 
 //
