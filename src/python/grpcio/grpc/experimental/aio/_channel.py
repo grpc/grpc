@@ -20,6 +20,8 @@ import logging
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
+from grpc import _compression
+from grpc import _grpcio_metadata
 
 from . import _base_call
 from ._call import (StreamStreamCall, StreamUnaryCall, UnaryStreamCall,
@@ -31,6 +33,19 @@ from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
 from ._utils import _timeout_to_deadline
 
 _IMMUTABLE_EMPTY_TUPLE = tuple()
+_USER_AGENT = 'grpc-python-asyncio/{}'.format(_grpcio_metadata.__version__)
+
+
+def _augment_channel_arguments(base_options: ChannelArgumentType,
+                               compression: Optional[grpc.Compression]):
+    compression_channel_argument = _compression.create_channel_option(
+        compression)
+    user_agent_channel_argument = ((
+        cygrpc.ChannelArgKey.primary_user_agent_string,
+        _USER_AGENT,
+    ),)
+    return tuple(base_options
+                ) + compression_channel_argument + user_agent_channel_argument
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -135,11 +150,11 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if compression:
-            raise NotImplementedError("TODO: compression not implemented yet")
-
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
+
+        if compression:
+            metadata = _compression.augment_metadata(metadata, compression)
 
         if not self._interceptors:
             call = UnaryUnaryCall(request, _timeout_to_deadline(timeout),
@@ -188,12 +203,13 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
         Returns:
           A Call object instance which is an awaitable object.
         """
-        if compression:
-            raise NotImplementedError("TODO: compression not implemented yet")
-
-        deadline = _timeout_to_deadline(timeout)
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
+
+        if compression:
+            metadata = _compression.augment_metadata(metadata, compression)
+
+        deadline = _timeout_to_deadline(timeout)
 
         call = UnaryStreamCall(request, deadline, metadata, credentials,
                                wait_for_ready, self._channel, self._method,
@@ -237,12 +253,13 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if compression:
-            raise NotImplementedError("TODO: compression not implemented yet")
-
-        deadline = _timeout_to_deadline(timeout)
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
+
+        if compression:
+            metadata = _compression.augment_metadata(metadata, compression)
+
+        deadline = _timeout_to_deadline(timeout)
 
         call = StreamUnaryCall(request_async_iterator, deadline, metadata,
                                credentials, wait_for_ready, self._channel,
@@ -286,12 +303,13 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if compression:
-            raise NotImplementedError("TODO: compression not implemented yet")
-
-        deadline = _timeout_to_deadline(timeout)
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
+
+        if compression:
+            metadata = _compression.augment_metadata(metadata, compression)
+
+        deadline = _timeout_to_deadline(timeout)
 
         call = StreamStreamCall(request_async_iterator, deadline, metadata,
                                 credentials, wait_for_ready, self._channel,
@@ -311,7 +329,7 @@ class Channel:
     _unary_unary_interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
     _ongoing_calls: _OngoingCalls
 
-    def __init__(self, target: Text, options: Optional[ChannelArgumentType],
+    def __init__(self, target: Text, options: ChannelArgumentType,
                  credentials: Optional[grpc.ChannelCredentials],
                  compression: Optional[grpc.Compression],
                  interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]):
@@ -326,10 +344,6 @@ class Channel:
           interceptors: An optional list of interceptors that would be used for
             intercepting any RPC executed with that channel.
         """
-
-        if compression:
-            raise NotImplementedError("TODO: compression not implemented yet")
-
         if interceptors is None:
             self._unary_unary_interceptors = None
         else:
@@ -349,7 +363,8 @@ class Channel:
                     .format(invalid_interceptors))
 
         self._loop = asyncio.get_event_loop()
-        self._channel = cygrpc.AioChannel(_common.encode(target), options,
+        self._channel = cygrpc.AioChannel(_common.encode(target),
+                                          _augment_channel_arguments(options, compression),
                                           credentials, self._loop)
         self._ongoing_calls = _OngoingCalls()
 

@@ -67,3 +67,9 @@ class _EOF:
 
 
 EOF = _EOF()
+
+_COMPRESSION_METADATA_STRING_MAPPING = {
+    CompressionAlgorithm.none: 'identity',
+    CompressionAlgorithm.deflate: 'deflate',
+    CompressionAlgorithm.gzip: 'gzip',
+}
