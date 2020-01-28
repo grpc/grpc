@@ -111,42 +111,25 @@ class PriorityLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  // A simple wrapper for ref-counting a picker from the child policy.
-  class RefCountedPicker : public RefCounted<RefCountedPicker> {
-   public:
-    explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
-   private:
-    std::unique_ptr<SubchannelPicker> picker_;
-  };
-
-  // A non-ref-counted wrapper for RefCountedPicker.
-  class RefCountedPickerWrapper : public SubchannelPicker {
-   public:
-    explicit RefCountedPickerWrapper(RefCountedPtr<RefCountedPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) override {
-      return picker_->Pick(std::move(args));
-    }
-   private:
-    RefCountedPtr<RefCountedPicker> picker_;
-  };
-
   // Each Priority holds a ref to the PriorityLb.
 // FIXME: rename to Child?
   class Priority : public InternallyRefCounted<Priority> {
    public:
-    Priority(RefCountedPtr<PriorityLb> priority_policy, uint32_t priority);
+    Priority(RefCountedPtr<PriorityLb> priority_policy, std::string name);
 
     ~Priority() { priority_policy_.reset(DEBUG_LOCATION, "Priority"); }
+
+    const std::string& name() const { return name_; }
 
     void Orphan() override;
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> update);
     void ResetBackoffLocked();
 
-    void UpdatePriorityPickerLocked();
+    std::unique_ptr<SubchannelPicker> GetPicker() {
+      return grpc_core::MakeUnique<RefCountedPickerWrapper>(picker_wrapper_);
+    }
+
     void DeactivateLocked();
     // Returns true if this locality map becomes the currently used one (i.e.,
     // its priority is selected) after reactivation.
@@ -161,6 +144,28 @@ class PriorityLb : public LoadBalancingPolicy {
     }
 
    private:
+    // A simple wrapper for ref-counting a picker from the child policy.
+    class RefCountedPicker : public RefCounted<RefCountedPicker> {
+     public:
+      explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
+          : picker_(std::move(picker)) {}
+      PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+     private:
+      std::unique_ptr<SubchannelPicker> picker_;
+    };
+
+    // A non-ref-counted wrapper for RefCountedPicker.
+    class RefCountedPickerWrapper : public SubchannelPicker {
+     public:
+      explicit RefCountedPickerWrapper(RefCountedPtr<RefCountedPicker> picker)
+          : picker_(std::move(picker)) {}
+      PickResult Pick(PickArgs args) override {
+        return picker_->Pick(std::move(args));
+      }
+     private:
+      RefCountedPtr<RefCountedPicker> picker_;
+    };
+
     class Helper : public ChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<Priority> priority)
@@ -200,6 +205,7 @@ class PriorityLb : public LoadBalancingPolicy {
     static void OnFailoverTimerLocked(void* arg, grpc_error* error);
 
     RefCountedPtr<PriorityLb> priority_policy_;
+    std::string name_;
 
     // States for delayed removal.
     grpc_timer delayed_removal_timer_;
@@ -222,9 +228,10 @@ class PriorityLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
+  uint32_t FindPriorityForChild(const std::string& child_name);
   void UpdatePriorityPickerLocked();
   void MaybeCreatePriorityLocked(uint32_t priority);
-  void FailoverOnConnectionFailureLocked();
+  void FailoverOnConnectionFailureLocked(const std::string& child_name);
   void FailoverOnDisconnectionLocked(uint32_t failed_priority);
   void SwitchToHigherPriorityLocked(uint32_t priority);
   void DeactivatePrioritiesLowerThan(uint32_t priority);
@@ -240,10 +247,9 @@ class PriorityLb : public LoadBalancingPolicy {
   // True if we are in the process of shutting down.
   bool shutting_down_ = false;
   // A map of children by name.
+// FIXME: maybe key this by StringView, with actual string stored inside
+// of value object?
   std::map<std::string /* name */, OrphanablePtr<Priority>> children_;
-  // A list of child names that currently exist, in decreasing order of
-  // priority.
-  std::vector<std::string /* name */> priorities_;
   // The priority that is currently being used.
   uint32_t current_priority_ = UINT32_MAX;
 };
@@ -363,59 +369,10 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   }
 #endif
 
-#if 0
-  // Construct new list of priorities and child map.
-  std::vector<std::string> new_priorities;
-  std::map<std::string, OrphanablePtr<Priority>> new_children;
-  for (const auto& child : config_->priorities()) {
-    new_priorities.push_back(child.name);
-    // If the child already exists, move it to the new map.
-    auto it = children_.find(child.name);
-    if (it != children_.end()) {
-      new_children[child.name] = std::move(it->second);
-      children_.erase(it);
-    }
-  }
-  // For any child still in the old map, deactivate it and move it to the
-  // new map.
-  for (auto& p : children_) {
-    p.second->DeactivateLocked();
-    new_children[p.first] = std::move(p.second);
-  }
-  // Swap out the map.
-  priorities_ = std::move(new_priorities);
-  children_ = std::move(new_children);
-  // Update existing priorities.
-
-  bool found_ready_child = false;
-  bool created_child = false;
-
-      // Child already exists.
-      // If we've already found a child in READY state, deactivate this one.
-      if (found_ready_child) {
-        if (locality_retention_interval_ms_ == 0) {
-          children_.erase(it);
-        } else {
-          it->second->DeactivateLocked();
-        }
-      } else
-
-      // Check its state.
-      if (it->second.connectivity_state() == GRPC_CHANNEL_READY) {
-        // FIXME:
-        // - return picker for this child
-        // - deactivate lower priorities
-        found_ready_child = true;
-      }
-#endif
-
-
 }
 
 void PriorityLb::UpdatePriorityPickerLocked() {
-  // If we are in fallback mode, don't generate an xds picker from localities.
-  if (priority_policy_->fallback_policy_ != nullptr) return;
-  if (current_priority() == UINT32_MAX) {
+  if (current_priority_ == UINT32_MAX) {
     grpc_error* error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ready locality map"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
@@ -424,22 +381,45 @@ void PriorityLb::UpdatePriorityPickerLocked() {
         grpc_core::MakeUnique<TransientFailurePicker>(error));
     return;
   }
-  priorities_[current_priority_]->UpdatePriorityPickerLocked();
+  priority_policy_->channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_READY,
+      children_[config_->priorities().at(current_priority_)]->GetPicker());
 }
 
 void PriorityLb::MaybeCreatePriorityLocked(uint32_t priority) {
-  // Exhausted priorities in the update.
-  if (!priority_list_update().Contains(priority)) return;
-  auto new_locality_map = new Priority(
-      priority_policy_->Ref(DEBUG_LOCATION, "Priority"), priority);
-  priorities_.emplace_back(OrphanablePtr<Priority>(new_locality_map));
-  new_locality_map->UpdateLocked(*priority_list_update().Find(priority));
+  if (priority >= config_->priorities().size()) return;
+  PriorityLbConfig::Child& config = config_->priorities().at(priority);
+  if (children_.find(config.name) != children_.end()) {
+    MaybeReactivateLocked();
+  } else {
+    Priority* new_child =
+        new Priority(Ref(DEBUG_LOCATION, "Priority"), config.name);
+    children_[config.name] = OrphanablePtr<Priority>(new_child);
+    new_child->UpdateLocked(config.config);
+  }
 }
 
-void PriorityLb::FailoverOnConnectionFailureLocked() {
-  const uint32_t failed_priority = LowestPriority();
+uint32_t PriorityLb::FindPriorityForChild(const std::string& child_name) {
+  // This simple linear search is probably fine, since we don't expect
+  // a large number of priorities here.  If it becomes a problem, we can
+  // optimize it via (e.g.) maintaining a map from name to priority.
+  for (uint32_t i = 0; i < config_->priorities().size(); ++i) {
+    if (config_->priorities().at(i).name == child_name) return i;
+  }
+  return UINT32_MAX;
+}
+
+void PriorityLb::FailoverOnConnectionFailureLocked(
+    const std::string& child_name) {
+  const uint32_t failed_priority = FindPriorityForChild(child_name);
+  // If the failed priority is not in the map, do nothing.  This could
+  // happen if we're in the middle of applying an update that removes
+  // a priority when the child for that priority has a connection failure.
+// FIXME: maybe return a queue picker in this case, while we try to
+// connect to another child?
+  if (failed_priority == UINT32_MAX) return;
   // If we're failing over from the lowest priority, report TRANSIENT_FAILURE.
-  if (failed_priority == priority_list_update().LowestPriority()) {
+  if (failed_priority == config_->priorities().size() - 1) {
     UpdatePriorityPickerLocked();
   }
   MaybeCreatePriorityLocked(failed_priority + 1);
@@ -514,55 +494,8 @@ void PriorityLb::Priority::UpdateLocked(
     gpr_log(GPR_INFO, "[priority_lb %p] Start Updating priority %" PRIu32,
             priority_policy(), priority_);
   }
-  // Maybe reactivate the locality map in case all the active locality maps have
-  // failed.
-  MaybeReactivateLocked();
 // FIXME: update child
 
-}
-
-void PriorityLb::Priority::UpdatePriorityPickerLocked() {
-  // Construct a new xds picker which maintains a map of all locality pickers
-  // that are ready. Each locality is represented by a portion of the range
-  // proportional to its weight, such that the total range is the sum of the
-  // weights of all localities.
-  LocalityPicker::PickerList picker_list;
-  uint32_t end = 0;
-  for (const auto& p : localities_) {
-    const auto& locality_name = p.first;
-    const Locality* locality = p.second.get();
-    // Skip the localities that are not in the latest locality map update.
-    if (!locality_map_update()->Contains(locality_name)) continue;
-    if (locality->connectivity_state() != GRPC_CHANNEL_READY) continue;
-    end += locality->weight();
-    picker_list.push_back(std::make_pair(end, locality->picker_wrapper()));
-  }
-  priority_policy()->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY,
-      grpc_core::MakeUnique<LocalityPicker>(
-          priority_policy_->Ref(DEBUG_LOCATION, "LocalityPicker"),
-          std::move(picker_list)));
-}
-
-void PriorityLb::Priority::DeactivateLocked() {
-  // If already deactivated, don't do it again.
-  if (delayed_removal_timer_callback_pending_) return;
-  MaybeCancelFailoverTimerLocked();
-  // Start a timer to delete the locality.
-  Ref(DEBUG_LOCATION, "Priority+timer").release();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO,
-            "[priority_lb %p] Will remove priority %" PRIu32 " in %" PRId64 " ms.",
-            priority_policy(), priority_,
-            priority_policy()->locality_retention_interval_ms_);
-  }
-  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
-                    grpc_schedule_on_exec_ctx);
-  grpc_timer_init(
-      &delayed_removal_timer_,
-      ExecCtx::Get()->Now() + priority_policy()->locality_retention_interval_ms_,
-      &on_delayed_removal_timer_);
-  delayed_removal_timer_callback_pending_ = true;
 }
 
 bool PriorityLb::Priority::MaybeReactivateLocked() {
@@ -619,7 +552,7 @@ void PriorityLb::Priority::OnLocalityStateUpdateLocked() {
       // handle it if it's the priority that is still in failover timeout.
       if (failover_timer_callback_pending_) {
         MaybeCancelFailoverTimerLocked();
-        priority_list()->FailoverOnConnectionFailureLocked();
+        priority_list()->FailoverOnConnectionFailureLocked(name_);
       }
     }
     return;
@@ -739,7 +672,7 @@ void PriorityLb::Priority::OnFailoverTimerLocked(
   Priority* self = static_cast<Priority*>(arg);
   self->failover_timer_callback_pending_ = false;
   if (error == GRPC_ERROR_NONE && !self->priority_policy_->shutting_down_) {
-    self->priority_list()->FailoverOnConnectionFailureLocked();
+    self->priority_list()->FailoverOnConnectionFailureLocked(self->name_);
   }
   self->Unref(DEBUG_LOCATION, "Priority+OnFailoverTimerLocked");
 }
