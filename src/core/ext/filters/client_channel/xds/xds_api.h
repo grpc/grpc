@@ -41,19 +41,6 @@ constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
-// The version state for each specific ADS resource type.
-struct VersionState {
-  // The version of the latest response that is accepted and used.
-  std::string version_info;
-  // The nonce of the latest response.
-  std::string nonce;
-  // The error message to be included in a NACK with the nonce. Consumed when a
-  // nonce is NACK'ed for the first time.
-  grpc_error* error = GRPC_ERROR_NONE;
-
-  ~VersionState() { GRPC_ERROR_UNREF(error); }
-};
-
 struct RdsUpdate {
   // The name to use in the CDS request.
   std::string cluster_name;
@@ -246,7 +233,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(const std::string& server_name,
 // Creates an LRS request sending client-side load reports. If all the counters
 // are zero, returns empty slice.
 grpc_slice XdsLrsRequestCreateAndEncode(
-    std::map<StringView /*cluster_name*/, std::set<XdsClientStats*>>
+    std::map<StringView /*cluster_name*/, std::set<XdsClientStats*>, StringLess>
         client_stats_map);
 
 // Parses the LRS response and returns \a

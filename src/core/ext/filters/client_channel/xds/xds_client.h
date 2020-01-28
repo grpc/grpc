@@ -153,8 +153,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
 
-    void OnResourceNamesChanged(const std::string& type_url);
-    void OnWatcherRemoved();
+    void Subscribe(const std::string& type_url, const std::string& name);
+    void Unsubscribe(const std::string& type_url, const std::string& name);
 
    private:
     class StateWatcher;
@@ -195,11 +195,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const std::string& cluster_name,
       RefCountedPtr<ServiceConfig>* service_config) const;
 
-  std::set<StringView> WatchedClusterNames() const;
-
-  std::set<StringView> EdsServiceNames() const;
-
-  std::map<StringView, std::set<XdsClientStats*>> ClientStatsMap() const;
+  std::map<StringView, std::set<XdsClientStats*>, StringLess> ClientStatsMap()
+      const;
 
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);
@@ -207,6 +204,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   static int ChannelArgCmp(void* p, void* q);
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
+
+  const grpc_millis request_timeout_;
 
   grpc_core::UniquePtr<char> build_version_;
 
@@ -225,10 +224,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   std::string route_config_name_;
   std::string cluster_name_;
   // All the received clusters are cached, no matter they are watched or not.
-  std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
+  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
   // Only the watched EDS service names are stored.
-  std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
-      endpoint_map_;
+  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
 
   bool shutting_down_ = false;
 };
