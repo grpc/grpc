@@ -201,7 +201,11 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
         if not self._interceptors_task.done():
             return False
 
-        call = self._interceptors_task.result()
+        try:
+            call = self._interceptors_task.result()
+        except (AioRpcError, asyncio.CancelledError):
+            return True
+
         return call.done()
 
     def add_done_callback(self, callback: DoneCallbackType) -> None:
@@ -209,7 +213,11 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
             self._pending_add_done_callbacks.append(callback)
             return
 
-        call = self._interceptors_task.result()
+        try:
+            call = self._interceptors_task.result()
+        except (AioRpcError, asyncio.CancelledError):
+            callback(self)
+            return
 
         if call.done():
             callback(self)

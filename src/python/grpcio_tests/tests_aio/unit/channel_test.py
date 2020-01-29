@@ -44,43 +44,6 @@ _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
 
 
-class Test_OngoingCalls(unittest.TestCase):
-
-    def test_trace_call(self):
-
-        class FakeCall(_base_call.RpcContext):
-
-            def __init__(self):
-                self.callback = None
-
-            def add_done_callback(self, callback):
-                self.callback = callback
-
-            def cancel(self):
-                raise NotImplementedError
-
-            def cancelled(self):
-                raise NotImplementedError
-
-            def done(self):
-                raise NotImplementedError
-
-            def time_remaining(self):
-                raise NotImplementedError
-
-        ongoing_calls = _OngoingCalls()
-        self.assertEqual(ongoing_calls.size(), 0)
-
-        call = FakeCall()
-        ongoing_calls.trace_call(call)
-        self.assertEqual(ongoing_calls.size(), 1)
-        self.assertEqual(ongoing_calls.calls, [call])
-
-        call.callback(call)
-        self.assertEqual(ongoing_calls.size(), 0)
-        self.assertEqual(ongoing_calls.calls, [])
-
-
 class TestChannel(AioTestBase):
 
     async def setUp(self):
@@ -263,65 +226,6 @@ class TestChannel(AioTestBase):
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
         await channel.close()
-
-    async def test_close_unary_unary(self):
-        channel = aio.insecure_channel(self._server_target)
-        stub = test_pb2_grpc.TestServiceStub(channel)
-
-        calls = [stub.UnaryCall(messages_pb2.SimpleRequest()) for _ in range(2)]
-
-        self.assertEqual(channel._ongoing_calls.size(), 2)
-
-        await channel.close()
-
-        for call in calls:
-            self.assertTrue(call.cancelled())
-
-        self.assertEqual(channel._ongoing_calls.size(), 0)
-
-    async def test_close_unary_stream(self):
-        channel = aio.insecure_channel(self._server_target)
-        stub = test_pb2_grpc.TestServiceStub(channel)
-
-        request = messages_pb2.StreamingOutputCallRequest()
-        calls = [stub.StreamingOutputCall(request) for _ in range(2)]
-
-        self.assertEqual(channel._ongoing_calls.size(), 2)
-
-        await channel.close()
-
-        for call in calls:
-            self.assertTrue(call.cancelled())
-
-        self.assertEqual(channel._ongoing_calls.size(), 0)
-
-    async def test_close_stream_stream(self):
-        channel = aio.insecure_channel(self._server_target)
-        stub = test_pb2_grpc.TestServiceStub(channel)
-
-        calls = [stub.FullDuplexCall() for _ in range(2)]
-
-        self.assertEqual(channel._ongoing_calls.size(), 2)
-
-        await channel.close()
-
-        for call in calls:
-            self.assertTrue(call.cancelled())
-
-        self.assertEqual(channel._ongoing_calls.size(), 0)
-
-    async def test_close_async_context(self):
-        async with aio.insecure_channel(self._server_target) as channel:
-            stub = test_pb2_grpc.TestServiceStub(channel)
-            calls = [
-                stub.UnaryCall(messages_pb2.SimpleRequest()) for _ in range(2)
-            ]
-            self.assertEqual(channel._ongoing_calls.size(), 2)
-
-        for call in calls:
-            self.assertTrue(call.cancelled())
-
-        self.assertEqual(channel._ongoing_calls.size(), 0)
 
 
 if __name__ == '__main__':

@@ -377,25 +377,34 @@ class Channel:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Finishes the asynchronous context manager by closing gracefully the channel."""
-        await self._close()
+        """Finishes the asynchronous context manager by closing the channel.
 
-    async def _wait_for_close_ongoing_calls(self):
-        sleep_iterations_sec = 0.001
+        Still active RPCs will be cancelled.
+        """
+        await self._close(None)
 
-        while self._ongoing_calls.size() > 0:
-            await asyncio.sleep(sleep_iterations_sec)
+    async def _close(self, grace):
+        if self._channel.closed():
+            return
 
-    async def _close(self):
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
+
+        if grace:
+            _, pending = await asyncio.wait(self._ongoing_calls.calls,
+                                            timeout=grace,
+                                            loop=self._loop)
+
+            if not pending:
+                return
 
         calls = self._ongoing_calls.calls
         for call in calls:
             call.cancel()
 
         try:
-            await asyncio.wait_for(self._wait_for_close_ongoing_calls(),
+            await asyncio.wait_for(asyncio.gather(*self._ongoing_calls.calls,
+                                                  loop=self._loop),
                                    _TIMEOUT_WAIT_FOR_CLOSE_ONGOING_CALLS_SEC,
                                    loop=self._loop)
         except asyncio.TimeoutError:
@@ -404,15 +413,20 @@ class Channel:
 
         self._channel.close()
 
-    async def close(self):
+    async def close(self, grace: Optional[float] = None):
         """Closes this Channel and releases all resources held by it.
 
-        Closing the Channel will proactively terminate all RPCs active with the
-        Channel and it is not valid to invoke new RPCs with the Channel.
+        This method immediately stops the channel from executing new RPCs in
+        all cases.
+
+        If a grace period is specified, this method wait until all active
+        RPCs are finshed, once the grace period is reached the ones that haven't
+        been terminated are cancelled. If a grace period is not specified
+        (by passing None for grace), all existing RPCs are cancelled immediately.
 
         This method is idempotent.
         """
-        await self._close()
+        await self._close(grace)
 
     def get_state(self,
                   try_to_connect: bool = False) -> grpc.ChannelConnectivity:

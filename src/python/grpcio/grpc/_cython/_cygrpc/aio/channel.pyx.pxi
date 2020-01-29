@@ -101,6 +101,9 @@ cdef class AioChannel:
         self._status = AIO_CHANNEL_STATUS_DESTROYED
         grpc_channel_destroy(self.channel)
 
+    def closed(self):
+        return self._status in (AIO_CHANNEL_STATUS_CLOSING, AIO_CHANNEL_STATUS_DESTROYED)
+
     def call(self,
              bytes method,
              object deadline,
@@ -110,7 +113,7 @@ cdef class AioChannel:
         Returns:
           The _AioCall object.
         """
-        if self._status in (AIO_CHANNEL_STATUS_CLOSING, AIO_CHANNEL_STATUS_DESTROYED):
+        if self.closed():
             # TODO(lidiz) switch to UsageError
             raise RuntimeError('Channel is closed.')
 
