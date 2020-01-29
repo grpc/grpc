@@ -140,7 +140,7 @@ tar zxf dotnet_old.tar.gz -C dotnet_old
 sudo cp -r dotnet_old/shared/Microsoft.NETCore.App/1.1.10/ /usr/share/dotnet/shared/Microsoft.NETCore.App/
 
 # Ruby dependencies
-gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+gpg --keyserver hkp://pgp.mit.edu --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 curl -sSL https://get.rvm.io | bash -s stable --ruby
 # silence shellcheck as it cannot follow the following `source` path statically:
 # shellcheck disable=SC1090

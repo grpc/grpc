@@ -976,6 +976,7 @@
 - cmake_target: absl::random_distributions
   deps:
   - absl/base:base_internal
+  - absl/base:config
   - absl/base:core_headers
   - absl/meta:type_traits
   - absl/random/internal:distributions
@@ -1044,14 +1045,17 @@
   - absl/base:config
   - absl/base:core_headers
   - absl/base:endian
+  - absl/base:raw_logging_internal
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/strings/internal/char_map.h
+  - third_party/abseil-cpp/absl/strings/internal/escaping.h
   - third_party/abseil-cpp/absl/strings/internal/ostringstream.h
   - third_party/abseil-cpp/absl/strings/internal/resize_uninitialized.h
   - third_party/abseil-cpp/absl/strings/internal/utf8.h
   name: absl/strings:internal
   src:
+  - third_party/abseil-cpp/absl/strings/internal/escaping.cc
   - third_party/abseil-cpp/absl/strings/internal/ostringstream.cc
   - third_party/abseil-cpp/absl/strings/internal/utf8.cc
 - cmake_target: absl::str_format
@@ -1104,7 +1108,6 @@
   - third_party/abseil-cpp/absl/strings/escaping.h
   - third_party/abseil-cpp/absl/strings/internal/charconv_bigint.h
   - third_party/abseil-cpp/absl/strings/internal/charconv_parse.h
-  - third_party/abseil-cpp/absl/strings/internal/escaping.h
   - third_party/abseil-cpp/absl/strings/internal/memutil.h
   - third_party/abseil-cpp/absl/strings/internal/stl_type_traits.h
   - third_party/abseil-cpp/absl/strings/internal/str_join_internal.h
@@ -1125,7 +1128,6 @@
   - third_party/abseil-cpp/absl/strings/escaping.cc
   - third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc
   - third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc
-  - third_party/abseil-cpp/absl/strings/internal/escaping.cc
   - third_party/abseil-cpp/absl/strings/internal/memutil.cc
   - third_party/abseil-cpp/absl/strings/match.cc
   - third_party/abseil-cpp/absl/strings/numbers.cc

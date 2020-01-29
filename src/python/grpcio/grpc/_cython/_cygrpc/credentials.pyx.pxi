@@ -14,7 +14,9 @@
 
 
 def _spawn_callback_in_thread(cb_func, args):
-  ForkManagedThread(target=cb_func, args=args).start()
+  t = ForkManagedThread(target=cb_func, args=args)
+  t.setDaemon(True)
+  t.start()
 
 async_callback_func = _spawn_callback_in_thread
 

@@ -834,8 +834,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
                                             endpoint_watcher_);
     }
-    auto watcher =
-        MakeUnique<EndpointWatcher>(Ref(DEBUG_LOCATION, "EndpointWatcher"));
+    auto watcher = grpc_core::MakeUnique<EndpointWatcher>(
+        Ref(DEBUG_LOCATION, "EndpointWatcher"));
     endpoint_watcher_ = watcher.get();
     xds_client()->WatchEndpointData(StringView(eds_service_name()),
                                     std::move(watcher));
@@ -1092,7 +1092,7 @@ void XdsLb::PriorityList::UpdateXdsPickerLocked() {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     xds_policy_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        MakeUnique<TransientFailurePicker>(error));
+        grpc_core::MakeUnique<TransientFailurePicker>(error));
     return;
   }
   priorities_[current_priority_]->UpdateXdsPickerLocked();
@@ -1183,8 +1183,9 @@ XdsLb::PriorityList::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
   // This is the first locality map ever created, report CONNECTING.
   if (priority_ == 0) {
     xds_policy_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, MakeUnique<QueuePicker>(xds_policy_->Ref(
-                                     DEBUG_LOCATION, "QueuePicker")));
+        GRPC_CHANNEL_CONNECTING,
+        grpc_core::MakeUnique<QueuePicker>(
+            xds_policy_->Ref(DEBUG_LOCATION, "QueuePicker")));
   }
 }
 
