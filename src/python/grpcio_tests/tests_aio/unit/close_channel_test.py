@@ -36,9 +36,6 @@ class TestOngoingCalls(unittest.TestCase):
 
         class FakeCall(_base_call.RpcContext):
 
-            def __init__(self):
-                self.callback = None
-
             def add_done_callback(self, callback):
                 self.callback = callback
 
