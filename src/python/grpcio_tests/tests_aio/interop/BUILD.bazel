@@ -14,10 +14,7 @@
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
-package(
-    default_testonly = 1,
-    default_visibility = ["//visibility:public"],
-)
+package(default_testonly = 1)
 
 py_library(
     name = "methods",

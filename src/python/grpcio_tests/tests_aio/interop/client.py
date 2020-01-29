@@ -23,13 +23,12 @@ from grpc.experimental import aio
 from tests.interop import client as interop_client_lib
 from tests_aio.interop import methods
 
-logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
 
 def _create_channel(args):
-    target = '{}:{}'.format(args.server_host, args.server_port)
+    target = f'{args.server_host}:{args.server_port}'
 
     if args.use_tls:
         channel_credentials, options = interop_client_lib.get_secure_channel_parameters(
@@ -54,9 +53,10 @@ async def test_interoperability():
     channel = _create_channel(args)
     stub = interop_client_lib.create_stub(channel, args)
     test_case = _test_case_from_arg(args.test_case)
-    await test_case.test_interoperability(stub, args)
+    await methods.test_interoperability(test_case, stub, args)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     asyncio.get_event_loop().set_debug(True)
     asyncio.get_event_loop().run_until_complete(test_interoperability())

@@ -37,36 +37,37 @@ class InteropTestCaseMixin:
     _stub: test_pb2_grpc.TestServiceStub
 
     async def test_empty_unary(self):
-        await methods.TestCase.EMPTY_UNARY.test_interoperability(
-            self._stub, None)
+        await methods.test_interoperability(methods.TestCase.EMPTY_UNARY,
+                                            self._stub, None)
 
     async def test_large_unary(self):
-        await methods.TestCase.LARGE_UNARY.test_interoperability(
-            self._stub, None)
+        await methods.test_interoperability(methods.TestCase.LARGE_UNARY,
+                                            self._stub, None)
 
     async def test_server_streaming(self):
-        await methods.TestCase.SERVER_STREAMING.test_interoperability(
-            self._stub, None)
+        await methods.test_interoperability(methods.TestCase.SERVER_STREAMING,
+                                            self._stub, None)
 
     async def test_client_streaming(self):
-        await methods.TestCase.CLIENT_STREAMING.test_interoperability(
-            self._stub, None)
+        await methods.test_interoperability(methods.TestCase.CLIENT_STREAMING,
+                                            self._stub, None)
 
     async def test_ping_pong(self):
-        await methods.TestCase.PING_PONG.test_interoperability(self._stub, None)
+        await methods.test_interoperability(methods.TestCase.PING_PONG,
+                                            self._stub, None)
 
     async def test_cancel_after_begin(self):
-        await methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(
-            self._stub, None)
+        await methods.test_interoperability(methods.TestCase.CANCEL_AFTER_BEGIN,
+                                            self._stub, None)
 
     async def test_cancel_after_first_response(self):
-        await methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(
-            self._stub, None)
+        await methods.test_interoperability(
+            methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE, self._stub, None)
 
     @unittest.skip('TODO(https://github.com/grpc/grpc/issues/21707)')
     async def test_timeout_on_sleeping_server(self):
-        await methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER.test_interoperability(
-            self._stub, None)
+        await methods.test_interoperability(
+            methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER, self._stub, None)
 
 
 class InsecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
