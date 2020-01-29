@@ -15,8 +15,6 @@
 
 import asyncio
 import logging
-import os
-import threading
 import unittest
 
 import grpc
@@ -25,24 +23,11 @@ from grpc.experimental.aio import _base_call
 from grpc.experimental.aio._channel import _OngoingCalls
 
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
-from tests.unit.framework.common import test_constants
-from tests_aio.unit._constants import (UNARY_CALL_WITH_SLEEP_VALUE,
-                                       UNREACHABLE_TARGET)
+from tests_aio.unit._constants import UNARY_CALL_WITH_SLEEP_VALUE
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
-_UNARY_CALL_METHOD = '/grpc.testing.TestService/UnaryCall'
 _UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
-_STREAMING_OUTPUT_CALL_METHOD = '/grpc.testing.TestService/StreamingOutputCall'
-
-_INVOCATION_METADATA = (
-    ('initial-md-key', 'initial-md-value'),
-    ('trailing-md-key-bin', b'\x00\x02'),
-)
-
-_NUM_STREAM_RESPONSES = 5
-_REQUEST_PAYLOAD_SIZE = 7
-_RESPONSE_PAYLOAD_SIZE = 42
 
 
 class TestOngoingCalls(unittest.TestCase):

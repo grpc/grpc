@@ -391,6 +391,7 @@ class Channel:
         self._channel.closing()
 
         if grace:
+            # pylint: disable=unused-variable
             _, pending = await asyncio.wait(self._ongoing_calls.calls,
                                             timeout=grace,
                                             loop=self._loop)

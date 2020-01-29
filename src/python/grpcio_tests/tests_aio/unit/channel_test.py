@@ -15,13 +15,11 @@
 
 import logging
 import os
-import threading
 import unittest
 
 import grpc
 from grpc.experimental import aio
 from grpc.experimental.aio import _base_call
-from grpc.experimental.aio._channel import _OngoingCalls
 
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests.unit.framework.common import test_constants
