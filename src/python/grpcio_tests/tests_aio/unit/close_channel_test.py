@@ -81,7 +81,6 @@ class TestCloseChannel(AioTestBase):
         )
 
         call = UnaryCallWithSleep(messages_pb2.SimpleRequest())
-        task = asyncio.ensure_future(call)
 
         await channel.close(grace=UNARY_CALL_WITH_SLEEP_VALUE * 2)
 
@@ -96,7 +95,6 @@ class TestCloseChannel(AioTestBase):
         )
 
         call = UnaryCallWithSleep(messages_pb2.SimpleRequest())
-        task = asyncio.ensure_future(call)
 
         await channel.close(None)
 
@@ -125,6 +123,19 @@ class TestCloseChannel(AioTestBase):
         calls = [stub.StreamingOutputCall(request) for _ in range(2)]
 
         self.assertEqual(channel._ongoing_calls.size(), 2)
+
+        await channel.close()
+
+        for call in calls:
+            self.assertTrue(call.cancelled())
+
+        self.assertEqual(channel._ongoing_calls.size(), 0)
+
+    async def test_close_stream_unary(self):
+        channel = aio.insecure_channel(self._server_target)
+        stub = test_pb2_grpc.TestServiceStub(channel)
+
+        calls = [stub.StreamingInputCall() for _ in range(2)]
 
         await channel.close()
 
