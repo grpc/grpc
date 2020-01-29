@@ -92,6 +92,10 @@ class TestTimeout(AioTestBase):
     async def setUp(self):
         address, self._server = await _start_test_server()
         self._client = aio.insecure_channel(address)
+        self.assertEqual(grpc.ChannelConnectivity.IDLE,
+                         self._client.get_state(True))
+        await _common.block_until_certain_state(self._client,
+                                                grpc.ChannelConnectivity.READY)
 
     async def tearDown(self):
         await self._client.close()
@@ -142,10 +146,9 @@ class TestTimeout(AioTestBase):
         multicallable = self._client.stream_unary(_TEST_SLEEPY_STREAM_UNARY)
         call = multicallable(timeout=0.5 * _SLEEP_TIME_UNIT_S)
 
-        await call.write(_REQUEST)
-        await call.write(_REQUEST)
-
         with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call.write(_REQUEST)
+            await call.write(_REQUEST)
             await call
 
         rpc_error = exception_context.exception
@@ -162,9 +165,8 @@ class TestTimeout(AioTestBase):
         multicallable = self._client.stream_stream(_TEST_SLEEPY_STREAM_STREAM)
         call = multicallable(timeout=0.5 * _SLEEP_TIME_UNIT_S)
 
-        await call.write(_REQUEST)
-
         with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call.write(_REQUEST)
             await call.read()
 
         rpc_error = exception_context.exception
