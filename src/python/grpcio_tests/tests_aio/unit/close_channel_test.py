@@ -101,7 +101,7 @@ class TestCloseChannel(AioTestBase):
         call = UnaryCallWithSleep(messages_pb2.SimpleRequest())
         task = asyncio.ensure_future(call)
 
-        await channel.close(grace=UNARY_CALL_WITH_SLEEP_VALUE / 2)
+        await channel.close(None)
 
         self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
 
