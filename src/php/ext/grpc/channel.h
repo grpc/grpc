@@ -33,8 +33,8 @@ typedef struct _grpc_channel_wrapper {
   char *creds_hashstr;
   size_t ref_count;
   gpr_mu mu;
-  grpc_channel_args args;
-  wrapped_grpc_channel_credentials *creds;
+  grpc_channel_args *args;
+  grpc_channel_credentials *creds;
 } grpc_channel_wrapper;
 
 /* Wrapper struct for grpc_channel that can be associated with a PHP object */

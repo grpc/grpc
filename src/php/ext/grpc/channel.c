@@ -31,10 +31,67 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "completion_queue.h"
 #include "channel_credentials.h"
 #include "timeval.h"
+
+static grpc_arg copy_arg(const grpc_arg* src) {
+  grpc_arg dst;
+  dst.type = src->type;
+  dst.key = gpr_strdup(src->key);
+  switch (dst.type) {
+    case GRPC_ARG_STRING:
+      dst.value.string = gpr_strdup(src->value.string);
+      break;
+    case GRPC_ARG_INTEGER:
+      dst.value.integer = src->value.integer;
+      break;
+    case GRPC_ARG_POINTER:
+      dst.value.pointer = src->value.pointer;
+      dst.value.pointer.p =
+          src->value.pointer.vtable->copy(src->value.pointer.p);
+      break;
+  }
+  return dst;
+}
+static grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src) {
+  grpc_channel_args* dst =
+      (grpc_channel_args*)(gpr_zalloc(sizeof(grpc_channel_args)));
+  if (src->num_args == 0) {
+    return dst;
+  }
+
+  dst->num_args = src->num_args;
+  dst->args = (grpc_arg*)(gpr_malloc(sizeof(grpc_arg) * dst->num_args));
+  // Copy args from src
+  for (size_t i = 0; i < src->num_args; ++i) {
+    dst->args[i] = copy_arg(&src->args[i]);
+  }
+
+  return dst;
+}
+
+void grpc_channel_args_destroy(grpc_channel_args* a) {
+  size_t i;
+  if (!a) return;
+  for (i = 0; i < a->num_args; i++) {
+    switch (a->args[i].type) {
+      case GRPC_ARG_STRING:
+        gpr_free(a->args[i].value.string);
+        break;
+      case GRPC_ARG_INTEGER:
+        break;
+      case GRPC_ARG_POINTER:
+        a->args[i].value.pointer.vtable->destroy(a->args[i].value.pointer.p);
+        break;
+    }
+    gpr_free(a->args[i].key);
+  }
+  gpr_free(a->args);
+  gpr_free(a);
+}
 
 zend_class_entry *grpc_ce_channel;
 PHP_GRPC_DECLARE_OBJECT_HANDLER(channel_ce_handlers)
@@ -57,7 +114,12 @@ void free_grpc_channel_wrapper(grpc_channel_wrapper* channel, bool free_channel)
   channel->args_hashstr = NULL;
   channel->creds_hashstr = NULL;
   channel->key = NULL;
-}
+
+  grpc_channel_credentials_release(channel->creds);
+  channel->creds = NULL;
+  grpc_channel_args_destroy(channel->args);
+  channel->args = NULL;
+  }
 
 void php_grpc_channel_ref(grpc_channel_wrapper* wrapper) {
   gpr_mu_lock(&wrapper->mu);
@@ -124,7 +186,7 @@ int php_grpc_read_args_array(zval *args_array,
     return FAILURE;
   }
 
-  args->args = ecalloc(zend_hash_num_elements(array_hash), sizeof(grpc_arg));
+  args->args = calloc(zend_hash_num_elements(array_hash), sizeof(grpc_arg));
   args_index = 0;
 
   char *key = NULL;
@@ -238,24 +300,23 @@ void create_channel(
     wrapped_grpc_channel *channel,
     char *target,
     grpc_channel_args args,
-    wrapped_grpc_channel_credentials *creds) {
+    grpc_channel_credentials *creds) {
   if (creds == NULL) {
     channel->wrapper->wrapped = grpc_insecure_channel_create(target, &args,
                                                              NULL);
   } else {
     channel->wrapper->wrapped =
-        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+        grpc_secure_channel_create(creds, target, &args, NULL);
   }
   // There is an Grpc\Channel object refer to it.
   php_grpc_channel_ref(channel->wrapper);
-  efree(args.args);
 }
 
 void create_and_add_channel_to_persistent_list(
     wrapped_grpc_channel *channel,
     char *target,
     grpc_channel_args args,
-    wrapped_grpc_channel_credentials *creds,
+    grpc_channel_credentials *creds,
     char *key,
     php_grpc_int key_len,
     int target_upper_bound TSRMLS_DC) {
@@ -287,6 +348,10 @@ void create_and_add_channel_to_persistent_list(
 
   create_channel(channel, target, args, creds);
   target_bound_status->current_count += 1;
+
+  // persist channel args and creds as well
+  channel->wrapper->args = grpc_channel_args_copy(&args);
+  channel->wrapper->creds = grpc_channel_credentials_copy(creds);
 
   le->channel = channel->wrapper;
   new_rsrc.ptr = le;
@@ -375,7 +440,7 @@ PHP_METHOD(Channel, __construct) {
 
   // parse the rest of the channel args array
   if (php_grpc_read_args_array(args_array, &args TSRMLS_CC) == FAILURE) {
-    efree(args.args);
+    free(args.args);
     return;
   }
 
@@ -418,14 +483,13 @@ PHP_METHOD(Channel, __construct) {
   if (creds != NULL && creds->hashstr != NULL) {
     strcat(key, creds->hashstr);
   }
-  channel->wrapper = malloc(sizeof(grpc_channel_wrapper));
+  channel->wrapper = calloc(sizeof(grpc_channel_wrapper), 1);
   channel->wrapper->ref_count = 0;
   channel->wrapper->key = key;
   channel->wrapper->target = strdup(target);
   channel->wrapper->args_hashstr = strdup(sha1str);
   channel->wrapper->creds_hashstr = NULL;
-  channel->wrapper->creds = creds;
-  channel->wrapper->args = args;
+
   if (creds != NULL && creds->hashstr != NULL) {
     php_grpc_int creds_hashstr_len = strlen(creds->hashstr);
     char *channel_creds_hashstr = malloc(creds_hashstr_len + 1);
@@ -438,11 +502,11 @@ PHP_METHOD(Channel, __construct) {
     // If the ChannelCredentials object was composed with a CallCredentials
     // object, there is no way we can tell them apart. Do NOT persist
     // them. They should be individually destroyed.
-    create_channel(channel, target, args, creds);
+    create_channel(channel, target, args, creds ? creds->wrapped : NULL);
   } else if (!(PHP_GRPC_PERSISTENT_LIST_FIND(&grpc_persistent_list, key,
                                              key_len, rsrc))) {
     create_and_add_channel_to_persistent_list(
-        channel, target, args, creds, key, key_len, target_upper_bound TSRMLS_CC);
+        channel, target, args, creds ? creds->wrapped : NULL, key, key_len, target_upper_bound TSRMLS_CC);
   } else {
     // Found a previously stored channel in the persistent list
     channel_persistent_le_t *le = (channel_persistent_le_t *)rsrc->ptr;
@@ -452,9 +516,8 @@ PHP_METHOD(Channel, __construct) {
          strcmp(creds->hashstr, le->channel->creds_hashstr) != 0)) {
       // somehow hash collision
       create_and_add_channel_to_persistent_list(
-          channel, target, args, creds, key, key_len, target_upper_bound TSRMLS_CC);
+          channel, target, args, creds ? creds->wrapped : NULL, key, key_len, target_upper_bound TSRMLS_CC);
     } else {
-      efree(args.args);
       free_grpc_channel_wrapper(channel->wrapper, false);
       gpr_mu_destroy(&channel->wrapper->mu);
       free(channel->wrapper);
@@ -465,6 +528,7 @@ PHP_METHOD(Channel, __construct) {
       update_and_get_target_upper_bound(target, target_upper_bound);
     }
   }
+  free(args.args);
 }
 
 /**

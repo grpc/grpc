@@ -106,14 +106,14 @@ ZEND_GET_MODULE(grpc)
 void create_new_channel(
     wrapped_grpc_channel *channel,
     char *target,
-    grpc_channel_args args,
-    wrapped_grpc_channel_credentials *creds) {
+    grpc_channel_args *args,
+    grpc_channel_credentials *creds) {
   if (creds == NULL) {
-    channel->wrapper->wrapped = grpc_insecure_channel_create(target, &args,
+    channel->wrapper->wrapped = grpc_insecure_channel_create(target, args,
                                                              NULL);
   } else {
     channel->wrapper->wrapped =
-        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+        grpc_secure_channel_create(creds, target, args, NULL);
   }
 }
 
