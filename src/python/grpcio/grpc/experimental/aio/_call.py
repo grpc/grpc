@@ -171,6 +171,7 @@ class Call:
         self._response_deserializer = response_deserializer
 
     def __del__(self) -> None:
+        # The '_cython_call' object might be destructed before Call object
         if hasattr(self, '_cython_call'):
             if not self._cython_call.done():
                 self._cancel(_GC_CANCELLATION_DETAILS)

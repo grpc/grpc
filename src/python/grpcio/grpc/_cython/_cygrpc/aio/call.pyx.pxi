@@ -411,7 +411,6 @@ cdef class _AioCall(GrpcCallWrapper):
         except ExecuteBatchError as batch_error:
             # Core should explain why this batch failed
             await status_task
-            assert self._status.code() != StatusCode.ok
 
     async def stream_unary(self,
                            tuple outbound_initial_metadata,
@@ -438,7 +437,6 @@ cdef class _AioCall(GrpcCallWrapper):
         except ExecuteBatchError:
             # Core should explain why this batch failed
             await self._handle_status_once_received()
-            assert self._status.code() != StatusCode.ok
 
             # Allow upper layer to proceed only if the status is set
             metadata_sent_observer()
@@ -498,7 +496,6 @@ cdef class _AioCall(GrpcCallWrapper):
         except ExecuteBatchError as batch_error:
             # Core should explain why this batch failed
             await status_task
-            assert self._status.code() != StatusCode.ok
 
             # Allow upper layer to proceed only if the status is set
             metadata_sent_observer()
