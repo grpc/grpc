@@ -25,8 +25,6 @@ from tests_aio.interop import methods
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
-_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
-
 
 class InteropTestCaseMixin:
     """Unit test methods.
