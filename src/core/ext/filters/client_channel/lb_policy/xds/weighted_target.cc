@@ -63,13 +63,13 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_non_leaf_wrr_trace(false, "non_leaf_wrr_lb");
+TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");
 
 namespace {
 
-constexpr char kNonLeafWrr[] = "non_leaf_wrr";
+constexpr char kWeightedTarget[] = "weighted_target";
 
-class NonLeafWrrLbConfig : public LoadBalancingPolicy::Config {
+class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
  public:
   struct ChildConfig {
     uint32_t weight;
@@ -78,10 +78,10 @@ class NonLeafWrrLbConfig : public LoadBalancingPolicy::Config {
 
   using WeightMap = std::map<std::string, ChildConfig>;
 
-  explicit NonLeafWrrLbConfig(WeightMap weight_map)
+  explicit WeightedTargetLbConfig(WeightMap weight_map)
       : weight_map_(std::move(weight_map)) {}
 
-  const char* name() const override { return kNonLeafWrr; }
+  const char* name() const override { return kWeightedTarget; }
 
   const WeightMap& weight_map() const { return weight_map_; }
 
@@ -89,11 +89,11 @@ class NonLeafWrrLbConfig : public LoadBalancingPolicy::Config {
   WeightMap weight_map_;
 };
 
-class NonLeafWrrLb : public LoadBalancingPolicy {
+class WeightedTargetLb : public LoadBalancingPolicy {
  public:
-  explicit NonLeafWrrLb(Args args);
+  explicit WeightedTargetLb(Args args);
 
-  const char* name() const override { return kNonLeafWrr; }
+  const char* name() const override { return kWeightedTarget; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -123,26 +123,26 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
         InlinedVector<std::pair<uint32_t,
                                 RefCountedPtr<ChildPickerWrapper>>, 1>;
 
-    WeightedPicker(RefCountedPtr<NonLeafWrrLb> parent, PickerList pickers)
+    WeightedPicker(RefCountedPtr<WeightedTargetLb> parent, PickerList pickers)
         : parent_(std::move(parent)), pickers_(std::move(pickers)) {}
     ~WeightedPicker() { parent_.reset(DEBUG_LOCATION, "WeightedPicker"); }
 
     PickResult Pick(PickArgs args) override;
 
    private:
-    RefCountedPtr<NonLeafWrrLb> parent_;
+    RefCountedPtr<WeightedTargetLb> parent_;
     PickerList pickers_;
   };
 
-  // Each WeightedChild holds a ref to its parent NonLeafWrrLb.
+  // Each WeightedChild holds a ref to its parent WeightedTargetLb.
   class WeightedChild : public InternallyRefCounted<WeightedChild> {
    public:
-    WeightedChild(RefCountedPtr<NonLeafWrrLb> non_leaf_wrr_policy, std::string name);
+    WeightedChild(RefCountedPtr<WeightedTargetLb> weighted_target_policy, std::string name);
     ~WeightedChild();
 
     void Orphan() override;
 
-    void UpdateLocked(const NonLeafWrrLbConfig::ChildConfig& config);
+    void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -188,7 +188,7 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
     static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
 
     // The owning LB policy.
-    RefCountedPtr<NonLeafWrrLb> non_leaf_wrr_policy_;
+    RefCountedPtr<WeightedTargetLb> weighted_target_policy_;
     const std::string name_;
 
     uint32_t weight_;
@@ -206,7 +206,7 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
     bool shutdown_ = false;
   };
 
-  ~NonLeafWrrLb();
+  ~WeightedTargetLb();
 
   void ShutdownLocked() override;
 
@@ -216,7 +216,7 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
 
   // Current channel args and config from the resolver.
   const grpc_channel_args* args_ = nullptr;
-  RefCountedPtr<NonLeafWrrLbConfig> config_;
+  RefCountedPtr<WeightedTargetLbConfig> config_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -227,14 +227,14 @@ class NonLeafWrrLb : public LoadBalancingPolicy {
 };
 
 //
-// NonLeafWrrLb::WeightedPicker
+// WeightedTargetLb::WeightedPicker
 //
 
-NonLeafWrrLb::PickResult NonLeafWrrLb::WeightedPicker::Pick(PickArgs args) {
+WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(PickArgs args) {
   // Handle drop.
   const std::string* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
-    non_leaf_wrr_policy_->client_stats_.AddCallDropped(*drop_category);
+    weighted_target_policy_->client_stats_.AddCallDropped(*drop_category);
     PickResult result;
     result.type = PickResult::PICK_COMPLETE;
     return result;
@@ -267,23 +267,23 @@ NonLeafWrrLb::PickResult NonLeafWrrLb::WeightedPicker::Pick(PickArgs args) {
 // ctor and dtor
 //
 
-NonLeafWrrLb::NonLeafWrrLb(Args args)
+WeightedTargetLb::WeightedTargetLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       child_retention_interval_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS,
           {GRPC_NON_LEAF_WRR_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})) {}
 
-NonLeafWrrLb::~NonLeafWrrLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] destroying non_leaf_wrr LB policy",
+WeightedTargetLb::~WeightedTargetLb() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO, "[weighted_target_lb %p] destroying weighted_target LB policy",
             this);
   }
   grpc_channel_args_destroy(args_);
 }
 
-void NonLeafWrrLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] shutting down", this);
+void WeightedTargetLb::ShutdownLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO, "[weighted_target_lb %p] shutting down", this);
   }
   shutting_down_ = true;
   localities_.clear();
@@ -293,14 +293,14 @@ void NonLeafWrrLb::ShutdownLocked() {
 // public methods
 //
 
-void NonLeafWrrLb::ResetBackoffLocked() {
+void WeightedTargetLb::ResetBackoffLocked() {
   for (auto& p : localities_) p.second->ResetBackoffLocked();
 }
 
-void NonLeafWrrLb::UpdateLocked(UpdateArgs args) {
+void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   if (shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] Received update", this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO, "[weighted_target_lb %p] Received update", this);
   }
   // Update config.
   config_ = std::move(args.config);
@@ -316,7 +316,7 @@ void NonLeafWrrLb::UpdateLocked(UpdateArgs args) {
       ++iter;
       continue;
     }
-    if (non_leaf_wrr_policy()->child_retention_interval_ms_ == 0) {
+    if (weighted_target_policy()->child_retention_interval_ms_ == 0) {
       iter = localities_.erase(iter);
     } else {
       child->DeactivateLocked();
@@ -326,7 +326,7 @@ void NonLeafWrrLb::UpdateLocked(UpdateArgs args) {
   // Add or update the localities in the new config.
   for (const auto& p : config_->weight_map()) {
     const std::string& name = p.first;
-    const NonLeafWrrLbConfig::ChildConfig& config = p.second;
+    const WeightedTargetLbConfig::ChildConfig& config = p.second;
     OrphanablePtr<WeightedChild>& child = localities_[name];
     if (child == nullptr) {
       child = MakeOrphanable<WeightedChild>(
@@ -336,7 +336,7 @@ void NonLeafWrrLb::UpdateLocked(UpdateArgs args) {
   }
 }
 
-void NonLeafWrrLb::UpdateStateLocked() {
+void WeightedTargetLb::UpdateStateLocked() {
   // Construct a new picker which maintains a map of all child pickers
   // that are ready. Each child is represented by a portion of the range
   // proportional to its weight, such that the total range is the sum of the
@@ -386,8 +386,8 @@ void NonLeafWrrLb::UpdateStateLocked() {
   } else {
     connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] connectivity changed to %s",
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO, "[weighted_target_lb %p] connectivity changed to %s",
             this, ConnectivityStateName(connectivity_state_));
   }
   if (connectivity_state_ == GRPC_CHANNEL_READY) {
@@ -399,43 +399,43 @@ void NonLeafWrrLb::UpdateStateLocked() {
 }
 
 //
-// NonLeafWrrLb::WeightedChild
+// WeightedTargetLb::WeightedChild
 //
 
-NonLeafWrrLb::WeightedChild::WeightedChild(
-    RefCountedPtr<NonLeafWrrLb> non_leaf_wrr_policy, std::string name)
-    : non_leaf_wrr_policy_(std::move(non_leaf_wrr_policy)),
+WeightedTargetLb::WeightedChild::WeightedChild(
+    RefCountedPtr<WeightedTargetLb> weighted_target_policy, std::string name)
+    : weighted_target_policy_(std::move(weighted_target_policy)),
       name_(std::move(name)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
-    gpr_log(GPR_INFO, "[non_leaf_wrr_lb %p] created WeightedChild %p for %s",
-            non_leaf_wrr_policy_.get(), this, name_.c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO, "[weighted_target_lb %p] created WeightedChild %p for %s",
+            weighted_target_policy_.get(), this, name_.c_str());
   }
 }
 
-NonLeafWrrLb::WeightedChild::~WeightedChild() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
+WeightedTargetLb::WeightedChild::~WeightedChild() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
-            "[non_leaf_wrr_lb %p] WeightedChild %p %s: destroying child",
-            non_leaf_wrr_policy_.get(), this, name_.c_str());
+            "[weighted_target_lb %p] WeightedChild %p %s: destroying child",
+            weighted_target_policy_.get(), this, name_.c_str());
   }
-  non_leaf_wrr_policy_.reset(DEBUG_LOCATION, "WeightedChild");
+  weighted_target_policy_.reset(DEBUG_LOCATION, "WeightedChild");
 }
 
-void NonLeafWrrLb::WeightedChild::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
+void WeightedTargetLb::WeightedChild::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
-            "[non_leaf_wrr_lb %p] WeightedChild %p %s: shutting down child",
-            non_leaf_wrr_policy_.get(), this, name_.c_str());
+            "[weighted_target_lb %p] WeightedChild %p %s: shutting down child",
+            weighted_target_policy_.get(), this, name_.c_str());
   }
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-                                   non_leaf_wrr_policy_->interested_parties());
+                                   weighted_target_policy_->interested_parties());
   child_policy_.reset();
   if (pending_child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(
         pending_child_policy_->interested_parties(),
-        non_leaf_wrr_policy_->interested_parties());
+        weighted_target_policy_->interested_parties());
     pending_child_policy_.reset();
   }
   // Drop our ref to the child's picker, in case it's holding a ref to
@@ -448,7 +448,7 @@ void NonLeafWrrLb::WeightedChild::Orphan() {
   Unref();
 }
 
-grpc_channel_args* NonLeafWrrLb::WeightedChild::CreateChildPolicyArgsLocked(
+grpc_channel_args* WeightedTargetLb::WeightedChild::CreateChildPolicyArgsLocked(
     const grpc_channel_args* args_in) {
   const grpc_arg args_to_add[] = {
 // FIXME: where should this be set?  EDS policy, probably?
@@ -467,11 +467,11 @@ grpc_channel_args* NonLeafWrrLb::WeightedChild::CreateChildPolicyArgsLocked(
 }
 
 OrphanablePtr<LoadBalancingPolicy>
-NonLeafWrrLb::WeightedChild::CreateChildPolicyLocked(
+WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
   Helper* helper = new Helper(this->Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = non_leaf_wrr_policy()->combiner();
+  lb_policy_args.combiner = weighted_target_policy()->combiner();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
@@ -480,30 +480,30 @@ NonLeafWrrLb::WeightedChild::CreateChildPolicyLocked(
           name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR,
-            "[non_leaf_wrr_lb %p] WeightedChild %p %s: failure creating child "
+            "[weighted_target_lb %p] WeightedChild %p %s: failure creating child "
             "policy %s",
-            non_leaf_wrr_policy_.get(), this, name_.c_str(), name);
+            weighted_target_policy_.get(), this, name_.c_str(), name);
     return nullptr;
   }
   helper->set_child(lb_policy.get());
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
-            "[non_leaf_wrr_lb %p] WeightedChild %p %s: Created new child policy "
+            "[weighted_target_lb %p] WeightedChild %p %s: Created new child policy "
             "%s (%p)",
-            non_leaf_wrr_policy_.get(), this, name_.c_str(), name,
+            weighted_target_policy_.get(), this, name_.c_str(), name,
             lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // xDS LB, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
-                                   non_leaf_wrr_policy_->interested_parties());
+                                   weighted_target_policy_->interested_parties());
   return lb_policy;
 }
 
-void NonLeafWrrLb::WeightedChild::UpdateLocked(
-    const NonLeafWrrLbConfig::ChildConfig& config) {
-  if (non_leaf_wrr_policy_->shutting_down_) return;
+void WeightedTargetLb::WeightedChild::UpdateLocked(
+    const WeightedTargetLbConfig::ChildConfig& config) {
+  if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;
   if (delayed_removal_timer_callback_pending_) {
@@ -512,7 +512,7 @@ void NonLeafWrrLb::WeightedChild::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.config = config.config;
-  update_args.args = CreateChildPolicyArgsLocked(non_leaf_wrr_policy_->args_);
+  update_args.args = CreateChildPolicyArgsLocked(weighted_target_policy_->args_);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -580,11 +580,11 @@ void NonLeafWrrLb::WeightedChild::UpdateLocked(
     // Cases 1, 2b, and 3b: create a new child policy.
     // If child_policy_ is null, we set it (case 1), else we set
     // pending_child_policy_ (cases 2b and 3b).
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
       gpr_log(GPR_INFO,
-              "[non_leaf_wrr_lb %p] WeightedChild %p %s: Creating new %schild "
+              "[weighted_target_lb %p] WeightedChild %p %s: Creating new %schild "
               "policy %s",
-              non_leaf_wrr_policy_.get(), this, name_.c_str(),
+              weighted_target_policy_.get(), this, name_.c_str(),
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
     auto& lb_policy =
@@ -601,24 +601,24 @@ void NonLeafWrrLb::WeightedChild::UpdateLocked(
   }
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
-            "[non_leaf_wrr_lb %p] WeightedChild %p %s: Updating %schild policy %p",
-            non_leaf_wrr_policy_.get(), this, name_.c_str(),
+            "[weighted_target_lb %p] WeightedChild %p %s: Updating %schild policy %p",
+            weighted_target_policy_.get(), this, name_.c_str(),
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
   policy_to_update->UpdateLocked(std::move(update_args));
 }
 
-void NonLeafWrrLb::WeightedChild::ResetBackoffLocked() {
+void WeightedTargetLb::WeightedChild::ResetBackoffLocked() {
   child_policy_->ResetBackoffLocked();
   if (pending_child_policy_ != nullptr) {
     pending_child_policy_->ResetBackoffLocked();
   }
 }
 
-void NonLeafWrrLb::WeightedChild::DeactivateLocked() {
+void WeightedTargetLb::WeightedChild::DeactivateLocked() {
   // If already deactivated, don't do that again.
   if (weight_ == 0) return;
   // Set the child weight to 0 so that future picker won't contain this child.
@@ -630,73 +630,73 @@ void NonLeafWrrLb::WeightedChild::DeactivateLocked() {
   grpc_timer_init(
       &delayed_removal_timer_,
       ExecCtx::Get()->Now() +
-          non_leaf_wrr_policy_->child_retention_interval_ms_,
+          weighted_target_policy_->child_retention_interval_ms_,
       &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }
 
-void NonLeafWrrLb::WeightedChild::OnDelayedRemovalTimer(void* arg,
+void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(void* arg,
                                                    grpc_error* error) {
   WeightedChild* self = static_cast<WeightedChild*>(arg);
-  self->non_leaf_wrr_policy_->combiner()->Run(
+  self->weighted_target_policy_->combiner()->Run(
       GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
                         OnDelayedRemovalTimerLocked, self, nullptr),
       GRPC_ERROR_REF(error));
 }
 
-void NonLeafWrrLb::WeightedChild::OnDelayedRemovalTimerLocked(
+void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimerLocked(
     void* arg, grpc_error* error) {
   WeightedChild* self = static_cast<WeightedChild*>(arg);
   self->delayed_removal_timer_callback_pending_ = false;
   if (error == GRPC_ERROR_NONE && !self->shutdown_ && self->weight_ == 0) {
-    self->non_leaf_wrr_policy_->localities_.erase(self->name_);
+    self->weighted_target_policy_->localities_.erase(self->name_);
   }
   self->Unref(DEBUG_LOCATION, "WeightedChild+timer");
 }
 
 //
-// NonLeafWrrLb::WeightedChild::Helper
+// WeightedTargetLb::WeightedChild::Helper
 //
 
-bool NonLeafWrrLb::WeightedChild::Helper::CalledByPendingChild() const {
+bool WeightedTargetLb::WeightedChild::Helper::CalledByPendingChild() const {
   GPR_ASSERT(child_ != nullptr);
   return child_ == weighted_child_->pending_child_policy_.get();
 }
 
-bool NonLeafWrrLb::WeightedChild::Helper::CalledByCurrentChild() const {
+bool WeightedTargetLb::WeightedChild::Helper::CalledByCurrentChild() const {
   GPR_ASSERT(child_ != nullptr);
   return child_ == weighted_child_->child_policy_.get();
 }
 
 RefCountedPtr<SubchannelInterface>
-NonLeafWrrLb::WeightedChild::Helper::CreateSubchannel(
+WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
     const grpc_channel_args& args) {
-  if (weighted_child_->non_leaf_wrr_policy_->shutting_down_ ||
+  if (weighted_child_->weighted_target_policy_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return nullptr;
   }
-  return weighted_child_->non_leaf_wrr_policy_->channel_control_helper()->CreateSubchannel(
+  return weighted_child_->weighted_target_policy_->channel_control_helper()->CreateSubchannel(
       args);
 }
 
-void NonLeafWrrLb::WeightedChild::Helper::UpdateState(
+void WeightedTargetLb::WeightedChild::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
-  if (weighted_child_->non_leaf_wrr_policy_->shutting_down_) return;
+  if (weighted_child_->weighted_target_policy_->shutting_down_) return;
   // If this request is from the pending child policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingChild()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_non_leaf_wrr_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
       gpr_log(GPR_INFO,
-              "[non_leaf_wrr_lb %p helper %p] pending child policy %p reports "
+              "[weighted_target_lb %p helper %p] pending child policy %p reports "
               "state=%s",
-              weighted_child_->non_leaf_wrr_policy_.get(), this,
+              weighted_child_->weighted_target_policy_.get(), this,
               weighted_child_->pending_child_policy_.get(),
               ConnectivityStateName(state));
     }
     if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(
         weighted_child_->child_policy_->interested_parties(),
-        weighted_child_->non_leaf_wrr_policy_->interested_parties());
+        weighted_child_->weighted_target_policy_->interested_parties());
     weighted_child_->child_policy_ =
         std::move(weighted_child_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
@@ -708,24 +708,24 @@ void NonLeafWrrLb::WeightedChild::Helper::UpdateState(
       MakeRefCounted<ChildPickerWrapper>(std::move(picker));
   weighted_child_->connectivity_state_ = state;
   // Notify the LB policy.
-  weighted_child_->non_leaf_wrr_policy_->UpdateStateLocked();
+  weighted_child_->weighted_target_policy_->UpdateStateLocked();
 }
 
-void NonLeafWrrLb::WeightedChild::Helper::RequestReresolution() {
-  if (weighted_child_->non_leaf_wrr_policy_->shutting_down_ ||
+void WeightedTargetLb::WeightedChild::Helper::RequestReresolution() {
+  if (weighted_child_->weighted_target_policy_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return;
   }
-  weighted_child_->non_leaf_wrr_policy_->channel_control_helper()->RequestReresolution();
+  weighted_child_->weighted_target_policy_->channel_control_helper()->RequestReresolution();
 }
 
-void NonLeafWrrLb::WeightedChild::Helper::AddTraceEvent(TraceSeverity severity,
+void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(TraceSeverity severity,
                                                         StringView message) {
-  if (weighted_child_->non_leaf_wrr_policy_->shutting_down_ ||
+  if (weighted_child_->weighted_target_policy_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return;
   }
-  weighted_child_->non_leaf_wrr_policy_->channel_control_helper()->AddTraceEvent(
+  weighted_child_->weighted_target_policy_->channel_control_helper()->AddTraceEvent(
       severity, message);
 }
 
@@ -733,30 +733,30 @@ void NonLeafWrrLb::WeightedChild::Helper::AddTraceEvent(TraceSeverity severity,
 // factory
 //
 
-class NonLeafWrrLbFactory : public LoadBalancingPolicyFactory {
+class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<NonLeafWrrLb>(std::move(args));
+    return MakeOrphanable<WeightedTargetLb>(std::move(args));
   }
 
-  const char* name() const override { return kNonLeafWrr; }
+  const char* name() const override { return kWeightedTarget; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
-      // non_leaf_wrr was mentioned as a policy in the deprecated
+      // weighted_target was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:loadBalancingPolicy error:non_leaf_wrr policy requires "
+          "field:loadBalancingPolicy error:weighted_target policy requires "
           "configuration.  Please use loadBalancingConfig field of service "
           "config instead.");
       return nullptr;
     }
     std::vector<grpc_error*> error_list;
     // Weight map.
-    NonLeafWrrLbConfig::WeightMap weight_map;
+    WeightedTargetLbConfig::WeightMap weight_map;
     auto it = json.object_value().find("weights");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -766,7 +766,7 @@ class NonLeafWrrLbFactory : public LoadBalancingPolicyFactory {
           "field:weights error:type should be object"));
     } else {
       for (const auto& p : it->second.object_value()) {
-        NonLeafWrrLbConfig::ChildConfig child_config;
+        WeightedTargetLbConfig::ChildConfig child_config;
         std::vector<grpc_error*> child_errors =
             ParseChildConfig(it->second, &child_config);
         if (!child_errors.empty()) {
@@ -789,12 +789,12 @@ class NonLeafWrrLbFactory : public LoadBalancingPolicyFactory {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("PriorityLb Parser", &error_list);
       return nullptr;
     }
-    return MakeRefCounted<NonLeafWrrLbConfig>(std::move(weight_map));
+    return MakeRefCounted<WeightedTargetLbConfig>(std::move(weight_map));
   }
 
  private:
   static std::vector<grpc_error*> ParseChildConfig(
-      const Json& json, NonLeafWrrLbConfig::ChildConfig* child_config) {
+      const Json& json, WeightedTargetLbConfig::ChildConfig* child_config) {
     std::vector<grpc_error*> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -847,10 +847,10 @@ class NonLeafWrrLbFactory : public LoadBalancingPolicyFactory {
 // Plugin registration
 //
 
-void grpc_lb_policy_non_leaf_wrr_init() {
+void grpc_lb_policy_weighted_target_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::NonLeafWrrLbFactory>());
+          grpc_core::MakeUnique<grpc_core::WeightedTargetLbFactory>());
 }
 
-void grpc_lb_policy_non_leaf_wrr_shutdown() {}
+void grpc_lb_policy_weighted_target_shutdown() {}
