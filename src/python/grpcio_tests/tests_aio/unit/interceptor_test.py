@@ -574,12 +574,11 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
     async def test_add_done_callback_before_finishes(self):
-        called = False
+        called = asyncio.Event()
         interceptor_can_continue = asyncio.Event()
 
         def callback(call):
-            nonlocal called
-            called = True
+            called.set()
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):
 
@@ -603,14 +602,16 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             interceptor_can_continue.set()
             await call
 
-            self.assertTrue(called)
+            try:
+                await asyncio.wait_for(called.wait(), timeout=0.1)
+            except:
+                self.fail("Callback was not called")
 
     async def test_add_done_callback_after_finishes(self):
-        called = False
+        called = asyncio.Event()
 
         def callback(call):
-            nonlocal called
-            called = True
+            called.set()
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):
 
@@ -634,14 +635,16 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             call.add_done_callback(callback)
 
-            self.assertTrue(called)
+            try:
+                await asyncio.wait_for(called.wait(), timeout=0.1)
+            except:
+                self.fail("Callback was not called")
 
     async def test_add_done_callback_after_finishes_before_await(self):
-        called = False
+        called = asyncio.Event()
 
         def callback(call):
-            nonlocal called
-            called = True
+            called.set()
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):
 
@@ -665,7 +668,10 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             await call
 
-            self.assertTrue(called)
+            try:
+                await asyncio.wait_for(called.wait(), timeout=0.1)
+            except:
+                self.fail("Callback was not called")
 
 
 if __name__ == '__main__':
