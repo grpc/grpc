@@ -12,10 +12,17 @@ Other should follow the user instructions. See the [How to use](https://github.c
  $ [sudo] apt-get install build-essential autoconf libtool pkg-config
 ```
 
-If you plan to build from source and run tests, install the following as well:
+If you plan to build using CMake
 ```sh
- $ [sudo] apt-get install libgflags-dev libgtest-dev
- $ [sudo] apt-get install clang-5.0 libc++-dev cmake
+ $ [sudo] apt-get install cmake
+```
+
+If you are a contributor and plan to build and run tests, install the following as well:
+```sh
+ $ # libgflags-dev is only required if building with make (deprecated)
+ $ [sudo] apt-get install libgflags-dev
+ $ # clang and LLVM C++ lib is only required for sanitizer builds
+ $ [sudo] apt-get install clang-5.0 libc++-dev
 ```
 
 ## MacOS
@@ -36,8 +43,11 @@ packages from [Homebrew](https://brew.sh):
  $ brew install autoconf automake libtool shtool
 ```
 
-If you plan to build from source and run tests, install the following as well:
+If you plan to build using CMake, follow the instructions from https://cmake.org/download/
+
+If you are a contributor and plan to build and run tests, install the following as well:
 ```sh
+ $ # gflags is only required if building with make (deprecated) 
  $ brew install gflags
 ```
 
