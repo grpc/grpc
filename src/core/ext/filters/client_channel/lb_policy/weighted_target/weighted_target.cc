@@ -160,7 +160,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       explicit Helper(RefCountedPtr<WeightedChild> weighted_child)
           : weighted_child_(std::move(weighted_child)) {}
 
-      ~Helper() { child_.reset(DEBUG_LOCATION, "Helper"); }
+      ~Helper() { weighted_child_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           const grpc_channel_args& args) override;
@@ -181,8 +181,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
         const char* name, const grpc_channel_args* args);
-    grpc_channel_args* CreateChildPolicyArgsLocked(
-        const grpc_channel_args* args);
 
     static void OnDelayedRemovalTimer(void* arg, grpc_error* error);
     static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
@@ -196,7 +194,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
     OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
 
-    RefCountedPtr<EndpointPickerWrapper> picker_wrapper_;
+    RefCountedPtr<ChildPickerWrapper> picker_wrapper_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
 
     // States for delayed removal.
@@ -230,15 +228,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 // WeightedTargetLb::WeightedPicker
 //
 
-WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(PickArgs args) {
-  // Handle drop.
-  const std::string* drop_category;
-  if (drop_config_->ShouldDrop(&drop_category)) {
-    weighted_target_policy_->client_stats_.AddCallDropped(*drop_category);
-    PickResult result;
-    result.type = PickResult::PICK_COMPLETE;
-    return result;
-  }
+WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
+    PickArgs args) {
   // Generate a random number in [0, total weight).
   const uint32_t key = rand() % pickers_[pickers_.size() - 1].first;
   // Find the index in pickers_ corresponding to key.
@@ -316,7 +307,7 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
       ++iter;
       continue;
     }
-    if (weighted_target_policy()->child_retention_interval_ms_ == 0) {
+    if (child_retention_interval_ms_ == 0) {
       iter = localities_.erase(iter);
     } else {
       child->DeactivateLocked();
@@ -377,25 +368,40 @@ void WeightedTargetLb::UpdateStateLocked() {
         GPR_UNREACHABLE_CODE(return );
     }
   }
+  // Determine aggregated connectivity state.
+// FIXME: change to new use semantics for TF
+  grpc_connectivity_state connectivity_state;
   if (picker_list.size() > 0) {
-    connectivity_state_ = GRPC_CHANNEL_READY;
+    connectivity_state = GRPC_CHANNEL_READY;
   } else if (num_connecting > 0) {
-    connectivity_state_ = GRPC_CHANNEL_CONNECTING;
+    connectivity_state = GRPC_CHANNEL_CONNECTING;
   } else if (num_idle > 0) {
-    connectivity_state_ = GRPC_CHANNEL_IDLE;
+// FIXME: implement ExitIdleLocked()
+    connectivity_state = GRPC_CHANNEL_IDLE;
   } else {
-    connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
+    connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] connectivity changed to %s",
-            this, ConnectivityStateName(connectivity_state_));
+            this, ConnectivityStateName(connectivity_state));
   }
-  if (connectivity_state_ == GRPC_CHANNEL_READY) {
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY,
-        grpc_core::MakeUnique<WeightedPicker>(
-            Ref(DEBUG_LOCATION, "WeightedPicker"), std::move(picker_list)));
+  std::unique_ptr<SubchannelPicker> picker;
+  switch (connectivity_state) {
+    case GRPC_CHANNEL_READY:
+      picker = grpc_core::MakeUnique<WeightedPicker>(
+          Ref(DEBUG_LOCATION, "WeightedPicker"), std::move(picker_list));
+      break;
+    case GRPC_CHANNEL_CONNECTING:
+    case GRPC_CHANNEL_IDLE:
+      picker = grpc_core::MakeUnique<QueuePicker>(
+          Ref(DEBUG_LOCATION, "QueuePicker"));
+      break;
+    default:
+      picker = grpc_core::MakeUnique<TransientFailurePicker>(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "weighted_target: all children report state TRANSIENT_FAILURE"));
   }
+  channel_control_helper()->UpdateState(connectivity_state, std::move(picker));
 }
 
 //
@@ -448,30 +454,12 @@ void WeightedTargetLb::WeightedChild::Orphan() {
   Unref();
 }
 
-grpc_channel_args* WeightedTargetLb::WeightedChild::CreateChildPolicyArgsLocked(
-    const grpc_channel_args* args_in) {
-  const grpc_arg args_to_add[] = {
-// FIXME: where should this be set?  EDS policy, probably?
-      // A channel arg indicating if the target is a backend inferred from a
-      // grpclb load balancer.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER),
-          1),
-      // Inhibit client-side health checking, since the balancer does
-      // this for us.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1),
-  };
-  return grpc_channel_args_copy_and_add(args_in, args_to_add,
-                                        GPR_ARRAY_SIZE(args_to_add));
-}
-
 OrphanablePtr<LoadBalancingPolicy>
 WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
   Helper* helper = new Helper(this->Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = weighted_target_policy()->combiner();
+  lb_policy_args.combiner = weighted_target_policy_->combiner();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
@@ -512,7 +500,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.config = config.config;
-  update_args.args = CreateChildPolicyArgsLocked(weighted_target_policy_->args_);
+  update_args.args = grpc_channel_args_copy(weighted_target_policy_->args_);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -827,7 +815,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
       child_config->config =
           LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second,
                                                                 &parse_error);
-      if (child_policy == nullptr) {
+      if (child_config->config == nullptr) {
         GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
         std::vector<grpc_error*> child_errors;
         child_errors.push_back(parse_error);
