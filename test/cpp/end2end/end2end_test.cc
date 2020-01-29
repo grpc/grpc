@@ -1307,14 +1307,14 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
 
 TEST_P(End2endTest, ChannelState) {
   MAYBE_SKIP_TEST;
-  if (GetParam().inproc) {
+  if (GetParam().inproc ||
+      GetParam().credentials_type == kSpiffeCredentialsType) {
     return;
   }
 
   ResetStub();
   // Start IDLE
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
 
   // Did not ask to connect, no state change.
   CompletionQueue cq;
@@ -1325,14 +1325,12 @@ TEST_P(End2endTest, ChannelState) {
   bool ok = true;
   cq.Next(&tag, &ok);
   EXPECT_FALSE(ok);
-  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
 
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(true));
   EXPECT_TRUE(channel_->WaitForStateChange(GRPC_CHANNEL_IDLE,
                                            gpr_inf_future(GPR_CLOCK_REALTIME)));
   auto state = channel_->GetState(false);
   EXPECT_TRUE(state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_READY);
-  WaitOnSpawnedThreads(GetCredentialsProvider(), GetParam().credentials_type);
 }
 
 // Takes 10s.
