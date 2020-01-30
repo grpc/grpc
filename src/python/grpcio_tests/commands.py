@@ -236,14 +236,14 @@ class RunInterop(test.test):
     user_options = [('args=', 'a', 'pass-thru arguments for the client/server'),
                     ('client', 'c', 'flag indicating to run the client'),
                     ('server', 's', 'flag indicating to run the server'),
-                    ('asyncio', 'i', 'flag indicating to run the asyncio stack')
+                    ('use_asyncio', 'i', 'flag indicating to run the asyncio stack')
                    ]
 
     def initialize_options(self):
         self.args = ''
         self.client = False
         self.server = False
-        self.asyncio = False
+        self.use_asyncio = False
 
     def finalize_options(self):
         if self.client and self.server:
@@ -264,7 +264,7 @@ class RunInterop(test.test):
     def run_server(self):
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
-        if self.asyncio:
+        if self.use_asyncio:
             import asyncio
             from tests_aio.interop import server
             sys.argv[1:] = self.args.split()

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2019 The gRPC Authors
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ set -e
 mkdir -p /var/local/git
 git clone /var/local/jenkins/grpc /var/local/git/grpc
 # clone gRPC submodules, use data from locally cloned submodules where possible
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
+(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc && git submodule update --init --reference /var/local/jenkins/grpc/${name} ${name}')
 
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true

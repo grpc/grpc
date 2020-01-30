@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
-# Install Python 3.7
+
+
 RUN apt-get update && apt-get -t stable install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7

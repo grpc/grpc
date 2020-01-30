@@ -668,7 +668,7 @@ class PythonLanguage:
         return 'python'
 
 
-class PythonAsyncIOClient:
+class PythonAsyncIOLanguage:
 
     def __init__(self):
         self.client_cwd = None
@@ -679,7 +679,7 @@ class PythonAsyncIOClient:
     def client_cmd(self, args):
         return [
             'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--client', '--args="{}"'.format(' '.join(args))
+            'run_interop', '--use_asyncio', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
@@ -694,7 +694,7 @@ class PythonAsyncIOClient:
     def server_cmd(self, args):
         return [
             'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--asyncio', '--server',
+            'run_interop', '--use_asyncio', '--server',
             '--args="{}"'.format(' '.join(args))
         ]
 
@@ -738,7 +738,7 @@ _LANGUAGES = {
     'objc': ObjcLanguage(),
     'ruby': RubyLanguage(),
     'python': PythonLanguage(),
-    'pythonasyncio': PythonAsyncIOClient(),
+    'pythonasyncio': PythonAsyncIOLanguage(),
 }
 
 # languages supported as cloud_to_cloud servers
