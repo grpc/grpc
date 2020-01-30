@@ -132,9 +132,9 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
       },
   };
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    UniquePtr<char> json_str = json.Dump();
+    std::string json_str = json.Dump();
     gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
-            parent_.get(), json_str.get());
+            parent_.get(), json_str.c_str());
   }
   grpc_error* error = GRPC_ERROR_NONE;
   RefCountedPtr<LoadBalancingPolicy::Config> config =

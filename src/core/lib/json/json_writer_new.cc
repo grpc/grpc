@@ -26,6 +26,8 @@
 
 #include "src/core/lib/json/json.h"
 
+#include "src/core/lib/gprpp/string_view.h"
+
 namespace grpc_core {
 
 namespace {
@@ -43,14 +45,14 @@ namespace {
  */
 class JsonWriter {
  public:
-  static UniquePtr<char> Dump(const Json& value, int indent);
+  static std::string Dump(const Json& value, int indent);
 
  private:
   explicit JsonWriter(int indent) : indent_(indent) {}
 
   void OutputCheck(size_t needed);
   void OutputChar(char c);
-  void OutputString(const std::string& str);
+  void OutputString(const StringView str);
   void OutputIndent();
   void ValueEnd();
   void EscapeUtf16(uint16_t utf16);
@@ -69,10 +71,7 @@ class JsonWriter {
   int depth_ = 0;
   bool container_empty_ = true;
   bool got_key_ = false;
-  char* output_ = nullptr;
-  size_t free_space_ = 0;
-  size_t string_len_ = 0;
-  size_t allocated_ = 0;
+  std::string output_;
 };
 
 /* This function checks if there's enough space left in the output buffer,
@@ -80,26 +79,22 @@ class JsonWriter {
  * bytes at a time (or multiples thereof).
  */
 void JsonWriter::OutputCheck(size_t needed) {
-  if (free_space_ >= needed) return;
-  needed -= free_space_;
+  size_t free_space = output_.capacity() - output_.size();
+  if (free_space >= needed) return;
+  needed -= free_space;
   /* Round up by 256 bytes. */
   needed = (needed + 0xff) & ~0xffU;
-  output_ = static_cast<char*>(gpr_realloc(output_, allocated_ + needed));
-  free_space_ += needed;
-  allocated_ += needed;
+  output_.reserve(output_.capacity() + needed);
 }
 
 void JsonWriter::OutputChar(char c) {
   OutputCheck(1);
-  output_[string_len_++] = c;
-  free_space_--;
+  output_.push_back(c);
 }
 
-void JsonWriter::OutputString(const std::string& str) {
+void JsonWriter::OutputString(const StringView str) {
   OutputCheck(str.size());
-  memcpy(output_ + string_len_, str.data(), str.size());
-  string_len_ += str.size();
-  free_space_ -= str.size();
+  output_.append(str.data(), str.size());
 }
 
 void JsonWriter::OutputIndent() {
@@ -115,11 +110,11 @@ void JsonWriter::OutputIndent() {
     return;
   }
   while (spaces >= (sizeof(spacesstr) - 1)) {
-    OutputString(std::string(spacesstr, sizeof(spacesstr) - 1));
+    OutputString(StringView(spacesstr, sizeof(spacesstr) - 1));
     spaces -= static_cast<unsigned>(sizeof(spacesstr) - 1);
   }
   if (spaces == 0) return;
-  OutputString(std::string(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
+  OutputString(StringView(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
 }
 
 void JsonWriter::ValueEnd() {
@@ -136,7 +131,7 @@ void JsonWriter::ValueEnd() {
 
 void JsonWriter::EscapeUtf16(uint16_t utf16) {
   static const char hex[] = "0123456789abcdef";
-  OutputString(std::string("\\u", 2));
+  OutputString(StringView("\\u", 2));
   OutputChar(hex[(utf16 >> 12) & 0x0f]);
   OutputChar(hex[(utf16 >> 8) & 0x0f]);
   OutputChar(hex[(utf16 >> 4) & 0x0f]);
@@ -155,19 +150,19 @@ void JsonWriter::EscapeString(const std::string& string) {
     } else if (c < 32 || c == 127) {
       switch (c) {
         case '\b':
-          OutputString(std::string("\\b", 2));
+          OutputString(StringView("\\b", 2));
           break;
         case '\f':
-          OutputString(std::string("\\f", 2));
+          OutputString(StringView("\\f", 2));
           break;
         case '\n':
-          OutputString(std::string("\\n", 2));
+          OutputString(StringView("\\n", 2));
           break;
         case '\r':
-          OutputString(std::string("\\r", 2));
+          OutputString(StringView("\\r", 2));
           break;
         case '\t':
-          OutputString(std::string("\\t", 2));
+          OutputString(StringView("\\t", 2));
           break;
         default:
           EscapeUtf16(c);
@@ -326,16 +321,15 @@ void JsonWriter::DumpValue(const Json& value) {
   }
 }
 
-UniquePtr<char> JsonWriter::Dump(const Json& value, int indent) {
+std::string JsonWriter::Dump(const Json& value, int indent) {
   JsonWriter writer(indent);
   writer.DumpValue(value);
-  writer.OutputChar('\0');
-  return UniquePtr<char>(writer.output_);
+  return std::move(writer.output_);
 }
 
 }  // namespace
 
-UniquePtr<char> Json::Dump(int indent) const {
+std::string Json::Dump(int indent) const {
   return JsonWriter::Dump(*this, indent);
 }
 

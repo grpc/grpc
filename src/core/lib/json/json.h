@@ -158,7 +158,7 @@ class Json {
   }
 
   // Dumps JSON from value to string form.
-  UniquePtr<char> Dump(int indent = 0) const;
+  std::string Dump(int indent = 0) const;
 
   // Accessor methods.
   Type type() const { return type_; }

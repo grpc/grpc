@@ -94,7 +94,6 @@ using ::envoy::api::v2::FractionalPercent;
 using ::envoy::api::v2::HttpConnectionManager;
 using ::envoy::api::v2::Listener;
 using ::envoy::api::v2::RouteConfiguration;
-using ::envoy::api::v2::VirtualHost;
 using ::envoy::service::discovery::v2::AggregatedDiscoveryService;
 using ::envoy::service::load_stats::v2::ClusterStats;
 using ::envoy::service::load_stats::v2::LoadReportingService;
@@ -1501,7 +1500,7 @@ using LdsTest = BasicTest;
 TEST_P(LdsTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::ACKED);
 }
@@ -1571,7 +1570,7 @@ TEST_P(LdsTest, ChooseMatchedDomain) {
         AdsServiceImpl::BuildListener(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::ACKED);
 }
@@ -1592,7 +1591,7 @@ TEST_P(LdsTest, ChooseLastRoute) {
         AdsServiceImpl::BuildListener(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::ACKED);
 }
@@ -1667,7 +1666,7 @@ TEST_P(RdsTest, Vanilla) {
   balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::ACKED);
 }
@@ -1706,7 +1705,7 @@ TEST_P(RdsTest, ChooseMatchedDomain) {
       {{"application_target_name", std::move(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::ACKED);
 }
@@ -1727,7 +1726,7 @@ TEST_P(RdsTest, ChooseLastRoute) {
       {{"application_target_name", std::move(route_config)}});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::ACKED);
 }
@@ -1802,7 +1801,7 @@ using CdsTest = BasicTest;
 TEST_P(CdsTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  SendRpc();
+  (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::ACKED);
 }

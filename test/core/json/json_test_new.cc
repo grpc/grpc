@@ -79,8 +79,8 @@ void RunSuccessTest(const char* input, const Json& expected,
   Json json = Json::Parse(input, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ValidateValue(json, expected);
-  UniquePtr<char> output = json.Dump();
-  EXPECT_STREQ(output.get(), expected_output);
+  std::string output = json.Dump();
+  EXPECT_EQ(output, expected_output);
 }
 
 TEST(Json, Whitespace) {
@@ -97,19 +97,18 @@ TEST(Json, Utf16) {
 }
 
 TEST(Json, Utf8) {
-  RunSuccessTest("\"ßâñć௵⇒\"", "\u00df\u00e2\u00f1\u0107\u0bf5\u21d2",
+  RunSuccessTest("\"ßâñć௵⇒\"", "ßâñć௵⇒",
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
-  RunSuccessTest("\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"",
-                 "\u00df\u00e2\u00f1\u0107\u0bf5\u21d2",
+  RunSuccessTest("\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"", "ßâñć௵⇒",
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
-// FIXME: reenable after figuring out build problem
-#if 0
   // Testing UTF-8 character "𝄞", U+11D1E.
-  RunSuccessTest("\"\xf0\x9d\x84\x9e\"", "\ud834\udd1e", "\"\\ud834\\udd1e\"");
-  RunSuccessTest("\"\\ud834\\udd1e\"", "\ud834\udd1e", "\"\\ud834\\udd1e\"");
-  RunSuccessTest("{\"\\ud834\\udd1e\":0}", Json::Object{{"\ud834\udd1e", 0}},
+  RunSuccessTest("\"\xf0\x9d\x84\x9e\"", "\xf0\x9d\x84\x9e",
+                 "\"\\ud834\\udd1e\"");
+  RunSuccessTest("\"\\ud834\\udd1e\"", "\xf0\x9d\x84\x9e",
+                 "\"\\ud834\\udd1e\"");
+  RunSuccessTest("{\"\\ud834\\udd1e\":0}",
+                 Json::Object{{"\xf0\x9d\x84\x9e", 0}},
                  "{\"\\ud834\\udd1e\":0}");
-#endif
 }
 
 TEST(Json, NestedEmptyContainers) {
