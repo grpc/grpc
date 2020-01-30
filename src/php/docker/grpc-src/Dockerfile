@@ -30,12 +30,16 @@ RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
 
 WORKDIR /github/grpc
 
-COPY . .
-
-RUN make && make install
+RUN git clone https://github.com/grpc/grpc . && \
+  git submodule update --init && \
+  make && make install
 
 
 WORKDIR /github/grpc/src/php/ext/grpc
+
+COPY src/php/ext/grpc/*.c ./
+COPY src/php/ext/grpc/*.h ./
+COPY src/php/ext/grpc/config.m4 ./
 
 RUN phpize && \
   ./configure --enable-tests && \
