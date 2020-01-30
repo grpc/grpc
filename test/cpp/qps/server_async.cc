@@ -162,10 +162,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
     }
-    // TODO(vjpai): Remove the following deadline and allow full proper
-    // shutdown.
-    server_->Shutdown(std::chrono::system_clock::now() +
-                      std::chrono::seconds(3));
+    server_->Shutdown();
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
       (*cq)->Shutdown();
     }
