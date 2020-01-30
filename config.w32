@@ -458,6 +458,12 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\strings\\internal\\escaping.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\memutil.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\ostringstream.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\arg.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\bind.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\extension.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\float_conversion.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\output.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\parser.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\utf8.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\match.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\numbers.cc " +
@@ -916,6 +922,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\numeric");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal\\str_format");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\types");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\address_sorting");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel");

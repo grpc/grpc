@@ -443,6 +443,7 @@
       'dependencies': [
         'absl/container:inlined_vector',
         'absl/memory:memory',
+        'absl/strings:str_format',
         'absl/strings:strings',
         'absl/types:optional',
       ],
