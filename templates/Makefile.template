@@ -201,7 +201,7 @@
   endif
 
   %for warning in CHECK_WARNINGS:
-  ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=c99 -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
+  ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=c11 -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
   ${warning_var('HAS_WORKING_%s', warning)} = $(shell $(${warning_var('CHECK_%s_WORKS_CMD', warning)}) 2> /dev/null && echo true || echo false)
   ifeq ($(${warning_var('HAS_WORKING_%s', warning)}),true)
   ${warning_var('W_%s', warning)}=-W${warning}
@@ -219,8 +219,8 @@
   HOST_LD ?= $(LD)
   HOST_LDXX ?= $(LDXX)
 
-  CFLAGS += -std=c99 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
-  CXXFLAGS += -std=c++11
+  CFLAGS += -std=c11 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
+  CXXFLAGS += -std=c++1y
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
   LDFLAGS += -framework CoreFoundation
@@ -324,7 +324,7 @@
   endif
 
   GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
-  GTEST_LIB += -lgflags -std=c++11
+  GTEST_LIB += -lgflags -std=c++1y
   ifeq ($(V),1)
   E = @:
   Q =

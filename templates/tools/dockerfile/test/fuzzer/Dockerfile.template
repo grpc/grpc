@@ -23,7 +23,7 @@
   <%include file="../../cmake_jessie_backports.include"/>
   <%include file="../../clang_update.include"/>
   <%include file="../../run_tests_addons.include"/>
-  RUN clang++ -c -g -O2 -std=c++11 llvm/lib/Fuzzer/*.cpp -IFuzzer
+  RUN clang++ -c -g -O2 -std=c++1y llvm/lib/Fuzzer/*.cpp -IFuzzer
   RUN ar ruv libFuzzer.a Fuzzer*.o
   RUN mv libFuzzer.a /usr/lib
   RUN rm -f Fuzzer*.o

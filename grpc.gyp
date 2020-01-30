@@ -64,11 +64,11 @@
     ],
     'cflags_c': [
       '-Werror',
-      '-std=c99',
+      '-std=c11',
     ],
     'cflags_cc': [
       '-Werror',
-      '-std=c++11',
+      '-std=c++1y',
     ],
     'include_dirs': [
       '.',
@@ -145,7 +145,7 @@
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
             '-stdlib=libc++',
-            '-std=c++11',
+            '-std=c++1y',
             '-Wno-error=deprecated-declarations',
           ],
         },

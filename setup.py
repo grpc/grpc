@@ -146,7 +146,7 @@ def check_linker_need_libatomic():
   """Test if linker on system needs libatomic."""
   code_test = (b'#include <atomic>\n' +
                b'int main() { return std::atomic<int64_t>{}; }')
-  cc_test = subprocess.Popen(['cc', '-x', 'c++', '-std=c++11', '-'],
+  cc_test = subprocess.Popen(['cc', '-x', 'c++', '-std=c++1y', '-'],
                              stdin=PIPE,
                              stdout=PIPE,
                              stderr=PIPE)
@@ -163,7 +163,7 @@ def check_linker_need_libatomic():
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-  EXTRA_ENV_COMPILE_ARGS = ' -std=c++11'
+  EXTRA_ENV_COMPILE_ARGS = ' -std=c++1y'
   if 'win32' in sys.platform:
     if sys.version_info < (3, 5):
       EXTRA_ENV_COMPILE_ARGS += ' -D_hypot=hypot'

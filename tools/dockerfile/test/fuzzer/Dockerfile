@@ -116,7 +116,7 @@ RUN make -C llvm-build -j 12 && make -C llvm-build install && rm -rf llvm-build
 
 RUN mkdir /var/local/jenkins
 
-RUN clang++ -c -g -O2 -std=c++11 llvm/lib/Fuzzer/*.cpp -IFuzzer
+RUN clang++ -c -g -O2 -std=c++1y llvm/lib/Fuzzer/*.cpp -IFuzzer
 RUN ar ruv libFuzzer.a Fuzzer*.o
 RUN mv libFuzzer.a /usr/lib
 RUN rm -f Fuzzer*.o

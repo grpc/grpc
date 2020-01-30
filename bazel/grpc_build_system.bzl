@@ -80,7 +80,7 @@ def grpc_cc_library(
     if use_cfstream:
         copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
-        copts = copts + if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c11"])
     linkopts = if_not_windows(["-pthread"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
@@ -175,7 +175,7 @@ def ios_cc_test(
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None):
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
-        copts = copts + if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c11"])
 
     # NOTE: these attributes won't be used for the poller-specific versions of a test
     # automatically, you need to set them explicitly (if applicable)
@@ -235,7 +235,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []
     if language.upper() == "C":
-        copts = ["-std=c99"]
+        copts = ["-std=c11"]
     native.cc_binary(
         name = name,
         srcs = srcs,

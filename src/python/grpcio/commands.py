@@ -218,7 +218,7 @@ class BuildExt(build_ext.build_ext):
             if platform.system() != 'Windows':
                 return False
             # TODO(lidiz) Remove the generated a.out for success tests.
-            cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
+            cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++1y', '-'],
                                        stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
@@ -226,7 +226,7 @@ class BuildExt(build_ext.build_ext):
             return not 'invalid argument' in str(cc_err)
 
         # This special conditioning is here due to difference of compiler
-        #   behavior in gcc and clang. The clang doesn't take --stdc++11
+        #   behavior in gcc and clang. The clang doesn't take -std
         #   flags but gcc does. Since the setuptools of Python only support
         #   all C or all C++ compilation, the mix of C and C++ will crash.
         #   *By default*, macOS and FreBSD use clang and Linux use gcc

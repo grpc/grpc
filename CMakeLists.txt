@@ -196,8 +196,8 @@ include(cmake/upb.cmake)
 include(cmake/zlib.cmake)
 
 if(NOT MSVC)
-  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
 endif()
 
 if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)

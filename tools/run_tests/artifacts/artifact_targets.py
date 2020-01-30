@@ -329,7 +329,7 @@ class ProtocArtifact:
                     environ=environ)
             else:
                 environ[
-                    'CXXFLAGS'] += ' -std=c++11 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
+                    'CXXFLAGS'] += ' -std=c++1y -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_protoc.sh'],
