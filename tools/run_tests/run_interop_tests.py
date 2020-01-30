@@ -679,7 +679,7 @@ class PythonAsyncIOLanguage:
     def client_cmd(self, args):
         return [
             'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use_asyncio', '--client',
+            'run_interop', '--use-asyncio', '--client',
             '--args="{}"'.format(' '.join(args))
         ]
 
@@ -695,7 +695,7 @@ class PythonAsyncIOLanguage:
     def server_cmd(self, args):
         return [
             'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use_asyncio', '--server',
+            'run_interop', '--use-asyncio', '--server',
             '--args="{}"'.format(' '.join(args))
         ]
 
