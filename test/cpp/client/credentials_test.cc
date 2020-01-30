@@ -762,9 +762,9 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
+  //grpc::testing::TestEnvironment env(argc, argv);
+  //grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
+  //grpc_shutdown();
   return ret;
 }
