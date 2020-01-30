@@ -143,10 +143,12 @@ cdef class _ServicerContext:
             if trailing_metadata == _IMMUTABLE_EMPTY_METADATA and self._rpc_state.trailing_metadata:
                 trailing_metadata = self._rpc_state.trailing_metadata
 
+            actual_code = get_status_code(code)
+
             self._rpc_state.status_sent = True
             await _send_error_status_from_server(
                 self._rpc_state,
-                code.value[0],
+                actual_code,
                 details,
                 trailing_metadata,
                 self._rpc_state.metadata_sent,

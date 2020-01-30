@@ -167,6 +167,8 @@ async def _ping_pong(stub: test_pb2_grpc.TestServiceStub) -> None:
         response = await call.read()
         _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE,
                                           response_size)
+    await call.done_writing()
+    await _validate_status_code_and_details(call, grpc.StatusCode.OK, '')
 
 
 async def _cancel_after_begin(stub: test_pb2_grpc.TestServiceStub):
@@ -362,11 +364,9 @@ async def _per_rpc_creds(stub: test_pb2_grpc.TestServiceStub,
                          (wanted_email, response.username))
 
 
-async def _special_status_message(stub: test_pb2_grpc.TestServiceStub,
-                                  args: argparse.Namespace):
+async def _special_status_message(stub: test_pb2_grpc.TestServiceStub):
     details = b'\t\ntest with whitespace\r\nand Unicode BMP \xe2\x98\xba and non-BMP \xf0\x9f\x98\x88\t\n'.decode(
         'utf-8')
-    code = 2
     status = grpc.StatusCode.UNKNOWN  # code = 2
 
     # Test with a UnaryCall
@@ -374,7 +374,8 @@ async def _special_status_message(stub: test_pb2_grpc.TestServiceStub,
         response_type=messages_pb2.COMPRESSABLE,
         response_size=1,
         payload=messages_pb2.Payload(body=b'\x00'),
-        response_status=messages_pb2.EchoStatus(code=code, message=details))
+        response_status=messages_pb2.EchoStatus(code=status.value[0],
+                                                message=details))
     call = stub.UnaryCall(request)
     await _validate_status_code_and_details(call, status, details)
 

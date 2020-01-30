@@ -67,6 +67,10 @@ class InteropTestCaseMixin:
         await methods.test_interoperability(
             methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER, self._stub, None)
 
+    async def test_special_status_message(self):
+        await methods.test_interoperability(
+            methods.TestCase.SPECIAL_STATUS_MESSAGE, self._stub, None)
+
 
 class InsecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
 

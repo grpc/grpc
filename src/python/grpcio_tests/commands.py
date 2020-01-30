@@ -237,7 +237,7 @@ class RunInterop(test.test):
         ('args=', None, 'pass-thru arguments for the client/server'),
         ('client', None, 'flag indicating to run the client'),
         ('server', None, 'flag indicating to run the server'),
-        ('use_asyncio', None, 'flag indicating to run the asyncio stack')
+        ('use-asyncio', None, 'flag indicating to run the asyncio stack')
     ]
 
     def initialize_options(self):

@@ -39,10 +39,19 @@ async def _maybe_echo_metadata(servicer_context):
         servicer_context.set_trailing_metadata((trailing_metadatum,))
 
 
+async def _maybe_echo_status(request: messages_pb2.SimpleRequest,
+                             servicer_context):
+    """Echos the RPC status if demanded by the request."""
+    if request.HasField('response_status'):
+        await servicer_context.abort(request.response_status.code,
+                                     request.response_status.message)
+
+
 class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
     async def UnaryCall(self, request, context):
         await _maybe_echo_metadata(context)
+        await _maybe_echo_status(request, context)
         return messages_pb2.SimpleResponse(
             payload=messages_pb2.Payload(type=messages_pb2.COMPRESSABLE,
                                          body=b'\x00' * request.response_size))
