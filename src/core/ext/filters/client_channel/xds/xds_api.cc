@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -106,10 +107,10 @@ bool XdsDropConfig::ShouldDrop(const std::string** category_name) const {
 namespace {
 
 void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
-                           const XdsBootstrap::MetadataValue& value);
+                           const Json& value);
 
 void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
-                       const std::vector<XdsBootstrap::MetadataValue>& values) {
+                       const Json::Array& values) {
   for (const auto& value : values) {
     auto* value_pb = google_protobuf_ListValue_add_values(list_value, arena);
     PopulateMetadataValue(arena, value_pb, value);
@@ -117,13 +118,12 @@ void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
 }
 
 void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
-                      const std::map<const char*, XdsBootstrap::MetadataValue,
-                                     StringLess>& metadata) {
+                      const Json::Object& metadata) {
   for (const auto& p : metadata) {
     google_protobuf_Struct_FieldsEntry* field =
         google_protobuf_Struct_add_fields(metadata_pb, arena);
-    google_protobuf_Struct_FieldsEntry_set_key(field,
-                                               upb_strview_makez(p.first));
+    google_protobuf_Struct_FieldsEntry_set_key(
+        field, upb_strview_makez(p.first.c_str()));
     google_protobuf_Value* value =
         google_protobuf_Struct_FieldsEntry_mutable_value(field, arena);
     PopulateMetadataValue(arena, value, p.second);
@@ -131,31 +131,35 @@ void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
 }
 
 void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
-                           const XdsBootstrap::MetadataValue& value) {
-  switch (value.type) {
-    case XdsBootstrap::MetadataValue::Type::MD_NULL:
+                           const Json& value) {
+  switch (value.type()) {
+    case Json::Type::JSON_NULL:
       google_protobuf_Value_set_null_value(value_pb, 0);
       break;
-    case XdsBootstrap::MetadataValue::Type::DOUBLE:
-      google_protobuf_Value_set_number_value(value_pb, value.double_value);
+    case Json::Type::NUMBER:
+      google_protobuf_Value_set_number_value(
+          value_pb, strtod(value.string_value().c_str(), nullptr));
       break;
-    case XdsBootstrap::MetadataValue::Type::STRING:
+    case Json::Type::STRING:
       google_protobuf_Value_set_string_value(
-          value_pb, upb_strview_makez(value.string_value));
+          value_pb, upb_strview_makez(value.string_value().c_str()));
       break;
-    case XdsBootstrap::MetadataValue::Type::BOOL:
-      google_protobuf_Value_set_bool_value(value_pb, value.bool_value);
+    case Json::Type::JSON_TRUE:
+      google_protobuf_Value_set_bool_value(value_pb, true);
       break;
-    case XdsBootstrap::MetadataValue::Type::STRUCT: {
+    case Json::Type::JSON_FALSE:
+      google_protobuf_Value_set_bool_value(value_pb, false);
+      break;
+    case Json::Type::OBJECT: {
       google_protobuf_Struct* struct_value =
           google_protobuf_Value_mutable_struct_value(value_pb, arena);
-      PopulateMetadata(arena, struct_value, value.struct_value);
+      PopulateMetadata(arena, struct_value, value.object_value());
       break;
     }
-    case XdsBootstrap::MetadataValue::Type::LIST: {
+    case Json::Type::ARRAY: {
       google_protobuf_ListValue* list_value =
           google_protobuf_Value_mutable_list_value(value_pb, arena);
-      PopulateListValue(arena, list_value, value.list_value);
+      PopulateListValue(arena, list_value, value.array_value());
       break;
     }
   }
@@ -164,33 +168,34 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
 void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
                   const char* build_version, envoy_api_v2_core_Node* node_msg) {
   if (node != nullptr) {
-    if (node->id != nullptr) {
-      envoy_api_v2_core_Node_set_id(node_msg, upb_strview_makez(node->id));
+    if (!node->id.empty()) {
+      envoy_api_v2_core_Node_set_id(node_msg,
+                                    upb_strview_makez(node->id.c_str()));
     }
-    if (node->cluster != nullptr) {
-      envoy_api_v2_core_Node_set_cluster(node_msg,
-                                         upb_strview_makez(node->cluster));
+    if (!node->cluster.empty()) {
+      envoy_api_v2_core_Node_set_cluster(
+          node_msg, upb_strview_makez(node->cluster.c_str()));
     }
-    if (!node->metadata.empty()) {
+    if (!node->metadata.object_value().empty()) {
       google_protobuf_Struct* metadata =
           envoy_api_v2_core_Node_mutable_metadata(node_msg, arena);
-      PopulateMetadata(arena, metadata, node->metadata);
+      PopulateMetadata(arena, metadata, node->metadata.object_value());
     }
-    if (node->locality_region != nullptr || node->locality_zone != nullptr ||
-        node->locality_subzone != nullptr) {
+    if (!node->locality_region.empty() || !node->locality_zone.empty() ||
+        !node->locality_subzone.empty()) {
       envoy_api_v2_core_Locality* locality =
           envoy_api_v2_core_Node_mutable_locality(node_msg, arena);
-      if (node->locality_region != nullptr) {
+      if (!node->locality_region.empty()) {
         envoy_api_v2_core_Locality_set_region(
-            locality, upb_strview_makez(node->locality_region));
+            locality, upb_strview_makez(node->locality_region.c_str()));
       }
-      if (node->locality_zone != nullptr) {
+      if (!node->locality_zone.empty()) {
         envoy_api_v2_core_Locality_set_zone(
-            locality, upb_strview_makez(node->locality_zone));
+            locality, upb_strview_makez(node->locality_zone.c_str()));
       }
-      if (node->locality_subzone != nullptr) {
+      if (!node->locality_subzone.empty()) {
         envoy_api_v2_core_Locality_set_sub_zone(
-            locality, upb_strview_makez(node->locality_subzone));
+            locality, upb_strview_makez(node->locality_subzone.c_str()));
       }
     }
   }
