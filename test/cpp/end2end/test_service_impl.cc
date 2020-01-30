@@ -446,16 +446,14 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
     }
 
     void StartRpc() {
-      {
-        if (req_->has_param() && req_->param().server_sleep_us() > 0) {
-          // Set an alarm for that much time
-          alarm_.experimental().Set(
-              gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                           gpr_time_from_micros(req_->param().server_sleep_us(),
-                                                GPR_TIMESPAN)),
-              [this](bool ok) { NonDelayed(ok); });
-          return;
-        }
+      if (req_->has_param() && req_->param().server_sleep_us() > 0) {
+        // Set an alarm for that much time
+        alarm_.experimental().Set(
+            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                         gpr_time_from_micros(req_->param().server_sleep_us(),
+                                              GPR_TIMESPAN)),
+            [this](bool ok) { NonDelayed(ok); });
+        return;
       }
       NonDelayed(true);
     }
