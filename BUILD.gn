@@ -162,6 +162,7 @@ config("grpc_config") {
     ]
     deps = [
         ":absl/container:inlined_vector",
+        ":absl/memory:memory",
         ":absl/strings:strings",
         ":absl/types:optional",
     ]

@@ -386,7 +386,7 @@ class FakeResolverFactory : public ResolverFactory {
 
 void grpc_resolver_fake_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::FakeResolverFactory>());
+      absl::make_unique<grpc_core::FakeResolverFactory>());
 }
 
 void grpc_resolver_fake_shutdown() {}

@@ -442,6 +442,7 @@
       'type': 'static_library',
       'dependencies': [
         'absl/container:inlined_vector',
+        'absl/memory:memory',
         'absl/strings:strings',
         'absl/types:optional',
       ],
