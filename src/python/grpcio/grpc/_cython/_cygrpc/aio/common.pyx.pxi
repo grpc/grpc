@@ -13,9 +13,9 @@
 # limitations under the License.
 
 
-cdef int get_status_code(object code) except *:
+cdef grpc_status_code get_status_code(object code) except *:
     if isinstance(code, int):
-        if code >=0 and code < 15:
+        if code >= StatusCode.ok and code <= StatusCode.data_loss:
             return code
         else:
             return StatusCode.unknown

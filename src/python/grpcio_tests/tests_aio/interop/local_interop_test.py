@@ -67,6 +67,26 @@ class InteropTestCaseMixin:
         await methods.test_interoperability(
             methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER, self._stub, None)
 
+    async def test_empty_stream(self):
+        await methods.test_interoperability(methods.TestCase.EMPTY_STREAM,
+                                            self._stub, None)
+
+    async def test_status_code_and_message(self):
+        await methods.test_interoperability(
+            methods.TestCase.STATUS_CODE_AND_MESSAGE, self._stub, None)
+
+    async def test_unimplemented_method(self):
+        await methods.test_interoperability(
+            methods.TestCase.UNIMPLEMENTED_METHOD, self._stub, None)
+
+    async def test_unimplemented_service(self):
+        await methods.test_interoperability(
+            methods.TestCase.UNIMPLEMENTED_SERVICE, self._stub, None)
+
+    async def test_custom_metadata(self):
+        await methods.test_interoperability(methods.TestCase.CUSTOM_METADATA,
+                                            self._stub, None)
+
     async def test_special_status_message(self):
         await methods.test_interoperability(
             methods.TestCase.SPECIAL_STATUS_MESSAGE, self._stub, None)

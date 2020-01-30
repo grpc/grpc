@@ -87,8 +87,10 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
         return messages_pb2.StreamingInputCallResponse(
             aggregated_payload_size=aggregate_size)
 
-    async def FullDuplexCall(self, request_async_iterator, unused_context):
+    async def FullDuplexCall(self, request_async_iterator, context):
+        await _maybe_echo_metadata(context)
         async for request in request_async_iterator:
+            await _maybe_echo_status(request, context)
             for response_parameters in request.response_parameters:
                 if response_parameters.interval_us != 0:
                     await asyncio.sleep(

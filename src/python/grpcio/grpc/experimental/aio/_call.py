@@ -260,7 +260,20 @@ class _UnaryResponseMixin(Call):
             if not self.cancelled():
                 self.cancel()
             raise
-        return response
+
+        # NOTE(lidiz) If we raise RpcError in the task, and users doesn't
+        # 'await' on it. AsyncIO will log 'Task exception was never retrieved'.
+        # Instead, if we move the exception raising here, the spam stops.
+        # Unfortunately, there can only be one 'yield from' in '__await__'. So,
+        # we need to access the private instance variable.
+        if response is cygrpc.EOF:
+            if self._cython_call.is_locally_cancelled():
+                raise asyncio.CancelledError()
+            else:
+                raise _create_rpc_error(self._cython_call._initial_metadata,
+                                        self._cython_call._status)
+        else:
+            return response
 
 
 class _StreamResponseMixin(Call):
@@ -432,11 +445,11 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
             if not self.cancelled():
                 self.cancel()
 
-        # Raises here if RPC failed or cancelled
-        await self._raise_for_status()
-
-        return _common.deserialize(serialized_response,
-                                   self._response_deserializer)
+        if self._cython_call.is_ok():
+            return _common.deserialize(serialized_response,
+                                       self._response_deserializer)
+        else:
+            return cygrpc.EOF
 
 
 class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
@@ -506,11 +519,11 @@ class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
             if not self.cancelled():
                 self.cancel()
 
-        # Raises RpcError if the RPC failed or cancelled
-        await self._raise_for_status()
-
-        return _common.deserialize(serialized_response,
-                                   self._response_deserializer)
+        if self._cython_call.is_ok():
+            return _common.deserialize(serialized_response,
+                                       self._response_deserializer)
+        else:
+            return cygrpc.EOF
 
 
 class StreamStreamCall(_StreamRequestMixin, _StreamResponseMixin, Call,

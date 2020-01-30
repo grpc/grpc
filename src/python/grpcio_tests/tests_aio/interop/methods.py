@@ -42,14 +42,14 @@ async def _expect_status_code(call: aio.Call,
     code = await call.code()
     if code != expected_code:
         raise ValueError('expected code %s, got %s' %
-                         (expected_code, call.code()))
+                         (expected_code, await call.code()))
 
 
 async def _expect_status_details(call: aio.Call, expected_details: str) -> None:
     details = await call.details()
     if details != expected_details:
         raise ValueError('expected message %s, got %s' %
-                         (expected_details, call.details()))
+                         (expected_details, await call.details()))
 
 
 async def _validate_status_code_and_details(call: aio.Call,
@@ -245,7 +245,6 @@ async def _empty_stream(stub: test_pb2_grpc.TestServiceStub):
 
 async def _status_code_and_message(stub: test_pb2_grpc.TestServiceStub):
     details = 'test status message'
-    code = 2
     status = grpc.StatusCode.UNKNOWN  # code = 2
 
     # Test with a UnaryCall
@@ -253,7 +252,8 @@ async def _status_code_and_message(stub: test_pb2_grpc.TestServiceStub):
         response_type=messages_pb2.COMPRESSABLE,
         response_size=1,
         payload=messages_pb2.Payload(body=b'\x00'),
-        response_status=messages_pb2.EchoStatus(code=code, message=details))
+        response_status=messages_pb2.EchoStatus(code=status.value[0],
+                                                message=details))
     call = stub.UnaryCall(request)
     await _validate_status_code_and_details(call, status, details)
 
@@ -263,7 +263,8 @@ async def _status_code_and_message(stub: test_pb2_grpc.TestServiceStub):
         response_type=messages_pb2.COMPRESSABLE,
         response_parameters=(messages_pb2.ResponseParameters(size=1),),
         payload=messages_pb2.Payload(body=b'\x00'),
-        response_status=messages_pb2.EchoStatus(code=code, message=details))
+        response_status=messages_pb2.EchoStatus(code=status.value[0],
+                                                message=details))
     await call.write(request)  # sends the initial request.
     await call.done_writing()
     await _validate_status_code_and_details(call, status, details)
