@@ -26,28 +26,25 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/logical_thread.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/test_config.h"
 
 namespace {
-TEST(LogicalThreadTest, NoOp) {
-  auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
-}
+TEST(WorkSerializerTest, NoOp) { grpc_core::WorkSerializer lock; }
 
-TEST(LogicalThreadTest, ExecuteOne) {
-  auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+TEST(WorkSerializerTest, ExecuteOne) {
+  grpc_core::WorkSerializer lock;
   gpr_event done;
   gpr_event_init(&done);
-  lock->Run([&done]() { gpr_event_set(&done, (void*)1); }, DEBUG_LOCATION);
+  lock.Run([&done]() { gpr_event_set(&done, (void*)1); }, DEBUG_LOCATION);
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
 }
 
 class TestThread {
  public:
-  explicit TestThread(grpc_core::RefCountedPtr<grpc_core::LogicalThread> lock)
-      : lock_(std::move(lock)),
-        thread_("grpc_execute_many", ExecuteManyLoop, this) {
+  explicit TestThread(grpc_core::WorkSerializer* lock)
+      : lock_(lock), thread_("grpc_execute_many", ExecuteManyLoop, this) {
     gpr_event_init(&done_);
     thread_.Start();
   }
@@ -86,18 +83,18 @@ class TestThread {
                      DEBUG_LOCATION);
   }
 
-  grpc_core::RefCountedPtr<grpc_core::LogicalThread> lock_;
+  grpc_core::WorkSerializer* lock_ = nullptr;
   grpc_core::Thread thread_;
   size_t counter_ = 0;
   gpr_event done_;
 };
 
-TEST(LogicalThreadTest, ExecuteMany) {
-  auto lock = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+TEST(WorkSerializerTest, ExecuteMany) {
+  grpc_core::WorkSerializer lock;
   {
     std::vector<std::unique_ptr<TestThread>> threads;
     for (size_t i = 0; i < 100; ++i) {
-      threads.push_back(std::unique_ptr<TestThread>(new TestThread(lock)));
+      threads.push_back(std::unique_ptr<TestThread>(new TestThread(&lock)));
     }
   }
 }

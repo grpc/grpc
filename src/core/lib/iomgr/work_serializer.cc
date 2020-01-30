@@ -18,11 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/logical_thread.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
-DebugOnlyTraceFlag grpc_logical_thread_trace(false, "logical_thread");
+DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
 
 struct CallbackWrapper {
   CallbackWrapper(std::function<void()> cb, const grpc_core::DebugLocation& loc)
@@ -33,51 +33,74 @@ struct CallbackWrapper {
   const DebugLocation location;
 };
 
-void LogicalThread::Run(std::function<void()> callback,
-                        const grpc_core::DebugLocation& location) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
-    gpr_log(GPR_INFO, "LogicalThread::Run() %p Scheduling callback [%s:%d]",
+void WorkSerializerImpl::Run(std::function<void()> callback,
+                             const grpc_core::DebugLocation& location) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+    gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
   }
   const size_t prev_size = size_.FetchAdd(1);
-  if (prev_size == 0) {
-    // There is no other closure executing right now on this logical thread.
+  // The work serializer should not have been orphaned.
+  GPR_DEBUG_ASSERT(prev_size > 0);
+  if (prev_size == 1) {
+    // There is no other closure executing right now on this work serializer.
     // Execute this closure immediately.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Executing immediately");
     }
     callback();
-    // Loan this thread to the logical thread and drain the queue.
+    // Loan this thread to the work serializer thread and drain the queue.
     DrainQueue();
   } else {
     CallbackWrapper* cb_wrapper =
         new CallbackWrapper(std::move(callback), location);
-    // There already are closures executing on this logical thread. Simply add
+    // There already are closures executing on this work serializer. Simply add
     // this closure to the queue.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Scheduling on queue : item %p", cb_wrapper);
     }
     queue_.Push(&cb_wrapper->mpscq_node);
   }
 }
 
-// The thread that calls this loans itself to the logical thread so as to
+void WorkSerializerImpl::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+    gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
+  }
+  size_t prev_size = size_.FetchSub(1);
+  if (prev_size == 1) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+      gpr_log(GPR_INFO, "  Destroying");
+    }
+    delete this;
+  }
+}
+
+// The thread that calls this loans itself to the work serializer so as to
 // execute all the scheduled callback. This is called from within
-// LogicalThread::Run() after executing a callback immediately, and hence size_
+// WorkSerializer::Run() after executing a callback immediately, and hence size_
 // is atleast 1.
-void LogicalThread::DrainQueue() {
+void WorkSerializerImpl::DrainQueue() {
   while (true) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
-      gpr_log(GPR_INFO, "LogicalThread::DrainQueue() %p", this);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+      gpr_log(GPR_INFO, "WorkSerializer::DrainQueue() %p", this);
     }
     size_t prev_size = size_.FetchSub(1);
-    // prev_size should be atleast 1 since
     GPR_DEBUG_ASSERT(prev_size >= 1);
+    // It is possible that while draining the queue, one of the callbacks ended
+    // up orphaning the work serializer. In that case, delete the object.
     if (prev_size == 1) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+        gpr_log(GPR_INFO, "  Queue Drained. Destroying");
+      }
+      delete this;
+      return;
+    }
+    if (prev_size == 2) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
         gpr_log(GPR_INFO, "  Queue Drained");
       }
-      break;
+      return;
     }
     // There is atleast one callback on the queue. Pop the callback from the
     // queue and execute it.
@@ -87,11 +110,11 @@ void LogicalThread::DrainQueue() {
                 queue_.PopAndCheckEnd(&empty_unused))) == nullptr) {
       // This can happen either due to a race condition within the mpscq
       // implementation or because of a race with Run()
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
         gpr_log(GPR_INFO, "  Queue returned nullptr, trying again");
       }
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_logical_thread_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
               cb_wrapper, cb_wrapper->location.file(),
               cb_wrapper->location.line());
