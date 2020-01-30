@@ -88,7 +88,7 @@ TEST(XdsBootstrapTest, Basic) {
   grpc_core::XdsBootstrap bootstrap(slice, &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   EXPECT_STREQ(bootstrap.server().server_uri, "fake:///lb");
-  ASSERT_EQ(bootstrap.server().channel_creds.size(), 1);
+  ASSERT_EQ(bootstrap.server().channel_creds.size(), 1UL);
   EXPECT_STREQ(bootstrap.server().channel_creds[0].type, "fake");
   EXPECT_EQ(bootstrap.server().channel_creds[0].config, nullptr);
   ASSERT_NE(bootstrap.node(), nullptr);
@@ -149,7 +149,7 @@ TEST(XdsBootstrapTest, Basic) {
   // iteration, replace this by using ElementsAre() in the statement above.
   auto it = bootstrap.node()->metadata.find("list");
   ASSERT_TRUE(it != bootstrap.node()->metadata.end());
-  ASSERT_EQ(it->second.list_value.size(), 3);
+  ASSERT_EQ(it->second.list_value.size(), 3UL);
   EXPECT_EQ(it->second.list_value[0].type,
             XdsBootstrap::MetadataValue::Type::DOUBLE);
   EXPECT_EQ(it->second.list_value[0].double_value, 1);
@@ -175,7 +175,7 @@ TEST(XdsBootstrapTest, ValidWithoutChannelCredsAndNode) {
   grpc_core::XdsBootstrap bootstrap(slice, &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE);
   EXPECT_STREQ(bootstrap.server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap.server().channel_creds.size(), 0);
+  EXPECT_EQ(bootstrap.server().channel_creds.size(), 0UL);
   EXPECT_EQ(bootstrap.node(), nullptr);
 }
 
