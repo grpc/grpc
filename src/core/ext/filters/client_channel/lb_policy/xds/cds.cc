@@ -37,9 +37,9 @@ namespace {
 constexpr char kCds[] = "cds_experimental";
 
 // Config for this LB policy.
-class CdsConfig : public LoadBalancingPolicy::Config {
+class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit CdsConfig(std::string cluster) : cluster_(std::move(cluster)) {}
+  explicit CdsLbConfig(std::string cluster) : cluster_(std::move(cluster)) {}
   const std::string& cluster() const { return cluster_; }
   const char* name() const override { return kCds; }
 
@@ -89,7 +89,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  RefCountedPtr<CdsConfig> config_;
+  RefCountedPtr<CdsLbConfig> config_;
 
   // Current channel args from the resolver.
   const grpc_channel_args* args_ = nullptr;
@@ -284,7 +284,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 // factory
 //
 
-class CdsFactory : public LoadBalancingPolicyFactory {
+class CdsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
@@ -320,7 +320,7 @@ class CdsFactory : public LoadBalancingPolicyFactory {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
       return nullptr;
     }
-    return MakeRefCounted<CdsConfig>(std::move(cluster));
+    return MakeRefCounted<CdsLbConfig>(std::move(cluster));
   }
 };
 
@@ -335,7 +335,7 @@ class CdsFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_cds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::CdsFactory>());
+          grpc_core::MakeUnique<grpc_core::CdsLbFactory>());
 }
 
 void grpc_lb_policy_cds_shutdown() {}
