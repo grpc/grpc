@@ -1119,10 +1119,12 @@ void LocalityStatsPopulate(
 }  // namespace
 
 grpc_slice XdsLrsRequestCreateAndEncode(
-    std::map<StringView, std::set<XdsClientStats*>> client_stats_map) {
+    std::map<StringView, std::set<XdsClientStats*>, StringLess>
+        client_stats_map) {
   upb::Arena arena;
   // Get the snapshots.
-  std::map<StringView, grpc_core::InlinedVector<XdsClientStats::Snapshot, 1>>
+  std::map<StringView, grpc_core::InlinedVector<XdsClientStats::Snapshot, 1>,
+           StringLess>
       snapshot_map;
   for (auto& p : client_stats_map) {
     const StringView& cluster_name = p.first;

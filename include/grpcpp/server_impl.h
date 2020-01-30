@@ -385,12 +385,6 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // shutdown callback tag (invoked when the CQ is fully shutdown).
   // It is protected by mu_
   CompletionQueue* callback_cq_ = nullptr;
-
-#ifndef NDEBUG
-  // List of CQs passed in by user that must be Shutdown only after Server is
-  // Shutdown.
-  std::vector<CompletionQueue*> cq_list_;
-#endif
 };
 
 }  // namespace grpc_impl

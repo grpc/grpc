@@ -29,7 +29,9 @@ namespace testing {
 /// DefaultReactor. It is intended for allow unit-testing of a callback API
 /// service via direct invocation of the service methods rather than through
 /// RPCs. It is only applicable for unary RPC methods that use the
-/// DefaultReactor rather than any user-defined reactor.
+/// DefaultReactor rather than any user-defined reactor. If it is used, it must
+/// be created before the RPC is invoked so that it can bind the reactor into a
+/// test mode rather than letting it follow the normal paths.
 class DefaultReactorTestPeer {
  public:
   explicit DefaultReactorTestPeer(experimental::CallbackServerContext* ctx)
@@ -40,7 +42,8 @@ class DefaultReactorTestPeer {
     ctx->SetupTestDefaultReactor(std::move(finish_func));
   }
   ::grpc::experimental::ServerUnaryReactor* reactor() const {
-    return &ctx_->default_reactor_;
+    return reinterpret_cast<experimental::ServerUnaryReactor*>(
+        &ctx_->default_reactor_);
   }
   bool test_status_set() const { return ctx_->test_status_set(); }
   Status test_status() const { return ctx_->test_status(); }

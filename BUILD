@@ -16,7 +16,10 @@
 
 licenses(["notice"])
 
-exports_files(["LICENSE"])
+exports_files([
+    "LICENSE",
+    "etc/roots.pem",
+])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -803,7 +806,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/json/json.cc",
         "src/core/lib/json/json_reader.cc",
+        "src/core/lib/json/json_reader_new.cc",
         "src/core/lib/json/json_writer.cc",
+        "src/core/lib/json/json_writer_new.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice.cc",

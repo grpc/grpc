@@ -75,6 +75,11 @@ class StringView final {
       : StringView(ptr, ptr == nullptr ? 0 : strlen(ptr)) {}
   constexpr StringView() : StringView(nullptr, 0) {}
 
+  template <typename Allocator>
+  StringView(
+      const std::basic_string<char, std::char_traits<char>, Allocator>& str)
+      : StringView(str.data(), str.size()) {}
+
   constexpr const char* data() const { return ptr_; }
   constexpr size_t size() const { return size_; }
   constexpr bool empty() const { return size_ == 0; }
