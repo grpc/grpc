@@ -119,7 +119,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     gpr_mu_unlock(&g_mu);
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
-    *addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
+    *addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_sockaddr_in sa;
     sa.sin_family = GRPC_AF_INET;
     sa.sin_addr.s_addr = 0x100007f;

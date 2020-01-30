@@ -39,7 +39,7 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(grpc_error** error) {
   grpc_slice contents;
   *error = grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
   if (*error != GRPC_ERROR_NONE) return nullptr;
-  return grpc_core::MakeUnique<XdsBootstrap>(contents, error);
+  return absl::make_unique<XdsBootstrap>(contents, error);
 }
 
 XdsBootstrap::XdsBootstrap(grpc_slice contents, grpc_error** error)
@@ -248,7 +248,7 @@ grpc_error* XdsBootstrap::ParseChannelCreds(grpc_json* json, size_t idx,
 
 grpc_error* XdsBootstrap::ParseNode(grpc_json* json) {
   InlinedVector<grpc_error*, 1> error_list;
-  node_ = grpc_core::MakeUnique<Node>();
+  node_ = absl::make_unique<Node>();
   bool seen_metadata = false;
   bool seen_locality = false;
   for (grpc_json* child = json->child; child != nullptr; child = child->next) {

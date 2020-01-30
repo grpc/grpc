@@ -564,6 +564,7 @@ grpc_cc_library(
         "src/core/lib/profiling/timers.h",
     ],
     external_deps = [
+        "absl/memory",
         "absl/strings",
     ],
     language = "c++",

@@ -1595,7 +1595,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   LoadBalancingPolicy::Args lb_args;
   lb_args.combiner = combiner_;
   lb_args.channel_control_helper =
-      grpc_core::MakeUnique<ClientChannelControlHelper>(this);
+      absl::make_unique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
   grpc_core::UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(new ResolvingLoadBalancingPolicy(
@@ -1871,7 +1871,7 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
                                      MemoryOrder::RELEASE);
       chand->UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
-          grpc_core::MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
+          absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
               GRPC_ERROR_REF(op->disconnect_with_error)));
     }
   }

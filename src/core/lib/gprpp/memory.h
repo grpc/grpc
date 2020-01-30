@@ -28,6 +28,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
+
 namespace grpc_core {
 
 class DefaultDeleteChar {
@@ -43,12 +45,6 @@ class DefaultDeleteChar {
 // except that it uses gpr_free for deleter.
 template <typename T>
 using UniquePtr = std::unique_ptr<T, DefaultDeleteChar>;
-
-// TODO(veblush): Replace this with absl::make_unique once abseil is added.
-template <typename T, typename... Args>
-inline std::unique_ptr<T> MakeUnique(Args&&... args) {
-  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
 
 }  // namespace grpc_core
 
