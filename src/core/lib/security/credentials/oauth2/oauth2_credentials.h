@@ -51,7 +51,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
 /// Creates a refresh token object from parsed json. Returns an invalid object
 /// if a parsing error has been encountered.
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
-    const grpc_json* json);
+    const grpc_core::Json& json);
 
 /// Destructs the object.
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
