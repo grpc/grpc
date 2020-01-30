@@ -679,7 +679,8 @@ class PythonAsyncIOLanguage:
     def client_cmd(self, args):
         return [
             'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use_asyncio', '--client', '--args="{}"'.format(' '.join(args))
+            'run_interop', '--use_asyncio', '--client',
+            '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
