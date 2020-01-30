@@ -1112,6 +1112,22 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_xds_client_secure
+- name: grpc_lb_policy_eds
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  plugin: grpc_lb_policy_eds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_xds_client
+- name: grpc_lb_policy_eds_secure
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  plugin: grpc_lb_policy_eds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_xds_client_secure
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
@@ -1155,6 +1171,22 @@ filegroups:
   - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
+- name: grpc_lb_policy_lrs
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
+  plugin: grpc_lb_policy_lrs
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_xds_client
+- name: grpc_lb_policy_lrs_secure
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
+  plugin: grpc_lb_policy_lrs
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_xds_client_secure
 - name: grpc_lb_policy_pick_first
   src:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -1163,6 +1195,13 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_lb_subchannel_list
+- name: grpc_lb_policy_priority
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  plugin: grpc_lb_policy_priority
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_lb_policy_round_robin
   src:
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
@@ -1171,6 +1210,13 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_lb_subchannel_list
+- name: grpc_lb_policy_weighted_target
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
+  plugin: grpc_lb_policy_weighted_target
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_lb_policy_xds
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -1740,7 +1786,11 @@ libs:
   - grpc_transport_inproc
   - grpc_lb_policy_grpclb_secure
   - grpc_lb_policy_cds_secure
+  - grpc_lb_policy_eds_secure
+  - grpc_lb_policy_lrs_secure
   - grpc_lb_policy_xds_secure
+  - grpc_lb_policy_priority
+  - grpc_lb_policy_weighted_target
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
   - grpc_resolver_dns_ares
@@ -1822,7 +1872,11 @@ libs:
   - grpc_resolver_xds
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_cds
+  - grpc_lb_policy_eds
+  - grpc_lb_policy_lrs
   - grpc_lb_policy_xds
+  - grpc_lb_policy_priority
+  - grpc_lb_policy_weighted_target
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
   - census

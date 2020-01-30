@@ -1856,7 +1856,11 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/type/matcher/string.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
+  src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -3377,7 +3381,11 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc

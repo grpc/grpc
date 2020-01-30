@@ -71,7 +71,7 @@ TraceFlag grpc_lb_lrs_trace(false, "lrs_lb");
 
 namespace {
 
-constexpr char kLrs[] = "xds_experimental";
+constexpr char kLrs[] = "lrs_experimental";
 
 class LrsLbConfig : public LoadBalancingPolicy::Config {
  public:
