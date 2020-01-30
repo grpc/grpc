@@ -11,9 +11,7 @@
   # Please make modifications to
   # `templates/src/objective-c/BoringSSL-GRPC.podspec.template` instead. This
   # file can be regenerated from the template by running
-  # `tools/buildgen/generate_projects.sh`. Because of some limitations of this
-  # template, you might actually need to run the same script twice in a row.
-  # (see err_data.c section)
+  # `tools/buildgen/generate_projects.sh`.
 
   # BoringSSL CocoaPods podspec
 
@@ -48,7 +46,7 @@
 
   Pod::Spec.new do |s|
     s.name     = 'BoringSSL-GRPC'
-    version = '0.0.6'
+    version = '0.0.7'
     s.version  = version
     s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
     # Adapted from the homepage:
@@ -141,8 +139,8 @@
                         'src/crypto/**/*.{h,c,cc}',
                         # We have to include fiat because spake25519 depends on it
                         'src/third_party/fiat/*.{h,c,cc}',
-                        # Include the err_data.c generated in prepare_command below
-                        'src/err_data.c'
+                        # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
+                        'err_data.c'
 
       ss.private_header_files = 'src/ssl/*.h',
                                 'src/ssl/**/*.h',
@@ -209,20 +207,6 @@
           export *
           module * { export * }
         }
-      EOF
-
-      # To build boringssl, we need the generated file err_data.c, which is normally generated
-      # by boringssl's err_data_generate.go, but we already have a copy of err_data.c checked into the
-      # grpc/grpc repository that gets regenerated whenever we update the third_party/boringssl submodule.
-      # To make the podspec independent of the grpc repository, the .podspec.template just copies
-      # the contents of err_data.c directly into the .podspec.
-      # TODO(jtattermusch): avoid needing to run tools/buildgen/generate_projects.sh twice on update
-      # TODO(jtattermusch): another pre-generated copy of err_data.c is under third_party/boringssl-with-bazel
-      # investigate if we could use it.
-      cat > src/err_data.c <<EOF
-      % for err_data in open("src/boringssl/err_data.c", "r").readlines():
-        ${err_data.replace('\\0', '\\\\0')}\
-      % endfor
       EOF
 
       # The symbol prefixing mechanism is performed by redefining BoringSSL symbols with "#define
