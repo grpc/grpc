@@ -713,7 +713,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
-                       grpc_core::Arena* arena, grpc_call* /*call*/) {
+                       grpc_core::Arena* arena) {
   GPR_TIMER_SCOPE("init_stream", 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   new (gs) grpc_chttp2_stream(t, refcount, server_data, arena);

@@ -72,7 +72,6 @@ typedef struct {
   grpc_millis deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;
-  grpc_call* call;
 } grpc_call_element_args;
 
 typedef struct {

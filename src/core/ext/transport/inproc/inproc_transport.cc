@@ -122,9 +122,8 @@ struct inproc_transport {
 
 struct inproc_stream {
   inproc_stream(inproc_transport* t, grpc_stream_refcount* refcount,
-                const void* server_data, grpc_core::Arena* arena,
-                grpc_call* call)
-      : t(t), refs(refcount), arena(arena), call(call) {
+                const void* server_data, grpc_core::Arena* arena)
+      : t(t), refs(refcount), arena(arena) {
     // Ref this stream right now for ctor and list.
     ref("inproc_init_stream:init");
     ref("inproc_init_stream:list");
@@ -157,8 +156,8 @@ struct inproc_stream {
 
       INPROC_LOG(GPR_INFO, "inproc_stream %p", this);
       // Ref the server call and client call
-      grpc_call_ref(call);
-      grpc_call_ref(cs->call);
+      ref("inproc server call");
+      cs->ref("inproc client call");
 
       other_side = cs;
       // Ref the server-side stream on behalf of the client now
@@ -256,7 +255,6 @@ struct inproc_stream {
   grpc_closure* closure_at_destroy = nullptr;
 
   grpc_core::Arena* arena;
-  grpc_call* call;
 
   grpc_transport_stream_op_batch* send_message_op = nullptr;
   grpc_transport_stream_op_batch* send_trailing_md_op = nullptr;
@@ -328,10 +326,10 @@ grpc_error* fill_in_metadata(inproc_stream* s,
 
 int init_stream(grpc_transport* gt, grpc_stream* gs,
                 grpc_stream_refcount* refcount, const void* server_data,
-                grpc_core::Arena* arena, grpc_call* call) {
+                grpc_core::Arena* arena) {
   INPROC_LOG(GPR_INFO, "init_stream %p %p %p", gt, gs, server_data);
   inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
-  new (gs) inproc_stream(t, refcount, server_data, arena, call);
+  new (gs) inproc_stream(t, refcount, server_data, arena);
   return 0;  // return value is not important
 }
 
@@ -367,19 +365,8 @@ void close_other_side_locked(inproc_stream* s, const char* reason) {
     grpc_metadata_batch_destroy(&s->to_read_initial_md);
     grpc_metadata_batch_destroy(&s->to_read_trailing_md);
 
-    grpc_call* other_call = s->other_side->call;
     s->other_side->unref(reason);
-    // Call to grpc_call_unref is through ExecCtx so as to not be under lock
-    // since the unref may trigger an invocation of perform_stream_op that takes
-    // a lock.
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                            GRPC_CLOSURE_CREATE(
-                                [](void* arg, grpc_error* /*error*/) {
-                                  grpc_call_unref(static_cast<grpc_call*>(arg));
-                                },
-                                other_call, grpc_schedule_on_exec_ctx),
-                            GRPC_ERROR_NONE);
-
+    s->other_side->unref("other side connection");
     s->other_side_closed = true;
     s->other_side = nullptr;
   }

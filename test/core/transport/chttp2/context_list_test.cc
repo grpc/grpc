@@ -83,7 +83,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
         gpr_malloc(grpc_transport_stream_size(t))));
     grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
                                reinterpret_cast<grpc_stream*>(s[i]), &ref,
-                               nullptr, nullptr, nullptr);
+                               nullptr, nullptr);
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
@@ -139,7 +139,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
         gpr_malloc(grpc_transport_stream_size(t))));
     grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
                                reinterpret_cast<grpc_stream*>(s[i]), &ref,
-                               nullptr, nullptr, nullptr);
+                               nullptr, nullptr);
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));

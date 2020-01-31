@@ -420,8 +420,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                       call->start_time,
                                       send_deadline,
                                       call->arena,
-                                      &call->call_combiner,
-                                      call};
+                                      &call->call_combiner};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, destroy_call,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
