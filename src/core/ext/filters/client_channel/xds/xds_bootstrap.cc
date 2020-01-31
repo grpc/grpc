@@ -79,14 +79,15 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
 
 grpc_error* XdsBootstrap::ParseXdsServerList(Json* json) {
   InlinedVector<grpc_error*, 1> error_list;
-  size_t idx = 0;
-  for (Json& child : *json->mutable_array()) {
+  for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
+    Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
       char* msg;
-      gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", idx);
+      gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", i);
       error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+      gpr_free(msg);
     } else {
-      grpc_error* parse_error = ParseXdsServer(&child, idx);
+      grpc_error* parse_error = ParseXdsServer(&child, i);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
@@ -140,6 +141,7 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(Json* json,
       char* msg;
       gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", i);
       error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+      gpr_free(msg);
     } else {
       grpc_error* parse_error = ParseChannelCreds(&child, i, server);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
