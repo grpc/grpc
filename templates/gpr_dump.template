@@ -1,0 +1,56 @@
+%YAML 1.2
+--- |
+  <% 
+  import yaml
+  import itertools
+
+  def sort_key(lib_dict, key):
+    if lib_dict.get(key, []):
+      lib_dict[key] = sorted(lib_dict[key])
+
+  def canonicalize_lib(lib_dict):
+    sort_key(lib_dict, 'deps')
+    sort_key(lib_dict, 'headers')
+    sort_key(lib_dict, 'public_headers')
+    sort_key(lib_dict, 'src')
+    # remove used_by
+    lib_dict.pop('used_by', None)
+    # remove filegroups
+    lib_dict.pop('filegroups', None)
+    return lib_dict
+
+  def get_lib_metadata_dict(name):
+    for lib in libs:
+      if lib.name == name:
+        return canonicalize_lib(lib.__dict__)
+    raise Exception('library not found')
+
+  def get_libs_by_build():
+    result = {}
+    sorted_libs = sorted(libs, key=lambda x: x.build)
+    for k, g in itertools.groupby(sorted_libs, lambda x: x.build):
+        result[k] = list(sorted(map(lambda x: x.name, g)))
+    return result
+
+  def get_targets_by_build():
+    result = {}
+    sorted_targets = sorted(targets, key=lambda x: x.build)
+    for k, g in itertools.groupby(sorted_targets, lambda x: x.build):
+        result[k] = list(sorted(map(lambda x: x.name, g)))
+    return result
+
+  %>
+  # gpr
+  ${yaml.dump(get_lib_metadata_dict('gpr'), default_flow_style=False)}
+  
+  # grpc
+  ${yaml.dump(get_lib_metadata_dict('grpc'), default_flow_style=False)}
+
+  # grpc++
+  ${yaml.dump(get_lib_metadata_dict('grpc++'), default_flow_style=False)}
+
+  # libs by build type
+  ${yaml.dump(get_libs_by_build(), default_flow_style=False)}
+
+  # targets by build type
+  ${yaml.dump(get_targets_by_build(), default_flow_style=False)}
