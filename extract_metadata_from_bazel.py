@@ -18,39 +18,50 @@ import yaml
 
 
 def _get_bazel_deps(target_name):
-    query = 'deps("//:%s")' % target_name
+    query = 'deps("%s")' % _get_bazel_label(target_name)
     output = subprocess.check_output(['tools/bazel', 'query', '--noimplicit_deps', '--output', 'label_kind', query])
     return output.splitlines()
+
+
+def _extract_source_file_path(label):
+    if label.startswith('source file //'):
+        label = label[len('source file //'):]
+    # labels in form //:src/core/lib/surface/call_test_only.h
+    if label.startswith(':'):
+        label = label[len(':'):]
+    # labels in form //test/core/util:port.cc
+    label = label.replace(':', '/')
+    return label
+
+
+def _get_bazel_label(target_name):
+    if ':' in target_name:
+        return '//%s' % target_name
+    else:
+        return '//:%s' % target_name
 
 
 def _extract_public_headers(deps):
     result = []
     for dep in deps:
         if dep.startswith('source file //:include/') and dep.endswith('.h'):
-            prefixlen = len('source file //:')
-            result.append(dep[prefixlen:])
+            result.append(_extract_source_file_path(dep))
     return list(sorted(result))
 
 
 def _extract_nonpublic_headers(deps):
     result = []
     for dep in deps:
-        if dep.startswith('source file //:') and not dep.startswith('source file //:include/') and dep.endswith('.h'):
-            prefixlen = len('source file //:')
-            result.append(dep[prefixlen:])
+        if dep.startswith('source file //') and not dep.startswith('source file //:include/') and dep.endswith('.h'):
+            result.append(_extract_source_file_path(dep))
     return list(sorted(result))
 
 
 def _extract_sources(deps):
     result = []
     for dep in deps:
-        if dep.startswith('source file //:') and (dep.endswith('.cc') or dep.endswith('.c')):
-            prefixlen = len('source file //:')
-            result.append(dep[prefixlen:])
-        elif dep.startswith('source file //') and dep.endswith('.proto'):
-            # TODO: there's a colon in the filename: src/proto/grpc/channelz:channelz.proto
-            prefixlen = len('source file //')
-            result.append(dep[prefixlen:])
+        if dep.startswith('source file //') and (dep.endswith('.cc') or dep.endswith('.c') or dep.endswith('.proto')):
+            result.append(_extract_source_file_path(dep))
     return list(sorted(result))
 
 
@@ -65,7 +76,7 @@ def _extract_cc_deps(deps):
     return list(sorted(result))
 
 
-def _get_library_metadata_from_bazel(lib_name):
+def _get_target_metadata_from_bazel(lib_name):
     # extract the deps from bazel
     deps = _get_bazel_deps(lib_name)
 
@@ -96,7 +107,7 @@ def _get_library_metadata_from_bazel(lib_name):
 def _get_primitive_libs(lib_names):
     result = {}
     for lib_name in lib_names:
-        result[lib_name] = _get_library_metadata_from_bazel(lib_name)
+        result[lib_name] = _get_target_metadata_from_bazel(lib_name)
 
     # initialize the non-transitive fields
     for lib_name in lib_names:
@@ -111,7 +122,7 @@ def _get_primitive_libs(lib_names):
         lib_dict = result[lib_name]
         for dep_name in lib_names:
             dep_dict = result[dep_name]
-            if lib_name != dep_name and filter(lambda x: x == '//:%s' % dep_name, lib_dict['deps_transitive']):
+            if lib_name != dep_name and filter(lambda x: x == _get_bazel_label(dep_name), lib_dict['deps_transitive']):
                 src_difference = set(lib_dict['public_headers']).difference(set(dep_dict['public_headers_transitive']))
                 lib_dict['public_headers'] = list(sorted(src_difference))
                 src_difference = set(lib_dict['headers']).difference(set(dep_dict['headers_transitive']))
@@ -147,18 +158,25 @@ _PRIMITIVE_LIBS = [
     'grpc_csharp_ext',
     'grpc_unsecure',
     'grpcpp_channelz',
-    
+
+
     #'grpc++_core_stats', TODO: is not build:all?
     #grpc_plugin_support (in src/compiler/BUILD)
     #grpc++_proto_reflection_desc_db (no corresponding target in BUILD)
     ]
 
-# random selection of tests
+# random selection of tests to verify that things build just fine
 _TESTS = [
+    # test helper libraries...
+    'test/core/util:grpc_test_util',
+    'test/cpp/util:test_config',
+    'test/cpp/util:test_util',
+
     'test/core/avl:avl_test',
     'test/core/slice:slice_test',
-    'test/cpp/interop:interop_test',
     'test/core/security:credentials_test',
+    #'test/cpp/interop:interop_test',  no good, uses binaries as data...
+    'test/cpp/end2end:end2end_test',
 ]
 
 # TODO: add libs for dependencies?
@@ -169,5 +187,10 @@ _TESTS = [
 # @com_github_cares_cares//
 # @com_google_protobuf//
 
-lib_dict = _get_primitive_libs(_PRIMITIVE_LIBS)
-print(yaml.dump(lib_dict, default_flow_style=False))
+# TODO: gtest
+
+lib_dict = _get_primitive_libs(_PRIMITIVE_LIBS + _TESTS)
+#print(yaml.dump(lib_dict['test/core/avl:avl_test'], default_flow_style=False))
+#print(yaml.dump(lib_dict['test/core/util:grpc_test_util'], default_flow_style=False))
+#print(yaml.dump(lib_dict['test/core/slice:slice_test'], default_flow_style=False))
+print(yaml.dump(lib_dict['test/cpp/end2end:end2end_test'], default_flow_style=False))
