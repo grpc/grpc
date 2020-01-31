@@ -45,6 +45,14 @@ void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   if (creds) creds->Unref();
 }
 
+grpc_channel_credentials* grpc_channel_credentials_copy(
+    grpc_channel_credentials* creds) {
+  GRPC_API_TRACE("grpc_channel_credentials_copy(creds=%p)", 1, (creds));
+  grpc_core::ExecCtx exec_ctx;
+  if (creds) creds->Ref().release();
+  return creds;
+}
+
 static std::map<grpc_core::UniquePtr<char>,
                 grpc_core::RefCountedPtr<grpc_channel_credentials>,
                 grpc_core::StringLess>* g_grpc_control_plane_creds;

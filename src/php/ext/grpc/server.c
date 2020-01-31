@@ -76,11 +76,11 @@ PHP_METHOD(Server, __construct) {
     server->wrapped = grpc_server_create(NULL, NULL);
   } else {
     if (php_grpc_read_args_array(args_array, &args TSRMLS_CC) == FAILURE) {
-      efree(args.args);
+      free(args.args);
       return;
     }
     server->wrapped = grpc_server_create(&args, NULL);
-    efree(args.args);
+    free(args.args);
   }
   grpc_server_register_completion_queue(server->wrapped, completion_queue,
                                         NULL);
