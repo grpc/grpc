@@ -82,7 +82,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
             call = stub.UnaryCall(messages_pb2.SimpleRequest())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(aio.AioRpcError) as exception_context:
                 await call
 
             self.assertEqual(grpc.StatusCode.UNAVAILABLE,
@@ -90,14 +90,6 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
             self.assertTrue(call.done())
             self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
-
-            # Exception is cached at call object level, reentrance
-            # returns again the same exception
-            with self.assertRaises(grpc.RpcError) as exception_context_retry:
-                await call
-
-            self.assertIs(exception_context.exception,
-                          exception_context_retry.exception)
 
     async def test_call_code_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())

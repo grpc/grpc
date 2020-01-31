@@ -1,5 +1,6 @@
 [
   "_sanity._sanity_test.AioSanityTest",
+  "interop.local_interop_test.InsecureLocalInteropTest",
   "unit.abort_test.TestAbort",
   "unit.aio_rpc_error_test.TestAioRpcError",
   "unit.call_test.TestStreamStreamCall",

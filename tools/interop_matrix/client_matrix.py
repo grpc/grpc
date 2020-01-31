@@ -56,7 +56,7 @@ LANG_RUNTIME_MATRIX = {
     'cxx': ['cxx'],  # This is actually debian8.
     'go': ['go1.8', 'go1.11'],
     'java': ['java'],
-    'python': ['python'],
+    'python': ['python', 'pythonasyncio'],
     'node': ['node'],
     'ruby': ['ruby'],
     'php': ['php', 'php7'],

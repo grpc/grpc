@@ -249,6 +249,10 @@ cdef class _AioCall(GrpcCallWrapper):
 
         return self._status
 
+    def is_ok(self):
+        """Returns if the RPC is ended with ok."""
+        return self.done() and self._status.code() == StatusCode.ok
+
     async def initial_metadata(self):
         """Returns the initial metadata of the RPC call.
         
