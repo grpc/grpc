@@ -562,7 +562,7 @@ cdef class AioServer:
 
     def add_secure_port(self, address, server_credentials):
         return self._server.add_http2_port(address,
-                                          server_credentials._credentials)
+                                           server_credentials._credentials)
 
     async def _request_call(self):
         cdef grpc_call_error error

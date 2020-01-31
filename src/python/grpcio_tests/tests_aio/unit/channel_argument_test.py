@@ -17,6 +17,7 @@ import asyncio
 import logging
 import platform
 import random
+import errno
 import unittest
 
 import grpc
@@ -37,10 +38,12 @@ _OPTIONS = (
     (_DISABLE_REUSE_PORT, ((_SOCKET_OPT_SO_REUSEPORT, 0),)),
 )
 
-_NUM_SERVER_CREATED = 100
+_NUM_SERVER_CREATED = 5
 
 _GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH = 'grpc.max_receive_message_length'
 _MAX_MESSAGE_LENGTH = 1024
+
+_ADDRESS_TOKEN_ERRNO = errno.EADDRINUSE, errno.ENOSR
 
 
 class _TestPointerWrapper(object):
@@ -78,8 +81,11 @@ async def test_if_reuse_port_enabled(server: aio.Server):
         ) as (unused_host, bound_port):
             assert bound_port == port
     except OSError as e:
-        assert 'Address already in use' in str(e)
-        return False
+        if e.errno in _ADDRESS_TOKEN_ERRNO:
+            return False
+        else:
+            logging.exception(e)
+            raise
     else:
         return True
 
@@ -114,11 +120,13 @@ class TestChannelArgument(AioTestBase):
 
     async def test_client(self):
         # Do not segfault, or raise exception!
-        aio.insecure_channel('[::]:0', options=_TEST_CHANNEL_ARGS)
+        channel = aio.insecure_channel('[::]:0', options=_TEST_CHANNEL_ARGS)
+        await channel.close()
 
     async def test_server(self):
         # Do not segfault, or raise exception!
-        aio.server(options=_TEST_CHANNEL_ARGS)
+        server = aio.server(options=_TEST_CHANNEL_ARGS)
+        await server.stop(None)
 
     async def test_invalid_client_args(self):
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
