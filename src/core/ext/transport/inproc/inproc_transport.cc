@@ -130,6 +130,7 @@ struct inproc_stream {
 
     grpc_metadata_batch_init(&to_read_initial_md);
     grpc_metadata_batch_init(&to_read_trailing_md);
+    ref("op state machine");
     GRPC_CLOSURE_INIT(&op_closure, op_state_machine, this,
                       grpc_schedule_on_exec_ctx);
     grpc_metadata_batch_init(&write_buffer_initial_md);
@@ -528,6 +529,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error* error) {
   }
   close_other_side_locked(s, "fail_helper:other_side");
   close_stream_locked(s);
+  s->unref("op closure done by failing");
 
   GRPC_ERROR_UNREF(error);
 }
@@ -859,6 +861,7 @@ done:
   if (needs_close) {
     close_other_side_locked(s, "op_state_machine");
     close_stream_locked(s);
+    s->unref("op closure done");
   }
   gpr_mu_unlock(mu);
   GRPC_ERROR_UNREF(new_err);
