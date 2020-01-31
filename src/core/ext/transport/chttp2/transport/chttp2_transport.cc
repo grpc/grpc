@@ -380,11 +380,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   if (channelz_enabled) {
     // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
     // it in here, so SocketNode knows its own address.
-    std::string socket_name =
-        absl::StrFormat("%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            "", t->peer_string, socket_name);
+            "", t->peer_string,
+            absl::StrFormat("%s %s", get_vtable()->name, t->peer_string));
   }
   return enable_bdp;
 }
