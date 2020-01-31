@@ -107,20 +107,6 @@ then
 
   # Xcode 10+ doesn't support building for i386 architecture
   sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
-
-  # make sure we have the golang 1.13+
-  # recent golang is currently required by boringssl's cmake build
-  # and C# uses cmake to build grpc_csharp_ext
-  # see https://github.com/grpc/grpc/issues/21626
-  which go
-  ls -l $(which go)
-  go version  # check original golang version (to diagnose the issue)
-  brew unlink go  # stop using brew-provided version of go
-  time curl -O https://dl.google.com/go/go1.13.6.darwin-amd64.pkg
-  time sudo installer -pkg ./go1.13.6.darwin-amd64.pkg -target /
-  export PATH="/usr/local/go/bin:$PATH"
-  which go
-  go version
 fi
 
 # PHP tests currently require using an older version of PHPUnit
