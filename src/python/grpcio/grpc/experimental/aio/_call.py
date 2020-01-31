@@ -359,7 +359,7 @@ class _StreamRequestMixin(Call):
             # within this Task won't be retrieved by another coroutine. It's
             # better to suppress the error than spamming users' screen.
             _LOGGER.debug(
-                'Exception while consuming of the request_iterator: %s',
+                'Exception while consuming the request_iterator: %s',
                 rpc_error)
 
     async def write(self, request: RequestType) -> None:
