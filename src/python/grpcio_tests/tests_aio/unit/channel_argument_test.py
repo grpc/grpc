@@ -38,7 +38,7 @@ _OPTIONS = (
     (_DISABLE_REUSE_PORT, ((_SOCKET_OPT_SO_REUSEPORT, 0),)),
 )
 
-_NUM_SERVER_CREATED = 10
+_NUM_SERVER_CREATED = 5
 
 _GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH = 'grpc.max_receive_message_length'
 _MAX_MESSAGE_LENGTH = 1024
@@ -120,11 +120,13 @@ class TestChannelArgument(AioTestBase):
 
     async def test_client(self):
         # Do not segfault, or raise exception!
-        aio.insecure_channel('[::]:0', options=_TEST_CHANNEL_ARGS)
+        channel = aio.insecure_channel('[::]:0', options=_TEST_CHANNEL_ARGS)
+        await channel.close()
 
     async def test_server(self):
         # Do not segfault, or raise exception!
-        aio.server(options=_TEST_CHANNEL_ARGS)
+        server = aio.server(options=_TEST_CHANNEL_ARGS)
+        await server.stop(None)
 
     async def test_invalid_client_args(self):
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
