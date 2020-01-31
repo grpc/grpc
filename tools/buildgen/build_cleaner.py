@@ -38,7 +38,7 @@ def repr_ordered_dict(dumper, odict):
 yaml.add_representer(collections.OrderedDict, repr_ordered_dict)
 
 
-def rebuild_as_ordered_dict(indict, special_keys):
+def _rebuild_as_ordered_dict(indict, special_keys):
     outdict = collections.OrderedDict()
     for key in sorted(indict.keys()):
         if '#' in key:
@@ -53,23 +53,22 @@ def rebuild_as_ordered_dict(indict, special_keys):
     return outdict
 
 
-def clean_elem(indict):
+def _clean_elem(indict):
     for name in ['public_headers', 'headers', 'src']:
         if name not in indict: continue
         inlist = indict[name]
         protos = list(x for x in inlist if os.path.splitext(x)[1] == '.proto')
         others = set(x for x in inlist if x not in protos)
         indict[name] = protos + sorted(others)
-    return rebuild_as_ordered_dict(indict, _ELEM_KEYS)
+    return _rebuild_as_ordered_dict(indict, _ELEM_KEYS)
 
 
-for filename in sys.argv[1:]:
-    with open(filename) as f:
-        js = yaml.load(f)
-    js = rebuild_as_ordered_dict(js, _TOP_LEVEL_KEYS)
+def cleaned_build_yaml_dict_as_string(indict):
+    """Takes dictionary which represents yaml file and returns the cleaned-up yaml string"""
+    js = _rebuild_as_ordered_dict(indict, _TOP_LEVEL_KEYS)
     for grp in ['filegroups', 'libs', 'targets']:
         if grp not in js: continue
-        js[grp] = sorted([clean_elem(x) for x in js[grp]],
+        js[grp] = sorted([_clean_elem(x) for x in js[grp]],
                          key=lambda x: (x.get('language', '_'), x['name']))
     output = yaml.dump(js, indent=2, width=80, default_flow_style=False)
     # massage out trailing whitespace
@@ -77,9 +76,20 @@ for filename in sys.argv[1:]:
     for line in output.splitlines():
         lines.append(line.rstrip() + '\n')
     output = ''.join(lines)
-    if TEST:
+    return output
+
+
+if __name__ == '__main__':
+    for filename in sys.argv[1:]:
         with open(filename) as f:
-            assert f.read() == output
-    else:
-        with open(filename, 'w') as f:
-            f.write(output)
+            js = yaml.load(f)
+        output = cleaned_build_yaml_dict_as_string(js)
+        if TEST:
+            with open(filename) as f:
+                if not f.read() == output:
+                    raise Exception(
+                        'Looks like build-cleaner.py has not been run for file "%s"?'
+                        % filename)
+        else:
+            with open(filename, 'w') as f:
+                f.write(output)

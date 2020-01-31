@@ -20,7 +20,7 @@ cd $(dirname $0)/../..
 DIFF_COMMAND="git diff --name-only HEAD | grep -v ^third_party/"
 
 if [ "x$1" == 'x--pre-commit' ]; then
-  if eval $DIFF_COMMAND | grep '^build.yaml$'; then
+  if eval $DIFF_COMMAND | grep '^build_handwritten.yaml$'; then
     ./tools/buildgen/generate_projects.sh
   else
     templates=$(eval $DIFF_COMMAND | grep '\.template$' || true)
