@@ -16,6 +16,8 @@ import socket as native_socket
 
 from libc cimport string
 
+cdef int _ASYNCIO_STREAM_DEFAULT_SOCKET_BACKLOG = 100
+
 
 # TODO(https://github.com/grpc/grpc/issues/21348) Better flow control needed.
 cdef class _AsyncioSocket:
@@ -182,6 +184,7 @@ cdef class _AsyncioSocket:
         self._grpc_accept_cb(self._grpc_socket, self._grpc_client_socket, grpc_error_none())
 
     cdef listen(self):
+        self._py_socket.listen(_ASYNCIO_STREAM_DEFAULT_SOCKET_BACKLOG)
         async def create_asyncio_server():
             self._server = await asyncio.start_server(
                 self._new_connection_callback,
