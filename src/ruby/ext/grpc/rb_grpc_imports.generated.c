@@ -121,6 +121,7 @@ grpc_ssl_session_cache_create_lru_type grpc_ssl_session_cache_create_lru_import;
 grpc_ssl_session_cache_destroy_type grpc_ssl_session_cache_destroy_import;
 grpc_ssl_session_cache_create_channel_arg_type grpc_ssl_session_cache_create_channel_arg_import;
 grpc_channel_credentials_release_type grpc_channel_credentials_release_import;
+grpc_channel_credentials_copy_type grpc_channel_credentials_copy_import;
 grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
 grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
 grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
@@ -393,6 +394,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_ssl_session_cache_destroy_import = (grpc_ssl_session_cache_destroy_type) GetProcAddress(library, "grpc_ssl_session_cache_destroy");
   grpc_ssl_session_cache_create_channel_arg_import = (grpc_ssl_session_cache_create_channel_arg_type) GetProcAddress(library, "grpc_ssl_session_cache_create_channel_arg");
   grpc_channel_credentials_release_import = (grpc_channel_credentials_release_type) GetProcAddress(library, "grpc_channel_credentials_release");
+  grpc_channel_credentials_copy_import = (grpc_channel_credentials_copy_type) GetProcAddress(library, "grpc_channel_credentials_copy");
   grpc_google_default_credentials_create_import = (grpc_google_default_credentials_create_type) GetProcAddress(library, "grpc_google_default_credentials_create");
   grpc_set_ssl_roots_override_callback_import = (grpc_set_ssl_roots_override_callback_type) GetProcAddress(library, "grpc_set_ssl_roots_override_callback");
   grpc_ssl_credentials_create_import = (grpc_ssl_credentials_create_type) GetProcAddress(library, "grpc_ssl_credentials_create");
