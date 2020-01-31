@@ -358,9 +358,8 @@ class _StreamRequestMixin(Call):
             # Rpc status should be exposed through other API. Exceptions raised
             # within this Task won't be retrieved by another coroutine. It's
             # better to suppress the error than spamming users' screen.
-            _LOGGER.debug(
-                'Exception while consuming the request_iterator: %s',
-                rpc_error)
+            _LOGGER.debug('Exception while consuming the request_iterator: %s',
+                          rpc_error)
 
     async def write(self, request: RequestType) -> None:
         if self.done():
