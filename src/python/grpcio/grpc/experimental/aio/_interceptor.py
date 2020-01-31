@@ -33,13 +33,14 @@ _LOCAL_CANCELLATION_DETAILS = 'Locally cancelled by application!'
 class ClientCallDetails(
         collections.namedtuple(
             'ClientCallDetails',
-            ('method', 'timeout', 'metadata', 'credentials')),
+            ('method', 'timeout', 'metadata', 'credentials', 'wait_for_ready')),
         grpc.ClientCallDetails):
 
     method: Text
     timeout: Optional[float]
     metadata: Optional[MetadataType]
     credentials: Optional[grpc.CallCredentials]
+    wait_for_ready: Optional[bool]
 
 
 class UnaryUnaryClientInterceptor(metaclass=ABCMeta):
@@ -108,28 +109,29 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
                  request: RequestType, timeout: Optional[float],
                  metadata: MetadataType,
                  credentials: Optional[grpc.CallCredentials],
-                 channel: cygrpc.AioChannel, method: bytes,
-                 request_serializer: SerializingFunction,
+                 wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
+                 method: bytes, request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction,
                  loop: asyncio.AbstractEventLoop) -> None:
         self._channel = channel
         self._loop = loop
         self._interceptors_task = asyncio.ensure_future(self._invoke(
-            interceptors, method, timeout, metadata, credentials, request,
-            request_serializer, response_deserializer),
+            interceptors, method, timeout, metadata, credentials,
+            wait_for_ready, request, request_serializer, response_deserializer),
                                                         loop=loop)
 
     def __del__(self):
         self.cancel()
 
     # pylint: disable=too-many-arguments
-    async def _invoke(
-            self, interceptors: Sequence[UnaryUnaryClientInterceptor],
-            method: bytes, timeout: Optional[float],
-            metadata: Optional[MetadataType],
-            credentials: Optional[grpc.CallCredentials], request: RequestType,
-            request_serializer: SerializingFunction,
-            response_deserializer: DeserializingFunction) -> UnaryUnaryCall:
+    async def _invoke(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+                      method: bytes, timeout: Optional[float],
+                      metadata: Optional[MetadataType],
+                      credentials: Optional[grpc.CallCredentials],
+                      wait_for_ready: Optional[bool], request: RequestType,
+                      request_serializer: SerializingFunction,
+                      response_deserializer: DeserializingFunction
+                     ) -> UnaryUnaryCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
@@ -154,12 +156,13 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
                 return UnaryUnaryCall(
                     request, _timeout_to_deadline(client_call_details.timeout),
                     client_call_details.metadata,
-                    client_call_details.credentials, self._channel,
+                    client_call_details.credentials,
+                    client_call_details.wait_for_ready, self._channel,
                     client_call_details.method, request_serializer,
                     response_deserializer, self._loop)
 
         client_call_details = ClientCallDetails(method, timeout, metadata,
-                                                credentials)
+                                                credentials, wait_for_ready)
         return await _run_interceptor(iter(interceptors), client_call_details,
                                       request)
 

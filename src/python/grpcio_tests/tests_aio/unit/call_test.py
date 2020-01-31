@@ -80,17 +80,16 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
             stub = test_pb2_grpc.TestServiceStub(channel)
 
-            call = stub.UnaryCall(messages_pb2.SimpleRequest(), timeout=0.1)
+            call = stub.UnaryCall(messages_pb2.SimpleRequest())
 
             with self.assertRaises(grpc.RpcError) as exception_context:
                 await call
 
-            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                              exception_context.exception.code())
 
             self.assertTrue(call.done())
-            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, await
-                             call.code())
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
 
             # Exception is cached at call object level, reentrance
             # returns again the same exception
