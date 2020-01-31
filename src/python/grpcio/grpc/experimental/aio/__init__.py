@@ -30,11 +30,12 @@ from ._channel import Channel, UnaryUnaryMultiCallable
 from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
                            UnaryUnaryClientInterceptor)
 from ._server import Server, server
+from ._typing import ChannelArgumentType
 
 
 def insecure_channel(
         target: Text,
-        options: Optional[Sequence[Tuple[Text, Any]]] = None,
+        options: Optional[ChannelArgumentType] = None,
         compression: Optional[grpc.Compression] = None,
         interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]] = None):
     """Creates an insecure asynchronous Channel to a server.
@@ -58,7 +59,7 @@ def insecure_channel(
 def secure_channel(
         target: Text,
         credentials: grpc.ChannelCredentials,
-        options: Optional[list] = None,
+        options: Optional[ChannelArgumentType] = None,
         compression: Optional[grpc.Compression] = None,
         interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]] = None):
     """Creates a secure asynchronous Channel to a server.
