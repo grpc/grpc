@@ -840,7 +840,9 @@ src:
 - src/core/lib/iomgr/wakeup_fd_posix.cc
 - src/core/lib/json/json.cc
 - src/core/lib/json/json_reader.cc
+- src/core/lib/json/json_reader_new.cc
 - src/core/lib/json/json_writer.cc
+- src/core/lib/json/json_writer_new.cc
 - src/core/lib/security/context/security_context.cc
 - src/core/lib/security/credentials/alts/alts_credentials.cc
 - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1984,6 +1986,7 @@ test:
 - json_fuzzer_test_one_entry
 - json_run_localhost
 - json_test
+- json_test_new
 - lame_client_test
 - large_metadata_bad_client_test
 - load_file_test
