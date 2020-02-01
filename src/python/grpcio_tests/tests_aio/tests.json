@@ -21,6 +21,10 @@
   "unit.interceptor_test.TestInterceptedUnaryUnaryCall",
   "unit.interceptor_test.TestUnaryUnaryClientInterceptor",
   "unit.metadata_test.TestMetadata",
+  "unit.server_dynamic_credentials_test.ServerSSLCertConfigFetcherParamsChecks",
+  "unit.server_dynamic_credentials_test.ServerSSLCertReloadTestCertConfigReuse",
+  "unit.server_dynamic_credentials_test.ServerSSLCertReloadTestWithClientAuth",
+  "unit.server_dynamic_credentials_test.ServerSSLCertReloadTestWithoutClientAuth",
   "unit.server_test.TestServer",
   "unit.timeout_test.TestTimeout",
   "unit.wait_for_ready_test.TestWaitForReady"
