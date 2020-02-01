@@ -238,6 +238,7 @@ struct inproc_stream {
   bool to_read_trailing_md_filled = false;
   bool ops_needed = false;
   bool op_closure_scheduled = false;
+  bool op_closure_schedulable = true;
   grpc_closure op_closure;
   grpc_closure accept_stream_closure;
   // Write buffer used only during gap at init time when client-side
@@ -530,6 +531,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error* error) {
   close_other_side_locked(s, "fail_helper:other_side");
   close_stream_locked(s);
   s->unref("op closure done by failing");
+  s->op_closure_schedulable = false;
 
   GRPC_ERROR_UNREF(error);
 }
@@ -605,6 +607,7 @@ void op_state_machine(void* arg, grpc_error* error) {
   inproc_stream* s = static_cast<inproc_stream*>(arg);
   gpr_mu* mu = &s->t->mu->mu;  // keep aside in case s gets closed
   gpr_mu_lock(mu);
+  GPR_DEBUG_ASSERT(s->op_closure_schedulable);
   s->op_closure_scheduled = false;
   // cancellation takes precedence
   inproc_stream* other = s->other_side;
@@ -862,6 +865,7 @@ done:
     close_other_side_locked(s, "op_state_machine");
     close_stream_locked(s);
     s->unref("op closure done");
+    s->op_closure_schedulable = false;
   }
   gpr_mu_unlock(mu);
   GRPC_ERROR_UNREF(new_err);
