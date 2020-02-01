@@ -11521,6 +11521,7 @@ target_include_directories(channel_arguments_test
 target_link_libraries(channel_arguments_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc++
   grpc
   gpr

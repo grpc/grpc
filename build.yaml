@@ -4601,6 +4601,7 @@ targets:
   src:
   - test/cpp/common/channel_arguments_test.cc
   deps:
+  - grpc_test_util
   - grpc++
   - grpc
   - gpr
