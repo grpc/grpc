@@ -136,6 +136,7 @@ class TestAbort(AioTestBase):
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.read()
+            await call.read()
 
         rpc_error = exception_context.exception
         self.assertEqual(_ABORT_CODE, rpc_error.code())
