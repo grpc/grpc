@@ -33,6 +33,22 @@ struct CallbackWrapper {
   const DebugLocation location;
 };
 
+class WorkSerializerImpl : public Orphanable {
+ public:
+  void Run(std::function<void()> callback,
+           const grpc_core::DebugLocation& location);
+
+  void Orphan() override;
+
+ private:
+  void DrainQueue();
+
+  // An initial size of 1 keeps track of whether the work serializer has been
+  // orphaned.
+  Atomic<size_t> size_{1};
+  MultiProducerSingleConsumerQueue queue_;
+};
+
 void WorkSerializerImpl::Run(std::function<void()> callback,
                              const grpc_core::DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
@@ -79,7 +95,7 @@ void WorkSerializerImpl::Orphan() {
 // The thread that calls this loans itself to the work serializer so as to
 // execute all the scheduled callback. This is called from within
 // WorkSerializer::Run() after executing a callback immediately, and hence size_
-// is atleast 1.
+// is at least 1.
 void WorkSerializerImpl::DrainQueue() {
   while (true) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
@@ -102,7 +118,7 @@ void WorkSerializerImpl::DrainQueue() {
       }
       return;
     }
-    // There is atleast one callback on the queue. Pop the callback from the
+    // There is at least one callback on the queue. Pop the callback from the
     // queue and execute it.
     CallbackWrapper* cb_wrapper = nullptr;
     bool empty_unused;
@@ -123,4 +139,17 @@ void WorkSerializerImpl::DrainQueue() {
     delete cb_wrapper;
   }
 }
+
+// WorkSerializer
+
+WorkSerializer::WorkSerializer()
+    : impl_(MakeOrphanable<WorkSerializerImpl>()) {}
+
+WorkSerializer::~WorkSerializer() {}
+
+void WorkSerializer::Run(std::function<void()> callback,
+                         const grpc_core::DebugLocation& location) {
+  impl_->Run(callback, location);
+}
+
 }  // namespace grpc_core
