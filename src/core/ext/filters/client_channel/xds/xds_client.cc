@@ -472,12 +472,10 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
 }  // namespace
 
 XdsClient::ChannelState::ChannelState(RefCountedPtr<XdsClient> xds_client,
-                                      const grpc_channel_args& args)
+                                      grpc_channel* channel)
     : InternallyRefCounted<ChannelState>(&grpc_xds_client_trace),
-      xds_client_(std::move(xds_client)) {
-  grpc_channel_args* new_args = BuildXdsChannelArgs(args);
-  channel_ = CreateXdsChannel(*xds_client_->bootstrap_, *new_args);
-  grpc_channel_args_destroy(new_args);
+      xds_client_(std::move(xds_client)),
+      channel_(channel) {
   GPR_ASSERT(channel_ != nullptr);
   StartConnectivityWatchLocked();
 }
@@ -1727,18 +1725,24 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
       server_name_(server_name),
       service_config_watcher_(std::move(watcher)) {
   if (*error != GRPC_ERROR_NONE) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p: failed to read bootstrap file: %s",
-              this, grpc_error_string(*error));
-    }
+    gpr_log(GPR_ERROR, "[xds_client %p] failed to read bootstrap file: %s",
+            this, grpc_error_string(*error));
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p: creating channel to %s", this,
+    gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s", this,
             bootstrap_->server().server_uri.c_str());
   }
+  grpc_channel_args* new_args = BuildXdsChannelArgs(channel_args);
+  grpc_channel* channel = CreateXdsChannel(*bootstrap_, *new_args, error);
+  grpc_channel_args_destroy(new_args);
+  if (*error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "[xds_client %p] failed to create xds channel: %s", this,
+            grpc_error_string(*error));
+    return;
+  }
   chand_ = MakeOrphanable<ChannelState>(
-      Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel_args);
+      Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel);
   if (service_config_watcher_ != nullptr) {
     chand_->Subscribe(kLdsTypeUrl, std::string(server_name));
   }
