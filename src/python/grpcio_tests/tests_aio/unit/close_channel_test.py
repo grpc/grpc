@@ -57,11 +57,11 @@ class TestOngoingCalls(unittest.TestCase):
         call = FakeCall()
         ongoing_calls.trace_call(call)
         self.assertEqual(ongoing_calls.size(), 1)
-        self.assertEqual(ongoing_calls.calls, [call])
+        self.assertEqual(ongoing_calls.calls, set([call]))
 
         call.callback(call)
         self.assertEqual(ongoing_calls.size(), 0)
-        self.assertEqual(ongoing_calls.calls, [])
+        self.assertEqual(ongoing_calls.calls, set())
 
 
 class TestCloseChannel(AioTestBase):
