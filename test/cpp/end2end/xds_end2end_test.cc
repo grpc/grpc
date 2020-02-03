@@ -16,6 +16,7 @@
  *
  */
 
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <numeric>
@@ -523,6 +524,27 @@ class AdsServiceImpl : public AdsService {
     }
   }
 
+  void BlockingRead(Stream* stream) {
+    DiscoveryRequest request;
+    bool seen_first_request = false;
+    while (stream->Read(&request))
+    {
+      if (!seen_first_request) {
+        EXPECT_TRUE(request.has_node());
+        seen_first_request = true;
+      }
+      {
+        gpr_log(GPR_INFO, "DD read something");
+        grpc_core::MutexLock lock(&ads_mu_);
+        requests_.push_back(request);
+        request_ready_ = true;
+      }
+    }
+    gpr_log(GPR_INFO, "DD out of blocking read loop as Read got NULL");
+    grpc_core::MutexLock lock(&ads_mu_);
+    stream_closed_ = true;
+  }
+
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
     gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
@@ -534,34 +556,77 @@ class AdsServiceImpl : public AdsService {
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
-      // Keep servicing requests until the EDS response has been sent back.
-      DiscoveryRequest request;
-      // TODO(roth): For each supported type, we currently only handle one
-      // request without replying to any new requests (for ACK/NACK or new
-      // resource names). It's not causing a big problem now but should be
-      // fixed.
+
+      std::thread reader(
+          std::bind(&AdsServiceImpl::BlockingRead, this, stream));
+
       bool eds_sent = false;
-      bool seen_first_request = false;
-      while (!eds_sent || cds_response_state_ == SENT) {
-        if (!stream->Read(&request)) return;
-        if (!seen_first_request) {
-          EXPECT_TRUE(request.has_node());
-          seen_first_request = true;
+      while (!stream_closed_) {
+        DiscoveryRequest request;
+        DiscoveryResponse response;
+        {
+          grpc_core::MutexLock lock(&ads_mu_);
+          if (stream_closed_ == true) return;
+          if (request_ready_ == true) {
+            request = requests_.front();
+            requests_.pop_front();
+            action_ = REQUEST;
+            if (requests_.size() == 0) {
+              gpr_log(GPR_INFO, "DD handling last request");
+              request_ready_ = false;
+            } else {
+              gpr_log(GPR_INFO, "DD handled a request but there is more");
+            }
+          } else if (update_ready_ == true) {
+            auto iter = eds_responses_updates_.find("update1");
+            if (iter != eds_responses_updates_.end()) {
+              gpr_log(GPR_INFO, "DD handled and update called update1");
+              response = iter->second;
+              action_ = UPDATE;
+              update_ready_ = false;
+            }
+          } else {
+            action_ = SLEEP;
+          }
         }
-        if (request.type_url() == kLdsTypeUrl) {
-          HandleLdsRequest(&request, stream);
-        } else if (request.type_url() == kRdsTypeUrl) {
-          HandleRdsRequest(&request, stream);
-        } else if (request.type_url() == kCdsTypeUrl) {
-          HandleCdsRequest(&request, stream);
-        } else if (request.type_url() == kEdsTypeUrl) {
-          HandleEdsRequest(&request, stream);
-          eds_sent = true;
+
+        switch (action_) {
+          case SLEEP:
+            gpr_log(GPR_INFO, "DD sleeping");
+            gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
+            break;
+          case REQUEST:
+            // TODO(roth): For each supported type, we currently only handle one
+            // request without replying to any new requests (for ACK/NACK or new
+            // resource names). It's not causing a big problem now but should be
+            // fixed.
+            if (eds_sent && cds_response_state_ != SENT) continue;
+            gpr_log(GPR_INFO, "DD request just once %s", request.type_url().c_str());
+            if (request.type_url() == kLdsTypeUrl) {
+              HandleLdsRequest(&request, stream);
+            } else if (request.type_url() == kRdsTypeUrl) {
+              HandleRdsRequest(&request, stream);
+            } else if (request.type_url() == kCdsTypeUrl) {
+              HandleCdsRequest(&request, stream);
+            } else if (request.type_url() == kEdsTypeUrl) {
+              HandleEdsRequest(&request, stream);
+              eds_sent = true;
+            }
+            break;
+          case UPDATE:
+            gpr_log(GPR_INFO, "DD update");
+            IncreaseResponseCount();
+            stream->Write(response);
+            break;
         }
       }
-      // Wait until notified done.
+      gpr_log(GPR_INFO, "DD out of while loop");
+      reader.join();
+      gpr_log(GPR_INFO, "DD reader joined successful!!!");
       grpc_core::MutexLock lock(&ads_mu_);
+      // Wait until notified done.
       ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; });
+      gpr_log(GPR_INFO, "DD out of while loop ads_done!!!");
     }();
     gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
     return Status::OK;
@@ -614,6 +679,13 @@ class AdsServiceImpl : public AdsService {
     grpc_core::MutexLock lock(&ads_mu_);
     eds_responses_and_delays_.push_back(
         std::make_pair(response, send_after_ms));
+  }
+
+  void UpdateEdsResponse(const string& name, const DiscoveryResponse& response) {
+    gpr_log(GPR_INFO, "DD in new UpdateEdsResponse");
+    grpc_core::MutexLock lock(&ads_mu_);
+    eds_responses_updates_[name] = response;
+    update_ready_ = true;
   }
 
   void set_eds_ignore() { eds_ignore_ = true; }
@@ -729,9 +801,32 @@ class AdsServiceImpl : public AdsService {
   std::map<std::string /*cluster_name*/, Cluster> cds_response_data_;
   ResponseState cds_response_state_ = NOT_SENT;
   bool cds_ignore_ = false;
-  // EDS response data.
+  // One more multiple EDS response data eachwith a specified delay,
+  // to be set in the response upon EDS request
   std::vector<ResponseDelayPair> eds_responses_and_delays_;
   bool eds_ignore_ = false;
+  // Requests that are read in from the StreamAggregatedResources
+  // request handler; to be processed by the main event loop in FIFO fashion.
+  std::deque<DiscoveryRequest> requests_;
+  // Signals that requests are read; protected by Mutex ads_mu_.
+  bool request_ready_ = false;
+  // Signals that client cancels the stream and the read got a NULL; protected
+  // by Mutex ads_mu_.
+  bool stream_closed_ = false;
+  // Action types for the main loop.
+  typedef enum {
+    REQUEST = 0,
+    UPDATE = 1,
+    SLEEP = 2,
+  } Action;
+  Action action_ = SLEEP;
+  // Updated EDS response data; set directly by the test and to be set in the
+  // response without any delays; this should replace
+  // std::vector<ResponseDelayPair> eds_responses_and_delays_ in the long term.
+  std::map<std::string, DiscoveryResponse> eds_responses_updates_;
+  // Signals that an update is ready to be set and need to send a response with
+  // it.
+  bool update_ready_ = false;
 };
 
 class LrsServiceImpl : public LrsService {
@@ -2347,15 +2442,9 @@ TEST_P(DropTest, Update) {
   AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
+  // The first ADS response.
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
-  // The second ADS response contains two drop categories.
-  // TODO(juanlishen): Change the ADS response sending to deterministic style
-  // (e.g., by using condition variable) so that we can shorten the test
-  // duration.
-  args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
-                          {kThrottleDropType, kDropPerMillionForThrottle}};
-  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 10000);
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
@@ -2375,11 +2464,19 @@ TEST_P(DropTest, Update) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  gpr_log(GPR_INFO, "DD drop rate 1 is %f", seen_drop_rate);
   const double kErrorTolerance = 0.3;
   EXPECT_THAT(
       seen_drop_rate,
       ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
                        ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
+  
+  // The second ADS response contains two drop categories, set using the update
+  // map and to be set in a response without any delays.
+  args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
+                          {kThrottleDropType, kDropPerMillionForThrottle}};
+  balancers_[0]->ads_service()->UpdateEdsResponse("update1", AdsServiceImpl::BuildResponse(args));
+
   // Wait until the drop rate increases to the middle of the two configs, which
   // implies that the update has been in effect.
   const double kDropRateThreshold =
@@ -2417,6 +2514,7 @@ TEST_P(DropTest, Update) {
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  gpr_log(GPR_INFO, "DD drop rate 2 is %f", seen_drop_rate);
   EXPECT_THAT(
       seen_drop_rate,
       ::testing::AllOf(
