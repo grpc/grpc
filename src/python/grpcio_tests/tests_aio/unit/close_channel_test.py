@@ -90,7 +90,7 @@ class TestCloseChannel(AioTestBase):
 
         call = UnaryCallWithSleep(messages_pb2.SimpleRequest())
 
-        await channel.close(grace=UNARY_CALL_WITH_SLEEP_VALUE * 2)
+        await channel.close(grace=UNARY_CALL_WITH_SLEEP_VALUE * 4)
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 

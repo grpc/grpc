@@ -29,6 +29,7 @@ _INITIAL_METADATA_TO_INJECT = (
     (_INITIAL_METADATA_KEY, 'extra info'),
     (_TRAILING_METADATA_KEY, b'\x13\x37'),
 )
+_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED = 1.0
 
 
 class TestUnaryUnaryClientInterceptor(AioTestBase):
@@ -607,7 +608,9 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             await call
 
             try:
-                await asyncio.wait_for(called.wait(), timeout=0.1)
+                await asyncio.wait_for(
+                    called.wait(),
+                    timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED)
             except:
                 self.fail("Callback was not called")
 
@@ -640,7 +643,9 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             call.add_done_callback(callback)
 
             try:
-                await asyncio.wait_for(called.wait(), timeout=0.1)
+                await asyncio.wait_for(
+                    called.wait(),
+                    timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED)
             except:
                 self.fail("Callback was not called")
 
@@ -673,7 +678,9 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             await call
 
             try:
-                await asyncio.wait_for(called.wait(), timeout=0.1)
+                await asyncio.wait_for(
+                    called.wait(),
+                    timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED)
             except:
                 self.fail("Callback was not called")
 
