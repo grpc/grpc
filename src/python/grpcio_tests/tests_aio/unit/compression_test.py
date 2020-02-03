@@ -51,6 +51,10 @@ async def _test_set_compression(unused_request_iterator, context):
     try:
         context.set_compression(grpc.Compression.Deflate)
     except RuntimeError:
+        # NOTE(lidiz) Testing if the servicer context raises exception when
+        # the set_compression method is called after initial_metadata sent.
+        # After the initial_metadata sent, the server-side has no control over
+        # which compression algorithm it should use.
         pass
     else:
         raise ValueError(
@@ -110,7 +114,7 @@ class TestCompression(AioTestBase):
         await self._channel.close()
         await self._server.stop(None)
 
-    async def test_channel_level_compression(self):
+    async def test_channel_level_compression_baned_compression(self):
         # GZIP is disabled, this call should fail
         async with aio.insecure_channel(
                 self._address, compression=grpc.Compression.Gzip) as channel:
@@ -121,6 +125,7 @@ class TestCompression(AioTestBase):
             rpc_error = exception_context.exception
             self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
 
+    async def test_channel_level_compression_allowed_compression(self):
         # Deflate is allowed, this call should succeed
         async with aio.insecure_channel(
                 self._address, compression=grpc.Compression.Deflate) as channel:
@@ -128,7 +133,7 @@ class TestCompression(AioTestBase):
             call = multicallable(_REQUEST)
             self.assertEqual(grpc.StatusCode.OK, await call.code())
 
-    async def test_client_call_level_compression(self):
+    async def test_client_call_level_compression_baned_compression(self):
         multicallable = self._channel.unary_unary(_TEST_UNARY_UNARY)
 
         # GZIP is disabled, this call should fail
@@ -137,6 +142,9 @@ class TestCompression(AioTestBase):
             await call
         rpc_error = exception_context.exception
         self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
+
+    async def test_client_call_level_compression_allowed_compression(self):
+        multicallable = self._channel.unary_unary(_TEST_UNARY_UNARY)
 
         # Deflate is allowed, this call should succeed
         call = multicallable(_REQUEST, compression=grpc.Compression.Deflate)
@@ -167,6 +175,20 @@ class TestCompression(AioTestBase):
         self.assertEqual(_RESPONSE, await call.read())
         self.assertEqual(_RESPONSE, await call.read())
         self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+    async def test_server_default_compression_algorithm(self):
+        server = aio.server(compression=grpc.Compression.Deflate)
+        port = server.add_insecure_port('[::]:0')
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+        await server.start()
+
+        async with aio.insecure_channel(f'localhost:{port}') as channel:
+            multicallable = channel.unary_unary(_TEST_UNARY_UNARY)
+            call = multicallable(_REQUEST)
+            self.assertEqual(_RESPONSE, await call)
+            self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+        await server.stop(None)
 
 
 if __name__ == '__main__':
