@@ -6133,6 +6133,40 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: xds_interop_client
+  build: test
+  run: false
+  language: c++
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_client.cc
+  deps:
+  - grpc++_test_config
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  platforms:
+  - linux
+- name: xds_interop_server
+  build: test
+  run: false
+  language: c++
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_server.cc
+  deps:
+  - grpc++_test_config
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  platforms:
+  - linux
 - name: public_headers_must_be_c89
   build: test
   language: c89
