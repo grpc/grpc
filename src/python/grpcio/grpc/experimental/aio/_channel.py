@@ -47,6 +47,7 @@ def _augment_channel_arguments(base_options: ChannelArgumentType,
     return tuple(base_options
                 ) + compression_channel_argument + user_agent_channel_argument
 
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -363,9 +364,10 @@ class Channel:
                     .format(invalid_interceptors))
 
         self._loop = asyncio.get_event_loop()
-        self._channel = cygrpc.AioChannel(_common.encode(target),
-                                          _augment_channel_arguments(options, compression),
-                                          credentials, self._loop)
+        self._channel = cygrpc.AioChannel(
+            _common.encode(target),
+            _augment_channel_arguments(options, compression), credentials,
+            self._loop)
         self._ongoing_calls = _OngoingCalls()
 
     async def __aenter__(self):
