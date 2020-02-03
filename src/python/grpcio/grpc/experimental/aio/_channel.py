@@ -47,7 +47,7 @@ class _OngoingCalls:
         self._calls.remove(call)
 
     @property
-    def calls(self) -> Set[_base_call.RpcContext]:
+    def calls(self) -> AbstractSet[_base_call.RpcContext]:
         """Returns the set of ongoing calls."""
         return self._calls
 
