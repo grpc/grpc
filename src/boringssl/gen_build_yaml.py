@@ -134,14 +134,15 @@ try:
     # so we don't need to generate them again, but there's no option to disable that behavior.
     # - crypto_test_data.cc is required to run boringssl_crypto_test but we already
     #   use the copy under third_party/boringssl-with-bazel so we just delete it
-    # - err_data.c is currently only used by the obj-C boringssl podspec
-    # TODO(jtattermusch): avoid the need to keep src/boringssl/err_data.c
+    # - err_data.c is already under third_party/boringssl-with-bazel so we just delete it
     generate_build_files.main([grpc_platform])
 
     print(yaml.dump(grpc_platform.yaml))
 
 finally:
+    # we don't want err_data.c and crypto_test_data.cc (see comment above)
+    if os.path.exists('err_data.c'):
+        os.remove('err_data.c')
     if os.path.exists('crypto_test_data.cc'):
-        os.remove('crypto_test_data.cc'
-                 )  # we don't want this file (see comment above)
+        os.remove('crypto_test_data.cc')
     shutil.rmtree('src')
