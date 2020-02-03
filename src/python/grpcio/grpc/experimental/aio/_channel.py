@@ -13,8 +13,10 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
-from typing import Any, AsyncIterable, Optional, Sequence, Text
+from typing import Any, AsyncIterable, Optional, Sequence, AbstractSet, Text
+from weakref import WeakSet
 
+import logging
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
@@ -30,6 +32,34 @@ from ._utils import _timeout_to_deadline
 
 _IMMUTABLE_EMPTY_TUPLE = tuple()
 
+_LOGGER = logging.getLogger(__name__)
+
+
+class _OngoingCalls:
+    """Internal class used for have visibility of the ongoing calls."""
+
+    _calls: AbstractSet[_base_call.RpcContext]
+
+    def __init__(self):
+        self._calls = WeakSet()
+
+    def _remove_call(self, call: _base_call.RpcContext):
+        self._calls.remove(call)
+
+    @property
+    def calls(self) -> AbstractSet[_base_call.RpcContext]:
+        """Returns the set of ongoing calls."""
+        return self._calls
+
+    def size(self) -> int:
+        """Returns the number of ongoing calls."""
+        return len(self._calls)
+
+    def trace_call(self, call: _base_call.RpcContext):
+        """Adds and manages a new ongoing call."""
+        self._calls.add(call)
+        call.add_done_callback(self._remove_call)
+
 
 class _BaseMultiCallable:
     """Base class of all multi callable objects.
@@ -38,6 +68,7 @@ class _BaseMultiCallable:
     """
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
+    _ongoing_calls: _OngoingCalls
     _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
@@ -49,9 +80,11 @@ class _BaseMultiCallable:
     _interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
     _loop: asyncio.AbstractEventLoop
 
+    # pylint: disable=too-many-arguments
     def __init__(
             self,
             channel: cygrpc.AioChannel,
+            ongoing_calls: _OngoingCalls,
             method: bytes,
             request_serializer: SerializingFunction,
             response_deserializer: DeserializingFunction,
@@ -60,6 +93,7 @@ class _BaseMultiCallable:
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._ongoing_calls = ongoing_calls
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
@@ -108,17 +142,20 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
         if not self._interceptors:
-            return UnaryUnaryCall(request, _timeout_to_deadline(timeout),
+            call = UnaryUnaryCall(request, _timeout_to_deadline(timeout),
                                   metadata, credentials, wait_for_ready,
                                   self._channel, self._method,
                                   self._request_serializer,
                                   self._response_deserializer, self._loop)
         else:
-            return InterceptedUnaryUnaryCall(
+            call = InterceptedUnaryUnaryCall(
                 self._interceptors, request, timeout, metadata, credentials,
                 wait_for_ready, self._channel, self._method,
                 self._request_serializer, self._response_deserializer,
                 self._loop)
+
+        self._ongoing_calls.trace_call(call)
+        return call
 
 
 class UnaryStreamMultiCallable(_BaseMultiCallable):
@@ -158,10 +195,12 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
-        return UnaryStreamCall(request, deadline, metadata, credentials,
+        call = UnaryStreamCall(request, deadline, metadata, credentials,
                                wait_for_ready, self._channel, self._method,
                                self._request_serializer,
                                self._response_deserializer, self._loop)
+        self._ongoing_calls.trace_call(call)
+        return call
 
 
 class StreamUnaryMultiCallable(_BaseMultiCallable):
@@ -205,10 +244,12 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
-        return StreamUnaryCall(request_async_iterator, deadline, metadata,
+        call = StreamUnaryCall(request_async_iterator, deadline, metadata,
                                credentials, wait_for_ready, self._channel,
                                self._method, self._request_serializer,
                                self._response_deserializer, self._loop)
+        self._ongoing_calls.trace_call(call)
+        return call
 
 
 class StreamStreamMultiCallable(_BaseMultiCallable):
@@ -252,10 +293,12 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
         if metadata is None:
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
-        return StreamStreamCall(request_async_iterator, deadline, metadata,
+        call = StreamStreamCall(request_async_iterator, deadline, metadata,
                                 credentials, wait_for_ready, self._channel,
                                 self._method, self._request_serializer,
                                 self._response_deserializer, self._loop)
+        self._ongoing_calls.trace_call(call)
+        return call
 
 
 class Channel:
@@ -266,6 +309,7 @@ class Channel:
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _unary_unary_interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
+    _ongoing_calls: _OngoingCalls
 
     def __init__(self, target: Text, options: Optional[ChannelArgumentType],
                  credentials: Optional[grpc.ChannelCredentials],
@@ -307,6 +351,62 @@ class Channel:
         self._loop = asyncio.get_event_loop()
         self._channel = cygrpc.AioChannel(_common.encode(target), options,
                                           credentials, self._loop)
+        self._ongoing_calls = _OngoingCalls()
+
+    async def __aenter__(self):
+        """Starts an asynchronous context manager.
+
+        Returns:
+          Channel the channel that was instantiated.
+        """
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Finishes the asynchronous context manager by closing the channel.
+
+        Still active RPCs will be cancelled.
+        """
+        await self._close(None)
+
+    async def _close(self, grace):
+        if self._channel.closed():
+            return
+
+        # No new calls will be accepted by the Cython channel.
+        self._channel.closing()
+
+        if grace:
+            # pylint: disable=unused-variable
+            _, pending = await asyncio.wait(self._ongoing_calls.calls,
+                                            timeout=grace,
+                                            loop=self._loop)
+
+            if not pending:
+                return
+
+        # A new set is created acting as a shallow copy because
+        # when cancellation happens the calls are automatically
+        # removed from the originally set.
+        calls = WeakSet(data=self._ongoing_calls.calls)
+        for call in calls:
+            call.cancel()
+
+        self._channel.close()
+
+    async def close(self, grace: Optional[float] = None):
+        """Closes this Channel and releases all resources held by it.
+
+        This method immediately stops the channel from executing new RPCs in
+        all cases.
+
+        If a grace period is specified, this method wait until all active
+        RPCs are finshed, once the grace period is reached the ones that haven't
+        been terminated are cancelled. If a grace period is not specified
+        (by passing None for grace), all existing RPCs are cancelled immediately.
+
+        This method is idempotent.
+        """
+        await self._close(grace)
 
     def get_state(self,
                   try_to_connect: bool = False) -> grpc.ChannelConnectivity:
@@ -372,7 +472,8 @@ class Channel:
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
         """
-        return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
+        return UnaryUnaryMultiCallable(self._channel, self._ongoing_calls,
+                                       _common.encode(method),
                                        request_serializer,
                                        response_deserializer,
                                        self._unary_unary_interceptors,
@@ -384,7 +485,8 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> UnaryStreamMultiCallable:
-        return UnaryStreamMultiCallable(self._channel, _common.encode(method),
+        return UnaryStreamMultiCallable(self._channel, self._ongoing_calls,
+                                        _common.encode(method),
                                         request_serializer,
                                         response_deserializer, None, self._loop)
 
@@ -394,7 +496,8 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamUnaryMultiCallable:
-        return StreamUnaryMultiCallable(self._channel, _common.encode(method),
+        return StreamUnaryMultiCallable(self._channel, self._ongoing_calls,
+                                        _common.encode(method),
                                         request_serializer,
                                         response_deserializer, None, self._loop)
 
@@ -404,33 +507,8 @@ class Channel:
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamStreamMultiCallable:
-        return StreamStreamMultiCallable(self._channel, _common.encode(method),
+        return StreamStreamMultiCallable(self._channel, self._ongoing_calls,
+                                         _common.encode(method),
                                          request_serializer,
                                          response_deserializer, None,
                                          self._loop)
-
-    async def _close(self):
-        # TODO: Send cancellation status
-        self._channel.close()
-
-    async def __aenter__(self):
-        """Starts an asynchronous context manager.
-
-        Returns:
-          Channel the channel that was instantiated.
-        """
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Finishes the asynchronous context manager by closing gracefully the channel."""
-        await self._close()
-
-    async def close(self):
-        """Closes this Channel and releases all resources held by it.
-
-        Closing the Channel will proactively terminate all RPCs active with the
-        Channel and it is not valid to invoke new RPCs with the Channel.
-
-        This method is idempotent.
-        """
-        await self._close()

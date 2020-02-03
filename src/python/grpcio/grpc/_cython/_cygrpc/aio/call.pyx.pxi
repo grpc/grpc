@@ -132,14 +132,14 @@ cdef class _AioCall(GrpcCallWrapper):
     cdef void _set_status(self, AioRpcStatus status) except *:
         cdef list waiters
 
+        self._status = status
+
         if self._initial_metadata is None:
             self._set_initial_metadata(_IMMUTABLE_EMPTY_METADATA)
 
-        self._status = status
-        waiters = self._waiters_status
-
         # No more waiters should be expected since status
         # has been set.
+        waiters = self._waiters_status
         self._waiters_status = None
 
         for waiter in waiters:
@@ -154,10 +154,9 @@ cdef class _AioCall(GrpcCallWrapper):
 
         self._initial_metadata = initial_metadata
 
-        waiters = self._waiters_initial_metadata
-
         # No more waiters should be expected since initial metadata
         # has been set.
+        waiters = self._waiters_initial_metadata
         self._waiters_initial_metadata = None
 
         for waiter in waiters:

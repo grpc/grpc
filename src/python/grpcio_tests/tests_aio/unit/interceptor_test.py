@@ -29,6 +29,7 @@ _INITIAL_METADATA_TO_INJECT = (
     (_INITIAL_METADATA_KEY, 'extra info'),
     (_TRAILING_METADATA_KEY, b'\x13\x37'),
 )
+_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED = 1.0
 
 
 class TestUnaryUnaryClientInterceptor(AioTestBase):
@@ -576,6 +577,112 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                                        call.trailing_metadata()))
 
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_add_done_callback_before_finishes(self):
+        called = asyncio.Event()
+        interceptor_can_continue = asyncio.Event()
+
+        def callback(call):
+            called.set()
+
+        class Interceptor(aio.UnaryUnaryClientInterceptor):
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
+
+                await interceptor_can_continue.wait()
+                call = await continuation(client_call_details, request)
+                return call
+
+        async with aio.insecure_channel(self._server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
+
+            multicallable = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = multicallable(messages_pb2.SimpleRequest())
+            call.add_done_callback(callback)
+            interceptor_can_continue.set()
+            await call
+
+            try:
+                await asyncio.wait_for(
+                    called.wait(),
+                    timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED)
+            except:
+                self.fail("Callback was not called")
+
+    async def test_add_done_callback_after_finishes(self):
+        called = asyncio.Event()
+
+        def callback(call):
+            called.set()
+
+        class Interceptor(aio.UnaryUnaryClientInterceptor):
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
+
+                call = await continuation(client_call_details, request)
+                return call
+
+        async with aio.insecure_channel(self._server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
+
+            multicallable = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = multicallable(messages_pb2.SimpleRequest())
+
+            await call
+
+            call.add_done_callback(callback)
+
+            try:
+                await asyncio.wait_for(
+                    called.wait(),
+                    timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED)
+            except:
+                self.fail("Callback was not called")
+
+    async def test_add_done_callback_after_finishes_before_await(self):
+        called = asyncio.Event()
+
+        def callback(call):
+            called.set()
+
+        class Interceptor(aio.UnaryUnaryClientInterceptor):
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
+
+                call = await continuation(client_call_details, request)
+                return call
+
+        async with aio.insecure_channel(self._server_target,
+                                        interceptors=[Interceptor()
+                                                     ]) as channel:
+
+            multicallable = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCall',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            call = multicallable(messages_pb2.SimpleRequest())
+
+            call.add_done_callback(callback)
+
+            await call
+
+            try:
+                await asyncio.wait_for(
+                    called.wait(),
+                    timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED)
+            except:
+                self.fail("Callback was not called")
 
 
 if __name__ == '__main__':
