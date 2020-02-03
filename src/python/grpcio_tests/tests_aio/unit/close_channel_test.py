@@ -68,7 +68,7 @@ class TestOngoingCalls(unittest.TestCase):
 
         call = TestOngoingCalls.FakeCall()
         ongoing_calls.trace_call(call)
-        del(call)
+        del (call)
         self.assertEqual(ongoing_calls.size(), 0)
 
 

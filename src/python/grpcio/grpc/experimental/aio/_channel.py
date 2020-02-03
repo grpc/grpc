@@ -405,7 +405,7 @@ class Channel:
         calls = WeakSet(data=self._ongoing_calls.calls)
         for call in calls:
             call.cancel()
-  
+
         self._channel.close()
 
     async def close(self, grace: Optional[float] = None):
