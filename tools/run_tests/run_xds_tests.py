@@ -510,6 +510,16 @@ try:
         else:
             raise http_error
 
+    if instance_group_url is None:
+        # Look up the instance group URL, which may be unset if we are running
+        # with --tolerate_gcp_errors=true.
+        result = compute.instanceGroups().get(
+            project=PROJECT_ID, zone=ZONE,
+            instanceGroup=INSTANCE_GROUP_NAME).execute()
+        instance_group_url = result['selfLink']
+    wait_for_healthy_backends(compute, PROJECT_ID, BACKEND_SERVICE_NAME,
+                              instance_group_url, WAIT_FOR_BACKEND_SEC)
+
     backends = []
     result = compute.instanceGroups().listInstances(
         project=PROJECT_ID,
@@ -525,16 +535,6 @@ try:
         # just extract the name manually.
         instance_name = item['instance'].split('/')[-1]
         backends.append(instance_name)
-
-    if instance_group_url is None:
-        # Look up the instance group URL, which may be unset if we are running
-        # with --tolerate_gcp_errors=true.
-        result = compute.instanceGroups().get(
-            project=PROJECT_ID, zone=ZONE,
-            instanceGroup=INSTANCE_GROUP_NAME).execute()
-        instance_group_url = result['selfLink']
-    wait_for_healthy_backends(compute, PROJECT_ID, BACKEND_SERVICE_NAME,
-                              instance_group_url, WAIT_FOR_BACKEND_SEC)
 
     # Start xDS client
     cmd = CLIENT_CMD.format(service_host=SERVICE_HOST,
