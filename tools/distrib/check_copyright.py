@@ -161,9 +161,7 @@ for filename in filename_list:
     m = re.search(re_license, text)
     if m:
         pass
-    elif 'DO NOT EDIT' not in text and filename not in [
-            'src/boringssl/err_data.c', 'src/boringssl/crypto_test_data.cc'
-    ]:
+    elif 'DO NOT EDIT' not in text:
         log(1, 'copyright missing', filename)
         ok = False
 

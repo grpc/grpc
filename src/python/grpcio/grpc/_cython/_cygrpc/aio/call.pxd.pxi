@@ -35,10 +35,12 @@ cdef class _AioCall(GrpcCallWrapper):
         # the initial metadata. Waiters are used for pausing the execution of
         # tasks that are asking for one of the field when they are not yet
         # available.
-        object _status
-        object _initial_metadata
+        readonly AioRpcStatus _status
+        readonly tuple _initial_metadata
         list _waiters_status
         list _waiters_initial_metadata
+
+        int _send_initial_metadata_flags
 
     cdef void _create_grpc_call(self, object timeout, bytes method, CallCredentials credentials) except *
     cdef void _set_status(self, AioRpcStatus status) except *

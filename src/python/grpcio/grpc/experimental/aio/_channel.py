@@ -135,9 +135,6 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if wait_for_ready:
-            raise NotImplementedError(
-                "TODO: wait_for_ready not implemented yet")
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -146,16 +143,16 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
 
         if not self._interceptors:
             call = UnaryUnaryCall(request, _timeout_to_deadline(timeout),
-                                  metadata, credentials, self._channel,
-                                  self._method, self._request_serializer,
+                                  metadata, credentials, wait_for_ready,
+                                  self._channel, self._method,
+                                  self._request_serializer,
                                   self._response_deserializer, self._loop)
         else:
-            call = InterceptedUnaryUnaryCall(self._interceptors, request,
-                                             timeout, metadata, credentials,
-                                             self._channel, self._method,
-                                             self._request_serializer,
-                                             self._response_deserializer,
-                                             self._loop)
+            call = InterceptedUnaryUnaryCall(
+                self._interceptors, request, timeout, metadata, credentials,
+                wait_for_ready, self._channel, self._method,
+                self._request_serializer, self._response_deserializer,
+                self._loop)
 
         self._ongoing_calls.trace_call(call)
         return call
@@ -191,10 +188,6 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
         Returns:
           A Call object instance which is an awaitable object.
         """
-        if wait_for_ready:
-            raise NotImplementedError(
-                "TODO: wait_for_ready not implemented yet")
-
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -203,7 +196,7 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
         call = UnaryStreamCall(request, deadline, metadata, credentials,
-                               self._channel, self._method,
+                               wait_for_ready, self._channel, self._method,
                                self._request_serializer,
                                self._response_deserializer, self._loop)
         self._ongoing_calls.trace_call(call)
@@ -244,10 +237,6 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if wait_for_ready:
-            raise NotImplementedError(
-                "TODO: wait_for_ready not implemented yet")
-
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -256,8 +245,8 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
         call = StreamUnaryCall(request_async_iterator, deadline, metadata,
-                               credentials, self._channel, self._method,
-                               self._request_serializer,
+                               credentials, wait_for_ready, self._channel,
+                               self._method, self._request_serializer,
                                self._response_deserializer, self._loop)
         self._ongoing_calls.trace_call(call)
         return call
@@ -297,10 +286,6 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if wait_for_ready:
-            raise NotImplementedError(
-                "TODO: wait_for_ready not implemented yet")
-
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
@@ -309,8 +294,8 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             metadata = _IMMUTABLE_EMPTY_TUPLE
 
         call = StreamStreamCall(request_async_iterator, deadline, metadata,
-                                credentials, self._channel, self._method,
-                                self._request_serializer,
+                                credentials, wait_for_ready, self._channel,
+                                self._method, self._request_serializer,
                                 self._response_deserializer, self._loop)
         self._ongoing_calls.trace_call(call)
         return call

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests behavior of the grpc.aio.UnaryUnaryCall class."""
+"""Tests behavior of the Call classes."""
 
 import asyncio
 import datetime
@@ -80,25 +80,16 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
             stub = test_pb2_grpc.TestServiceStub(channel)
 
-            call = stub.UnaryCall(messages_pb2.SimpleRequest(), timeout=0.1)
+            call = stub.UnaryCall(messages_pb2.SimpleRequest())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(aio.AioRpcError) as exception_context:
                 await call
 
-            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                              exception_context.exception.code())
 
             self.assertTrue(call.done())
-            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, await
-                             call.code())
-
-            # Exception is cached at call object level, reentrance
-            # returns again the same exception
-            with self.assertRaises(grpc.RpcError) as exception_context_retry:
-                await call
-
-            self.assertIs(exception_context.exception,
-                          exception_context_retry.exception)
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
 
     async def test_call_code_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())

@@ -132,7 +132,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
                     method=client_call_details.method,
                     timeout=_constants.UNARY_CALL_WITH_SLEEP_VALUE / 2,
                     metadata=client_call_details.metadata,
-                    credentials=client_call_details.credentials)
+                    credentials=client_call_details.credentials,
+                    wait_for_ready=client_call_details.wait_for_ready)
                 return await continuation(new_client_call_details, request)
 
         interceptor = TimeoutInterceptor()
@@ -173,7 +174,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
                     method=client_call_details.method,
                     timeout=_constants.UNARY_CALL_WITH_SLEEP_VALUE / 2,
                     metadata=client_call_details.metadata,
-                    credentials=client_call_details.credentials)
+                    credentials=client_call_details.credentials,
+                    wait_for_ready=client_call_details.wait_for_ready)
 
                 try:
                     call = await continuation(new_client_call_details, request)
@@ -187,7 +189,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
                     method=client_call_details.method,
                     timeout=None,
                     metadata=client_call_details.metadata,
-                    credentials=client_call_details.credentials)
+                    credentials=client_call_details.credentials,
+                    wait_for_ready=client_call_details.wait_for_ready)
 
                 call = await continuation(new_client_call_details, request)
                 self.calls.append(call)
@@ -552,6 +555,7 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                     metadata=client_call_details.metadata +
                     _INITIAL_METADATA_TO_INJECT,
                     credentials=client_call_details.credentials,
+                    wait_for_ready=client_call_details.wait_for_ready,
                 )
                 return await continuation(new_details, request)
 

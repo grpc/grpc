@@ -38,6 +38,7 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/map.h"
@@ -56,6 +57,7 @@
 #include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
 #include <gmock/gmock.h>
@@ -89,6 +91,9 @@ using ::envoy::api::v2::ClusterLoadAssignment;
 using ::envoy::api::v2::DiscoveryRequest;
 using ::envoy::api::v2::DiscoveryResponse;
 using ::envoy::api::v2::FractionalPercent;
+using ::envoy::api::v2::HttpConnectionManager;
+using ::envoy::api::v2::Listener;
+using ::envoy::api::v2::RouteConfiguration;
 using ::envoy::service::discovery::v2::AggregatedDiscoveryService;
 using ::envoy::service::load_stats::v2::ClusterStats;
 using ::envoy::service::load_stats::v2::LoadReportingService;
@@ -96,6 +101,9 @@ using ::envoy::service::load_stats::v2::LoadStatsRequest;
 using ::envoy::service::load_stats::v2::LoadStatsResponse;
 using ::envoy::service::load_stats::v2::UpstreamLocalityStats;
 
+constexpr char kLdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Listener";
+constexpr char kRdsTypeUrl[] =
+    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
 constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
@@ -382,6 +390,22 @@ class AdsServiceImpl : public AdsService {
   using ResponseDelayPair = std::pair<DiscoveryResponse, int>;
 
   AdsServiceImpl(bool enable_load_reporting) {
+    // Construct RDS response data.
+    default_route_config_.set_name("application_target_name");
+    auto* virtual_host = default_route_config_.add_virtual_hosts();
+    virtual_host->add_domains("*");
+    auto* route = virtual_host->add_routes();
+    route->mutable_match()->set_prefix("");
+    route->mutable_route()->set_cluster("application_target_name");
+    rds_response_data_ = {
+        {"application_target_name", default_route_config_},
+    };
+    // Construct LDS response data (with inlined RDS result).
+    default_listener_ = BuildListener(default_route_config_);
+    lds_response_data_ = {
+        {"application_target_name", default_listener_},
+    };
+    // Construct CDS response data.
     default_cluster_.set_name("application_target_name");
     default_cluster_.set_type(envoy::api::v2::Cluster::EDS);
     default_cluster_.mutable_eds_cluster_config()
@@ -396,12 +420,65 @@ class AdsServiceImpl : public AdsService {
     };
   }
 
+  void HandleLdsRequest(DiscoveryRequest* request, Stream* stream) {
+    gpr_log(GPR_INFO, "ADS[%p]: received LDS request '%s'", this,
+            request->DebugString().c_str());
+    const std::string version_str = "version_1";
+    const std::string nonce_str = "nonce_1";
+    grpc_core::MutexLock lock(&ads_mu_);
+    if (lds_ignore_) return;
+    if (lds_response_state_ == NOT_SENT) {
+      DiscoveryResponse response;
+      response.set_type_url(kLdsTypeUrl);
+      response.set_version_info(version_str);
+      response.set_nonce(nonce_str);
+      for (const auto& server_name : request->resource_names()) {
+        auto iter = lds_response_data_.find(server_name);
+        if (iter == lds_response_data_.end()) continue;
+        response.add_resources()->PackFrom(iter->second);
+      }
+      stream->Write(response);
+      lds_response_state_ = SENT;
+    } else if (lds_response_state_ == SENT) {
+      GPR_ASSERT(!request->response_nonce().empty());
+      lds_response_state_ =
+          request->version_info() == version_str ? ACKED : NACKED;
+    }
+  }
+
+  void HandleRdsRequest(DiscoveryRequest* request, Stream* stream) {
+    gpr_log(GPR_INFO, "ADS[%p]: received RDS request '%s'", this,
+            request->DebugString().c_str());
+    const std::string version_str = "version_1";
+    const std::string nonce_str = "nonce_1";
+    grpc_core::MutexLock lock(&ads_mu_);
+    if (rds_ignore_) return;
+    if (rds_response_state_ == NOT_SENT) {
+      DiscoveryResponse response;
+      response.set_type_url(kRdsTypeUrl);
+      response.set_version_info(version_str);
+      response.set_nonce(nonce_str);
+      for (const auto& route_config_name : request->resource_names()) {
+        auto iter = rds_response_data_.find(route_config_name);
+        if (iter == rds_response_data_.end()) continue;
+        response.add_resources()->PackFrom(iter->second);
+      }
+      stream->Write(response);
+      rds_response_state_ = SENT;
+    } else if (rds_response_state_ == SENT) {
+      GPR_ASSERT(!request->response_nonce().empty());
+      rds_response_state_ =
+          request->version_info() == version_str ? ACKED : NACKED;
+    }
+  }
+
   void HandleCdsRequest(DiscoveryRequest* request, Stream* stream) {
     gpr_log(GPR_INFO, "ADS[%p]: received CDS request '%s'", this,
             request->DebugString().c_str());
     const std::string version_str = "version_1";
     const std::string nonce_str = "nonce_1";
     grpc_core::MutexLock lock(&ads_mu_);
+    if (cds_ignore_) return;
     if (cds_response_state_ == NOT_SENT) {
       DiscoveryResponse response;
       response.set_type_url(kCdsTypeUrl);
@@ -428,6 +505,7 @@ class AdsServiceImpl : public AdsService {
     std::vector<ResponseDelayPair> responses_and_delays;
     {
       grpc_core::MutexLock lock(&ads_mu_);
+      if (eds_ignore_) return;
       responses_and_delays = eds_responses_and_delays_;
     }
     // Send response.
@@ -463,9 +541,18 @@ class AdsServiceImpl : public AdsService {
       // resource names). It's not causing a big problem now but should be
       // fixed.
       bool eds_sent = false;
+      bool seen_first_request = false;
       while (!eds_sent || cds_response_state_ == SENT) {
         if (!stream->Read(&request)) return;
-        if (request.type_url() == kCdsTypeUrl) {
+        if (!seen_first_request) {
+          EXPECT_TRUE(request.has_node());
+          seen_first_request = true;
+        }
+        if (request.type_url() == kLdsTypeUrl) {
+          HandleLdsRequest(&request, stream);
+        } else if (request.type_url() == kRdsTypeUrl) {
+          HandleRdsRequest(&request, stream);
+        } else if (request.type_url() == kCdsTypeUrl) {
           HandleCdsRequest(&request, stream);
         } else if (request.type_url() == kEdsTypeUrl) {
           HandleEdsRequest(&request, stream);
@@ -480,11 +567,20 @@ class AdsServiceImpl : public AdsService {
     return Status::OK;
   }
 
-  Cluster GetDefaultCluster() const { return default_cluster_; }
+  Listener default_listener() const { return default_listener_; }
+  RouteConfiguration default_route_config() const {
+    return default_route_config_;
+  }
+  Cluster default_cluster() const { return default_cluster_; }
 
-  void SetCdsResponse(
-      std::map<std::string /*cluster_name*/, Cluster> cds_response_data) {
-    cds_response_data_ = std::move(cds_response_data);
+  ResponseState lds_response_state() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    return lds_response_state_;
+  }
+
+  ResponseState rds_response_state() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    return rds_response_state_;
   }
 
   ResponseState cds_response_state() {
@@ -492,10 +588,54 @@ class AdsServiceImpl : public AdsService {
     return cds_response_state_;
   }
 
+  void SetLdsResponse(
+      std::map<std::string /*server_name*/, Listener> lds_response_data) {
+    lds_response_data_ = std::move(lds_response_data);
+  }
+
+  void set_lds_ignore() { lds_ignore_ = true; }
+
+  void SetRdsResponse(
+      std::map<std::string /*route_config_name*/, RouteConfiguration>
+          rds_response_data) {
+    rds_response_data_ = std::move(rds_response_data);
+  }
+
+  void set_rds_ignore() { rds_ignore_ = true; }
+
+  void SetCdsResponse(
+      std::map<std::string /*cluster_name*/, Cluster> cds_response_data) {
+    cds_response_data_ = std::move(cds_response_data);
+  }
+
+  void set_cds_ignore() { cds_ignore_ = true; }
+
   void AddEdsResponse(const DiscoveryResponse& response, int send_after_ms) {
     grpc_core::MutexLock lock(&ads_mu_);
     eds_responses_and_delays_.push_back(
         std::make_pair(response, send_after_ms));
+  }
+
+  void set_eds_ignore() { eds_ignore_ = true; }
+
+  void SetLdsToUseDynamicRds() {
+    auto listener = default_listener_;
+    HttpConnectionManager http_connection_manager;
+    http_connection_manager.mutable_rds()->set_route_config_name(
+        "application_target_name");
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    SetLdsResponse({{"application_target_name", std::move(listener)}});
+  }
+
+  static Listener BuildListener(const RouteConfiguration& route_config) {
+    HttpConnectionManager http_connection_manager;
+    *(http_connection_manager.mutable_route_config()) = route_config;
+    Listener listener;
+    listener.set_name("application_target_name");
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    return listener;
   }
 
   void Start() {
@@ -573,12 +713,25 @@ class AdsServiceImpl : public AdsService {
   // Protect the members below.
   grpc_core::Mutex ads_mu_;
   bool ads_done_ = false;
+  // LDS response data.
+  Listener default_listener_;
+  std::map<std::string /*server_name*/, Listener> lds_response_data_;
+  ResponseState lds_response_state_ = NOT_SENT;
+  bool lds_ignore_ = false;
+  // RDS response data.
+  RouteConfiguration default_route_config_;
+  std::map<std::string /*route_config_name*/, RouteConfiguration>
+      rds_response_data_;
+  ResponseState rds_response_state_ = NOT_SENT;
+  bool rds_ignore_ = false;
   // CDS response data.
   Cluster default_cluster_;
   std::map<std::string /*cluster_name*/, Cluster> cds_response_data_;
   ResponseState cds_response_state_ = NOT_SENT;
+  bool cds_ignore_ = false;
   // EDS response data.
   std::vector<ResponseDelayPair> eds_responses_and_delays_;
+  bool eds_ignore_ = false;
 };
 
 class LrsServiceImpl : public LrsService {
@@ -762,7 +915,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0, int failover_timeout = 0,
-                 const grpc::string& expected_targets = "") {
+                 const grpc::string& expected_targets = "",
+                 int xds_resource_does_not_exist_timeout = 0) {
     ChannelArguments args;
     // TODO(juanlishen): Add setter to ChannelArguments.
     if (fallback_timeout > 0) {
@@ -770,6 +924,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS, failover_timeout);
+    }
+    if (xds_resource_does_not_exist_timeout > 0) {
+      args.SetInt(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
+                  xds_resource_does_not_exist_timeout);
     }
     // If the parent channel is using the fake resolver, we inject the
     // response generator for the parent here, and then SetNextResolution()
@@ -1335,13 +1493,315 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
       "");
 }
 
+using LdsTest = BasicTest;
+
+// Tests that LDS client should send an ACK upon correct LDS response (with
+// inlined RDS result).
+TEST_P(LdsTest, Vanilla) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  (void)SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::ACKED);
+}
+
+// Tests that LDS client should send a NACK if there is no API listener in the
+// Listener in the LDS response.
+TEST_P(LdsTest, NoApiListener) {
+  auto listener = balancers_[0]->ads_service()->default_listener();
+  listener.clear_api_listener();
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name", listener}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that LDS client should send a NACK if the route_specifier in the
+// http_connection_manager is neither inlined route_config nor RDS.
+TEST_P(LdsTest, WrongRouteSpecifier) {
+  auto listener = balancers_[0]->ads_service()->default_listener();
+  HttpConnectionManager http_connection_manager;
+  http_connection_manager.mutable_scoped_routes();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name", std::move(listener)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that LDS client should send a NACK if matching domain can't be found in
+// the LDS response.
+TEST_P(LdsTest, NoMatchedDomain) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)->clear_domains();
+  route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name",
+        AdsServiceImpl::BuildListener(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that LDS client should choose the virtual host with matching domain if
+// multiple virtual hosts exist in the LDS response.
+TEST_P(LdsTest, ChooseMatchedDomain) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
+  route_config.mutable_virtual_hosts(0)->clear_domains();
+  route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_cluster_header();
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name",
+        AdsServiceImpl::BuildListener(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  (void)SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::ACKED);
+}
+
+// Tests that LDS client should choose the last route in the virtual host if
+// multiple routes exist in the LDS response.
+TEST_P(LdsTest, ChooseLastRoute) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
+      route_config.virtual_hosts(0).routes(0);
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_cluster_header();
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name",
+        AdsServiceImpl::BuildListener(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  (void)SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::ACKED);
+}
+
+// Tests that LDS client should send a NACK if route match has non-empty prefix
+// in the LDS response.
+TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->set_prefix("nonempty_prefix");
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name",
+        AdsServiceImpl::BuildListener(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that LDS client should send a NACK if route has an action other than
+// RouteAction in the LDS response.
+TEST_P(LdsTest, RouteHasNoRouteAction) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_redirect();
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name",
+        AdsServiceImpl::BuildListener(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that LDS client should send a NACK if RouteAction has a
+// cluster_specifier other than cluster in the LDS response.
+TEST_P(LdsTest, RouteActionHasNoCluster) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_cluster_header();
+  balancers_[0]->ads_service()->SetLdsResponse(
+      {{"application_target_name",
+        AdsServiceImpl::BuildListener(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that LDS client times out when no response received.
+TEST_P(LdsTest, Timeout) {
+  ResetStub(0, 0, "", 500);
+  balancers_[0]->ads_service()->set_lds_ignore();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+using RdsTest = BasicTest;
+
+// Tests that RDS client should send an ACK upon correct RDS response.
+TEST_P(RdsTest, Vanilla) {
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  (void)SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
+            AdsServiceImpl::ACKED);
+}
+
+// Tests that RDS client should send a NACK if matching domain can't be found in
+// the RDS response.
+TEST_P(RdsTest, NoMatchedDomain) {
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)->clear_domains();
+  route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
+  balancers_[0]->ads_service()->SetRdsResponse(
+      {{"application_target_name", std::move(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that RDS client should choose the virtual host with matching domain if
+// multiple virtual hosts exist in the RDS response.
+TEST_P(RdsTest, ChooseMatchedDomain) {
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
+  route_config.mutable_virtual_hosts(0)->clear_domains();
+  route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_cluster_header();
+  balancers_[0]->ads_service()->SetRdsResponse(
+      {{"application_target_name", std::move(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  (void)SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
+            AdsServiceImpl::ACKED);
+}
+
+// Tests that RDS client should choose the last route in the virtual host if
+// multiple routes exist in the RDS response.
+TEST_P(RdsTest, ChooseLastRoute) {
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
+      route_config.virtual_hosts(0).routes(0);
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_cluster_header();
+  balancers_[0]->ads_service()->SetRdsResponse(
+      {{"application_target_name", std::move(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  (void)SendRpc();
+  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
+            AdsServiceImpl::ACKED);
+}
+
+// Tests that RDS client should send a NACK if route match has non-empty prefix
+// in the RDS response.
+TEST_P(RdsTest, RouteMatchHasNonemptyPrefix) {
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->set_prefix("nonempty_prefix");
+  balancers_[0]->ads_service()->SetRdsResponse(
+      {{"application_target_name", std::move(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that RDS client should send a NACK if route has an action other than
+// RouteAction in the RDS response.
+TEST_P(RdsTest, RouteHasNoRouteAction) {
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_redirect();
+  balancers_[0]->ads_service()->SetRdsResponse(
+      {{"application_target_name", std::move(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that RDS client should send a NACK if RouteAction has a
+// cluster_specifier other than cluster in the RDS response.
+TEST_P(RdsTest, RouteActionHasNoCluster) {
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_cluster_header();
+  balancers_[0]->ads_service()->SetRdsResponse(
+      {{"application_target_name", std::move(route_config)}});
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that RDS client times out when no response received.
+TEST_P(RdsTest, Timeout) {
+  ResetStub(0, 0, "", 500);
+  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+  balancers_[0]->ads_service()->set_rds_ignore();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
 using CdsTest = BasicTest;
 
 // Tests that CDS client should send an ACK upon correct CDS response.
 TEST_P(CdsTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::ACKED);
 }
@@ -1349,7 +1809,7 @@ TEST_P(CdsTest, Vanilla) {
 // Tests that CDS client should send a NACK if the cluster type in CDS response
 // is other than EDS.
 TEST_P(CdsTest, WrongClusterType) {
-  auto cluster = balancers_[0]->ads_service()->GetDefaultCluster();
+  auto cluster = balancers_[0]->ads_service()->default_cluster();
   cluster.set_type(envoy::api::v2::Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResponse(
       {{"application_target_name", std::move(cluster)}});
@@ -1363,7 +1823,7 @@ TEST_P(CdsTest, WrongClusterType) {
 // Tests that CDS client should send a NACK if the eds_config in CDS response is
 // other than ADS.
 TEST_P(CdsTest, WrongEdsConfig) {
-  auto cluster = balancers_[0]->ads_service()->GetDefaultCluster();
+  auto cluster = balancers_[0]->ads_service()->default_cluster();
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   balancers_[0]->ads_service()->SetCdsResponse(
       {{"application_target_name", std::move(cluster)}});
@@ -1377,7 +1837,7 @@ TEST_P(CdsTest, WrongEdsConfig) {
 // Tests that CDS client should send a NACK if the lb_policy in CDS response is
 // other than ROUND_ROBIN.
 TEST_P(CdsTest, WrongLbPolicy) {
-  auto cluster = balancers_[0]->ads_service()->GetDefaultCluster();
+  auto cluster = balancers_[0]->ads_service()->default_cluster();
   cluster.set_lb_policy(envoy::api::v2::Cluster::LEAST_REQUEST);
   balancers_[0]->ads_service()->SetCdsResponse(
       {{"application_target_name", std::move(cluster)}});
@@ -1391,7 +1851,7 @@ TEST_P(CdsTest, WrongLbPolicy) {
 // Tests that CDS client should send a NACK if the lrs_server in CDS response is
 // other than SELF.
 TEST_P(CdsTest, WrongLrsServer) {
-  auto cluster = balancers_[0]->ads_service()->GetDefaultCluster();
+  auto cluster = balancers_[0]->ads_service()->default_cluster();
   cluster.mutable_lrs_server()->mutable_ads();
   balancers_[0]->ads_service()->SetCdsResponse(
       {{"application_target_name", std::move(cluster)}});
@@ -1400,6 +1860,27 @@ TEST_P(CdsTest, WrongLrsServer) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
+}
+
+// Tests that CDS client times out when no response received.
+TEST_P(CdsTest, Timeout) {
+  ResetStub(0, 0, "", 500);
+  balancers_[0]->ads_service()->set_cds_ignore();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+using EdsTest = BasicTest;
+
+// TODO(roth): Add tests showing that RPCs fail when EDS data is invalid.
+
+TEST_P(EdsTest, Timeout) {
+  ResetStub(0, 0, "", 500);
+  balancers_[0]->ads_service()->set_eds_ignore();
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
 }
 
 using LocalityMapTest = BasicTest;
@@ -2597,8 +3078,27 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
                                            TestType(true, true)),
                          &TestTypeName);
 
+// LDS depends on XdsResolver.
+INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest,
+                         ::testing::Values(TestType(true, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
+
+// RDS depends on XdsResolver.
+INSTANTIATE_TEST_SUITE_P(XdsTest, RdsTest,
+                         ::testing::Values(TestType(true, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
+
 // CDS depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(XdsTest, CdsTest,
+                         ::testing::Values(TestType(true, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
+
+// EDS could be tested with or without XdsResolver, but the tests would
+// be the same either way, so we test it only with XdsResolver.
+INSTANTIATE_TEST_SUITE_P(XdsTest, EdsTest,
                          ::testing::Values(TestType(true, false),
                                            TestType(true, true)),
                          &TestTypeName);

@@ -26,11 +26,10 @@ want_submodules=$(mktemp /tmp/submXXXXXX)
 
 git submodule | awk '{ print $1 }' | sort > "$submodules"
 cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
- a2e6adecc294dc4cd98cc285a9134ce58e0f2ad0 third_party/abseil-cpp (heads/master)
+ 37dd2562ec830d547a1524bb306be313ac3f2556 third_party/abseil-cpp (heads/master)
  090faecb454fbd6e6e17a75ef8146acb037118d4 third_party/benchmark (v1.5.0)
  73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty (remotes/origin/wide-14-g73594cd)
- 7f02881e96e51f1873afcf384d02f782b48967ca third_party/boringssl (remotes/origin/HEAD)
- 83da28a68f32023fd3b95a8ae94991a07b1f6c62 third_party/boringssl-with-bazel (remotes/origin/master-with-bazel)
+ 1c2769383f027befac5b75b6cedd25daf3bf4dcf third_party/boringssl-with-bazel (remotes/origin/master-with-bazel)
  e982924acee7f7313b4baa4ee5ec000c5e373c30 third_party/cares/cares (cares-1_15_0)
  c83ed7ea9eb5fb3b93d1ad52b59750f1958b8bde third_party/envoy-api (heads/master)
  28f50e0fed19872e0fd50dd23ce2ee8cd759338e third_party/gflags (v2.2.0-5-g30dbc81)

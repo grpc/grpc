@@ -20,6 +20,7 @@ dummy-variables-rgx=^ignored_|^unused_
 # be what works for us at the moment (excepting the dead-code-walking Beta
 # API).
 max-args=7
+max-parents=8
 
 [MISCELLANEOUS]
 

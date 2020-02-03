@@ -13,6 +13,19 @@
 # limitations under the License.
 
 
+cdef grpc_status_code get_status_code(object code) except *:
+    if isinstance(code, int):
+        if code >= StatusCode.ok and code <= StatusCode.data_loss:
+            return code
+        else:
+            return StatusCode.unknown
+    else:
+        try:
+            return code.value[0]
+        except (KeyError, AttributeError):
+            return StatusCode.unknown
+
+
 cdef object deserialize(object deserializer, bytes raw_message):
     """Perform deserialization on raw bytes.
 

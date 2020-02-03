@@ -151,6 +151,7 @@ cdef grpc_error* asyncio_socket_bind(
         _asyncio_apply_socket_options(socket, flags)
         socket.bind((host, port))
     except IOError as io_error:
+        socket.close()
         return socket_error("bind", str(io_error))
     else:
         aio_socket = _AsyncioSocket.create_with_py_socket(grpc_socket, socket)

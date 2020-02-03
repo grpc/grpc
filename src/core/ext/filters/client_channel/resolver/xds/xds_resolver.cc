@@ -68,6 +68,7 @@ class XdsResolver : public Resolver {
 
 void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
     RefCountedPtr<ServiceConfig> service_config) {
+  if (resolver_->xds_client_ == nullptr) return;
   grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
   Result result;
   result.args =
@@ -77,6 +78,7 @@ void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
 }
 
 void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
+  if (resolver_->xds_client_ == nullptr) return;
   grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
   Result result;
   result.args =

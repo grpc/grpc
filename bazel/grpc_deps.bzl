@@ -129,9 +129,11 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            # NOTE: This URL generates a tarball containing dynamic date
-            # information, so the sha256 is not consistent.
-            url = "https://boringssl.googlesource.com/boringssl/+archive/83da28a68f32023fd3b95a8ae94991a07b1f6c62.tar.gz",
+            # Use github mirror instead of https://boringssl.googlesource.com/boringssl
+            # to obtain a boringssl archive with consistent sha256
+            sha256 = "a3d4de4f03cb321ef943678d72a045c9a19d26b23d6f4e313f97600c65201a27",
+            strip_prefix = "boringssl-1c2769383f027befac5b75b6cedd25daf3bf4dcf",
+            url = "https://github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz",
         )
 
     if "zlib" not in native.existing_rules():
@@ -195,9 +197,9 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "939e50c2fbcbd6f1124023350ef9bd5310d413227faf0e11de2a366dcc4e1e48",
-            strip_prefix = "abseil-cpp-a2e6adecc294dc4cd98cc285a9134ce58e0f2ad0",
-            url = "https://github.com/abseil/abseil-cpp/archive/a2e6adecc294dc4cd98cc285a9134ce58e0f2ad0.tar.gz",
+            sha256 = "19391fb4882601a65cb648d638c11aa301ce5f525ef02da1a9eafd22f72d7c59",
+            strip_prefix = "abseil-cpp-37dd2562ec830d547a1524bb306be313ac3f2556",
+            url = "https://github.com/abseil/abseil-cpp/archive/37dd2562ec830d547a1524bb306be313ac3f2556.tar.gz",
         )
 
     if "bazel_toolchains" not in native.existing_rules():

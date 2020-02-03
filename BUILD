@@ -16,7 +16,10 @@
 
 licenses(["notice"])
 
-exports_files(["LICENSE"])
+exports_files([
+    "LICENSE",
+    "etc/roots.pem",
+])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -803,7 +806,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/json/json.cc",
         "src/core/lib/json/json_reader.cc",
+        "src/core/lib/json/json_reader_new.cc",
         "src/core/lib/json/json_writer.cc",
+        "src/core/lib/json/json_writer_new.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice.cc",
@@ -2400,8 +2405,19 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/lds.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/rds.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/srds.upb.c",
+        "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c",
+        "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c",
+        "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/string.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
@@ -2413,8 +2429,19 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/lds.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/rds.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/route/route.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/srds.upb.h",
+        "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h",
+        "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h",
+        "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.h",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/string.upb.h",
     ],
     external_deps = [
         "upb_lib",
