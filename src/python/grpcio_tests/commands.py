@@ -233,14 +233,18 @@ class TestGevent(setuptools.Command):
 class RunInterop(test.test):
 
     description = 'run interop test client/server'
-    user_options = [('args=', 'a', 'pass-thru arguments for the client/server'),
-                    ('client', 'c', 'flag indicating to run the client'),
-                    ('server', 's', 'flag indicating to run the server')]
+    user_options = [
+        ('args=', None, 'pass-thru arguments for the client/server'),
+        ('client', None, 'flag indicating to run the client'),
+        ('server', None, 'flag indicating to run the server'),
+        ('use-asyncio', None, 'flag indicating to run the asyncio stack')
+    ]
 
     def initialize_options(self):
         self.args = ''
         self.client = False
         self.server = False
+        self.use_asyncio = False
 
     def finalize_options(self):
         if self.client and self.server:
@@ -261,9 +265,15 @@ class RunInterop(test.test):
     def run_server(self):
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
-        from tests.interop import server
-        sys.argv[1:] = self.args.split()
-        server.serve()
+        if self.use_asyncio:
+            import asyncio
+            from tests_aio.interop import server
+            sys.argv[1:] = self.args.split()
+            asyncio.get_event_loop().run_until_complete(server.serve())
+        else:
+            from tests.interop import server
+            sys.argv[1:] = self.args.split()
+            server.serve()
 
     def run_client(self):
         # We import here to ensure that our setuptools parent has had a chance to

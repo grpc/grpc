@@ -163,6 +163,7 @@ class Json {
   // Accessor methods.
   Type type() const { return type_; }
   const std::string& string_value() const { return string_value_; }
+  std::string* mutable_string_value() { return &string_value_; }
   const Object& object_value() const { return object_value_; }
   Object* mutable_object() { return &object_value_; }
   const Array& array_value() const { return array_value_; }

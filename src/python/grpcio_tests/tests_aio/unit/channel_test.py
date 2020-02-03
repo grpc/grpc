@@ -33,8 +33,8 @@ _UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
 _STREAMING_OUTPUT_CALL_METHOD = '/grpc.testing.TestService/StreamingOutputCall'
 
 _INVOCATION_METADATA = (
-    ('initial-md-key', 'initial-md-value'),
-    ('trailing-md-key-bin', b'\x00\x02'),
+    ('x-grpc-test-echo-initial', 'initial-md-value'),
+    ('x-grpc-test-echo-trailing-bin', b'\x00\x02'),
 )
 
 _NUM_STREAM_RESPONSES = 5

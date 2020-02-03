@@ -164,10 +164,11 @@ async def _send_message(GrpcCallWrapper grpc_call_wrapper,
 
 async def _send_initial_metadata(GrpcCallWrapper grpc_call_wrapper,
                                  tuple metadata,
+                                 int flags,
                                  object loop):
     cdef SendInitialMetadataOperation op = SendInitialMetadataOperation(
         metadata,
-        _EMPTY_FLAG)
+        flags)
     cdef tuple ops = (op,)
     await execute_batch(grpc_call_wrapper, ops, loop)
 

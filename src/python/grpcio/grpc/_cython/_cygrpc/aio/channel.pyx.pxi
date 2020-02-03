@@ -99,7 +99,8 @@ cdef class AioChannel:
     def call(self,
              bytes method,
              object deadline,
-             object python_call_credentials):
+             object python_call_credentials,
+             object wait_for_ready):
         """Assembles a Cython Call object.
 
         Returns:
@@ -115,4 +116,4 @@ cdef class AioChannel:
         else:
             cython_call_credentials = None
 
-        return _AioCall(self, deadline, method, cython_call_credentials)
+        return _AioCall(self, deadline, method, cython_call_credentials, wait_for_ready)

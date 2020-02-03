@@ -23,7 +23,6 @@
 #include <mutex>
 
 #include <grpc/grpc.h>
-#include <grpcpp/alarm.h>
 #include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

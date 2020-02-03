@@ -144,12 +144,16 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
 };
 
-// Exposed for testing only.
+// ---- Functions below are exposed for testing only -----------------------
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
     const grpc_tls_credentials_options& options, bool server_config,
     grpc_ssl_certificate_config_reload_status* status);
+
+// TlsCheckHostName checks if |peer_name| matches the identity information
+// contained in |peer|. This is AKA hostname check.
+grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
 
 }  // namespace grpc_core
 

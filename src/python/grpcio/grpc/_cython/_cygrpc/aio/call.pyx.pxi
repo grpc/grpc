@@ -30,10 +30,22 @@ _NON_OK_CALL_REPRESENTATION = ('<{} of RPC that terminated with:\n'
                                '>')
 
 
+cdef int _get_send_initial_metadata_flags(object wait_for_ready) except *:
+    cdef int flags = 0
+    # Wait-for-ready can be None, which means using default value in Core.
+    if wait_for_ready is not None:
+        flags |= InitialMetadataFlags.wait_for_ready_explicitly_set
+        if wait_for_ready:
+            flags |= InitialMetadataFlags.wait_for_ready
+
+    flags &= InitialMetadataFlags.used_mask
+    return flags
+
+
 cdef class _AioCall(GrpcCallWrapper):
 
     def __cinit__(self, AioChannel channel, object deadline,
-                  bytes method, CallCredentials call_credentials):
+                  bytes method, CallCredentials call_credentials, object wait_for_ready):
         self.call = NULL
         self._channel = channel
         self._loop = channel.loop
@@ -45,6 +57,7 @@ cdef class _AioCall(GrpcCallWrapper):
         self._done_callbacks = []
         self._is_locally_cancelled = False
         self._deadline = deadline
+        self._send_initial_metadata_flags = _get_send_initial_metadata_flags(wait_for_ready)
         self._create_grpc_call(deadline, method, call_credentials)
 
     def __dealloc__(self):
@@ -236,6 +249,10 @@ cdef class _AioCall(GrpcCallWrapper):
 
         return self._status
 
+    def is_ok(self):
+        """Returns if the RPC is ended with ok."""
+        return self.done() and self._status.code() == StatusCode.ok
+
     async def initial_metadata(self):
         """Returns the initial metadata of the RPC call.
         
@@ -279,7 +296,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
         cdef SendInitialMetadataOperation initial_metadata_op = SendInitialMetadataOperation(
             outbound_initial_metadata,
-            GRPC_INITIAL_METADATA_USED_MASK)
+            self._send_initial_metadata_flags)
         cdef SendMessageOperation send_message_op = SendMessageOperation(request, _EMPTY_FLAGS)
         cdef SendCloseFromClientOperation send_close_op = SendCloseFromClientOperation(_EMPTY_FLAGS)
         cdef ReceiveInitialMetadataOperation receive_initial_metadata_op = ReceiveInitialMetadataOperation(_EMPTY_FLAGS)
@@ -366,12 +383,12 @@ cdef class _AioCall(GrpcCallWrapper):
         """Implementation of the start of a unary-stream call."""
         # Peer may prematurely end this RPC at any point. We need a corutine
         # that watches if the server sends the final status.
-        self._loop.create_task(self._handle_status_once_received())
+        status_task = self._loop.create_task(self._handle_status_once_received())
 
         cdef tuple outbound_ops
         cdef Operation initial_metadata_op = SendInitialMetadataOperation(
             outbound_initial_metadata,
-            GRPC_INITIAL_METADATA_USED_MASK)
+            self._send_initial_metadata_flags)
         cdef Operation send_message_op = SendMessageOperation(
             request,
             _EMPTY_FLAGS)
@@ -384,16 +401,20 @@ cdef class _AioCall(GrpcCallWrapper):
             send_close_op,
         )
 
-        # Sends out the request message.
-        await execute_batch(self,
-                            outbound_ops,
-                            self._loop)
+        try:
+            # Sends out the request message.
+            await execute_batch(self,
+                                outbound_ops,
+                                self._loop)
 
-        # Receives initial metadata.
-        self._set_initial_metadata(
-            await _receive_initial_metadata(self,
-                                            self._loop),
-        )
+            # Receives initial metadata.
+            self._set_initial_metadata(
+                await _receive_initial_metadata(self,
+                                                self._loop),
+            )
+        except ExecuteBatchError as batch_error:
+            # Core should explain why this batch failed
+            await status_task
 
     async def stream_unary(self,
                            tuple outbound_initial_metadata,
@@ -404,17 +425,26 @@ cdef class _AioCall(GrpcCallWrapper):
         propagate the final status exception, then we have to raise it.
         Othersize, it would end normally and raise `StopAsyncIteration()`.
         """
-        # Sends out initial_metadata ASAP.
-        await _send_initial_metadata(self,
-                                     outbound_initial_metadata,
-                                     self._loop)
-        # Notify upper level that sending messages are allowed now.
-        metadata_sent_observer()
+        try:
+            # Sends out initial_metadata ASAP.
+            await _send_initial_metadata(self,
+                                        outbound_initial_metadata,
+                                        self._send_initial_metadata_flags,
+                                        self._loop)
+            # Notify upper level that sending messages are allowed now.
+            metadata_sent_observer()
 
-        # Receives initial metadata.
-        self._set_initial_metadata(
-            await _receive_initial_metadata(self, self._loop)
-        )
+            # Receives initial metadata.
+            self._set_initial_metadata(
+                await _receive_initial_metadata(self, self._loop)
+            )
+        except ExecuteBatchError:
+            # Core should explain why this batch failed
+            await self._handle_status_once_received()
+
+            # Allow upper layer to proceed only if the status is set
+            metadata_sent_observer()
+            return None
 
         cdef tuple inbound_ops
         cdef ReceiveMessageOperation receive_message_op = ReceiveMessageOperation(_EMPTY_FLAGS)
@@ -452,16 +482,24 @@ cdef class _AioCall(GrpcCallWrapper):
         """
         # Peer may prematurely end this RPC at any point. We need a corutine
         # that watches if the server sends the final status.
-        self._loop.create_task(self._handle_status_once_received())
+        status_task = self._loop.create_task(self._handle_status_once_received())
 
-        # Sends out initial_metadata ASAP.
-        await _send_initial_metadata(self,
-                                     outbound_initial_metadata,
-                                     self._loop)
-        # Notify upper level that sending messages are allowed now.   
-        metadata_sent_observer()
+        try:
+            # Sends out initial_metadata ASAP.
+            await _send_initial_metadata(self,
+                                        outbound_initial_metadata,
+                                        self._send_initial_metadata_flags,
+                                        self._loop)
+            # Notify upper level that sending messages are allowed now.   
+            metadata_sent_observer()
 
-        # Receives initial metadata.
-        self._set_initial_metadata(
-            await _receive_initial_metadata(self, self._loop)
-        )
+            # Receives initial metadata.
+            self._set_initial_metadata(
+                await _receive_initial_metadata(self, self._loop)
+            )
+        except ExecuteBatchError as batch_error:
+            # Core should explain why this batch failed
+            await status_task
+
+            # Allow upper layer to proceed only if the status is set
+            metadata_sent_observer()

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import grpc
+from grpc.experimental import aio
 from grpc.experimental.aio._typing import MetadataType, MetadatumType
 
 
@@ -22,3 +24,11 @@ def seen_metadata(expected: MetadataType, actual: MetadataType):
 def seen_metadatum(expected: MetadatumType, actual: MetadataType):
     metadata_dict = dict(actual)
     return metadata_dict.get(expected[0]) == expected[1]
+
+
+async def block_until_certain_state(channel: aio.Channel,
+                                    expected_state: grpc.ChannelConnectivity):
+    state = channel.get_state()
+    while state != expected_state:
+        await channel.wait_for_state_change(state)
+        state = channel.get_state()
