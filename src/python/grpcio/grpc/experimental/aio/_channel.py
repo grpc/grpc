@@ -29,7 +29,6 @@ from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
                       SerializingFunction)
 from ._utils import _timeout_to_deadline
 
-_TIMEOUT_WAIT_FOR_CLOSE_ONGOING_CALLS_SEC = 0.1
 _IMMUTABLE_EMPTY_TUPLE = tuple()
 
 _LOGGER = logging.getLogger(__name__)
@@ -402,16 +401,7 @@ class Channel:
         calls = self._ongoing_calls.calls
         for call in calls:
             call.cancel()
-
-        try:
-            await asyncio.wait_for(asyncio.gather(*self._ongoing_calls.calls,
-                                                  loop=self._loop),
-                                   _TIMEOUT_WAIT_FOR_CLOSE_ONGOING_CALLS_SEC,
-                                   loop=self._loop)
-        except asyncio.TimeoutError:
-            _LOGGER.warning("Closing channel %s, closing RPCs timed out",
-                            str(self))
-
+  
         self._channel.close()
 
     async def close(self, grace: Optional[float] = None):
