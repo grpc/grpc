@@ -129,9 +129,11 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            # NOTE: This URL generates a tarball containing dynamic date
-            # information, so the sha256 is not consistent.
-            url = "https://boringssl.googlesource.com/boringssl/+archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz",
+            # Use github mirror instead of https://boringssl.googlesource.com/boringssl
+            # to obtain a boringssl archive with consistent sha256
+            sha256 = "a3d4de4f03cb321ef943678d72a045c9a19d26b23d6f4e313f97600c65201a27",
+            strip_prefix = "boringssl-1c2769383f027befac5b75b6cedd25daf3bf4dcf",
+            url = "https://github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz",
         )
 
     if "zlib" not in native.existing_rules():
