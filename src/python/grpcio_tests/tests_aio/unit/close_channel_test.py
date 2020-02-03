@@ -16,6 +16,7 @@
 import asyncio
 import logging
 import unittest
+from weakref import WeakSet
 
 import grpc
 from grpc.experimental import aio
@@ -32,36 +33,43 @@ _UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
 
 class TestOngoingCalls(unittest.TestCase):
 
+    class FakeCall(_base_call.RpcContext):
+
+        def add_done_callback(self, callback):
+            self.callback = callback
+
+        def cancel(self):
+            raise NotImplementedError
+
+        def cancelled(self):
+            raise NotImplementedError
+
+        def done(self):
+            raise NotImplementedError
+
+        def time_remaining(self):
+            raise NotImplementedError
+
     def test_trace_call(self):
-
-        class FakeCall(_base_call.RpcContext):
-
-            def add_done_callback(self, callback):
-                self.callback = callback
-
-            def cancel(self):
-                raise NotImplementedError
-
-            def cancelled(self):
-                raise NotImplementedError
-
-            def done(self):
-                raise NotImplementedError
-
-            def time_remaining(self):
-                raise NotImplementedError
-
         ongoing_calls = _OngoingCalls()
         self.assertEqual(ongoing_calls.size(), 0)
 
-        call = FakeCall()
+        call = TestOngoingCalls.FakeCall()
         ongoing_calls.trace_call(call)
         self.assertEqual(ongoing_calls.size(), 1)
-        self.assertEqual(ongoing_calls.calls, set([call]))
+        self.assertEqual(ongoing_calls.calls, WeakSet([call]))
 
         call.callback(call)
         self.assertEqual(ongoing_calls.size(), 0)
-        self.assertEqual(ongoing_calls.calls, set())
+        self.assertEqual(ongoing_calls.calls, WeakSet())
+
+    def test_deleted_call(self):
+        ongoing_calls = _OngoingCalls()
+
+        call = TestOngoingCalls.FakeCall()
+        ongoing_calls.trace_call(call)
+        del(call)
+        self.assertEqual(ongoing_calls.size(), 0)
 
 
 class TestCloseChannel(AioTestBase):

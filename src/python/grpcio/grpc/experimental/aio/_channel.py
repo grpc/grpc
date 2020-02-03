@@ -13,7 +13,8 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
-from typing import Any, AsyncIterable, Optional, Sequence, Set, Text
+from typing import Any, AsyncIterable, Optional, Sequence, AbstractSet, Text
+from weakref import WeakSet
 
 import logging
 import grpc
@@ -37,10 +38,10 @@ _LOGGER = logging.getLogger(__name__)
 class _OngoingCalls:
     """Internal class used for have visibility of the ongoing calls."""
 
-    _calls: Set[_base_call.RpcContext]
+    _calls: AbstractSet[_base_call.RpcContext]
 
     def __init__(self):
-        self._calls = set()
+        self._calls = WeakSet()
 
     def _remove_call(self, call: _base_call.RpcContext):
         self._calls.remove(call)
@@ -401,7 +402,7 @@ class Channel:
         # A new set is created acting as a shallow copy because
         # when cancellation happens the calls are automatically
         # removed from the originally set.
-        calls = set(self._ongoing_calls.calls)
+        calls = WeakSet(data=self._ongoing_calls.calls)
         for call in calls:
             call.cancel()
   
