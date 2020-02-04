@@ -120,13 +120,10 @@ void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
 void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
                       const Json::Object& metadata) {
   for (const auto& p : metadata) {
-    google_protobuf_Struct_FieldsEntry* field =
-        google_protobuf_Struct_add_fields(metadata_pb, arena);
-    google_protobuf_Struct_FieldsEntry_set_key(
-        field, upb_strview_makez(p.first.c_str()));
-    google_protobuf_Value* value =
-        google_protobuf_Struct_FieldsEntry_mutable_value(field, arena);
+    google_protobuf_Value* value = google_protobuf_Value_new(arena);
     PopulateMetadataValue(arena, value, p.second);
+    google_protobuf_Struct_fields_set(
+        metadata_pb, upb_strview_makez(p.first.c_str()), value, arena);
   }
 }
 
