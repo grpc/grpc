@@ -78,7 +78,7 @@ class XdsStatsWatcher {
   XdsStatsWatcher(int start_id, int end_id)
       : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {}
 
-  void RpcCompleted(int request_id, std::string peer) {
+  void RpcCompleted(int request_id, const std::string& peer) {
     if (start_id_ <= request_id && request_id < end_id_) {
       {
         std::lock_guard<std::mutex> lk(m_);
@@ -183,7 +183,7 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
   }
 };
 
-void RunTestLoop(std::string server,
+void RunTestLoop(const std::string& server,
                  std::chrono::duration<double> duration_per_query) {
   TestClient client(
       grpc::CreateChannel(server, grpc::InsecureChannelCredentials()));
