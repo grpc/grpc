@@ -89,7 +89,7 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
     async def _send_request(self):
         start_time = time.time()
         await self._stub.UnaryCall(self._request)
-        self._record_query_time(self, time.time() - start_time)
+        self._record_query_time(time.time() - start_time)
 
     async def _infinite_sender(self) -> None:
         while self._running:
@@ -99,7 +99,7 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
         await super().run()
         self._running = True
         senders = (self._infinite_sender() for _ in range(self._concurrency))
-        await asyncio.wait(senders)
+        await asyncio.gather(*senders)
         self._stopped.set()
     
     async def stop(self) -> None:
@@ -121,7 +121,7 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
             start_time = time.time()
             await call.write(self._request)
             await call.read()
-            self._record_query_time(self, time.time() - start_time)
+            self._record_query_time(time.time() - start_time)
 
     async def run(self):
         await super().run()

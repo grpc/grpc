@@ -30,6 +30,8 @@ from tests_aio.benchmark import benchmark_client, benchmark_servicer
 _NUM_CORES = multiprocessing.cpu_count()
 _NUM_CORE_PYTHON_CAN_USE = 1
 
+_LOGGER = logging.getLogger(__name__)
+
 
 def _get_server_status(start_time: float, end_time: float, port: int) -> control_pb2.ServerStatus:
     end_time = time.time()
@@ -42,7 +44,7 @@ def _get_server_status(start_time: float, end_time: float, port: int) -> control
 
 def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
     if config.async_server_threads != 1:
-        logging.warning('config.async_server_threads [%d] != 1', config.async_server_threads)
+        _LOGGER.warning('config.async_server_threads [%d] != 1', config.async_server_threads)
 
     server = aio.server()
     if config.server_type == control_pb2.ASYNC_SERVER:
@@ -114,9 +116,12 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
 
     async def RunServer(self, request_iterator, context):
         config = (await context.read()).setup
+        _LOGGER.info('Received ServerConfig: %s', config)
 
         server, port = _create_server(config)
         await server.start()
+        _LOGGER.info('Server started at port [%d]', port)
+
         start_time = time.time()
         yield _get_server_status(start_time, start_time, port)
 
@@ -130,6 +135,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
 
     async def RunClient(self, request_iterator, context):
         config = (await context.read()).setup
+        _LOGGER.info('Received ClientConfig: %s', config)
 
         running_tasks = []
         qps_data = histogram.Histogram(config.histogram_params.resolution,
@@ -140,6 +146,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         for i in range(config.client_channels):
             server = config.server_targets[i % len(config.server_targets)]
             client = _create_client(server, config, qps_data)
+            _LOGGER.info('Client created against server [%s]', server)
             running_tasks.append(self._loop.create_task(client.run()))
 
         end_time = time.time()
@@ -162,6 +169,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         return control_pb2.CoreResponse(cores=_NUM_CORES)
 
     async def QuitWorker(self, request, context):
+        _LOGGER.info('QuitWorker command received.')
         self._quit_event.set()
         return control_pb2.Void()
 

@@ -39,7 +39,7 @@ async def run_worker_server(port: int) -> None:
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     parser = argparse.ArgumentParser(
         description='gRPC Python performance testing worker')
     parser.add_argument('--driver_port',
