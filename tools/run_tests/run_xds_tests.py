@@ -495,8 +495,9 @@ def start_xds_client():
     bootstrap_path = None
     with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
         bootstrap_file.write(
-            BOOTSTRAP_TEMPLATE.format(node_id=socket.gethostname()))
-        bootstrap_path = boostrap_file.name
+            BOOTSTRAP_TEMPLATE.format(
+                node_id=socket.gethostname()).encode('utf-8'))
+        bootstrap_path = bootstrap_file.name
 
     client_process = subprocess.Popen(shlex.split(cmd),
                                       env=dict(
