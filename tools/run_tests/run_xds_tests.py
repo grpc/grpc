@@ -493,7 +493,7 @@ def start_xds_client():
                             stats_port=STATS_PORT,
                             qps=QPS)
     bootstrap_path = None
-    with bootstrap_file as tempfile.NamedTemporaryFile(delete=False):
+    with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
         bootstrap_file.write(
             BOOTSTRAP_TEMPLATE.format(node_id=socket.gethostname()))
         bootstrap_path = boostrap_file.name
