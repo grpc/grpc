@@ -56,14 +56,14 @@ class BenchmarkClient(abc.ABC):
             self._stub = benchmark_service_pb2_grpc.BenchmarkServiceStub(
                 self._channel)
             payload = messages_pb2.Payload(
-                body='\0' * config.payload_config.simple_params.req_size)
+                body=b'\0' * config.payload_config.simple_params.req_size)
             self._request = messages_pb2.SimpleRequest(
                 payload=payload,
                 response_size=config.payload_config.simple_params.resp_size)
         else:
             self._generic = True
             self._stub = GenericStub(self._channel)
-            self._request = '\0' * config.payload_config.bytebuf_params.req_size
+            self._request = b'\0' * config.payload_config.bytebuf_params.req_size
 
         self._hist = hist
         self._response_callbacks = []
