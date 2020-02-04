@@ -278,8 +278,11 @@ _BUILD_EXTRA_METADATA = {
     'src/compiler:grpc_ruby_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_ruby_plugin' },
 
     #'grpc++_core_stats', TODO: whis is this library not build:all?
+    # TODO: tools
+
 
     'test/core/util:grpc_test_util': { 'language': 'c', 'build': 'private', '_RENAME': 'grpc_test_util' },
+    # TODO: grpc_test_util_unsecure
     'test/core/avl:avl_test': { 'language': 'c', 'build': 'test', '_TYPE': 'target', '_RENAME': 'avl_test' },
     'test/core/slice:slice_test': { 'language': 'c', 'build': 'test', '_TYPE': 'target', '_RENAME': 'slice_test' },
 
@@ -290,6 +293,15 @@ _BUILD_EXTRA_METADATA = {
 
     #'test/cpp/interop:interop_test',  no good, uses binaries as data...
 }
+
+# TODO: remaining tools
+# test/core/security:create_jwt  grpc_create_jwt
+# test/core/security:verify_jwt  grpc_verify_jwt
+# grpc_print_google_default_creds_token  ? add it?
+
+# TODO: grpc_cli
+# test/cpp/util:grpc_cli
+
 
 lib_dict = _generate_build_metadata(_BUILD_EXTRA_METADATA.keys())
 build_yaml_like = _convert_to_build_yaml_like(lib_dict)
