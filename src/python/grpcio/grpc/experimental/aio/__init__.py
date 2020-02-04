@@ -26,7 +26,7 @@ from grpc._cython.cygrpc import EOF, AbortError, init_grpc_aio
 
 from ._base_call import Call, RpcContext, UnaryStreamCall, UnaryUnaryCall
 from ._call import AioRpcError
-from ._channel import Channel, UnaryUnaryMultiCallable
+from ._channel import Channel, UnaryUnaryMultiCallable, channel_ready
 from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
                            UnaryUnaryClientInterceptor)
 from ._server import Server, server
@@ -88,4 +88,4 @@ __all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
            'UnaryUnaryMultiCallable', 'ClientCallDetails',
            'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
            'insecure_channel', 'server', 'Server', 'EOF', 'secure_channel',
-           'AbortError')
+           'AbortError', 'channel_ready')
