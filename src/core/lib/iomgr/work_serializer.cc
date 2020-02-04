@@ -33,7 +33,7 @@ struct CallbackWrapper {
   const DebugLocation location;
 };
 
-class WorkSerializerImpl : public Orphanable {
+class WorkSerializer::WorkSerializerImpl : public Orphanable {
  public:
   void Run(std::function<void()> callback,
            const grpc_core::DebugLocation& location);
@@ -49,8 +49,8 @@ class WorkSerializerImpl : public Orphanable {
   MultiProducerSingleConsumerQueue queue_;
 };
 
-void WorkSerializerImpl::Run(std::function<void()> callback,
-                             const grpc_core::DebugLocation& location) {
+void WorkSerializer::WorkSerializerImpl::Run(
+    std::function<void()> callback, const grpc_core::DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
@@ -79,7 +79,7 @@ void WorkSerializerImpl::Run(std::function<void()> callback,
   }
 }
 
-void WorkSerializerImpl::Orphan() {
+void WorkSerializer::WorkSerializerImpl::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
   }
@@ -96,7 +96,7 @@ void WorkSerializerImpl::Orphan() {
 // execute all the scheduled callback. This is called from within
 // WorkSerializer::Run() after executing a callback immediately, and hence size_
 // is at least 1.
-void WorkSerializerImpl::DrainQueue() {
+void WorkSerializer::WorkSerializerImpl::DrainQueue() {
   while (true) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "WorkSerializer::DrainQueue() %p", this);

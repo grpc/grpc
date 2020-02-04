@@ -33,8 +33,6 @@
 
 namespace grpc_core {
 
-class WorkSerializerImpl;
-
 // WorkSerializer is a mechanism to schedule callbacks in a synchronized manner.
 // All callbacks scheduled on a WorkSerializer instance will be executed
 // serially in a borrowed thread. The API provides a FIFO guarantee to the
@@ -57,6 +55,8 @@ class WorkSerializer {
            const grpc_core::DebugLocation& location);
 
  private:
+  class WorkSerializerImpl;
+
   OrphanablePtr<WorkSerializerImpl> impl_;
 };
 
