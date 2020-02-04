@@ -161,10 +161,11 @@ Please note that when using Ninja, you will still need Visual C++ (part of Visua
 installed to be able to compile the C/C++ sources.
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
-> md .build
-> cd .build
+> cd cmake
+> md build
+> cd build
 > call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
-> cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+> cmake ..\.. -GNinja -DCMAKE_BUILD_TYPE=Release
 > cmake --build .
 ```
 
@@ -198,7 +199,8 @@ mode (rather than "module" mode) for the dependencies.
 This means you will need to have external copies of these libraries available
 on your system.
 ```
-$ cmake .. -DgRPC_CARES_PROVIDER=package    \
+$ cmake ../.. -DgRPC_INSTALL=ON             \
+           -DgRPC_CARES_PROVIDER=package    \
            -DgRPC_PROTOBUF_PROVIDER=package \
            -DgRPC_SSL_PROVIDER=package      \
            -DgRPC_ZLIB_PROVIDER=package
@@ -222,7 +224,7 @@ that will be used for this build.
 This toolchain file is specified to CMake by setting the `CMAKE_TOOLCHAIN_FILE`
 variable.
 ```
-$ cmake .. -DCMAKE_TOOLCHAIN_FILE=path/to/file
+$ cmake ../.. -DCMAKE_TOOLCHAIN_FILE=path/to/file
 $ make
 ```
 
