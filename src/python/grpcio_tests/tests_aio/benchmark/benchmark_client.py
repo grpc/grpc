@@ -54,7 +54,7 @@ class BenchmarkClient(abc.ABC):
         if config.payload_config.WhichOneof('payload') == 'simple_params':
             self._generic = False
             self._stub = benchmark_service_pb2_grpc.BenchmarkServiceStub(
-                channel)
+                self._channel)
             payload = messages_pb2.Payload(
                 body='\0' * config.payload_config.simple_params.req_size)
             self._request = messages_pb2.SimpleRequest(
@@ -62,7 +62,7 @@ class BenchmarkClient(abc.ABC):
                 response_size=config.payload_config.simple_params.resp_size)
         else:
             self._generic = True
-            self._stub = GenericStub(channel)
+            self._stub = GenericStub(self._channel)
             self._request = '\0' * config.payload_config.bytebuf_params.req_size
 
         self._hist = hist
