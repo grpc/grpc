@@ -123,7 +123,7 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
                  request: Any,
                  *,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
+                 metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -151,9 +151,6 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if metadata is None:
-            metadata = _IMMUTABLE_EMPTY_TUPLE
-
         if compression:
             metadata = _compression.augment_metadata(metadata, compression)
 
@@ -181,7 +178,7 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
                  request: Any,
                  *,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
+                 metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -204,9 +201,6 @@ class UnaryStreamMultiCallable(_BaseMultiCallable):
         Returns:
           A Call object instance which is an awaitable object.
         """
-        if metadata is None:
-            metadata = _IMMUTABLE_EMPTY_TUPLE
-
         if compression:
             metadata = _compression.augment_metadata(metadata, compression)
 
@@ -226,7 +220,7 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
     def __call__(self,
                  request_async_iterator: Optional[AsyncIterable[Any]] = None,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
+                 metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -254,9 +248,6 @@ class StreamUnaryMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if metadata is None:
-            metadata = _IMMUTABLE_EMPTY_TUPLE
-
         if compression:
             metadata = _compression.augment_metadata(metadata, compression)
 
@@ -276,7 +267,7 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
     def __call__(self,
                  request_async_iterator: Optional[AsyncIterable[Any]] = None,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
+                 metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -304,9 +295,6 @@ class StreamStreamMultiCallable(_BaseMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        if metadata is None:
-            metadata = _IMMUTABLE_EMPTY_TUPLE
-
         if compression:
             metadata = _compression.augment_metadata(metadata, compression)
 
