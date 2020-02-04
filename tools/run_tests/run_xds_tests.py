@@ -194,7 +194,7 @@ def create_instance_template(compute, name, grpc_port, project):
             'tags': {
                 'items': ['grpc-allow-healthcheck']
             },
-            'machineType': 'e2-standard-1',
+            'machineType': 'e2-standard-2',
             'serviceAccounts': [{
                 'email': 'default',
                 'scopes': ['https://www.googleapis.com/auth/cloud-platform',]
