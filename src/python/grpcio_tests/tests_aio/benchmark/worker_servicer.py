@@ -95,7 +95,7 @@ def _create_client(server: str, config: control_pb2.ClientConfig, qps_data: hist
     if config.client_type == control_pb2.ASYNC_CLIENT:
         if config.rpc_type == control_pb2.UNARY:
             client_type = benchmark_client.UnaryAsyncBenchmarkClient
-        if config.rpc_type == control_pb2.STREAMING:
+        elif config.rpc_type == control_pb2.STREAMING:
             client_type = benchmark_client.StreamingAsyncBenchmarkClient
         else:
             raise NotImplementedError(f'Unsupported rpc_type [{config.rpc_type}]')
@@ -126,7 +126,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             if request.mark.reset:
                 start_time = end_time
             yield status
-        server.stop(None)
+        await server.stop(None)
 
     async def RunClient(self, request_iterator, context):
         config = (await context.read()).setup
