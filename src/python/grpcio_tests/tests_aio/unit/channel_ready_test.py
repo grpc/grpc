@@ -41,7 +41,7 @@ class TestChannelReady(AioTestBase):
     async def test_channel_ready_success(self):
         # Start `channel_ready` as another Task
         channel_ready_task = self.loop.create_task(
-            aio.channel_ready(self._channel))
+            self._channel.channel_ready())
 
         # Wait for TRANSIENT_FAILURE
         await _common.block_until_certain_state(
@@ -54,12 +54,11 @@ class TestChannelReady(AioTestBase):
             # The RPC should recover itself
             await channel_ready_task
         finally:
-            if server is not None:
-                await server.stop(None)
+            await server.stop(None)
 
     async def test_channel_ready_blocked(self):
         with self.assertRaises(asyncio.TimeoutError):
-            await asyncio.wait_for(aio.channel_ready(self._channel),
+            await asyncio.wait_for(self._channel.channel_ready(),
                                    test_constants.SHORT_TIMEOUT)
 
 
