@@ -37,7 +37,7 @@ cdef class _HandlerCallDetails:
         self.invocation_metadata = invocation_metadata
 
 
-class _ServerStoppedError(RuntimeError):
+class _ServerStoppedError(BaseError):
     """Raised if the server is stopped."""
 
 
@@ -77,7 +77,7 @@ cdef class RPCState:
         if self.abort_exception is not None:
             raise self.abort_exception
         if self.status_sent:
-            raise RuntimeError(_RPC_FINISHED_DETAILS)
+            raise UsageError(_RPC_FINISHED_DETAILS)
         if self.server._status == AIO_SERVER_STATUS_STOPPED:
             raise _ServerStoppedError(_SERVER_STOPPED_DETAILS)
 
@@ -105,11 +105,6 @@ cdef class RPCState:
         grpc_metadata_array_destroy(&self.request_metadata)
         if self.call:
             grpc_call_unref(self.call)
-
-
-# TODO(lidiz) inherit this from Python level `AioRpcStatus`, we need to improve
-# current code structure to make it happen.
-class AbortError(Exception): pass
 
 
 cdef class _ServicerContext:
@@ -155,7 +150,7 @@ cdef class _ServicerContext:
         self._rpc_state.raise_for_termination()
 
         if self._rpc_state.metadata_sent:
-            raise RuntimeError('Send initial metadata failed: already sent')
+            raise UsageError('Send initial metadata failed: already sent')
         else:
             await _send_initial_metadata(
                 self._rpc_state,
@@ -170,7 +165,7 @@ cdef class _ServicerContext:
               str details='',
               tuple trailing_metadata=_IMMUTABLE_EMPTY_METADATA):
         if self._rpc_state.abort_exception is not None:
-            raise RuntimeError('Abort already called!')
+            raise UsageError('Abort already called!')
         else:
             # Keeps track of the exception object. After abort happen, the RPC
             # should stop execution. However, if users decided to suppress it, it
@@ -579,7 +574,7 @@ cdef CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = CallbackFailureHandle
 cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_server_shutdown_and_notify',
     None,
-    RuntimeError)
+    InternalError)
 
 
 cdef class AioServer:
@@ -642,7 +637,7 @@ cdef class AioServer:
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
-            raise RuntimeError("Error in grpc_server_request_call: %s" % error)
+            raise InternalError("Error in grpc_server_request_call: %s" % error)
 
         await future
         return rpc_state
@@ -692,7 +687,7 @@ cdef class AioServer:
         if self._status == AIO_SERVER_STATUS_RUNNING:
             return
         elif self._status != AIO_SERVER_STATUS_READY:
-            raise RuntimeError('Server not in ready state')
+            raise UsageError('Server not in ready state')
 
         self._status = AIO_SERVER_STATUS_RUNNING
         cdef object server_started = self._loop.create_future()
@@ -788,11 +783,7 @@ cdef class AioServer:
         return True
 
     def __dealloc__(self):
-        """Deallocation of Core objects are ensured by Python grpc.aio.Server.
-
-        If the Cython representation is deallocated without underlying objects
-        freed, raise an RuntimeError.
-        """
+        """Deallocation of Core objects are ensured by Python layer."""
         # TODO(lidiz) if users create server, and then dealloc it immediately.
         # There is a potential memory leak of created Core server.
         if self._status != AIO_SERVER_STATUS_STOPPED:

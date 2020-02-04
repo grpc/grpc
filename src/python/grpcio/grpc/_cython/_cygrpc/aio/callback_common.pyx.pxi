@@ -66,7 +66,7 @@ cdef class CallbackWrapper:
 cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_completion_queue_shutdown',
     'Unknown',
-    RuntimeError)
+    InternalError)
 
 
 cdef class CallbackCompletionQueue:
