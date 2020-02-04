@@ -17,13 +17,22 @@ import subprocess
 import yaml
 
 
+def _get_bazel_label(target_name):
+    if ':' in target_name:
+        return '//%s' % target_name
+    else:
+        return '//:%s' % target_name
+
+
 def _get_bazel_deps(target_name):
+    """Get transitive dependencies from bazel by running 'bazel query deps()'"""
     query = 'deps("%s")' % _get_bazel_label(target_name)
     output = subprocess.check_output(['tools/bazel', 'query', '--noimplicit_deps', '--output', 'label_kind', query])
     return output.splitlines()
 
 
 def _extract_source_file_path(label):
+    """Gets relative path to source file from bazel deps listing"""
     if label.startswith('source file //'):
         label = label[len('source file //'):]
     # labels in form //:src/core/lib/surface/call_test_only.h
@@ -34,14 +43,8 @@ def _extract_source_file_path(label):
     return label
 
 
-def _get_bazel_label(target_name):
-    if ':' in target_name:
-        return '//%s' % target_name
-    else:
-        return '//:%s' % target_name
-
-
 def _extract_public_headers(deps):
+    """Gets list of public headers from bazel deps listing"""
     result = []
     for dep in deps:
         if dep.startswith('source file //:include/') and dep.endswith('.h'):
@@ -50,6 +53,7 @@ def _extract_public_headers(deps):
 
 
 def _extract_nonpublic_headers(deps):
+    """Gets list of non-public headers from bazel deps listing"""
     result = []
     for dep in deps:
         if dep.startswith('source file //') and not dep.startswith('source file //:include/') and dep.endswith('.h'):
@@ -58,6 +62,7 @@ def _extract_nonpublic_headers(deps):
 
 
 def _extract_sources(deps):
+    """Gets list of source files from bazel deps listing"""
     result = []
     for dep in deps:
         if dep.startswith('source file //') and (dep.endswith('.cc') or dep.endswith('.c') or dep.endswith('.proto')):
@@ -66,30 +71,43 @@ def _extract_sources(deps):
 
 
 def _extract_cc_deps(deps):
+    """Gets list of cc_library dependencies from bazel deps listing"""
     result = []
     for dep in deps:
         if dep.startswith('cc_library rule '):
             prefixlen = len('cc_library rule ')
             result.append(dep[prefixlen:])
-    # TODO :remove itself from the deps?
-
     return list(sorted(result))
 
 
-def _deps_sorted_reverse_topologically(lib_names, lib_dict):
-    # TODO: actually implement this
-    # expected output: if library A depends on B, A should be listed first
-    result = list(sorted(lib_names))
-    result.reverse()
+def _sort_by_build_order(lib_names, lib_dict):
+    """Sort library names to form correct build order. Use metadata from lib_dict"""
+    # we find correct build order by performing a topological sort
+    # expected output: if library B depends on A, A should be listed first
+    
+    # all libs that are not in the dictionary are considered external.
+    external_deps = list(sorted(filter(lambda lib_name: lib_name not in lib_dict, lib_names)))
+
+    result = list(external_deps)  # external deps will be listed first
+    while len(result) < len(lib_names):
+        more_results = []
+        for lib in lib_names:
+            if lib not in result:
+                dep_set = set(lib_dict[lib]['deps']).intersection(lib_names)
+                if not dep_set.difference(set(result)):
+                    more_results.append(lib)
+        if not more_results:
+            raise Exception('Cannot sort topologically, there seems to be a cyclic dependency')
+        result = result + list(sorted(more_results))  # when build order doesn't matter, sort lexicographically
     return result
 
 
-def _get_target_metadata_from_bazel(lib_name):
+def _get_target_metadata_from_bazel(target_name):
     # extract the deps from bazel
-    deps = _get_bazel_deps(lib_name)
+    deps = _get_bazel_deps(target_name)
 
     lib_dict = {}
-    lib_dict['name'] = lib_name
+    lib_dict['name'] = target_name
     lib_dict['public_headers_transitive'] = _extract_public_headers(deps)
     lib_dict['headers_transitive'] = _extract_nonpublic_headers(deps)
     lib_dict['src_transitive'] = _extract_sources(deps)
@@ -102,15 +120,16 @@ def _get_target_metadata_from_bazel(lib_name):
     # TODO: only set secure if uses boringssl directly, not transitively
     lib_dict['secure'] = depends_on_boringssl
 
-    extra_props = _LIBS_EXTRA_PROPERTIES.get(lib_name, {})
-    lib_dict.update(extra_props)
-
     return lib_dict
 
 def _get_primitive_libs(lib_names):
     result = {}
     for lib_name in lib_names:
         result[lib_name] = _get_target_metadata_from_bazel(lib_name)
+
+    # populate extra properties from build metadata
+    for lib_name in lib_names:
+        result[lib_name].update(_BUILD_METADATA.get(lib_name, {}))
 
     # initialize the non-transitive fields
     for lib_name in lib_names:
@@ -145,11 +164,6 @@ def _get_primitive_libs(lib_names):
                 # add the dependency on that library
                 lib_dict['deps'] = lib_dict['deps'] + [dep_name]
 
-    # make sure deps are listed in reverse topological order (e.g. "grpc gpr" and not "gpr grpc")
-    for lib_name in lib_names:
-        lib_dict = result[lib_name]
-        lib_dict['deps'] = _deps_sorted_reverse_topologically(lib_dict['deps'], result)
-
     # strip the transitive fields
     for lib_name in lib_names:
         lib_dict = result[lib_name]
@@ -161,7 +175,7 @@ def _get_primitive_libs(lib_names):
     # rename some targets to something else
     # TODO(jtattermusch): cleanup this code
     for lib_name in lib_names:
-        to_name = _RENAME_TARGETS_DICT.get(lib_name, None)
+        to_name = _BUILD_METADATA.get(lib_name, {}).get('_RENAME', None)
         if to_name:
             lib_dict = result.pop(lib_name)
             lib_dict['name'] = to_name
@@ -171,18 +185,32 @@ def _get_primitive_libs(lib_names):
             for lib_dict_to_update in result.values():
                 lib_dict_to_update['deps'] = list(map(lambda dep: to_name if dep == lib_name else dep, lib_dict_to_update['deps']))
 
+    # make sure deps are listed in reverse topological order (e.g. "grpc gpr" and not "gpr grpc")
+    for lib_dict in result.itervalues():
+        lib_dict['deps'] = list(reversed(_sort_by_build_order(lib_dict['deps'], result)))
+
     return result
 
 
 def _convert_to_build_yaml_like(lib_dict):
-    lib_list = list(filter(lambda lib: lib.get('TYPE', 'library') == 'library' , lib_dict.values()))
-    target_list = list(filter(lambda lib: lib.get('TYPE', 'library') == 'target' , lib_dict.values()))
+    lib_names = list(filter(lambda lib_name: lib_dict[lib_name].get('TYPE', 'library') == 'library' , lib_dict.keys()))
+    target_names = list(filter(lambda lib_name: lib_dict[lib_name].get('TYPE', 'library') == 'target' , lib_dict.keys()))
+
+    # make sure libraries come in build order (seems to be required by Makefile)
+    lib_names = _sort_by_build_order(lib_names, lib_dict)
+    target_names = _sort_by_build_order(target_names, lib_dict)
+
+    # list libraries and targets in predefined order
+    lib_list = list(map(lambda lib_name: lib_dict[lib_name], lib_names))
+    target_list = list(map(lambda lib_name: lib_dict[lib_name], target_names))
     
     # get rid of the "TYPE" field
     for lib in lib_list:
-        lib.pop('TYPE', None)
+        lib.pop('_TYPE', None)
+        lib.pop('_RENAME', None)
     for target in target_list:
-        target.pop('TYPE', None)
+        target.pop('_TYPE', None)
+        target.pop('_RENAME', None)
         target.pop('public_headers', None)  # public headers make no sense for targets
     
     build_yaml_like = {
@@ -194,40 +222,13 @@ def _convert_to_build_yaml_like(lib_dict):
     return build_yaml_like
 
 
-# TODO: these are mostly "public libraries", in build.yaml they are as "build: all"
-_PRIMITIVE_LIBS = [
-    # TODO: translate name to address_sorting
-    'third_party/address_sorting:address_sorting',  # technically doesn't belong here but it's defined like that in original build.yaml
-    'gpr',
-    'grpc',
-    'grpc++',
-    'grpc++_alts',
-    'grpc++_error_details',
-    'grpc++_reflection',
-    'grpc++_unsecure',
-    #'grpc_cronet' (no corresponding target in BUILD?)
-    'grpc_csharp_ext',
-    'grpc_unsecure',
-    'grpcpp_channelz',
-
-
-     # technically doesn't belong here
-    'src/compiler:grpc_plugin_support', 
-    'src/compiler:grpc_cpp_plugin',
-    'src/compiler:grpc_csharp_plugin',
-    'src/compiler:grpc_node_plugin',
-    'src/compiler:grpc_objective_c_plugin',
-    'src/compiler:grpc_php_plugin',
-    'src/compiler:grpc_python_plugin',
-    'src/compiler:grpc_ruby_plugin',
-    
-    #'grpc++_core_stats', TODO: is not build:all?
-    #grpc++_proto_reflection_desc_db (no corresponding target in BUILD)
-    ]
-
-#dll: only, true, false:   manual?
-_LIBS_EXTRA_PROPERTIES = {
-    'third_party/address_sorting:address_sorting': { 'language': 'c', 'build': 'all' },
+# extra metadata that will be used to construct build.yaml
+# there are mostly extra properties that we weren't able to obtain from the bazel build
+# _TYPE: whether this is library, target or test
+# _RENAME: whether this target should be renamed to a different name (to match expectations of make and cmake builds)
+# TODO: dll: only, true, false: set manually?
+_BUILD_METADATA = {
+    'third_party/address_sorting:address_sorting': { 'language': 'c', 'build': 'all', '_RENAME': 'address_sorting' },
     'gpr': { 'language': 'c', 'build': 'all' },
     'grpc': { 'language': 'c', 'build': 'all', 'baselib': True, 'generate_plugin_registry': True},  # TODO: get list of plugins
     'grpc++': { 'language': 'c++', 'build': 'all', 'baselib': True },
@@ -238,28 +239,19 @@ _LIBS_EXTRA_PROPERTIES = {
     'grpc_csharp_ext': { 'language': 'c', 'build': 'all' },
     'grpc_unsecure': { 'language': 'c', 'build': 'all', 'baselib': True, 'generate_plugin_registry': True},  # TODO: get list of plugins
     'grpcpp_channelz': { 'language': 'c++', 'build': 'all' },
+    #'grpc_cronet' (no corresponding target in BUILD?)
 
-    'src/compiler:grpc_plugin_support': { 'language': 'c++', 'build': 'protoc' },
-    'src/compiler:grpc_cpp_plugin': { 'language': 'c++', 'build': 'protoc', 'TYPE': 'target' },
-    'src/compiler:grpc_csharp_plugin': { 'language': 'c++', 'build': 'protoc', 'TYPE': 'target' },
-    'src/compiler:grpc_node_plugin': { 'language': 'c++', 'build': 'protoc', 'TYPE': 'target' },
-    'src/compiler:grpc_objective_c_plugin': { 'language': 'c++', 'build': 'protoc', 'TYPE': 'target' },
-    'src/compiler:grpc_php_plugin': { 'language': 'c++', 'build': 'protoc', 'TYPE': 'target' },
-    'src/compiler:grpc_python_plugin': { 'language': 'c++', 'build': 'protoc', 'TYPE': 'target' },
-    'src/compiler:grpc_ruby_plugin': { 'language': 'c++', 'build': 'protoc', 'TYPE': 'target' },
-}
+    'src/compiler:grpc_plugin_support': { 'language': 'c++', 'build': 'protoc', '_RENAME': 'grpc_plugin_support' },
+    'src/compiler:grpc_cpp_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_cpp_plugin' },
+    'src/compiler:grpc_csharp_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_csharp_plugin' },
+    'src/compiler:grpc_node_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_node_plugin' },
+    'src/compiler:grpc_objective_c_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_objective_c_plugin' },
+    'src/compiler:grpc_php_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_php_plugin' },
+    'src/compiler:grpc_python_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_python_plugin' },
+    'src/compiler:grpc_ruby_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_ruby_plugin' },
 
-# rename the targets from the name used by bazel to format used historically by build.yaml
-_RENAME_TARGETS_DICT ={
-    'third_party/address_sorting:address_sorting': 'address_sorting',
-    'src/compiler:grpc_plugin_support': 'grpc_plugin_support',
-    'src/compiler:grpc_cpp_plugin': 'grpc_cpp_plugin',
-    'src/compiler:grpc_csharp_plugin': 'grpc_csharp_plugin',
-    'src/compiler:grpc_node_plugin': 'grpc_node_plugin',
-    'src/compiler:grpc_objective_c_plugin': 'grpc_objective_c_plugin',
-    'src/compiler:grpc_php_plugin': 'grpc_php_plugin',
-    'src/compiler:grpc_python_plugin': 'grpc_python_plugin',
-    'src/compiler:grpc_ruby_plugin': 'grpc_ruby_plugin',
+    #'grpc++_core_stats', TODO: is not build:all?
+    #grpc++_proto_reflection_desc_db (no corresponding target in BUILD)
 }
 
 # random selection of tests to verify that things build just fine
@@ -285,7 +277,7 @@ _TESTS = [
 # @com_google_protobuf//
 # TODO: gtest
 
-lib_dict = _get_primitive_libs(_PRIMITIVE_LIBS)
+lib_dict = _get_primitive_libs(_BUILD_METADATA.keys())
 build_yaml_like = _convert_to_build_yaml_like(lib_dict)
 
 with open('build_autogenerated.yaml', 'w') as file:
