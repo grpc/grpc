@@ -162,6 +162,12 @@ class InlinedVector {
     size_--;
   }
 
+  T& front() { return data()[0]; }
+  const T& front() const { return data()[0]; }
+
+  T& back() { return data()[size_ - 1]; }
+  const T& back() const { return data()[size_ - 1]; }
+
   size_t size() const { return size_; }
   bool empty() const { return size_ == 0; }
 

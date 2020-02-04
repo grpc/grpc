@@ -74,12 +74,12 @@ namespace {
 
 constexpr char kXds[] = "xds_experimental";
 
-class ParsedXdsConfig : public LoadBalancingPolicy::Config {
+class XdsConfig : public LoadBalancingPolicy::Config {
  public:
-  ParsedXdsConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
-                  RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy,
-                  std::string eds_service_name,
-                  Optional<std::string> lrs_load_reporting_server_name)
+  XdsConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
+            RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy,
+            std::string eds_service_name,
+            Optional<std::string> lrs_load_reporting_server_name)
       : child_policy_(std::move(child_policy)),
         fallback_policy_(std::move(fallback_policy)),
         eds_service_name_(std::move(eds_service_name)),
@@ -387,7 +387,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // Current channel args and config from the resolver.
   const grpc_channel_args* args_ = nullptr;
-  RefCountedPtr<ParsedXdsConfig> config_;
+  RefCountedPtr<XdsConfig> config_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -1777,9 +1777,9 @@ class XdsFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kXds; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const Json& json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-    if (json == nullptr) {
+    if (json.type() == Json::Type::JSON_NULL) {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1787,61 +1787,57 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
-    GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-    InlinedVector<grpc_error*, 3> error_list;
+    std::vector<grpc_error*> error_list;
+    // Child policy.
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
+    auto it = json.object_value().find("childPolicy");
+    if (it != json.object_value().end()) {
+      grpc_error* parse_error = GRPC_ERROR_NONE;
+      child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+          it->second, &parse_error);
+      if (child_policy == nullptr) {
+        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        std::vector<grpc_error*> child_errors;
+        child_errors.push_back(parse_error);
+        error_list.push_back(
+            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
+      }
+    }
+    // Fallback policy.
     RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy;
+    it = json.object_value().find("fallbackPolicy");
+    if (it != json.object_value().end()) {
+      grpc_error* parse_error = GRPC_ERROR_NONE;
+      fallback_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+          it->second, &parse_error);
+      if (fallback_policy == nullptr) {
+        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        std::vector<grpc_error*> child_errors;
+        child_errors.push_back(parse_error);
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+            "field:fallbackPolicy", &child_errors));
+      }
+    }
+    // EDS service name.
     const char* eds_service_name = nullptr;
+    it = json.object_value().find("edsServiceName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:edsServiceName error:type should be string"));
+      } else {
+        eds_service_name = it->second.string_value().c_str();
+      }
+    }
+    // LRS load reporting server name.
     const char* lrs_load_reporting_server_name = nullptr;
-    for (const grpc_json* field = json->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr) continue;
-      if (strcmp(field->key, "childPolicy") == 0) {
-        if (child_policy != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:childPolicy error:Duplicate entry"));
-        }
-        grpc_error* parse_error = GRPC_ERROR_NONE;
-        child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
-        if (child_policy == nullptr) {
-          GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-          error_list.push_back(parse_error);
-        }
-      } else if (strcmp(field->key, "fallbackPolicy") == 0) {
-        if (fallback_policy != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:fallbackPolicy error:Duplicate entry"));
-        }
-        grpc_error* parse_error = GRPC_ERROR_NONE;
-        fallback_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
-        if (fallback_policy == nullptr) {
-          GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-          error_list.push_back(parse_error);
-        }
-      } else if (strcmp(field->key, "edsServiceName") == 0) {
-        if (eds_service_name != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:edsServiceName error:Duplicate entry"));
-        }
-        if (field->type != GRPC_JSON_STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:edsServiceName error:type should be string"));
-          continue;
-        }
-        eds_service_name = field->value;
-      } else if (strcmp(field->key, "lrsLoadReportingServerName") == 0) {
-        if (lrs_load_reporting_server_name != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:lrsLoadReportingServerName error:Duplicate entry"));
-        }
-        if (field->type != GRPC_JSON_STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:lrsLoadReportingServerName error:type should be string"));
-          continue;
-        }
-        lrs_load_reporting_server_name = field->value;
+    it = json.object_value().find("lrsLoadReportingServerName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:lrsLoadReportingServerName error:type should be string"));
+      } else {
+        lrs_load_reporting_server_name = it->second.string_value().c_str();
       }
     }
     if (error_list.empty()) {
@@ -1850,7 +1846,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         optional_lrs_load_reporting_server_name.emplace(
             std::string(lrs_load_reporting_server_name));
       }
-      return MakeRefCounted<ParsedXdsConfig>(
+      return MakeRefCounted<XdsConfig>(
           std::move(child_policy), std::move(fallback_policy),
           eds_service_name == nullptr ? "" : eds_service_name,
           std::move(optional_lrs_load_reporting_server_name));
