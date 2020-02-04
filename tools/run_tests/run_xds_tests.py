@@ -20,8 +20,10 @@ import grpc
 import logging
 import os
 import shlex
+import socket
 import subprocess
 import sys
+import tempfile
 import time
 
 from src.proto.grpc.testing import messages_pb2
@@ -46,10 +48,7 @@ argp.add_argument(
     default=None,
     help='Command to launch xDS test client. This script will fill in '
     '{service_host}, {service_port},{stats_port} and {qps} parameters using '
-    'str.format()')
-argp.add_argument('--bootstrap_file',
-                  default=None,
-                  help='Path to xDS bootstrap file.')
+    'str.format(), and generate the GRPC_XDS_BOOTSTRAP file.')
 argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--qps', default=10, help='Client QPS')
 argp.add_argument(
@@ -85,7 +84,6 @@ PROJECT_ID = args.project_id
 ZONE = args.zone
 QPS = args.qps
 TEST_CASE = args.test_case
-BOOTSTRAP_FILE = args.bootstrap_file
 CLIENT_CMD = args.client_cmd
 WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
 TEMPLATE_NAME = 'test-template' + args.gcp_suffix
@@ -105,6 +103,21 @@ INSTANCE_GROUP_SIZE = 2
 WAIT_FOR_OPERATION_SEC = 60
 NUM_TEST_RPCS = 10 * QPS
 WAIT_FOR_STATS_SEC = 30
+BOOTSTRAP_TEMPLATE = """
+{{
+  "node": {{
+    "id": "{node_id}"
+  }},
+  "xds_servers": [{{
+    "server_uri": "trafficdirector.googleapis.com:443",
+    "channel_creds": [
+      {{
+        "type": "google_default",
+        "config": {{}}
+      }}
+    ]
+  }}]
+}}"""
 
 
 def get_client_stats(num_rpcs, timeout_sec):
@@ -179,9 +192,9 @@ def create_instance_template(compute, name, grpc_port, project):
         'name': name,
         'properties': {
             'tags': {
-                'items': ['grpc-td-tag']
+                'items': ['grpc-allow-healthcheck']
             },
-            'machineType': 'n1-standard-1',
+            'machineType': 'e2-standard-1',
             'serviceAccounts': [{
                 'email': 'default',
                 'scopes': ['https://www.googleapis.com/auth/cloud-platform',]
@@ -271,7 +284,7 @@ def create_health_check_firewall_rule(compute, name, project):
             'IPProtocol': 'tcp'
         }],
         'sourceRanges': ['35.191.0.0/16', '130.211.0.0/22'],
-        'targetTags': ['grpc-td-tag'],
+        'targetTags': ['grpc-allow-healthcheck'],
     }
     result = compute.firewalls().insert(project=project, body=config).execute()
     wait_for_global_operation(compute, project, result['name'])
@@ -474,6 +487,24 @@ def wait_for_healthy_backends(compute, project_id, backend_service,
                     (timeout_sec, result))
 
 
+def start_xds_client():
+    cmd = CLIENT_CMD.format(service_host=SERVICE_HOST,
+                            service_port=SERVICE_PORT,
+                            stats_port=STATS_PORT,
+                            qps=QPS)
+    bootstrap_path = None
+    with bootstrap_file as tempfile.NamedTemporaryFile(delete=False):
+        bootstrap_file.write(
+            BOOTSTRAP_TEMPLATE.format(node_id=socket.gethostname()))
+        bootstrap_path = boostrap_file.name
+
+    client_process = subprocess.Popen(shlex.split(cmd),
+                                      env=dict(
+                                          os.environ,
+                                          GRPC_XDS_BOOTSTRAP=bootstrap_path))
+    return client_process
+
+
 compute = googleapiclient.discovery.build('compute', 'v1')
 client_process = None
 
@@ -536,15 +567,7 @@ try:
         instance_name = item['instance'].split('/')[-1]
         backends.append(instance_name)
 
-    # Start xDS client
-    cmd = CLIENT_CMD.format(service_host=SERVICE_HOST,
-                            service_port=SERVICE_PORT,
-                            stats_port=STATS_PORT,
-                            qps=QPS)
-    client_process = subprocess.Popen(shlex.split(cmd),
-                                      env=dict(
-                                          os.environ,
-                                          GRPC_XDS_BOOTSTRAP=BOOTSTRAP_FILE))
+    client_process = start_xds_client()
 
     if TEST_CASE == 'all':
         test_ping_pong(backends, NUM_TEST_RPCS, WAIT_FOR_STATS_SEC)
