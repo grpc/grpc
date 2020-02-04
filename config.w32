@@ -255,13 +255,11 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\iomgr_internal.cc " +
     "src\\core\\lib\\iomgr\\iomgr_posix.cc " +
     "src\\core\\lib\\iomgr\\iomgr_posix_cfstream.cc " +
-    "src\\core\\lib\\iomgr\\iomgr_uv.cc " +
     "src\\core\\lib\\iomgr\\iomgr_windows.cc " +
     "src\\core\\lib\\iomgr\\is_epollexclusive_available.cc " +
     "src\\core\\lib\\iomgr\\load_file.cc " +
     "src\\core\\lib\\iomgr\\lockfree_event.cc " +
     "src\\core\\lib\\iomgr\\logical_thread.cc " +
-    "src\\core\\lib\\iomgr\\poller\\eventmanager_libuv.cc " +
     "src\\core\\lib\\iomgr\\polling_entity.cc " +
     "src\\core\\lib\\iomgr\\pollset.cc " +
     "src\\core\\lib\\iomgr\\pollset_custom.cc " +
@@ -281,7 +279,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\socket_utils_common_posix.cc " +
     "src\\core\\lib\\iomgr\\socket_utils_linux.cc " +
     "src\\core\\lib\\iomgr\\socket_utils_posix.cc " +
-    "src\\core\\lib\\iomgr\\socket_utils_uv.cc " +
     "src\\core\\lib\\iomgr\\socket_utils_windows.cc " +
     "src\\core\\lib\\iomgr\\socket_windows.cc " +
     "src\\core\\lib\\iomgr\\tcp_client.cc " +
@@ -736,12 +733,6 @@ if (PHP_GRPC != "no") {
     "third_party\\boringssl-with-bazel\\src\\ssl\\tls_method.cc " +
     "third_party\\boringssl-with-bazel\\src\\ssl\\tls_record.cc " +
     "third_party\\boringssl-with-bazel\\src\\third_party\\fiat\\curve25519.c " +
-    "third_party\\upb\\upb\\decode.c " +
-    "third_party\\upb\\upb\\encode.c " +
-    "third_party\\upb\\upb\\msg.c " +
-    "third_party\\upb\\upb\\port.c " +
-    "third_party\\upb\\upb\\table.c " +
-    "third_party\\upb\\upb\\upb.c " +
     "third_party\\zlib\\adler32.c " +
     "third_party\\zlib\\compress.c " +
     "third_party\\zlib\\crc32.c " +
@@ -869,7 +860,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\executor");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\poller");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
@@ -963,8 +953,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\ssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\third_party");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\third_party\\fiat");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();
   for (i = 0; i < build_dirs.length; i++) {

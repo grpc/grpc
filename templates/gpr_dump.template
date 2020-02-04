@@ -40,6 +40,10 @@
     return result
 
   %>
+  
+  # address_sorting
+  ${yaml.dump(get_lib_metadata_dict('address_sorting'), default_flow_style=False)}
+
   # gpr
   ${yaml.dump(get_lib_metadata_dict('gpr'), default_flow_style=False)}
   
@@ -54,3 +58,6 @@
 
   # targets by build type
   ${yaml.dump(get_targets_by_build(), default_flow_style=False)}
+
+
+  

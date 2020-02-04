@@ -1,4 +1,39 @@
 
+
+# address_sorting
+ares: false
+boringssl: false
+build: all
+deps: []
+headers:
+- third_party/address_sorting/address_sorting_internal.h
+- third_party/address_sorting/include/address_sorting/address_sorting.h
+is_library: true
+language: c
+name: address_sorting
+own_deps: []
+own_headers:
+- third_party/address_sorting/address_sorting_internal.h
+- third_party/address_sorting/include/address_sorting/address_sorting.h
+own_public_headers: []
+own_src:
+- third_party/address_sorting/address_sorting.c
+- third_party/address_sorting/address_sorting_posix.c
+- third_party/address_sorting/address_sorting_windows.c
+public_headers: []
+src:
+- third_party/address_sorting/address_sorting.c
+- third_party/address_sorting/address_sorting_posix.c
+- third_party/address_sorting/address_sorting_windows.c
+transitive_deps: []
+vs_config_type: StaticLibrary
+vs_packages: []
+vs_proj_dir: .
+vs_project_guid: '{A472A527-2719-A54A-AEB7-EE7E77B5FEE0}'
+vs_props: []
+zlib: false
+
+
 # gpr
 ares: false
 boringssl: false
@@ -56,23 +91,23 @@ is_library: true
 language: c
 name: gpr
 own_deps:
-- absl/base:atomic_hook
-- absl/base:base
-- absl/base:base_internal
-- absl/base:bits
-- absl/base:config
-- absl/base:core_headers
-- absl/base:dynamic_annotations
-- absl/base:endian
-- absl/base:log_severity
-- absl/base:raw_logging_internal
-- absl/base:spinlock_wait
-- absl/base:throw_delegate
-- absl/memory:memory
-- absl/meta:type_traits
-- absl/numeric:int128
-- absl/strings:internal
 - absl/strings:strings
+- absl/strings:internal
+- absl/numeric:int128
+- absl/meta:type_traits
+- absl/memory:memory
+- absl/base:throw_delegate
+- absl/base:spinlock_wait
+- absl/base:raw_logging_internal
+- absl/base:log_severity
+- absl/base:endian
+- absl/base:dynamic_annotations
+- absl/base:core_headers
+- absl/base:config
+- absl/base:bits
+- absl/base:base_internal
+- absl/base:base
+- absl/base:atomic_hook
 own_headers:
 - src/core/lib/gpr/alloc.h
 - src/core/lib/gpr/arena.h
@@ -225,7 +260,6 @@ public_headers:
 - include/grpc/support/sync_windows.h
 - include/grpc/support/thd_id.h
 - include/grpc/support/time.h
-secure: false
 src:
 - src/core/lib/gpr/alloc.cc
 - src/core/lib/gpr/atm.cc
@@ -295,6 +329,7 @@ zlib: false
 
 # grpc
 ares: false
+baselib: true
 boringssl: false
 build: all
 deps:
@@ -323,6 +358,7 @@ deps:
 - absl/types:optional
 - absl/types:span
 - absl/utility:utility
+- address_sorting
 - gpr
 generate_plugin_registry: true
 headers:
@@ -662,38 +698,37 @@ headers:
 - src/core/tsi/transport_security.h
 - src/core/tsi/transport_security_grpc.h
 - src/core/tsi/transport_security_interface.h
-- third_party/address_sorting/address_sorting_internal.h
-- third_party/address_sorting/include/address_sorting/address_sorting.h
 is_library: true
 language: c
 name: grpc
 own_deps:
-- absl/algorithm:algorithm
-- absl/base:atomic_hook
-- absl/base:base
-- absl/base:base_internal
-- absl/base:bits
-- absl/base:config
-- absl/base:core_headers
-- absl/base:dynamic_annotations
-- absl/base:endian
-- absl/base:log_severity
-- absl/base:raw_logging_internal
-- absl/base:spinlock_wait
-- absl/base:throw_delegate
-- absl/container:compressed_tuple
-- absl/container:inlined_vector
-- absl/container:inlined_vector_internal
-- absl/memory:memory
-- absl/meta:type_traits
-- absl/numeric:int128
-- absl/strings:internal
-- absl/strings:strings
-- absl/types:bad_optional_access
-- absl/types:optional
-- absl/types:span
-- absl/utility:utility
 - gpr
+- address_sorting
+- absl/utility:utility
+- absl/types:span
+- absl/types:optional
+- absl/types:bad_optional_access
+- absl/strings:strings
+- absl/strings:internal
+- absl/numeric:int128
+- absl/meta:type_traits
+- absl/memory:memory
+- absl/container:inlined_vector_internal
+- absl/container:inlined_vector
+- absl/container:compressed_tuple
+- absl/base:throw_delegate
+- absl/base:spinlock_wait
+- absl/base:raw_logging_internal
+- absl/base:log_severity
+- absl/base:endian
+- absl/base:dynamic_annotations
+- absl/base:core_headers
+- absl/base:config
+- absl/base:bits
+- absl/base:base_internal
+- absl/base:base
+- absl/base:atomic_hook
+- absl/algorithm:algorithm
 own_headers:
 - src/core/ext/filters/client_channel/backend_metric.h
 - src/core/ext/filters/client_channel/backup_poller.h
@@ -1031,8 +1066,6 @@ own_headers:
 - src/core/tsi/transport_security.h
 - src/core/tsi/transport_security_grpc.h
 - src/core/tsi/transport_security_interface.h
-- third_party/address_sorting/address_sorting_internal.h
-- third_party/address_sorting/include/address_sorting/address_sorting.h
 own_public_headers:
 - include/grpc/byte_buffer.h
 - include/grpc/byte_buffer_reader.h
@@ -1431,9 +1464,6 @@ own_src:
 - src/core/tsi/ssl_transport_security.cc
 - src/core/tsi/transport_security.cc
 - src/core/tsi/transport_security_grpc.cc
-- third_party/address_sorting/address_sorting.c
-- third_party/address_sorting/address_sorting_posix.c
-- third_party/address_sorting/address_sorting_windows.c
 public_headers:
 - include/grpc/byte_buffer.h
 - include/grpc/byte_buffer_reader.h
@@ -1833,22 +1863,21 @@ src:
 - src/core/tsi/ssl_transport_security.cc
 - src/core/tsi/transport_security.cc
 - src/core/tsi/transport_security_grpc.cc
-- third_party/address_sorting/address_sorting.c
-- third_party/address_sorting/address_sorting_posix.c
-- third_party/address_sorting/address_sorting_windows.c
 transitive_deps:
-- gpr
+- absl/container:inlined_vector
+- absl/container:inlined_vector_internal
+- absl/container:compressed_tuple
 - absl/types:optional
 - absl/types:bad_optional_access
+- absl/types:span
+- absl/algorithm:algorithm
+- absl/utility:utility
+- address_sorting
+- gpr
 - absl/strings:strings
 - absl/strings:internal
 - absl/numeric:int128
-- absl/container:inlined_vector
-- absl/container:inlined_vector_internal
-- absl/types:span
 - absl/memory:memory
-- absl/container:compressed_tuple
-- absl/utility:utility
 - absl/base:throw_delegate
 - absl/base:endian
 - absl/base:bits
@@ -1861,7 +1890,6 @@ transitive_deps:
 - absl/base:base_internal
 - absl/meta:type_traits
 - absl/base:atomic_hook
-- absl/algorithm:algorithm
 - absl/base:config
 vs_config_type: StaticLibrary
 vs_packages: []
@@ -1873,6 +1901,7 @@ zlib: false
 
 # grpc++
 ares: false
+baselib: true
 boringssl: false
 build: all
 deps:
@@ -1901,6 +1930,7 @@ deps:
 - absl/types:optional
 - absl/types:span
 - absl/utility:utility
+- address_sorting
 - gpr
 - grpc
 headers:
@@ -1919,33 +1949,34 @@ is_library: true
 language: c++
 name: grpc++
 own_deps:
-- absl/algorithm:algorithm
-- absl/base:atomic_hook
-- absl/base:base
-- absl/base:base_internal
-- absl/base:bits
-- absl/base:config
-- absl/base:core_headers
-- absl/base:dynamic_annotations
-- absl/base:endian
-- absl/base:log_severity
-- absl/base:raw_logging_internal
-- absl/base:spinlock_wait
-- absl/base:throw_delegate
-- absl/container:compressed_tuple
-- absl/container:inlined_vector
-- absl/container:inlined_vector_internal
-- absl/memory:memory
-- absl/meta:type_traits
-- absl/numeric:int128
-- absl/strings:internal
-- absl/strings:strings
-- absl/types:bad_optional_access
-- absl/types:optional
-- absl/types:span
-- absl/utility:utility
-- gpr
 - grpc
+- gpr
+- address_sorting
+- absl/utility:utility
+- absl/types:span
+- absl/types:optional
+- absl/types:bad_optional_access
+- absl/strings:strings
+- absl/strings:internal
+- absl/numeric:int128
+- absl/meta:type_traits
+- absl/memory:memory
+- absl/container:inlined_vector_internal
+- absl/container:inlined_vector
+- absl/container:compressed_tuple
+- absl/base:throw_delegate
+- absl/base:spinlock_wait
+- absl/base:raw_logging_internal
+- absl/base:log_severity
+- absl/base:endian
+- absl/base:dynamic_annotations
+- absl/base:core_headers
+- absl/base:config
+- absl/base:bits
+- absl/base:base_internal
+- absl/base:base
+- absl/base:atomic_hook
+- absl/algorithm:algorithm
 own_headers:
 - src/cpp/client/create_channel_internal.h
 - src/cpp/client/secure_credentials.h
@@ -2442,7 +2473,6 @@ public_headers:
 - include/grpcpp/support/sync_stream_impl.h
 - include/grpcpp/support/time.h
 - include/grpcpp/support/validate_service_config.h
-secure: true
 src:
 - src/cpp/client/channel_cc.cc
 - src/cpp/client/client_context.cc
@@ -2493,18 +2523,20 @@ src:
 - src/cpp/util/time_cc.cc
 transitive_deps:
 - grpc
-- gpr
+- absl/container:inlined_vector
+- absl/container:inlined_vector_internal
+- absl/container:compressed_tuple
 - absl/types:optional
 - absl/types:bad_optional_access
+- absl/types:span
+- absl/algorithm:algorithm
+- absl/utility:utility
+- address_sorting
+- gpr
 - absl/strings:strings
 - absl/strings:internal
 - absl/numeric:int128
-- absl/container:inlined_vector
-- absl/container:inlined_vector_internal
-- absl/types:span
 - absl/memory:memory
-- absl/container:compressed_tuple
-- absl/utility:utility
 - absl/base:throw_delegate
 - absl/base:endian
 - absl/base:bits
@@ -2517,7 +2549,6 @@ transitive_deps:
 - absl/base:base_internal
 - absl/meta:type_traits
 - absl/base:atomic_hook
-- absl/algorithm:algorithm
 - absl/base:config
 vs_config_type: StaticLibrary
 vs_packages: []
@@ -2529,6 +2560,7 @@ zlib: false
 
 # libs by build type
 all:
+- address_sorting
 - gpr
 - grpc
 - grpc++
@@ -2539,6 +2571,7 @@ all:
 - grpc_csharp_ext
 - grpc_unsecure
 - grpcpp_channelz
+- upb
 private:
 - absl/algorithm:algorithm
 - absl/algorithm:container
@@ -2652,7 +2685,36 @@ private:
 - absl/types:span
 - absl/types:variant
 - absl/utility:utility
+- ares
+- benchmark
+- boringssl
+- boringssl_test_util
+- grpc++_test_config
+- grpc++_test_util
+- grpc_test_util
+- z
+protoc:
+- grpc_plugin_support
 
 
 # targets by build type
-{}
+protoc:
+- grpc_cpp_plugin
+- grpc_csharp_plugin
+- grpc_node_plugin
+- grpc_objective_c_plugin
+- grpc_php_plugin
+- grpc_python_plugin
+- grpc_ruby_plugin
+test:
+- avl_test
+- boringssl_crypto_test
+- boringssl_ssl_test
+- end2end_test
+- slice_test
+tool:
+- check_epollexclusive
+- gen_hpack_tables
+- gen_legal_metadata_characters
+- gen_percent_encoding_tables
+
