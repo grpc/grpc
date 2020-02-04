@@ -991,7 +991,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   std::tuple<int, int, int> WaitForAllBackends(size_t start_index = 0,
-                                               size_t stop_index = 0) {
+                                               size_t stop_index = 0,
+                                               bool reset_counters = true) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -999,7 +1000,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     while (!SeenAllBackends(start_index, stop_index)) {
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
     }
-    ResetBackendCounters();
+    if (reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO,
             "Performed %d warm up requests against the backends. "
             "%d succeeded, %d failed, %d dropped.",
@@ -2197,6 +2198,41 @@ TEST_P(FailoverTest, UpdatePriority) {
   WaitForBackend(1);
   CheckRpcSendOk(kNumRpcs);
   EXPECT_EQ(kNumRpcs, backends_[1]->backend_service()->request_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());
+}
+
+// Moves all localities in the current priority to a higher priority.
+TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // First update:
+  // - Priority 0 is locality 0, containing backend 0, which is down.
+  // - Priority 1 is locality 1, containing backends 1 and 2, which are up.
+  ShutdownBackend(0);
+  AdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
+      {"locality1", GetBackendPorts(1, 3), kDefaultLocalityWeight, 1},
+  });
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  // Second update:
+  // - Priority 0 contains both localities 0 and 1.
+  // - Priority 1 is not present.
+  // - We add backend 3 to locality 1, just so we have a way to know
+  //   when the update has been seen by the client.
+  args = AdsServiceImpl::ResponseArgs({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
+      {"locality1", GetBackendPorts(1, 4), kDefaultLocalityWeight, 0},
+  });
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 1000);
+  // When we get the first update, all backends in priority 0 are down,
+  // so we will create priority 1.  Backends 1 and 2 should have traffic,
+  // but backend 3 should not.
+  WaitForAllBackends(1, 3, false);
+  EXPECT_EQ(0UL, backends_[3]->backend_service()->request_count());
+  // When backend 3 gets traffic, we know the second update has been seen.
+  WaitForBackend(3);
   // The ADS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
   EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());

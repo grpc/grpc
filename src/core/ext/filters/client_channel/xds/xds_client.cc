@@ -1015,9 +1015,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
           const auto& locality = p.second;
           gpr_log(GPR_INFO,
                   "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
-                  " %s contains %" PRIuPTR " server addresses",
+                  " %s has weight %d, contains %" PRIuPTR " server addresses",
                   xds_client(), priority, locality_count,
-                  locality.name->AsHumanReadableString(),
+                  locality.name->AsHumanReadableString(), locality.lb_weight,
                   locality.serverlist.size());
           for (size_t i = 0; i < locality.serverlist.size(); ++i) {
             char* ipport;

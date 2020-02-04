@@ -1032,6 +1032,8 @@ void XdsLb::UpdatePrioritiesLocked() {
   for (uint32_t priority = 0; priority < priorities_.size(); ++priority) {
     LocalityMap* locality_map = priorities_[priority].get();
     const auto* locality_map_update = priority_list_update_.Find(priority);
+    // If we have more current priorities than exist in the update, stop here.
+    if (locality_map_update == nullptr) break;
     // Propagate locality_map_update.
     // TODO(juanlishen): Find a clean way to skip duplicate update for a
     // priority.
