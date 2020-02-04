@@ -72,13 +72,13 @@ To prepare for cmake + Microsoft Visual C++ compiler build
 # Clone the repository (including submodules)
 
 Before building, you need to clone the gRPC github repository and download submodules containing source code
-for gRPC's dependencies (that's done by the `submodule` command or `--recursive` flag). The following commands will clone the gRPC
-repository at the latest stable version.
+for gRPC's dependencies (that's done by the `submodule` command or `--recursive` flag). Use following commands
+to clone the gRPC repository at the [latest stable release tag](https://github.com/grpc/grpc/releases)
 
 ## Unix
 
 ```sh
- $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+ $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
  $ cd grpc
  $ git submodule update --init
  ```
@@ -86,10 +86,9 @@ repository at the latest stable version.
 ## Windows
 
 ```
-> @rem You can also do just "git clone --recursive -b THE_BRANCH_YOU_WANT https://github.com/grpc/grpc"
-> powershell git clone --recursive -b ((New-Object System.Net.WebClient).DownloadString(\"https://grpc.io/release\").Trim()) https://github.com/grpc/grpc
+> git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 > cd grpc
-> @rem To update submodules at later time, run "git submodule update --init"
+> git submodule update --init
 ```
 
 NOTE: The `bazel` build tool uses a different model for dependencies. You only need to worry about downloading submodules if you're building
