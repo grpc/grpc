@@ -163,7 +163,7 @@ class _ServerSSLCertReloadTest(AioTestBase, abc.ABC):
         async with _create_channel(self._port,
                                    client_credentials) as client_channel:
             if expect_success:
-                await asyncio.wait_for(aio.channel_ready(client_channel),
+                await asyncio.wait_for(client_channel.channel_ready(),
                                        _CLIENT_TRY_TO_CONNECT_TIMEOUT_S)
             await self._perform_rpc(client_channel, expect_success)
 
