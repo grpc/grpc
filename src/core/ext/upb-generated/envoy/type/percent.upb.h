@@ -9,7 +9,6 @@
 #ifndef ENVOY_TYPE_PERCENT_PROTO_UPB_H_
 #define ENVOY_TYPE_PERCENT_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -37,7 +36,7 @@ typedef enum {
 /* envoy.type.Percent */
 
 UPB_INLINE envoy_type_Percent *envoy_type_Percent_new(upb_arena *arena) {
-  return (envoy_type_Percent *)upb_msg_new(&envoy_type_Percent_msginit, arena);
+  return (envoy_type_Percent *)_upb_msg_new(&envoy_type_Percent_msginit, arena);
 }
 UPB_INLINE envoy_type_Percent *envoy_type_Percent_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -57,7 +56,7 @@ UPB_INLINE void envoy_type_Percent_set_value(envoy_type_Percent *msg, double val
 /* envoy.type.FractionalPercent */
 
 UPB_INLINE envoy_type_FractionalPercent *envoy_type_FractionalPercent_new(upb_arena *arena) {
-  return (envoy_type_FractionalPercent *)upb_msg_new(&envoy_type_FractionalPercent_msginit, arena);
+  return (envoy_type_FractionalPercent *)_upb_msg_new(&envoy_type_FractionalPercent_msginit, arena);
 }
 UPB_INLINE envoy_type_FractionalPercent *envoy_type_FractionalPercent_parse(const char *buf, size_t size,
                         upb_arena *arena) {

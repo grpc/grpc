@@ -9,7 +9,6 @@
 #ifndef ENVOY_TYPE_MATCHER_STRING_PROTO_UPB_H_
 #define ENVOY_TYPE_MATCHER_STRING_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -33,7 +32,7 @@ extern const upb_msglayout envoy_type_matcher_RegexMatcher_msginit;
 /* envoy.type.matcher.StringMatcher */
 
 UPB_INLINE envoy_type_matcher_StringMatcher *envoy_type_matcher_StringMatcher_new(upb_arena *arena) {
-  return (envoy_type_matcher_StringMatcher *)upb_msg_new(&envoy_type_matcher_StringMatcher_msginit, arena);
+  return (envoy_type_matcher_StringMatcher *)_upb_msg_new(&envoy_type_matcher_StringMatcher_msginit, arena);
 }
 UPB_INLINE envoy_type_matcher_StringMatcher *envoy_type_matcher_StringMatcher_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -83,7 +82,7 @@ UPB_INLINE void envoy_type_matcher_StringMatcher_set_safe_regex(envoy_type_match
 UPB_INLINE struct envoy_type_matcher_RegexMatcher* envoy_type_matcher_StringMatcher_mutable_safe_regex(envoy_type_matcher_StringMatcher *msg, upb_arena *arena) {
   struct envoy_type_matcher_RegexMatcher* sub = (struct envoy_type_matcher_RegexMatcher*)envoy_type_matcher_StringMatcher_safe_regex(msg);
   if (sub == NULL) {
-    sub = (struct envoy_type_matcher_RegexMatcher*)upb_msg_new(&envoy_type_matcher_RegexMatcher_msginit, arena);
+    sub = (struct envoy_type_matcher_RegexMatcher*)_upb_msg_new(&envoy_type_matcher_RegexMatcher_msginit, arena);
     if (!sub) return NULL;
     envoy_type_matcher_StringMatcher_set_safe_regex(msg, sub);
   }
@@ -93,7 +92,7 @@ UPB_INLINE struct envoy_type_matcher_RegexMatcher* envoy_type_matcher_StringMatc
 /* envoy.type.matcher.ListStringMatcher */
 
 UPB_INLINE envoy_type_matcher_ListStringMatcher *envoy_type_matcher_ListStringMatcher_new(upb_arena *arena) {
-  return (envoy_type_matcher_ListStringMatcher *)upb_msg_new(&envoy_type_matcher_ListStringMatcher_msginit, arena);
+  return (envoy_type_matcher_ListStringMatcher *)_upb_msg_new(&envoy_type_matcher_ListStringMatcher_msginit, arena);
 }
 UPB_INLINE envoy_type_matcher_ListStringMatcher *envoy_type_matcher_ListStringMatcher_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -110,10 +109,10 @@ UPB_INLINE envoy_type_matcher_StringMatcher** envoy_type_matcher_ListStringMatch
   return (envoy_type_matcher_StringMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
 UPB_INLINE envoy_type_matcher_StringMatcher** envoy_type_matcher_ListStringMatcher_resize_patterns(envoy_type_matcher_ListStringMatcher *msg, size_t len, upb_arena *arena) {
-  return (envoy_type_matcher_StringMatcher**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_type_matcher_StringMatcher**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_type_matcher_StringMatcher* envoy_type_matcher_ListStringMatcher_add_patterns(envoy_type_matcher_ListStringMatcher *msg, upb_arena *arena) {
-  struct envoy_type_matcher_StringMatcher* sub = (struct envoy_type_matcher_StringMatcher*)upb_msg_new(&envoy_type_matcher_StringMatcher_msginit, arena);
+  struct envoy_type_matcher_StringMatcher* sub = (struct envoy_type_matcher_StringMatcher*)_upb_msg_new(&envoy_type_matcher_StringMatcher_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(0, 0), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;

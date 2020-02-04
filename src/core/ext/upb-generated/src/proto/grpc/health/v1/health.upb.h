@@ -9,7 +9,6 @@
 #ifndef SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H_
 #define SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -38,7 +37,7 @@ typedef enum {
 /* grpc.health.v1.HealthCheckRequest */
 
 UPB_INLINE grpc_health_v1_HealthCheckRequest *grpc_health_v1_HealthCheckRequest_new(upb_arena *arena) {
-  return (grpc_health_v1_HealthCheckRequest *)upb_msg_new(&grpc_health_v1_HealthCheckRequest_msginit, arena);
+  return (grpc_health_v1_HealthCheckRequest *)_upb_msg_new(&grpc_health_v1_HealthCheckRequest_msginit, arena);
 }
 UPB_INLINE grpc_health_v1_HealthCheckRequest *grpc_health_v1_HealthCheckRequest_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -58,7 +57,7 @@ UPB_INLINE void grpc_health_v1_HealthCheckRequest_set_service(grpc_health_v1_Hea
 /* grpc.health.v1.HealthCheckResponse */
 
 UPB_INLINE grpc_health_v1_HealthCheckResponse *grpc_health_v1_HealthCheckResponse_new(upb_arena *arena) {
-  return (grpc_health_v1_HealthCheckResponse *)upb_msg_new(&grpc_health_v1_HealthCheckResponse_msginit, arena);
+  return (grpc_health_v1_HealthCheckResponse *)_upb_msg_new(&grpc_health_v1_HealthCheckResponse_msginit, arena);
 }
 UPB_INLINE grpc_health_v1_HealthCheckResponse *grpc_health_v1_HealthCheckResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {

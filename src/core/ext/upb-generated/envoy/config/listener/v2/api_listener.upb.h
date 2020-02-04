@@ -9,7 +9,6 @@
 #ifndef ENVOY_CONFIG_LISTENER_V2_API_LISTENER_PROTO_UPB_H_
 #define ENVOY_CONFIG_LISTENER_V2_API_LISTENER_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -30,7 +29,7 @@ extern const upb_msglayout google_protobuf_Any_msginit;
 /* envoy.config.listener.v2.ApiListener */
 
 UPB_INLINE envoy_config_listener_v2_ApiListener *envoy_config_listener_v2_ApiListener_new(upb_arena *arena) {
-  return (envoy_config_listener_v2_ApiListener *)upb_msg_new(&envoy_config_listener_v2_ApiListener_msginit, arena);
+  return (envoy_config_listener_v2_ApiListener *)_upb_msg_new(&envoy_config_listener_v2_ApiListener_msginit, arena);
 }
 UPB_INLINE envoy_config_listener_v2_ApiListener *envoy_config_listener_v2_ApiListener_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -49,7 +48,7 @@ UPB_INLINE void envoy_config_listener_v2_ApiListener_set_api_listener(envoy_conf
 UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v2_ApiListener_mutable_api_listener(envoy_config_listener_v2_ApiListener *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_listener_v2_ApiListener_api_listener(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
     if (!sub) return NULL;
     envoy_config_listener_v2_ApiListener_set_api_listener(msg, sub);
   }

@@ -9,7 +9,6 @@
 #ifndef GOOGLE_PROTOBUF_TIMESTAMP_PROTO_UPB_H_
 #define GOOGLE_PROTOBUF_TIMESTAMP_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -28,7 +27,7 @@ extern const upb_msglayout google_protobuf_Timestamp_msginit;
 /* google.protobuf.Timestamp */
 
 UPB_INLINE google_protobuf_Timestamp *google_protobuf_Timestamp_new(upb_arena *arena) {
-  return (google_protobuf_Timestamp *)upb_msg_new(&google_protobuf_Timestamp_msginit, arena);
+  return (google_protobuf_Timestamp *)_upb_msg_new(&google_protobuf_Timestamp_msginit, arena);
 }
 UPB_INLINE google_protobuf_Timestamp *google_protobuf_Timestamp_parse(const char *buf, size_t size,
                         upb_arena *arena) {

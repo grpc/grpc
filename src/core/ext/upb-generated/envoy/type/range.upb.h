@@ -9,7 +9,6 @@
 #ifndef ENVOY_TYPE_RANGE_PROTO_UPB_H_
 #define ENVOY_TYPE_RANGE_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -31,7 +30,7 @@ extern const upb_msglayout envoy_type_DoubleRange_msginit;
 /* envoy.type.Int64Range */
 
 UPB_INLINE envoy_type_Int64Range *envoy_type_Int64Range_new(upb_arena *arena) {
-  return (envoy_type_Int64Range *)upb_msg_new(&envoy_type_Int64Range_msginit, arena);
+  return (envoy_type_Int64Range *)_upb_msg_new(&envoy_type_Int64Range_msginit, arena);
 }
 UPB_INLINE envoy_type_Int64Range *envoy_type_Int64Range_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -55,7 +54,7 @@ UPB_INLINE void envoy_type_Int64Range_set_end(envoy_type_Int64Range *msg, int64_
 /* envoy.type.DoubleRange */
 
 UPB_INLINE envoy_type_DoubleRange *envoy_type_DoubleRange_new(upb_arena *arena) {
-  return (envoy_type_DoubleRange *)upb_msg_new(&envoy_type_DoubleRange_msginit, arena);
+  return (envoy_type_DoubleRange *)_upb_msg_new(&envoy_type_DoubleRange_msginit, arena);
 }
 UPB_INLINE envoy_type_DoubleRange *envoy_type_DoubleRange_parse(const char *buf, size_t size,
                         upb_arena *arena) {

@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_LISTENER_UDP_LISTENER_CONFIG_PROTO_UPB_H_
 #define ENVOY_API_V2_LISTENER_UDP_LISTENER_CONFIG_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -32,7 +31,7 @@ extern const upb_msglayout google_protobuf_Struct_msginit;
 /* envoy.api.v2.listener.UdpListenerConfig */
 
 UPB_INLINE envoy_api_v2_listener_UdpListenerConfig *envoy_api_v2_listener_UdpListenerConfig_new(upb_arena *arena) {
-  return (envoy_api_v2_listener_UdpListenerConfig *)upb_msg_new(&envoy_api_v2_listener_UdpListenerConfig_msginit, arena);
+  return (envoy_api_v2_listener_UdpListenerConfig *)_upb_msg_new(&envoy_api_v2_listener_UdpListenerConfig_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_listener_UdpListenerConfig *envoy_api_v2_listener_UdpListenerConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -65,7 +64,7 @@ UPB_INLINE void envoy_api_v2_listener_UdpListenerConfig_set_config(envoy_api_v2_
 UPB_INLINE struct google_protobuf_Struct* envoy_api_v2_listener_UdpListenerConfig_mutable_config(envoy_api_v2_listener_UdpListenerConfig *msg, upb_arena *arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_api_v2_listener_UdpListenerConfig_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Struct*)upb_msg_new(&google_protobuf_Struct_msginit, arena);
+    sub = (struct google_protobuf_Struct*)_upb_msg_new(&google_protobuf_Struct_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_listener_UdpListenerConfig_set_config(msg, sub);
   }
@@ -77,7 +76,7 @@ UPB_INLINE void envoy_api_v2_listener_UdpListenerConfig_set_typed_config(envoy_a
 UPB_INLINE struct google_protobuf_Any* envoy_api_v2_listener_UdpListenerConfig_mutable_typed_config(envoy_api_v2_listener_UdpListenerConfig *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_api_v2_listener_UdpListenerConfig_typed_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_listener_UdpListenerConfig_set_typed_config(msg, sub);
   }

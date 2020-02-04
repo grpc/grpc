@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_ENDPOINT_ENDPOINT_PROTO_UPB_H_
 #define ENVOY_API_V2_ENDPOINT_ENDPOINT_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -45,7 +44,7 @@ extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 /* envoy.api.v2.endpoint.Endpoint */
 
 UPB_INLINE envoy_api_v2_endpoint_Endpoint *envoy_api_v2_endpoint_Endpoint_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_Endpoint *)upb_msg_new(&envoy_api_v2_endpoint_Endpoint_msginit, arena);
+  return (envoy_api_v2_endpoint_Endpoint *)_upb_msg_new(&envoy_api_v2_endpoint_Endpoint_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_Endpoint *envoy_api_v2_endpoint_Endpoint_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -65,7 +64,7 @@ UPB_INLINE void envoy_api_v2_endpoint_Endpoint_set_address(envoy_api_v2_endpoint
 UPB_INLINE struct envoy_api_v2_core_Address* envoy_api_v2_endpoint_Endpoint_mutable_address(envoy_api_v2_endpoint_Endpoint *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Address* sub = (struct envoy_api_v2_core_Address*)envoy_api_v2_endpoint_Endpoint_address(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_Address*)upb_msg_new(&envoy_api_v2_core_Address_msginit, arena);
+    sub = (struct envoy_api_v2_core_Address*)_upb_msg_new(&envoy_api_v2_core_Address_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_Endpoint_set_address(msg, sub);
   }
@@ -77,7 +76,7 @@ UPB_INLINE void envoy_api_v2_endpoint_Endpoint_set_health_check_config(envoy_api
 UPB_INLINE struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* envoy_api_v2_endpoint_Endpoint_mutable_health_check_config(envoy_api_v2_endpoint_Endpoint *msg, upb_arena *arena) {
   struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* sub = (struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig*)envoy_api_v2_endpoint_Endpoint_health_check_config(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig*)upb_msg_new(&envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_msginit, arena);
+    sub = (struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig*)_upb_msg_new(&envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_Endpoint_set_health_check_config(msg, sub);
   }
@@ -87,7 +86,7 @@ UPB_INLINE struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* envoy_api_v2
 /* envoy.api.v2.endpoint.Endpoint.HealthCheckConfig */
 
 UPB_INLINE envoy_api_v2_endpoint_Endpoint_HealthCheckConfig *envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_Endpoint_HealthCheckConfig *)upb_msg_new(&envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_msginit, arena);
+  return (envoy_api_v2_endpoint_Endpoint_HealthCheckConfig *)_upb_msg_new(&envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_Endpoint_HealthCheckConfig *envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -107,7 +106,7 @@ UPB_INLINE void envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_set_port_value(
 /* envoy.api.v2.endpoint.LbEndpoint */
 
 UPB_INLINE envoy_api_v2_endpoint_LbEndpoint *envoy_api_v2_endpoint_LbEndpoint_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_LbEndpoint *)upb_msg_new(&envoy_api_v2_endpoint_LbEndpoint_msginit, arena);
+  return (envoy_api_v2_endpoint_LbEndpoint *)_upb_msg_new(&envoy_api_v2_endpoint_LbEndpoint_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_LbEndpoint *envoy_api_v2_endpoint_LbEndpoint_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -139,7 +138,7 @@ UPB_INLINE void envoy_api_v2_endpoint_LbEndpoint_set_endpoint(envoy_api_v2_endpo
 UPB_INLINE struct envoy_api_v2_endpoint_Endpoint* envoy_api_v2_endpoint_LbEndpoint_mutable_endpoint(envoy_api_v2_endpoint_LbEndpoint *msg, upb_arena *arena) {
   struct envoy_api_v2_endpoint_Endpoint* sub = (struct envoy_api_v2_endpoint_Endpoint*)envoy_api_v2_endpoint_LbEndpoint_endpoint(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_endpoint_Endpoint*)upb_msg_new(&envoy_api_v2_endpoint_Endpoint_msginit, arena);
+    sub = (struct envoy_api_v2_endpoint_Endpoint*)_upb_msg_new(&envoy_api_v2_endpoint_Endpoint_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_LbEndpoint_set_endpoint(msg, sub);
   }
@@ -154,7 +153,7 @@ UPB_INLINE void envoy_api_v2_endpoint_LbEndpoint_set_metadata(envoy_api_v2_endpo
 UPB_INLINE struct envoy_api_v2_core_Metadata* envoy_api_v2_endpoint_LbEndpoint_mutable_metadata(envoy_api_v2_endpoint_LbEndpoint *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Metadata* sub = (struct envoy_api_v2_core_Metadata*)envoy_api_v2_endpoint_LbEndpoint_metadata(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_Metadata*)upb_msg_new(&envoy_api_v2_core_Metadata_msginit, arena);
+    sub = (struct envoy_api_v2_core_Metadata*)_upb_msg_new(&envoy_api_v2_core_Metadata_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_LbEndpoint_set_metadata(msg, sub);
   }
@@ -166,7 +165,7 @@ UPB_INLINE void envoy_api_v2_endpoint_LbEndpoint_set_load_balancing_weight(envoy
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_endpoint_LbEndpoint_mutable_load_balancing_weight(envoy_api_v2_endpoint_LbEndpoint *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_endpoint_LbEndpoint_load_balancing_weight(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_LbEndpoint_set_load_balancing_weight(msg, sub);
   }
@@ -179,7 +178,7 @@ UPB_INLINE void envoy_api_v2_endpoint_LbEndpoint_set_endpoint_name(envoy_api_v2_
 /* envoy.api.v2.endpoint.LocalityLbEndpoints */
 
 UPB_INLINE envoy_api_v2_endpoint_LocalityLbEndpoints *envoy_api_v2_endpoint_LocalityLbEndpoints_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_LocalityLbEndpoints *)upb_msg_new(&envoy_api_v2_endpoint_LocalityLbEndpoints_msginit, arena);
+  return (envoy_api_v2_endpoint_LocalityLbEndpoints *)_upb_msg_new(&envoy_api_v2_endpoint_LocalityLbEndpoints_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_LocalityLbEndpoints *envoy_api_v2_endpoint_LocalityLbEndpoints_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -202,7 +201,7 @@ UPB_INLINE void envoy_api_v2_endpoint_LocalityLbEndpoints_set_locality(envoy_api
 UPB_INLINE struct envoy_api_v2_core_Locality* envoy_api_v2_endpoint_LocalityLbEndpoints_mutable_locality(envoy_api_v2_endpoint_LocalityLbEndpoints *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Locality* sub = (struct envoy_api_v2_core_Locality*)envoy_api_v2_endpoint_LocalityLbEndpoints_locality(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_Locality*)upb_msg_new(&envoy_api_v2_core_Locality_msginit, arena);
+    sub = (struct envoy_api_v2_core_Locality*)_upb_msg_new(&envoy_api_v2_core_Locality_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_LocalityLbEndpoints_set_locality(msg, sub);
   }
@@ -212,10 +211,10 @@ UPB_INLINE envoy_api_v2_endpoint_LbEndpoint** envoy_api_v2_endpoint_LocalityLbEn
   return (envoy_api_v2_endpoint_LbEndpoint**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
 }
 UPB_INLINE envoy_api_v2_endpoint_LbEndpoint** envoy_api_v2_endpoint_LocalityLbEndpoints_resize_lb_endpoints(envoy_api_v2_endpoint_LocalityLbEndpoints *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_endpoint_LbEndpoint**)_upb_array_resize_accessor(msg, UPB_SIZE(16, 32), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_endpoint_LbEndpoint**)_upb_array_resize_accessor(msg, UPB_SIZE(16, 32), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_endpoint_LbEndpoint* envoy_api_v2_endpoint_LocalityLbEndpoints_add_lb_endpoints(envoy_api_v2_endpoint_LocalityLbEndpoints *msg, upb_arena *arena) {
-  struct envoy_api_v2_endpoint_LbEndpoint* sub = (struct envoy_api_v2_endpoint_LbEndpoint*)upb_msg_new(&envoy_api_v2_endpoint_LbEndpoint_msginit, arena);
+  struct envoy_api_v2_endpoint_LbEndpoint* sub = (struct envoy_api_v2_endpoint_LbEndpoint*)_upb_msg_new(&envoy_api_v2_endpoint_LbEndpoint_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(16, 32), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -227,7 +226,7 @@ UPB_INLINE void envoy_api_v2_endpoint_LocalityLbEndpoints_set_load_balancing_wei
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_endpoint_LocalityLbEndpoints_mutable_load_balancing_weight(envoy_api_v2_endpoint_LocalityLbEndpoints *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_LocalityLbEndpoints_set_load_balancing_weight(msg, sub);
   }
@@ -242,7 +241,7 @@ UPB_INLINE void envoy_api_v2_endpoint_LocalityLbEndpoints_set_proximity(envoy_ap
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_endpoint_LocalityLbEndpoints_mutable_proximity(envoy_api_v2_endpoint_LocalityLbEndpoints *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_endpoint_LocalityLbEndpoints_proximity(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_LocalityLbEndpoints_set_proximity(msg, sub);
   }

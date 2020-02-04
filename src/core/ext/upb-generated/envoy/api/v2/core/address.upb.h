@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_CORE_ADDRESS_PROTO_UPB_H_
 #define ENVOY_API_V2_CORE_ADDRESS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -54,7 +53,7 @@ typedef enum {
 /* envoy.api.v2.core.Pipe */
 
 UPB_INLINE envoy_api_v2_core_Pipe *envoy_api_v2_core_Pipe_new(upb_arena *arena) {
-  return (envoy_api_v2_core_Pipe *)upb_msg_new(&envoy_api_v2_core_Pipe_msginit, arena);
+  return (envoy_api_v2_core_Pipe *)_upb_msg_new(&envoy_api_v2_core_Pipe_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_Pipe *envoy_api_v2_core_Pipe_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -74,7 +73,7 @@ UPB_INLINE void envoy_api_v2_core_Pipe_set_path(envoy_api_v2_core_Pipe *msg, upb
 /* envoy.api.v2.core.SocketAddress */
 
 UPB_INLINE envoy_api_v2_core_SocketAddress *envoy_api_v2_core_SocketAddress_new(upb_arena *arena) {
-  return (envoy_api_v2_core_SocketAddress *)upb_msg_new(&envoy_api_v2_core_SocketAddress_msginit, arena);
+  return (envoy_api_v2_core_SocketAddress *)_upb_msg_new(&envoy_api_v2_core_SocketAddress_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_SocketAddress *envoy_api_v2_core_SocketAddress_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -123,7 +122,7 @@ UPB_INLINE void envoy_api_v2_core_SocketAddress_set_ipv4_compat(envoy_api_v2_cor
 /* envoy.api.v2.core.TcpKeepalive */
 
 UPB_INLINE envoy_api_v2_core_TcpKeepalive *envoy_api_v2_core_TcpKeepalive_new(upb_arena *arena) {
-  return (envoy_api_v2_core_TcpKeepalive *)upb_msg_new(&envoy_api_v2_core_TcpKeepalive_msginit, arena);
+  return (envoy_api_v2_core_TcpKeepalive *)_upb_msg_new(&envoy_api_v2_core_TcpKeepalive_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_TcpKeepalive *envoy_api_v2_core_TcpKeepalive_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -144,7 +143,7 @@ UPB_INLINE void envoy_api_v2_core_TcpKeepalive_set_keepalive_probes(envoy_api_v2
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mutable_keepalive_probes(envoy_api_v2_core_TcpKeepalive *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_TcpKeepalive_keepalive_probes(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_TcpKeepalive_set_keepalive_probes(msg, sub);
   }
@@ -156,7 +155,7 @@ UPB_INLINE void envoy_api_v2_core_TcpKeepalive_set_keepalive_time(envoy_api_v2_c
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mutable_keepalive_time(envoy_api_v2_core_TcpKeepalive *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_TcpKeepalive_keepalive_time(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_TcpKeepalive_set_keepalive_time(msg, sub);
   }
@@ -168,7 +167,7 @@ UPB_INLINE void envoy_api_v2_core_TcpKeepalive_set_keepalive_interval(envoy_api_
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mutable_keepalive_interval(envoy_api_v2_core_TcpKeepalive *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_TcpKeepalive_keepalive_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_TcpKeepalive_set_keepalive_interval(msg, sub);
   }
@@ -178,7 +177,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mu
 /* envoy.api.v2.core.BindConfig */
 
 UPB_INLINE envoy_api_v2_core_BindConfig *envoy_api_v2_core_BindConfig_new(upb_arena *arena) {
-  return (envoy_api_v2_core_BindConfig *)upb_msg_new(&envoy_api_v2_core_BindConfig_msginit, arena);
+  return (envoy_api_v2_core_BindConfig *)_upb_msg_new(&envoy_api_v2_core_BindConfig_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_BindConfig *envoy_api_v2_core_BindConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -199,7 +198,7 @@ UPB_INLINE void envoy_api_v2_core_BindConfig_set_source_address(envoy_api_v2_cor
 UPB_INLINE struct envoy_api_v2_core_SocketAddress* envoy_api_v2_core_BindConfig_mutable_source_address(envoy_api_v2_core_BindConfig *msg, upb_arena *arena) {
   struct envoy_api_v2_core_SocketAddress* sub = (struct envoy_api_v2_core_SocketAddress*)envoy_api_v2_core_BindConfig_source_address(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_SocketAddress*)upb_msg_new(&envoy_api_v2_core_SocketAddress_msginit, arena);
+    sub = (struct envoy_api_v2_core_SocketAddress*)_upb_msg_new(&envoy_api_v2_core_SocketAddress_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_BindConfig_set_source_address(msg, sub);
   }
@@ -211,7 +210,7 @@ UPB_INLINE void envoy_api_v2_core_BindConfig_set_freebind(envoy_api_v2_core_Bind
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_core_BindConfig_mutable_freebind(envoy_api_v2_core_BindConfig *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_core_BindConfig_freebind(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_BoolValue*)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+    sub = (struct google_protobuf_BoolValue*)_upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_BindConfig_set_freebind(msg, sub);
   }
@@ -221,10 +220,10 @@ UPB_INLINE struct envoy_api_v2_core_SocketOption** envoy_api_v2_core_BindConfig_
   return (struct envoy_api_v2_core_SocketOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
 UPB_INLINE struct envoy_api_v2_core_SocketOption** envoy_api_v2_core_BindConfig_resize_socket_options(envoy_api_v2_core_BindConfig *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_api_v2_core_SocketOption**)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_api_v2_core_SocketOption**)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_core_SocketOption* envoy_api_v2_core_BindConfig_add_socket_options(envoy_api_v2_core_BindConfig *msg, upb_arena *arena) {
-  struct envoy_api_v2_core_SocketOption* sub = (struct envoy_api_v2_core_SocketOption*)upb_msg_new(&envoy_api_v2_core_SocketOption_msginit, arena);
+  struct envoy_api_v2_core_SocketOption* sub = (struct envoy_api_v2_core_SocketOption*)_upb_msg_new(&envoy_api_v2_core_SocketOption_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(8, 16), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -234,7 +233,7 @@ UPB_INLINE struct envoy_api_v2_core_SocketOption* envoy_api_v2_core_BindConfig_a
 /* envoy.api.v2.core.Address */
 
 UPB_INLINE envoy_api_v2_core_Address *envoy_api_v2_core_Address_new(upb_arena *arena) {
-  return (envoy_api_v2_core_Address *)upb_msg_new(&envoy_api_v2_core_Address_msginit, arena);
+  return (envoy_api_v2_core_Address *)_upb_msg_new(&envoy_api_v2_core_Address_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_Address *envoy_api_v2_core_Address_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -263,7 +262,7 @@ UPB_INLINE void envoy_api_v2_core_Address_set_socket_address(envoy_api_v2_core_A
 UPB_INLINE struct envoy_api_v2_core_SocketAddress* envoy_api_v2_core_Address_mutable_socket_address(envoy_api_v2_core_Address *msg, upb_arena *arena) {
   struct envoy_api_v2_core_SocketAddress* sub = (struct envoy_api_v2_core_SocketAddress*)envoy_api_v2_core_Address_socket_address(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_SocketAddress*)upb_msg_new(&envoy_api_v2_core_SocketAddress_msginit, arena);
+    sub = (struct envoy_api_v2_core_SocketAddress*)_upb_msg_new(&envoy_api_v2_core_SocketAddress_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_Address_set_socket_address(msg, sub);
   }
@@ -275,7 +274,7 @@ UPB_INLINE void envoy_api_v2_core_Address_set_pipe(envoy_api_v2_core_Address *ms
 UPB_INLINE struct envoy_api_v2_core_Pipe* envoy_api_v2_core_Address_mutable_pipe(envoy_api_v2_core_Address *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Pipe* sub = (struct envoy_api_v2_core_Pipe*)envoy_api_v2_core_Address_pipe(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_Pipe*)upb_msg_new(&envoy_api_v2_core_Pipe_msginit, arena);
+    sub = (struct envoy_api_v2_core_Pipe*)_upb_msg_new(&envoy_api_v2_core_Pipe_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_Address_set_pipe(msg, sub);
   }
@@ -285,7 +284,7 @@ UPB_INLINE struct envoy_api_v2_core_Pipe* envoy_api_v2_core_Address_mutable_pipe
 /* envoy.api.v2.core.CidrRange */
 
 UPB_INLINE envoy_api_v2_core_CidrRange *envoy_api_v2_core_CidrRange_new(upb_arena *arena) {
-  return (envoy_api_v2_core_CidrRange *)upb_msg_new(&envoy_api_v2_core_CidrRange_msginit, arena);
+  return (envoy_api_v2_core_CidrRange *)_upb_msg_new(&envoy_api_v2_core_CidrRange_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_CidrRange *envoy_api_v2_core_CidrRange_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -308,7 +307,7 @@ UPB_INLINE void envoy_api_v2_core_CidrRange_set_prefix_len(envoy_api_v2_core_Cid
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_CidrRange_mutable_prefix_len(envoy_api_v2_core_CidrRange *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_CidrRange_prefix_len(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_CidrRange_set_prefix_len(msg, sub);
   }

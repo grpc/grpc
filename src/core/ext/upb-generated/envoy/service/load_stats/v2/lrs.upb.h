@@ -9,7 +9,6 @@
 #ifndef ENVOY_SERVICE_LOAD_STATS_V2_LRS_PROTO_UPB_H_
 #define ENVOY_SERVICE_LOAD_STATS_V2_LRS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -37,7 +36,7 @@ extern const upb_msglayout google_protobuf_Duration_msginit;
 /* envoy.service.load_stats.v2.LoadStatsRequest */
 
 UPB_INLINE envoy_service_load_stats_v2_LoadStatsRequest *envoy_service_load_stats_v2_LoadStatsRequest_new(upb_arena *arena) {
-  return (envoy_service_load_stats_v2_LoadStatsRequest *)upb_msg_new(&envoy_service_load_stats_v2_LoadStatsRequest_msginit, arena);
+  return (envoy_service_load_stats_v2_LoadStatsRequest *)_upb_msg_new(&envoy_service_load_stats_v2_LoadStatsRequest_msginit, arena);
 }
 UPB_INLINE envoy_service_load_stats_v2_LoadStatsRequest *envoy_service_load_stats_v2_LoadStatsRequest_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -57,7 +56,7 @@ UPB_INLINE void envoy_service_load_stats_v2_LoadStatsRequest_set_node(envoy_serv
 UPB_INLINE struct envoy_api_v2_core_Node* envoy_service_load_stats_v2_LoadStatsRequest_mutable_node(envoy_service_load_stats_v2_LoadStatsRequest *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Node* sub = (struct envoy_api_v2_core_Node*)envoy_service_load_stats_v2_LoadStatsRequest_node(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_Node*)upb_msg_new(&envoy_api_v2_core_Node_msginit, arena);
+    sub = (struct envoy_api_v2_core_Node*)_upb_msg_new(&envoy_api_v2_core_Node_msginit, arena);
     if (!sub) return NULL;
     envoy_service_load_stats_v2_LoadStatsRequest_set_node(msg, sub);
   }
@@ -67,10 +66,10 @@ UPB_INLINE struct envoy_api_v2_endpoint_ClusterStats** envoy_service_load_stats_
   return (struct envoy_api_v2_endpoint_ClusterStats**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
 UPB_INLINE struct envoy_api_v2_endpoint_ClusterStats** envoy_service_load_stats_v2_LoadStatsRequest_resize_cluster_stats(envoy_service_load_stats_v2_LoadStatsRequest *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_api_v2_endpoint_ClusterStats**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_api_v2_endpoint_ClusterStats**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_endpoint_ClusterStats* envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(envoy_service_load_stats_v2_LoadStatsRequest *msg, upb_arena *arena) {
-  struct envoy_api_v2_endpoint_ClusterStats* sub = (struct envoy_api_v2_endpoint_ClusterStats*)upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_msginit, arena);
+  struct envoy_api_v2_endpoint_ClusterStats* sub = (struct envoy_api_v2_endpoint_ClusterStats*)_upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(4, 8), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -80,7 +79,7 @@ UPB_INLINE struct envoy_api_v2_endpoint_ClusterStats* envoy_service_load_stats_v
 /* envoy.service.load_stats.v2.LoadStatsResponse */
 
 UPB_INLINE envoy_service_load_stats_v2_LoadStatsResponse *envoy_service_load_stats_v2_LoadStatsResponse_new(upb_arena *arena) {
-  return (envoy_service_load_stats_v2_LoadStatsResponse *)upb_msg_new(&envoy_service_load_stats_v2_LoadStatsResponse_msginit, arena);
+  return (envoy_service_load_stats_v2_LoadStatsResponse *)_upb_msg_new(&envoy_service_load_stats_v2_LoadStatsResponse_msginit, arena);
 }
 UPB_INLINE envoy_service_load_stats_v2_LoadStatsResponse *envoy_service_load_stats_v2_LoadStatsResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -99,11 +98,11 @@ UPB_INLINE upb_strview* envoy_service_load_stats_v2_LoadStatsResponse_mutable_cl
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
 UPB_INLINE upb_strview* envoy_service_load_stats_v2_LoadStatsResponse_resize_clusters(envoy_service_load_stats_v2_LoadStatsResponse *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_service_load_stats_v2_LoadStatsResponse_add_clusters(envoy_service_load_stats_v2_LoadStatsResponse *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+  return _upb_array_append_accessor(msg, UPB_SIZE(8, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+      arena);
 }
 UPB_INLINE void envoy_service_load_stats_v2_LoadStatsResponse_set_load_reporting_interval(envoy_service_load_stats_v2_LoadStatsResponse *msg, struct google_protobuf_Duration* value) {
   UPB_FIELD_AT(msg, struct google_protobuf_Duration*, UPB_SIZE(4, 8)) = value;
@@ -111,7 +110,7 @@ UPB_INLINE void envoy_service_load_stats_v2_LoadStatsResponse_set_load_reporting
 UPB_INLINE struct google_protobuf_Duration* envoy_service_load_stats_v2_LoadStatsResponse_mutable_load_reporting_interval(envoy_service_load_stats_v2_LoadStatsResponse *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_service_load_stats_v2_LoadStatsResponse_load_reporting_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_service_load_stats_v2_LoadStatsResponse_set_load_reporting_interval(msg, sub);
   }
