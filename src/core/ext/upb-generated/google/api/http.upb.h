@@ -9,7 +9,6 @@
 #ifndef GOOGLE_API_HTTP_PROTO_UPB_H_
 #define GOOGLE_API_HTTP_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -34,7 +33,7 @@ extern const upb_msglayout google_api_CustomHttpPattern_msginit;
 /* google.api.Http */
 
 UPB_INLINE google_api_Http *google_api_Http_new(upb_arena *arena) {
-  return (google_api_Http *)upb_msg_new(&google_api_Http_msginit, arena);
+  return (google_api_Http *)_upb_msg_new(&google_api_Http_msginit, arena);
 }
 UPB_INLINE google_api_Http *google_api_Http_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -52,10 +51,10 @@ UPB_INLINE google_api_HttpRule** google_api_Http_mutable_rules(google_api_Http *
   return (google_api_HttpRule**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
 UPB_INLINE google_api_HttpRule** google_api_Http_resize_rules(google_api_Http *msg, size_t len, upb_arena *arena) {
-  return (google_api_HttpRule**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (google_api_HttpRule**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct google_api_HttpRule* google_api_Http_add_rules(google_api_Http *msg, upb_arena *arena) {
-  struct google_api_HttpRule* sub = (struct google_api_HttpRule*)upb_msg_new(&google_api_HttpRule_msginit, arena);
+  struct google_api_HttpRule* sub = (struct google_api_HttpRule*)_upb_msg_new(&google_api_HttpRule_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(4, 8), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -68,7 +67,7 @@ UPB_INLINE void google_api_Http_set_fully_decode_reserved_expansion(google_api_H
 /* google.api.HttpRule */
 
 UPB_INLINE google_api_HttpRule *google_api_HttpRule_new(upb_arena *arena) {
-  return (google_api_HttpRule *)upb_msg_new(&google_api_HttpRule_msginit, arena);
+  return (google_api_HttpRule *)_upb_msg_new(&google_api_HttpRule_msginit, arena);
 }
 UPB_INLINE google_api_HttpRule *google_api_HttpRule_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -134,7 +133,7 @@ UPB_INLINE void google_api_HttpRule_set_custom(google_api_HttpRule *msg, google_
 UPB_INLINE struct google_api_CustomHttpPattern* google_api_HttpRule_mutable_custom(google_api_HttpRule *msg, upb_arena *arena) {
   struct google_api_CustomHttpPattern* sub = (struct google_api_CustomHttpPattern*)google_api_HttpRule_custom(msg);
   if (sub == NULL) {
-    sub = (struct google_api_CustomHttpPattern*)upb_msg_new(&google_api_CustomHttpPattern_msginit, arena);
+    sub = (struct google_api_CustomHttpPattern*)_upb_msg_new(&google_api_CustomHttpPattern_msginit, arena);
     if (!sub) return NULL;
     google_api_HttpRule_set_custom(msg, sub);
   }
@@ -144,10 +143,10 @@ UPB_INLINE google_api_HttpRule** google_api_HttpRule_mutable_additional_bindings
   return (google_api_HttpRule**)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
 }
 UPB_INLINE google_api_HttpRule** google_api_HttpRule_resize_additional_bindings(google_api_HttpRule *msg, size_t len, upb_arena *arena) {
-  return (google_api_HttpRule**)_upb_array_resize_accessor(msg, UPB_SIZE(24, 48), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (google_api_HttpRule**)_upb_array_resize_accessor(msg, UPB_SIZE(24, 48), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct google_api_HttpRule* google_api_HttpRule_add_additional_bindings(google_api_HttpRule *msg, upb_arena *arena) {
-  struct google_api_HttpRule* sub = (struct google_api_HttpRule*)upb_msg_new(&google_api_HttpRule_msginit, arena);
+  struct google_api_HttpRule* sub = (struct google_api_HttpRule*)_upb_msg_new(&google_api_HttpRule_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(24, 48), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -160,7 +159,7 @@ UPB_INLINE void google_api_HttpRule_set_response_body(google_api_HttpRule *msg, 
 /* google.api.CustomHttpPattern */
 
 UPB_INLINE google_api_CustomHttpPattern *google_api_CustomHttpPattern_new(upb_arena *arena) {
-  return (google_api_CustomHttpPattern *)upb_msg_new(&google_api_CustomHttpPattern_msginit, arena);
+  return (google_api_CustomHttpPattern *)_upb_msg_new(&google_api_CustomHttpPattern_msginit, arena);
 }
 UPB_INLINE google_api_CustomHttpPattern *google_api_CustomHttpPattern_parse(const char *buf, size_t size,
                         upb_arena *arena) {

@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_CORE_HTTP_URI_PROTO_UPB_H_
 #define ENVOY_API_V2_CORE_HTTP_URI_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -30,7 +29,7 @@ extern const upb_msglayout google_protobuf_Duration_msginit;
 /* envoy.api.v2.core.HttpUri */
 
 UPB_INLINE envoy_api_v2_core_HttpUri *envoy_api_v2_core_HttpUri_new(upb_arena *arena) {
-  return (envoy_api_v2_core_HttpUri *)upb_msg_new(&envoy_api_v2_core_HttpUri_msginit, arena);
+  return (envoy_api_v2_core_HttpUri *)_upb_msg_new(&envoy_api_v2_core_HttpUri_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_HttpUri *envoy_api_v2_core_HttpUri_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -64,7 +63,7 @@ UPB_INLINE void envoy_api_v2_core_HttpUri_set_timeout(envoy_api_v2_core_HttpUri 
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HttpUri_mutable_timeout(envoy_api_v2_core_HttpUri *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HttpUri_timeout(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HttpUri_set_timeout(msg, sub);
   }

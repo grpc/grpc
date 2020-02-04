@@ -9,7 +9,6 @@
 #ifndef GOOGLE_RPC_STATUS_PROTO_UPB_H_
 #define GOOGLE_RPC_STATUS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -30,7 +29,7 @@ extern const upb_msglayout google_protobuf_Any_msginit;
 /* google.rpc.Status */
 
 UPB_INLINE google_rpc_Status *google_rpc_Status_new(upb_arena *arena) {
-  return (google_rpc_Status *)upb_msg_new(&google_rpc_Status_msginit, arena);
+  return (google_rpc_Status *)_upb_msg_new(&google_rpc_Status_msginit, arena);
 }
 UPB_INLINE google_rpc_Status *google_rpc_Status_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -55,10 +54,10 @@ UPB_INLINE struct google_protobuf_Any** google_rpc_Status_mutable_details(google
   return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
 UPB_INLINE struct google_protobuf_Any** google_rpc_Status_resize_details(google_rpc_Status *msg, size_t len, upb_arena *arena) {
-  return (struct google_protobuf_Any**)_upb_array_resize_accessor(msg, UPB_SIZE(12, 24), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct google_protobuf_Any**)_upb_array_resize_accessor(msg, UPB_SIZE(12, 24), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct google_protobuf_Any* google_rpc_Status_add_details(google_rpc_Status *msg, upb_arena *arena) {
-  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(12, 24), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;

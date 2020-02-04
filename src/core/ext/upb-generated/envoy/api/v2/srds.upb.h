@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_SRDS_PROTO_UPB_H_
 #define ENVOY_API_V2_SRDS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -34,7 +33,7 @@ extern const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_ms
 /* envoy.api.v2.ScopedRouteConfiguration */
 
 UPB_INLINE envoy_api_v2_ScopedRouteConfiguration *envoy_api_v2_ScopedRouteConfiguration_new(upb_arena *arena) {
-  return (envoy_api_v2_ScopedRouteConfiguration *)upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_msginit, arena);
+  return (envoy_api_v2_ScopedRouteConfiguration *)_upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_ScopedRouteConfiguration *envoy_api_v2_ScopedRouteConfiguration_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -61,7 +60,7 @@ UPB_INLINE void envoy_api_v2_ScopedRouteConfiguration_set_key(envoy_api_v2_Scope
 UPB_INLINE struct envoy_api_v2_ScopedRouteConfiguration_Key* envoy_api_v2_ScopedRouteConfiguration_mutable_key(envoy_api_v2_ScopedRouteConfiguration *msg, upb_arena *arena) {
   struct envoy_api_v2_ScopedRouteConfiguration_Key* sub = (struct envoy_api_v2_ScopedRouteConfiguration_Key*)envoy_api_v2_ScopedRouteConfiguration_key(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_ScopedRouteConfiguration_Key*)upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_Key_msginit, arena);
+    sub = (struct envoy_api_v2_ScopedRouteConfiguration_Key*)_upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_Key_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_ScopedRouteConfiguration_set_key(msg, sub);
   }
@@ -71,7 +70,7 @@ UPB_INLINE struct envoy_api_v2_ScopedRouteConfiguration_Key* envoy_api_v2_Scoped
 /* envoy.api.v2.ScopedRouteConfiguration.Key */
 
 UPB_INLINE envoy_api_v2_ScopedRouteConfiguration_Key *envoy_api_v2_ScopedRouteConfiguration_Key_new(upb_arena *arena) {
-  return (envoy_api_v2_ScopedRouteConfiguration_Key *)upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_Key_msginit, arena);
+  return (envoy_api_v2_ScopedRouteConfiguration_Key *)_upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_Key_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_ScopedRouteConfiguration_Key *envoy_api_v2_ScopedRouteConfiguration_Key_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -88,10 +87,10 @@ UPB_INLINE envoy_api_v2_ScopedRouteConfiguration_Key_Fragment** envoy_api_v2_Sco
   return (envoy_api_v2_ScopedRouteConfiguration_Key_Fragment**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
 UPB_INLINE envoy_api_v2_ScopedRouteConfiguration_Key_Fragment** envoy_api_v2_ScopedRouteConfiguration_Key_resize_fragments(envoy_api_v2_ScopedRouteConfiguration_Key *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_ScopedRouteConfiguration_Key_Fragment**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_ScopedRouteConfiguration_Key_Fragment**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_ScopedRouteConfiguration_Key_Fragment* envoy_api_v2_ScopedRouteConfiguration_Key_add_fragments(envoy_api_v2_ScopedRouteConfiguration_Key *msg, upb_arena *arena) {
-  struct envoy_api_v2_ScopedRouteConfiguration_Key_Fragment* sub = (struct envoy_api_v2_ScopedRouteConfiguration_Key_Fragment*)upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit, arena);
+  struct envoy_api_v2_ScopedRouteConfiguration_Key_Fragment* sub = (struct envoy_api_v2_ScopedRouteConfiguration_Key_Fragment*)_upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(0, 0), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -101,7 +100,7 @@ UPB_INLINE struct envoy_api_v2_ScopedRouteConfiguration_Key_Fragment* envoy_api_
 /* envoy.api.v2.ScopedRouteConfiguration.Key.Fragment */
 
 UPB_INLINE envoy_api_v2_ScopedRouteConfiguration_Key_Fragment *envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_new(upb_arena *arena) {
-  return (envoy_api_v2_ScopedRouteConfiguration_Key_Fragment *)upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit, arena);
+  return (envoy_api_v2_ScopedRouteConfiguration_Key_Fragment *)_upb_msg_new(&envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_ScopedRouteConfiguration_Key_Fragment *envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_parse(const char *buf, size_t size,
                         upb_arena *arena) {

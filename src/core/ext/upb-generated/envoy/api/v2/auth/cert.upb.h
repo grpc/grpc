@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_AUTH_CERT_PROTO_UPB_H_
 #define ENVOY_API_V2_AUTH_CERT_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -78,7 +77,7 @@ typedef enum {
 /* envoy.api.v2.auth.TlsParameters */
 
 UPB_INLINE envoy_api_v2_auth_TlsParameters *envoy_api_v2_auth_TlsParameters_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_TlsParameters *)upb_msg_new(&envoy_api_v2_auth_TlsParameters_msginit, arena);
+  return (envoy_api_v2_auth_TlsParameters *)_upb_msg_new(&envoy_api_v2_auth_TlsParameters_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_TlsParameters *envoy_api_v2_auth_TlsParameters_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -104,27 +103,27 @@ UPB_INLINE upb_strview* envoy_api_v2_auth_TlsParameters_mutable_cipher_suites(en
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 16), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_TlsParameters_resize_cipher_suites(envoy_api_v2_auth_TlsParameters *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(16, 16), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(16, 16), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_auth_TlsParameters_add_cipher_suites(envoy_api_v2_auth_TlsParameters *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(
-      msg, UPB_SIZE(16, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+  return _upb_array_append_accessor(msg, UPB_SIZE(16, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+      arena);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_TlsParameters_mutable_ecdh_curves(envoy_api_v2_auth_TlsParameters *msg, size_t *len) {
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(20, 24), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_TlsParameters_resize_ecdh_curves(envoy_api_v2_auth_TlsParameters *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(20, 24), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(20, 24), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_auth_TlsParameters_add_ecdh_curves(envoy_api_v2_auth_TlsParameters *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(
-      msg, UPB_SIZE(20, 24), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+  return _upb_array_append_accessor(msg, UPB_SIZE(20, 24), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+      arena);
 }
 
 /* envoy.api.v2.auth.PrivateKeyProvider */
 
 UPB_INLINE envoy_api_v2_auth_PrivateKeyProvider *envoy_api_v2_auth_PrivateKeyProvider_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_PrivateKeyProvider *)upb_msg_new(&envoy_api_v2_auth_PrivateKeyProvider_msginit, arena);
+  return (envoy_api_v2_auth_PrivateKeyProvider *)_upb_msg_new(&envoy_api_v2_auth_PrivateKeyProvider_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_PrivateKeyProvider *envoy_api_v2_auth_PrivateKeyProvider_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -157,7 +156,7 @@ UPB_INLINE void envoy_api_v2_auth_PrivateKeyProvider_set_config(envoy_api_v2_aut
 UPB_INLINE struct google_protobuf_Struct* envoy_api_v2_auth_PrivateKeyProvider_mutable_config(envoy_api_v2_auth_PrivateKeyProvider *msg, upb_arena *arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_api_v2_auth_PrivateKeyProvider_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Struct*)upb_msg_new(&google_protobuf_Struct_msginit, arena);
+    sub = (struct google_protobuf_Struct*)_upb_msg_new(&google_protobuf_Struct_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_PrivateKeyProvider_set_config(msg, sub);
   }
@@ -169,7 +168,7 @@ UPB_INLINE void envoy_api_v2_auth_PrivateKeyProvider_set_typed_config(envoy_api_
 UPB_INLINE struct google_protobuf_Any* envoy_api_v2_auth_PrivateKeyProvider_mutable_typed_config(envoy_api_v2_auth_PrivateKeyProvider *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_api_v2_auth_PrivateKeyProvider_typed_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_PrivateKeyProvider_set_typed_config(msg, sub);
   }
@@ -179,7 +178,7 @@ UPB_INLINE struct google_protobuf_Any* envoy_api_v2_auth_PrivateKeyProvider_muta
 /* envoy.api.v2.auth.TlsCertificate */
 
 UPB_INLINE envoy_api_v2_auth_TlsCertificate *envoy_api_v2_auth_TlsCertificate_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_TlsCertificate *)upb_msg_new(&envoy_api_v2_auth_TlsCertificate_msginit, arena);
+  return (envoy_api_v2_auth_TlsCertificate *)_upb_msg_new(&envoy_api_v2_auth_TlsCertificate_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_TlsCertificate *envoy_api_v2_auth_TlsCertificate_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -203,7 +202,7 @@ UPB_INLINE void envoy_api_v2_auth_TlsCertificate_set_certificate_chain(envoy_api
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_TlsCertificate_mutable_certificate_chain(envoy_api_v2_auth_TlsCertificate *msg, upb_arena *arena) {
   struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)envoy_api_v2_auth_TlsCertificate_certificate_chain(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_DataSource*)upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
+    sub = (struct envoy_api_v2_core_DataSource*)_upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_TlsCertificate_set_certificate_chain(msg, sub);
   }
@@ -215,7 +214,7 @@ UPB_INLINE void envoy_api_v2_auth_TlsCertificate_set_private_key(envoy_api_v2_au
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_TlsCertificate_mutable_private_key(envoy_api_v2_auth_TlsCertificate *msg, upb_arena *arena) {
   struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)envoy_api_v2_auth_TlsCertificate_private_key(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_DataSource*)upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
+    sub = (struct envoy_api_v2_core_DataSource*)_upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_TlsCertificate_set_private_key(msg, sub);
   }
@@ -227,7 +226,7 @@ UPB_INLINE void envoy_api_v2_auth_TlsCertificate_set_password(envoy_api_v2_auth_
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_TlsCertificate_mutable_password(envoy_api_v2_auth_TlsCertificate *msg, upb_arena *arena) {
   struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)envoy_api_v2_auth_TlsCertificate_password(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_DataSource*)upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
+    sub = (struct envoy_api_v2_core_DataSource*)_upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_TlsCertificate_set_password(msg, sub);
   }
@@ -239,7 +238,7 @@ UPB_INLINE void envoy_api_v2_auth_TlsCertificate_set_ocsp_staple(envoy_api_v2_au
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_TlsCertificate_mutable_ocsp_staple(envoy_api_v2_auth_TlsCertificate *msg, upb_arena *arena) {
   struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)envoy_api_v2_auth_TlsCertificate_ocsp_staple(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_DataSource*)upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
+    sub = (struct envoy_api_v2_core_DataSource*)_upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_TlsCertificate_set_ocsp_staple(msg, sub);
   }
@@ -249,10 +248,10 @@ UPB_INLINE struct envoy_api_v2_core_DataSource** envoy_api_v2_auth_TlsCertificat
   return (struct envoy_api_v2_core_DataSource**)_upb_array_mutable_accessor(msg, UPB_SIZE(20, 40), len);
 }
 UPB_INLINE struct envoy_api_v2_core_DataSource** envoy_api_v2_auth_TlsCertificate_resize_signed_certificate_timestamp(envoy_api_v2_auth_TlsCertificate *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_api_v2_core_DataSource**)_upb_array_resize_accessor(msg, UPB_SIZE(20, 40), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_api_v2_core_DataSource**)_upb_array_resize_accessor(msg, UPB_SIZE(20, 40), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_TlsCertificate_add_signed_certificate_timestamp(envoy_api_v2_auth_TlsCertificate *msg, upb_arena *arena) {
-  struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
+  struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)_upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(20, 40), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -264,7 +263,7 @@ UPB_INLINE void envoy_api_v2_auth_TlsCertificate_set_private_key_provider(envoy_
 UPB_INLINE struct envoy_api_v2_auth_PrivateKeyProvider* envoy_api_v2_auth_TlsCertificate_mutable_private_key_provider(envoy_api_v2_auth_TlsCertificate *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_PrivateKeyProvider* sub = (struct envoy_api_v2_auth_PrivateKeyProvider*)envoy_api_v2_auth_TlsCertificate_private_key_provider(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_PrivateKeyProvider*)upb_msg_new(&envoy_api_v2_auth_PrivateKeyProvider_msginit, arena);
+    sub = (struct envoy_api_v2_auth_PrivateKeyProvider*)_upb_msg_new(&envoy_api_v2_auth_PrivateKeyProvider_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_TlsCertificate_set_private_key_provider(msg, sub);
   }
@@ -274,7 +273,7 @@ UPB_INLINE struct envoy_api_v2_auth_PrivateKeyProvider* envoy_api_v2_auth_TlsCer
 /* envoy.api.v2.auth.TlsSessionTicketKeys */
 
 UPB_INLINE envoy_api_v2_auth_TlsSessionTicketKeys *envoy_api_v2_auth_TlsSessionTicketKeys_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_TlsSessionTicketKeys *)upb_msg_new(&envoy_api_v2_auth_TlsSessionTicketKeys_msginit, arena);
+  return (envoy_api_v2_auth_TlsSessionTicketKeys *)_upb_msg_new(&envoy_api_v2_auth_TlsSessionTicketKeys_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_TlsSessionTicketKeys *envoy_api_v2_auth_TlsSessionTicketKeys_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -291,10 +290,10 @@ UPB_INLINE struct envoy_api_v2_core_DataSource** envoy_api_v2_auth_TlsSessionTic
   return (struct envoy_api_v2_core_DataSource**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
 UPB_INLINE struct envoy_api_v2_core_DataSource** envoy_api_v2_auth_TlsSessionTicketKeys_resize_keys(envoy_api_v2_auth_TlsSessionTicketKeys *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_api_v2_core_DataSource**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_api_v2_core_DataSource**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_TlsSessionTicketKeys_add_keys(envoy_api_v2_auth_TlsSessionTicketKeys *msg, upb_arena *arena) {
-  struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
+  struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)_upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(0, 0), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -304,7 +303,7 @@ UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_TlsSessionTick
 /* envoy.api.v2.auth.CertificateValidationContext */
 
 UPB_INLINE envoy_api_v2_auth_CertificateValidationContext *envoy_api_v2_auth_CertificateValidationContext_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_CertificateValidationContext *)upb_msg_new(&envoy_api_v2_auth_CertificateValidationContext_msginit, arena);
+  return (envoy_api_v2_auth_CertificateValidationContext *)_upb_msg_new(&envoy_api_v2_auth_CertificateValidationContext_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_CertificateValidationContext *envoy_api_v2_auth_CertificateValidationContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -330,7 +329,7 @@ UPB_INLINE void envoy_api_v2_auth_CertificateValidationContext_set_trusted_ca(en
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_CertificateValidationContext_mutable_trusted_ca(envoy_api_v2_auth_CertificateValidationContext *msg, upb_arena *arena) {
   struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)envoy_api_v2_auth_CertificateValidationContext_trusted_ca(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_DataSource*)upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
+    sub = (struct envoy_api_v2_core_DataSource*)_upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CertificateValidationContext_set_trusted_ca(msg, sub);
   }
@@ -340,31 +339,31 @@ UPB_INLINE upb_strview* envoy_api_v2_auth_CertificateValidationContext_mutable_v
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(20, 40), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_CertificateValidationContext_resize_verify_certificate_hash(envoy_api_v2_auth_CertificateValidationContext *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(20, 40), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(20, 40), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_auth_CertificateValidationContext_add_verify_certificate_hash(envoy_api_v2_auth_CertificateValidationContext *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(
-      msg, UPB_SIZE(20, 40), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+  return _upb_array_append_accessor(msg, UPB_SIZE(20, 40), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+      arena);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_CertificateValidationContext_mutable_verify_certificate_spki(envoy_api_v2_auth_CertificateValidationContext *msg, size_t *len) {
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_CertificateValidationContext_resize_verify_certificate_spki(envoy_api_v2_auth_CertificateValidationContext *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(24, 48), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(24, 48), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_auth_CertificateValidationContext_add_verify_certificate_spki(envoy_api_v2_auth_CertificateValidationContext *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(
-      msg, UPB_SIZE(24, 48), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+  return _upb_array_append_accessor(msg, UPB_SIZE(24, 48), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+      arena);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_CertificateValidationContext_mutable_verify_subject_alt_name(envoy_api_v2_auth_CertificateValidationContext *msg, size_t *len) {
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 56), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_CertificateValidationContext_resize_verify_subject_alt_name(envoy_api_v2_auth_CertificateValidationContext *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(28, 56), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(28, 56), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_auth_CertificateValidationContext_add_verify_subject_alt_name(envoy_api_v2_auth_CertificateValidationContext *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(
-      msg, UPB_SIZE(28, 56), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+  return _upb_array_append_accessor(msg, UPB_SIZE(28, 56), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+      arena);
 }
 UPB_INLINE void envoy_api_v2_auth_CertificateValidationContext_set_require_ocsp_staple(envoy_api_v2_auth_CertificateValidationContext *msg, struct google_protobuf_BoolValue* value) {
   UPB_FIELD_AT(msg, struct google_protobuf_BoolValue*, UPB_SIZE(8, 16)) = value;
@@ -372,7 +371,7 @@ UPB_INLINE void envoy_api_v2_auth_CertificateValidationContext_set_require_ocsp_
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_auth_CertificateValidationContext_mutable_require_ocsp_staple(envoy_api_v2_auth_CertificateValidationContext *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_auth_CertificateValidationContext_require_ocsp_staple(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_BoolValue*)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+    sub = (struct google_protobuf_BoolValue*)_upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CertificateValidationContext_set_require_ocsp_staple(msg, sub);
   }
@@ -384,7 +383,7 @@ UPB_INLINE void envoy_api_v2_auth_CertificateValidationContext_set_require_signe
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_auth_CertificateValidationContext_mutable_require_signed_certificate_timestamp(envoy_api_v2_auth_CertificateValidationContext *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_auth_CertificateValidationContext_require_signed_certificate_timestamp(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_BoolValue*)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+    sub = (struct google_protobuf_BoolValue*)_upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CertificateValidationContext_set_require_signed_certificate_timestamp(msg, sub);
   }
@@ -396,7 +395,7 @@ UPB_INLINE void envoy_api_v2_auth_CertificateValidationContext_set_crl(envoy_api
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_CertificateValidationContext_mutable_crl(envoy_api_v2_auth_CertificateValidationContext *msg, upb_arena *arena) {
   struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)envoy_api_v2_auth_CertificateValidationContext_crl(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_DataSource*)upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
+    sub = (struct envoy_api_v2_core_DataSource*)_upb_msg_new(&envoy_api_v2_core_DataSource_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CertificateValidationContext_set_crl(msg, sub);
   }
@@ -409,7 +408,7 @@ UPB_INLINE void envoy_api_v2_auth_CertificateValidationContext_set_allow_expired
 /* envoy.api.v2.auth.CommonTlsContext */
 
 UPB_INLINE envoy_api_v2_auth_CommonTlsContext *envoy_api_v2_auth_CommonTlsContext_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_CommonTlsContext *)upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_msginit, arena);
+  return (envoy_api_v2_auth_CommonTlsContext *)_upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_CommonTlsContext *envoy_api_v2_auth_CommonTlsContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -445,7 +444,7 @@ UPB_INLINE void envoy_api_v2_auth_CommonTlsContext_set_tls_params(envoy_api_v2_a
 UPB_INLINE struct envoy_api_v2_auth_TlsParameters* envoy_api_v2_auth_CommonTlsContext_mutable_tls_params(envoy_api_v2_auth_CommonTlsContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_TlsParameters* sub = (struct envoy_api_v2_auth_TlsParameters*)envoy_api_v2_auth_CommonTlsContext_tls_params(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_TlsParameters*)upb_msg_new(&envoy_api_v2_auth_TlsParameters_msginit, arena);
+    sub = (struct envoy_api_v2_auth_TlsParameters*)_upb_msg_new(&envoy_api_v2_auth_TlsParameters_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CommonTlsContext_set_tls_params(msg, sub);
   }
@@ -455,10 +454,10 @@ UPB_INLINE envoy_api_v2_auth_TlsCertificate** envoy_api_v2_auth_CommonTlsContext
   return (envoy_api_v2_auth_TlsCertificate**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
 UPB_INLINE envoy_api_v2_auth_TlsCertificate** envoy_api_v2_auth_CommonTlsContext_resize_tls_certificates(envoy_api_v2_auth_CommonTlsContext *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_auth_TlsCertificate**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_auth_TlsCertificate**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_auth_TlsCertificate* envoy_api_v2_auth_CommonTlsContext_add_tls_certificates(envoy_api_v2_auth_CommonTlsContext *msg, upb_arena *arena) {
-  struct envoy_api_v2_auth_TlsCertificate* sub = (struct envoy_api_v2_auth_TlsCertificate*)upb_msg_new(&envoy_api_v2_auth_TlsCertificate_msginit, arena);
+  struct envoy_api_v2_auth_TlsCertificate* sub = (struct envoy_api_v2_auth_TlsCertificate*)_upb_msg_new(&envoy_api_v2_auth_TlsCertificate_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(4, 8), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -470,7 +469,7 @@ UPB_INLINE void envoy_api_v2_auth_CommonTlsContext_set_validation_context(envoy_
 UPB_INLINE struct envoy_api_v2_auth_CertificateValidationContext* envoy_api_v2_auth_CommonTlsContext_mutable_validation_context(envoy_api_v2_auth_CommonTlsContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_CertificateValidationContext* sub = (struct envoy_api_v2_auth_CertificateValidationContext*)envoy_api_v2_auth_CommonTlsContext_validation_context(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_CertificateValidationContext*)upb_msg_new(&envoy_api_v2_auth_CertificateValidationContext_msginit, arena);
+    sub = (struct envoy_api_v2_auth_CertificateValidationContext*)_upb_msg_new(&envoy_api_v2_auth_CertificateValidationContext_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CommonTlsContext_set_validation_context(msg, sub);
   }
@@ -480,20 +479,20 @@ UPB_INLINE upb_strview* envoy_api_v2_auth_CommonTlsContext_mutable_alpn_protocol
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_auth_CommonTlsContext_resize_alpn_protocols(envoy_api_v2_auth_CommonTlsContext *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_auth_CommonTlsContext_add_alpn_protocols(envoy_api_v2_auth_CommonTlsContext *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+  return _upb_array_append_accessor(msg, UPB_SIZE(8, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+      arena);
 }
 UPB_INLINE envoy_api_v2_auth_SdsSecretConfig** envoy_api_v2_auth_CommonTlsContext_mutable_tls_certificate_sds_secret_configs(envoy_api_v2_auth_CommonTlsContext *msg, size_t *len) {
   return (envoy_api_v2_auth_SdsSecretConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
 UPB_INLINE envoy_api_v2_auth_SdsSecretConfig** envoy_api_v2_auth_CommonTlsContext_resize_tls_certificate_sds_secret_configs(envoy_api_v2_auth_CommonTlsContext *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_auth_SdsSecretConfig**)_upb_array_resize_accessor(msg, UPB_SIZE(12, 24), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_auth_SdsSecretConfig**)_upb_array_resize_accessor(msg, UPB_SIZE(12, 24), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_auth_SdsSecretConfig* envoy_api_v2_auth_CommonTlsContext_add_tls_certificate_sds_secret_configs(envoy_api_v2_auth_CommonTlsContext *msg, upb_arena *arena) {
-  struct envoy_api_v2_auth_SdsSecretConfig* sub = (struct envoy_api_v2_auth_SdsSecretConfig*)upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
+  struct envoy_api_v2_auth_SdsSecretConfig* sub = (struct envoy_api_v2_auth_SdsSecretConfig*)_upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(12, 24), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -505,7 +504,7 @@ UPB_INLINE void envoy_api_v2_auth_CommonTlsContext_set_validation_context_sds_se
 UPB_INLINE struct envoy_api_v2_auth_SdsSecretConfig* envoy_api_v2_auth_CommonTlsContext_mutable_validation_context_sds_secret_config(envoy_api_v2_auth_CommonTlsContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_SdsSecretConfig* sub = (struct envoy_api_v2_auth_SdsSecretConfig*)envoy_api_v2_auth_CommonTlsContext_validation_context_sds_secret_config(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_SdsSecretConfig*)upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
+    sub = (struct envoy_api_v2_auth_SdsSecretConfig*)_upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CommonTlsContext_set_validation_context_sds_secret_config(msg, sub);
   }
@@ -517,7 +516,7 @@ UPB_INLINE void envoy_api_v2_auth_CommonTlsContext_set_combined_validation_conte
 UPB_INLINE struct envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext* envoy_api_v2_auth_CommonTlsContext_mutable_combined_validation_context(envoy_api_v2_auth_CommonTlsContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext* sub = (struct envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext*)envoy_api_v2_auth_CommonTlsContext_combined_validation_context(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext*)upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_msginit, arena);
+    sub = (struct envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext*)_upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CommonTlsContext_set_combined_validation_context(msg, sub);
   }
@@ -527,7 +526,7 @@ UPB_INLINE struct envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidati
 /* envoy.api.v2.auth.CommonTlsContext.CombinedCertificateValidationContext */
 
 UPB_INLINE envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext *envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext *)upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_msginit, arena);
+  return (envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext *)_upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext *envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -547,7 +546,7 @@ UPB_INLINE void envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidation
 UPB_INLINE struct envoy_api_v2_auth_CertificateValidationContext* envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_mutable_default_validation_context(envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_CertificateValidationContext* sub = (struct envoy_api_v2_auth_CertificateValidationContext*)envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_default_validation_context(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_CertificateValidationContext*)upb_msg_new(&envoy_api_v2_auth_CertificateValidationContext_msginit, arena);
+    sub = (struct envoy_api_v2_auth_CertificateValidationContext*)_upb_msg_new(&envoy_api_v2_auth_CertificateValidationContext_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_set_default_validation_context(msg, sub);
   }
@@ -559,7 +558,7 @@ UPB_INLINE void envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidation
 UPB_INLINE struct envoy_api_v2_auth_SdsSecretConfig* envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_mutable_validation_context_sds_secret_config(envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_SdsSecretConfig* sub = (struct envoy_api_v2_auth_SdsSecretConfig*)envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_validation_context_sds_secret_config(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_SdsSecretConfig*)upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
+    sub = (struct envoy_api_v2_auth_SdsSecretConfig*)_upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_set_validation_context_sds_secret_config(msg, sub);
   }
@@ -569,7 +568,7 @@ UPB_INLINE struct envoy_api_v2_auth_SdsSecretConfig* envoy_api_v2_auth_CommonTls
 /* envoy.api.v2.auth.UpstreamTlsContext */
 
 UPB_INLINE envoy_api_v2_auth_UpstreamTlsContext *envoy_api_v2_auth_UpstreamTlsContext_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_UpstreamTlsContext *)upb_msg_new(&envoy_api_v2_auth_UpstreamTlsContext_msginit, arena);
+  return (envoy_api_v2_auth_UpstreamTlsContext *)_upb_msg_new(&envoy_api_v2_auth_UpstreamTlsContext_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_UpstreamTlsContext *envoy_api_v2_auth_UpstreamTlsContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -591,7 +590,7 @@ UPB_INLINE void envoy_api_v2_auth_UpstreamTlsContext_set_common_tls_context(envo
 UPB_INLINE struct envoy_api_v2_auth_CommonTlsContext* envoy_api_v2_auth_UpstreamTlsContext_mutable_common_tls_context(envoy_api_v2_auth_UpstreamTlsContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_CommonTlsContext* sub = (struct envoy_api_v2_auth_CommonTlsContext*)envoy_api_v2_auth_UpstreamTlsContext_common_tls_context(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_CommonTlsContext*)upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_msginit, arena);
+    sub = (struct envoy_api_v2_auth_CommonTlsContext*)_upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_UpstreamTlsContext_set_common_tls_context(msg, sub);
   }
@@ -609,7 +608,7 @@ UPB_INLINE void envoy_api_v2_auth_UpstreamTlsContext_set_max_session_keys(envoy_
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_auth_UpstreamTlsContext_mutable_max_session_keys(envoy_api_v2_auth_UpstreamTlsContext *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_auth_UpstreamTlsContext_max_session_keys(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_UpstreamTlsContext_set_max_session_keys(msg, sub);
   }
@@ -619,7 +618,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_auth_UpstreamTlsCont
 /* envoy.api.v2.auth.DownstreamTlsContext */
 
 UPB_INLINE envoy_api_v2_auth_DownstreamTlsContext *envoy_api_v2_auth_DownstreamTlsContext_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_DownstreamTlsContext *)upb_msg_new(&envoy_api_v2_auth_DownstreamTlsContext_msginit, arena);
+  return (envoy_api_v2_auth_DownstreamTlsContext *)_upb_msg_new(&envoy_api_v2_auth_DownstreamTlsContext_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_DownstreamTlsContext *envoy_api_v2_auth_DownstreamTlsContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -651,7 +650,7 @@ UPB_INLINE void envoy_api_v2_auth_DownstreamTlsContext_set_common_tls_context(en
 UPB_INLINE struct envoy_api_v2_auth_CommonTlsContext* envoy_api_v2_auth_DownstreamTlsContext_mutable_common_tls_context(envoy_api_v2_auth_DownstreamTlsContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_CommonTlsContext* sub = (struct envoy_api_v2_auth_CommonTlsContext*)envoy_api_v2_auth_DownstreamTlsContext_common_tls_context(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_CommonTlsContext*)upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_msginit, arena);
+    sub = (struct envoy_api_v2_auth_CommonTlsContext*)_upb_msg_new(&envoy_api_v2_auth_CommonTlsContext_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_DownstreamTlsContext_set_common_tls_context(msg, sub);
   }
@@ -663,7 +662,7 @@ UPB_INLINE void envoy_api_v2_auth_DownstreamTlsContext_set_require_client_certif
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_auth_DownstreamTlsContext_mutable_require_client_certificate(envoy_api_v2_auth_DownstreamTlsContext *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_auth_DownstreamTlsContext_require_client_certificate(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_BoolValue*)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+    sub = (struct google_protobuf_BoolValue*)_upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_DownstreamTlsContext_set_require_client_certificate(msg, sub);
   }
@@ -675,7 +674,7 @@ UPB_INLINE void envoy_api_v2_auth_DownstreamTlsContext_set_require_sni(envoy_api
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_auth_DownstreamTlsContext_mutable_require_sni(envoy_api_v2_auth_DownstreamTlsContext *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_auth_DownstreamTlsContext_require_sni(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_BoolValue*)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+    sub = (struct google_protobuf_BoolValue*)_upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_DownstreamTlsContext_set_require_sni(msg, sub);
   }
@@ -687,7 +686,7 @@ UPB_INLINE void envoy_api_v2_auth_DownstreamTlsContext_set_session_ticket_keys(e
 UPB_INLINE struct envoy_api_v2_auth_TlsSessionTicketKeys* envoy_api_v2_auth_DownstreamTlsContext_mutable_session_ticket_keys(envoy_api_v2_auth_DownstreamTlsContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_TlsSessionTicketKeys* sub = (struct envoy_api_v2_auth_TlsSessionTicketKeys*)envoy_api_v2_auth_DownstreamTlsContext_session_ticket_keys(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_TlsSessionTicketKeys*)upb_msg_new(&envoy_api_v2_auth_TlsSessionTicketKeys_msginit, arena);
+    sub = (struct envoy_api_v2_auth_TlsSessionTicketKeys*)_upb_msg_new(&envoy_api_v2_auth_TlsSessionTicketKeys_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_DownstreamTlsContext_set_session_ticket_keys(msg, sub);
   }
@@ -699,7 +698,7 @@ UPB_INLINE void envoy_api_v2_auth_DownstreamTlsContext_set_session_ticket_keys_s
 UPB_INLINE struct envoy_api_v2_auth_SdsSecretConfig* envoy_api_v2_auth_DownstreamTlsContext_mutable_session_ticket_keys_sds_secret_config(envoy_api_v2_auth_DownstreamTlsContext *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_SdsSecretConfig* sub = (struct envoy_api_v2_auth_SdsSecretConfig*)envoy_api_v2_auth_DownstreamTlsContext_session_ticket_keys_sds_secret_config(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_SdsSecretConfig*)upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
+    sub = (struct envoy_api_v2_auth_SdsSecretConfig*)_upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_DownstreamTlsContext_set_session_ticket_keys_sds_secret_config(msg, sub);
   }
@@ -709,7 +708,7 @@ UPB_INLINE struct envoy_api_v2_auth_SdsSecretConfig* envoy_api_v2_auth_Downstrea
 /* envoy.api.v2.auth.SdsSecretConfig */
 
 UPB_INLINE envoy_api_v2_auth_SdsSecretConfig *envoy_api_v2_auth_SdsSecretConfig_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_SdsSecretConfig *)upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
+  return (envoy_api_v2_auth_SdsSecretConfig *)_upb_msg_new(&envoy_api_v2_auth_SdsSecretConfig_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_SdsSecretConfig *envoy_api_v2_auth_SdsSecretConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -732,7 +731,7 @@ UPB_INLINE void envoy_api_v2_auth_SdsSecretConfig_set_sds_config(envoy_api_v2_au
 UPB_INLINE struct envoy_api_v2_core_ConfigSource* envoy_api_v2_auth_SdsSecretConfig_mutable_sds_config(envoy_api_v2_auth_SdsSecretConfig *msg, upb_arena *arena) {
   struct envoy_api_v2_core_ConfigSource* sub = (struct envoy_api_v2_core_ConfigSource*)envoy_api_v2_auth_SdsSecretConfig_sds_config(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_ConfigSource*)upb_msg_new(&envoy_api_v2_core_ConfigSource_msginit, arena);
+    sub = (struct envoy_api_v2_core_ConfigSource*)_upb_msg_new(&envoy_api_v2_core_ConfigSource_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_SdsSecretConfig_set_sds_config(msg, sub);
   }
@@ -742,7 +741,7 @@ UPB_INLINE struct envoy_api_v2_core_ConfigSource* envoy_api_v2_auth_SdsSecretCon
 /* envoy.api.v2.auth.Secret */
 
 UPB_INLINE envoy_api_v2_auth_Secret *envoy_api_v2_auth_Secret_new(upb_arena *arena) {
-  return (envoy_api_v2_auth_Secret *)upb_msg_new(&envoy_api_v2_auth_Secret_msginit, arena);
+  return (envoy_api_v2_auth_Secret *)_upb_msg_new(&envoy_api_v2_auth_Secret_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_auth_Secret *envoy_api_v2_auth_Secret_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -778,7 +777,7 @@ UPB_INLINE void envoy_api_v2_auth_Secret_set_tls_certificate(envoy_api_v2_auth_S
 UPB_INLINE struct envoy_api_v2_auth_TlsCertificate* envoy_api_v2_auth_Secret_mutable_tls_certificate(envoy_api_v2_auth_Secret *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_TlsCertificate* sub = (struct envoy_api_v2_auth_TlsCertificate*)envoy_api_v2_auth_Secret_tls_certificate(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_TlsCertificate*)upb_msg_new(&envoy_api_v2_auth_TlsCertificate_msginit, arena);
+    sub = (struct envoy_api_v2_auth_TlsCertificate*)_upb_msg_new(&envoy_api_v2_auth_TlsCertificate_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_Secret_set_tls_certificate(msg, sub);
   }
@@ -790,7 +789,7 @@ UPB_INLINE void envoy_api_v2_auth_Secret_set_session_ticket_keys(envoy_api_v2_au
 UPB_INLINE struct envoy_api_v2_auth_TlsSessionTicketKeys* envoy_api_v2_auth_Secret_mutable_session_ticket_keys(envoy_api_v2_auth_Secret *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_TlsSessionTicketKeys* sub = (struct envoy_api_v2_auth_TlsSessionTicketKeys*)envoy_api_v2_auth_Secret_session_ticket_keys(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_TlsSessionTicketKeys*)upb_msg_new(&envoy_api_v2_auth_TlsSessionTicketKeys_msginit, arena);
+    sub = (struct envoy_api_v2_auth_TlsSessionTicketKeys*)_upb_msg_new(&envoy_api_v2_auth_TlsSessionTicketKeys_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_Secret_set_session_ticket_keys(msg, sub);
   }
@@ -802,7 +801,7 @@ UPB_INLINE void envoy_api_v2_auth_Secret_set_validation_context(envoy_api_v2_aut
 UPB_INLINE struct envoy_api_v2_auth_CertificateValidationContext* envoy_api_v2_auth_Secret_mutable_validation_context(envoy_api_v2_auth_Secret *msg, upb_arena *arena) {
   struct envoy_api_v2_auth_CertificateValidationContext* sub = (struct envoy_api_v2_auth_CertificateValidationContext*)envoy_api_v2_auth_Secret_validation_context(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_auth_CertificateValidationContext*)upb_msg_new(&envoy_api_v2_auth_CertificateValidationContext_msginit, arena);
+    sub = (struct envoy_api_v2_auth_CertificateValidationContext*)_upb_msg_new(&envoy_api_v2_auth_CertificateValidationContext_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_auth_Secret_set_validation_context(msg, sub);
   }

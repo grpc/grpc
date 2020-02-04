@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_CORE_HEALTH_CHECK_PROTO_UPB_H_
 #define ENVOY_API_V2_CORE_HEALTH_CHECK_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -69,7 +68,7 @@ typedef enum {
 /* envoy.api.v2.core.HealthCheck */
 
 UPB_INLINE envoy_api_v2_core_HealthCheck *envoy_api_v2_core_HealthCheck_new(upb_arena *arena) {
-  return (envoy_api_v2_core_HealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_msginit, arena);
+  return (envoy_api_v2_core_HealthCheck *)_upb_msg_new(&envoy_api_v2_core_HealthCheck_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_HealthCheck *envoy_api_v2_core_HealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -119,7 +118,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_timeout(envoy_api_v2_core_Heal
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutable_timeout(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HealthCheck_timeout(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_timeout(msg, sub);
   }
@@ -131,7 +130,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_interval(envoy_api_v2_core_Hea
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutable_interval(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HealthCheck_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_interval(msg, sub);
   }
@@ -143,7 +142,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_interval_jitter(envoy_api_v2_c
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutable_interval_jitter(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HealthCheck_interval_jitter(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_interval_jitter(msg, sub);
   }
@@ -155,7 +154,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_unhealthy_threshold(envoy_api_
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_HealthCheck_mutable_unhealthy_threshold(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_HealthCheck_unhealthy_threshold(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_unhealthy_threshold(msg, sub);
   }
@@ -167,7 +166,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_healthy_threshold(envoy_api_v2
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_HealthCheck_mutable_healthy_threshold(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_HealthCheck_healthy_threshold(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_healthy_threshold(msg, sub);
   }
@@ -179,7 +178,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_alt_port(envoy_api_v2_core_Hea
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_HealthCheck_mutable_alt_port(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_HealthCheck_alt_port(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_alt_port(msg, sub);
   }
@@ -191,7 +190,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_reuse_connection(envoy_api_v2_
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_core_HealthCheck_mutable_reuse_connection(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_core_HealthCheck_reuse_connection(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_BoolValue*)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+    sub = (struct google_protobuf_BoolValue*)_upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_reuse_connection(msg, sub);
   }
@@ -203,7 +202,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_http_health_check(envoy_api_v2
 UPB_INLINE struct envoy_api_v2_core_HealthCheck_HttpHealthCheck* envoy_api_v2_core_HealthCheck_mutable_http_health_check(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HealthCheck_HttpHealthCheck* sub = (struct envoy_api_v2_core_HealthCheck_HttpHealthCheck*)envoy_api_v2_core_HealthCheck_http_health_check(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_HealthCheck_HttpHealthCheck*)upb_msg_new(&envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit, arena);
+    sub = (struct envoy_api_v2_core_HealthCheck_HttpHealthCheck*)_upb_msg_new(&envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_http_health_check(msg, sub);
   }
@@ -215,7 +214,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_tcp_health_check(envoy_api_v2_
 UPB_INLINE struct envoy_api_v2_core_HealthCheck_TcpHealthCheck* envoy_api_v2_core_HealthCheck_mutable_tcp_health_check(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HealthCheck_TcpHealthCheck* sub = (struct envoy_api_v2_core_HealthCheck_TcpHealthCheck*)envoy_api_v2_core_HealthCheck_tcp_health_check(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_HealthCheck_TcpHealthCheck*)upb_msg_new(&envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit, arena);
+    sub = (struct envoy_api_v2_core_HealthCheck_TcpHealthCheck*)_upb_msg_new(&envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_tcp_health_check(msg, sub);
   }
@@ -227,7 +226,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_grpc_health_check(envoy_api_v2
 UPB_INLINE struct envoy_api_v2_core_HealthCheck_GrpcHealthCheck* envoy_api_v2_core_HealthCheck_mutable_grpc_health_check(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HealthCheck_GrpcHealthCheck* sub = (struct envoy_api_v2_core_HealthCheck_GrpcHealthCheck*)envoy_api_v2_core_HealthCheck_grpc_health_check(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_HealthCheck_GrpcHealthCheck*)upb_msg_new(&envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit, arena);
+    sub = (struct envoy_api_v2_core_HealthCheck_GrpcHealthCheck*)_upb_msg_new(&envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_grpc_health_check(msg, sub);
   }
@@ -239,7 +238,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_no_traffic_interval(envoy_api_
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutable_no_traffic_interval(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HealthCheck_no_traffic_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_no_traffic_interval(msg, sub);
   }
@@ -251,7 +250,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_custom_health_check(envoy_api_
 UPB_INLINE struct envoy_api_v2_core_HealthCheck_CustomHealthCheck* envoy_api_v2_core_HealthCheck_mutable_custom_health_check(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HealthCheck_CustomHealthCheck* sub = (struct envoy_api_v2_core_HealthCheck_CustomHealthCheck*)envoy_api_v2_core_HealthCheck_custom_health_check(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_HealthCheck_CustomHealthCheck*)upb_msg_new(&envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit, arena);
+    sub = (struct envoy_api_v2_core_HealthCheck_CustomHealthCheck*)_upb_msg_new(&envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_custom_health_check(msg, sub);
   }
@@ -263,7 +262,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_unhealthy_interval(envoy_api_v
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutable_unhealthy_interval(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HealthCheck_unhealthy_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_unhealthy_interval(msg, sub);
   }
@@ -275,7 +274,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_unhealthy_edge_interval(envoy_
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutable_unhealthy_edge_interval(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HealthCheck_unhealthy_edge_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_unhealthy_edge_interval(msg, sub);
   }
@@ -287,7 +286,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_healthy_edge_interval(envoy_ap
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutable_healthy_edge_interval(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HealthCheck_healthy_edge_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_healthy_edge_interval(msg, sub);
   }
@@ -308,7 +307,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_initial_jitter(envoy_api_v2_co
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutable_initial_jitter(envoy_api_v2_core_HealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HealthCheck_initial_jitter(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_set_initial_jitter(msg, sub);
   }
@@ -318,7 +317,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HealthCheck_mutabl
 /* envoy.api.v2.core.HealthCheck.Payload */
 
 UPB_INLINE envoy_api_v2_core_HealthCheck_Payload *envoy_api_v2_core_HealthCheck_Payload_new(upb_arena *arena) {
-  return (envoy_api_v2_core_HealthCheck_Payload *)upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
+  return (envoy_api_v2_core_HealthCheck_Payload *)_upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_HealthCheck_Payload *envoy_api_v2_core_HealthCheck_Payload_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -351,7 +350,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_Payload_set_binary(envoy_api_v2_co
 /* envoy.api.v2.core.HealthCheck.HttpHealthCheck */
 
 UPB_INLINE envoy_api_v2_core_HealthCheck_HttpHealthCheck *envoy_api_v2_core_HealthCheck_HttpHealthCheck_new(upb_arena *arena) {
-  return (envoy_api_v2_core_HealthCheck_HttpHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit, arena);
+  return (envoy_api_v2_core_HealthCheck_HttpHealthCheck *)_upb_msg_new(&envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_HealthCheck_HttpHealthCheck *envoy_api_v2_core_HealthCheck_HttpHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -385,7 +384,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_HttpHealthCheck_set_send(envoy_api
 UPB_INLINE struct envoy_api_v2_core_HealthCheck_Payload* envoy_api_v2_core_HealthCheck_HttpHealthCheck_mutable_send(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HealthCheck_Payload* sub = (struct envoy_api_v2_core_HealthCheck_Payload*)envoy_api_v2_core_HealthCheck_HttpHealthCheck_send(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_HealthCheck_Payload*)upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
+    sub = (struct envoy_api_v2_core_HealthCheck_Payload*)_upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_HttpHealthCheck_set_send(msg, sub);
   }
@@ -397,7 +396,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_HttpHealthCheck_set_receive(envoy_
 UPB_INLINE struct envoy_api_v2_core_HealthCheck_Payload* envoy_api_v2_core_HealthCheck_HttpHealthCheck_mutable_receive(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HealthCheck_Payload* sub = (struct envoy_api_v2_core_HealthCheck_Payload*)envoy_api_v2_core_HealthCheck_HttpHealthCheck_receive(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_HealthCheck_Payload*)upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
+    sub = (struct envoy_api_v2_core_HealthCheck_Payload*)_upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_HttpHealthCheck_set_receive(msg, sub);
   }
@@ -410,10 +409,10 @@ UPB_INLINE struct envoy_api_v2_core_HeaderValueOption** envoy_api_v2_core_Health
   return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(44, 80), len);
 }
 UPB_INLINE struct envoy_api_v2_core_HeaderValueOption** envoy_api_v2_core_HealthCheck_HttpHealthCheck_resize_request_headers_to_add(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_resize_accessor(msg, UPB_SIZE(44, 80), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_resize_accessor(msg, UPB_SIZE(44, 80), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_core_HeaderValueOption* envoy_api_v2_core_HealthCheck_HttpHealthCheck_add_request_headers_to_add(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, upb_arena *arena) {
-  struct envoy_api_v2_core_HeaderValueOption* sub = (struct envoy_api_v2_core_HeaderValueOption*)upb_msg_new(&envoy_api_v2_core_HeaderValueOption_msginit, arena);
+  struct envoy_api_v2_core_HeaderValueOption* sub = (struct envoy_api_v2_core_HeaderValueOption*)_upb_msg_new(&envoy_api_v2_core_HeaderValueOption_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(44, 80), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -426,20 +425,20 @@ UPB_INLINE upb_strview* envoy_api_v2_core_HealthCheck_HttpHealthCheck_mutable_re
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 88), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_core_HealthCheck_HttpHealthCheck_resize_request_headers_to_remove(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(48, 88), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(48, 88), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_core_HealthCheck_HttpHealthCheck_add_request_headers_to_remove(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(
-      msg, UPB_SIZE(48, 88), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+  return _upb_array_append_accessor(msg, UPB_SIZE(48, 88), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+      arena);
 }
 UPB_INLINE struct envoy_type_Int64Range** envoy_api_v2_core_HealthCheck_HttpHealthCheck_mutable_expected_statuses(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, size_t *len) {
   return (struct envoy_type_Int64Range**)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 96), len);
 }
 UPB_INLINE struct envoy_type_Int64Range** envoy_api_v2_core_HealthCheck_HttpHealthCheck_resize_expected_statuses(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_type_Int64Range**)_upb_array_resize_accessor(msg, UPB_SIZE(52, 96), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_type_Int64Range**)_upb_array_resize_accessor(msg, UPB_SIZE(52, 96), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_type_Int64Range* envoy_api_v2_core_HealthCheck_HttpHealthCheck_add_expected_statuses(envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, upb_arena *arena) {
-  struct envoy_type_Int64Range* sub = (struct envoy_type_Int64Range*)upb_msg_new(&envoy_type_Int64Range_msginit, arena);
+  struct envoy_type_Int64Range* sub = (struct envoy_type_Int64Range*)_upb_msg_new(&envoy_type_Int64Range_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(52, 96), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -452,7 +451,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_HttpHealthCheck_set_codec_client_t
 /* envoy.api.v2.core.HealthCheck.TcpHealthCheck */
 
 UPB_INLINE envoy_api_v2_core_HealthCheck_TcpHealthCheck *envoy_api_v2_core_HealthCheck_TcpHealthCheck_new(upb_arena *arena) {
-  return (envoy_api_v2_core_HealthCheck_TcpHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit, arena);
+  return (envoy_api_v2_core_HealthCheck_TcpHealthCheck *)_upb_msg_new(&envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_HealthCheck_TcpHealthCheck *envoy_api_v2_core_HealthCheck_TcpHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -472,7 +471,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_TcpHealthCheck_set_send(envoy_api_
 UPB_INLINE struct envoy_api_v2_core_HealthCheck_Payload* envoy_api_v2_core_HealthCheck_TcpHealthCheck_mutable_send(envoy_api_v2_core_HealthCheck_TcpHealthCheck *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HealthCheck_Payload* sub = (struct envoy_api_v2_core_HealthCheck_Payload*)envoy_api_v2_core_HealthCheck_TcpHealthCheck_send(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_HealthCheck_Payload*)upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
+    sub = (struct envoy_api_v2_core_HealthCheck_Payload*)_upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_TcpHealthCheck_set_send(msg, sub);
   }
@@ -482,10 +481,10 @@ UPB_INLINE envoy_api_v2_core_HealthCheck_Payload** envoy_api_v2_core_HealthCheck
   return (envoy_api_v2_core_HealthCheck_Payload**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
 UPB_INLINE envoy_api_v2_core_HealthCheck_Payload** envoy_api_v2_core_HealthCheck_TcpHealthCheck_resize_receive(envoy_api_v2_core_HealthCheck_TcpHealthCheck *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_core_HealthCheck_Payload**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_core_HealthCheck_Payload**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_core_HealthCheck_Payload* envoy_api_v2_core_HealthCheck_TcpHealthCheck_add_receive(envoy_api_v2_core_HealthCheck_TcpHealthCheck *msg, upb_arena *arena) {
-  struct envoy_api_v2_core_HealthCheck_Payload* sub = (struct envoy_api_v2_core_HealthCheck_Payload*)upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
+  struct envoy_api_v2_core_HealthCheck_Payload* sub = (struct envoy_api_v2_core_HealthCheck_Payload*)_upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(4, 8), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -495,7 +494,7 @@ UPB_INLINE struct envoy_api_v2_core_HealthCheck_Payload* envoy_api_v2_core_Healt
 /* envoy.api.v2.core.HealthCheck.RedisHealthCheck */
 
 UPB_INLINE envoy_api_v2_core_HealthCheck_RedisHealthCheck *envoy_api_v2_core_HealthCheck_RedisHealthCheck_new(upb_arena *arena) {
-  return (envoy_api_v2_core_HealthCheck_RedisHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit, arena);
+  return (envoy_api_v2_core_HealthCheck_RedisHealthCheck *)_upb_msg_new(&envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_HealthCheck_RedisHealthCheck *envoy_api_v2_core_HealthCheck_RedisHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -515,7 +514,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_RedisHealthCheck_set_key(envoy_api
 /* envoy.api.v2.core.HealthCheck.GrpcHealthCheck */
 
 UPB_INLINE envoy_api_v2_core_HealthCheck_GrpcHealthCheck *envoy_api_v2_core_HealthCheck_GrpcHealthCheck_new(upb_arena *arena) {
-  return (envoy_api_v2_core_HealthCheck_GrpcHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit, arena);
+  return (envoy_api_v2_core_HealthCheck_GrpcHealthCheck *)_upb_msg_new(&envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_HealthCheck_GrpcHealthCheck *envoy_api_v2_core_HealthCheck_GrpcHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -539,7 +538,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_GrpcHealthCheck_set_authority(envo
 /* envoy.api.v2.core.HealthCheck.CustomHealthCheck */
 
 UPB_INLINE envoy_api_v2_core_HealthCheck_CustomHealthCheck *envoy_api_v2_core_HealthCheck_CustomHealthCheck_new(upb_arena *arena) {
-  return (envoy_api_v2_core_HealthCheck_CustomHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit, arena);
+  return (envoy_api_v2_core_HealthCheck_CustomHealthCheck *)_upb_msg_new(&envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_HealthCheck_CustomHealthCheck *envoy_api_v2_core_HealthCheck_CustomHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -572,7 +571,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_CustomHealthCheck_set_config(envoy
 UPB_INLINE struct google_protobuf_Struct* envoy_api_v2_core_HealthCheck_CustomHealthCheck_mutable_config(envoy_api_v2_core_HealthCheck_CustomHealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_api_v2_core_HealthCheck_CustomHealthCheck_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Struct*)upb_msg_new(&google_protobuf_Struct_msginit, arena);
+    sub = (struct google_protobuf_Struct*)_upb_msg_new(&google_protobuf_Struct_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_CustomHealthCheck_set_config(msg, sub);
   }
@@ -584,7 +583,7 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_CustomHealthCheck_set_typed_config
 UPB_INLINE struct google_protobuf_Any* envoy_api_v2_core_HealthCheck_CustomHealthCheck_mutable_typed_config(envoy_api_v2_core_HealthCheck_CustomHealthCheck *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_api_v2_core_HealthCheck_CustomHealthCheck_typed_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_HealthCheck_CustomHealthCheck_set_typed_config(msg, sub);
   }

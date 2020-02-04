@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_ENDPOINT_LOAD_REPORT_PROTO_UPB_H_
 #define ENVOY_API_V2_ENDPOINT_LOAD_REPORT_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -48,7 +47,7 @@ extern const upb_msglayout google_protobuf_Struct_msginit;
 /* envoy.api.v2.endpoint.UpstreamLocalityStats */
 
 UPB_INLINE envoy_api_v2_endpoint_UpstreamLocalityStats *envoy_api_v2_endpoint_UpstreamLocalityStats_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_UpstreamLocalityStats *)upb_msg_new(&envoy_api_v2_endpoint_UpstreamLocalityStats_msginit, arena);
+  return (envoy_api_v2_endpoint_UpstreamLocalityStats *)_upb_msg_new(&envoy_api_v2_endpoint_UpstreamLocalityStats_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_UpstreamLocalityStats *envoy_api_v2_endpoint_UpstreamLocalityStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -74,7 +73,7 @@ UPB_INLINE void envoy_api_v2_endpoint_UpstreamLocalityStats_set_locality(envoy_a
 UPB_INLINE struct envoy_api_v2_core_Locality* envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(envoy_api_v2_endpoint_UpstreamLocalityStats *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Locality* sub = (struct envoy_api_v2_core_Locality*)envoy_api_v2_endpoint_UpstreamLocalityStats_locality(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_Locality*)upb_msg_new(&envoy_api_v2_core_Locality_msginit, arena);
+    sub = (struct envoy_api_v2_core_Locality*)_upb_msg_new(&envoy_api_v2_core_Locality_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_UpstreamLocalityStats_set_locality(msg, sub);
   }
@@ -93,10 +92,10 @@ UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats** envoy_api_v2_endpoint
   return (envoy_api_v2_endpoint_EndpointLoadMetricStats**)_upb_array_mutable_accessor(msg, UPB_SIZE(40, 48), len);
 }
 UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats** envoy_api_v2_endpoint_UpstreamLocalityStats_resize_load_metric_stats(envoy_api_v2_endpoint_UpstreamLocalityStats *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_endpoint_EndpointLoadMetricStats**)_upb_array_resize_accessor(msg, UPB_SIZE(40, 48), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_endpoint_EndpointLoadMetricStats**)_upb_array_resize_accessor(msg, UPB_SIZE(40, 48), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_endpoint_EndpointLoadMetricStats* envoy_api_v2_endpoint_UpstreamLocalityStats_add_load_metric_stats(envoy_api_v2_endpoint_UpstreamLocalityStats *msg, upb_arena *arena) {
-  struct envoy_api_v2_endpoint_EndpointLoadMetricStats* sub = (struct envoy_api_v2_endpoint_EndpointLoadMetricStats*)upb_msg_new(&envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit, arena);
+  struct envoy_api_v2_endpoint_EndpointLoadMetricStats* sub = (struct envoy_api_v2_endpoint_EndpointLoadMetricStats*)_upb_msg_new(&envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(40, 48), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -109,10 +108,10 @@ UPB_INLINE envoy_api_v2_endpoint_UpstreamEndpointStats** envoy_api_v2_endpoint_U
   return (envoy_api_v2_endpoint_UpstreamEndpointStats**)_upb_array_mutable_accessor(msg, UPB_SIZE(44, 56), len);
 }
 UPB_INLINE envoy_api_v2_endpoint_UpstreamEndpointStats** envoy_api_v2_endpoint_UpstreamLocalityStats_resize_upstream_endpoint_stats(envoy_api_v2_endpoint_UpstreamLocalityStats *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_endpoint_UpstreamEndpointStats**)_upb_array_resize_accessor(msg, UPB_SIZE(44, 56), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_endpoint_UpstreamEndpointStats**)_upb_array_resize_accessor(msg, UPB_SIZE(44, 56), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_endpoint_UpstreamEndpointStats* envoy_api_v2_endpoint_UpstreamLocalityStats_add_upstream_endpoint_stats(envoy_api_v2_endpoint_UpstreamLocalityStats *msg, upb_arena *arena) {
-  struct envoy_api_v2_endpoint_UpstreamEndpointStats* sub = (struct envoy_api_v2_endpoint_UpstreamEndpointStats*)upb_msg_new(&envoy_api_v2_endpoint_UpstreamEndpointStats_msginit, arena);
+  struct envoy_api_v2_endpoint_UpstreamEndpointStats* sub = (struct envoy_api_v2_endpoint_UpstreamEndpointStats*)_upb_msg_new(&envoy_api_v2_endpoint_UpstreamEndpointStats_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(44, 56), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -125,7 +124,7 @@ UPB_INLINE void envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_req
 /* envoy.api.v2.endpoint.UpstreamEndpointStats */
 
 UPB_INLINE envoy_api_v2_endpoint_UpstreamEndpointStats *envoy_api_v2_endpoint_UpstreamEndpointStats_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_UpstreamEndpointStats *)upb_msg_new(&envoy_api_v2_endpoint_UpstreamEndpointStats_msginit, arena);
+  return (envoy_api_v2_endpoint_UpstreamEndpointStats *)_upb_msg_new(&envoy_api_v2_endpoint_UpstreamEndpointStats_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_UpstreamEndpointStats *envoy_api_v2_endpoint_UpstreamEndpointStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -150,7 +149,7 @@ UPB_INLINE void envoy_api_v2_endpoint_UpstreamEndpointStats_set_address(envoy_ap
 UPB_INLINE struct envoy_api_v2_core_Address* envoy_api_v2_endpoint_UpstreamEndpointStats_mutable_address(envoy_api_v2_endpoint_UpstreamEndpointStats *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Address* sub = (struct envoy_api_v2_core_Address*)envoy_api_v2_endpoint_UpstreamEndpointStats_address(msg);
   if (sub == NULL) {
-    sub = (struct envoy_api_v2_core_Address*)upb_msg_new(&envoy_api_v2_core_Address_msginit, arena);
+    sub = (struct envoy_api_v2_core_Address*)_upb_msg_new(&envoy_api_v2_core_Address_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_UpstreamEndpointStats_set_address(msg, sub);
   }
@@ -169,10 +168,10 @@ UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats** envoy_api_v2_endpoint
   return (envoy_api_v2_endpoint_EndpointLoadMetricStats**)_upb_array_mutable_accessor(msg, UPB_SIZE(40, 48), len);
 }
 UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats** envoy_api_v2_endpoint_UpstreamEndpointStats_resize_load_metric_stats(envoy_api_v2_endpoint_UpstreamEndpointStats *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_endpoint_EndpointLoadMetricStats**)_upb_array_resize_accessor(msg, UPB_SIZE(40, 48), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_endpoint_EndpointLoadMetricStats**)_upb_array_resize_accessor(msg, UPB_SIZE(40, 48), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_endpoint_EndpointLoadMetricStats* envoy_api_v2_endpoint_UpstreamEndpointStats_add_load_metric_stats(envoy_api_v2_endpoint_UpstreamEndpointStats *msg, upb_arena *arena) {
-  struct envoy_api_v2_endpoint_EndpointLoadMetricStats* sub = (struct envoy_api_v2_endpoint_EndpointLoadMetricStats*)upb_msg_new(&envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit, arena);
+  struct envoy_api_v2_endpoint_EndpointLoadMetricStats* sub = (struct envoy_api_v2_endpoint_EndpointLoadMetricStats*)_upb_msg_new(&envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(40, 48), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -184,7 +183,7 @@ UPB_INLINE void envoy_api_v2_endpoint_UpstreamEndpointStats_set_metadata(envoy_a
 UPB_INLINE struct google_protobuf_Struct* envoy_api_v2_endpoint_UpstreamEndpointStats_mutable_metadata(envoy_api_v2_endpoint_UpstreamEndpointStats *msg, upb_arena *arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_api_v2_endpoint_UpstreamEndpointStats_metadata(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Struct*)upb_msg_new(&google_protobuf_Struct_msginit, arena);
+    sub = (struct google_protobuf_Struct*)_upb_msg_new(&google_protobuf_Struct_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_UpstreamEndpointStats_set_metadata(msg, sub);
   }
@@ -197,7 +196,7 @@ UPB_INLINE void envoy_api_v2_endpoint_UpstreamEndpointStats_set_total_issued_req
 /* envoy.api.v2.endpoint.EndpointLoadMetricStats */
 
 UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats *envoy_api_v2_endpoint_EndpointLoadMetricStats_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_EndpointLoadMetricStats *)upb_msg_new(&envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit, arena);
+  return (envoy_api_v2_endpoint_EndpointLoadMetricStats *)_upb_msg_new(&envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats *envoy_api_v2_endpoint_EndpointLoadMetricStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -225,7 +224,7 @@ UPB_INLINE void envoy_api_v2_endpoint_EndpointLoadMetricStats_set_total_metric_v
 /* envoy.api.v2.endpoint.ClusterStats */
 
 UPB_INLINE envoy_api_v2_endpoint_ClusterStats *envoy_api_v2_endpoint_ClusterStats_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_ClusterStats *)upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_msginit, arena);
+  return (envoy_api_v2_endpoint_ClusterStats *)_upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_ClusterStats *envoy_api_v2_endpoint_ClusterStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -250,10 +249,10 @@ UPB_INLINE envoy_api_v2_endpoint_UpstreamLocalityStats** envoy_api_v2_endpoint_C
   return (envoy_api_v2_endpoint_UpstreamLocalityStats**)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 48), len);
 }
 UPB_INLINE envoy_api_v2_endpoint_UpstreamLocalityStats** envoy_api_v2_endpoint_ClusterStats_resize_upstream_locality_stats(envoy_api_v2_endpoint_ClusterStats *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_endpoint_UpstreamLocalityStats**)_upb_array_resize_accessor(msg, UPB_SIZE(28, 48), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_endpoint_UpstreamLocalityStats**)_upb_array_resize_accessor(msg, UPB_SIZE(28, 48), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_endpoint_UpstreamLocalityStats* envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(envoy_api_v2_endpoint_ClusterStats *msg, upb_arena *arena) {
-  struct envoy_api_v2_endpoint_UpstreamLocalityStats* sub = (struct envoy_api_v2_endpoint_UpstreamLocalityStats*)upb_msg_new(&envoy_api_v2_endpoint_UpstreamLocalityStats_msginit, arena);
+  struct envoy_api_v2_endpoint_UpstreamLocalityStats* sub = (struct envoy_api_v2_endpoint_UpstreamLocalityStats*)_upb_msg_new(&envoy_api_v2_endpoint_UpstreamLocalityStats_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(28, 48), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -268,7 +267,7 @@ UPB_INLINE void envoy_api_v2_endpoint_ClusterStats_set_load_report_interval(envo
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(envoy_api_v2_endpoint_ClusterStats *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_endpoint_ClusterStats_load_report_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_endpoint_ClusterStats_set_load_report_interval(msg, sub);
   }
@@ -278,10 +277,10 @@ UPB_INLINE envoy_api_v2_endpoint_ClusterStats_DroppedRequests** envoy_api_v2_end
   return (envoy_api_v2_endpoint_ClusterStats_DroppedRequests**)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 56), len);
 }
 UPB_INLINE envoy_api_v2_endpoint_ClusterStats_DroppedRequests** envoy_api_v2_endpoint_ClusterStats_resize_dropped_requests(envoy_api_v2_endpoint_ClusterStats *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_endpoint_ClusterStats_DroppedRequests**)_upb_array_resize_accessor(msg, UPB_SIZE(32, 56), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_endpoint_ClusterStats_DroppedRequests**)_upb_array_resize_accessor(msg, UPB_SIZE(32, 56), len, UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_endpoint_ClusterStats_DroppedRequests* envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(envoy_api_v2_endpoint_ClusterStats *msg, upb_arena *arena) {
-  struct envoy_api_v2_endpoint_ClusterStats_DroppedRequests* sub = (struct envoy_api_v2_endpoint_ClusterStats_DroppedRequests*)upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit, arena);
+  struct envoy_api_v2_endpoint_ClusterStats_DroppedRequests* sub = (struct envoy_api_v2_endpoint_ClusterStats_DroppedRequests*)_upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(32, 56), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
@@ -294,7 +293,7 @@ UPB_INLINE void envoy_api_v2_endpoint_ClusterStats_set_cluster_service_name(envo
 /* envoy.api.v2.endpoint.ClusterStats.DroppedRequests */
 
 UPB_INLINE envoy_api_v2_endpoint_ClusterStats_DroppedRequests *envoy_api_v2_endpoint_ClusterStats_DroppedRequests_new(upb_arena *arena) {
-  return (envoy_api_v2_endpoint_ClusterStats_DroppedRequests *)upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit, arena);
+  return (envoy_api_v2_endpoint_ClusterStats_DroppedRequests *)_upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_endpoint_ClusterStats_DroppedRequests *envoy_api_v2_endpoint_ClusterStats_DroppedRequests_parse(const char *buf, size_t size,
                         upb_arena *arena) {

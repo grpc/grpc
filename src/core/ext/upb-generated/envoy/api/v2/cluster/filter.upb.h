@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_CLUSTER_FILTER_PROTO_UPB_H_
 #define ENVOY_API_V2_CLUSTER_FILTER_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -30,7 +29,7 @@ extern const upb_msglayout google_protobuf_Any_msginit;
 /* envoy.api.v2.cluster.Filter */
 
 UPB_INLINE envoy_api_v2_cluster_Filter *envoy_api_v2_cluster_Filter_new(upb_arena *arena) {
-  return (envoy_api_v2_cluster_Filter *)upb_msg_new(&envoy_api_v2_cluster_Filter_msginit, arena);
+  return (envoy_api_v2_cluster_Filter *)_upb_msg_new(&envoy_api_v2_cluster_Filter_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_cluster_Filter *envoy_api_v2_cluster_Filter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -53,7 +52,7 @@ UPB_INLINE void envoy_api_v2_cluster_Filter_set_typed_config(envoy_api_v2_cluste
 UPB_INLINE struct google_protobuf_Any* envoy_api_v2_cluster_Filter_mutable_typed_config(envoy_api_v2_cluster_Filter *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_api_v2_cluster_Filter_typed_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_cluster_Filter_set_typed_config(msg, sub);
   }

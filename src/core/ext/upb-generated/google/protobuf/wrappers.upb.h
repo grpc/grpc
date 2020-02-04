@@ -9,7 +9,6 @@
 #ifndef GOOGLE_PROTOBUF_WRAPPERS_PROTO_UPB_H_
 #define GOOGLE_PROTOBUF_WRAPPERS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -52,7 +51,7 @@ extern const upb_msglayout google_protobuf_BytesValue_msginit;
 /* google.protobuf.DoubleValue */
 
 UPB_INLINE google_protobuf_DoubleValue *google_protobuf_DoubleValue_new(upb_arena *arena) {
-  return (google_protobuf_DoubleValue *)upb_msg_new(&google_protobuf_DoubleValue_msginit, arena);
+  return (google_protobuf_DoubleValue *)_upb_msg_new(&google_protobuf_DoubleValue_msginit, arena);
 }
 UPB_INLINE google_protobuf_DoubleValue *google_protobuf_DoubleValue_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -72,7 +71,7 @@ UPB_INLINE void google_protobuf_DoubleValue_set_value(google_protobuf_DoubleValu
 /* google.protobuf.FloatValue */
 
 UPB_INLINE google_protobuf_FloatValue *google_protobuf_FloatValue_new(upb_arena *arena) {
-  return (google_protobuf_FloatValue *)upb_msg_new(&google_protobuf_FloatValue_msginit, arena);
+  return (google_protobuf_FloatValue *)_upb_msg_new(&google_protobuf_FloatValue_msginit, arena);
 }
 UPB_INLINE google_protobuf_FloatValue *google_protobuf_FloatValue_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -92,7 +91,7 @@ UPB_INLINE void google_protobuf_FloatValue_set_value(google_protobuf_FloatValue 
 /* google.protobuf.Int64Value */
 
 UPB_INLINE google_protobuf_Int64Value *google_protobuf_Int64Value_new(upb_arena *arena) {
-  return (google_protobuf_Int64Value *)upb_msg_new(&google_protobuf_Int64Value_msginit, arena);
+  return (google_protobuf_Int64Value *)_upb_msg_new(&google_protobuf_Int64Value_msginit, arena);
 }
 UPB_INLINE google_protobuf_Int64Value *google_protobuf_Int64Value_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -112,7 +111,7 @@ UPB_INLINE void google_protobuf_Int64Value_set_value(google_protobuf_Int64Value 
 /* google.protobuf.UInt64Value */
 
 UPB_INLINE google_protobuf_UInt64Value *google_protobuf_UInt64Value_new(upb_arena *arena) {
-  return (google_protobuf_UInt64Value *)upb_msg_new(&google_protobuf_UInt64Value_msginit, arena);
+  return (google_protobuf_UInt64Value *)_upb_msg_new(&google_protobuf_UInt64Value_msginit, arena);
 }
 UPB_INLINE google_protobuf_UInt64Value *google_protobuf_UInt64Value_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -132,7 +131,7 @@ UPB_INLINE void google_protobuf_UInt64Value_set_value(google_protobuf_UInt64Valu
 /* google.protobuf.Int32Value */
 
 UPB_INLINE google_protobuf_Int32Value *google_protobuf_Int32Value_new(upb_arena *arena) {
-  return (google_protobuf_Int32Value *)upb_msg_new(&google_protobuf_Int32Value_msginit, arena);
+  return (google_protobuf_Int32Value *)_upb_msg_new(&google_protobuf_Int32Value_msginit, arena);
 }
 UPB_INLINE google_protobuf_Int32Value *google_protobuf_Int32Value_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -152,7 +151,7 @@ UPB_INLINE void google_protobuf_Int32Value_set_value(google_protobuf_Int32Value 
 /* google.protobuf.UInt32Value */
 
 UPB_INLINE google_protobuf_UInt32Value *google_protobuf_UInt32Value_new(upb_arena *arena) {
-  return (google_protobuf_UInt32Value *)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+  return (google_protobuf_UInt32Value *)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
 }
 UPB_INLINE google_protobuf_UInt32Value *google_protobuf_UInt32Value_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -172,7 +171,7 @@ UPB_INLINE void google_protobuf_UInt32Value_set_value(google_protobuf_UInt32Valu
 /* google.protobuf.BoolValue */
 
 UPB_INLINE google_protobuf_BoolValue *google_protobuf_BoolValue_new(upb_arena *arena) {
-  return (google_protobuf_BoolValue *)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+  return (google_protobuf_BoolValue *)_upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
 }
 UPB_INLINE google_protobuf_BoolValue *google_protobuf_BoolValue_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -192,7 +191,7 @@ UPB_INLINE void google_protobuf_BoolValue_set_value(google_protobuf_BoolValue *m
 /* google.protobuf.StringValue */
 
 UPB_INLINE google_protobuf_StringValue *google_protobuf_StringValue_new(upb_arena *arena) {
-  return (google_protobuf_StringValue *)upb_msg_new(&google_protobuf_StringValue_msginit, arena);
+  return (google_protobuf_StringValue *)_upb_msg_new(&google_protobuf_StringValue_msginit, arena);
 }
 UPB_INLINE google_protobuf_StringValue *google_protobuf_StringValue_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -212,7 +211,7 @@ UPB_INLINE void google_protobuf_StringValue_set_value(google_protobuf_StringValu
 /* google.protobuf.BytesValue */
 
 UPB_INLINE google_protobuf_BytesValue *google_protobuf_BytesValue_new(upb_arena *arena) {
-  return (google_protobuf_BytesValue *)upb_msg_new(&google_protobuf_BytesValue_msginit, arena);
+  return (google_protobuf_BytesValue *)_upb_msg_new(&google_protobuf_BytesValue_msginit, arena);
 }
 UPB_INLINE google_protobuf_BytesValue *google_protobuf_BytesValue_parse(const char *buf, size_t size,
                         upb_arena *arena) {
