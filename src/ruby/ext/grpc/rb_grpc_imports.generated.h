@@ -86,6 +86,9 @@ extern grpc_register_plugin_type grpc_register_plugin_import;
 typedef void(*grpc_init_type)(void);
 extern grpc_init_type grpc_init_import;
 #define grpc_init grpc_init_import
+typedef char*(*grpc_call_get_idle_account_str_type)(const grpc_call* call);
+extern grpc_call_get_idle_account_str_type grpc_call_get_idle_account_str_import;
+#define grpc_call_get_idle_account_str grpc_call_get_idle_account_str_import
 typedef void(*grpc_shutdown_type)(void);
 extern grpc_shutdown_type grpc_shutdown_import;
 #define grpc_shutdown grpc_shutdown_import

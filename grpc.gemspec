@@ -771,6 +771,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/completion_queue_factory.h )
   s.files += %w( src/core/lib/surface/event_string.cc )
   s.files += %w( src/core/lib/surface/event_string.h )
+  s.files += %w( src/core/lib/surface/idle_accounting.h )
   s.files += %w( src/core/lib/surface/init.cc )
   s.files += %w( src/core/lib/surface/init.h )
   s.files += %w( src/core/lib/surface/init_secure.cc )

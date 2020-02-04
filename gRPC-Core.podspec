@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.27.0-pre2'
+  version = '1.27.0'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -848,6 +848,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/completion_queue_factory.h',
                       'src/core/lib/surface/event_string.cc',
                       'src/core/lib/surface/event_string.h',
+                      'src/core/lib/surface/idle_accounting.h',
                       'src/core/lib/surface/init.cc',
                       'src/core/lib/surface/init.h',
                       'src/core/lib/surface/init_secure.cc',
@@ -1265,6 +1266,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/completion_queue.h',
                               'src/core/lib/surface/completion_queue_factory.h',
                               'src/core/lib/surface/event_string.h',
+                              'src/core/lib/surface/idle_accounting.h',
                               'src/core/lib/surface/init.h',
                               'src/core/lib/surface/lame_client.h',
                               'src/core/lib/surface/server.h',

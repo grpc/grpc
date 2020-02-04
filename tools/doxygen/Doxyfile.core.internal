@@ -1562,6 +1562,7 @@ src/core/lib/surface/completion_queue_factory.cc \
 src/core/lib/surface/completion_queue_factory.h \
 src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
+src/core/lib/surface/idle_accounting.h \
 src/core/lib/surface/init.cc \
 src/core/lib/surface/init.h \
 src/core/lib/surface/init_secure.cc \

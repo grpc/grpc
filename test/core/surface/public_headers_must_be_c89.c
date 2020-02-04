@@ -81,6 +81,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_call_details_destroy);
   printf("%lx", (unsigned long) grpc_register_plugin);
   printf("%lx", (unsigned long) grpc_init);
+  printf("%lx", (unsigned long) grpc_call_get_idle_account_str);
   printf("%lx", (unsigned long) grpc_shutdown);
   printf("%lx", (unsigned long) grpc_is_initialized);
   printf("%lx", (unsigned long) grpc_shutdown_blocking);

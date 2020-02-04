@@ -14,6 +14,7 @@ EXPORTS
     grpc_call_details_destroy
     grpc_register_plugin
     grpc_init
+    grpc_call_get_idle_account_str
     grpc_shutdown
     grpc_is_initialized
     grpc_shutdown_blocking
