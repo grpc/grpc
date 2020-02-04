@@ -177,6 +177,9 @@ def _get_primitive_libs(lib_names):
     for lib_name in lib_names:
         to_name = _BUILD_METADATA.get(lib_name, {}).get('_RENAME', None)
         if to_name:
+            # TODO: make sure the name doesn't exist
+            if to_name in result:
+                raise Exception('Cannot rename target ' + lib_name + ', ' + to_name + ' already exists.')
             lib_dict = result.pop(lib_name)
             lib_dict['name'] = to_name
             result[to_name] = lib_dict
@@ -193,16 +196,19 @@ def _get_primitive_libs(lib_names):
 
 
 def _convert_to_build_yaml_like(lib_dict):
-    lib_names = list(filter(lambda lib_name: lib_dict[lib_name].get('TYPE', 'library') == 'library' , lib_dict.keys()))
-    target_names = list(filter(lambda lib_name: lib_dict[lib_name].get('TYPE', 'library') == 'target' , lib_dict.keys()))
+    lib_names = list(filter(lambda lib_name: lib_dict[lib_name].get('_TYPE', 'library') == 'library' , lib_dict.keys()))
+    target_names = list(filter(lambda lib_name: lib_dict[lib_name].get('_TYPE', 'library') == 'target' , lib_dict.keys()))
+    test_names = list(filter(lambda lib_name: lib_dict[lib_name].get('_TYPE', 'library') == 'test' , lib_dict.keys()))
 
     # make sure libraries come in build order (seems to be required by Makefile)
     lib_names = _sort_by_build_order(lib_names, lib_dict)
     target_names = _sort_by_build_order(target_names, lib_dict)
+    test_names = _sort_by_build_order(test_names, lib_dict)
 
     # list libraries and targets in predefined order
     lib_list = list(map(lambda lib_name: lib_dict[lib_name], lib_names))
     target_list = list(map(lambda lib_name: lib_dict[lib_name], target_names))
+    test_list = list(map(lambda lib_name: lib_dict[lib_name], test_names))
     
     # get rid of the "TYPE" field
     for lib in lib_list:
@@ -212,12 +218,16 @@ def _convert_to_build_yaml_like(lib_dict):
         target.pop('_TYPE', None)
         target.pop('_RENAME', None)
         target.pop('public_headers', None)  # public headers make no sense for targets
+    for test in test_list:
+        test.pop('_TYPE', None)
+        test.pop('_RENAME', None)
+        test.pop('public_headers', None)  # public headers make no sense for tests
     
     build_yaml_like = {
         'libs': lib_list,
         'filegroups': [],
         'targets': target_list,
-        'tests': []
+        'tests': test_list,
     }
     return build_yaml_like
 
@@ -252,6 +262,14 @@ _BUILD_METADATA = {
 
     #'grpc++_core_stats', TODO: is not build:all?
     #grpc++_proto_reflection_desc_db (no corresponding target in BUILD)
+
+    'test/core/util:grpc_test_util': { 'language': 'c', 'build': 'private', '_RENAME': 'grpc_test_util' },
+    'test/core/avl:avl_test': { 'language': 'c', 'build': 'test', '_TYPE': 'target', '_RENAME': 'avl_test' },
+    'test/core/slice:slice_test': { 'language': 'c', 'build': 'test', '_TYPE': 'target', '_RENAME': 'slice_test' },
+
+    'test/cpp/util:test_config': { 'language': 'c++', 'build': 'private', '_RENAME': 'grpc++_test_config' },
+    'test/cpp/util:test_util': { 'language': 'c++', 'build': 'private', '_RENAME': 'grpc++_test_util' },
+    'test/cpp/end2end:end2end_test': { 'language': 'c++', 'build': 'test', 'gtest': True, '_TYPE': 'target', '_RENAME': 'end2end_test' },
 }
 
 # random selection of tests to verify that things build just fine
