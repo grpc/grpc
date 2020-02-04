@@ -149,7 +149,7 @@ WorkSerializer::~WorkSerializer() {}
 
 void WorkSerializer::Run(std::function<void()> callback,
                          const grpc_core::DebugLocation& location) {
-  impl_->Run(callback, location);
+  impl_->Run(std::move(callback), location);
 }
 
 }  // namespace grpc_core
