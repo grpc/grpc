@@ -134,8 +134,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     class AdsCallState;
     class LrsCallState;
 
-    ChannelState(RefCountedPtr<XdsClient> xds_client,
-                 const grpc_channel_args& args);
+    ChannelState(RefCountedPtr<XdsClient> xds_client, grpc_channel* channel);
     ~ChannelState();
 
     void Orphan() override;
