@@ -28,6 +28,9 @@
 #define UPB_SIZE(size32, size64) size64
 #endif
 
+/* These macros aren't really "port", they are helper macros that we don't want
+ * to leak.
+ */
 #define UPB_FIELD_AT(msg, fieldtype, offset) \
   *(fieldtype*)((const char*)(msg) + offset)
 
@@ -39,6 +42,8 @@
 #define UPB_WRITE_ONEOF(msg, fieldtype, offset, value, case_offset, case_val) \
   UPB_FIELD_AT(msg, int, case_offset) = case_val;                             \
   UPB_FIELD_AT(msg, fieldtype, offset) = value;
+
+#define UPB_MAPTYPE_STRING 0
 
 /* UPB_INLINE: inline if possible, emit standalone code if required. */
 #ifdef __cplusplus
@@ -122,6 +127,18 @@ int msvc_vsnprintf(char* s, size_t n, const char* format, va_list arg);
 #define UPB_MIN(x, y) ((x) < (y) ? (x) : (y))
 
 #define UPB_UNUSED(var) (void)var
+
+/* UPB_ASSUME(): in release mode, we tell the compiler to assume this is true.
+ */
+#ifdef NDEBUG
+#ifdef __GNUC__
+#define UPB_ASSUME(expr) if (!(expr)) __builtin_unreachable()
+#else
+#define UPB_ASSUME(expr) do {} if (false && (expr))
+#endif
+#else
+#define UPB_ASSUME(expr) assert(expr)
+#endif
 
 /* UPB_ASSERT(): in release mode, we use the expression without letting it be
  * evaluated.  This prevents "unused variable" warnings. */
