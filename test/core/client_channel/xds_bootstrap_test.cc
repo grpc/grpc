@@ -83,7 +83,7 @@ TEST(XdsBootstrapTest, Basic) {
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
-  ASSERT_EQ(bootstrap.server().channel_creds.size(), 1);
+  ASSERT_EQ(bootstrap.server().channel_creds.size(), 1UL);
   EXPECT_EQ(bootstrap.server().channel_creds[0].type, "fake");
   EXPECT_EQ(bootstrap.server().channel_creds[0].config.type(),
             Json::Type::JSON_NULL);
@@ -123,7 +123,7 @@ TEST(XdsBootstrapTest, ValidWithoutChannelCredsAndNode) {
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap.server().channel_creds.size(), 0);
+  EXPECT_EQ(bootstrap.server().channel_creds.size(), 0UL);
   EXPECT_EQ(bootstrap.node(), nullptr);
 }
 

@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/json/json.h"
 
@@ -30,15 +31,15 @@ namespace {
 
 class JsonReader {
  public:
+  static grpc_error* Parse(StringView input, Json* output);
+
+ private:
   enum class Status {
     GRPC_JSON_DONE,          /* The parser finished successfully. */
     GRPC_JSON_PARSE_ERROR,   /* The parser found an error in the json stream. */
     GRPC_JSON_INTERNAL_ERROR /* The parser got an internal error. */
   };
 
-  static Status Parse(StringView input, Json* output);
-
- private:
   enum class State {
     GRPC_JSON_STATE_OBJECT_KEY_BEGIN,
     GRPC_JSON_STATE_OBJECT_KEY_STRING,
@@ -77,12 +78,15 @@ class JsonReader {
   static constexpr uint32_t GRPC_JSON_READ_CHAR_EOF = 0x7ffffff0;
 
   explicit JsonReader(StringView input)
-      : input_(reinterpret_cast<const uint8_t*>(input.data())),
+      : original_input_(reinterpret_cast<const uint8_t*>(input.data())),
+        input_(original_input_),
         remaining_input_(input.size()) {}
 
   Status Run();
   uint32_t ReadChar();
   bool IsComplete();
+
+  size_t CurrentIndex() const { return input_ - original_input_ - 1; }
 
   void StringAddChar(uint32_t c);
   void StringAddUtf32(uint32_t c);
@@ -97,6 +101,7 @@ class JsonReader {
   void SetFalse();
   void SetNull();
 
+  const uint8_t* original_input_;
   const uint8_t* input_;
   size_t remaining_input_;
 
@@ -105,7 +110,7 @@ class JsonReader {
   bool container_just_begun_ = false;
   uint16_t unicode_char_ = 0;
   uint16_t unicode_high_surrogate_ = 0;
-  bool duplicate_key_found_ = false;
+  std::vector<grpc_error*> errors_;
 
   Json root_value_;
   std::vector<Json*> stack_;
@@ -164,7 +169,11 @@ Json* JsonReader::CreateAndLinkValue() {
     Json* parent = stack_.back();
     if (parent->type() == Json::Type::OBJECT) {
       if (parent->object_value().find(key_) != parent->object_value().end()) {
-        duplicate_key_found_ = true;
+        char* msg;
+        gpr_asprintf(&msg, "duplicate key \"%s\" at index %" PRIuPTR,
+                     key_.c_str(), CurrentIndex());
+        errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+        gpr_free(msg);
       }
       value = &(*parent->mutable_object())[std::move(key_)];
     } else {
@@ -781,27 +790,35 @@ JsonReader::Status JsonReader::Run() {
   GPR_UNREACHABLE_CODE(return Status::GRPC_JSON_INTERNAL_ERROR);
 }
 
-JsonReader::Status JsonReader::Parse(StringView input, Json* output) {
+grpc_error* JsonReader::Parse(StringView input, Json* output) {
   JsonReader reader(input);
   Status status = reader.Run();
-  if (reader.duplicate_key_found_) status = Status::GRPC_JSON_PARSE_ERROR;
-  if (status == Status::GRPC_JSON_DONE) {
-    *output = std::move(reader.root_value_);
+  if (status == Status::GRPC_JSON_INTERNAL_ERROR) {
+    char* msg;
+    gpr_asprintf(&msg, "internal error in JSON parser at index %" PRIuPTR,
+                 reader.CurrentIndex());
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+    gpr_free(msg);
+  } else if (status == Status::GRPC_JSON_PARSE_ERROR) {
+    char* msg;
+    gpr_asprintf(&msg, "JSON parse error at index %" PRIuPTR,
+                 reader.CurrentIndex());
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+    gpr_free(msg);
   }
-  return status;
+  if (!reader.errors_.empty()) {
+    return GRPC_ERROR_CREATE_FROM_VECTOR("JSON parsing failed",
+                                         &reader.errors_);
+  }
+  *output = std::move(reader.root_value_);
+  return GRPC_ERROR_NONE;
 }
 
 }  // namespace
 
 Json Json::Parse(StringView json_str, grpc_error** error) {
   Json value;
-  JsonReader::Status status = JsonReader::Parse(json_str, &value);
-  if (status == JsonReader::Status::GRPC_JSON_PARSE_ERROR) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON parse error");
-  } else if (status == JsonReader::Status::GRPC_JSON_INTERNAL_ERROR) {
-    *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("internal error in JSON parser");
-  }
+  *error = JsonReader::Parse(json_str, &value);
   return value;
 }
 
