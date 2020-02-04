@@ -1949,6 +1949,7 @@ def server(thread_pool,
                                  maximum_concurrent_rpcs, compression)
 
 
+
 @contextlib.contextmanager
 def _create_servicer_context(rpc_event, state, request_deserializer):
     from grpc import _server  # pylint: disable=cyclic-import
@@ -2031,7 +2032,12 @@ __all__ = (
     'secure_channel',
     'intercept_channel',
     'server',
+    'unary_unary',
 )
+
+if sys.version_info[0] > 2:
+    from grpc._simple_stubs import unary_unary
+    __all__ = __all__ + (unary_unary,)
 
 ############################### Extension Shims ################################
 
