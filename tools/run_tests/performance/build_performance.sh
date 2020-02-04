@@ -74,6 +74,7 @@ do
     ;;
   "python_asyncio")
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --compiler python3.7 --build_only -j 8
+    ;;
   *)
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8
     ;;
