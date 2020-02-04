@@ -72,6 +72,8 @@ do
     # python workers are only run with python2.7 and building with multiple python versions is costly
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --compiler python2.7 --build_only -j 8
     ;;
+  "python_asyncio")
+    python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --compiler python3.7 --build_only -j 8
   *)
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8
     ;;
