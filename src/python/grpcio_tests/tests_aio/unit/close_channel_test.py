@@ -24,11 +24,11 @@ from grpc.experimental.aio import _base_call
 from grpc.experimental.aio._channel import _OngoingCalls
 
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
-from tests_aio.unit._constants import UNARY_CALL_WITH_SLEEP_VALUE
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
 _UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
+_LONG_TIMEOUT_THAT_SHOULD_NOT_EXPIRE = 60
 
 
 class TestOngoingCalls(unittest.TestCase):
@@ -90,7 +90,7 @@ class TestCloseChannel(AioTestBase):
 
         call = UnaryCallWithSleep(messages_pb2.SimpleRequest())
 
-        await channel.close(grace=UNARY_CALL_WITH_SLEEP_VALUE * 4)
+        await channel.close(grace=_LONG_TIMEOUT_THAT_SHOULD_NOT_EXPIRE)
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
