@@ -33,18 +33,22 @@ _NUM_CORE_PYTHON_CAN_USE = 1
 _LOGGER = logging.getLogger(__name__)
 
 
-def _get_server_status(start_time: float, end_time: float, port: int) -> control_pb2.ServerStatus:
+def _get_server_status(start_time: float, end_time: float,
+                       port: int) -> control_pb2.ServerStatus:
     end_time = time.time()
     elapsed_time = end_time - start_time
     stats = stats_pb2.ServerStats(time_elapsed=elapsed_time,
-                                    time_user=elapsed_time,
-                                    time_system=elapsed_time)
-    return control_pb2.ServerStatus(stats=stats, port=port, cores=_NUM_CORE_PYTHON_CAN_USE)
+                                  time_user=elapsed_time,
+                                  time_system=elapsed_time)
+    return control_pb2.ServerStatus(stats=stats,
+                                    port=port,
+                                    cores=_NUM_CORE_PYTHON_CAN_USE)
 
 
 def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
     if config.async_server_threads != 1:
-        _LOGGER.warning('config.async_server_threads [%d] != 1', config.async_server_threads)
+        _LOGGER.warning('config.async_server_threads [%d] != 1',
+                        config.async_server_threads)
 
     server = aio.server()
     if config.server_type == control_pb2.ASYNC_SERVER:
@@ -56,8 +60,7 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
         servicer = benchmark_servicer.GenericBenchmarkServicer(resp_size)
         method_implementations = {
             'StreamingCall':
-                grpc.stream_stream_rpc_method_handler(servicer.StreamingCall
-                                                        ),
+                grpc.stream_stream_rpc_method_handler(servicer.StreamingCall),
             'UnaryCall':
                 grpc.unary_unary_rpc_method_handler(servicer.UnaryCall),
         }
@@ -72,27 +75,32 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
         server_creds = grpc.ssl_server_credentials(
             ((resources.private_key(), resources.certificate_chain()),))
         port = server.add_secure_port('[::]:{}'.format(config.port),
-                                        server_creds)
+                                      server_creds)
     else:
         port = server.add_insecure_port('[::]:{}'.format(config.port))
 
     return server, port
 
 
-def _get_client_status(start_time: float, end_time: float, qps_data: histogram.Histogram) -> control_pb2.ClientStatus:
+def _get_client_status(start_time: float, end_time: float,
+                       qps_data: histogram.Histogram
+                      ) -> control_pb2.ClientStatus:
     latencies = qps_data.get_data()
     end_time = time.time()
     elapsed_time = end_time - start_time
     stats = stats_pb2.ClientStats(latencies=latencies,
-                                    time_elapsed=elapsed_time,
-                                    time_user=elapsed_time,
-                                    time_system=elapsed_time)
+                                  time_elapsed=elapsed_time,
+                                  time_user=elapsed_time,
+                                  time_system=elapsed_time)
     return control_pb2.ClientStatus(stats=stats)
 
 
-def _create_client(server: str, config: control_pb2.ClientConfig, qps_data: histogram.Histogram) -> benchmark_client.BenchmarkClient:
+def _create_client(server: str, config: control_pb2.ClientConfig,
+                   qps_data: histogram.Histogram
+                  ) -> benchmark_client.BenchmarkClient:
     if config.load_params.WhichOneof('load') != 'closed_loop':
-        raise NotImplementedError(f'Unsupported load parameter {config.load_params}')
+        raise NotImplementedError(
+            f'Unsupported load parameter {config.load_params}')
 
     if config.client_type == control_pb2.ASYNC_CLIENT:
         if config.rpc_type == control_pb2.UNARY:
@@ -100,9 +108,11 @@ def _create_client(server: str, config: control_pb2.ClientConfig, qps_data: hist
         elif config.rpc_type == control_pb2.STREAMING:
             client_type = benchmark_client.StreamingAsyncBenchmarkClient
         else:
-            raise NotImplementedError(f'Unsupported rpc_type [{config.rpc_type}]')
+            raise NotImplementedError(
+                f'Unsupported rpc_type [{config.rpc_type}]')
     else:
-        raise NotImplementedError(f'Unsupported client type {config.client_type}')
+        raise NotImplementedError(
+            f'Unsupported client type {config.client_type}')
 
     return client_type(server, config, qps_data)
 

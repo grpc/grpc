@@ -38,7 +38,8 @@ class GenericStub(object):
 class BenchmarkClient(abc.ABC):
     """Benchmark client interface that exposes a non-blocking send_request()."""
 
-    def __init__(self, address: str, config: control_pb2.ClientConfig, hist: histogram.Histogram):
+    def __init__(self, address: str, config: control_pb2.ClientConfig,
+                 hist: histogram.Histogram):
         # Creates the channel
         if config.HasField('security_params'):
             channel_credentials = grpc.ssl_channel_credentials(
@@ -81,7 +82,8 @@ class BenchmarkClient(abc.ABC):
 
 class UnaryAsyncBenchmarkClient(BenchmarkClient):
 
-    def __init__(self, address: str, config: control_pb2.ClientConfig, hist: histogram.Histogram):
+    def __init__(self, address: str, config: control_pb2.ClientConfig,
+                 hist: histogram.Histogram):
         super().__init__(address, config, hist)
         self._running = None
         self._stopped = asyncio.Event()
@@ -101,7 +103,7 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
         senders = (self._infinite_sender() for _ in range(self._concurrency))
         await asyncio.gather(*senders)
         self._stopped.set()
-    
+
     async def stop(self) -> None:
         self._running = False
         await self._stopped.wait()
@@ -110,7 +112,8 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
 
 class StreamingAsyncBenchmarkClient(BenchmarkClient):
 
-    def __init__(self, address: str, config: control_pb2.ClientConfig, hist: histogram.Histogram):
+    def __init__(self, address: str, config: control_pb2.ClientConfig,
+                 hist: histogram.Histogram):
         super().__init__(address, config, hist)
         self._running = None
         self._stopped = asyncio.Event()
@@ -126,7 +129,8 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
     async def run(self):
         await super().run()
         self._running = True
-        senders = (self._one_streamming_call() for _ in range(self._concurrency))
+        senders = (
+            self._one_streamming_call() for _ in range(self._concurrency))
         await asyncio.wait(senders)
         self._stopped.set()
 

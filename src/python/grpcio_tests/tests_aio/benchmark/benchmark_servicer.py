@@ -35,13 +35,13 @@ class BenchmarkServicer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
             yield messages_pb2.SimpleResponse(payload=payload)
 
     async def StreamingCall(self, request_iterator, unused_context):
-        payload = messages_pb2.Payload(body='\0' * request.response_size)
         async for request in request_iterator:
+            payload = messages_pb2.Payload(body=b'\0' * request.response_size)
             yield messages_pb2.SimpleResponse(payload=payload)
 
 
-class GenericBenchmarkServicer(benchmark_service_pb2_grpc.BenchmarkServiceServicer
-                            ):
+class GenericBenchmarkServicer(
+        benchmark_service_pb2_grpc.BenchmarkServiceServicer):
     """Generic (no-codec) Server implementation for the Benchmark service."""
 
     def __init__(self, resp_size):

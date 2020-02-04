@@ -48,6 +48,4 @@ if __name__ == '__main__':
                         help='The port the worker should listen on')
     args = parser.parse_args()
 
-    asyncio.get_event_loop().run_until_complete(
-        run_worker_server(args.port)
-    )
+    asyncio.get_event_loop().run_until_complete(run_worker_server(args.port))
