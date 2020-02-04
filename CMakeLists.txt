@@ -526,7 +526,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c init_test)
   add_dependencies(buildtests_c inproc_callback_test)
   add_dependencies(buildtests_c invalid_call_argument_test)
-  add_dependencies(buildtests_c json_test)
   add_dependencies(buildtests_c lame_client_test)
   add_dependencies(buildtests_c load_file_test)
   add_dependencies(buildtests_c message_compress_test)
@@ -826,7 +825,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx json_run_localhost)
   endif()
-  add_dependencies(buildtests_cxx json_test_new)
+  add_dependencies(buildtests_cxx json_test)
   add_dependencies(buildtests_cxx message_allocator_end2end_test)
   add_dependencies(buildtests_cxx metrics_client)
   add_dependencies(buildtests_cxx mock_test)
@@ -1124,11 +1123,8 @@ add_library(alts_test_util
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
-  src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -1614,11 +1610,8 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
-  src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2100,11 +2093,8 @@ add_library(grpc_cronet
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
-  src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2531,11 +2521,8 @@ add_library(grpc_test_util
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
-  src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2876,11 +2863,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
-  src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -3197,11 +3181,8 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
-  src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -8543,33 +8524,6 @@ target_include_directories(invalid_call_argument_test
 )
 
 target_link_libraries(invalid_call_argument_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(json_test
-  test/core/json/json_test.cc
-)
-
-target_include_directories(json_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(json_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -14018,13 +13972,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(json_test_new
-  test/core/json/json_test_new.cc
+add_executable(json_test
+  test/core/json/json_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(json_test_new
+target_include_directories(json_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14041,7 +13995,7 @@ target_include_directories(json_test_new
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(json_test_new
+target_link_libraries(json_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util

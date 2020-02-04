@@ -770,11 +770,8 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/iomgr/work_serializer.cc
-  - src/core/lib/json/json.cc
   - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_reader_new.cc
   - src/core/lib/json/json_writer.cc
-  - src/core/lib/json/json_writer_new.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -3302,16 +3299,6 @@ targets:
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
-- name: json_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
 - name: lame_client_test
   build: test
   language: c
@@ -5396,12 +5383,12 @@ targets:
   - mac
   - linux
   - posix
-- name: json_test_new
+- name: json_test
   gtest: true
   build: test
   language: c++
   src:
-  - test/core/json/json_test_new.cc
+  - test/core/json/json_test.cc
   deps:
   - grpc_test_util
   - grpc
