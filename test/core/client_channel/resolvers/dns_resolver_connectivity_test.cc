@@ -64,9 +64,8 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
-    char** /*service_config_json*/, int /*query_timeout_ms*/,
-    grpc_core::Combiner* /*combiner*/) {
+    bool /*check_grpclb*/, char** /*service_config_json*/,
+    int /*query_timeout_ms*/, grpc_core::Combiner* /*combiner*/) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error* error = GRPC_ERROR_NONE;
