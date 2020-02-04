@@ -124,9 +124,10 @@ def _generate_build_metadata(lib_names):
     for lib_name in lib_names:
         lib_dict = result[lib_name]
         
-        depends_on_boringssl = True if filter(lambda dep : dep.startswith('@boringssl//'), lib_dict['deps_transitive']) else False
+        # causes cyclic dependency warnings in Makefile?
+        #depends_on_boringssl = True if filter(lambda dep : dep.startswith('@boringssl//'), lib_dict['deps_transitive']) else False
         # TODO: only set secure if uses boringssl directly, not transitively
-        lib_dict['secure'] = depends_on_boringssl
+        #lib_dict['secure'] = depends_on_boringssl
 
         # doesn't work
         #depends_on_gtest = '@com_github_google_googletest//:gtest' in lib_dict['deps_transitive']
@@ -156,10 +157,13 @@ def _generate_build_metadata(lib_names):
     for lib_name in lib_names:
         lib_dict = result[lib_name]
         for dep_name in lib_dict['deps_transitive']:
-            if dep_name.startswith('@com_google_absl//'):
-                prefixlen = len('@com_google_absl//')
-                # add the dependency on that library
-                lib_dict['deps'] = lib_dict['deps'] + [dep_name[prefixlen:]]
+            # TODO: get rid of this hack
+            # absl dependency for targets breaks the Makefile
+            if lib_dict.get('_TYPE', 'library') != 'target':
+                if dep_name.startswith('@com_google_absl//'):
+                    prefixlen = len('@com_google_absl//')
+                    # add the dependency on that library
+                    lib_dict['deps'] = lib_dict['deps'] + [dep_name[prefixlen:]]
 
     
     # postprocess transitive fields to get non-transitive values
@@ -253,7 +257,7 @@ def _convert_to_build_yaml_like(lib_dict):
 _BUILD_EXTRA_METADATA = {
     'third_party/address_sorting:address_sorting': { 'language': 'c', 'build': 'all', '_RENAME': 'address_sorting' },
     'gpr': { 'language': 'c', 'build': 'all' },
-    'grpc': { 'language': 'c', 'build': 'all', 'baselib': True, 'generate_plugin_registry': True},  # TODO: get list of plugins
+    'grpc': { 'language': 'c', 'build': 'all', 'baselib': True, 'secure': True, 'generate_plugin_registry': True},  # TODO: get list of plugins
     'grpc++': { 'language': 'c++', 'build': 'all', 'baselib': True },
     'grpc++_alts': { 'language': 'c++', 'build': 'all', 'baselib': True },
     'grpc++_error_details': { 'language': 'c++', 'build': 'all' },
@@ -273,8 +277,7 @@ _BUILD_EXTRA_METADATA = {
     'src/compiler:grpc_python_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_python_plugin' },
     'src/compiler:grpc_ruby_plugin': { 'language': 'c++', 'build': 'protoc', '_TYPE': 'target', '_RENAME': 'grpc_ruby_plugin' },
 
-    #'grpc++_core_stats', TODO: is not build:all?
-    #grpc++_proto_reflection_desc_db (no corresponding target in BUILD)
+    #'grpc++_core_stats', TODO: whis is this library not build:all?
 
     'test/core/util:grpc_test_util': { 'language': 'c', 'build': 'private', '_RENAME': 'grpc_test_util' },
     'test/core/avl:avl_test': { 'language': 'c', 'build': 'test', '_TYPE': 'target', '_RENAME': 'avl_test' },
