@@ -89,15 +89,15 @@ cdef class RPCState:
             return _EMPTY_FLAG
 
     cdef Operation create_send_initial_metadata_op_if_not_sent(self):
+        cdef SendInitialMetadataOperation op
         if self.metadata_sent:
             return None
-
-        cdef SendInitialMetadataOperation op = SendInitialMetadataOperation(
-            _augment_metadata(_IMMUTABLE_EMPTY_METADATA, self.compression_algorithm),
-            _EMPTY_FLAG
-        )
-        self.metadata_sent = True
-        return op
+        else:
+            op = SendInitialMetadataOperation(
+                _augment_metadata(_IMMUTABLE_EMPTY_METADATA, self.compression_algorithm),
+                _EMPTY_FLAG
+            )
+            return op
 
     def __dealloc__(self):
         """Cleans the Core objects."""
@@ -149,6 +149,7 @@ cdef class _ServicerContext:
                             self._rpc_state.create_send_initial_metadata_op_if_not_sent(),
                             self._rpc_state.get_write_flag(),
                             self._loop)
+        self._rpc_state.metadata_sent = True
 
     async def send_initial_metadata(self, tuple metadata):
         self._rpc_state.raise_for_termination()
