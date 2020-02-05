@@ -16,11 +16,14 @@
 import contextlib
 import datetime
 import inspect
+import os
 import unittest
 import sys
 import time
 
 import logging
+
+os.environ["GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"] = "1"
 
 import grpc
 import test_common
@@ -82,7 +85,7 @@ class SimpleStubsTest(unittest.TestCase):
 
         Args:
           to_check: A function returning nothing, that caches values based on
-            an arbitrary supplied Text object.
+            an arbitrary supplied string.
         """
         initial_runs = []
         cached_runs = []
@@ -121,11 +124,31 @@ class SimpleStubsTest(unittest.TestCase):
             test_name = inspect.stack()[0][3]
             args = (request, target, _UNARY_UNARY)
             kwargs = {"channel_credentials": grpc.local_channel_credentials()}
-            def _invoke(seed: Text):
+            def _invoke(seed: str):
                 run_kwargs = dict(kwargs)
                 run_kwargs["options"] = ((test_name + seed, ""),)
                 grpc.unary_unary(*args, **run_kwargs)
             self.assert_cached(_invoke)
+
+    # TODO: Can this somehow be made more blackbox?
+    def test_channels_evicted(self):
+        with _server(grpc.local_server_credentials()) as (_, port):
+            target = f'localhost:{port}'
+            request = b'0000'
+            response = grpc.unary_unary(request,
+                                        target,
+                                        _UNARY_UNARY,
+                                        channel_credentials=grpc.local_channel_credentials())
+            channel_count = None
+            deadline = datetime.datetime.now() + datetime.timedelta(seconds=10)
+            while datetime.datetime.now() < deadline:
+                channel_count = grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()
+                if channel_count == 0:
+                    break
+                time.sleep(1)
+            else:
+                self.assertFalse("Not all channels were evicted. {channel_count} remain.")
+
 
     # TODO: Test request_serializer
     # TODO: Test request_deserializer
