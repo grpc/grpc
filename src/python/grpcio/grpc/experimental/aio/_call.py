@@ -142,10 +142,15 @@ class AioRpcError(grpc.RpcError):
 
 
 def _create_rpc_error(initial_metadata: Optional[MetadataType],
-                      status: cygrpc.AioRpcStatus) -> AioRpcError:
-    return AioRpcError(_common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-                       status.details(), initial_metadata,
-                       status.trailing_metadata())
+                      status: cygrpc.AioRpcStatus,
+                      debug_error_string: Optional[str] = None) -> AioRpcError:
+    return AioRpcError(
+        _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
+        status.details(),
+        initial_metadata,
+        status.trailing_metadata(),
+        debug_error_string,
+    )
 
 
 class Call:
@@ -270,8 +275,12 @@ class _UnaryResponseMixin(Call):
             if self._cython_call.is_locally_cancelled():
                 raise asyncio.CancelledError()
             else:
+                call_status = self._cython_call._status
+                debug_error_string = None
+                if call_status is not None:
+                    debug_error_string = call_status._debug_error_string
                 raise _create_rpc_error(self._cython_call._initial_metadata,
-                                        self._cython_call._status)
+                                        call_status, debug_error_string)
         else:
             return response
 
