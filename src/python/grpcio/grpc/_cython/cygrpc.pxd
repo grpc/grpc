@@ -13,6 +13,8 @@
 # limitations under the License.
 # distutils: language=c++
 
+cimport cpython
+
 include "_cygrpc/grpc.pxi"
 
 include "_cygrpc/arguments.pxd.pxi"

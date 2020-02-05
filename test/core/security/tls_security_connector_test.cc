@@ -16,16 +16,17 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
 #include <gmock/gmock.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "src/core/tsi/transport_security.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/test_config.h"
 
@@ -254,6 +255,35 @@ TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailInit) {
   EXPECT_EQ(connector, nullptr);
 }
 
+TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameSuccess) {
+  const char* target_name = "foo.test.google.fr";
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, target_name,
+                 &peer.properties[0]) == TSI_OK);
+  grpc_error* error = grpc_core::TlsCheckHostName(target_name, &peer);
+  tsi_peer_destruct(&peer);
+  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
+  options_->Unref();
+}
+
+TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
+  const char* target_name = "foo.test.google.fr";
+  const char* another_name = "bar.test.google.fr";
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, another_name,
+                 &peer.properties[0]) == TSI_OK);
+  grpc_error* error = grpc_core::TlsCheckHostName(target_name, &peer);
+  tsi_peer_destruct(&peer);
+  EXPECT_NE(error, GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
+  options_->Unref();
+}
+
 TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorSuccess) {
   SetOptions(SUCCESS);
   auto cred = std::unique_ptr<grpc_server_credentials>(
@@ -274,8 +304,8 @@ TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorFailInit) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;

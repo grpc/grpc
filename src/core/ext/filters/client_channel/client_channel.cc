@@ -1563,8 +1563,9 @@ void ChannelData::UpdateServiceConfigLocked(
 void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   // Instantiate resolving LB policy.
   LoadBalancingPolicy::Args lb_args;
-  lb_args.logical_thread = logical_thread_;
-  lb_args.channel_control_helper = MakeUnique<ClientChannelControlHelper>(this);
+  lb_args.combiner = combiner_;
+  lb_args.channel_control_helper =
+      grpc_core::MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
   grpc_core::UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(new ResolvingLoadBalancingPolicy(
@@ -1698,11 +1699,11 @@ bool ChannelData::ProcessResolverResultLocked(
       ((service_config == nullptr) !=
        (chand->saved_service_config_ == nullptr)) ||
       (service_config != nullptr &&
-       strcmp(service_config->service_config_json(),
-              chand->saved_service_config_->service_config_json()) != 0);
+       service_config->json_string() !=
+           chand->saved_service_config_->json_string());
   if (service_config_changed) {
     service_config_json.reset(gpr_strdup(
-        service_config != nullptr ? service_config->service_config_json()
+        service_config != nullptr ? service_config->json_string().c_str()
                                   : ""));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
@@ -1839,7 +1840,7 @@ void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
                                      MemoryOrder::RELEASE);
       chand->UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
-          MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
+          grpc_core::MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
               GRPC_ERROR_REF(op->disconnect_with_error)));
     }
   }

@@ -512,8 +512,6 @@ class CLanguage(object):
 
         if compiler == 'gcc4.9' or compiler == 'default':
             return ('jessie', [])
-        elif compiler == 'gcc4.8':
-            return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
         elif compiler == 'gcc7.4':
@@ -1455,12 +1453,11 @@ argp.add_argument(
 argp.add_argument(
     '--compiler',
     choices=[
-        'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.4',
-        'gcc8.3', 'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-        'clang7.0', 'python2.7', 'python3.5', 'python3.6', 'python3.7',
-        'python3.8', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
-        'electron1.3', 'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015',
-        'cmake_vs2017'
+        'default', 'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl',
+        'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0', 'python2.7',
+        'python3.5', 'python3.6', 'python3.7', 'python3.8', 'pypy', 'pypy3',
+        'python_alpine', 'all_the_cpythons', 'electron1.3', 'electron1.6',
+        'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
     ],
     default='default',
     help=

@@ -121,12 +121,19 @@ def grpc_deps():
         actual = "@io_opencensus_cpp//opencensus/tags:tags",
     )
 
+    native.bind(
+        name = "libuv",
+        actual = "@libuv//:libuv",
+    )
+
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            # NOTE: This URL generates a tarball containing dynamic date
-            # information, so the sha256 is not consistent.
-            url = "https://boringssl.googlesource.com/boringssl/+archive/83da28a68f32023fd3b95a8ae94991a07b1f6c62.tar.gz",
+            # Use github mirror instead of https://boringssl.googlesource.com/boringssl
+            # to obtain a boringssl archive with consistent sha256
+            sha256 = "a3d4de4f03cb321ef943678d72a045c9a19d26b23d6f4e313f97600c65201a27",
+            strip_prefix = "boringssl-1c2769383f027befac5b75b6cedd25daf3bf4dcf",
+            url = "https://github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz",
         )
 
     if "zlib" not in native.existing_rules():
@@ -141,9 +148,9 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "416212e14481cff8fd4849b1c1c1200a7f34808a54377e22d7447efdf54ad758",
-            strip_prefix = "protobuf-09745575a923640154bcf307fba8aedff47f240a",
-            url = "https://github.com/google/protobuf/archive/09745575a923640154bcf307fba8aedff47f240a.tar.gz",
+            sha256 = "51398b0b97b353c1c226d0ade0bae80c80380e691cba7c1a108918986784a1c7",
+            strip_prefix = "protobuf-29cd005ce1fe1a8fabf11e325cb13006a6646d59",
+            url = "https://github.com/google/protobuf/archive/29cd005ce1fe1a8fabf11e325cb13006a6646d59.tar.gz",
         )
 
     if "com_github_google_googletest" not in native.existing_rules():
@@ -190,9 +197,9 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "6e477042edb279a7e3436f5d571b918389daea4b01d0d1e37ace50157d132b36",
-            strip_prefix = "abseil-cpp-bf86cfe165ef7d70dfe68f0b8fc0c018bc79a577",
-            url = "https://github.com/abseil/abseil-cpp/archive/bf86cfe165ef7d70dfe68f0b8fc0c018bc79a577.tar.gz",
+            sha256 = "19391fb4882601a65cb648d638c11aa301ce5f525ef02da1a9eafd22f72d7c59",
+            strip_prefix = "abseil-cpp-37dd2562ec830d547a1524bb306be313ac3f2556",
+            url = "https://github.com/abseil/abseil-cpp/archive/37dd2562ec830d547a1524bb306be313ac3f2556.tar.gz",
         )
 
     if "bazel_toolchains" not in native.existing_rules():
@@ -227,9 +234,9 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "61d0417abd60e65ed589c9deee7c124fe76a4106831f6ad39464e1525cef1454",
-            strip_prefix = "upb-9effcbcb27f0a665f9f345030188c0b291e32482",
-            url = "https://github.com/protocolbuffers/upb/archive/9effcbcb27f0a665f9f345030188c0b291e32482.tar.gz",
+            sha256 = "e9c136e56b98c8eb48ad1c9f8df4a6348e99f9f336ee6199c4259a312c2e3598",
+            strip_prefix = "upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc",
+            url = "https://github.com/protocolbuffers/upb/archive/d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
         )
     if "envoy_api" not in native.existing_rules():
         http_archive(
@@ -261,6 +268,15 @@ def grpc_deps():
                 "https://github.com/bazelbuild/apple_support/releases/download/0.7.1/apple_support.0.7.1.tar.gz",
             ],
             sha256 = "122ebf7fe7d1c8e938af6aeaee0efe788a3a2449ece5a8d6a428cb18d6f88033",
+        )
+
+    if "libuv" not in native.existing_rules():
+        http_archive(
+            name = "libuv",
+            build_file = "@com_github_grpc_grpc//third_party:libuv.BUILD",
+            sha256 = "dfb4fe1ff0b47340978490a14bf253475159ecfcbad46ab2a350c78f9ce3360f",
+            strip_prefix = "libuv-15ae750151ac9341e5945eb38f8982d59fb99201",
+            url = "https://github.com/libuv/libuv/archive/15ae750151ac9341e5945eb38f8982d59fb99201.tar.gz",
         )
 
     grpc_python_deps()

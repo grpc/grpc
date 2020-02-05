@@ -13,11 +13,13 @@
 # limitations under the License.
 
 
-cdef class _AioCall:
+cdef class _AioCall(GrpcCallWrapper):
     cdef:
         AioChannel _channel
         list _references
-        GrpcCallWrapper _grpc_call_wrapper
+        object _deadline
+        list _done_callbacks
+
         # Caches the picked event loop, so we can avoid the 30ns overhead each
         # time we need access to the event loop.
         object _loop
@@ -29,5 +31,17 @@ cdef class _AioCall:
         # because Core is holding a pointer for the callback handler.
         bint _is_locally_cancelled
 
-    cdef grpc_call* _create_grpc_call(self, object timeout, bytes method) except *
-    cdef void _destroy_grpc_call(self)
+        # Following attributes are used for storing the status of the call and
+        # the initial metadata. Waiters are used for pausing the execution of
+        # tasks that are asking for one of the field when they are not yet
+        # available.
+        readonly AioRpcStatus _status
+        readonly tuple _initial_metadata
+        list _waiters_status
+        list _waiters_initial_metadata
+
+        int _send_initial_metadata_flags
+
+    cdef void _create_grpc_call(self, object timeout, bytes method, CallCredentials credentials) except *
+    cdef void _set_status(self, AioRpcStatus status) except *
+    cdef void _set_initial_metadata(self, tuple initial_metadata) except *

@@ -64,6 +64,7 @@ _GRPC_DEP_NAMES = [
     'io_bazel_rules_go',
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
+    'libuv',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [

@@ -532,6 +532,7 @@ class RPCTest(unittest.TestCase):
                 metadata=(('test', 'CancelledUnaryRequestUnaryResponse'),))
             response_future.cancel()
 
+        self.assertIs(grpc.StatusCode.CANCELLED, response_future.code())
         self.assertTrue(response_future.cancelled())
         with self.assertRaises(grpc.FutureCancelledError):
             response_future.result()
@@ -539,7 +540,6 @@ class RPCTest(unittest.TestCase):
             response_future.exception()
         with self.assertRaises(grpc.FutureCancelledError):
             response_future.traceback()
-        self.assertIs(grpc.StatusCode.CANCELLED, response_future.code())
 
     def testCancelledUnaryRequestStreamResponse(self):
         self._cancelled_unary_request_stream_response(
@@ -562,6 +562,7 @@ class RPCTest(unittest.TestCase):
             self._control.block_until_paused()
             response_future.cancel()
 
+        self.assertIs(grpc.StatusCode.CANCELLED, response_future.code())
         self.assertTrue(response_future.cancelled())
         with self.assertRaises(grpc.FutureCancelledError):
             response_future.result()
@@ -570,7 +571,6 @@ class RPCTest(unittest.TestCase):
         with self.assertRaises(grpc.FutureCancelledError):
             response_future.traceback()
         self.assertIsNotNone(response_future.initial_metadata())
-        self.assertIs(grpc.StatusCode.CANCELLED, response_future.code())
         self.assertIsNotNone(response_future.details())
         self.assertIsNotNone(response_future.trailing_metadata())
 

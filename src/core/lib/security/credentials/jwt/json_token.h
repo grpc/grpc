@@ -52,7 +52,8 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
 
 /* Creates a json_key object from parsed json. Returns an invalid object if a
    parsing error has been encountered. */
-grpc_auth_json_key grpc_auth_json_key_create_from_json(const grpc_json* json);
+grpc_auth_json_key grpc_auth_json_key_create_from_json(
+    const grpc_core::Json& json);
 
 /* Destructs the object. */
 void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key);

@@ -226,7 +226,7 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
   }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* /*json*/, grpc_error** /*error*/) const override {
+      const Json& /*json*/, grpc_error** /*error*/) const override {
     return nullptr;
   }
 

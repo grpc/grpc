@@ -31,12 +31,12 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Timeout** → "grpc-timeout" TimeoutValue TimeoutUnit
 * **TimeoutValue** → {_positive integer as ASCII string of at most 8 digits_}
 * **TimeoutUnit** → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond
-* **Hour** → "H"
-* **Minute** → "M"
-* **Second** → "S"
-* **Millisecond** → "m"
-* **Microsecond** → "u"
-* **Nanosecond** → "n"
+  * **Hour** → "H"
+  * **Minute** → "M"
+  * **Second** → "S"
+  * **Millisecond** → "m"
+  * **Microsecond** → "u"
+  * **Nanosecond** → "n"
 * **Content-Type** → "content-type" "application/grpc" [("+proto" / "+json" / {_custom_})]
 * **Content-Coding** → "identity" / "gzip" / "deflate" / "snappy" / {_custom_}
 * <a name="message-encoding"></a>**Message-Encoding** → "grpc-encoding" Content-Coding

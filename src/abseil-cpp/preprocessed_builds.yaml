@@ -420,14 +420,6 @@
   headers:
   - third_party/abseil-cpp/absl/debugging/internal/address_is_readable.h
   - third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.h
-  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_aarch64-inl.inc
-  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_arm-inl.inc
-  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_config.h
-  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_generic-inl.inc
-  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_powerpc-inl.inc
-  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_unimplemented-inl.inc
-  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_win32-inl.inc
-  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_x86-inl.inc
   - third_party/abseil-cpp/absl/debugging/internal/vdso_support.h
   name: absl/debugging:debugging_internal
   src:
@@ -491,6 +483,14 @@
   - absl/base:core_headers
   - absl/debugging:debugging_internal
   headers:
+  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_aarch64-inl.inc
+  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_arm-inl.inc
+  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_config.h
+  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_generic-inl.inc
+  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_powerpc-inl.inc
+  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_unimplemented-inl.inc
+  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_win32-inl.inc
+  - third_party/abseil-cpp/absl/debugging/internal/stacktrace_x86-inl.inc
   - third_party/abseil-cpp/absl/debugging/stacktrace.h
   name: absl/debugging:stacktrace
   src:
@@ -516,6 +516,7 @@
   - third_party/abseil-cpp/absl/debugging/symbolize.cc
 - cmake_target: absl::flags_config
   deps:
+  - absl/base:config
   - absl/base:core_headers
   - absl/flags:path_util
   - absl/flags:program_name
@@ -530,12 +531,13 @@
 - cmake_target: absl::flags
   deps:
   - absl/base:base
+  - absl/base:config
   - absl/base:core_headers
   - absl/flags:config
   - absl/flags:flag_internal
   - absl/flags:handle
   - absl/flags:marshalling
-  - absl/memory:memory
+  - absl/flags:registry
   - absl/strings:strings
   headers:
   - third_party/abseil-cpp/absl/flags/declare.h
@@ -545,7 +547,9 @@
   - third_party/abseil-cpp/absl/flags/flag.cc
 - cmake_target: absl::flags_internal
   deps:
+  - absl/base:config
   - absl/base:core_headers
+  - absl/flags:config
   - absl/flags:handle
   - absl/flags:registry
   - absl/memory:memory
@@ -558,18 +562,20 @@
   - third_party/abseil-cpp/absl/flags/internal/flag.cc
 - cmake_target: absl::flags_handle
   deps:
+  - absl/base:config
   - absl/base:core_headers
-  - absl/flags:config
   - absl/flags:marshalling
+  - absl/strings:strings
   - absl/types:optional
   headers:
   - third_party/abseil-cpp/absl/flags/internal/commandlineflag.h
   name: absl/flags:handle
-  src:
-  - third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc
+  src: []
 - cmake_target: absl::flags_marshalling
   deps:
+  - absl/base:config
   - absl/base:core_headers
+  - absl/base:log_severity
   - absl/strings:str_format
   - absl/strings:strings
   headers:
@@ -579,8 +585,12 @@
   - third_party/abseil-cpp/absl/flags/marshalling.cc
 - cmake_target: absl::flags_parse
   deps:
+  - absl/base:config
+  - absl/base:core_headers
   - absl/flags:config
   - absl/flags:flag
+  - absl/flags:flag_internal
+  - absl/flags:handle
   - absl/flags:program_name
   - absl/flags:registry
   - absl/flags:usage
@@ -595,6 +605,7 @@
   - third_party/abseil-cpp/absl/flags/parse.cc
 - cmake_target: absl::flags_path_util
   deps:
+  - absl/base:config
   - absl/strings:strings
   headers:
   - third_party/abseil-cpp/absl/flags/internal/path_util.h
@@ -602,6 +613,8 @@
   src: []
 - cmake_target: absl::flags_program_name
   deps:
+  - absl/base:config
+  - absl/base:core_headers
   - absl/flags:path_util
   - absl/strings:strings
   - absl/synchronization:synchronization
@@ -612,8 +625,8 @@
   - third_party/abseil-cpp/absl/flags/internal/program_name.cc
 - cmake_target: absl::flags_registry
   deps:
+  - absl/base:config
   - absl/base:core_headers
-  - absl/base:dynamic_annotations
   - absl/base:raw_logging_internal
   - absl/flags:config
   - absl/flags:handle
@@ -628,6 +641,8 @@
   - third_party/abseil-cpp/absl/flags/internal/type_erased.cc
 - cmake_target: absl::flags_usage
   deps:
+  - absl/base:config
+  - absl/base:core_headers
   - absl/flags:usage_internal
   - absl/strings:strings
   - absl/synchronization:synchronization
@@ -638,13 +653,16 @@
   - third_party/abseil-cpp/absl/flags/usage.cc
 - cmake_target: absl::flags_usage_internal
   deps:
+  - absl/base:config
+  - absl/base:core_headers
   - absl/flags:config
   - absl/flags:flag
+  - absl/flags:flag_internal
   - absl/flags:handle
   - absl/flags:path_util
   - absl/flags:program_name
+  - absl/flags:registry
   - absl/strings:strings
-  - absl/synchronization:synchronization
   headers:
   - third_party/abseil-cpp/absl/flags/internal/usage.h
   name: absl/flags:usage_internal
@@ -958,6 +976,7 @@
 - cmake_target: absl::random_distributions
   deps:
   - absl/base:base_internal
+  - absl/base:config
   - absl/base:core_headers
   - absl/meta:type_traits
   - absl/random/internal:distributions
@@ -1026,14 +1045,17 @@
   - absl/base:config
   - absl/base:core_headers
   - absl/base:endian
+  - absl/base:raw_logging_internal
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/strings/internal/char_map.h
+  - third_party/abseil-cpp/absl/strings/internal/escaping.h
   - third_party/abseil-cpp/absl/strings/internal/ostringstream.h
   - third_party/abseil-cpp/absl/strings/internal/resize_uninitialized.h
   - third_party/abseil-cpp/absl/strings/internal/utf8.h
   name: absl/strings:internal
   src:
+  - third_party/abseil-cpp/absl/strings/internal/escaping.cc
   - third_party/abseil-cpp/absl/strings/internal/ostringstream.cc
   - third_party/abseil-cpp/absl/strings/internal/utf8.cc
 - cmake_target: absl::str_format

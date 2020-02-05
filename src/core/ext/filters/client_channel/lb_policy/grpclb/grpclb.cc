@@ -120,10 +120,9 @@ namespace {
 
 constexpr char kGrpclb[] = "grpclb";
 
-class ParsedGrpcLbConfig : public LoadBalancingPolicy::Config {
+class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit ParsedGrpcLbConfig(
-      RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
+  explicit GrpcLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
       : child_policy_(std::move(child_policy)) {}
   const char* name() const override { return kGrpclb; }
 
@@ -713,8 +712,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
-      state, MakeUnique<Picker>(parent_.get(), parent_->serverlist_,
-                                std::move(picker), std::move(client_stats)));
+      state, grpc_core::MakeUnique<Picker>(parent_.get(), parent_->serverlist_,
+                                           std::move(picker),
+                                           std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -1435,8 +1435,7 @@ void GrpcLb::ResetBackoffLocked() {
 
 void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
-  auto* grpclb_config =
-      static_cast<const ParsedGrpcLbConfig*>(args.config.get());
+  auto* grpclb_config = static_cast<const GrpcLbConfig*>(args.config.get());
   if (grpclb_config != nullptr) {
     child_policy_config_ = grpclb_config->child_policy();
   } else {
@@ -1857,33 +1856,27 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kGrpclb; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const Json& json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-    if (json == nullptr) {
-      return RefCountedPtr<LoadBalancingPolicy::Config>(
-          new ParsedGrpcLbConfig(nullptr));
+    if (json.type() == Json::Type::JSON_NULL) {
+      return MakeRefCounted<GrpcLbConfig>(nullptr);
     }
-    InlinedVector<grpc_error*, 2> error_list;
+    std::vector<grpc_error*> error_list;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    for (const grpc_json* field = json->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr) continue;
-      if (strcmp(field->key, "childPolicy") == 0) {
-        if (child_policy != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:childPolicy error:Duplicate entry"));
-        }
-        grpc_error* parse_error = GRPC_ERROR_NONE;
-        child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
-        if (parse_error != GRPC_ERROR_NONE) {
-          error_list.push_back(parse_error);
-        }
+    auto it = json.object_value().find("childPolicy");
+    if (it != json.object_value().end()) {
+      grpc_error* parse_error = GRPC_ERROR_NONE;
+      child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+          it->second, &parse_error);
+      if (parse_error != GRPC_ERROR_NONE) {
+        std::vector<grpc_error*> child_errors;
+        child_errors.push_back(parse_error);
+        error_list.push_back(
+            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
     if (error_list.empty()) {
-      return RefCountedPtr<LoadBalancingPolicy::Config>(
-          new ParsedGrpcLbConfig(std::move(child_policy)));
+      return MakeRefCounted<GrpcLbConfig>(std::move(child_policy));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("GrpcLb Parser", &error_list);
       return nullptr;

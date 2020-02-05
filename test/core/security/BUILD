@@ -269,6 +269,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
+        "//:tsi",
+        "//:tsi_interface",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],

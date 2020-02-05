@@ -24,8 +24,8 @@
   <%include file="../../run_tests_addons.include"/>
   <%include file="../../cmake_jessie_backports.include"/>
 
-  # Install gcc-4.8 and other relevant items
-  RUN apt-get update && apt-get -y install gcc-4.8 gcc-4.8-multilib g++-4.8 g++-4.8-multilib && apt-get clean
+  # Install gcc-4.9 and other relevant items
+  RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean
 
   # Define the default command.
   CMD ["bash"]
