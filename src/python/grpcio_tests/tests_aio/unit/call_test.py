@@ -52,6 +52,34 @@ class _MulticallableTestMixin():
         await self._server.stop(None)
 
 
+
+class _SecureCallMixin:
+    """A Mixin to run the call tests over a secure channel."""
+
+    async def setUp(self):
+        server_credentials = grpc.ssl_server_credentials([
+            (resources.private_key(), resources.certificate_chain())
+        ])
+        channel_credentials = grpc.ssl_channel_credentials(
+            resources.test_root_certificates())
+
+        self._server_address, self._server = await start_test_server(
+            secure=True, server_credentials=server_credentials)
+        _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
+        channel_options = (
+            (
+                'grpc.ssl_target_name_override',
+                _SERVER_HOST_OVERRIDE,
+            ),
+        )
+        self._channel = aio.secure_channel(self._server_address, channel_credentials, channel_options)
+        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+
+    async def tearDown(self):
+        await self._channel.close()
+        await self._server.stop(None)
+
+
 class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
     async def test_call_to_string(self):
@@ -60,7 +88,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertTrue(str(call) is not None)
         self.assertTrue(repr(call) is not None)
 
-        response = await call
+        await call
 
         self.assertTrue(str(call) is not None)
         self.assertTrue(repr(call) is not None)
@@ -207,29 +235,21 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         with self.assertRaises(asyncio.CancelledError):
             await task
 
-    def test_call_credentials(self):   # FIXME
+    async def test_passing_credentials_fails_over_insecure_channel(self):
+        call_credentials = grpc.composite_call_credentials(
+            grpc.access_token_call_credentials("abc"),
+            grpc.access_token_call_credentials("def"),
+        )
+        with self.assertRaisesRegex(RuntimeError, "Call credentials are only valid on secure channels"):
+            self._stub.UnaryCall(messages_pb2.SimpleRequest(), credentials=call_credentials)
 
-        async def coro():
-            server_target, _ = await start_test_server(secure=True)  # pylint: disable=unused-variable
-            channel_credentials = grpc.ssl_channel_credentials(
-                root_certificates=_TEST_ROOT_CERTIFICATES,
-                private_key=_PRIVATE_KEY,
-                certificate_chain=_CERTIFICATE_CHAIN,
-            )
 
-            async with aio.secure_channel(server_target, channel_credentials) as channel:
-                hi = channel.unary_unary('/grpc.testing.TestService/UnaryCall',
-                                         request_serializer=messages_pb2.
-                                         SimpleRequest.SerializeToString,
-                                         response_deserializer=messages_pb2.
-                                         SimpleResponse.FromString)
-                call = hi(messages_pb2.SimpleRequest())  # , credentials=call_credentials)
-                response = await call
-
-                self.assertIsInstance(response, messages_pb2.SimpleResponse)
-                self.assertEqual(await call.code(), grpc.StatusCode.OK)
-
-        self.loop.run_until_complete(coro())
+class TestUnaryUnarySecureCall(_SecureCallMixin, AioTestBase):
+    """Calls made over a secure channel."""
+    async def test_call_ok_with_credentials(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        response = await call
+        self.assertIsInstance(response, messages_pb2.SimpleResponse)
 
 
 class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
@@ -584,7 +604,6 @@ _STREAM_OUTPUT_REQUEST_ONE_RESPONSE.response_parameters.append(
 
 
 class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
-
     async def test_cancel(self):
         # Invokes the actual RPC
         call = self._stub.FullDuplexCall()

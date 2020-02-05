@@ -9,6 +9,7 @@
   "unit.call_test.TestStreamUnaryCall",
   "unit.call_test.TestUnaryStreamCall",
   "unit.call_test.TestUnaryUnaryCall",
+  "unit.call_test.TestUnaryUnarySecureCall",
   "unit.channel_argument_test.TestChannelArgument",
   "unit.channel_ready_test.TestChannelReady",
   "unit.channel_test.TestChannel",
