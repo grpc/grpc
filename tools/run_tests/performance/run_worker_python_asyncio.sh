@@ -17,4 +17,4 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-PYTHONPATH=src/python/grpcio_tests:src/python/gens py37_native/bin/python src/python/grpcio_tests/tests_aio/benchmark/worker.py "$@"
+PYTHONPATH=src/python/grpcio_tests:src/python/gens py36_native/bin/python src/python/grpcio_tests/tests_aio/benchmark/worker.py "$@"
