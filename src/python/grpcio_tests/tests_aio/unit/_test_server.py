@@ -24,10 +24,6 @@ from tests_aio.unit import _constants
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
-_PRIVATE_KEY = resources.private_key()
-_CERTIFICATE_CHAIN = resources.certificate_chain()
-_TEST_ROOT_CERTIFICATES = resources.test_root_certificates()
-_SERVER_CERTS = ((_PRIVATE_KEY, _CERTIFICATE_CHAIN),)
 
 
 async def _maybe_echo_metadata(servicer_context):

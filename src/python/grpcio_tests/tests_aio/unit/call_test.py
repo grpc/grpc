@@ -34,10 +34,7 @@ _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 _RESPONSE_INTERVAL_US = test_constants.SHORT_TIMEOUT * 1000 * 1000
 _UNREACHABLE_TARGET = '0.1:1111'
 _INFINITE_INTERVAL_US = 2**31 - 1
-
-_PRIVATE_KEY = resources.private_key()
-_CERTIFICATE_CHAIN = resources.certificate_chain()
-_TEST_ROOT_CERTIFICATES = resources.test_root_certificates()
+_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 
 class _MulticallableTestMixin():
@@ -65,7 +62,6 @@ class _SecureCallMixin:
 
         self._server_address, self._server = await start_test_server(
             secure=True, server_credentials=server_credentials)
-        _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
         channel_options = (
             (
                 'grpc.ssl_target_name_override',
@@ -250,6 +246,7 @@ class TestUnaryUnarySecureCall(_SecureCallMixin, AioTestBase):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
         response = await call
         self.assertIsInstance(response, messages_pb2.SimpleResponse)
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
 
 class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
