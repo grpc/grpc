@@ -837,6 +837,7 @@ class PythonAsyncIOLanguage:
             channels=1,
             client_threads_per_cq=1,
             server_threads_per_cq=1,
+            unconstrained_client=True,
             categories=[SMOKETEST, SCALABLE])
 
         # yield _ping_pong_scenario(
