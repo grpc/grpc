@@ -275,7 +275,10 @@ py_proto_library(
 proto_library(
     name = "control_descriptor",
     srcs = ["control.proto"],
-    deps = [":payloads_descriptor", ":stats_descriptor"]
+    deps = [
+        ":payloads_descriptor",
+        ":stats_descriptor",
+    ],
 )
 
 py_proto_library(

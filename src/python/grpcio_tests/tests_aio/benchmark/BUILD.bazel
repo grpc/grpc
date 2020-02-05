@@ -44,22 +44,22 @@ py_library(
 py_library(
     name = "worker_servicer",
     srcs = ["worker_servicer.py"],
-    srcs_version = "PY3",
     data = [
         "//src/python/grpcio_tests/tests/unit/credentials",
     ],
+    srcs_version = "PY3",
     deps = [
         ":benchmark_client",
         ":benchmark_servicer",
-        "//src/python/grpcio_tests/tests/qps:histogram",
-        "//src/python/grpcio_tests/tests/unit:resources",
+        "//src/proto/grpc/core:stats_py_pb2",
         "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
-        "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
         "//src/proto/grpc/testing:control_py_pb2",
         "//src/proto/grpc/testing:payloads_py_pb2",
-        "//src/proto/grpc/core:stats_py_pb2",
         "//src/proto/grpc/testing:stats_py_pb2",
+        "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/qps:histogram",
+        "//src/python/grpcio_tests/tests/unit:resources",
     ],
 )
 
