@@ -39,7 +39,6 @@ grpc_cc_library(
     external_deps = [
         "benchmark",
     ],
-    tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
@@ -61,7 +60,6 @@ grpc_cc_library(
     external_deps = [
         "benchmark",
     ],
-    tags = ["no_windows"],
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
@@ -73,22 +71,28 @@ grpc_cc_library(
 grpc_cc_test(
     name = "bm_closure",
     srcs = ["bm_closure.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [":helpers"],
 )
 
 grpc_cc_test(
     name = "bm_alarm",
     srcs = ["bm_alarm.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [":helpers"],
 )
 
 grpc_cc_test(
     name = "bm_arena",
-    size = "enormous",
     srcs = ["bm_arena.cc"],
     tags = [
+        "no_mac",
         "no_windows",
         "notsan",
     ],
@@ -99,7 +103,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_byte_buffer",
     srcs = ["bm_byte_buffer.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -107,7 +114,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_channel",
     srcs = ["bm_channel.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -115,7 +125,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_call_create",
     srcs = ["bm_call_create.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -123,14 +136,20 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_cq",
     srcs = ["bm_cq.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [":helpers"],
 )
 
 grpc_cc_test(
     name = "bm_cq_multiple_threads",
     srcs = ["bm_cq_multiple_threads.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -138,7 +157,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_error",
     srcs = ["bm_error.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -149,7 +171,10 @@ grpc_cc_library(
     hdrs = [
         "fullstack_streaming_ping_pong.h",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [":helpers"],
 )
 
@@ -189,7 +214,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "bm_fullstack_trickle",
-    size = "enormous",
+    size = "large",
     srcs = ["bm_fullstack_trickle.cc"],
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
@@ -225,7 +250,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_metadata",
     srcs = ["bm_metadata.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -233,7 +261,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_chttp2_hpack",
     srcs = ["bm_chttp2_hpack.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -252,16 +283,19 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_timer",
     srcs = ["bm_timer.cc"],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
 
 grpc_cc_test(
     name = "bm_threadpool",
-    size = "enormous",
     srcs = ["bm_threadpool.cc"],
     tags = [
+        "no_mac",
         "no_windows",
         "notsan",
     ],
@@ -301,7 +335,10 @@ grpc_cc_test(
     srcs = [
         "bm_callback_unary_ping_pong.cc",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [":callback_unary_ping_pong_h"],
 )
 
