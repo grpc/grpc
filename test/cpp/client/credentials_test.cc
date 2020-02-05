@@ -19,6 +19,7 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/server_builder.h>
 
 #include <memory>
 
@@ -690,6 +691,10 @@ TEST_F(CredentialsTest, LoadTlsServerCredentials) {
   TlsCredentialsOptions options = TlsCredentialsOptions(
       GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
       GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config, nullptr);
+  // It is necessary to instantiate a |ServerBuilder| object so that the C-core
+  // is properly initialized.
+  ::grpc::ServerBuilder builder;
+  (void)builder;
   std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
       grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
@@ -762,8 +767,6 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }
