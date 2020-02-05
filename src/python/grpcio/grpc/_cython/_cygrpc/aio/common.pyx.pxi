@@ -82,8 +82,6 @@ class UsageError(BaseError):
     """Raised when the usage might lead to undefined behavior."""
 
 
-# TODO(lidiz) inherit this from Python level `AioRpcStatus`, we need to improve
-# current code structure to make it happen.
 class AbortError(BaseError):
     """Raised when calling abort in servicer methods.
 
