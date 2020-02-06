@@ -15,9 +15,16 @@ _LOGGER = logging.getLogger(__name__)
 _EVICTION_PERIOD_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"
 if _EVICTION_PERIOD_KEY in os.environ:
     _EVICTION_PERIOD = datetime.timedelta(seconds=float(os.environ[_EVICTION_PERIOD_KEY]))
+    _LOGGER.info(f"Setting managed channel eviction period to {_EVICTION_PERIOD}")
 else:
     _EVICTION_PERIOD = datetime.timedelta(minutes=10)
 
+_MAXIMUM_CHANNELS_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM"
+if _MAXIMUM_CHANNELS_KEY in os.environ:
+    _MAXIMUM_CHANNELS = int(os.environ[_MAXIMUM_CHANNELS_KEY])
+    _LOGGER.info(f"Setting maximum managed channels to {_MAXIMUM_CHANNELS}")
+else:
+    _MAXIMUM_CHANNELS = 2 ** 8
 
 def _create_channel(target: Text,
                     options: Sequence[Tuple[Text, Text]],
@@ -74,6 +81,10 @@ class ChannelCache:
                 ChannelCache._eviction_ready.set()
                 if not ChannelCache._singleton._mapping:
                     ChannelCache._condition.wait()
+                elif len(ChannelCache._singleton._mapping) > _MAXIMUM_CHANNELS:
+                    key = next(iter(ChannelCache._singleton._mapping.keys()))
+                    ChannelCache._singleton._evict_locked(key)
+                    # And immediately reevaluate.
                 else:
                     key, (channel, eviction_time) = next(iter(ChannelCache._singleton._mapping.items()))
                     now = datetime.datetime.now()
@@ -97,24 +108,13 @@ class ChannelCache:
             channel_data = self._mapping.get(key, None)
             if channel_data is not None:
                 channel = channel_data[0]
-                # # NOTE: This isn't actually necessary. The eviction thread will
-                # # always wake up because the new head of the list will, by
-                # # definition, have a later eviction time than the old head of
-                # # the list. If however, we allow for channels with heterogeneous
-                # # eviction periods, this *will* become necessary. We can imagine
-                # # this would be the case for timeouts. That is, if a timeout
-                # # longer than the eviction period is specified, we do not want
-                # # to cancel the RPC prematurely.
-                # if channel is next(iter(self._mapping.values()))[0]:
-                #     self._condition.notify()
-                # Move to the end of the map.
                 self._mapping.pop(key)
                 self._mapping[key] = (channel, datetime.datetime.now() + _EVICTION_PERIOD)
                 return channel
             else:
                 channel = _create_channel(target, options, channel_credentials, compression)
                 self._mapping[key] = (channel, datetime.datetime.now() + _EVICTION_PERIOD)
-                if len(self._mapping) == 1:
+                if len(self._mapping) == 1 or len(self._mapping) >= _MAXIMUM_CHANNELS:
                     self._condition.notify()
                 return channel
 
@@ -123,6 +123,7 @@ class ChannelCache:
             return len(self._mapping)
 
 
+# TODO: s/Text/str/g
 def unary_unary(request: Any,
                 target: Text,
                 method: Text,
