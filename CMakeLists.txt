@@ -827,7 +827,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx json_run_localhost)
   endif()
   add_dependencies(buildtests_cxx json_test_new)
-  add_dependencies(buildtests_cxx logical_thread_test)
   add_dependencies(buildtests_cxx message_allocator_end2end_test)
   add_dependencies(buildtests_cxx metrics_client)
   add_dependencies(buildtests_cxx mock_test)
@@ -894,6 +893,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx transport_connectivity_state_test)
   add_dependencies(buildtests_cxx transport_pid_controller_test)
   add_dependencies(buildtests_cxx transport_security_common_api_test)
+  add_dependencies(buildtests_cxx work_serializer_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx writes_per_rpc_test)
   endif()
@@ -1070,7 +1070,6 @@ add_library(alts_test_util
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -1124,6 +1123,7 @@ add_library(alts_test_util
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_reader_new.cc
@@ -1560,7 +1560,6 @@ add_library(grpc
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -1614,6 +1613,7 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_reader_new.cc
@@ -2046,7 +2046,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -2100,6 +2099,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_reader_new.cc
@@ -2477,7 +2477,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -2531,6 +2530,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_reader_new.cc
@@ -2822,7 +2822,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -2876,6 +2875,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_reader_new.cc
@@ -3143,7 +3143,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -3197,6 +3196,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_reader_new.cc
@@ -14054,42 +14054,6 @@ target_link_libraries(json_test_new
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(logical_thread_test
-  test/core/iomgr/logical_thread_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(logical_thread_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(logical_thread_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(message_allocator_end2end_test
   test/cpp/end2end/message_allocator_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16058,6 +16022,42 @@ target_link_libraries(transport_security_common_api_test
   alts_test_util
   gpr
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(work_serializer_test
+  test/core/iomgr/work_serializer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(work_serializer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(work_serializer_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

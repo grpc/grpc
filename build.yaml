@@ -716,7 +716,6 @@ filegroups:
   - src/core/lib/iomgr/is_epollexclusive_available.cc
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
-  - src/core/lib/iomgr/logical_thread.cc
   - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
@@ -770,6 +769,7 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
+  - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_reader_new.cc
@@ -898,7 +898,6 @@ filegroups:
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
-  - src/core/lib/iomgr/logical_thread.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
@@ -939,6 +938,7 @@ filegroups:
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
+  - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
@@ -5407,16 +5407,6 @@ targets:
   - grpc
   - gpr
   uses_polling: false
-- name: logical_thread_test
-  cpu_cost: 10
-  build: test
-  language: c++
-  src:
-  - test/core/iomgr/logical_thread_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
 - name: message_allocator_end2end_test
   gtest: true
   cpu_cost: 0.5
@@ -6088,6 +6078,16 @@ targets:
   - alts_test_util
   - gpr
   - grpc
+- name: work_serializer_test
+  cpu_cost: 10
+  build: test
+  language: c++
+  src:
+  - test/core/iomgr/work_serializer_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5

@@ -1729,11 +1729,11 @@ bool ChannelData::ProcessResolverResultLocked(
       ((service_config == nullptr) !=
        (chand->saved_service_config_ == nullptr)) ||
       (service_config != nullptr &&
-       strcmp(service_config->service_config_json(),
-              chand->saved_service_config_->service_config_json()) != 0);
+       service_config->json_string() !=
+           chand->saved_service_config_->json_string());
   if (service_config_changed) {
     service_config_json.reset(gpr_strdup(
-        service_config != nullptr ? service_config->service_config_json()
+        service_config != nullptr ? service_config->json_string().c_str()
                                   : ""));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,

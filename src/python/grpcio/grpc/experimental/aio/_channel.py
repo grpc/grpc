@@ -44,7 +44,10 @@ class _OngoingCalls:
         self._calls = WeakSet()
 
     def _remove_call(self, call: _base_call.RpcContext):
-        self._calls.remove(call)
+        try:
+            self._calls.remove(call)
+        except KeyError:
+            pass
 
     @property
     def calls(self) -> AbstractSet[_base_call.RpcContext]:

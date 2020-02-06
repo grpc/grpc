@@ -560,8 +560,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/logical_thread.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/logical_thread.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/nameser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/poller/eventmanager_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/poller/eventmanager_libuv.h" role="src" />
@@ -655,6 +653,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />

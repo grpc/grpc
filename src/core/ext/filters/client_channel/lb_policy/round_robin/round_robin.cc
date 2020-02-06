@@ -467,7 +467,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   }
 }
 
-class ParsedRoundRobinConfig : public LoadBalancingPolicy::Config {
+class RoundRobinConfig : public LoadBalancingPolicy::Config {
  public:
   const char* name() const override { return kRoundRobin; }
 };
@@ -486,12 +486,8 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kRoundRobin; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** /*error*/) const override {
-    if (json != nullptr) {
-      GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-    }
-    return RefCountedPtr<LoadBalancingPolicy::Config>(
-        new ParsedRoundRobinConfig());
+      const Json& json, grpc_error** /*error*/) const override {
+    return MakeRefCounted<RoundRobinConfig>();
   }
 };
 

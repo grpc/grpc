@@ -1368,8 +1368,6 @@ src/core/lib/iomgr/load_file.cc \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
 src/core/lib/iomgr/lockfree_event.h \
-src/core/lib/iomgr/logical_thread.cc \
-src/core/lib/iomgr/logical_thread.h \
 src/core/lib/iomgr/nameser.h \
 src/core/lib/iomgr/poller/eventmanager_libuv.cc \
 src/core/lib/iomgr/poller/eventmanager_libuv.h \
@@ -1463,6 +1461,8 @@ src/core/lib/iomgr/wakeup_fd_pipe.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
+src/core/lib/iomgr/work_serializer.cc \
+src/core/lib/iomgr/work_serializer.h \
 src/core/lib/json/json.cc \
 src/core/lib/json/json.h \
 src/core/lib/json/json_reader.cc \
