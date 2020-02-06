@@ -443,7 +443,10 @@ class _StreamRequestMixin(Call):
         await self._write(request)
 
     async def done_writing(self) -> None:
-        """Implementation of done_writing is idempotent."""
+        """Signal peer that client is done writing.
+
+        This method is idempotent.
+        """
         self._raise_for_different_style(_APIStyle.READER_WRITER)
         await self._done_writing()
 
