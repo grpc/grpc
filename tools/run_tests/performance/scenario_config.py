@@ -118,6 +118,7 @@ def _ping_pong_scenario(name,
                         unconstrained_client=None,
                         client_language=None,
                         server_language=None,
+                        async_client_threads=0,
                         async_server_threads=0,
                         server_threads_per_cq=0,
                         client_threads_per_cq=0,
@@ -187,7 +188,7 @@ def _ping_pong_scenario(name,
             'num_clients'] = num_clients if num_clients is not None else 0  # use as many clients as available.
         scenario['client_config']['outstanding_rpcs_per_channel'] = deep
         scenario['client_config']['client_channels'] = wide
-        scenario['client_config']['async_client_threads'] = 0
+        scenario['client_config']['async_client_threads'] = async_client_threads
         if offered_load is not None:
             optimization_target = 'latency'
     else:
@@ -837,6 +838,7 @@ class PythonAsyncIOLanguage:
             channels=1,
             client_threads_per_cq=1,
             server_threads_per_cq=1,
+            async_server_threads=6,
             unconstrained_client=True,
             categories=[SMOKETEST, SCALABLE])
 
