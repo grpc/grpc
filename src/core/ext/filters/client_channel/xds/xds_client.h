@@ -56,7 +56,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~ClusterWatcherInterface() = default;
 
-    virtual void OnClusterChanged(CdsUpdate cluster_data) = 0;
+    virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
   };
@@ -66,7 +66,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~EndpointWatcherInterface() = default;
 
-    virtual void OnEndpointChanged(EdsUpdate update) = 0;
+    virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
   };
@@ -175,7 +175,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         watchers;
     // The latest data seen from CDS.
-    Optional<CdsUpdate> update;
+    Optional<XdsApi::CdsUpdate> update;
   };
 
   struct EndpointState {
@@ -184,7 +184,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
         watchers;
     std::set<XdsClientStats*> client_stats;
     // The latest data seen from EDS.
-    EdsUpdate update;
+    XdsApi::EdsUpdate update;
   };
 
   // Sends an error notification to all watchers.
@@ -212,6 +212,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   grpc_pollset_set* interested_parties_;
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
+  XdsApi api_;
 
   const std::string server_name_;
 
