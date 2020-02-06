@@ -830,15 +830,28 @@ class PythonAsyncIOLanguage:
 
     def scenarios(self):
         yield _ping_pong_scenario(
-            'python_asyncio_protobuf_async_unary_ping_pong',
+            'python_asyncio_protobuf_async_unary_ping_pong_64_max',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
             outstanding=64,
             channels=1,
+            async_client_threads=0,
+            async_server_threads=0,
+            unconstrained_client='async',
+            categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_unary_ping_pong_128_1thread',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            outstanding=128,
+            channels=1,
             client_threads_per_cq=1,
             server_threads_per_cq=1,
             async_client_threads=1,
+            async_server_threads=1,
             unconstrained_client='async',
             categories=[SMOKETEST, SCALABLE])
 
