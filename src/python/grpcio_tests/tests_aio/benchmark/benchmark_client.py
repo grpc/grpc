@@ -71,7 +71,7 @@ class BenchmarkClient(abc.ABC):
         self._concurrency = config.outstanding_rpcs_per_channel
 
     async def run(self) -> None:
-        await aio.channel_ready(self._channel)
+        await self._channel.channel_ready()
 
     async def stop(self) -> None:
         await self._channel.close()
