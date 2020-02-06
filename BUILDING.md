@@ -184,7 +184,7 @@ ie `gRPC_CARES_PROVIDER`.
 ### Install after build
 
 Perform the following steps to install gRPC using CMake.
-* Set `gRPC_INSTALL` to `ON`
+* Set `-DgRPC_INSTALL=ON`
 * Build the `install` target
 
 The install destination is controlled by the
@@ -197,9 +197,14 @@ in "module" mode and install them alongside gRPC in a single step.
 If you are using an older version of gRPC, you will need to select "package"
 mode (rather than "module" mode) for the dependencies.
 This means you will need to have external copies of these libraries available
-on your system.
+on your system. This [example](test/distrib/cpp/run_distrib_test_cmake.sh) shows
+how to install dependencies with cmake before proceeding to installing gRPC itself. 
+
 ```
-$ cmake ../.. -DgRPC_INSTALL=ON             \
+# NOTE: all of gRPC's dependencies need to be already installed
+$ cmake ../.. -DgRPC_INSTALL=ON                \
+              -DCMAKE_BUILD_TYPE=Release       \
+              -DgRPC_ABSL_PROVIDER=package     \
               -DgRPC_CARES_PROVIDER=package    \
               -DgRPC_PROTOBUF_PROVIDER=package \
               -DgRPC_SSL_PROVIDER=package      \
@@ -207,7 +212,6 @@ $ cmake ../.. -DgRPC_INSTALL=ON             \
 $ make
 $ make install
 ```
-[Example](test/distrib/cpp/run_distrib_test_cmake.sh)
 
 ### Cross-compiling
 
