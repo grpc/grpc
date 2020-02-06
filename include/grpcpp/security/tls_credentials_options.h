@@ -55,12 +55,13 @@ class TlsKeyMaterialsConfig {
   }
   int version() const { return version_; }
 
-  /** Setter for key materials that will be called by the user. The setter
-   * transfers ownership of the arguments to the config. **/
-  void set_pem_root_certs(grpc::string pem_root_certs);
+  /** Setter for key materials that will be called by the user. Ownership of the
+   * arguments will not be transferred. **/
+  void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(const PemKeyCertPair& pem_key_cert_pair);
-  void set_key_materials(grpc::string pem_root_certs,
-                         std::vector<PemKeyCertPair> pem_key_cert_pair_list);
+  void set_key_materials(
+      const grpc::string& pem_root_certs,
+      const std::vector<PemKeyCertPair>& pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; };
 
  private:
@@ -70,40 +71,36 @@ class TlsKeyMaterialsConfig {
 };
 
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. It is
- * used for experimental purposes for now and it is subject to change.
+ *  used for experimental purposes for now and it is subject to change.
  *
- * The credential reload arg contains all the info necessary to schedule/cancel
- * a credential reload request. The callback function must be called after
- * finishing the schedule operation. See the description of the
- * grpc_tls_credential_reload_arg struct in grpc_security.h for more details.
+ *  The credential reload arg contains all the info necessary to schedule/cancel
+ *  a credential reload request. The callback function must be called after
+ *  finishing the schedule operation. See the description of the
+ *  grpc_tls_credential_reload_arg struct in grpc_security.h for more details.
  * **/
 class TlsCredentialReloadArg {
  public:
   /** TlsCredentialReloadArg does not take ownership of the C arg that is passed
-   * to the constructor. One must remember to free any memory allocated to the C
-   * arg after using the setter functions below. **/
+   *  to the constructor. One must remember to free any memory allocated to the
+   * C arg after using the setter functions below. **/
   TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg);
   ~TlsCredentialReloadArg();
 
-  /** Getters for member fields. The callback function is not exposed.
-   * They return the corresponding fields of the underlying C arg. In the case
-   * of the key materials config, it creates a new instance of the C++ key
-   * materials config from the underlying C grpc_tls_key_materials_config. **/
+  /** Getters for member fields. **/
   void* cb_user_data() const;
   bool is_pem_key_cert_pair_list_empty() const;
   grpc_ssl_certificate_config_reload_status status() const;
   grpc::string error_details() const;
 
-  /** Setters for member fields. They modify the fields of the underlying C arg.
-   * The setters for the key_materials_config and the error_details allocate
-   * memory when modifying c_arg_, so one must remember to free c_arg_'s
-   * original key_materials_config or error_details after using the appropriate
-   * setter function.
-   * **/
+  /** Setters for member fields. Ownership of the arguments will not be
+   *  transferred. **/
   void set_cb_user_data(void* cb_user_data);
   void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(
-      TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair);
+      const TlsKeyMaterialsConfig::PemKeyCertPair& pem_key_cert_pair);
+  void set_key_materials(const grpc::string& pem_root_certs,
+                         std::vector<TlsKeyMaterialsConfig::PemKeyCertPair>
+                             pem_key_cert_pair_list);
   void set_key_materials_config(
       const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);
@@ -187,8 +184,7 @@ class TlsServerAuthorizationCheckArg {
   TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg);
   ~TlsServerAuthorizationCheckArg();
 
-  /** Getters for member fields. They return the corresponding fields of the
-   * underlying C arg.**/
+  /** Getters for member fields. **/
   void* cb_user_data() const;
   int success() const;
   grpc::string target_name() const;
@@ -197,12 +193,7 @@ class TlsServerAuthorizationCheckArg {
   grpc_status_code status() const;
   grpc::string error_details() const;
 
-  /** Setters for member fields. They modify the fields of the underlying C arg.
-   * The setters for target_name, peer_cert, and error_details allocate memory
-   * when modifying c_arg_, so one must remember to free c_arg_'s original
-   * target_name, peer_cert, or error_details after using the appropriate setter
-   * function.
-   * **/
+  /** Setters for member fields. **/
   void set_cb_user_data(void* cb_user_data);
   void set_success(int success);
   void set_target_name(const grpc::string& target_name);
