@@ -34,30 +34,24 @@ from tests.unit.framework.common import get_socket
 _NUM_CORES = multiprocessing.cpu_count()
 _NUM_CORE_PYTHON_CAN_USE = 1
 _WORKER_ENTRY_FILE = os.path.split(os.path.abspath(__file__))[0] + '/worker.py'
-_SubWorker = collections.namedtuple(
-    '_SubWorker', ['process', 'port', 'channel', 'stub'])
-
+_SubWorker = collections.namedtuple('_SubWorker',
+                                    ['process', 'port', 'channel', 'stub'])
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _get_server_status(start_time: float,
-                       end_time: float,
+def _get_server_status(start_time: float, end_time: float,
                        port: int) -> control_pb2.ServerStatus:
     end_time = time.time()
     elapsed_time = end_time - start_time
     stats = stats_pb2.ServerStats(time_elapsed=elapsed_time,
                                   time_user=elapsed_time,
                                   time_system=elapsed_time)
-    return control_pb2.ServerStatus(stats=stats,
-                                    port=port,
-                                    cores=_NUM_CORES)
+    return control_pb2.ServerStatus(stats=stats, port=port, cores=_NUM_CORES)
 
 
 def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
-    server = aio.server(options=(
-        ('grpc.so_reuseport', 1),
-    ))
+    server = aio.server(options=(('grpc.so_reuseport', 1),))
     if config.server_type == control_pb2.ASYNC_SERVER:
         servicer = benchmark_servicer.BenchmarkServicer()
         benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
@@ -91,7 +85,7 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
 
 def _get_client_status(start_time: float, end_time: float,
                        qps_data: histogram.Histogram
-                       ) -> control_pb2.ClientStatus:
+                      ) -> control_pb2.ClientStatus:
     latencies = qps_data.get_data()
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -104,7 +98,7 @@ def _get_client_status(start_time: float, end_time: float,
 
 def _create_client(server: str, config: control_pb2.ClientConfig,
                    qps_data: histogram.Histogram
-                   ) -> benchmark_client.BenchmarkClient:
+                  ) -> benchmark_client.BenchmarkClient:
     if config.load_params.WhichOneof('load') != 'closed_loop':
         raise NotImplementedError(
             f'Unsupported load parameter {config.load_params}')
@@ -134,13 +128,11 @@ async def _create_sub_worker() -> _SubWorker:
     port = _pick_an_unused_port()
 
     _LOGGER.info('Creating sub worker at port [%d]...', port)
-    process = await asyncio.create_subprocess_exec(
-        sys.executable,
-        _WORKER_ENTRY_FILE,
-        '--driver_port', str(port)
-    )
-    _LOGGER.info(
-        'Created sub worker process for port [%d] at pid [%d]', port, process.pid)
+    process = await asyncio.create_subprocess_exec(sys.executable,
+                                                   _WORKER_ENTRY_FILE,
+                                                   '--driver_port', str(port))
+    _LOGGER.info('Created sub worker process for port [%d] at pid [%d]', port,
+                 process.pid)
     channel = aio.insecure_channel(f'localhost:{port}')
     _LOGGER.info('Waiting for sub worker at port [%d]', port)
     await channel.channel_ready()
@@ -182,8 +174,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         _LOGGER.info('Received ServerConfig: %s', config)
 
         if config.async_server_threads <= 0:
-            _LOGGER.info(
-                'async_server_threads can\'t be [%d]', config.async_server_threads)
+            _LOGGER.info('async_server_threads can\'t be [%d]',
+                         config.async_server_threads)
             _LOGGER.info('Using async_server_threads == [%d]', _NUM_CORES)
             config.async_server_threads = _NUM_CORES
 
@@ -196,8 +188,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         else:
             sub_workers = await asyncio.gather(*(
                 _create_sub_worker()
-                for _ in range(config.async_server_threads)
-            ))
+                for _ in range(config.async_server_threads)))
 
             calls = [worker.stub.RunServer() for worker in sub_workers]
 
@@ -209,11 +200,12 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
                 await call.read()
 
             start_time = time.time()
-            await context.write(_get_server_status(
-                start_time,
-                start_time,
-                config.port,
-            ))
+            await context.write(
+                _get_server_status(
+                    start_time,
+                    start_time,
+                    config.port,
+                ))
 
             async for request in request_iterator:
                 end_time = time.time()
@@ -278,8 +270,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         _LOGGER.info('Received ClientConfig: %s', config)
 
         if config.async_client_threads <= 0:
-            _LOGGER.info(
-                'async_client_threads can\'t be [%d]', config.async_client_threads)
+            _LOGGER.info('async_client_threads can\'t be [%d]',
+                         config.async_client_threads)
             _LOGGER.info('Using async_client_threads == [%d]', _NUM_CORES)
             config.async_client_threads = _NUM_CORES
 
@@ -288,8 +280,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         else:
             sub_workers = await asyncio.gather(*(
                 _create_sub_worker()
-                for _ in range(config.async_client_threads)
-            ))
+                for _ in range(config.async_client_threads)))
 
             calls = [worker.stub.RunClient() for worker in sub_workers]
 
@@ -304,7 +295,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             result = histogram.Histogram(config.histogram_params.resolution,
                                          config.histogram_params.max_possible)
             end_time = time.time()
-            await context.write(_get_client_status(start_time, end_time, result))
+            await context.write(_get_client_status(start_time, end_time,
+                                                   result))
 
             async for request in request_iterator:
                 end_time = time.time()
@@ -321,8 +313,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
                 if request.mark.reset:
                     result.reset()
                     start_time = time.time()
-                _LOGGER.debug(
-                    'Reporting count=[%d]', status.stats.latencies.count)
+                _LOGGER.debug('Reporting count=[%d]',
+                              status.stats.latencies.count)
                 await context.write(status)
 
             for call in calls:
