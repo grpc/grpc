@@ -67,7 +67,7 @@ class Histogram(object):
 
     def merge(self, another_data):
         with self._lock:
-            for i in len(self._buckets):
+            for i in range(len(self._buckets)):
                 self._buckets[i] += another_data.bucket[i]
             self._min = min(self._min, another_data.min_seen)
             self._max = max(self._max, another_data.max_seen)

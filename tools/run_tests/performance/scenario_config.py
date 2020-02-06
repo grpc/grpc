@@ -838,7 +838,7 @@ class PythonAsyncIOLanguage:
             channels=1,
             client_threads_per_cq=1,
             server_threads_per_cq=1,
-            async_server_threads=6,
+            async_client_threads=7,
             unconstrained_client=True,
             categories=[SMOKETEST, SCALABLE])
 
