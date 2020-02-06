@@ -17,4 +17,6 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-PYTHONPATH=src/python/grpcio_tests:src/python/gens py36_native/bin/python src/python/grpcio_tests/tests_aio/benchmark/worker.py "$@"
+export GRPC_ENABLE_FORK_SUPPORT=0
+export PYTHONPATH=src/python/grpcio_tests:src/python/gens
+py36_native/bin/python src/python/grpcio_tests/tests_aio/benchmark/worker.py "$@"
