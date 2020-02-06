@@ -395,7 +395,7 @@ class Channel:
         # A new set is created acting as a shallow copy because
         # when cancellation happens the calls are automatically
         # removed from the originally set.
-        calls = frozenset(self._ongoing_calls.calls)
+        calls = WeakSet(self._ongoing_calls.calls)
         for call in calls:
             if call is not None:
                 call.cancel()
