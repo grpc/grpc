@@ -143,9 +143,13 @@ class AioRpcError(grpc.RpcError):
 
 def _create_rpc_error(initial_metadata: Optional[MetadataType],
                       status: cygrpc.AioRpcStatus) -> AioRpcError:
-    return AioRpcError(_common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-                       status.details(), initial_metadata,
-                       status.trailing_metadata())
+    return AioRpcError(
+        _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
+        status.details(),
+        initial_metadata,
+        status.trailing_metadata(),
+        status.debug_error_string(),
+    )
 
 
 class Call:
