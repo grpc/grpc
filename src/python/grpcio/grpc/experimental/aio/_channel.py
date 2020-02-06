@@ -461,6 +461,13 @@ class Channel:
         assert await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None)
 
+    async def channel_ready(self) -> None:
+        """Creates a coroutine that ends when a Channel is ready."""
+        state = self.get_state(try_to_connect=True)
+        while state != grpc.ChannelConnectivity.READY:
+            await self.wait_for_state_change(state)
+            state = self.get_state(try_to_connect=True)
+
     def unary_unary(
             self,
             method: Text,
