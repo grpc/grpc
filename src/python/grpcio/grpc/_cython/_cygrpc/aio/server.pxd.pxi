@@ -28,6 +28,8 @@ cdef class RPCState(GrpcCallWrapper):
     cdef object abort_exception
     cdef bint metadata_sent
     cdef bint status_sent
+    cdef grpc_status_code status_code
+    cdef str status_details
     cdef tuple trailing_metadata
 
     cdef bytes method(self)

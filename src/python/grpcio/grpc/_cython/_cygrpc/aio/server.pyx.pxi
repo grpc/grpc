@@ -42,6 +42,8 @@ cdef class RPCState:
         self.abort_exception = None
         self.metadata_sent = False
         self.status_sent = False
+        self.status_code = StatusCode.ok
+        self.status_details = ''
         self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
 
     cdef bytes method(self):
@@ -125,7 +127,7 @@ cdef class _ServicerContext:
         if self._rpc_state.metadata_sent:
             raise RuntimeError('Send initial metadata failed: already sent')
         else:
-            await _send_initial_metadata(self._rpc_state, metadata, self._loop)
+            await _send_initial_metadata(self._rpc_state, metadata, _EMPTY_FLAG, self._loop)
             self._rpc_state.metadata_sent = True
 
     async def abort(self,
@@ -143,10 +145,15 @@ cdef class _ServicerContext:
             if trailing_metadata == _IMMUTABLE_EMPTY_METADATA and self._rpc_state.trailing_metadata:
                 trailing_metadata = self._rpc_state.trailing_metadata
 
+            if details == '' and self._rpc_state.status_details:
+                details = self._rpc_state.status_details
+
+            actual_code = get_status_code(code)
+
             self._rpc_state.status_sent = True
             await _send_error_status_from_server(
                 self._rpc_state,
-                code.value[0],
+                actual_code,
                 details,
                 trailing_metadata,
                 self._rpc_state.metadata_sent,
@@ -160,6 +167,12 @@ cdef class _ServicerContext:
 
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
+
+    def set_code(self, object code):
+        self._rpc_state.status_code = get_status_code(code)
+
+    def set_details(self, str details):
+        self._rpc_state.status_details = details
 
 
 cdef _find_method_handler(str method, tuple metadata, list generic_handlers):
@@ -207,8 +220,8 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
         SendMessageOperation(response_raw, _EMPTY_FLAGS),
         SendStatusFromServerOperation(
             rpc_state.trailing_metadata,
-            StatusCode.ok,
-            b'',
+            rpc_state.status_code,
+            rpc_state.status_details,
             _EMPTY_FLAGS,
         ),
     )
@@ -260,8 +273,8 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
     # Sends the final status of this RPC
     cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
         rpc_state.trailing_metadata,
-        StatusCode.ok,
-        b'',
+        rpc_state.status_code,
+        rpc_state.status_details,
         _EMPTY_FLAGS,
     )
 
@@ -417,11 +430,20 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
     except _ServerStoppedError:
         _LOGGER.info('Aborting RPC due to server stop.')
     except Exception as e:
-        _LOGGER.exception(e)
+        _LOGGER.exception('Unexpected [%s] raised by servicer method [%s]' % (
+            type(e).__name__,
+            _decode(rpc_state.method()),
+        ))
         if not rpc_state.status_sent and rpc_state.server._status != AIO_SERVER_STATUS_STOPPED:
+            # Allows users to raise other types of exception with specified status code
+            if rpc_state.status_code == StatusCode.ok:
+                status_code = StatusCode.unknown
+            else:
+                status_code = rpc_state.status_code
+
             await _send_error_status_from_server(
                 rpc_state,
-                StatusCode.unknown,
+                status_code,
                 'Unexpected %s: %s' % (type(e), e),
                 rpc_state.trailing_metadata,
                 rpc_state.metadata_sent,
@@ -562,7 +584,7 @@ cdef class AioServer:
 
     def add_secure_port(self, address, server_credentials):
         return self._server.add_http2_port(address,
-                                          server_credentials._credentials)
+                                           server_credentials._credentials)
 
     async def _request_call(self):
         cdef grpc_call_error error

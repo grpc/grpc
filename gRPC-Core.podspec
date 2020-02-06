@@ -170,7 +170,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.5'
+    ss.dependency 'BoringSSL-GRPC', '0.0.7'
     abseil_version = '0.20190808.1'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
@@ -655,8 +655,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.cc',
                       'src/core/lib/iomgr/lockfree_event.h',
-                      'src/core/lib/iomgr/logical_thread.cc',
-                      'src/core/lib/iomgr/logical_thread.h',
                       'src/core/lib/iomgr/nameser.h',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.cc',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.h',
@@ -750,6 +748,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/wakeup_fd_pipe.h',
                       'src/core/lib/iomgr/wakeup_fd_posix.cc',
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
+                      'src/core/lib/iomgr/work_serializer.cc',
+                      'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.cc',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_reader.cc',
@@ -1204,7 +1204,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
-                              'src/core/lib/iomgr/logical_thread.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
@@ -1245,6 +1244,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/unix_sockets_posix.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
+                              'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/security/context/security_context.h',

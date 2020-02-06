@@ -91,11 +91,11 @@ class BaseNode : public RefCounted<BaseNode> {
   virtual ~BaseNode();
 
   // All children must implement this function.
-  virtual grpc_json* RenderJson() = 0;
+  virtual Json RenderJson() = 0;
 
   // Renders the json and returns allocated string that must be freed by the
   // caller.
-  char* RenderJsonString();
+  std::string RenderJsonString();
 
   EntityType type() const { return type_; }
   intptr_t uuid() const { return uuid_; }
@@ -124,7 +124,7 @@ class CallCountingHelper {
   void RecordCallSucceeded();
 
   // Common rendering of the call count data and last_call_started_timestamp.
-  void PopulateCallCounts(grpc_json* json);
+  void PopulateCallCounts(Json::Object* json);
 
  private:
   // testing peer friend.
@@ -187,7 +187,7 @@ class ChannelNode : public BaseNode {
 
   intptr_t parent_uuid() const { return parent_uuid_; }
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
@@ -216,7 +216,7 @@ class ChannelNode : public BaseNode {
   void RemoveChildSubchannel(intptr_t child_uuid);
 
  private:
-  void PopulateChildRefs(grpc_json* json);
+  void PopulateChildRefs(Json::Object* json);
 
   // to allow the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
@@ -245,9 +245,10 @@ class ServerNode : public BaseNode {
 
   ~ServerNode() override;
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
-  char* RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
+  std::string RenderServerSockets(intptr_t start_socket_id,
+                                  intptr_t max_results);
 
   void AddChildSocket(RefCountedPtr<SocketNode> node);
 
@@ -285,7 +286,7 @@ class SocketNode : public BaseNode {
   SocketNode(std::string local, std::string remote, std::string name);
   ~SocketNode() override {}
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
   void RecordStreamStartedFromLocal();
   void RecordStreamStartedFromRemote();
@@ -324,7 +325,7 @@ class ListenSocketNode : public BaseNode {
   ListenSocketNode(std::string local_addr, std::string name);
   ~ListenSocketNode() override {}
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
  private:
   std::string local_addr_;

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 
 class _WatchConnectivityFailed(Exception):
@@ -69,9 +70,10 @@ cdef class AioChannel:
         Keeps mirroring the behavior from Core, so we can easily switch to
         other design of API if necessary.
         """
-        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
+        if self._status in (AIO_CHANNEL_STATUS_DESTROYED, AIO_CHANNEL_STATUS_CLOSING):
             # TODO(lidiz) switch to UsageError
             raise RuntimeError('Channel is closed.')
+
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
 
         cdef object future = self.loop.create_future()
@@ -92,20 +94,27 @@ cdef class AioChannel:
         else:
             return True
 
+    def closing(self):
+        self._status = AIO_CHANNEL_STATUS_CLOSING
+
     def close(self):
         self._status = AIO_CHANNEL_STATUS_DESTROYED
         grpc_channel_destroy(self.channel)
 
+    def closed(self):
+        return self._status in (AIO_CHANNEL_STATUS_CLOSING, AIO_CHANNEL_STATUS_DESTROYED)
+
     def call(self,
              bytes method,
              object deadline,
-             object python_call_credentials):
+             object python_call_credentials,
+             object wait_for_ready):
         """Assembles a Cython Call object.
 
         Returns:
           The _AioCall object.
         """
-        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
+        if self.closed():
             # TODO(lidiz) switch to UsageError
             raise RuntimeError('Channel is closed.')
 
@@ -115,4 +124,4 @@ cdef class AioChannel:
         else:
             cython_call_credentials = None
 
-        return _AioCall(self, deadline, method, cython_call_credentials)
+        return _AioCall(self, deadline, method, cython_call_credentials, wait_for_ready)

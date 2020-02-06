@@ -18,9 +18,11 @@ cdef class _AsyncioSocket:
         # Common attributes
         grpc_custom_socket * _grpc_socket
         grpc_custom_read_callback _grpc_read_cb
+        grpc_custom_write_callback _grpc_write_cb
         object _reader
         object _writer
         object _task_read
+        object _task_write
         object _task_connect
         char * _read_buffer
         # Caches the picked event loop, so we can avoid the 30ns overhead each

@@ -48,7 +48,7 @@ $ tools/run_tests/performance/run_worker_<language>.sh
 
 ```
 $ cd <grpc-java-repo>
-$ ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist
+$ ./gradlew -PskipCodegen=true -PskipAndroid=true :grpc-benchmarks:installDist
 $ benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker --driver_port <driver_port>
 ```
 

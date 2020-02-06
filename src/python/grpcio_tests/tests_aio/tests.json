@@ -1,5 +1,7 @@
 [
   "_sanity._sanity_test.AioSanityTest",
+  "interop.local_interop_test.InsecureLocalInteropTest",
+  "interop.local_interop_test.SecureLocalInteropTest",
   "unit.abort_test.TestAbort",
   "unit.aio_rpc_error_test.TestAioRpcError",
   "unit.call_test.TestStreamStreamCall",
@@ -8,6 +10,8 @@
   "unit.call_test.TestUnaryUnaryCall",
   "unit.channel_argument_test.TestChannelArgument",
   "unit.channel_test.TestChannel",
+  "unit.close_channel_test.TestCloseChannel",
+  "unit.close_channel_test.TestOngoingCalls",
   "unit.connectivity_test.TestConnectivityState",
   "unit.done_callback_test.TestDoneCallback",
   "unit.init_test.TestInsecureChannel",
@@ -15,5 +19,7 @@
   "unit.interceptor_test.TestInterceptedUnaryUnaryCall",
   "unit.interceptor_test.TestUnaryUnaryClientInterceptor",
   "unit.metadata_test.TestMetadata",
-  "unit.server_test.TestServer"
+  "unit.server_test.TestServer",
+  "unit.timeout_test.TestTimeout",
+  "unit.wait_for_ready_test.TestWaitForReady"
 ]

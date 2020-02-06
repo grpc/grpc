@@ -17,18 +17,14 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
-sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-apt-get update
-apt-get install -t jessie-backports -y libssl-dev
+# Install openssl (to use instead of boringssl)
+apt-get update && apt-get install -y libssl-dev
 
 # To increase the confidence that gRPC installation works without depending on
 # too many submodules unnecessarily, just wipe out contents of most submodules
 # before starting the test.
 rm -r third_party/benchmark/* || true
 rm -r third_party/bloaty/* || true
-rm -r third_party/boringssl/* || true
 rm -r third_party/boringssl-with-bazel/* || true
 rm -r third_party/gflags/* || true
 rm -r third_party/googletest/* || true
