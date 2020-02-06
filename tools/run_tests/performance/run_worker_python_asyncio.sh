@@ -17,4 +17,4 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-blaze-bin/src/python/grpcio_tests/tests_aio/benchmark:worker "$@"
+bazel-bin/src/python/grpcio_tests/tests_aio/benchmark/worker "$@"
