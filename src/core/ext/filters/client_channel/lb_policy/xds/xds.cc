@@ -68,7 +68,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_xds_trace(false, "xds");
+TraceFlag grpc_lb_xds_trace(false, "xds_lb");
 
 namespace {
 
@@ -652,6 +652,10 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
       if (strstr(grpc_error_string(error), "xds call failed")) {
         xds_policy_->channel_control_helper()->RequestReresolution();
       }
+    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO,
+              "[xdslb %p] xds watcher reported error (ignoring): %s",
+              xds_policy_.get(), grpc_error_string(error));
     }
     GRPC_ERROR_UNREF(error);
   }
@@ -676,10 +680,9 @@ XdsLb::XdsLb(Args args)
       locality_map_failover_timeout_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS,
           {GRPC_XDS_DEFAULT_FAILOVER_TIMEOUT_MS, 0, INT_MAX})) {
-  if (xds_client_from_channel_ != nullptr &&
-      GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Using xds client %p from channel", this,
-            xds_client_from_channel_.get());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] created -- xds client from channel: %p",
+            this, xds_client_from_channel_.get());
   }
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
@@ -724,12 +727,21 @@ void XdsLb::ShutdownLocked() {
   // destroying the Xds client leading to a situation where the Xds lb policy is
   // never destroyed.
   if (xds_client_from_channel_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p] cancelling watch for %s", this,
+              eds_service_name());
+    }
     xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
                                           endpoint_watcher_);
     if (config_->lrs_load_reporting_server_name().has_value()) {
       // TODO(roth): We should pass the cluster name (in addition to the
       // eds_service_name) when adding the client stats. To do so, we need to
       // first find a way to plumb the cluster name down into this LB policy.
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] removing client stats for LRS server \"%s\"", this,
+                config_->lrs_load_reporting_server_name().value().c_str());
+      }
       xds_client()->RemoveClientStats(
           StringView(config_->lrs_load_reporting_server_name().value().c_str()),
           StringView(eds_service_name()), &client_stats_);
@@ -806,8 +818,16 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
   if (is_initial_update ||
       strcmp(old_eds_service_name, eds_service_name()) != 0) {
     if (!is_initial_update) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO, "[xdslb %p] cancelling watch for %s", this,
+                old_eds_service_name);
+      }
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
                                             endpoint_watcher_);
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p] starting watch for %s", this,
+              eds_service_name());
     }
     auto watcher = grpc_core::MakeUnique<EndpointWatcher>(
         Ref(DEBUG_LOCATION, "EndpointWatcher"));
@@ -829,12 +849,22 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
            old_config->lrs_load_reporting_server_name().value())) {
     if (old_config != nullptr &&
         old_config->lrs_load_reporting_server_name().has_value()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] removing client stats for LRS server \"%s\"", this,
+                old_config->lrs_load_reporting_server_name().value().c_str());
+      }
       xds_client()->RemoveClientStats(
           StringView(
               old_config->lrs_load_reporting_server_name().value().c_str()),
           StringView(old_eds_service_name), &client_stats_);
     }
     if (config_->lrs_load_reporting_server_name().has_value()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] adding client stats for LRS server \"%s\"", this,
+                config_->lrs_load_reporting_server_name().value().c_str());
+      }
       // TODO(roth): We should pass the cluster name (in addition to the
       // eds_service_name) when adding the client stats. To do so, we need to
       // first find a way to plumb the cluster name down into this LB policy.
@@ -1206,6 +1236,9 @@ void XdsLb::LocalityMap::ResetBackoffLocked() {
 }
 
 void XdsLb::LocalityMap::UpdateXdsPickerLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] constructing new picker", xds_policy());
+  }
   // Construct a new xds picker which maintains a map of all locality pickers
   // that are ready. Each locality is represented by a portion of the range
   // proportional to its weight, such that the total range is the sum of the
@@ -1218,8 +1251,15 @@ void XdsLb::LocalityMap::UpdateXdsPickerLocked() {
     // Skip the localities that are not in the latest locality map update.
     if (!locality_map_update()->Contains(locality_name)) continue;
     if (locality->connectivity_state() != GRPC_CHANNEL_READY) continue;
+    RefCountedPtr<EndpointPickerWrapper> picker_wrapper =
+        locality->picker_wrapper();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p]   locality=%s weight=%d picker=%p",
+              xds_policy(), locality_name->AsHumanReadableString(),
+              locality->weight(), picker_wrapper.get());
+    }
     end += locality->weight();
-    picker_list.push_back(std::make_pair(end, locality->picker_wrapper()));
+    picker_list.push_back(std::make_pair(end, std::move(picker_wrapper)));
   }
   xds_policy()->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_READY,
@@ -1738,6 +1778,12 @@ void XdsLb::LocalityMap::Locality::Helper::UpdateState(
   } else if (!CalledByCurrentChild()) {
     // This request is from an outdated child, so ignore it.
     return;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p helper %p] pending child policy %p reports state=%s",
+            locality_->xds_policy(), this, locality_->child_policy_.get(),
+            ConnectivityStateName(state));
   }
   // Cache the picker and its state in the locality.
   // TODO(roth): If load reporting is not configured, we should ideally
