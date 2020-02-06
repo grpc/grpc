@@ -28,7 +28,6 @@ os.environ["GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"] = "1"
 import grpc
 import test_common
 
-# TODO: Figure out how to get this test to run only for Python 3.
 from typing import Callable, Optional
 
 _CACHE_EPOCHS = 8
