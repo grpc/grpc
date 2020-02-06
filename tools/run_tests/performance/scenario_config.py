@@ -903,17 +903,15 @@ class PythonAsyncIOLanguage:
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            server_language='python_asyncio',
-            async_server_threads=1,
+            server_language='c++',
             categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
             'python_asyncio_to_cpp_protobuf_sync_streaming_ping_pong',
             rpc_type='STREAMING',
-            client_type='SYNC_CLIENT',
+            client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            server_language='python_asyncio',
-            async_server_threads=1)
+            server_language='c++')
 
         yield _ping_pong_scenario(
             'python_asyncio_protobuf_async_unary_ping_pong_1MB',
