@@ -12,6 +12,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "upb_textformat_lib",
+        actual = "@upb//:textformat",
+    )
+
+    native.bind(
         name = "absl",
         actual = "@com_google_absl//absl",
     )

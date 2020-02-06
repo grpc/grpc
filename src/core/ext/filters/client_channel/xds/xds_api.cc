@@ -37,6 +37,7 @@
 #include "envoy/api/v2/core/config_source.upb.h"
 #include "envoy/api/v2/core/health_check.upb.h"
 #include "envoy/api/v2/discovery.upb.h"
+#include "envoy/api/v2/discovery.upbdefs.h"
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
 #include "envoy/api/v2/endpoint/load_report.upb.h"
@@ -52,6 +53,10 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
+// FIXME: remove extern "C" once upb adds it in textencode.h
+extern "C" {
+#include "upb/textencode.h"
+}
 #include "upb/upb.h"
 
 namespace grpc_core {
@@ -203,7 +208,8 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
 }  // namespace
 
 grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
-    const std::string& type_url, const std::string& nonce, grpc_error* error) {
+    const std::string& type_url, const std::string& nonce, grpc_error* error,
+    XdsClient* client, TraceFlag* tracer) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -226,6 +232,18 @@ grpc_slice XdsUnsupportedTypeNackRequestCreateAndEncode(
       envoy_api_v2_DiscoveryRequest_mutable_error_detail(request, arena.ptr());
   google_rpc_Status_set_message(error_detail, error_description_strview);
   GRPC_ERROR_UNREF(error);
+  // Log if needed.
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+// FIXME: retain symtab so we don't have to keep reloading
+    upb_symtab* symtab = upb_symtab_new();
+    const upb_msgdef* msg_type =
+        envoy_api_v2_DiscoveryRequest_getmsgdef(symtab);
+    char buf[10240];
+    upb_textencode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] constructed request: %s", client, buf);
+    upb_symtab_free(symtab);
+  }
   // Encode the request.
   size_t output_length;
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
@@ -238,7 +256,8 @@ grpc_slice XdsLdsRequestCreateAndEncode(const std::string& server_name,
                                         const char* build_version,
                                         const std::string& version,
                                         const std::string& nonce,
-                                        grpc_error* error) {
+                                        grpc_error* error, XdsClient* client,
+                                        TraceFlag* tracer) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -293,7 +312,8 @@ grpc_slice XdsRdsRequestCreateAndEncode(const std::string& route_config_name,
                                         const char* build_version,
                                         const std::string& version,
                                         const std::string& nonce,
-                                        grpc_error* error) {
+                                        grpc_error* error, XdsClient* client,
+                                        TraceFlag* tracer) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -347,7 +367,8 @@ grpc_slice XdsRdsRequestCreateAndEncode(const std::string& route_config_name,
 grpc_slice XdsCdsRequestCreateAndEncode(
     const std::set<StringView>& cluster_names, const XdsBootstrap::Node* node,
     const char* build_version, const std::string& version,
-    const std::string& nonce, grpc_error* error) {
+    const std::string& nonce, grpc_error* error, XdsClient* client,
+    TraceFlag* tracer) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -402,7 +423,8 @@ grpc_slice XdsCdsRequestCreateAndEncode(
 grpc_slice XdsEdsRequestCreateAndEncode(
     const std::set<StringView>& eds_service_names,
     const XdsBootstrap::Node* node, const char* build_version,
-    const std::string& version, const std::string& nonce, grpc_error* error) {
+    const std::string& version, const std::string& nonce, grpc_error* error,
+    XdsClient* client, TraceFlag* tracer) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -601,8 +623,6 @@ grpc_error* RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
-}  // namespace
-
 grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
                              const std::string& expected_server_name,
                              LdsUpdate* lds_update, upb_arena* arena) {
@@ -797,8 +817,6 @@ grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
   }
   return GRPC_ERROR_NONE;
 }
-
-namespace {
 
 grpc_error* ServerAddressParseAndAppend(
     const envoy_api_v2_endpoint_LbEndpoint* lb_endpoint,
@@ -1001,7 +1019,7 @@ grpc_error* XdsAdsResponseDecodeAndParse(
     const std::set<StringView>& expected_eds_service_names,
     LdsUpdate* lds_update, RdsUpdate* rds_update, CdsUpdateMap* cds_update_map,
     EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
-    std::string* type_url) {
+    std::string* type_url, XdsClient* client, TraceFlag* tracer) {
   upb::Arena arena;
   // Decode the response.
   const envoy_api_v2_DiscoveryResponse* response =

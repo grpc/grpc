@@ -1309,6 +1309,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_ads_upb",
+        "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
     ],
@@ -1334,6 +1335,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_ads_upb",
+        "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
@@ -2456,6 +2458,68 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "envoy_ads_upbdefs",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.h",
+    ],
+    external_deps = [
+        "upb_textformat_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":envoy_core_upbdefs",
+        ":envoy_type_upbdefs",
+        ":google_api_upbdefs",
+        ":proto_gen_validate_upbdefs",
+    ],
+)
+
+grpc_cc_library(
     name = "envoy_core_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
@@ -2487,6 +2551,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "envoy_core_upbdefs",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/api/v2/core/address.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upbdefs.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/api/v2/core/address.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upbdefs.h",
+    ],
+    external_deps = [
+        "upb_textformat_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":envoy_type_upbdefs",
+        ":google_api_upbdefs",
+        ":proto_gen_validate_upbdefs",
+    ],
+)
+
+grpc_cc_library(
     name = "envoy_type_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/type/http.upb.c",
@@ -2509,6 +2604,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "envoy_type_upbdefs",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/type/http.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/type/percent.upbdefs.c",
+        "src/core/ext/upb-generated/envoy/type/range.upbdefs.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/type/http.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/type/percent.upbdefs.h",
+        "src/core/ext/upb-generated/envoy/type/range.upbdefs.h",
+    ],
+    external_deps = [
+        "upb_textformat_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":google_api_upbdefs",
+        ":proto_gen_validate_upbdefs",
+    ],
+)
+
+grpc_cc_library(
     name = "proto_gen_validate_upb",
     srcs = [
         "src/core/ext/upb-generated/gogoproto/gogo.upb.c",
@@ -2524,6 +2641,25 @@ grpc_cc_library(
     language = "c++",
     deps = [
         ":google_api_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "proto_gen_validate_upbdefs",
+    srcs = [
+        "src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c",
+        "src/core/ext/upb-generated/validate/validate.upbdefs.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/gogoproto/gogo.upbdefs.h",
+        "src/core/ext/upb-generated/validate/validate.upbdefs.h",
+    ],
+    external_deps = [
+        "upb_textformat_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":google_api_upbdefs",
     ],
 )
 
@@ -2599,6 +2735,38 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "google_api_upbdefs",
+    srcs = [
+        "src/core/ext/upb-generated/google/api/annotations.upbdefs.c",
+        "src/core/ext/upb-generated/google/api/http.upbdefs.c",
+        "src/core/ext/upb-generated/google/protobuf/any.upbdefs.c",
+        "src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c",
+        "src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c",
+        "src/core/ext/upb-generated/google/protobuf/empty.upbdefs.c",
+        "src/core/ext/upb-generated/google/protobuf/struct.upbdefs.c",
+        "src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.c",
+        "src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c",
+        "src/core/ext/upb-generated/google/rpc/status.upbdefs.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/google/api/annotations.upbdefs.h",
+        "src/core/ext/upb-generated/google/api/http.upbdefs.h",
+        "src/core/ext/upb-generated/google/protobuf/any.upbdefs.h",
+        "src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.h",
+        "src/core/ext/upb-generated/google/protobuf/duration.upbdefs.h",
+        "src/core/ext/upb-generated/google/protobuf/empty.upbdefs.h",
+        "src/core/ext/upb-generated/google/protobuf/struct.upbdefs.h",
+        "src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.h",
+        "src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.h",
+        "src/core/ext/upb-generated/google/rpc/status.upbdefs.h",
+    ],
+    external_deps = [
+        "upb_textformat_lib",
     ],
     language = "c++",
 )
