@@ -50,6 +50,7 @@
 #include "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h"
 #include "envoy/config/listener/v2/api_listener.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upb.h"
+#include "envoy/service/load_stats/v2/lrs.upbdefs.h"
 #include "envoy/type/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
@@ -276,7 +277,8 @@ void MaybeLogDiscoveryRequest(XdsClient* client, TraceFlag* tracer,
         envoy_api_v2_DiscoveryRequest_getmsgdef(symtab);
     char buf[10240];
     upb_textencode(request, msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] constructed request: %s", client, buf);
+    gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s", client,
+            buf);
   }
 }
 
@@ -1028,6 +1030,20 @@ grpc_error* XdsApi::ParseAdsResponse(
 
 namespace {
 
+void MaybeLogLrsRequest(
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const envoy_service_load_stats_v2_LoadStatsRequest* request) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_msgdef* msg_type =
+        envoy_service_load_stats_v2_LoadStatsRequest_getmsgdef(symtab);
+    char buf[10240];
+    upb_textencode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s", client,
+            buf);
+  }
+}
+
 grpc_slice SerializeLrsRequest(
     const envoy_service_load_stats_v2_LoadStatsRequest* request,
     upb_arena* arena) {
@@ -1057,6 +1073,7 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
   // Set the cluster name.
   envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
       cluster_stats, upb_strview_makez(server_name.c_str()));
+  MaybeLogLrsRequest(client_, tracer_, symtab_.ptr(), request);
   return SerializeLrsRequest(request, arena.ptr());
 }
 
@@ -1172,6 +1189,7 @@ grpc_slice XdsApi::CreateLrsRequest(
                                          timespec.tv_nsec);
     }
   }
+  MaybeLogLrsRequest(client_, tracer_, symtab_.ptr(), request);
   return SerializeLrsRequest(request, arena.ptr());
 }
 
