@@ -813,7 +813,8 @@ void op_state_machine(void* arg, grpc_error* error) {
                                 s->recv_trailing_md_op->on_complete,
                                 GRPC_ERROR_REF(new_err));
         s->recv_trailing_md_op = nullptr;
-        needs_close = true;
+	// Only mark that it needs close if it has sent trailing metadata
+        needs_close = s->trailing_md_sent;
       } else {
         INPROC_LOG(GPR_INFO,
                    "op_state_machine %p server needs to delay handling "
@@ -864,8 +865,8 @@ done:
   if (needs_close) {
     close_other_side_locked(s, "op_state_machine");
     close_stream_locked(s);
-    s->unref("op closure done");
     s->op_closure_schedulable = false;
+    s->unref("op closure done");
   }
   gpr_mu_unlock(mu);
   GRPC_ERROR_UNREF(new_err);
@@ -975,8 +976,6 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                op->recv_message ? " recv_message" : "",
                op->recv_trailing_metadata ? " recv_trailing_metadata" : "");
   }
-
-  bool needs_close = false;
 
   if (error == GRPC_ERROR_NONE &&
       (op->send_initial_metadata || op->send_trailing_metadata)) {
@@ -1157,10 +1156,6 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     INPROC_LOG(GPR_INFO, "perform_stream_op %p scheduling on_complete %p", s,
                error);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_complete, GRPC_ERROR_REF(error));
-  }
-  if (needs_close) {
-    close_other_side_locked(s, "perform_stream_op:other_side");
-    close_stream_locked(s);
   }
   gpr_mu_unlock(mu);
   GRPC_ERROR_UNREF(error);
