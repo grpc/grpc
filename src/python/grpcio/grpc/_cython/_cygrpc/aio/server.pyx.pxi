@@ -21,6 +21,16 @@ cdef int _EMPTY_FLAG = 0
 cdef str _RPC_FINISHED_DETAILS = 'RPC already finished.'
 cdef str _SERVER_STOPPED_DETAILS = 'Server already stopped.'
 
+cdef _augment_metadata(tuple metadata, object compression):
+    if compression is None:
+        return metadata
+    else:
+        return ((
+            GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+            _COMPRESSION_METADATA_STRING_MAPPING[compression]
+        ),) + metadata
+
+
 cdef class _HandlerCallDetails:
     def __cinit__(self, str method, tuple invocation_metadata):
         self.method = method
@@ -45,6 +55,8 @@ cdef class RPCState:
         self.status_code = StatusCode.ok
         self.status_details = ''
         self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
+        self.compression_algorithm = None
+        self.disable_next_compression = False
 
     cdef bytes method(self):
         return _slice_bytes(self.details.method)
@@ -68,6 +80,24 @@ cdef class RPCState:
             raise RuntimeError(_RPC_FINISHED_DETAILS)
         if self.server._status == AIO_SERVER_STATUS_STOPPED:
             raise _ServerStoppedError(_SERVER_STOPPED_DETAILS)
+
+    cdef int get_write_flag(self):
+        if self.disable_next_compression:
+            self.disable_next_compression = False
+            return WriteFlag.no_compress
+        else:
+            return _EMPTY_FLAG
+
+    cdef Operation create_send_initial_metadata_op_if_not_sent(self):
+        cdef SendInitialMetadataOperation op
+        if self.metadata_sent:
+            return None
+        else:
+            op = SendInitialMetadataOperation(
+                _augment_metadata(_IMMUTABLE_EMPTY_METADATA, self.compression_algorithm),
+                _EMPTY_FLAG
+            )
+            return op
 
     def __dealloc__(self):
         """Cleans the Core objects."""
@@ -116,10 +146,10 @@ cdef class _ServicerContext:
 
         await _send_message(self._rpc_state,
                             serialize(self._response_serializer, message),
-                            self._rpc_state.metadata_sent,
+                            self._rpc_state.create_send_initial_metadata_op_if_not_sent(),
+                            self._rpc_state.get_write_flag(),
                             self._loop)
-        if not self._rpc_state.metadata_sent:
-            self._rpc_state.metadata_sent = True
+        self._rpc_state.metadata_sent = True
 
     async def send_initial_metadata(self, tuple metadata):
         self._rpc_state.raise_for_termination()
@@ -127,7 +157,12 @@ cdef class _ServicerContext:
         if self._rpc_state.metadata_sent:
             raise RuntimeError('Send initial metadata failed: already sent')
         else:
-            await _send_initial_metadata(self._rpc_state, metadata, _EMPTY_FLAG, self._loop)
+            await _send_initial_metadata(
+                self._rpc_state,
+                _augment_metadata(metadata, self._rpc_state.compression_algorithm),
+                _EMPTY_FLAG,
+                self._loop
+            )
             self._rpc_state.metadata_sent = True
 
     async def abort(self,
@@ -156,7 +191,7 @@ cdef class _ServicerContext:
                 actual_code,
                 details,
                 trailing_metadata,
-                self._rpc_state.metadata_sent,
+                self._rpc_state.create_send_initial_metadata_op_if_not_sent(),
                 self._loop
             )
 
@@ -173,6 +208,15 @@ cdef class _ServicerContext:
 
     def set_details(self, str details):
         self._rpc_state.status_details = details
+
+    def set_compression(self, object compression):
+        if self._rpc_state.metadata_sent:
+            raise RuntimeError('Compression setting must be specified before sending initial metadata')
+        else:
+            self._rpc_state.compression_algorithm = compression
+
+    def disable_next_message_compression(self):
+        self._rpc_state.disable_next_compression = True
 
 
 cdef _find_method_handler(str method, tuple metadata, list generic_handlers):
@@ -217,7 +261,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     # Assembles the batch operations
     cdef tuple finish_ops
     finish_ops = (
-        SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        SendMessageOperation(response_raw, rpc_state.get_write_flag()),
         SendStatusFromServerOperation(
             rpc_state.trailing_metadata,
             rpc_state.status_code,
@@ -446,7 +490,7 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
                 status_code,
                 'Unexpected %s: %s' % (type(e), e),
                 rpc_state.trailing_metadata,
-                rpc_state.metadata_sent,
+                rpc_state.create_send_initial_metadata_op_if_not_sent(),
                 loop
             )
 
@@ -492,7 +536,7 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
             StatusCode.unimplemented,
             'Method not found!',
             _IMMUTABLE_EMPTY_METADATA,
-            rpc_state.metadata_sent,
+            rpc_state.create_send_initial_metadata_op_if_not_sent(),
             loop
         )
         return
@@ -541,7 +585,7 @@ cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHan
 cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
-                 options, maximum_concurrent_rpcs, compression):
+                 options, maximum_concurrent_rpcs):
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
@@ -569,8 +613,6 @@ cdef class AioServer:
         if interceptors:
             raise NotImplementedError()
         if maximum_concurrent_rpcs:
-            raise NotImplementedError()
-        if compression:
             raise NotImplementedError()
         if thread_pool:
             raise NotImplementedError()

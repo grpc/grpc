@@ -31,10 +31,14 @@ cdef class RPCState(GrpcCallWrapper):
     cdef grpc_status_code status_code
     cdef str status_details
     cdef tuple trailing_metadata
+    cdef object compression_algorithm
+    cdef bint disable_next_compression
 
     cdef bytes method(self)
     cdef tuple invocation_metadata(self)
     cdef void raise_for_termination(self) except *
+    cdef int get_write_flag(self)
+    cdef Operation create_send_initial_metadata_op_if_not_sent(self)
 
 
 cdef enum AioServerStatus:

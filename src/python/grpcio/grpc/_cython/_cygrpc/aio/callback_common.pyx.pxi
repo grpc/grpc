@@ -153,12 +153,13 @@ async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
 
 async def _send_message(GrpcCallWrapper grpc_call_wrapper,
                         bytes message,
-                        bint metadata_sent,
+                        Operation send_initial_metadata_op,
+                        int write_flag,
                         object loop):
-    cdef SendMessageOperation op = SendMessageOperation(message, _EMPTY_FLAG)
+    cdef SendMessageOperation op = SendMessageOperation(message, write_flag)
     cdef tuple ops = (op,)
-    if not metadata_sent:
-        ops = prepend_send_initial_metadata_op(ops, None)
+    if send_initial_metadata_op is not None:
+        ops = (send_initial_metadata_op,) + ops
     await execute_batch(grpc_call_wrapper, ops, loop)
 
 
@@ -184,7 +185,7 @@ async def _send_error_status_from_server(GrpcCallWrapper grpc_call_wrapper,
                                          grpc_status_code code,
                                          str details,
                                          tuple trailing_metadata,
-                                         bint metadata_sent,
+                                         Operation send_initial_metadata_op,
                                          object loop):
     assert code != StatusCode.ok, 'Expecting non-ok status code.'
     cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
@@ -194,6 +195,6 @@ async def _send_error_status_from_server(GrpcCallWrapper grpc_call_wrapper,
         _EMPTY_FLAGS,
     )
     cdef tuple ops = (op,)
-    if not metadata_sent:
-        ops = prepend_send_initial_metadata_op(ops, None)
+    if send_initial_metadata_op is not None:
+        ops = (send_initial_metadata_op,) + ops
     await execute_batch(grpc_call_wrapper, ops, loop)
