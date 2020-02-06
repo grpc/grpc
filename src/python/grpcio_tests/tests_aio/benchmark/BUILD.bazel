@@ -60,6 +60,7 @@ py_library(
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/qps:histogram",
         "//src/python/grpcio_tests/tests/unit:resources",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
     ],
 )
 
