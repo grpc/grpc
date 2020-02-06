@@ -26,15 +26,28 @@ py_library(
 )
 
 py_library(
+    name = "_constants",
+    srcs = ["_constants.py"],
+    srcs_version = "PY3",
+)
+
+py_library(
     name = "_test_server",
     srcs = ["_test_server.py"],
     srcs_version = "PY3",
     deps = [
+        ":_constants",
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
     ],
+)
+
+py_library(
+    name = "_common",
+    srcs = ["_common.py"],
+    srcs_version = "PY3",
 )
 
 [
@@ -49,14 +62,16 @@ py_library(
         main = test_file_name,
         python_version = "PY3",
         deps = [
+            ":_common",
+            ":_constants",
             ":_test_base",
             ":_test_server",
-            "//external:six",
             "//src/proto/grpc/testing:benchmark_service_py_pb2",
             "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
             "//src/proto/grpc/testing:py_messages_proto",
             "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/unit/framework/common",
+            "@six",
         ],
     )
     for test_file_name in GRPC_ASYNC_TESTS

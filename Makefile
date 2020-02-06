@@ -363,7 +363,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CFLAGS += -g
-CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
+CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/upb -Isrc/core/ext/upb-generated
 COREFLAGS += -fno-exceptions
 LDFLAGS += -g
 
@@ -562,7 +562,7 @@ OPENSSL_LIBS = ssl crypto
 endif
 
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -g -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
+BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -g -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 CARES_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/c-ares.c -lcares $(LDFLAGS)
@@ -643,9 +643,7 @@ endif
 # Note that for testing purposes, one can do:
 #   make HAS_EMBEDDED_OPENSSL_ALPN=false
 # to emulate the fact we do not have OpenSSL in the third_party folder.
-ifneq ($(wildcard third_party/openssl-1.0.2f/libssl.a),)
-HAS_EMBEDDED_OPENSSL_ALPN = third_party/openssl-1.0.2f
-else ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
+ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
 else
 CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -722,6 +720,9 @@ ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
 ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
 CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
+GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+
 UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
 UPB_MERGE_OBJS = $(LIBUPB_OBJS)
 UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
@@ -768,7 +769,7 @@ OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
 # need to prefix these to ensure overriding system libraries
-CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
+CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)
 else ifneq ($(EMBED_OPENSSL),false)
 OPENSSL_DEP += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
 OPENSSL_MERGE_LIBS += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
@@ -1162,6 +1163,7 @@ alts_iovec_record_protocol_test: $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_
 alts_security_connector_test: $(BINDIR)/$(CONFIG)/alts_security_connector_test
 alts_tsi_handshaker_test: $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test
 alts_tsi_utils_test: $(BINDIR)/$(CONFIG)/alts_tsi_utils_test
+alts_util_test: $(BINDIR)/$(CONFIG)/alts_util_test
 alts_zero_copy_grpc_protector_test: $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
@@ -1254,7 +1256,7 @@ interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
 json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
-logical_thread_test: $(BINDIR)/$(CONFIG)/logical_thread_test
+json_test_new: $(BINDIR)/$(CONFIG)/json_test_new
 message_allocator_end2end_test: $(BINDIR)/$(CONFIG)/message_allocator_end2end_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
@@ -1305,6 +1307,7 @@ timer_test: $(BINDIR)/$(CONFIG)/timer_test
 transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_common_api_test: $(BINDIR)/$(CONFIG)/transport_security_common_api_test
+work_serializer_test: $(BINDIR)/$(CONFIG)/work_serializer_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 xds_bootstrap_test: $(BINDIR)/$(CONFIG)/xds_bootstrap_test
 xds_end2end_test: $(BINDIR)/$(CONFIG)/xds_end2end_test
@@ -1411,14 +1414,14 @@ static: static_c static_cxx
 
 static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libupb.a
 
-static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
+static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
 
 static_csharp: static_c  $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 
 shared: shared_c shared_cxx
 
 shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
 grpc_csharp_ext: shared_csharp
@@ -1641,6 +1644,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_security_connector_test \
   $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test \
   $(BINDIR)/$(CONFIG)/alts_tsi_utils_test \
+  $(BINDIR)/$(CONFIG)/alts_util_test \
   $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
@@ -1723,7 +1727,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
-  $(BINDIR)/$(CONFIG)/logical_thread_test \
+  $(BINDIR)/$(CONFIG)/json_test_new \
   $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
@@ -1774,6 +1778,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
+  $(BINDIR)/$(CONFIG)/work_serializer_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
@@ -1815,6 +1820,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_security_connector_test \
   $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test \
   $(BINDIR)/$(CONFIG)/alts_tsi_utils_test \
+  $(BINDIR)/$(CONFIG)/alts_util_test \
   $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
@@ -1897,7 +1903,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
-  $(BINDIR)/$(CONFIG)/logical_thread_test \
+  $(BINDIR)/$(CONFIG)/json_test_new \
   $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
@@ -1948,6 +1954,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
+  $(BINDIR)/$(CONFIG)/work_serializer_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
@@ -2262,6 +2269,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test || ( echo test alts_tsi_handshaker_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alts_tsi_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alts_tsi_utils_test || ( echo test alts_tsi_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_util_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_util_test || ( echo test alts_util_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alts_zero_copy_grpc_protector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test || ( echo test alts_zero_copy_grpc_protector_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
@@ -2408,8 +2417,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test || ( echo test inproc_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
-	$(E) "[RUN]     Testing logical_thread_test"
-	$(Q) $(BINDIR)/$(CONFIG)/logical_thread_test || ( echo test logical_thread_test failed ; exit 1 )
+	$(E) "[RUN]     Testing json_test_new"
+	$(Q) $(BINDIR)/$(CONFIG)/json_test_new || ( echo test json_test_new failed ; exit 1 )
 	$(E) "[RUN]     Testing message_allocator_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_allocator_end2end_test || ( echo test message_allocator_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
@@ -2494,6 +2503,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_security_common_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_common_api_test || ( echo test transport_security_common_api_test failed ; exit 1 )
+	$(E) "[RUN]     Testing work_serializer_test"
+	$(Q) $(BINDIR)/$(CONFIG)/work_serializer_test || ( echo test work_serializer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing xds_bootstrap_test"
@@ -2590,6 +2601,8 @@ strip-static_cxx: static_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++.a
+	$(E) "[STRIP]   Stripping libgrpc++_alts.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a
 	$(E) "[STRIP]   Stripping libgrpc++_error_details.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a
 	$(E) "[STRIP]   Stripping libgrpc++_reflection.a"
@@ -2620,6 +2633,8 @@ strip-shared_cxx: shared_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -3020,6 +3035,22 @@ $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc: src/proto/grpc/tes
 endif
 
 ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc: src/proto/grpc/testing/xds/cds_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/cds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc: protoc_dep_error
 else
@@ -3030,6 +3061,22 @@ $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc: src/proto/grpc/testing/
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
 $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/eds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -3195,6 +3242,9 @@ install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(prefix)/lib/libgrpc++.a
+	$(E) "[INSTALL] Installing libgrpc++_alts.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(prefix)/lib/libgrpc++_alts.a
 	$(E) "[INSTALL] Installing libgrpc++_error_details.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(prefix)/lib/libgrpc++_error_details.a
@@ -3281,6 +3331,15 @@ ifeq ($(SYSTEM),MINGW32)
 else ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_alts.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_alts.so.1
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_alts.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
@@ -3412,18 +3471,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBADDRESS_SORTING_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)
+$(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBADDRESS_SORTING_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBADDRESS_SORTING_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)
+$(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBADDRESS_SORTING_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.9 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.9 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.9
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so
 endif
@@ -3437,8 +3496,301 @@ endif
 LIBALTS_TEST_UTIL_SRC = \
     test/core/tsi/alts/crypt/gsec_test_util.cc \
     test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
+    test/core/end2end/cq_verifier.cc \
+    test/core/end2end/fixtures/http_proxy_fixture.cc \
+    test/core/end2end/fixtures/local_util.cc \
+    test/core/end2end/fixtures/proxy.cc \
+    test/core/iomgr/endpoint_tests.cc \
+    test/core/util/debugger_macros.cc \
+    test/core/util/fuzzer_util.cc \
+    test/core/util/grpc_profiler.cc \
+    test/core/util/histogram.cc \
+    test/core/util/memory_counters.cc \
+    test/core/util/mock_endpoint.cc \
+    test/core/util/parse_hexstring.cc \
+    test/core/util/passthru_endpoint.cc \
+    test/core/util/port.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
+    test/core/util/port_server_client.cc \
+    test/core/util/slice_splitter.cc \
+    test/core/util/subprocess_posix.cc \
+    test/core/util/subprocess_windows.cc \
+    test/core/util/test_config.cc \
+    test/core/util/test_lb_policies.cc \
+    test/core/util/tracer_util.cc \
+    test/core/util/trickle_endpoint.cc \
+    test/core/util/cmdline.cc \
+    src/core/lib/avl/avl.cc \
+    src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_stack.cc \
+    src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
+    src/core/lib/channel/channelz_registry.cc \
+    src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/handshaker.cc \
+    src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/status_util.cc \
+    src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_args.cc \
+    src/core/lib/compression/compression_internal.cc \
+    src/core/lib/compression/message_compress.cc \
+    src/core/lib/compression/stream_compression.cc \
+    src/core/lib/compression/stream_compression_gzip.cc \
+    src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/debug/stats.cc \
+    src/core/lib/debug/stats_data.cc \
+    src/core/lib/http/format_request.cc \
+    src/core/lib/http/httpcli.cc \
+    src/core/lib/http/parser.cc \
+    src/core/lib/iomgr/buffer_list.cc \
+    src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/cfstream_handle.cc \
+    src/core/lib/iomgr/combiner.cc \
+    src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_cfstream.cc \
+    src/core/lib/iomgr/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/endpoint_pair_uv.cc \
+    src/core/lib/iomgr/endpoint_pair_windows.cc \
+    src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_cfstream.cc \
+    src/core/lib/iomgr/ev_epoll1_linux.cc \
+    src/core/lib/iomgr/ev_epollex_linux.cc \
+    src/core/lib/iomgr/ev_poll_posix.cc \
+    src/core/lib/iomgr/ev_posix.cc \
+    src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/exec_ctx.cc \
+    src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
+    src/core/lib/iomgr/gethostname_fallback.cc \
+    src/core/lib/iomgr/gethostname_host_name_max.cc \
+    src/core/lib/iomgr/gethostname_sysconf.cc \
+    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
+    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
+    src/core/lib/iomgr/internal_errqueue.cc \
+    src/core/lib/iomgr/iocp_windows.cc \
+    src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
+    src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
+    src/core/lib/iomgr/iomgr_uv.cc \
+    src/core/lib/iomgr/iomgr_windows.cc \
+    src/core/lib/iomgr/is_epollexclusive_available.cc \
+    src/core/lib/iomgr/load_file.cc \
+    src/core/lib/iomgr/lockfree_event.cc \
+    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
+    src/core/lib/iomgr/polling_entity.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
+    src/core/lib/iomgr/pollset_set_windows.cc \
+    src/core/lib/iomgr/pollset_uv.cc \
+    src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
+    src/core/lib/iomgr/resolve_address_posix.cc \
+    src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resource_quota.cc \
+    src/core/lib/iomgr/sockaddr_utils.cc \
+    src/core/lib/iomgr/socket_factory_posix.cc \
+    src/core/lib/iomgr/socket_mutator.cc \
+    src/core/lib/iomgr/socket_utils_common_posix.cc \
+    src/core/lib/iomgr/socket_utils_linux.cc \
+    src/core/lib/iomgr/socket_utils_posix.cc \
+    src/core/lib/iomgr/socket_utils_uv.cc \
+    src/core/lib/iomgr/socket_utils_windows.cc \
+    src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
+    src/core/lib/iomgr/tcp_client_posix.cc \
+    src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
+    src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
+    src/core/lib/iomgr/tcp_server_posix.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_windows.cc \
+    src/core/lib/iomgr/tcp_uv.cc \
+    src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
+    src/core/lib/iomgr/timer_generic.cc \
+    src/core/lib/iomgr/timer_heap.cc \
+    src/core/lib/iomgr/timer_manager.cc \
+    src/core/lib/iomgr/timer_uv.cc \
+    src/core/lib/iomgr/udp_server.cc \
+    src/core/lib/iomgr/unix_sockets_posix.cc \
+    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
+    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
+    src/core/lib/iomgr/wakeup_fd_pipe.cc \
+    src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/iomgr/work_serializer.cc \
+    src/core/lib/json/json.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_reader_new.cc \
+    src/core/lib/json/json_writer.cc \
+    src/core/lib/json/json_writer_new.cc \
+    src/core/lib/slice/b64.cc \
+    src/core/lib/slice/percent_encoding.cc \
+    src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/byte_buffer.cc \
+    src/core/lib/surface/byte_buffer_reader.cc \
+    src/core/lib/surface/call.cc \
+    src/core/lib/surface/call_details.cc \
+    src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_init.cc \
+    src/core/lib/surface/channel_ping.cc \
+    src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/completion_queue.cc \
+    src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/event_string.cc \
+    src/core/lib/surface/lame_client.cc \
+    src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server.cc \
+    src/core/lib/surface/validate_metadata.cc \
+    src/core/lib/surface/version.cc \
+    src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/byte_stream.cc \
+    src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata.cc \
+    src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/pid_controller.cc \
+    src/core/lib/transport/static_metadata.cc \
+    src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
+    src/core/lib/transport/timeout_encoding.cc \
+    src/core/lib/transport/transport.cc \
+    src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
+    src/core/lib/debug/trace.cc \
+    src/core/ext/filters/client_channel/backend_metric.cc \
+    src/core/ext/filters/client_channel/backup_poller.cc \
+    src/core/ext/filters/client_channel/channel_connectivity.cc \
+    src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_channelz.cc \
+    src/core/ext/filters/client_channel/client_channel_factory.cc \
+    src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
+    src/core/ext/filters/client_channel/health/health_check_client.cc \
+    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
+    src/core/ext/filters/client_channel/http_proxy.cc \
+    src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy_registry.cc \
+    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
+    src/core/ext/filters/client_channel/parse_address.cc \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/resolver.cc \
+    src/core/ext/filters/client_channel/resolver_registry.cc \
+    src/core/ext/filters/client_channel/resolver_result_parsing.cc \
+    src/core/ext/filters/client_channel/resolving_lb_policy.cc \
+    src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/server_address.cc \
+    src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/subchannel.cc \
+    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
+    src/core/ext/upb-generated/validate/validate.upb.c \
+    src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/http.upb.c \
+    src/core/ext/upb-generated/google/protobuf/any.upb.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
+    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
+    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
+    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
+    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
+    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
+    src/core/ext/upb-generated/google/rpc/status.upb.c \
+    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
+    src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
+    src/core/ext/transport/chttp2/transport/context_list.cc \
+    src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame_data.cc \
+    src/core/ext/transport/chttp2/transport/frame_goaway.cc \
+    src/core/ext/transport/chttp2/transport/frame_ping.cc \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_settings.cc \
+    src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser.cc \
+    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
+    src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/stream_map.cc \
+    src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/http_filters_plugin.cc \
+    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/server/http_server_filter.cc \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd_id.h \
+    include/grpc/support/time.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
+    include/grpc/impl/codegen/gpr_slice.h \
+    include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
 
 LIBALTS_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBALTS_TEST_UTIL_SRC))))
 
@@ -3453,7 +3805,7 @@ $(LIBDIR)/$(CONFIG)/libalts_test_util.a: openssl_dep_error
 else
 
 
-$(LIBDIR)/$(CONFIG)/libalts_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBALTS_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libalts_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBALTS_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libalts_test_util.a
@@ -3470,6 +3822,45 @@ endif
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBALTS_TEST_UTIL_OBJS:.o=.dep)
+endif
+endif
+
+
+LIBENGINE_PASSTHROUGH_SRC = \
+    test/core/end2end/engine_passthrough.cc \
+
+PUBLIC_HEADERS_C += \
+
+LIBENGINE_PASSTHROUGH_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBENGINE_PASSTHROUGH_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libengine_passthrough.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libengine_passthrough.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBENGINE_PASSTHROUGH_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libengine_passthrough.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libengine_passthrough.a $(LIBENGINE_PASSTHROUGH_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libengine_passthrough.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBENGINE_PASSTHROUGH_OBJS:.o=.dep)
 endif
 endif
 
@@ -3552,7 +3943,7 @@ PUBLIC_HEADERS_C += \
 LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBGPR_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBGPR_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr.a
@@ -3564,18 +3955,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)
+$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)
+$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.9 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.9 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.9
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
@@ -3651,7 +4042,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -3705,9 +4095,12 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -3922,6 +4315,15 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
     src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
     src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
@@ -3932,6 +4334,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
@@ -4012,11 +4416,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE
 else
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc.a
 endif
@@ -4024,18 +4428,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.9 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.9 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.9
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
@@ -4116,7 +4520,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -4170,9 +4573,12 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -4404,11 +4810,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_E
 else
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_cronet.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBGRPC_CRONET_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_cronet.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_CRONET_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBGRPC_CRONET_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBGRPC_CRONET_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
 endif
@@ -4416,18 +4822,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.9 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.9 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so.9
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so
 endif
@@ -4536,7 +4942,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -4590,9 +4995,12 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -4755,7 +5163,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: openssl_dep_error
 else
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBGRPC_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
@@ -4865,7 +5273,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -4919,9 +5326,12 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -5074,7 +5484,7 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_UNSECURE_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
@@ -5157,7 +5567,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -5211,9 +5620,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -5359,6 +5771,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
     src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
     src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
@@ -5369,6 +5790,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
@@ -5430,11 +5853,11 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 endif
@@ -5442,18 +5865,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.9 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.9 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.9
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
@@ -5482,7 +5905,7 @@ $(LIBDIR)/$(CONFIG)/libreconnect_server.a: openssl_dep_error
 else
 
 
-$(LIBDIR)/$(CONFIG)/libreconnect_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBRECONNECT_SERVER_OBJS) 
+$(LIBDIR)/$(CONFIG)/libreconnect_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBRECONNECT_SERVER_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libreconnect_server.a
@@ -5521,7 +5944,7 @@ $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a: openssl_dep_error
 else
 
 
-$(LIBDIR)/$(CONFIG)/libtest_tcp_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBTEST_TCP_SERVER_OBJS) 
+$(LIBDIR)/$(CONFIG)/libtest_tcp_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBTEST_TCP_SERVER_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a
@@ -5570,7 +5993,7 @@ $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBBM_CALLBACK_TEST_SERVICE_IMPL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBM_CALLBACK_TEST_SERVICE_IMPL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a
@@ -5620,7 +6043,7 @@ $(LIBDIR)/$(CONFIG)/libdns_test_util.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libdns_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBDNS_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libdns_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBDNS_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libdns_test_util.a
@@ -5690,205 +6113,7 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
-    src/core/ext/filters/client_channel/http_proxy.cc \
-    src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_registry.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/parse_address.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
-    src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_registry.cc \
-    src/core/ext/filters/client_channel/resolver_result_parsing.cc \
-    src/core/ext/filters/client_channel/resolving_lb_policy.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/server_address.cc \
-    src/core/ext/filters/client_channel/service_config.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/lib/avl/avl.cc \
-    src/core/lib/backoff/backoff.cc \
-    src/core/lib/channel/channel_args.cc \
-    src/core/lib/channel/channel_stack.cc \
-    src/core/lib/channel/channel_stack_builder.cc \
-    src/core/lib/channel/channel_trace.cc \
-    src/core/lib/channel/channelz.cc \
-    src/core/lib/channel/channelz_registry.cc \
-    src/core/lib/channel/connected_channel.cc \
-    src/core/lib/channel/handshaker.cc \
-    src/core/lib/channel/handshaker_registry.cc \
-    src/core/lib/channel/status_util.cc \
-    src/core/lib/compression/compression.cc \
-    src/core/lib/compression/compression_args.cc \
-    src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/message_compress.cc \
-    src/core/lib/compression/stream_compression.cc \
-    src/core/lib/compression/stream_compression_gzip.cc \
-    src/core/lib/compression/stream_compression_identity.cc \
-    src/core/lib/debug/stats.cc \
-    src/core/lib/debug/stats_data.cc \
-    src/core/lib/http/format_request.cc \
-    src/core/lib/http/httpcli.cc \
-    src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
-    src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/cfstream_handle.cc \
-    src/core/lib/iomgr/combiner.cc \
-    src/core/lib/iomgr/endpoint.cc \
-    src/core/lib/iomgr/endpoint_cfstream.cc \
-    src/core/lib/iomgr/endpoint_pair_posix.cc \
-    src/core/lib/iomgr/endpoint_pair_uv.cc \
-    src/core/lib/iomgr/endpoint_pair_windows.cc \
-    src/core/lib/iomgr/error.cc \
-    src/core/lib/iomgr/error_cfstream.cc \
-    src/core/lib/iomgr/ev_epoll1_linux.cc \
-    src/core/lib/iomgr/ev_epollex_linux.cc \
-    src/core/lib/iomgr/ev_poll_posix.cc \
-    src/core/lib/iomgr/ev_posix.cc \
-    src/core/lib/iomgr/ev_windows.cc \
-    src/core/lib/iomgr/exec_ctx.cc \
-    src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
-    src/core/lib/iomgr/fork_posix.cc \
-    src/core/lib/iomgr/fork_windows.cc \
-    src/core/lib/iomgr/gethostname_fallback.cc \
-    src/core/lib/iomgr/gethostname_host_name_max.cc \
-    src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
-    src/core/lib/iomgr/iocp_windows.cc \
-    src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_custom.cc \
-    src/core/lib/iomgr/iomgr_internal.cc \
-    src/core/lib/iomgr/iomgr_posix.cc \
-    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
-    src/core/lib/iomgr/iomgr_uv.cc \
-    src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/is_epollexclusive_available.cc \
-    src/core/lib/iomgr/load_file.cc \
-    src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
-    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
-    src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset.cc \
-    src/core/lib/iomgr/pollset_custom.cc \
-    src/core/lib/iomgr/pollset_set.cc \
-    src/core/lib/iomgr/pollset_set_custom.cc \
-    src/core/lib/iomgr/pollset_set_windows.cc \
-    src/core/lib/iomgr/pollset_uv.cc \
-    src/core/lib/iomgr/pollset_windows.cc \
-    src/core/lib/iomgr/resolve_address.cc \
-    src/core/lib/iomgr/resolve_address_custom.cc \
-    src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_windows.cc \
-    src/core/lib/iomgr/resource_quota.cc \
-    src/core/lib/iomgr/sockaddr_utils.cc \
-    src/core/lib/iomgr/socket_factory_posix.cc \
-    src/core/lib/iomgr/socket_mutator.cc \
-    src/core/lib/iomgr/socket_utils_common_posix.cc \
-    src/core/lib/iomgr/socket_utils_linux.cc \
-    src/core/lib/iomgr/socket_utils_posix.cc \
-    src/core/lib/iomgr/socket_utils_uv.cc \
-    src/core/lib/iomgr/socket_utils_windows.cc \
-    src/core/lib/iomgr/socket_windows.cc \
-    src/core/lib/iomgr/tcp_client.cc \
-    src/core/lib/iomgr/tcp_client_cfstream.cc \
-    src/core/lib/iomgr/tcp_client_custom.cc \
-    src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_windows.cc \
-    src/core/lib/iomgr/tcp_custom.cc \
-    src/core/lib/iomgr/tcp_posix.cc \
-    src/core/lib/iomgr/tcp_server.cc \
-    src/core/lib/iomgr/tcp_server_custom.cc \
-    src/core/lib/iomgr/tcp_server_posix.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_windows.cc \
-    src/core/lib/iomgr/tcp_uv.cc \
-    src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
-    src/core/lib/iomgr/timer.cc \
-    src/core/lib/iomgr/timer_custom.cc \
-    src/core/lib/iomgr/timer_generic.cc \
-    src/core/lib/iomgr/timer_heap.cc \
-    src/core/lib/iomgr/timer_manager.cc \
-    src/core/lib/iomgr/timer_uv.cc \
-    src/core/lib/iomgr/udp_server.cc \
-    src/core/lib/iomgr/unix_sockets_posix.cc \
-    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
-    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
-    src/core/lib/iomgr/wakeup_fd_pipe.cc \
-    src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
-    src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_writer.cc \
-    src/core/lib/slice/b64.cc \
-    src/core/lib/slice/percent_encoding.cc \
-    src/core/lib/slice/slice.cc \
-    src/core/lib/slice/slice_buffer.cc \
-    src/core/lib/slice/slice_intern.cc \
-    src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/api_trace.cc \
-    src/core/lib/surface/byte_buffer.cc \
-    src/core/lib/surface/byte_buffer_reader.cc \
-    src/core/lib/surface/call.cc \
-    src/core/lib/surface/call_details.cc \
-    src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/channel.cc \
-    src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
-    src/core/lib/surface/channel_stack_type.cc \
-    src/core/lib/surface/completion_queue.cc \
-    src/core/lib/surface/completion_queue_factory.cc \
-    src/core/lib/surface/event_string.cc \
-    src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server.cc \
-    src/core/lib/surface/validate_metadata.cc \
-    src/core/lib/surface/version.cc \
-    src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/byte_stream.cc \
-    src/core/lib/transport/connectivity_state.cc \
-    src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
-    src/core/lib/transport/pid_controller.cc \
-    src/core/lib/transport/static_metadata.cc \
-    src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/status_metadata.cc \
-    src/core/lib/transport/timeout_encoding.cc \
-    src/core/lib/transport/transport.cc \
-    src/core/lib/transport/transport_op_string.cc \
-    src/core/lib/uri/uri_parser.cc \
-    src/core/lib/debug/trace.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
-    src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upb.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -6179,11 +6404,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++.a
 endif
@@ -6191,18 +6416,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc -lgpr -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc -lgpr -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc -lgpr -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc -lgpr -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).so
 endif
@@ -6215,6 +6440,81 @@ endif
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_OBJS:.o=.dep)
+endif
+endif
+
+
+LIBGRPC++_ALTS_SRC = \
+    src/cpp/common/alts_context.cc \
+    src/cpp/common/alts_util.cc \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
+
+PUBLIC_HEADERS_CXX += \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/security/alts_context.h \
+    include/grpcpp/security/alts_util.h \
+
+LIBGRPC++_ALTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_ALTS_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_alts.a: openssl_dep_error
+
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): openssl_dep_error
+
+else
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_alts.a: protobuf_dep_error
+
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): protobuf_dep_error
+
+else
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_alts.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_ALTS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBGRPC++_ALTS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgpr$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgpr -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_alts.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgpr -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).so.1
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).so
+endif
+endif
+
+endif
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC++_ALTS_OBJS:.o=.dep)
 endif
 endif
 
@@ -6246,7 +6546,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_CORE_STATS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_CORE_STATS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a
@@ -6302,11 +6602,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a
 endif
@@ -6314,18 +6614,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_error_details.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_error_details.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).so
 endif
@@ -6372,7 +6672,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_PROTO_REFLECTION_DESC_DB_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_PROTO_REFLECTION_DESC_DB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a
@@ -6429,7 +6729,7 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHA
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_REFLECTION_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_REFLECTION_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
@@ -6441,18 +6741,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_reflection.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_reflection.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).so
 endif
@@ -6497,7 +6797,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_CONFIG_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_CONFIG_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
@@ -6672,7 +6972,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
@@ -6852,7 +7152,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_UTIL_UNSECURE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_UTIL_UNSECURE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a
@@ -6921,205 +7221,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
-    src/core/ext/filters/client_channel/http_proxy.cc \
-    src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_registry.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/parse_address.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
-    src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_registry.cc \
-    src/core/ext/filters/client_channel/resolver_result_parsing.cc \
-    src/core/ext/filters/client_channel/resolving_lb_policy.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/server_address.cc \
-    src/core/ext/filters/client_channel/service_config.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/lib/avl/avl.cc \
-    src/core/lib/backoff/backoff.cc \
-    src/core/lib/channel/channel_args.cc \
-    src/core/lib/channel/channel_stack.cc \
-    src/core/lib/channel/channel_stack_builder.cc \
-    src/core/lib/channel/channel_trace.cc \
-    src/core/lib/channel/channelz.cc \
-    src/core/lib/channel/channelz_registry.cc \
-    src/core/lib/channel/connected_channel.cc \
-    src/core/lib/channel/handshaker.cc \
-    src/core/lib/channel/handshaker_registry.cc \
-    src/core/lib/channel/status_util.cc \
-    src/core/lib/compression/compression.cc \
-    src/core/lib/compression/compression_args.cc \
-    src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/message_compress.cc \
-    src/core/lib/compression/stream_compression.cc \
-    src/core/lib/compression/stream_compression_gzip.cc \
-    src/core/lib/compression/stream_compression_identity.cc \
-    src/core/lib/debug/stats.cc \
-    src/core/lib/debug/stats_data.cc \
-    src/core/lib/http/format_request.cc \
-    src/core/lib/http/httpcli.cc \
-    src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
-    src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/cfstream_handle.cc \
-    src/core/lib/iomgr/combiner.cc \
-    src/core/lib/iomgr/endpoint.cc \
-    src/core/lib/iomgr/endpoint_cfstream.cc \
-    src/core/lib/iomgr/endpoint_pair_posix.cc \
-    src/core/lib/iomgr/endpoint_pair_uv.cc \
-    src/core/lib/iomgr/endpoint_pair_windows.cc \
-    src/core/lib/iomgr/error.cc \
-    src/core/lib/iomgr/error_cfstream.cc \
-    src/core/lib/iomgr/ev_epoll1_linux.cc \
-    src/core/lib/iomgr/ev_epollex_linux.cc \
-    src/core/lib/iomgr/ev_poll_posix.cc \
-    src/core/lib/iomgr/ev_posix.cc \
-    src/core/lib/iomgr/ev_windows.cc \
-    src/core/lib/iomgr/exec_ctx.cc \
-    src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
-    src/core/lib/iomgr/fork_posix.cc \
-    src/core/lib/iomgr/fork_windows.cc \
-    src/core/lib/iomgr/gethostname_fallback.cc \
-    src/core/lib/iomgr/gethostname_host_name_max.cc \
-    src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
-    src/core/lib/iomgr/iocp_windows.cc \
-    src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_custom.cc \
-    src/core/lib/iomgr/iomgr_internal.cc \
-    src/core/lib/iomgr/iomgr_posix.cc \
-    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
-    src/core/lib/iomgr/iomgr_uv.cc \
-    src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/is_epollexclusive_available.cc \
-    src/core/lib/iomgr/load_file.cc \
-    src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
-    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
-    src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset.cc \
-    src/core/lib/iomgr/pollset_custom.cc \
-    src/core/lib/iomgr/pollset_set.cc \
-    src/core/lib/iomgr/pollset_set_custom.cc \
-    src/core/lib/iomgr/pollset_set_windows.cc \
-    src/core/lib/iomgr/pollset_uv.cc \
-    src/core/lib/iomgr/pollset_windows.cc \
-    src/core/lib/iomgr/resolve_address.cc \
-    src/core/lib/iomgr/resolve_address_custom.cc \
-    src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_windows.cc \
-    src/core/lib/iomgr/resource_quota.cc \
-    src/core/lib/iomgr/sockaddr_utils.cc \
-    src/core/lib/iomgr/socket_factory_posix.cc \
-    src/core/lib/iomgr/socket_mutator.cc \
-    src/core/lib/iomgr/socket_utils_common_posix.cc \
-    src/core/lib/iomgr/socket_utils_linux.cc \
-    src/core/lib/iomgr/socket_utils_posix.cc \
-    src/core/lib/iomgr/socket_utils_uv.cc \
-    src/core/lib/iomgr/socket_utils_windows.cc \
-    src/core/lib/iomgr/socket_windows.cc \
-    src/core/lib/iomgr/tcp_client.cc \
-    src/core/lib/iomgr/tcp_client_cfstream.cc \
-    src/core/lib/iomgr/tcp_client_custom.cc \
-    src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_windows.cc \
-    src/core/lib/iomgr/tcp_custom.cc \
-    src/core/lib/iomgr/tcp_posix.cc \
-    src/core/lib/iomgr/tcp_server.cc \
-    src/core/lib/iomgr/tcp_server_custom.cc \
-    src/core/lib/iomgr/tcp_server_posix.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_windows.cc \
-    src/core/lib/iomgr/tcp_uv.cc \
-    src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
-    src/core/lib/iomgr/timer.cc \
-    src/core/lib/iomgr/timer_custom.cc \
-    src/core/lib/iomgr/timer_generic.cc \
-    src/core/lib/iomgr/timer_heap.cc \
-    src/core/lib/iomgr/timer_manager.cc \
-    src/core/lib/iomgr/timer_uv.cc \
-    src/core/lib/iomgr/udp_server.cc \
-    src/core/lib/iomgr/unix_sockets_posix.cc \
-    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
-    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
-    src/core/lib/iomgr/wakeup_fd_pipe.cc \
-    src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
-    src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_writer.cc \
-    src/core/lib/slice/b64.cc \
-    src/core/lib/slice/percent_encoding.cc \
-    src/core/lib/slice/slice.cc \
-    src/core/lib/slice/slice_buffer.cc \
-    src/core/lib/slice/slice_intern.cc \
-    src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/api_trace.cc \
-    src/core/lib/surface/byte_buffer.cc \
-    src/core/lib/surface/byte_buffer_reader.cc \
-    src/core/lib/surface/call.cc \
-    src/core/lib/surface/call_details.cc \
-    src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/channel.cc \
-    src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
-    src/core/lib/surface/channel_stack_type.cc \
-    src/core/lib/surface/completion_queue.cc \
-    src/core/lib/surface/completion_queue_factory.cc \
-    src/core/lib/surface/event_string.cc \
-    src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server.cc \
-    src/core/lib/surface/validate_metadata.cc \
-    src/core/lib/surface/version.cc \
-    src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/byte_stream.cc \
-    src/core/lib/transport/connectivity_state.cc \
-    src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
-    src/core/lib/transport/pid_controller.cc \
-    src/core/lib/transport/static_metadata.cc \
-    src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/status_metadata.cc \
-    src/core/lib/transport/timeout_encoding.cc \
-    src/core/lib/transport/transport.cc \
-    src/core/lib/transport/transport_op_string.cc \
-    src/core/lib/uri/uri_parser.cc \
-    src/core/lib/debug/trace.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
-    src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upb.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -7394,11 +7496,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARE
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 endif
@@ -7406,18 +7508,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgpr$(SHARED_VERSION_CORE)-dll -lgrpc_unsecure$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgpr$(SHARED_VERSION_CORE)-dll -lgrpc_unsecure$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgpr -lgrpc_unsecure -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgpr -lgrpc_unsecure -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgpr -lgrpc_unsecure -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgpr -lgrpc_unsecure -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).so
 endif
@@ -7457,7 +7559,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_BENCHMARK_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_BENCHMARK_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a
@@ -7513,7 +7615,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_CLI_LIBS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_CLI_LIBS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a
@@ -7566,7 +7668,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
@@ -7617,7 +7719,7 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARE
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBGRPCPP_CHANNELZ_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPCPP_CHANNELZ_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
@@ -7629,18 +7731,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPCPP_CHANNELZ_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPCPP_CHANNELZ_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPCPP_CHANNELZ_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPCPP_CHANNELZ_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpcpp_channelz.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpcpp_channelz.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc
 	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).so
 endif
@@ -7688,7 +7790,7 @@ $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libhttp2_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBHTTP2_CLIENT_MAIN_OBJS) 
+$(LIBDIR)/$(CONFIG)/libhttp2_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBHTTP2_CLIENT_MAIN_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a
@@ -7739,7 +7841,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libinterop_client_helper.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_CLIENT_HELPER_OBJS) 
+$(LIBDIR)/$(CONFIG)/libinterop_client_helper.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_CLIENT_HELPER_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a
@@ -7793,7 +7895,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_client_main.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libinterop_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_CLIENT_MAIN_OBJS) 
+$(LIBDIR)/$(CONFIG)/libinterop_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_CLIENT_MAIN_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_client_main.a
@@ -7844,7 +7946,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libinterop_server_helper.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_HELPER_OBJS) 
+$(LIBDIR)/$(CONFIG)/libinterop_server_helper.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_HELPER_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a
@@ -7896,7 +7998,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libinterop_server_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_LIB_OBJS) 
+$(LIBDIR)/$(CONFIG)/libinterop_server_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a
@@ -7946,7 +8048,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_server_main.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libinterop_server_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_MAIN_OBJS) 
+$(LIBDIR)/$(CONFIG)/libinterop_server_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_MAIN_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_main.a
@@ -8014,7 +8116,7 @@ $(LIBDIR)/$(CONFIG)/libqps.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libqps.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBQPS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libqps.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBQPS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libqps.a
@@ -8052,7 +8154,6 @@ $(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing
 
 LIBGRPC_CSHARP_EXT_SRC = \
     src/csharp/ext/grpc_csharp_ext.c \
-    src/csharp/ext/std++compat.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -8070,7 +8171,7 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SH
 else
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBGRPC_CSHARP_EXT_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_CSHARP_EXT_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
@@ -8082,18 +8183,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).so.2
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).so
 endif
@@ -8109,280 +8210,280 @@ endif
 
 
 LIBBORINGSSL_SRC = \
-    src/boringssl/err_data.c \
-    third_party/boringssl/crypto/asn1/a_bitstr.c \
-    third_party/boringssl/crypto/asn1/a_bool.c \
-    third_party/boringssl/crypto/asn1/a_d2i_fp.c \
-    third_party/boringssl/crypto/asn1/a_dup.c \
-    third_party/boringssl/crypto/asn1/a_enum.c \
-    third_party/boringssl/crypto/asn1/a_gentm.c \
-    third_party/boringssl/crypto/asn1/a_i2d_fp.c \
-    third_party/boringssl/crypto/asn1/a_int.c \
-    third_party/boringssl/crypto/asn1/a_mbstr.c \
-    third_party/boringssl/crypto/asn1/a_object.c \
-    third_party/boringssl/crypto/asn1/a_octet.c \
-    third_party/boringssl/crypto/asn1/a_print.c \
-    third_party/boringssl/crypto/asn1/a_strnid.c \
-    third_party/boringssl/crypto/asn1/a_time.c \
-    third_party/boringssl/crypto/asn1/a_type.c \
-    third_party/boringssl/crypto/asn1/a_utctm.c \
-    third_party/boringssl/crypto/asn1/a_utf8.c \
-    third_party/boringssl/crypto/asn1/asn1_lib.c \
-    third_party/boringssl/crypto/asn1/asn1_par.c \
-    third_party/boringssl/crypto/asn1/asn_pack.c \
-    third_party/boringssl/crypto/asn1/f_enum.c \
-    third_party/boringssl/crypto/asn1/f_int.c \
-    third_party/boringssl/crypto/asn1/f_string.c \
-    third_party/boringssl/crypto/asn1/tasn_dec.c \
-    third_party/boringssl/crypto/asn1/tasn_enc.c \
-    third_party/boringssl/crypto/asn1/tasn_fre.c \
-    third_party/boringssl/crypto/asn1/tasn_new.c \
-    third_party/boringssl/crypto/asn1/tasn_typ.c \
-    third_party/boringssl/crypto/asn1/tasn_utl.c \
-    third_party/boringssl/crypto/asn1/time_support.c \
-    third_party/boringssl/crypto/base64/base64.c \
-    third_party/boringssl/crypto/bio/bio.c \
-    third_party/boringssl/crypto/bio/bio_mem.c \
-    third_party/boringssl/crypto/bio/connect.c \
-    third_party/boringssl/crypto/bio/fd.c \
-    third_party/boringssl/crypto/bio/file.c \
-    third_party/boringssl/crypto/bio/hexdump.c \
-    third_party/boringssl/crypto/bio/pair.c \
-    third_party/boringssl/crypto/bio/printf.c \
-    third_party/boringssl/crypto/bio/socket.c \
-    third_party/boringssl/crypto/bio/socket_helper.c \
-    third_party/boringssl/crypto/bn_extra/bn_asn1.c \
-    third_party/boringssl/crypto/bn_extra/convert.c \
-    third_party/boringssl/crypto/buf/buf.c \
-    third_party/boringssl/crypto/bytestring/asn1_compat.c \
-    third_party/boringssl/crypto/bytestring/ber.c \
-    third_party/boringssl/crypto/bytestring/cbb.c \
-    third_party/boringssl/crypto/bytestring/cbs.c \
-    third_party/boringssl/crypto/bytestring/unicode.c \
-    third_party/boringssl/crypto/chacha/chacha.c \
-    third_party/boringssl/crypto/cipher_extra/cipher_extra.c \
-    third_party/boringssl/crypto/cipher_extra/derive_key.c \
-    third_party/boringssl/crypto/cipher_extra/e_aesccm.c \
-    third_party/boringssl/crypto/cipher_extra/e_aesctrhmac.c \
-    third_party/boringssl/crypto/cipher_extra/e_aesgcmsiv.c \
-    third_party/boringssl/crypto/cipher_extra/e_chacha20poly1305.c \
-    third_party/boringssl/crypto/cipher_extra/e_null.c \
-    third_party/boringssl/crypto/cipher_extra/e_rc2.c \
-    third_party/boringssl/crypto/cipher_extra/e_rc4.c \
-    third_party/boringssl/crypto/cipher_extra/e_tls.c \
-    third_party/boringssl/crypto/cipher_extra/tls_cbc.c \
-    third_party/boringssl/crypto/cmac/cmac.c \
-    third_party/boringssl/crypto/conf/conf.c \
-    third_party/boringssl/crypto/cpu-aarch64-fuchsia.c \
-    third_party/boringssl/crypto/cpu-aarch64-linux.c \
-    third_party/boringssl/crypto/cpu-arm-linux.c \
-    third_party/boringssl/crypto/cpu-arm.c \
-    third_party/boringssl/crypto/cpu-intel.c \
-    third_party/boringssl/crypto/cpu-ppc64le.c \
-    third_party/boringssl/crypto/crypto.c \
-    third_party/boringssl/crypto/curve25519/spake25519.c \
-    third_party/boringssl/crypto/dh/check.c \
-    third_party/boringssl/crypto/dh/dh.c \
-    third_party/boringssl/crypto/dh/dh_asn1.c \
-    third_party/boringssl/crypto/dh/params.c \
-    third_party/boringssl/crypto/digest_extra/digest_extra.c \
-    third_party/boringssl/crypto/dsa/dsa.c \
-    third_party/boringssl/crypto/dsa/dsa_asn1.c \
-    third_party/boringssl/crypto/ec_extra/ec_asn1.c \
-    third_party/boringssl/crypto/ec_extra/ec_derive.c \
-    third_party/boringssl/crypto/ecdh_extra/ecdh_extra.c \
-    third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c \
-    third_party/boringssl/crypto/engine/engine.c \
-    third_party/boringssl/crypto/err/err.c \
-    third_party/boringssl/crypto/evp/digestsign.c \
-    third_party/boringssl/crypto/evp/evp.c \
-    third_party/boringssl/crypto/evp/evp_asn1.c \
-    third_party/boringssl/crypto/evp/evp_ctx.c \
-    third_party/boringssl/crypto/evp/p_dsa_asn1.c \
-    third_party/boringssl/crypto/evp/p_ec.c \
-    third_party/boringssl/crypto/evp/p_ec_asn1.c \
-    third_party/boringssl/crypto/evp/p_ed25519.c \
-    third_party/boringssl/crypto/evp/p_ed25519_asn1.c \
-    third_party/boringssl/crypto/evp/p_rsa.c \
-    third_party/boringssl/crypto/evp/p_rsa_asn1.c \
-    third_party/boringssl/crypto/evp/p_x25519.c \
-    third_party/boringssl/crypto/evp/p_x25519_asn1.c \
-    third_party/boringssl/crypto/evp/pbkdf.c \
-    third_party/boringssl/crypto/evp/print.c \
-    third_party/boringssl/crypto/evp/scrypt.c \
-    third_party/boringssl/crypto/evp/sign.c \
-    third_party/boringssl/crypto/ex_data.c \
-    third_party/boringssl/crypto/fipsmodule/bcm.c \
-    third_party/boringssl/crypto/fipsmodule/fips_shared_support.c \
-    third_party/boringssl/crypto/fipsmodule/is_fips.c \
-    third_party/boringssl/crypto/hkdf/hkdf.c \
-    third_party/boringssl/crypto/hrss/hrss.c \
-    third_party/boringssl/crypto/lhash/lhash.c \
-    third_party/boringssl/crypto/mem.c \
-    third_party/boringssl/crypto/obj/obj.c \
-    third_party/boringssl/crypto/obj/obj_xref.c \
-    third_party/boringssl/crypto/pem/pem_all.c \
-    third_party/boringssl/crypto/pem/pem_info.c \
-    third_party/boringssl/crypto/pem/pem_lib.c \
-    third_party/boringssl/crypto/pem/pem_oth.c \
-    third_party/boringssl/crypto/pem/pem_pk8.c \
-    third_party/boringssl/crypto/pem/pem_pkey.c \
-    third_party/boringssl/crypto/pem/pem_x509.c \
-    third_party/boringssl/crypto/pem/pem_xaux.c \
-    third_party/boringssl/crypto/pkcs7/pkcs7.c \
-    third_party/boringssl/crypto/pkcs7/pkcs7_x509.c \
-    third_party/boringssl/crypto/pkcs8/p5_pbev2.c \
-    third_party/boringssl/crypto/pkcs8/pkcs8.c \
-    third_party/boringssl/crypto/pkcs8/pkcs8_x509.c \
-    third_party/boringssl/crypto/poly1305/poly1305.c \
-    third_party/boringssl/crypto/poly1305/poly1305_arm.c \
-    third_party/boringssl/crypto/poly1305/poly1305_vec.c \
-    third_party/boringssl/crypto/pool/pool.c \
-    third_party/boringssl/crypto/rand_extra/deterministic.c \
-    third_party/boringssl/crypto/rand_extra/forkunsafe.c \
-    third_party/boringssl/crypto/rand_extra/fuchsia.c \
-    third_party/boringssl/crypto/rand_extra/rand_extra.c \
-    third_party/boringssl/crypto/rand_extra/windows.c \
-    third_party/boringssl/crypto/rc4/rc4.c \
-    third_party/boringssl/crypto/refcount_c11.c \
-    third_party/boringssl/crypto/refcount_lock.c \
-    third_party/boringssl/crypto/rsa_extra/rsa_asn1.c \
-    third_party/boringssl/crypto/rsa_extra/rsa_print.c \
-    third_party/boringssl/crypto/siphash/siphash.c \
-    third_party/boringssl/crypto/stack/stack.c \
-    third_party/boringssl/crypto/thread.c \
-    third_party/boringssl/crypto/thread_none.c \
-    third_party/boringssl/crypto/thread_pthread.c \
-    third_party/boringssl/crypto/thread_win.c \
-    third_party/boringssl/crypto/x509/a_digest.c \
-    third_party/boringssl/crypto/x509/a_sign.c \
-    third_party/boringssl/crypto/x509/a_strex.c \
-    third_party/boringssl/crypto/x509/a_verify.c \
-    third_party/boringssl/crypto/x509/algorithm.c \
-    third_party/boringssl/crypto/x509/asn1_gen.c \
-    third_party/boringssl/crypto/x509/by_dir.c \
-    third_party/boringssl/crypto/x509/by_file.c \
-    third_party/boringssl/crypto/x509/i2d_pr.c \
-    third_party/boringssl/crypto/x509/rsa_pss.c \
-    third_party/boringssl/crypto/x509/t_crl.c \
-    third_party/boringssl/crypto/x509/t_req.c \
-    third_party/boringssl/crypto/x509/t_x509.c \
-    third_party/boringssl/crypto/x509/t_x509a.c \
-    third_party/boringssl/crypto/x509/x509.c \
-    third_party/boringssl/crypto/x509/x509_att.c \
-    third_party/boringssl/crypto/x509/x509_cmp.c \
-    third_party/boringssl/crypto/x509/x509_d2.c \
-    third_party/boringssl/crypto/x509/x509_def.c \
-    third_party/boringssl/crypto/x509/x509_ext.c \
-    third_party/boringssl/crypto/x509/x509_lu.c \
-    third_party/boringssl/crypto/x509/x509_obj.c \
-    third_party/boringssl/crypto/x509/x509_r2x.c \
-    third_party/boringssl/crypto/x509/x509_req.c \
-    third_party/boringssl/crypto/x509/x509_set.c \
-    third_party/boringssl/crypto/x509/x509_trs.c \
-    third_party/boringssl/crypto/x509/x509_txt.c \
-    third_party/boringssl/crypto/x509/x509_v3.c \
-    third_party/boringssl/crypto/x509/x509_vfy.c \
-    third_party/boringssl/crypto/x509/x509_vpm.c \
-    third_party/boringssl/crypto/x509/x509cset.c \
-    third_party/boringssl/crypto/x509/x509name.c \
-    third_party/boringssl/crypto/x509/x509rset.c \
-    third_party/boringssl/crypto/x509/x509spki.c \
-    third_party/boringssl/crypto/x509/x_algor.c \
-    third_party/boringssl/crypto/x509/x_all.c \
-    third_party/boringssl/crypto/x509/x_attrib.c \
-    third_party/boringssl/crypto/x509/x_crl.c \
-    third_party/boringssl/crypto/x509/x_exten.c \
-    third_party/boringssl/crypto/x509/x_info.c \
-    third_party/boringssl/crypto/x509/x_name.c \
-    third_party/boringssl/crypto/x509/x_pkey.c \
-    third_party/boringssl/crypto/x509/x_pubkey.c \
-    third_party/boringssl/crypto/x509/x_req.c \
-    third_party/boringssl/crypto/x509/x_sig.c \
-    third_party/boringssl/crypto/x509/x_spki.c \
-    third_party/boringssl/crypto/x509/x_val.c \
-    third_party/boringssl/crypto/x509/x_x509.c \
-    third_party/boringssl/crypto/x509/x_x509a.c \
-    third_party/boringssl/crypto/x509v3/pcy_cache.c \
-    third_party/boringssl/crypto/x509v3/pcy_data.c \
-    third_party/boringssl/crypto/x509v3/pcy_lib.c \
-    third_party/boringssl/crypto/x509v3/pcy_map.c \
-    third_party/boringssl/crypto/x509v3/pcy_node.c \
-    third_party/boringssl/crypto/x509v3/pcy_tree.c \
-    third_party/boringssl/crypto/x509v3/v3_akey.c \
-    third_party/boringssl/crypto/x509v3/v3_akeya.c \
-    third_party/boringssl/crypto/x509v3/v3_alt.c \
-    third_party/boringssl/crypto/x509v3/v3_bcons.c \
-    third_party/boringssl/crypto/x509v3/v3_bitst.c \
-    third_party/boringssl/crypto/x509v3/v3_conf.c \
-    third_party/boringssl/crypto/x509v3/v3_cpols.c \
-    third_party/boringssl/crypto/x509v3/v3_crld.c \
-    third_party/boringssl/crypto/x509v3/v3_enum.c \
-    third_party/boringssl/crypto/x509v3/v3_extku.c \
-    third_party/boringssl/crypto/x509v3/v3_genn.c \
-    third_party/boringssl/crypto/x509v3/v3_ia5.c \
-    third_party/boringssl/crypto/x509v3/v3_info.c \
-    third_party/boringssl/crypto/x509v3/v3_int.c \
-    third_party/boringssl/crypto/x509v3/v3_lib.c \
-    third_party/boringssl/crypto/x509v3/v3_ncons.c \
-    third_party/boringssl/crypto/x509v3/v3_ocsp.c \
-    third_party/boringssl/crypto/x509v3/v3_pci.c \
-    third_party/boringssl/crypto/x509v3/v3_pcia.c \
-    third_party/boringssl/crypto/x509v3/v3_pcons.c \
-    third_party/boringssl/crypto/x509v3/v3_pku.c \
-    third_party/boringssl/crypto/x509v3/v3_pmaps.c \
-    third_party/boringssl/crypto/x509v3/v3_prn.c \
-    third_party/boringssl/crypto/x509v3/v3_purp.c \
-    third_party/boringssl/crypto/x509v3/v3_skey.c \
-    third_party/boringssl/crypto/x509v3/v3_sxnet.c \
-    third_party/boringssl/crypto/x509v3/v3_utl.c \
-    third_party/boringssl/ssl/bio_ssl.cc \
-    third_party/boringssl/ssl/d1_both.cc \
-    third_party/boringssl/ssl/d1_lib.cc \
-    third_party/boringssl/ssl/d1_pkt.cc \
-    third_party/boringssl/ssl/d1_srtp.cc \
-    third_party/boringssl/ssl/dtls_method.cc \
-    third_party/boringssl/ssl/dtls_record.cc \
-    third_party/boringssl/ssl/handoff.cc \
-    third_party/boringssl/ssl/handshake.cc \
-    third_party/boringssl/ssl/handshake_client.cc \
-    third_party/boringssl/ssl/handshake_server.cc \
-    third_party/boringssl/ssl/s3_both.cc \
-    third_party/boringssl/ssl/s3_lib.cc \
-    third_party/boringssl/ssl/s3_pkt.cc \
-    third_party/boringssl/ssl/ssl_aead_ctx.cc \
-    third_party/boringssl/ssl/ssl_asn1.cc \
-    third_party/boringssl/ssl/ssl_buffer.cc \
-    third_party/boringssl/ssl/ssl_cert.cc \
-    third_party/boringssl/ssl/ssl_cipher.cc \
-    third_party/boringssl/ssl/ssl_file.cc \
-    third_party/boringssl/ssl/ssl_key_share.cc \
-    third_party/boringssl/ssl/ssl_lib.cc \
-    third_party/boringssl/ssl/ssl_privkey.cc \
-    third_party/boringssl/ssl/ssl_session.cc \
-    third_party/boringssl/ssl/ssl_stat.cc \
-    third_party/boringssl/ssl/ssl_transcript.cc \
-    third_party/boringssl/ssl/ssl_versions.cc \
-    third_party/boringssl/ssl/ssl_x509.cc \
-    third_party/boringssl/ssl/t1_enc.cc \
-    third_party/boringssl/ssl/t1_lib.cc \
-    third_party/boringssl/ssl/tls13_both.cc \
-    third_party/boringssl/ssl/tls13_client.cc \
-    third_party/boringssl/ssl/tls13_enc.cc \
-    third_party/boringssl/ssl/tls13_server.cc \
-    third_party/boringssl/ssl/tls_method.cc \
-    third_party/boringssl/ssl/tls_record.cc \
-    third_party/boringssl/third_party/fiat/curve25519.c \
+    third_party/boringssl-with-bazel/err_data.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_dup.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_gentm.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_i2d_fp.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_int.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_mbstr.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_print.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_utf8.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_int.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_string.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_new.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_typ.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_utl.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/time_support.c \
+    third_party/boringssl-with-bazel/src/crypto/base64/base64.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/connect.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/fd.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/file.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/hexdump.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/pair.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/printf.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.c \
+    third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.c \
+    third_party/boringssl-with-bazel/src/crypto/buf/buf.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/ber.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbb.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbs.c \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/unicode.c \
+    third_party/boringssl-with-bazel/src/crypto/chacha/chacha.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/derive_key.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesccm.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesctrhmac.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesgcmsiv.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_chacha20poly1305.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_null.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc2.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc4.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_tls.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.c \
+    third_party/boringssl-with-bazel/src/crypto/cmac/cmac.c \
+    third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-arm.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-intel.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-ppc64le.c \
+    third_party/boringssl-with-bazel/src/crypto/crypto.c \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
+    third_party/boringssl-with-bazel/src/crypto/dh/check.c \
+    third_party/boringssl-with-bazel/src/crypto/dh/dh.c \
+    third_party/boringssl-with-bazel/src/crypto/dh/dh_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/dh/params.c \
+    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.c \
+    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/engine/engine.c \
+    third_party/boringssl-with-bazel/src/crypto/err/err.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/digestsign.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/print.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/scrypt.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/sign.c \
+    third_party/boringssl-with-bazel/src/crypto/ex_data.c \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.c \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/is_fips.c \
+    third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c \
+    third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
+    third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
+    third_party/boringssl-with-bazel/src/crypto/mem.c \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj.c \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj_xref.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_all.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_info.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_oth.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pk8.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pkey.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_xaux.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/p5_pbev2.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8.c \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305.c \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_arm.c \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.c \
+    third_party/boringssl-with-bazel/src/crypto/pool/pool.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
+    third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount_c11.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount_lock.c \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
+    third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
+    third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
+    third_party/boringssl-with-bazel/src/crypto/thread.c \
+    third_party/boringssl-with-bazel/src/crypto/thread_none.c \
+    third_party/boringssl-with-bazel/src/crypto/thread_pthread.c \
+    third_party/boringssl-with-bazel/src/crypto/thread_win.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_file.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_d2.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_def.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_r2x.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_req.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_set.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_txt.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_v3.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vfy.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vpm.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509cset.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509name.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509rset.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509spki.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_algor.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_all.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_crl.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_exten.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_info.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_name.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_pkey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_req.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_sig.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_spki.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_cache.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_data.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_map.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_node.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_tree.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akeya.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_alt.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bitst.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_conf.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_cpols.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_crld.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_extku.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_genn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ia5.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_info.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_int.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ncons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ocsp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pci.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcia.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pku.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_sxnet.c \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c \
+    third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_pkt.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_srtp.cc \
+    third_party/boringssl-with-bazel/src/ssl/dtls_method.cc \
+    third_party/boringssl-with-bazel/src/ssl/dtls_record.cc \
+    third_party/boringssl-with-bazel/src/ssl/handoff.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake_client.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake_server.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_pkt.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_aead_ctx.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_asn1.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_buffer.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_cert.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_cipher.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_file.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_key_share.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_privkey.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_session.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_stat.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_transcript.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_versions.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_x509.cc \
+    third_party/boringssl-with-bazel/src/ssl/t1_enc.cc \
+    third_party/boringssl-with-bazel/src/ssl/t1_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_client.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_enc.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
+    third_party/boringssl-with-bazel/src/third_party/fiat/curve25519.c \
 
 PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
-$(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(LIBBORINGSSL_OBJS): CXXFLAGS += -fno-exceptions
 $(LIBBORINGSSL_OBJS): CFLAGS += -g
 
-$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBBORINGSSL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBBORINGSSL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl.a
@@ -8400,16 +8501,16 @@ endif
 
 
 LIBBORINGSSL_TEST_UTIL_SRC = \
-    third_party/boringssl/crypto/test/file_test.cc \
-    third_party/boringssl/crypto/test/malloc.cc \
-    third_party/boringssl/crypto/test/test_util.cc \
-    third_party/boringssl/crypto/test/wycheproof_util.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/file_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/malloc.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/test_util.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/wycheproof_util.cc \
 
 PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TEST_UTIL_SRC))))
 
-$(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(LIBBORINGSSL_TEST_UTIL_OBJS): CXXFLAGS += -fno-exceptions
 $(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS += -g
 
@@ -8422,7 +8523,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
@@ -8477,7 +8578,7 @@ $(LIBDIR)/$(CONFIG)/libbenchmark.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark.a
@@ -8520,7 +8621,7 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 else
 
 
-$(LIBDIR)/$(CONFIG)/libupb.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBUPB_OBJS) 
+$(LIBDIR)/$(CONFIG)/libupb.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBUPB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb.a
@@ -8532,18 +8633,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.9 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.9 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.9
 	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so
 endif
@@ -8700,7 +8801,7 @@ $(LIBDIR)/$(CONFIG)/libbad_client_test.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libbad_client_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(PROTOBUF_DEP) $(LIBBAD_CLIENT_TEST_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbad_client_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBAD_CLIENT_TEST_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_client_test.a
@@ -8741,7 +8842,7 @@ $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: openssl_dep_error
 else
 
 
-$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBBAD_SSL_TEST_SERVER_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBBAD_SSL_TEST_SERVER_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
@@ -8859,7 +8960,7 @@ $(LIBDIR)/$(CONFIG)/libend2end_tests.a: openssl_dep_error
 else
 
 
-$(LIBDIR)/$(CONFIG)/libend2end_tests.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBEND2END_TESTS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libend2end_tests.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBEND2END_TESTS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_tests.a
@@ -8966,7 +9067,7 @@ PUBLIC_HEADERS_C += \
 LIBEND2END_NOSEC_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TESTS_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
@@ -8982,6 +9083,73 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_NOSEC_TESTS_OBJS:.o=.dep)
 endif
 
+
+# Add private ABSEIL target which contains all sources used by all baselib libraries.
+
+
+LIBGRPC_ABSEIL_SRC = \
+    third_party/abseil-cpp/absl/base/dynamic_annotations.cc \
+    third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
+    third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
+    third_party/abseil-cpp/absl/base/internal/spinlock.cc \
+    third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc \
+    third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
+    third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
+    third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
+    third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
+    third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/numeric/int128.cc \
+    third_party/abseil-cpp/absl/strings/ascii.cc \
+    third_party/abseil-cpp/absl/strings/charconv.cc \
+    third_party/abseil-cpp/absl/strings/escaping.cc \
+    third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
+    third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
+    third_party/abseil-cpp/absl/strings/internal/escaping.cc \
+    third_party/abseil-cpp/absl/strings/internal/memutil.cc \
+    third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
+    third_party/abseil-cpp/absl/strings/internal/utf8.cc \
+    third_party/abseil-cpp/absl/strings/match.cc \
+    third_party/abseil-cpp/absl/strings/numbers.cc \
+    third_party/abseil-cpp/absl/strings/str_cat.cc \
+    third_party/abseil-cpp/absl/strings/str_replace.cc \
+    third_party/abseil-cpp/absl/strings/str_split.cc \
+    third_party/abseil-cpp/absl/strings/string_view.cc \
+    third_party/abseil-cpp/absl/strings/substitute.cc \
+    third_party/abseil-cpp/absl/types/bad_optional_access.cc \
+
+
+LIBGRPC_ABSEIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ABSEIL_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libgrpc_abseil.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libgrpc_abseil.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_ABSEIL_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a $(LIBGRPC_ABSEIL_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC_ABSEIL_OBJS:.o=.dep)
+endif
+endif
 
 
 # All of the test targets, and protoc plugins
@@ -14189,6 +14357,49 @@ endif
 endif
 
 
+ALTS_UTIL_TEST_SRC = \
+    test/cpp/common/alts_util_test.cc \
+
+ALTS_UTIL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_UTIL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_util_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/alts_util_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_util_test: $(PROTOBUF_DEP) $(ALTS_UTIL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_UTIL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_util_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/common/alts_util_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_alts_util_test: $(ALTS_UTIL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_UTIL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 ALTS_ZERO_COPY_GRPC_PROTECTOR_TEST_SRC = \
     test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc \
 
@@ -15394,16 +15605,16 @@ $(BINDIR)/$(CONFIG)/channel_arguments_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/channel_arguments_test: $(PROTOBUF_DEP) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/channel_arguments_test: $(PROTOBUF_DEP) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/channel_arguments_test
+	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/channel_arguments_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/common/channel_arguments_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/common/channel_arguments_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
 
@@ -18156,15 +18367,15 @@ endif
 endif
 
 
-LOGICAL_THREAD_TEST_SRC = \
-    test/core/iomgr/logical_thread_test.cc \
+JSON_TEST_NEW_SRC = \
+    test/core/json/json_test_new.cc \
 
-LOGICAL_THREAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LOGICAL_THREAD_TEST_SRC))))
+JSON_TEST_NEW_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_TEST_NEW_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/logical_thread_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/json_test_new: openssl_dep_error
 
 else
 
@@ -18175,26 +18386,26 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
-$(BINDIR)/$(CONFIG)/logical_thread_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/json_test_new: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/logical_thread_test: $(PROTOBUF_DEP) $(LOGICAL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/json_test_new: $(PROTOBUF_DEP) $(JSON_TEST_NEW_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(LOGICAL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/logical_thread_test
+	$(Q) $(LDXX) $(LDFLAGS) $(JSON_TEST_NEW_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/json_test_new
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/iomgr/logical_thread_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/json/json_test_new.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_logical_thread_test: $(LOGICAL_THREAD_TEST_OBJS:.o=.dep)
+deps_json_test_new: $(JSON_TEST_NEW_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LOGICAL_THREAD_TEST_OBJS:.o=.dep)
+-include $(JSON_TEST_NEW_OBJS:.o=.dep)
 endif
 endif
 
@@ -20423,6 +20634,49 @@ endif
 endif
 
 
+WORK_SERIALIZER_TEST_SRC = \
+    test/core/iomgr/work_serializer_test.cc \
+
+WORK_SERIALIZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WORK_SERIALIZER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/work_serializer_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/work_serializer_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/work_serializer_test: $(PROTOBUF_DEP) $(WORK_SERIALIZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(WORK_SERIALIZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/work_serializer_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/work_serializer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_work_serializer_test: $(WORK_SERIALIZER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(WORK_SERIALIZER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 WRITES_PER_RPC_TEST_SRC = \
     test/cpp/performance/writes_per_rpc_test.cc \
 
@@ -20511,7 +20765,9 @@ endif
 
 XDS_END2END_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc \
     test/cpp/end2end/xds_end2end_test.cc \
 
@@ -20546,7 +20802,11 @@ endif
 
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/ads_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/cds_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/eds_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/lds_rds_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/lrs_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20559,7 +20819,7 @@ ifneq ($(NO_DEPS),true)
 -include $(XDS_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
 
 
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \
@@ -20599,19 +20859,19 @@ endif
 
 
 BORINGSSL_SSL_TEST_SRC = \
-    third_party/boringssl/crypto/test/abi_test.cc \
-    third_party/boringssl/crypto/test/gtest_main.cc \
-    third_party/boringssl/ssl/span_test.cc \
-    third_party/boringssl/ssl/ssl_c_test.c \
-    third_party/boringssl/ssl/ssl_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/abi_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/gtest_main.cc \
+    third_party/boringssl-with-bazel/src/ssl/span_test.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_c_test.c \
+    third_party/boringssl-with-bazel/src/ssl/ssl_test.cc \
 
 BORINGSSL_SSL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SSL_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CXXFLAGS)
 $(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
@@ -20630,18 +20890,18 @@ $(BINDIR)/$(CONFIG)/boringssl_ssl_test: $(PROTOBUF_DEP) $(BORINGSSL_SSL_TEST_OBJ
 
 endif
 
-$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS += -fno-exceptions
 $(BORINGSSL_SSL_TEST_OBJS): CFLAGS += -g
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/abi_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/abi_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/ssl/span_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/ssl/span_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/ssl/ssl_c_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/ssl/ssl_c_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/ssl/ssl_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/ssl/ssl_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 deps_boringssl_ssl_test: $(BORINGSSL_SSL_TEST_OBJS:.o=.dep)
 
@@ -20651,75 +20911,75 @@ endif
 
 
 BORINGSSL_CRYPTO_TEST_SRC = \
-    src/boringssl/crypto_test_data.cc \
-    third_party/boringssl/crypto/abi_self_test.cc \
-    third_party/boringssl/crypto/asn1/asn1_test.cc \
-    third_party/boringssl/crypto/base64/base64_test.cc \
-    third_party/boringssl/crypto/bio/bio_test.cc \
-    third_party/boringssl/crypto/buf/buf_test.cc \
-    third_party/boringssl/crypto/bytestring/bytestring_test.cc \
-    third_party/boringssl/crypto/chacha/chacha_test.cc \
-    third_party/boringssl/crypto/cipher_extra/aead_test.cc \
-    third_party/boringssl/crypto/cipher_extra/cipher_test.cc \
-    third_party/boringssl/crypto/cmac/cmac_test.cc \
-    third_party/boringssl/crypto/compiler_test.cc \
-    third_party/boringssl/crypto/constant_time_test.cc \
-    third_party/boringssl/crypto/cpu-arm-linux_test.cc \
-    third_party/boringssl/crypto/curve25519/ed25519_test.cc \
-    third_party/boringssl/crypto/curve25519/spake25519_test.cc \
-    third_party/boringssl/crypto/curve25519/x25519_test.cc \
-    third_party/boringssl/crypto/dh/dh_test.cc \
-    third_party/boringssl/crypto/digest_extra/digest_test.cc \
-    third_party/boringssl/crypto/dsa/dsa_test.cc \
-    third_party/boringssl/crypto/ecdh_extra/ecdh_test.cc \
-    third_party/boringssl/crypto/err/err_test.cc \
-    third_party/boringssl/crypto/evp/evp_extra_test.cc \
-    third_party/boringssl/crypto/evp/evp_test.cc \
-    third_party/boringssl/crypto/evp/pbkdf_test.cc \
-    third_party/boringssl/crypto/evp/scrypt_test.cc \
-    third_party/boringssl/crypto/fipsmodule/aes/aes_test.cc \
-    third_party/boringssl/crypto/fipsmodule/bn/bn_test.cc \
-    third_party/boringssl/crypto/fipsmodule/ec/ec_test.cc \
-    third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64_test.cc \
-    third_party/boringssl/crypto/fipsmodule/ecdsa/ecdsa_test.cc \
-    third_party/boringssl/crypto/fipsmodule/md5/md5_test.cc \
-    third_party/boringssl/crypto/fipsmodule/modes/gcm_test.cc \
-    third_party/boringssl/crypto/fipsmodule/rand/ctrdrbg_test.cc \
-    third_party/boringssl/crypto/fipsmodule/sha/sha_test.cc \
-    third_party/boringssl/crypto/hkdf/hkdf_test.cc \
-    third_party/boringssl/crypto/hmac_extra/hmac_test.cc \
-    third_party/boringssl/crypto/hrss/hrss_test.cc \
-    third_party/boringssl/crypto/impl_dispatch_test.cc \
-    third_party/boringssl/crypto/lhash/lhash_test.cc \
-    third_party/boringssl/crypto/obj/obj_test.cc \
-    third_party/boringssl/crypto/pem/pem_test.cc \
-    third_party/boringssl/crypto/pkcs7/pkcs7_test.cc \
-    third_party/boringssl/crypto/pkcs8/pkcs12_test.cc \
-    third_party/boringssl/crypto/pkcs8/pkcs8_test.cc \
-    third_party/boringssl/crypto/poly1305/poly1305_test.cc \
-    third_party/boringssl/crypto/pool/pool_test.cc \
-    third_party/boringssl/crypto/rand_extra/rand_test.cc \
-    third_party/boringssl/crypto/refcount_test.cc \
-    third_party/boringssl/crypto/rsa_extra/rsa_test.cc \
-    third_party/boringssl/crypto/self_test.cc \
-    third_party/boringssl/crypto/siphash/siphash_test.cc \
-    third_party/boringssl/crypto/stack/stack_test.cc \
-    third_party/boringssl/crypto/test/abi_test.cc \
-    third_party/boringssl/crypto/test/file_test_gtest.cc \
-    third_party/boringssl/crypto/test/gtest_main.cc \
-    third_party/boringssl/crypto/thread_test.cc \
-    third_party/boringssl/crypto/x509/x509_test.cc \
-    third_party/boringssl/crypto/x509/x509_time_test.cc \
-    third_party/boringssl/crypto/x509v3/tab_test.cc \
-    third_party/boringssl/crypto/x509v3/v3name_test.cc \
+    third_party/boringssl-with-bazel/crypto_test_data.cc \
+    third_party/boringssl-with-bazel/src/crypto/abi_self_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/base64/base64_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/buf/buf_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/bytestring_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/chacha/chacha_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/aead_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/cmac/cmac_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/compiler_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/constant_time_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/ed25519_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/x25519_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh/dh_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/err/err_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_extra_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/scrypt_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/aes_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bn/bn_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/ec_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/p256-x86_64_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/ecdsa/ecdsa_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/md5/md5_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/modes/gcm_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/rand/ctrdrbg_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/sha_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/hmac_extra/hmac_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/hrss/hrss_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/impl_dispatch_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/lhash/lhash_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs12_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/pool/pool_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/refcount_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/self_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/siphash/siphash_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/stack/stack_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/abi_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/file_test_gtest.cc \
+    third_party/boringssl-with-bazel/src/crypto/test/gtest_main.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_time_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/tab_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509v3/v3name_test.cc \
 
 BORINGSSL_CRYPTO_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CRYPTO_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_CRYPTO_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_CRYPTO_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CRYPTO_TEST_OBJS): CFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CRYPTO_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CXXFLAGS)
 $(BORINGSSL_CRYPTO_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
@@ -20738,130 +20998,130 @@ $(BINDIR)/$(CONFIG)/boringssl_crypto_test: $(PROTOBUF_DEP) $(BORINGSSL_CRYPTO_TE
 
 endif
 
-$(BORINGSSL_CRYPTO_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CRYPTO_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(BORINGSSL_CRYPTO_TEST_OBJS): CXXFLAGS += -fno-exceptions
 $(BORINGSSL_CRYPTO_TEST_OBJS): CFLAGS += -g
-$(OBJDIR)/$(CONFIG)/src/boringssl/crypto_test_data.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/crypto_test_data.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/abi_self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/abi_self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/asn1/asn1_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/asn1/asn1_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/base64/base64_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/base64/base64_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/bio/bio_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/bio/bio_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/buf/buf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/buf/buf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/bytestring/bytestring_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/bytestring/bytestring_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/chacha/chacha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/chacha/chacha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/cipher_extra/aead_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/cipher_extra/aead_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/cipher_extra/cipher_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/cmac/cmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/cmac/cmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/compiler_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/compiler_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/constant_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/constant_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/cpu-arm-linux_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/curve25519/ed25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/curve25519/ed25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/curve25519/spake25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/curve25519/x25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/curve25519/x25519_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/dh/dh_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/dh/dh_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/digest_extra/digest_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/dsa/dsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/dsa/dsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/ecdh_extra/ecdh_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/err/err_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/err/err_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/evp/evp_extra_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/evp/evp_extra_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/evp/evp_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/evp/evp_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/evp/pbkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/evp/pbkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/evp/scrypt_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/evp/scrypt_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/aes/aes_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/aes/aes_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/bn/bn_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/bn/bn_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/ec/ec_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/ec_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/p256-x86_64_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/ecdsa/ecdsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/ecdsa/ecdsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/md5/md5_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/md5/md5_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/modes/gcm_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/modes/gcm_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/rand/ctrdrbg_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/rand/ctrdrbg_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/fipsmodule/sha/sha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/sha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/hkdf/hkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/hmac_extra/hmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hmac_extra/hmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/hrss/hrss_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hrss/hrss_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/impl_dispatch_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/impl_dispatch_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/lhash/lhash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/lhash/lhash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/obj/obj_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/obj/obj_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pem/pem_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pem/pem_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pkcs7/pkcs7_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pkcs8/pkcs12_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs12_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pkcs8/pkcs8_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/poly1305/poly1305_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/pool/pool_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/pool/pool_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/rand_extra/rand_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/refcount_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/refcount_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/rsa_extra/rsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/siphash/siphash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/siphash/siphash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/stack/stack_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/stack/stack_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/abi_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/abi_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/file_test_gtest.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/file_test_gtest.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/thread_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/thread_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509/x509_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509/x509_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509/x509_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509/x509_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509v3/tab_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509v3/tab_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
-$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509v3/v3name_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509v3/v3name_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 deps_boringssl_crypto_test: $(BORINGSSL_CRYPTO_TEST_OBJS:.o=.dep)
 
@@ -23216,6 +23476,8 @@ src/core/tsi/ssl_transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/transport_security_grpc.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
+src/cpp/common/alts_context.cc: $(OPENSSL_DEP)
+src/cpp/common/alts_util.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_channel_arguments.cc: $(OPENSSL_DEP)
@@ -23230,7 +23492,6 @@ src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/util/core_stats.cc: $(OPENSSL_DEP)
 src/cpp/util/error_details.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
-src/csharp/ext/std++compat.cc: $(OPENSSL_DEP)
 test/core/bad_client/bad_client.cc: $(OPENSSL_DEP)
 test/core/bad_ssl/server_common.cc: $(OPENSSL_DEP)
 test/core/end2end/data/client_certs.cc: $(OPENSSL_DEP)
@@ -23238,6 +23499,7 @@ test/core/end2end/data/server1_cert.cc: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.cc: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.cc: $(OPENSSL_DEP)
 test/core/end2end/end2end_tests.cc: $(OPENSSL_DEP)
+test/core/end2end/engine_passthrough.cc: $(OPENSSL_DEP)
 test/core/end2end/tests/call_creds.cc: $(OPENSSL_DEP)
 test/core/security/oauth2_utils.cc: $(OPENSSL_DEP)
 test/core/tsi/alts/crypt/gsec_test_util.cc: $(OPENSSL_DEP)
@@ -23282,6 +23544,34 @@ test/cpp/util/string_ref_helper.cc: $(OPENSSL_DEP)
 test/cpp/util/subprocess.cc: $(OPENSSL_DEP)
 test/cpp/util/test_config_cc.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/dynamic_annotations.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/internal/cycleclock.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/internal/raw_logging.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/internal/spinlock.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/internal/sysinfo.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/internal/thread_identity.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/internal/throw_delegate.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/base/log_severity.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/numeric/int128.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/ascii.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/charconv.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/escaping.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/internal/escaping.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/internal/memutil.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/internal/ostringstream.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/internal/utf8.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/match.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/numbers.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/str_cat.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/str_replace.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/str_split.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/string_view.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/strings/substitute.cc: $(OPENSSL_DEP)
+third_party/abseil-cpp/absl/types/bad_optional_access.cc: $(OPENSSL_DEP)
 third_party/upb/upb/decode.c: $(OPENSSL_DEP)
 third_party/upb/upb/encode.c: $(OPENSSL_DEP)
 third_party/upb/upb/msg.c: $(OPENSSL_DEP)

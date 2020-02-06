@@ -13,8 +13,6 @@
 # limitations under the License.
 
 
-import threading
-
 # No-op implementations for Windows.
 
 def fork_handlers_and_grpc_init():

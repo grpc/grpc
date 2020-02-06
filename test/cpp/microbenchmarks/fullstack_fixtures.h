@@ -62,15 +62,6 @@ class FixtureConfiguration {
 
 class BaseFixture : public TrackCounters {};
 
-// Special tag to be used in Server shutdown. This tag is *NEVER* returned when
-// Cq->Next() API is called (This is because FinalizeResult() function in this
-// class always returns 'false'). This is intentional and makes writing shutdown
-// code easier.
-class ShutdownTag : public internal::CompletionQueueTag {
- public:
-  bool FinalizeResult(void** /*tag*/, bool* /*status*/) { return false; }
-};
-
 class FullstackFixture : public BaseFixture {
  public:
   FullstackFixture(Service* service, const FixtureConfiguration& config,
@@ -94,11 +85,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   virtual ~FullstackFixture() {
-    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
-    // returned to the user) see ShutdownTag definition for more details
-    ShutdownTag shutdown_tag;
-    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
-                                    &shutdown_tag);
+    server_->Shutdown();
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -226,11 +213,7 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   virtual ~EndpointPairFixture() {
-    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
-    // returned to the user) see ShutdownTag definition for more details
-    ShutdownTag shutdown_tag;
-    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
-                                    &shutdown_tag);
+    server_->Shutdown();
     cq_->Shutdown();
     void* tag;
     bool ok;

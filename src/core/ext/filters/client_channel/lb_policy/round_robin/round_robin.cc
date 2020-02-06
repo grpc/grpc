@@ -321,13 +321,13 @@ void RoundRobin::RoundRobinSubchannelList::
    */
   if (num_ready_ > 0) {
     /* 1) READY */
-    p->channel_control_helper()->UpdateState(GRPC_CHANNEL_READY,
-                                             MakeUnique<Picker>(p, this));
+    p->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY, grpc_core::MakeUnique<Picker>(p, this));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING,
-        MakeUnique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+        GRPC_CHANNEL_CONNECTING, grpc_core::MakeUnique<QueuePicker>(
+                                     p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
     grpc_error* error =
@@ -336,7 +336,7 @@ void RoundRobin::RoundRobinSubchannelList::
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        MakeUnique<TransientFailurePicker>(error));
+        grpc_core::MakeUnique<TransientFailurePicker>(error));
   }
 }
 
@@ -453,7 +453,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        MakeUnique<TransientFailurePicker>(error));
+        grpc_core::MakeUnique<TransientFailurePicker>(error));
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {
     // If there is no current list, immediately promote the new list to
@@ -467,7 +467,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   }
 }
 
-class ParsedRoundRobinConfig : public LoadBalancingPolicy::Config {
+class RoundRobinConfig : public LoadBalancingPolicy::Config {
  public:
   const char* name() const override { return kRoundRobin; }
 };
@@ -486,12 +486,8 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kRoundRobin; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** /*error*/) const override {
-    if (json != nullptr) {
-      GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-    }
-    return RefCountedPtr<LoadBalancingPolicy::Config>(
-        new ParsedRoundRobinConfig());
+      const Json& /*json*/, grpc_error** /*error*/) const override {
+    return MakeRefCounted<RoundRobinConfig>();
   }
 };
 

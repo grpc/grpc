@@ -16,16 +16,13 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
-#include <stdio.h>
-#include <string.h>
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
 #include <grpc/support/string_util.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -37,6 +34,7 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -193,6 +191,7 @@ static int server_cred_reload_sync(void* /*config_user_data*/,
 static grpc_channel_credentials* create_tls_channel_credentials(
     fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   /* Set credential reload config. */
   grpc_tls_credential_reload_config* reload_config =
       grpc_tls_credential_reload_config_create(nullptr, client_cred_reload_sync,
@@ -278,7 +277,7 @@ int main(int argc, char** argv) {
   FILE* roots_file;
   size_t roots_size = strlen(test_root_cert);
   char* roots_filename;
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
   /* Set the SSL roots env var. */
   roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);

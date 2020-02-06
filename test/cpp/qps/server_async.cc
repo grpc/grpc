@@ -162,7 +162,10 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
     }
-    std::thread shutdown_thread(&AsyncQpsServerTest::ShutdownThreadFunc, this);
+    // TODO(vjpai): Remove the following deadline and allow full proper
+    // shutdown.
+    server_->Shutdown(std::chrono::system_clock::now() +
+                      std::chrono::seconds(3));
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
       (*cq)->Shutdown();
     }
@@ -175,7 +178,6 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       while ((*cq)->Next(&got_tag, &ok))
         ;
     }
-    shutdown_thread.join();
   }
 
   int GetPollCount() override {
@@ -192,12 +194,6 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
   }
 
  private:
-  void ShutdownThreadFunc() {
-    // TODO (vpai): Remove this deadline and allow Shutdown to finish properly
-    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(3);
-    server_->Shutdown(deadline);
-  }
-
   void ThreadFunc(int thread_idx) {
     // Wait until work is available or we are shutting down
     bool ok;

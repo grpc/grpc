@@ -41,8 +41,9 @@ class Preprocess(setuptools.Command):
         if os.path.isfile(STATUS_PROTO):
             if not os.path.isdir(PACKAGE_STATUS_PROTO_PATH):
                 os.makedirs(PACKAGE_STATUS_PROTO_PATH)
-            shutil.copyfile(STATUS_PROTO,
-                            os.path.join(ROOT_DIR, PACKAGE_STATUS_PROTO_PATH,
-                                         'status.proto'))
+            shutil.copyfile(
+                STATUS_PROTO,
+                os.path.join(ROOT_DIR, PACKAGE_STATUS_PROTO_PATH,
+                             'status.proto'))
         if os.path.isfile(LICENSE):
             shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))

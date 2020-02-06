@@ -16,7 +16,10 @@
 
 licenses(["notice"])
 
-exports_files(["LICENSE"])
+exports_files([
+    "LICENSE",
+    "etc/roots.pem",
+])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -70,8 +73,8 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_use_absl",
-    values = {"define": "GRPC_USE_ABSL=1"},
+    name = "grpc_disable_absl",
+    values = {"define": "GRPC_USE_ABSL=0"},
 )
 
 python_config_settings()
@@ -429,6 +432,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_alts",
+    srcs = [
+        "src/cpp/common/alts_context.cc",
+        "src/cpp/common/alts_util.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/security/alts_context.h",
+        "include/grpcpp/security/alts_util.h",
+    ],
+    language = "c++",
+    standalone = True,
+    deps = [
+        "alts_upb",
+        "alts_util",
+        "grpc++",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_csharp_ext",
     srcs = [
         "src/csharp/ext/grpc_csharp_ext.c",
@@ -541,6 +563,9 @@ grpc_cc_library(
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
@@ -595,6 +620,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "inlined_vector",
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/gprpp/inlined_vector.h",
@@ -612,6 +640,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "optional",
+    external_deps = [
+        "absl/types:optional",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/gprpp/optional.h",
@@ -721,7 +752,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
-        "src/core/lib/iomgr/logical_thread.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -773,9 +803,12 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
+        "src/core/lib/iomgr/work_serializer.cc",
         "src/core/lib/json/json.cc",
         "src/core/lib/json/json_reader.cc",
+        "src/core/lib/json/json_reader_new.cc",
         "src/core/lib/json/json_writer.cc",
+        "src/core/lib/json/json_writer_new.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice.cc",
@@ -873,7 +906,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
-        "src/core/lib/iomgr/logical_thread.h",
         "src/core/lib/iomgr/nameser.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
@@ -916,6 +948,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
+        "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/json/json.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
@@ -2372,8 +2405,19 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/lds.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/rds.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/srds.upb.c",
+        "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c",
+        "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c",
+        "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/string.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
@@ -2385,8 +2429,19 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/lds.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/rds.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/route/route.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/srds.upb.h",
+        "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h",
+        "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h",
+        "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.h",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/string.upb.h",
     ],
     external_deps = [
         "upb_lib",

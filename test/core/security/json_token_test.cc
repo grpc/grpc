@@ -32,6 +32,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
+using grpc_core::Json;
+
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.
    Maximum size for a string literal is 509 chars in C89, yay!  */
@@ -205,122 +207,78 @@ static void test_parse_json_key_failure_no_private_key(void) {
   grpc_auth_json_key_destruct(&json_key);
 }
 
-static grpc_json* parse_json_part_from_jwt(const char* str, size_t len,
-                                           char** scratchpad) {
+static Json parse_json_part_from_jwt(const char* str, size_t len) {
   grpc_core::ExecCtx exec_ctx;
-  char* b64;
-  char* decoded;
-  grpc_json* json;
-  grpc_slice slice;
-  b64 = static_cast<char*>(gpr_malloc(len + 1));
+  char* b64 = static_cast<char*>(gpr_malloc(len + 1));
   strncpy(b64, str, len);
   b64[len] = '\0';
-  slice = grpc_base64_decode(b64, 1);
-  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(slice));
-  decoded = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1));
-  strncpy(decoded, reinterpret_cast<const char*> GRPC_SLICE_START_PTR(slice),
-          GRPC_SLICE_LENGTH(slice));
-  decoded[GRPC_SLICE_LENGTH(slice)] = '\0';
-  json = grpc_json_parse_string(decoded);
+  grpc_slice slice = grpc_base64_decode(b64, 1);
   gpr_free(b64);
-  *scratchpad = decoded;
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(slice));
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::StringView string(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+      GRPC_SLICE_LENGTH(slice));
+  Json json = Json::Parse(string, &error);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+    GRPC_ERROR_UNREF(error);
+  }
   grpc_slice_unref(slice);
-
   return json;
 }
 
-static void check_jwt_header(grpc_json* header) {
-  grpc_json* ptr;
-  grpc_json* alg = nullptr;
-  grpc_json* typ = nullptr;
-  grpc_json* kid = nullptr;
-
-  for (ptr = header->child; ptr; ptr = ptr->next) {
-    if (strcmp(ptr->key, "alg") == 0) {
-      alg = ptr;
-    } else if (strcmp(ptr->key, "typ") == 0) {
-      typ = ptr;
-    } else if (strcmp(ptr->key, "kid") == 0) {
-      kid = ptr;
-    }
-  }
-  GPR_ASSERT(alg != nullptr);
-  GPR_ASSERT(alg->type == GRPC_JSON_STRING);
-  GPR_ASSERT(strcmp(alg->value, "RS256") == 0);
-
-  GPR_ASSERT(typ != nullptr);
-  GPR_ASSERT(typ->type == GRPC_JSON_STRING);
-  GPR_ASSERT(strcmp(typ->value, "JWT") == 0);
-
-  GPR_ASSERT(kid != nullptr);
-  GPR_ASSERT(kid->type == GRPC_JSON_STRING);
-  GPR_ASSERT(strcmp(kid->value, "e6b5137873db8d2ef81e06a47289e6434ec8a165") ==
-             0);
+static void check_jwt_header(const Json& header) {
+  Json::Object object = header.object_value();
+  Json value = object["alg"];
+  GPR_ASSERT(value.type() == Json::Type::STRING);
+  GPR_ASSERT(strcmp(value.string_value().c_str(), "RS256") == 0);
+  value = object["typ"];
+  GPR_ASSERT(value.type() == Json::Type::STRING);
+  GPR_ASSERT(strcmp(value.string_value().c_str(), "JWT") == 0);
+  value = object["kid"];
+  GPR_ASSERT(value.type() == Json::Type::STRING);
+  GPR_ASSERT(strcmp(value.string_value().c_str(),
+                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
 }
 
-static void check_jwt_claim(grpc_json* claim, const char* expected_audience,
+static void check_jwt_claim(const Json& claim, const char* expected_audience,
                             const char* expected_scope) {
-  gpr_timespec expiration = gpr_time_0(GPR_CLOCK_REALTIME);
-  gpr_timespec issue_time = gpr_time_0(GPR_CLOCK_REALTIME);
-  gpr_timespec parsed_lifetime;
-  grpc_json* iss = nullptr;
-  grpc_json* scope = nullptr;
-  grpc_json* aud = nullptr;
-  grpc_json* exp = nullptr;
-  grpc_json* iat = nullptr;
-  grpc_json* sub = nullptr;
-  grpc_json* ptr;
+  Json::Object object = claim.object_value();
 
-  for (ptr = claim->child; ptr; ptr = ptr->next) {
-    if (strcmp(ptr->key, "iss") == 0) {
-      iss = ptr;
-    } else if (strcmp(ptr->key, "sub") == 0) {
-      sub = ptr;
-    } else if (strcmp(ptr->key, "scope") == 0) {
-      scope = ptr;
-    } else if (strcmp(ptr->key, "aud") == 0) {
-      aud = ptr;
-    } else if (strcmp(ptr->key, "exp") == 0) {
-      exp = ptr;
-    } else if (strcmp(ptr->key, "iat") == 0) {
-      iat = ptr;
-    }
-  }
-
-  GPR_ASSERT(iss != nullptr);
-  GPR_ASSERT(iss->type == GRPC_JSON_STRING);
-  GPR_ASSERT(
-      strcmp(
-          iss->value,
-          "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com") ==
-      0);
+  Json value = object["iss"];
+  GPR_ASSERT(value.type() == Json::Type::STRING);
+  GPR_ASSERT(value.string_value() ==
+             "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com");
 
   if (expected_scope != nullptr) {
-    GPR_ASSERT(scope != nullptr);
-    GPR_ASSERT(sub == nullptr);
-    GPR_ASSERT(scope->type == GRPC_JSON_STRING);
-    GPR_ASSERT(strcmp(scope->value, expected_scope) == 0);
+    GPR_ASSERT(object.find("sub") == object.end());
+    value = object["scope"];
+    GPR_ASSERT(value.type() == Json::Type::STRING);
+    GPR_ASSERT(value.string_value() == expected_scope);
   } else {
     /* Claims without scope must have a sub. */
-    GPR_ASSERT(scope == nullptr);
-    GPR_ASSERT(sub != nullptr);
-    GPR_ASSERT(sub->type == GRPC_JSON_STRING);
-    GPR_ASSERT(strcmp(iss->value, sub->value) == 0);
+    GPR_ASSERT(object.find("scope") == object.end());
+    value = object["sub"];
+    GPR_ASSERT(value.type() == Json::Type::STRING);
+    GPR_ASSERT(value.string_value() == object["iss"].string_value());
   }
 
-  GPR_ASSERT(aud != nullptr);
-  GPR_ASSERT(aud->type == GRPC_JSON_STRING);
-  GPR_ASSERT(strcmp(aud->value, expected_audience) == 0);
+  value = object["aud"];
+  GPR_ASSERT(value.type() == Json::Type::STRING);
+  GPR_ASSERT(value.string_value() == expected_audience);
 
-  GPR_ASSERT(exp != nullptr);
-  GPR_ASSERT(exp->type == GRPC_JSON_NUMBER);
-  expiration.tv_sec = strtol(exp->value, nullptr, 10);
+  gpr_timespec expiration = gpr_time_0(GPR_CLOCK_REALTIME);
+  value = object["exp"];
+  GPR_ASSERT(value.type() == Json::Type::NUMBER);
+  expiration.tv_sec = strtol(value.string_value().c_str(), nullptr, 10);
 
-  GPR_ASSERT(iat != nullptr);
-  GPR_ASSERT(iat->type == GRPC_JSON_NUMBER);
-  issue_time.tv_sec = strtol(iat->value, nullptr, 10);
+  gpr_timespec issue_time = gpr_time_0(GPR_CLOCK_REALTIME);
+  value = object["iat"];
+  GPR_ASSERT(value.type() == Json::Type::NUMBER);
+  issue_time.tv_sec = strtol(value.string_value().c_str(), nullptr, 10);
 
-  parsed_lifetime = gpr_time_sub(expiration, issue_time);
+  gpr_timespec parsed_lifetime = gpr_time_sub(expiration, issue_time);
   GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime().tv_sec);
 }
 
@@ -363,21 +321,18 @@ static char* jwt_creds_jwt_encode_and_sign(const grpc_auth_json_key* key) {
                                   grpc_max_auth_token_lifetime(), nullptr);
 }
 
-static void service_account_creds_check_jwt_claim(grpc_json* claim) {
+static void service_account_creds_check_jwt_claim(const Json& claim) {
   check_jwt_claim(claim, GRPC_JWT_OAUTH2_AUDIENCE, test_scope);
 }
 
-static void jwt_creds_check_jwt_claim(grpc_json* claim) {
+static void jwt_creds_check_jwt_claim(const Json& claim) {
   check_jwt_claim(claim, test_service_url, nullptr);
 }
 
 static void test_jwt_encode_and_sign(
     char* (*jwt_encode_and_sign_func)(const grpc_auth_json_key*),
-    void (*check_jwt_claim_func)(grpc_json*)) {
+    void (*check_jwt_claim_func)(const Json&)) {
   char* json_string = test_json_key_str(nullptr);
-  grpc_json* parsed_header = nullptr;
-  grpc_json* parsed_claim = nullptr;
-  char* scratchpad;
   grpc_auth_json_key json_key =
       grpc_auth_json_key_create_from_string(json_string);
   const char* b64_signature;
@@ -385,23 +340,19 @@ static void test_jwt_encode_and_sign(
   char* jwt = jwt_encode_and_sign_func(&json_key);
   const char* dot = strchr(jwt, '.');
   GPR_ASSERT(dot != nullptr);
-  parsed_header = parse_json_part_from_jwt(jwt, static_cast<size_t>(dot - jwt),
-                                           &scratchpad);
-  GPR_ASSERT(parsed_header != nullptr);
+  Json parsed_header =
+      parse_json_part_from_jwt(jwt, static_cast<size_t>(dot - jwt));
+  GPR_ASSERT(parsed_header.type() == Json::Type::OBJECT);
   check_jwt_header(parsed_header);
   offset = static_cast<size_t>(dot - jwt) + 1;
-  grpc_json_destroy(parsed_header);
-  gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot != nullptr);
-  parsed_claim = parse_json_part_from_jwt(
-      jwt + offset, static_cast<size_t>(dot - (jwt + offset)), &scratchpad);
-  GPR_ASSERT(parsed_claim != nullptr);
+  Json parsed_claim = parse_json_part_from_jwt(
+      jwt + offset, static_cast<size_t>(dot - (jwt + offset)));
+  GPR_ASSERT(parsed_claim.type() == Json::Type::OBJECT);
   check_jwt_claim_func(parsed_claim);
   offset = static_cast<size_t>(dot - jwt) + 1;
-  grpc_json_destroy(parsed_claim);
-  gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot == nullptr); /* no more part. */

@@ -29,12 +29,14 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+#include "test/core/util/test_config.h"
 
 #define ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES "Hello World"
 #define ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME "Hello Google"
 #define ALTS_TSI_HANDSHAKER_TEST_CONSUMED_BYTES "Hello "
 #define ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES "Google"
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY "chapi@service.google.com"
+#define ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL "TSI_PRIVACY_AND_INTEGRITY"
 #define ALTS_TSI_HANDSHAKER_TEST_KEY_DATA \
   "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOPABCDEFGHIJKL"
 #define ALTS_TSI_HANDSHAKER_TEST_BUFFER_SIZE 100
@@ -309,6 +311,10 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  /* Validate security level. */
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+                    peer.properties[4].value.data,
+                    peer.properties[4].value.length) == 0);
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
@@ -365,6 +371,11 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  /* Check security level. */
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+                    peer.properties[4].value.data,
+                    peer.properties[4].value.length) == 0);
+
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
@@ -956,7 +967,8 @@ void check_handshaker_success() {
   notification_destroy(&tsi_to_caller_notification);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();

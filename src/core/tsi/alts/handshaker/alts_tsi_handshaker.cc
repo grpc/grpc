@@ -86,7 +86,7 @@ static tsi_result handshaker_result_extract_peer(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
-  GPR_ASSERT(kTsiAltsNumOfPeerProperties == 4);
+  GPR_ASSERT(kTsiAltsNumOfPeerProperties == 5);
   tsi_result ok = tsi_construct_peer(kTsiAltsNumOfPeerProperties, peer);
   int index = 0;
   if (ok != TSI_OK) {
@@ -127,6 +127,16 @@ static tsi_result handshaker_result_extract_peer(
       TSI_ALTS_CONTEXT,
       reinterpret_cast<char*>(GRPC_SLICE_START_PTR(result->serialized_context)),
       GRPC_SLICE_LENGTH(result->serialized_context), &peer->properties[index]);
+  if (ok != TSI_OK) {
+    tsi_peer_destruct(peer);
+    gpr_log(GPR_ERROR, "Failed to set tsi peer property");
+  }
+  index++;
+  GPR_ASSERT(&peer->properties[index] != nullptr);
+  ok = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+      &peer->properties[index]);
   if (ok != TSI_OK) {
     tsi_peer_destruct(peer);
     gpr_log(GPR_ERROR, "Failed to set tsi peer property");

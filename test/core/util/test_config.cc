@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -398,7 +399,21 @@ TestEnvironment::TestEnvironment(int argc, char** argv) {
   grpc_test_init(argc, argv);
 }
 
-TestEnvironment::~TestEnvironment() { grpc_maybe_wait_for_async_shutdown(); }
+TestEnvironment::~TestEnvironment() {
+  // This will wait until gRPC shutdown has actually happened to make sure
+  // no gRPC resources (such as thread) are active. (timeout = 10s)
+  gpr_timespec timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                      gpr_time_from_seconds(10, GPR_TIMESPAN));
+  while (grpc_is_initialized()) {
+    grpc_maybe_wait_for_async_shutdown();
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_millis(1, GPR_TIMESPAN)));
+    if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), timeout) > 0) {
+      gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+      break;
+    }
+  }
+}
 
 }  // namespace testing
 }  // namespace grpc
