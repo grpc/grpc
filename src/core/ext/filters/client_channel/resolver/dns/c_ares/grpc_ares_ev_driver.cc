@@ -65,8 +65,8 @@ struct grpc_ares_ev_driver {
   /** refcount of the event driver */
   gpr_refcount refs;
 
-  /** logical_thread to synchronize c-ares and I/O callbacks on */
-  grpc_core::RefCountedPtr<grpc_core::LogicalThread> logical_thread;
+  /** work_serializer to synchronize c-ares and I/O callbacks on */
+  std::shared_ptr<grpc_core::WorkSerializer> work_serializer;
   /** a list of grpc_fd that this event driver is currently using. */
   fd_node* fds;
   /** is this event driver currently working? */
@@ -145,7 +145,7 @@ void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
 grpc_error* grpc_ares_ev_driver_create_locked(
     grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
     int query_timeout_ms,
-    grpc_core::RefCountedPtr<grpc_core::LogicalThread> logical_thread,
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
     grpc_ares_request* request) {
   *ev_driver = new grpc_ares_ev_driver();
   ares_options opts;
@@ -163,7 +163,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(
     gpr_free(*ev_driver);
     return err;
   }
-  (*ev_driver)->logical_thread = std::move(logical_thread);
+  (*ev_driver)->work_serializer = std::move(work_serializer);
   gpr_ref_init(&(*ev_driver)->refs, 1);
   (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = nullptr;
@@ -171,7 +171,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(
   (*ev_driver)->shutting_down = false;
   (*ev_driver)->request = request;
   (*ev_driver)->polled_fd_factory =
-      grpc_core::NewGrpcPolledFdFactory((*ev_driver)->logical_thread);
+      grpc_core::NewGrpcPolledFdFactory((*ev_driver)->work_serializer);
   (*ev_driver)
       ->polled_fd_factory->ConfigureAresChannelLocked((*ev_driver)->channel);
   (*ev_driver)->query_timeout_ms = query_timeout_ms;
@@ -234,7 +234,7 @@ static grpc_millis calculate_next_ares_backup_poll_alarm_ms(
 static void on_timeout(void* arg, grpc_error* error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  driver->logical_thread->Run(
+  driver->work_serializer->Run(
       [driver, error]() { on_timeout_locked(driver, error); }, DEBUG_LOCATION);
 }
 
@@ -253,7 +253,7 @@ static void on_timeout_locked(grpc_ares_ev_driver* driver, grpc_error* error) {
 static void on_ares_backup_poll_alarm(void* arg, grpc_error* error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
   GRPC_ERROR_REF(error);
-  driver->logical_thread->Run(
+  driver->work_serializer->Run(
       [driver, error]() { on_ares_backup_poll_alarm_locked(driver, error); },
       DEBUG_LOCATION);
 }
@@ -330,7 +330,7 @@ static void on_readable_locked(fd_node* fdn, grpc_error* error) {
 
 static void on_readable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
-  fdn->ev_driver->logical_thread->Run(
+  fdn->ev_driver->work_serializer->Run(
       [fdn, error]() { on_readable_locked(fdn, error); }, DEBUG_LOCATION);
 }
 
@@ -360,7 +360,7 @@ static void on_writable_locked(fd_node* fdn, grpc_error* error) {
 static void on_writable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   GRPC_ERROR_REF(error);
-  fdn->ev_driver->logical_thread->Run(
+  fdn->ev_driver->work_serializer->Run(
       [fdn, error]() { on_writable_locked(fdn, error); }, DEBUG_LOCATION);
 }
 
@@ -386,7 +386,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           fdn = static_cast<fd_node*>(gpr_malloc(sizeof(fd_node)));
           fdn->grpc_polled_fd =
               ev_driver->polled_fd_factory->NewGrpcPolledFdLocked(
-                  socks[i], ev_driver->pollset_set, ev_driver->logical_thread);
+                  socks[i], ev_driver->pollset_set, ev_driver->work_serializer);
           GRPC_CARES_TRACE_LOG("request:%p new fd: %s", ev_driver->request,
                                fdn->grpc_polled_fd->GetName());
           fdn->ev_driver = ev_driver;

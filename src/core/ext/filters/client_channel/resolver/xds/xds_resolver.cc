@@ -33,7 +33,7 @@ namespace {
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args)
-      : Resolver(args.logical_thread, std::move(args.result_handler)),
+      : Resolver(args.work_serializer, std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
     char* path = args.uri->path;
@@ -90,7 +90,7 @@ void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
   xds_client_ = MakeOrphanable<XdsClient>(
-      combiner(), interested_parties_, StringView(server_name_.get()),
+      work_serializer(), interested_parties_, StringView(server_name_.get()),
       grpc_core::MakeUnique<ServiceConfigWatcher>(Ref()), *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,

@@ -33,9 +33,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -97,7 +97,7 @@ class NativeDnsResolver : public Resolver {
 };
 
 NativeDnsResolver::NativeDnsResolver(ResolverArgs args)
-    : Resolver(args.logical_thread, std::move(args.result_handler)),
+    : Resolver(args.work_serializer, std::move(args.result_handler)),
       backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
@@ -150,8 +150,8 @@ void NativeDnsResolver::ShutdownLocked() {
 void NativeDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  r->logical_thread()->Run([r, error]() { r->OnNextResolutionLocked(error); },
-                           DEBUG_LOCATION);
+  r->work_serializer()->Run([r, error]() { r->OnNextResolutionLocked(error); },
+                            DEBUG_LOCATION);
 }
 
 void NativeDnsResolver::OnNextResolutionLocked(grpc_error* error) {
@@ -166,8 +166,8 @@ void NativeDnsResolver::OnNextResolutionLocked(grpc_error* error) {
 void NativeDnsResolver::OnResolved(void* arg, grpc_error* error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // owned by lambda
-  r->logical_thread()->Run([r, error]() { r->OnResolvedLocked(error); },
-                           DEBUG_LOCATION);
+  r->work_serializer()->Run([r, error]() { r->OnResolvedLocked(error); },
+                            DEBUG_LOCATION);
 }
 
 void NativeDnsResolver::OnResolvedLocked(grpc_error* error) {

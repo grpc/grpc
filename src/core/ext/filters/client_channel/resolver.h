@@ -28,7 +28,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/logical_thread.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
@@ -45,7 +45,7 @@ namespace grpc_core {
 /// DNS).
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
-/// logical_thread passed to the constructor.
+/// work_serializer passed to the constructor.
 class Resolver : public InternallyRefCounted<Resolver> {
  public:
   /// Results returned by the resolver.
@@ -115,29 +115,28 @@ class Resolver : public InternallyRefCounted<Resolver> {
   /// implementations.  At that point, this method can go away.
   virtual void ResetBackoffLocked() {}
 
-  // Note: This must be invoked while holding the logical_thread.
+  // Note: This must be invoked while holding the work_serializer.
   void Orphan() override {
     ShutdownLocked();
     Unref();
   }
 
  protected:
-  /// Does NOT take ownership of the reference to \a logical_thread.
-  explicit Resolver(RefCountedPtr<LogicalThread> logical_thread,
+  explicit Resolver(std::shared_ptr<WorkSerializer> work_serializer,
                     std::unique_ptr<ResultHandler> result_handler);
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;
 
-  RefCountedPtr<LogicalThread> logical_thread() const {
-    return logical_thread_;
+  std::shared_ptr<WorkSerializer> work_serializer() const {
+    return work_serializer_;
   }
 
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
   std::unique_ptr<ResultHandler> result_handler_;
-  RefCountedPtr<LogicalThread> logical_thread_;
+  std::shared_ptr<WorkSerializer> work_serializer_;
 };
 
 }  // namespace grpc_core

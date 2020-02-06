@@ -57,8 +57,8 @@
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -149,8 +149,8 @@ class ChannelData {
   RefCountedPtr<ServiceConfig> service_config() const {
     return service_config_;
   }
-  RefCountedPtr<LogicalThread> logical_thread() const {
-    return logical_thread_;
+  WorkSerializer* work_serializer() const {
+    return work_serializer_.get();
   }
 
   RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
@@ -164,10 +164,13 @@ class ChannelData {
                                       grpc_closure* watcher_timer_init) {
     auto* watcher = new ExternalConnectivityWatcher(
         this, pollent, state, on_complete, watcher_timer_init);
-    MutexLock lock(&external_watchers_mu_);
-    // Will be deleted when the watch is complete.
-    GPR_ASSERT(external_watchers_[on_complete] == nullptr);
-    external_watchers_[on_complete] = watcher;
+    {
+      MutexLock lock(&external_watchers_mu_);
+      // Will be deleted when the watch is complete.
+      GPR_ASSERT(external_watchers_[on_complete] == nullptr);
+      external_watchers_[on_complete] = watcher;
+    }
+    watcher->Start();
   }
 
   void RemoveExternalConnectivityWatcher(grpc_closure* on_complete,
@@ -207,6 +210,8 @@ class ChannelData {
                                 grpc_closure* watcher_timer_init);
 
     ~ExternalConnectivityWatcher();
+
+    void Start();
 
     void Notify(grpc_connectivity_state state) override;
 
@@ -283,9 +288,9 @@ class ChannelData {
   RefCountedPtr<ServiceConfig> service_config_;
 
   //
-  // Fields used in the control plane.  Guarded by logical_thread.
+  // Fields used in the control plane.  Guarded by work_serializer.
   //
-  RefCountedPtr<LogicalThread> logical_thread_;
+  std::shared_ptr<WorkSerializer> work_serializer_;
   grpc_pollset_set* interested_parties_;
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   OrphanablePtr<ResolvingLoadBalancingPolicy> resolving_lb_policy_;
@@ -297,10 +302,10 @@ class ChannelData {
   std::map<Subchannel*, int> subchannel_refcount_map_;
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
-  // logical_thread when the SubchannelWrappers are created and destroyed.
+  // work_serializer when the SubchannelWrappers are created and destroyed.
   std::set<SubchannelWrapper*> subchannel_wrappers_;
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
-  // Updates are queued here in the control plane logical_thread and then
+  // Updates are queued here in the control plane work_serializer and then
   // applied in the data plane mutex when the picker is updated.
   std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
            RefCountedPtrLess<SubchannelWrapper>>
@@ -308,7 +313,7 @@ class ChannelData {
 
   //
   // Fields accessed from both data plane mutex and control plane
-  // logical_thread.
+  // work_serializer.
   //
   Atomic<grpc_error*> disconnect_error_;
 
@@ -842,7 +847,7 @@ class CallData {
 // Note that no synchronization is needed here, because even if the
 // underlying subchannel is shared between channels, this wrapper will only
 // be used within one channel, so it will always be synchronized by the
-// control plane logical_thread.
+// control plane work_serializer.
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
   SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
@@ -968,7 +973,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     health_check_service_name_ = std::move(health_check_service_name);
   }
 
-  // Caller must be holding the control-plane logical_thread.
+  // Caller must be holding the control-plane work_serializer.
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
   }
@@ -1017,7 +1022,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
                 "subchannel %p (connected_subchannel=%p state=%s); "
-                "hopping into logical_thread",
+                "hopping into work_serializer",
                 parent_->chand_, parent_.get(), parent_->subchannel_,
                 connected_subchannel.get(), ConnectivityStateName(new_state));
       }
@@ -1050,7 +1055,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           : parent_(std::move(parent)),
             state_(new_state),
             connected_subchannel_(std::move(connected_subchannel)) {
-        parent_->parent_->chand_->logical_thread_->Run(
+        parent_->parent_->chand_->work_serializer_->Run(
             [this]() { ApplyUpdateInControlPlaneLogicalThread(); },
             DEBUG_LOCATION);
       }
@@ -1118,7 +1123,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   // CancelConnectivityStateWatch() with its watcher, we know the
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
-  // To be accessed only in the control plane logical_thread.
+  // To be accessed only in the control plane work_serializer.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   // To be accessed only in the data plane mutex.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_in_data_plane_;
@@ -1141,8 +1146,6 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
   grpc_polling_entity_add_to_pollset_set(&pollent_,
                                          chand_->interested_parties_);
   GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalConnectivityWatcher");
-  chand_->logical_thread_->Run([this]() { AddWatcherLocked(); },
-                               DEBUG_LOCATION);
 }
 
 ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
@@ -1150,6 +1153,11 @@ ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
                                            chand_->interested_parties_);
   GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_,
                            "ExternalConnectivityWatcher");
+}
+
+void ChannelData::ExternalConnectivityWatcher::Start() {
+  chand_->work_serializer_->Run([this]() { AddWatcherLocked(); },
+                                DEBUG_LOCATION);
 }
 
 void ChannelData::ExternalConnectivityWatcher::Notify(
@@ -1164,12 +1172,12 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   // Report new state to the user.
   *state_ = state;
   ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_NONE);
-  // Hop back into the logical_thread to clean up.
+  // Hop back into the work_serializer to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
   if (state != GRPC_CHANNEL_SHUTDOWN) {
-    chand_->logical_thread_->Run([this]() { RemoveWatcherLocked(); },
-                                 DEBUG_LOCATION);
+    chand_->work_serializer_->Run([this]() { RemoveWatcherLocked(); },
+                                  DEBUG_LOCATION);
   }
 }
 
@@ -1180,9 +1188,9 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
     return;  // Already done.
   }
   ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
-  // Hop back into the logical_thread to clean up.
-  chand_->logical_thread_->Run([this]() { RemoveWatcherLocked(); },
-                               DEBUG_LOCATION);
+  // Hop back into the work_serializer to clean up.
+  chand_->work_serializer_->Run([this]() { RemoveWatcherLocked(); },
+                                DEBUG_LOCATION);
 }
 
 void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked() {
@@ -1209,8 +1217,8 @@ class ChannelData::ConnectivityWatcherAdder {
         initial_state_(initial_state),
         watcher_(std::move(watcher)) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherAdder");
-    chand_->logical_thread_->Run([this]() { AddWatcherLocked(); },
-                                 DEBUG_LOCATION);
+    chand_->work_serializer_->Run([this]() { AddWatcherLocked(); },
+                                  DEBUG_LOCATION);
   }
 
  private:
@@ -1235,8 +1243,8 @@ class ChannelData::ConnectivityWatcherRemover {
                              AsyncConnectivityStateWatcherInterface* watcher)
       : chand_(chand), watcher_(watcher) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherRemover");
-    chand_->logical_thread_->Run([this]() { RemoveWatcherLocked(); },
-                                 DEBUG_LOCATION);
+    chand_->work_serializer_->Run([this]() { RemoveWatcherLocked(); },
+                                  DEBUG_LOCATION);
   }
 
  private:
@@ -1389,7 +1397,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
       channelz_node_(GetChannelzNode(args->channel_args)),
-      logical_thread_(MakeRefCounted<LogicalThread>()),
+      work_serializer_(std::make_shared<WorkSerializer>()),
       interested_parties_(grpc_pollset_set_create()),
       subchannel_pool_(GetSubchannelPool(args->channel_args)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
@@ -1563,7 +1571,7 @@ void ChannelData::UpdateServiceConfigLocked(
 void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   // Instantiate resolving LB policy.
   LoadBalancingPolicy::Args lb_args;
-  lb_args.combiner = combiner_;
+  lb_args.work_serializer = work_serializer_;
   lb_args.channel_control_helper =
       grpc_core::MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
@@ -1856,10 +1864,10 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   if (op->bind_pollset != nullptr) {
     grpc_pollset_set_add_pollset(chand->interested_parties_, op->bind_pollset);
   }
-  // Pop into control plane logical_thread for remaining ops.
+  // Pop into control plane work_serializer for remaining ops.
   op->handler_private.extra_arg = elem;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "start_transport_op");
-  chand->logical_thread_->Run(
+  chand->work_serializer_->Run(
       [op]() { ChannelData::StartTransportOpLocked(op); }, DEBUG_LOCATION);
 }
 
@@ -1925,7 +1933,7 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
   grpc_connectivity_state out = state_tracker_.state();
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(owning_stack_, "TryToConnect");
-    logical_thread_->Run([this]() { TryToConnectLocked(); }, DEBUG_LOCATION);
+    work_serializer_->Run([this]() { TryToConnectLocked(); }, DEBUG_LOCATION);
   }
   return out;
 }
@@ -3843,7 +3851,7 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         GRPC_CLOSURE_CREATE(
             [](void* arg, grpc_error* /*error*/) {
               auto* chand = static_cast<ChannelData*>(arg);
-              chand->logical_thread()->Run(
+              chand->work_serializer()->Run(
                   [chand]() {
                     chand->CheckConnectivityState(/*try_to_connect=*/true);
                   },

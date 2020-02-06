@@ -51,7 +51,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/logical_thread.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -192,7 +192,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_core::RefCountedPtr<grpc_core::LogicalThread> lock;
+  std::shared_ptr<WorkSerializer> lock;
   grpc_channel_args* channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;

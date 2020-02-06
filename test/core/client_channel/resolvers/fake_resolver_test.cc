@@ -28,7 +28,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/logical_thread.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
 #include "test/core/util/test_config.h"
@@ -63,7 +63,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 };
 
 static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
-    grpc_core::RefCountedPtr<grpc_core::LogicalThread> logical_thread,
+    std::shared_ptr<WorkSerializer> work_serializer,
     grpc_core::FakeResolverResponseGenerator* response_generator,
     std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
   grpc_core::ResolverFactory* factory =
@@ -74,7 +74,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
   grpc_channel_args channel_args = {1, &generator_arg};
   grpc_core::ResolverArgs args;
   args.args = &channel_args;
-  args.logical_thread = std::move(logical_thread);
+  args.work_serializer = std::move(work_serializer);
   args.result_handler = std::move(result_handler);
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -118,7 +118,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
 
 static void test_fake_resolver() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::RefCountedPtr<grpc_core::LogicalThread> logical_thread =
+  std::shared_ptr<WorkSerializer> work_serializer =
       grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
   // Create resolver.
   ResultHandler* result_handler = new ResultHandler();
@@ -126,7 +126,7 @@ static void test_fake_resolver() {
       response_generator =
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = build_fake_resolver(
-      logical_thread, response_generator.get(),
+      work_serializer, response_generator.get(),
       std::unique_ptr<grpc_core::Resolver::ResultHandler>(result_handler));
   GPR_ASSERT(resolver.get() != nullptr);
   resolver->StartLocked();

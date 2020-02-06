@@ -90,7 +90,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  public:
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      RefCountedPtr<LogicalThread> /*logical_thread*/) override {
+      std::shared_ptr<WorkSerializer> /*work_serializer*/) override {
     return new GrpcPolledFdPosix(as, driver_pollset_set);
   }
 
@@ -98,7 +98,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    RefCountedPtr<LogicalThread> /*logical_thread*/) {
+    std::shared_ptr<WorkSerializer> /*work_serializer*/) {
   return MakeUnique<GrpcPolledFdFactoryPosix>();
 }
 

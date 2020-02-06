@@ -130,7 +130,7 @@ class XdsPriorityListUpdate {
 };
 
 // There are two phases of accessing this class's content:
-// 1. to initialize in the control plane logical_thread;
+// 1. to initialize in the control plane work_serializer;
 // 2. to use in the data plane mutex.
 // So no additional synchronization is needed.
 class XdsDropConfig : public RefCounted<XdsDropConfig> {

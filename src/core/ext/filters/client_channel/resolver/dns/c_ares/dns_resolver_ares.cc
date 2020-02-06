@@ -42,9 +42,9 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
-#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -91,7 +91,7 @@ class AresDnsResolver : public Resolver {
   bool request_service_config_;
   /// pollset_set to drive the name resolution process
   grpc_pollset_set* interested_parties_;
-  /// closures used by the logical_thread
+  /// closures used by the work_serializer
   grpc_closure on_next_resolution_;
   grpc_closure on_resolved_;
   /// are we currently resolving?
@@ -120,7 +120,7 @@ class AresDnsResolver : public Resolver {
 };
 
 AresDnsResolver::AresDnsResolver(ResolverArgs args)
-    : Resolver(args.logical_thread, std::move(args.result_handler)),
+    : Resolver(args.work_serializer, std::move(args.result_handler)),
       backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
@@ -206,8 +206,8 @@ void AresDnsResolver::ShutdownLocked() {
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  r->logical_thread()->Run([r, error]() { r->OnNextResolutionLocked(error); },
-                           DEBUG_LOCATION);
+  r->work_serializer()->Run([r, error]() { r->OnNextResolutionLocked(error); },
+                            DEBUG_LOCATION);
 }
 
 void AresDnsResolver::OnNextResolutionLocked(grpc_error* error) {
@@ -318,8 +318,8 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  r->logical_thread()->Run([r, error]() { r->OnResolvedLocked(error); },
-                           DEBUG_LOCATION);
+  r->work_serializer()->Run([r, error]() { r->OnResolvedLocked(error); },
+                            DEBUG_LOCATION);
 }
 
 void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
@@ -334,15 +334,15 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
   }
   if (addresses_ != nullptr) {
     Result result;
-    result.addresses = std::move(*r->addresses_);
-    if (r->service_config_json_ != nullptr) {
+    result.addresses = std::move(*addresses_);
+    if (service_config_json_ != nullptr) {
       std::string service_config_string = ChooseServiceConfig(
-          r->service_config_json_, &result.service_config_error);
-      gpr_free(r->service_config_json_);
+          service_config_json_, &result.service_config_error);
+      gpr_free(service_config_json_);
       if (result.service_config_error == GRPC_ERROR_NONE &&
           !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
-                             r, service_config_string.c_str());
+                             this, service_config_string.c_str());
         result.service_config = ServiceConfig::Create(
             service_config_string, &result.service_config_error);
       }
@@ -425,7 +425,7 @@ void AresDnsResolver::StartResolvingLocked() {
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
       &on_resolved_, &addresses_, enable_srv_queries_ /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr,
-      query_timeout_ms_, logical_thread());
+      query_timeout_ms_, work_serializer());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
                        this, pending_request_);

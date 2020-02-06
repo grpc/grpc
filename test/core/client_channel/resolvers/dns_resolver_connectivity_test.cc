@@ -26,14 +26,14 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/logical_thread.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
-static grpc_core::RefCountedPtr<grpc_core::LogicalThread>* g_logical_thread;
+static std::shared_ptr<WorkSerializer>* g_work_serializer;
 
 static void my_resolve_address(const char* addr, const char* /*default_port*/,
                                grpc_pollset_set* /*interested_parties*/,
@@ -66,7 +66,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     bool /*check_grpclb*/, char** /*service_config_json*/,
     int /*query_timeout_ms*/,
-    grpc_core::RefCountedPtr<grpc_core::LogicalThread> /*logical_thread*/) {
+    std::shared_ptr<WorkSerializer> /*work_serializer*/) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error* error = GRPC_ERROR_NONE;
@@ -99,7 +99,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
-  args.logical_thread = *g_logical_thread;
+  args.work_serializer = *g_work_serializer;
   args.result_handler = std::move(result_handler);
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -163,8 +163,8 @@ int main(int argc, char** argv) {
   gpr_mu_init(&g_mu);
   {
     grpc_core::ExecCtx exec_ctx;
-    auto logical_thread = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
-    g_logical_thread = &logical_thread;
+    auto work_serializer = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+    g_work_serializer = &work_serializer;
     grpc_set_resolver_impl(&test_resolver);
     grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
     grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;

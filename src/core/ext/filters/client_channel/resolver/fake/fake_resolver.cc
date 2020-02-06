@@ -35,9 +35,9 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/logical_thread.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -87,7 +87,7 @@ class FakeResolver : public Resolver {
 };
 
 FakeResolver::FakeResolver(ResolverArgs args)
-    : Resolver(args.logical_thread, std::move(args.result_handler)),
+    : Resolver(args.work_serializer, std::move(args.result_handler)),
       response_generator_(
           FakeResolverResponseGenerator::GetFromArgs(args.args)) {
   // Channels sharing the same subchannels may have different resolver response
@@ -119,8 +119,8 @@ void FakeResolver::RequestReresolutionLocked() {
     if (!reresolution_closure_pending_) {
       reresolution_closure_pending_ = true;
       Ref().release();  // ref held by closure
-      logical_thread()->Run([this]() { ReturnReresolutionResult(); },
-                            DEBUG_LOCATION);
+      work_serializer()->Run([this]() { ReturnReresolutionResult(); },
+                             DEBUG_LOCATION);
     }
   }
 }
@@ -228,7 +228,7 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
   }
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, std::move(result));
-  resolver->logical_thread()->Run(
+  resolver->work_serializer()->Run(
       [arg]() {
         arg->SetResponseLocked();
         delete arg;
@@ -246,7 +246,7 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
   }
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, std::move(result), true);
-  resolver->logical_thread()->Run(
+  resolver->work_serializer()->Run(
       [arg]() {
         arg->SetReresolutionResponseLocked();
         delete arg;
@@ -263,7 +263,7 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
   }
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, Resolver::Result());
-  resolver->logical_thread()->Run(
+  resolver->work_serializer()->Run(
       [arg]() {
         arg->SetReresolutionResponseLocked();
         delete arg;
@@ -280,7 +280,7 @@ void FakeResolverResponseGenerator::SetFailure() {
   }
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, Resolver::Result());
-  resolver->logical_thread()->Run(
+  resolver->work_serializer()->Run(
       [arg]() {
         arg->SetFailureLocked();
         delete arg;
@@ -297,7 +297,7 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
   }
   FakeResolverResponseSetter* arg = new FakeResolverResponseSetter(
       resolver, Resolver::Result(), false, false);
-  resolver->logical_thread()->Run(
+  resolver->work_serializer()->Run(
       [arg]() {
         arg->SetFailureLocked();
         delete arg;
@@ -313,7 +313,7 @@ void FakeResolverResponseGenerator::SetFakeResolver(
   if (has_result_) {
     FakeResolverResponseSetter* arg =
         new FakeResolverResponseSetter(resolver_, std::move(result_));
-    resolver_->logical_thread()->Run(
+    resolver_->work_serializer()->Run(
         [arg]() {
           arg->SetResponseLocked();
           delete arg;

@@ -246,7 +246,7 @@ class GrpcLb : public LoadBalancingPolicy {
     //
     // Note: This is called from the picker, so it will be invoked in
     // the channel's data plane mutex, NOT the control plane
-    // logical_thread.  It should not be accessed by any other part of the LB
+    // work_serializer.  It should not be accessed by any other part of the LB
     // policy.
     const char* ShouldDrop();
 
@@ -254,7 +254,7 @@ class GrpcLb : public LoadBalancingPolicy {
     std::vector<GrpcLbServer> serverlist_;
 
     // Guarded by the channel's data plane mutex, NOT the control
-    // plane logical_thread.  It should not be accessed by anything but the
+    // plane work_serializer.  It should not be accessed by anything but the
     // picker via the ShouldDrop() method.
     size_t drop_index_ = 0;
   };
@@ -904,7 +904,7 @@ void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(void* arg,
                                                           grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  lb_calld->grpclb_policy()->logical_thread()->Run(
+  lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->MaybeSendClientLoadReportLocked(error); },
       DEBUG_LOCATION);
 }
@@ -983,7 +983,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
                                                      grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  lb_calld->grpclb_policy()->logical_thread()->Run(
+  lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->ClientLoadReportDoneLocked(error); },
       DEBUG_LOCATION);
 }
@@ -1002,7 +1002,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(grpc_error* error) {
 void GrpcLb::BalancerCallState::OnInitialRequestSent(void* arg,
                                                      grpc_error* /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->logical_thread()->Run(
+  lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); }, DEBUG_LOCATION);
 }
 
@@ -1021,7 +1021,7 @@ void GrpcLb::BalancerCallState::OnInitialRequestSentLocked() {
 void GrpcLb::BalancerCallState::OnBalancerMessageReceived(
     void* arg, grpc_error* /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->logical_thread()->Run(
+  lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); },
       DEBUG_LOCATION);
 }
@@ -1187,7 +1187,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceived(void* arg,
                                                          grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GRPC_ERROR_REF(error);  // owned by lambda
-  lb_calld->grpclb_policy()->logical_thread()->Run(
+  lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->OnBalancerStatusReceivedLocked(error); },
       DEBUG_LOCATION);
 }
@@ -1526,7 +1526,7 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
 void GrpcLb::OnBalancerChannelConnectivityChanged(void* arg,
                                                   grpc_error* /*error*/) {
   GrpcLb* self = static_cast<GrpcLb*>(arg);
-  self->logical_thread()->Run(
+  self->work_serializer()->Run(
       [self]() { self->OnBalancerChannelConnectivityChangedLocked(); },
       DEBUG_LOCATION);
 }
@@ -1614,7 +1614,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
 void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  grpclb_policy->logical_thread()->Run(
+  grpclb_policy->work_serializer()->Run(
       [grpclb_policy, error]() {
         grpclb_policy->OnBalancerCallRetryTimerLocked(error);
       },
@@ -1658,7 +1658,7 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
 void GrpcLb::OnFallbackTimer(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  grpclb_policy->logical_thread()->Run(
+  grpclb_policy->work_serializer()->Run(
       [grpclb_policy, error]() { grpclb_policy->OnFallbackTimerLocked(error); },
       DEBUG_LOCATION);
 }
@@ -1703,7 +1703,7 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
   Helper* helper = new Helper(Ref());
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.logical_thread = logical_thread();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);

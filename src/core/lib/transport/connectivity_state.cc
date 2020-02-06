@@ -59,11 +59,12 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
            grpc_connectivity_state state,
-           const RefCountedPtr<LogicalThread>& logical_thread)
+           const std::shared_ptr<WorkSerializer>& work_serializer)
       : watcher_(std::move(watcher)), state_(state) {
-    if (logical_thread != nullptr) {
-      logical_thread->Run([this]() { SendNotification(this, GRPC_ERROR_NONE); },
-                          DEBUG_LOCATION);
+    if (work_serializer != nullptr) {
+      work_serializer->Run(
+          [this]() { SendNotification(this, GRPC_ERROR_NONE); },
+          DEBUG_LOCATION);
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);
@@ -89,7 +90,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
 
 void AsyncConnectivityStateWatcherInterface::Notify(
     grpc_connectivity_state state) {
-  new Notifier(Ref(), state, logical_thread_);  // Deletes itself when done.
+  new Notifier(Ref(), state, work_serializer_);  // Deletes itself when done.
 }
 
 //

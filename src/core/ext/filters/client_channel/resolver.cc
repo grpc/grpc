@@ -29,11 +29,11 @@ namespace grpc_core {
 // Resolver
 //
 
-Resolver::Resolver(RefCountedPtr<LogicalThread> logical_thread,
+Resolver::Resolver(std::shared_ptr<WorkSerializer> work_serializer,
                    std::unique_ptr<ResultHandler> result_handler)
     : InternallyRefCounted(&grpc_trace_resolver_refcount),
       result_handler_(std::move(result_handler)),
-      logical_thread_(std::move(logical_thread)) {}
+      work_serializer_(std::move(work_serializer)) {}
 
 //
 // Resolver::Result
