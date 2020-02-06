@@ -50,10 +50,6 @@ def _get_server_status(start_time: float, end_time: float,
 
 
 def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
-    if config.async_server_threads != 1:
-        _LOGGER.warning('config.async_server_threads [%d] != 1',
-                        config.async_server_threads)
-
     server = aio.server()
     if config.server_type == control_pb2.ASYNC_SERVER:
         servicer = benchmark_servicer.BenchmarkServicer()
@@ -154,9 +150,18 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         self._loop = asyncio.get_event_loop()
         self._quit_event = asyncio.Event()
 
+    # async def _run_single_server(self, config, request_iterator, context):
+    #     server, port = _create_server(config)
+    #     await server.start()
+
     async def RunServer(self, request_iterator, context):
         config = (await context.read()).setup
         _LOGGER.info('Received ServerConfig: %s', config)
+
+        if config.async_server_threads <= 0:
+            _LOGGER.info('async_server_threads can\'t be [%d]', config.async_server_threads)
+            _LOGGER.info('Using async_server_threads == [%d]', _NUM_CORES)
+            config.async_server_threads = _NUM_CORES
 
         server, port = _create_server(config)
         await server.start()
@@ -208,13 +213,17 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         _LOGGER.info('Received ClientConfig: %s', config)
 
         if config.async_client_threads <= 0:
-            raise ValueError('async_client_threads can\'t be [%d]' % config.async_client_threads)
-        elif config.async_client_threads == 1:
+            _LOGGER.info('async_client_threads can\'t be [%d]', config.async_client_threads)
+            _LOGGER.info('Using async_client_threads == [%d]', _NUM_CORES)
+            config.async_client_threads = _NUM_CORES
+
+        if config.async_client_threads == 1:
             await self._run_single_client(config, request_iterator, context)
         else:
-            sub_workers = []
-            for _ in range(config.async_client_threads):
-                sub_workers.append(await _create_sub_worker())
+            sub_workers = await asyncio.gather(*(
+                _create_sub_worker()
+                for _ in range(config.async_client_threads)
+            ))
 
             calls = [worker.stub.RunClient() for worker in sub_workers]
 
@@ -259,7 +268,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
                 await worker.process.wait()
                 _LOGGER.info('Sub worker [%s] quit', worker)
 
-    async def CoreCount(self, unused_request, unused_context):
+    @staticmethod
+    async def CoreCount(unused_request, unused_context):
         return control_pb2.CoreResponse(cores=_NUM_CORES)
 
     async def QuitWorker(self, unused_request, unused_context):
