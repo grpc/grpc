@@ -50,6 +50,7 @@ grpc_slice g_fake_auth_key;
 grpc_slice g_fake_auth_value;
 
 struct inproc_stream;
+void maybe_schedule_op_closure_locked(inproc_stream* s, grpc_error* error);
 bool cancel_stream_locked(inproc_stream* s, grpc_error* error);
 void op_state_machine(void* arg, grpc_error* error);
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
@@ -188,6 +189,8 @@ struct inproc_stream {
       if (cs->write_buffer_cancel_error != GRPC_ERROR_NONE) {
         cancel_other_error = cs->write_buffer_cancel_error;
         cs->write_buffer_cancel_error = GRPC_ERROR_NONE;
+	INPROC_LOG(GPR_DEBUG, "Maybe scheduling op closure %p", this);
+	maybe_schedule_op_closure_locked(this, cancel_other_error);
       }
 
       gpr_mu_unlock(&t->mu->mu);
@@ -399,7 +402,8 @@ void complete_if_batch_end_locked(inproc_stream* s, grpc_error* error,
 }
 
 void maybe_schedule_op_closure_locked(inproc_stream* s, grpc_error* error) {
-  if (s && s->ops_needed && !s->op_closure_scheduled) {
+  if (s && s->op_closure_schedulable && (error != GRPC_ERROR_NONE || s->ops_needed) && !s->op_closure_scheduled) {
+    INPROC_LOG(GPR_DEBUG, "scheduling op closure %p", s);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &s->op_closure,
                             GRPC_ERROR_REF(error));
     s->op_closure_scheduled = true;
@@ -430,9 +434,11 @@ void fail_helper_locked(inproc_stream* s, grpc_error* error) {
     if (other != nullptr) {
       if (other->cancel_other_error == GRPC_ERROR_NONE) {
         other->cancel_other_error = GRPC_ERROR_REF(error);
+	INPROC_LOG(GPR_DEBUG, "Maybe scheduling op closure %p", other);
+	maybe_schedule_op_closure_locked(other, error);
       }
-      maybe_schedule_op_closure_locked(other, error);
     } else if (s->write_buffer_cancel_error == GRPC_ERROR_NONE) {
+      INPROC_LOG(GPR_INFO, "Buffering cancel error %p with %s", s, grpc_error_string(error));
       s->write_buffer_cancel_error = GRPC_ERROR_REF(error);
     }
   }
@@ -626,6 +632,7 @@ void op_state_machine(void* arg, grpc_error* error) {
   if (s->send_message_op && other) {
     if (other->recv_message_op) {
       message_transfer_locked(s, other);
+	INPROC_LOG(GPR_DEBUG, "Maybe scheduling op closure %p", other);
       maybe_schedule_op_closure_locked(other, GRPC_ERROR_NONE);
     } else if (!s->t->is_client && s->trailing_md_sent) {
       // A server send will never be matched if the server already sent status
@@ -684,6 +691,7 @@ void op_state_machine(void* arg, grpc_error* error) {
         needs_close = true;
       }
     }
+	INPROC_LOG(GPR_DEBUG, "Maybe scheduling op closure %p", other);
     maybe_schedule_op_closure_locked(other, GRPC_ERROR_NONE);
     complete_if_batch_end_locked(
         s, GRPC_ERROR_NONE, s->send_trailing_md_op,
@@ -746,6 +754,7 @@ void op_state_machine(void* arg, grpc_error* error) {
   if (s->recv_message_op) {
     if (other && other->send_message_op) {
       message_transfer_locked(other, s);
+	INPROC_LOG(GPR_DEBUG, "Maybe scheduling op closure %p", other);
       maybe_schedule_op_closure_locked(other, GRPC_ERROR_NONE);
     }
   }
@@ -878,7 +887,10 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error* error) {
   if (s->cancel_self_error == GRPC_ERROR_NONE) {
     ret = true;
     s->cancel_self_error = GRPC_ERROR_REF(error);
-    maybe_schedule_op_closure_locked(s, s->cancel_self_error);
+    if (s->cancel_other_error == GRPC_ERROR_NONE) {
+	INPROC_LOG(GPR_DEBUG, "Maybe scheduling op closure %p", s);
+      maybe_schedule_op_closure_locked(s, s->cancel_self_error);
+    }
     // Send trailing md to the other side indicating cancellation, even if we
     // already have
     s->trailing_md_sent = true;
@@ -898,9 +910,11 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error* error) {
     if (other != nullptr) {
       if (other->cancel_other_error == GRPC_ERROR_NONE) {
         other->cancel_other_error = GRPC_ERROR_REF(s->cancel_self_error);
-      }
+	INPROC_LOG(GPR_DEBUG, "Maybe scheduling op closure %p", other);
       maybe_schedule_op_closure_locked(other, other->cancel_other_error);
+      }
     } else if (s->write_buffer_cancel_error == GRPC_ERROR_NONE) {
+      INPROC_LOG(GPR_INFO, "Buffering cancel error %p with %s", s, grpc_error_string(s->cancel_self_error));
       s->write_buffer_cancel_error = GRPC_ERROR_REF(s->cancel_self_error);
     }
 
@@ -919,9 +933,6 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error* error) {
       s->recv_trailing_md_op = nullptr;
     }
   }
-
-  close_other_side_locked(s, "cancel_stream:other_side");
-  close_stream_locked(s);
 
   GRPC_ERROR_UNREF(error);
   return ret;
@@ -1058,6 +1069,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
           }
         }
       }
+	INPROC_LOG(GPR_DEBUG, "Maybe scheduling op closure %p", s->other_side);
       maybe_schedule_op_closure_locked(s->other_side, error);
     }
   }
@@ -1168,7 +1180,6 @@ void close_transport_locked(inproc_transport* t) {
     t->is_closed = true;
     /* Also end all streams on this transport */
     while (t->stream_list != nullptr) {
-      // cancel_stream_locked also adjusts stream list
       cancel_stream_locked(
           t->stream_list,
           grpc_error_set_int(
