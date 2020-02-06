@@ -31,6 +31,7 @@
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/optional.h"
+#include "upb/def.h"
 
 namespace grpc_core {
 
@@ -250,6 +251,7 @@ class XdsApi {
   TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;
   const char* build_version_;
+  upb::SymbolTable symtab_;
 };
 
 }  // namespace grpc_core

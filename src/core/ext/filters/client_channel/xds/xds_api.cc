@@ -53,10 +53,7 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
-// FIXME: remove extern "C" once upb adds it in textencode.h
-extern "C" {
 #include "upb/textencode.h"
-}
 #include "upb/upb.h"
 
 namespace grpc_core {
@@ -268,18 +265,15 @@ envoy_api_v2_DiscoveryRequest* CreateDiscoveryRequest(
 }
 
 void MaybeLogDiscoveryRequest(XdsClient* client, TraceFlag* tracer,
+                              upb_symtab* symtab,
                               envoy_api_v2_DiscoveryRequest* request) {
-  // Log if needed.
   if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-// FIXME: retain symtab so we don't have to keep reloading
-    upb_symtab* symtab = upb_symtab_new();
     const upb_msgdef* msg_type =
         envoy_api_v2_DiscoveryRequest_getmsgdef(symtab);
     char buf[10240];
     upb_textencode(request, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed request: %s", client, buf);
-    upb_symtab_free(symtab);
   }
 }
 
@@ -300,7 +294,7 @@ grpc_slice XdsApi::CreateUnsupportedTypeNackRequest(const std::string& type_url,
   envoy_api_v2_DiscoveryRequest* request = CreateDiscoveryRequest(
       arena.ptr(), type_url.c_str(), /*version=*/"", nonce, error,
       /*node=*/nullptr, /*build_version=*/nullptr);
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
+  MaybeLogDiscoveryRequest(client_, tracer_, symtab_.ptr(), request);
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
 
@@ -317,7 +311,7 @@ grpc_slice XdsApi::CreateLdsRequest(const std::string& server_name,
   envoy_api_v2_DiscoveryRequest_add_resource_names(
       request, upb_strview_make(server_name.data(), server_name.size()),
       arena.ptr());
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
+  MaybeLogDiscoveryRequest(client_, tracer_, symtab_.ptr(), request);
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
 
@@ -335,7 +329,7 @@ grpc_slice XdsApi::CreateRdsRequest(const std::string& route_config_name,
       request,
       upb_strview_make(route_config_name.data(), route_config_name.size()),
       arena.ptr());
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
+  MaybeLogDiscoveryRequest(client_, tracer_, symtab_.ptr(), request);
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
 
@@ -354,7 +348,7 @@ grpc_slice XdsApi::CreateCdsRequest(const std::set<StringView>& cluster_names,
         request, upb_strview_make(cluster_name.data(), cluster_name.size()),
         arena.ptr());
   }
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
+  MaybeLogDiscoveryRequest(client_, tracer_, symtab_.ptr(), request);
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
 
@@ -373,7 +367,7 @@ grpc_slice XdsApi::CreateEdsRequest(
         upb_strview_make(eds_service_name.data(), eds_service_name.size()),
         arena.ptr());
   }
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
+  MaybeLogDiscoveryRequest(client_, tracer_, symtab_.ptr(), request);
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
 
