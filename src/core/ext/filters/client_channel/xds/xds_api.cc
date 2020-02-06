@@ -32,6 +32,7 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
 #include "envoy/api/v2/cds.upb.h"
+#include "envoy/api/v2/cds.upbdefs.h"
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "envoy/api/v2/core/config_source.upb.h"
@@ -39,10 +40,12 @@
 #include "envoy/api/v2/discovery.upb.h"
 #include "envoy/api/v2/discovery.upbdefs.h"
 #include "envoy/api/v2/eds.upb.h"
+#include "envoy/api/v2/eds.upbdefs.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
 #include "envoy/api/v2/endpoint/load_report.upb.h"
 #include "envoy/api/v2/lds.upb.h"
 #include "envoy/api/v2/rds.upb.h"
+#include "envoy/api/v2/rds.upbdefs.h"
 #include "envoy/api/v2/route/route.upb.h"
 #include "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h"
 #include "envoy/config/listener/v2/api_listener.upb.h"
@@ -266,7 +269,7 @@ envoy_api_v2_DiscoveryRequest* CreateDiscoveryRequest(
 
 void MaybeLogDiscoveryRequest(XdsClient* client, TraceFlag* tracer,
                               upb_symtab* symtab,
-                              envoy_api_v2_DiscoveryRequest* request) {
+                              const envoy_api_v2_DiscoveryRequest* request) {
   if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_msgdef* msg_type =
@@ -373,6 +376,57 @@ grpc_slice XdsApi::CreateEdsRequest(
 
 namespace {
 
+void MaybeLogDiscoveryResponse(XdsClient* client, TraceFlag* tracer,
+                               upb_symtab* symtab,
+                               const envoy_api_v2_DiscoveryResponse* response) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_msgdef* msg_type =
+        envoy_api_v2_DiscoveryResponse_getmsgdef(symtab);
+    char buf[10240];
+    upb_textencode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", client, buf);
+  }
+}
+
+void MaybeLogRouteConfiguration(
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const envoy_api_v2_RouteConfiguration* route_config) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_msgdef* msg_type =
+        envoy_api_v2_RouteConfiguration_getmsgdef(symtab);
+    char buf[10240];
+    upb_textencode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", client, buf);
+  }
+}
+
+void MaybeLogCluster(XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+                     const envoy_api_v2_Cluster* cluster) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_msgdef* msg_type = envoy_api_v2_Cluster_getmsgdef(symtab);
+    char buf[10240];
+    upb_textencode(cluster, msg_type, nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", client, buf);
+  }
+}
+
+void MaybeLogClusterLoadAssignment(
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const envoy_api_v2_ClusterLoadAssignment* cla) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_msgdef* msg_type =
+        envoy_api_v2_ClusterLoadAssignment_getmsgdef(symtab);
+    char buf[10240];
+    upb_textencode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] ClusterLoadAssignment: %s", client,
+            buf);
+  }
+}
+
 // Better match type has smaller value.
 enum MatchType {
   EXACT_MATCH,
@@ -423,8 +477,10 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
 }
 
 grpc_error* RouteConfigParse(
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_api_v2_RouteConfiguration* route_config,
     const std::string& expected_server_name, XdsApi::RdsUpdate* rds_update) {
+  MaybeLogRouteConfiguration(client, tracer, symtab, route_config);
   // Strip off port from server name, if any.
   size_t pos = expected_server_name.find(':');
   std::string expected_host_name = expected_server_name.substr(0, pos);
@@ -517,7 +573,9 @@ grpc_error* RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
+grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
+                             upb_symtab* symtab,
+                             const envoy_api_v2_DiscoveryResponse* response,
                              const std::string& expected_server_name,
                              XdsApi::LdsUpdate* lds_update, upb_arena* arena) {
   // Get the resources from the response.
@@ -567,8 +625,9 @@ grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
           envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_config(
               http_connection_manager);
       XdsApi::RdsUpdate rds_update;
-      grpc_error* error =
-          RouteConfigParse(route_config, expected_server_name, &rds_update);
+      grpc_error* error = RouteConfigParse(
+          client, tracer, symtab, route_config, expected_server_name,
+          &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
       lds_update->rds_update.emplace(std::move(rds_update));
       const upb_strview route_config_name =
@@ -598,7 +657,9 @@ grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
       "No listener found for expected server name.");
 }
 
-grpc_error* RdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
+grpc_error* RdsResponseParse(XdsClient* client, TraceFlag* tracer,
+                             upb_symtab* symtab,
+                             const envoy_api_v2_DiscoveryResponse* response,
                              const std::string& expected_server_name,
                              const std::string& expected_route_config_name,
                              XdsApi::RdsUpdate* rds_update, upb_arena* arena) {
@@ -632,8 +693,9 @@ grpc_error* RdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
     if (!upb_strview_eql(name, expected_name)) continue;
     // Parse the route_config.
     XdsApi::RdsUpdate local_rds_update;
-    grpc_error* error =
-        RouteConfigParse(route_config, expected_server_name, &local_rds_update);
+    grpc_error* error = RouteConfigParse(
+        client, tracer, symtab, route_config, expected_server_name,
+        &local_rds_update);
     if (error != GRPC_ERROR_NONE) return error;
     *rds_update = std::move(local_rds_update);
     return GRPC_ERROR_NONE;
@@ -642,7 +704,9 @@ grpc_error* RdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
       "No route config found for expected name.");
 }
 
-grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
+grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
+                             upb_symtab* symtab,
+                             const envoy_api_v2_DiscoveryResponse* response,
                              XdsApi::CdsUpdateMap* cds_update_map,
                              upb_arena* arena) {
   // Get the resources from the response.
@@ -668,6 +732,7 @@ grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
     if (cluster == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode cluster.");
     }
+    MaybeLogCluster(client, tracer, symtab, cluster);
     // Check the cluster_discovery_type.
     if (!envoy_api_v2_Cluster_has_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
@@ -826,6 +891,7 @@ grpc_error* DropParseAndAppend(
 }
 
 grpc_error* EdsResponsedParse(
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_api_v2_DiscoveryResponse* response,
     const std::set<StringView>& expected_eds_service_names,
     XdsApi::EdsUpdateMap* eds_update_map, upb_arena* arena) {
@@ -855,6 +921,8 @@ grpc_error* EdsResponsedParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Can't parse cluster_load_assignment.");
     }
+    MaybeLogClusterLoadAssignment(client, tracer, symtab,
+                                  cluster_load_assignment);
     // Check the cluster name (which actually means eds_service_name). Ignore
     // unexpected names.
     upb_strview cluster_name = envoy_api_v2_ClusterLoadAssignment_cluster_name(
@@ -927,6 +995,7 @@ grpc_error* XdsApi::ParseAdsResponse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Can't decode the whole response.");
   }
+  MaybeLogDiscoveryResponse(client_, tracer_, symtab_.ptr(), response);
   // Record the type_url, the version_info, and the nonce of the response.
   upb_strview type_url_strview =
       envoy_api_v2_DiscoveryResponse_type_url(response);
@@ -938,17 +1007,19 @@ grpc_error* XdsApi::ParseAdsResponse(
   *nonce = std::string(nonce_strview.data, nonce_strview.size);
   // Parse the response according to the resource type.
   if (*type_url == kLdsTypeUrl) {
-    return LdsResponseParse(response, expected_server_name, lds_update,
-                            arena.ptr());
+    return LdsResponseParse(client_, tracer_, symtab_.ptr(), response,
+                            expected_server_name, lds_update, arena.ptr());
   } else if (*type_url == kRdsTypeUrl) {
-    return RdsResponseParse(response, expected_server_name,
-                            expected_route_config_name, rds_update,
-                            arena.ptr());
+    return RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
+                            expected_server_name, expected_route_config_name,
+                            rds_update, arena.ptr());
   } else if (*type_url == kCdsTypeUrl) {
-    return CdsResponseParse(response, cds_update_map, arena.ptr());
+    return CdsResponseParse(client_, tracer_, symtab_.ptr(), response,
+                            cds_update_map, arena.ptr());
   } else if (*type_url == kEdsTypeUrl) {
-    return EdsResponsedParse(response, expected_eds_service_names,
-                             eds_update_map, arena.ptr());
+    return EdsResponsedParse(client_, tracer_, symtab_.ptr(), response,
+                             expected_eds_service_names, eds_update_map,
+                             arena.ptr());
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Unsupported ADS resource type.");
