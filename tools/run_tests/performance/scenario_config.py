@@ -838,76 +838,78 @@ class PythonAsyncIOLanguage:
             channels=1,
             client_threads_per_cq=1,
             server_threads_per_cq=1,
-            async_client_threads=7,
-            unconstrained_client=True,
+            async_client_threads=1,
+            unconstrained_client='async',
             categories=[SMOKETEST, SCALABLE])
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_generic_async_streaming_ping_pong',
-        #     rpc_type='STREAMING',
-        #     client_type='ASYNC_CLIENT',
-        #     server_type='ASYNC_GENERIC_SERVER',
-        #     use_generic_payload=True,
-        #     categories=[SMOKETEST, SCALABLE])
+        yield _ping_pong_scenario(
+            'python_asyncio_generic_async_streaming_ping_pong',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_GENERIC_SERVER',
+            use_generic_payload=True,
+            categories=[SMOKETEST, SCALABLE])
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_protobuf_async_streaming_ping_pong',
-        #     rpc_type='STREAMING',
-        #     client_type='ASYNC_CLIENT',
-        #     server_type='ASYNC_SERVER')
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_streaming_ping_pong',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER')
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_protobuf_async_unary_ping_pong',
-        #     rpc_type='UNARY',
-        #     client_type='ASYNC_CLIENT',
-        #     server_type='ASYNC_SERVER')
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_unary_ping_pong',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER')
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_protobuf_async_unary_ping_pong',
-        #     rpc_type='UNARY',
-        #     client_type='ASYNC_CLIENT',
-        #     server_type='ASYNC_SERVER',
-        #     categories=[SMOKETEST, SCALABLE])
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_unary_ping_pong',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            categories=[SMOKETEST, SCALABLE])
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_protobuf_async_unary_qps_unconstrained',
-        #     rpc_type='UNARY',
-        #     client_type='ASYNC_CLIENT',
-        #     server_type='ASYNC_SERVER',
-        #     unconstrained_client='async')
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            async_client_threads=1,
+            unconstrained_client='async')
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_protobuf_async_streaming_qps_unconstrained',
-        #     rpc_type='STREAMING',
-        #     client_type='ASYNC_CLIENT',
-        #     server_type='ASYNC_SERVER',
-        #     unconstrained_client='async')
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_streaming_qps_unconstrained',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            async_client_threads=1,
+            unconstrained_client='async')
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_to_cpp_protobuf_async_unary_ping_pong',
-        #     rpc_type='UNARY',
-        #     client_type='ASYNC_CLIENT',
-        #     server_type='ASYNC_SERVER',
-        #     server_language='python_asyncio',
-        #     async_server_threads=1,
-        #     categories=[SMOKETEST, SCALABLE])
+        yield _ping_pong_scenario(
+            'python_asyncio_to_cpp_protobuf_async_unary_ping_pong',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            server_language='python_asyncio',
+            async_server_threads=1,
+            categories=[SMOKETEST, SCALABLE])
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_to_cpp_protobuf_sync_streaming_ping_pong',
-        #     rpc_type='STREAMING',
-        #     client_type='SYNC_CLIENT',
-        #     server_type='ASYNC_SERVER',
-        #     server_language='python_asyncio',
-        #     async_server_threads=1)
+        yield _ping_pong_scenario(
+            'python_asyncio_to_cpp_protobuf_sync_streaming_ping_pong',
+            rpc_type='STREAMING',
+            client_type='SYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            server_language='python_asyncio',
+            async_server_threads=1)
 
-        # yield _ping_pong_scenario(
-        #     'python_asyncio_protobuf_async_unary_ping_pong_1MB',
-        #     rpc_type='UNARY',
-        #     client_type='ASYNC_CLIENT',
-        #     server_type='ASYNC_SERVER',
-        #     req_size=1024 * 1024,
-        #     resp_size=1024 * 1024,
-        #     categories=[SMOKETEST, SCALABLE])
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_unary_ping_pong_1MB',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            req_size=1024 * 1024,
+            resp_size=1024 * 1024,
+            categories=[SMOKETEST, SCALABLE])
 
     def __str__(self):
         return 'python_asyncio'

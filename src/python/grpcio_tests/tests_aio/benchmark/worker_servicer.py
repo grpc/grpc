@@ -213,7 +213,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             await self._run_single_client(config, request_iterator, context)
         else:
             sub_workers = []
-            for i in range(config.async_client_threads):
+            for _ in range(config.async_client_threads):
                 sub_workers.append(await _create_sub_worker())
 
             calls = [worker.stub.RunClient() for worker in sub_workers]
