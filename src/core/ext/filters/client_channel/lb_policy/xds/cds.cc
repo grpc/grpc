@@ -63,7 +63,7 @@ class CdsLb : public LoadBalancingPolicy {
    public:
     explicit ClusterWatcher(RefCountedPtr<CdsLb> parent)
         : parent_(std::move(parent)) {}
-    void OnClusterChanged(CdsUpdate cluster_data) override;
+    void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override;
     void OnError(grpc_error* error) override;
 
    private:
@@ -111,7 +111,7 @@ class CdsLb : public LoadBalancingPolicy {
 // CdsLb::ClusterWatcher
 //
 
-void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
+void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client",
             parent_.get());
