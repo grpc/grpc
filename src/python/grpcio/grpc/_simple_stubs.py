@@ -138,12 +138,47 @@ def unary_unary(request: RequestType,
                 wait_for_ready: Optional[bool] = None,
                 timeout: Optional[float] = None,
                 metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> ResponseType:
-    """Invokes a unary RPC without an explicitly specified channel.
+    """Invokes a unary-unary RPC without an explicitly specified channel.
 
-    This is backed by a cache of channels evicted by a background thread
-    on a periodic basis.
+    This is backed by a per-process cache of channels. Channels are evicted
+    from the cache after a fixed period by a background. Channels will also be
+    evicted if more than a configured maximum accumulate.
 
-    TODO: Document the parameters and return value.
+    The default eviction period is 10 minutes. One may set the environment
+    variable "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS" to configure this.
+
+    The default maximum maximum number of channels is 256. One may set the
+    environment variable "GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM" to configure
+    this.
+
+    Args:
+      request: An iterator that yields request values for the RPC.
+      target: The server address.
+      method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
+      options: An optional list of key-value pairs (channel args in gRPC Core
+        runtime) to configure the channel.
+      channel_credentials: A credential applied to the whole channel, e.g. the
+        return value of grpc.ssl_channel_credentials().
+      call_credentials: A call credential applied to each call individually,
+        e.g. the output of grpc.metadata_call_credentials() or
+        grpc.access_token_call_credentials().
+      compression: An optional value indicating the compression method to be
+        used over the lifetime of the channel, e.g. grpc.Compression.Gzip.
+      wait_for_ready: An optional flag indicating whether the RPC should fail
+        immediately if the connection is not ready at the time the RPC is
+        invoked, or if it should wait until the connection to the server
+        becomes ready. When using this option, the user will likely also want
+        to set a timeout. Defaults to False.
+      timeout: An optional duration of time in seconds to allow for the RPC,
+        after which an exception will be raised.
+      metadata: Optional metadata to send to the server.
+
+    Returns:
+      The response to the RPC.
     """
     channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
     multicallable = channel.unary_unary(method, request_serializer, request_deserializer)
@@ -160,7 +195,6 @@ def unary_stream(request: RequestType,
                  request_serializer: Optional[Callable[[Any], bytes]] = None,
                  request_deserializer: Optional[Callable[[bytes], Any]] = None,
                  options: Sequence[Tuple[AnyStr, AnyStr]] = (),
-                 # TODO: Somehow make insecure_channel opt-in, not the default.
                  channel_credentials: Optional[grpc.ChannelCredentials] = None,
                  call_credentials: Optional[grpc.CallCredentials] = None,
                  compression: Optional[grpc.Compression] = None,
@@ -169,10 +203,45 @@ def unary_stream(request: RequestType,
                  metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
 
-    This is backed by a cache of channels evicted by a background thread
-    on a periodic basis.
+    This is backed by a per-process cache of channels. Channels are evicted
+    from the cache after a fixed period by a background. Channels will also be
+    evicted if more than a configured maximum accumulate.
 
-    TODO: Document the parameters and return value.
+    The default eviction period is 10 minutes. One may set the environment
+    variable "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS" to configure this.
+
+    The default maximum maximum number of channels is 256. One may set the
+    environment variable "GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM" to configure
+    this.
+
+    Args:
+      request: An iterator that yields request values for the RPC.
+      target: The server address.
+      method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
+      options: An optional list of key-value pairs (channel args in gRPC Core
+        runtime) to configure the channel.
+      channel_credentials: A credential applied to the whole channel, e.g. the
+        return value of grpc.ssl_channel_credentials().
+      call_credentials: A call credential applied to each call individually,
+        e.g. the output of grpc.metadata_call_credentials() or
+        grpc.access_token_call_credentials().
+      compression: An optional value indicating the compression method to be
+        used over the lifetime of the channel, e.g. grpc.Compression.Gzip.
+      wait_for_ready: An optional flag indicating whether the RPC should fail
+        immediately if the connection is not ready at the time the RPC is
+        invoked, or if it should wait until the connection to the server
+        becomes ready. When using this option, the user will likely also want
+        to set a timeout. Defaults to False.
+      timeout: An optional duration of time in seconds to allow for the RPC,
+        after which an exception will be raised.
+      metadata: Optional metadata to send to the server.
+
+    Returns:
+      An iterator of responses.
     """
     channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
     multicallable = channel.unary_stream(method, request_serializer, request_deserializer)
@@ -189,7 +258,6 @@ def stream_unary(request_iterator: Iterator[RequestType],
                  request_serializer: Optional[Callable[[Any], bytes]] = None,
                  request_deserializer: Optional[Callable[[bytes], Any]] = None,
                  options: Sequence[Tuple[AnyStr, AnyStr]] = (),
-                 # TODO: Somehow make insecure_channel opt-in, not the default.
                  channel_credentials: Optional[grpc.ChannelCredentials] = None,
                  call_credentials: Optional[grpc.CallCredentials] = None,
                  compression: Optional[grpc.Compression] = None,
@@ -198,10 +266,45 @@ def stream_unary(request_iterator: Iterator[RequestType],
                  metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> ResponseType:
     """Invokes a stream-unary RPC without an explicitly specified channel.
 
-    This is backed by a cache of channels evicted by a background thread
-    on a periodic basis.
+    This is backed by a per-process cache of channels. Channels are evicted
+    from the cache after a fixed period by a background. Channels will also be
+    evicted if more than a configured maximum accumulate.
 
-    TODO: Document the parameters and return value.
+    The default eviction period is 10 minutes. One may set the environment
+    variable "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS" to configure this.
+
+    The default maximum maximum number of channels is 256. One may set the
+    environment variable "GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM" to configure
+    this.
+
+    Args:
+      request_iterator: An iterator that yields request values for the RPC.
+      target: The server address.
+      method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
+      options: An optional list of key-value pairs (channel args in gRPC Core
+        runtime) to configure the channel.
+      channel_credentials: A credential applied to the whole channel, e.g. the
+        return value of grpc.ssl_channel_credentials().
+      call_credentials: A call credential applied to each call individually,
+        e.g. the output of grpc.metadata_call_credentials() or
+        grpc.access_token_call_credentials().
+      compression: An optional value indicating the compression method to be
+        used over the lifetime of the channel, e.g. grpc.Compression.Gzip.
+      wait_for_ready: An optional flag indicating whether the RPC should fail
+        immediately if the connection is not ready at the time the RPC is
+        invoked, or if it should wait until the connection to the server
+        becomes ready. When using this option, the user will likely also want
+        to set a timeout. Defaults to False.
+      timeout: An optional duration of time in seconds to allow for the RPC,
+        after which an exception will be raised.
+      metadata: Optional metadata to send to the server.
+
+    Returns:
+      The response to the RPC.
     """
     channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
     multicallable = channel.stream_unary(method, request_serializer, request_deserializer)
@@ -218,7 +321,6 @@ def stream_stream(request_iterator: Iterator[RequestType],
                   request_serializer: Optional[Callable[[Any], bytes]] = None,
                   request_deserializer: Optional[Callable[[bytes], Any]] = None,
                   options: Sequence[Tuple[AnyStr, AnyStr]] = (),
-                  # TODO: Somehow make insecure_channel opt-in, not the default.
                   channel_credentials: Optional[grpc.ChannelCredentials] = None,
                   call_credentials: Optional[grpc.CallCredentials] = None,
                   compression: Optional[grpc.Compression] = None,
@@ -227,10 +329,45 @@ def stream_stream(request_iterator: Iterator[RequestType],
                   metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> Iterator[ResponseType]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
 
-    This is backed by a cache of channels evicted by a background thread
-    on a periodic basis.
+    This is backed by a per-process cache of channels. Channels are evicted
+    from the cache after a fixed period by a background. Channels will also be
+    evicted if more than a configured maximum accumulate.
 
-    TODO: Document the parameters and return value.
+    The default eviction period is 10 minutes. One may set the environment
+    variable "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS" to configure this.
+
+    The default maximum maximum number of channels is 256. One may set the
+    environment variable "GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM" to configure
+    this.
+
+    Args:
+      request_iterator: An iterator that yields request values for the RPC.
+      target: The server address.
+      method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
+      options: An optional list of key-value pairs (channel args in gRPC Core
+        runtime) to configure the channel.
+      channel_credentials: A credential applied to the whole channel, e.g. the
+        return value of grpc.ssl_channel_credentials().
+      call_credentials: A call credential applied to each call individually,
+        e.g. the output of grpc.metadata_call_credentials() or
+        grpc.access_token_call_credentials().
+      compression: An optional value indicating the compression method to be
+        used over the lifetime of the channel, e.g. grpc.Compression.Gzip.
+      wait_for_ready: An optional flag indicating whether the RPC should fail
+        immediately if the connection is not ready at the time the RPC is
+        invoked, or if it should wait until the connection to the server
+        becomes ready. When using this option, the user will likely also want
+        to set a timeout. Defaults to False.
+      timeout: An optional duration of time in seconds to allow for the RPC,
+        after which an exception will be raised.
+      metadata: Optional metadata to send to the server.
+
+    Returns:
+      An iterator of responses.
     """
     channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
     multicallable = channel.stream_stream(method, request_serializer, request_deserializer)
