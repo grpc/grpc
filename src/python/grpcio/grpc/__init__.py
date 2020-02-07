@@ -569,7 +569,6 @@ class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
 
 ############  Authentication & Authorization Interfaces & Classes  #############
 
-
 class ChannelCredentials(object):
     """An encapsulation of the data required to create a secure Channel.
 
@@ -598,6 +597,13 @@ class CallCredentials(object):
 
     def __init__(self, credentials):
         self._credentials = credentials
+
+
+_insecure_channel_credentials = object()
+
+
+def insecure_channel_credentials():
+    return ChannelCredentials(_insecure_channel_credentials)
 
 
 class AuthMetadataContext(six.with_metaclass(abc.ABCMeta)):
@@ -1879,6 +1885,10 @@ def secure_channel(target, credentials, options=None, compression=None):
       A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
+    if credentials._credentials is _insecure_channel_credentials:
+        raise ValueError(
+            "secure_channel cannot be called with insecure credentials." +
+            " Call insecure_channel instead.")
     return _channel.Channel(target, () if options is None else options,
                             credentials._credentials, compression)
 
@@ -1947,7 +1957,6 @@ def server(thread_pool,
                                  () if interceptors is None else interceptors,
                                  () if options is None else options,
                                  maximum_concurrent_rpcs, compression)
-
 
 
 @contextlib.contextmanager
@@ -2022,6 +2031,7 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
+    'insecure_channel_credentials',
     'local_channel_credentials',
     'local_server_credentials',
     'ssl_server_credentials',

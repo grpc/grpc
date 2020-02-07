@@ -32,6 +32,7 @@ from typing import Callable, Optional
 import test_common
 import grpc
 
+_REQUEST = b"0000"
 
 _CACHE_EPOCHS = 8
 _CACHE_TRIALS = 6
@@ -67,6 +68,7 @@ def _stream_stream_handler(request_iterator, context):
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
+
     def service(self, handler_call_details):
         if handler_call_details.method == _UNARY_UNARY:
             return grpc.unary_unary_rpc_method_handler(_unary_unary_handler)
@@ -125,10 +127,11 @@ class SimpleStubsTest(unittest.TestCase):
                 runs.append(_time_invocation(lambda: to_check(text)))
             initial_runs.append(runs[0])
             cached_runs.extend(runs[1:])
-        average_cold = sum((run for run in initial_runs), datetime.timedelta()) / len(initial_runs)
-        average_warm = sum((run for run in cached_runs), datetime.timedelta()) / len(cached_runs)
+        average_cold = sum((run for run in initial_runs),
+                           datetime.timedelta()) / len(initial_runs)
+        average_warm = sum((run for run in cached_runs),
+                           datetime.timedelta()) / len(cached_runs)
         self.assertLess(average_warm, average_cold)
-
 
     def assert_eventually(self,
                           predicate: Callable[[], bool],
@@ -148,106 +151,121 @@ class SimpleStubsTest(unittest.TestCase):
     def test_unary_unary_insecure(self):
         with _server(None) as (_, port):
             target = f'localhost:{port}'
-            request = b'0000'
-            response = grpc.unary_unary(request, target, _UNARY_UNARY)
-            self.assertEqual(request, response)
+            response = grpc.unary_unary(
+                        _REQUEST,
+                        target,
+                        _UNARY_UNARY,
+                        channel_credentials=grpc.insecure_channel_credentials())
+            self.assertEqual(_REQUEST, response)
 
     def test_unary_unary_secure(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            request = b'0000'
-            response = grpc.unary_unary(request,
-                                        target,
-                                        _UNARY_UNARY,
-                                        channel_credentials=grpc.local_channel_credentials())
-            self.assertEqual(request, response)
+            response = grpc.unary_unary(
+                _REQUEST,
+                target,
+                _UNARY_UNARY,
+                channel_credentials=grpc.local_channel_credentials())
+            self.assertEqual(_REQUEST, response)
+
+    def test_channel_credentials_default(self):
+        with _server(grpc.local_server_credentials()) as (_, port):
+            target = f'localhost:{port}'
+            response = grpc.unary_unary(
+                _REQUEST,
+                target,
+                _UNARY_UNARY)
+            self.assertEqual(_REQUEST, response)
 
     def test_channels_cached(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            request = b'0000'
             test_name = inspect.stack()[0][3]
-            args = (request, target, _UNARY_UNARY)
+            args = (_REQUEST, target, _UNARY_UNARY)
             kwargs = {"channel_credentials": grpc.local_channel_credentials()}
+
             def _invoke(seed: str):
                 run_kwargs = dict(kwargs)
                 run_kwargs["options"] = ((test_name + seed, ""),)
                 grpc.unary_unary(*args, **run_kwargs)
+
             self.assert_cached(_invoke)
 
     def test_channels_evicted(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            request = b'0000'
-            response = grpc.unary_unary(request,
-                                        target,
-                                        _UNARY_UNARY,
-                                        channel_credentials=grpc.local_channel_credentials())
+            response = grpc.unary_unary(
+                _REQUEST,
+                target,
+                _UNARY_UNARY,
+                channel_credentials=grpc.local_channel_credentials())
             self.assert_eventually(
-                lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count() == 0,
-                message=lambda: f"{grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()} remain")
+                lambda: grpc._simple_stubs.ChannelCache.get(
+                )._test_only_channel_count() == 0,
+                message=lambda:
+                f"{grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()} remain"
+            )
 
     def test_total_channels_enforced(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            request = b'0000'
             for i in range(99):
                 # Ensure we get a new channel each time.
                 options = (("foo", str(i)),)
                 # Send messages at full blast.
-                grpc.unary_unary(request,
-                                 target,
-                                 _UNARY_UNARY,
-                                 options=options,
-                                 channel_credentials=grpc.local_channel_credentials())
+                grpc.unary_unary(
+                    _REQUEST,
+                    target,
+                    _UNARY_UNARY,
+                    options=options,
+                    channel_credentials=grpc.local_channel_credentials())
                 self.assert_eventually(
-                    lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count() <= _MAXIMUM_CHANNELS + 1,
-                    message=lambda: f"{grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()} channels remain")
+                    lambda: grpc._simple_stubs.ChannelCache.get(
+                    )._test_only_channel_count() <= _MAXIMUM_CHANNELS + 1,
+                    message=lambda:
+                    f"{grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()} channels remain"
+                )
 
     def test_unary_stream(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            request = b'0000'
-            for response in grpc.unary_stream(request,
-                                             target,
-                                             _UNARY_STREAM,
-                                             channel_credentials=grpc.local_channel_credentials()):
-                self.assertEqual(request, response)
+            for response in grpc.unary_stream(
+                    _REQUEST,
+                    target,
+                    _UNARY_STREAM,
+                    channel_credentials=grpc.local_channel_credentials()):
+                self.assertEqual(_REQUEST, response)
 
     def test_stream_unary(self):
+
         def request_iter():
             for _ in range(_CLIENT_REQUEST_COUNT):
-                yield request
+                yield _REQUEST
+
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            request = b'0000'
-            response = grpc.stream_unary(request_iter(),
-                                         target,
-                                         _STREAM_UNARY,
-                                         channel_credentials=grpc.local_channel_credentials())
-            self.assertEqual(request, response)
+            response = grpc.stream_unary(
+                request_iter(),
+                target,
+                _STREAM_UNARY,
+                channel_credentials=grpc.local_channel_credentials())
+            self.assertEqual(_REQUEST, response)
 
     def test_stream_stream(self):
+
         def request_iter():
             for _ in range(_CLIENT_REQUEST_COUNT):
-                yield request
+                yield _REQUEST
+
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            request = b'0000'
-            for response in grpc.stream_stream(request_iter(),
-                                               target,
-                                               _STREAM_STREAM,
-                                               channel_credentials=grpc.local_channel_credentials()):
-                self.assertEqual(request, response)
+            for response in grpc.stream_stream(
+                    request_iter(),
+                    target,
+                    _STREAM_STREAM,
+                    channel_credentials=grpc.local_channel_credentials()):
+                self.assertEqual(_REQUEST, response)
 
-
-    # TODO: Test request_serializer
-    # TODO: Test request_deserializer
-    # TODO: Test channel_credentials
-    # TODO: Test call_credentials
-    # TODO: Test compression
-    # TODO: Test wait_for_ready
-    # TODO: Test metadata
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
