@@ -51,21 +51,21 @@ using grpc::testing::SimpleResponse;
 using grpc::testing::TestService;
 
 class TestServiceImpl : public TestService::Service {
-  std::string hostname;
-
  public:
-  TestServiceImpl(std::string i) : hostname(i) {}
+  TestServiceImpl(std::string i) : hostname_(i) {}
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
     response->set_server_id(FLAGS_server_id);
-    response->set_hostname(hostname);
+    response->set_hostname(hostname_);
     return Status::OK;
   }
+
+ private:
+  std::string hostname_;
 };
 
 void RunServer(const int port, std::string hostname) {
-  GPR_ASSERT(port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
 
@@ -86,7 +86,11 @@ int main(int argc, char** argv) {
 
   char* hostname = grpc_gethostname();
   if (hostname == nullptr) {
-    std::cout << "Failed to get hostname, aborting test" << std::endl;
+    std::cout << "Failed to get hostname, terminating" << std::endl;
+    return 1;
+  }
+  if (FLAGS_port == 0) {
+    std::cout << "Invalid port, terminating" << std::endl;
     return 1;
   }
 
