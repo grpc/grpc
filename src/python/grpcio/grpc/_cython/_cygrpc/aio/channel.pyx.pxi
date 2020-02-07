@@ -71,8 +71,7 @@ cdef class AioChannel:
         other design of API if necessary.
         """
         if self._status in (AIO_CHANNEL_STATUS_DESTROYED, AIO_CHANNEL_STATUS_CLOSING):
-            # TODO(lidiz) switch to UsageError
-            raise RuntimeError('Channel is closed.')
+            raise UsageError('Channel is closed.')
 
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
 
@@ -115,8 +114,7 @@ cdef class AioChannel:
           The _AioCall object.
         """
         if self.closed():
-            # TODO(lidiz) switch to UsageError
-            raise RuntimeError('Channel is closed.')
+            raise UsageError('Channel is closed.')
 
         cdef CallCredentials cython_call_credentials
         if python_call_credentials is not None:
