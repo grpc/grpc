@@ -18,7 +18,7 @@ source ~/.rvm/scripts/rvm
 set -ex
 
 cd "$(dirname "$0")/../../.."
-bazel=`pwd`/tools/bazel
+bazel=$(pwd)/tools/bazel
 
 CONFIG=${CONFIG:-opt}
 
