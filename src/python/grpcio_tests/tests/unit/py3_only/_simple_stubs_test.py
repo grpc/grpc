@@ -36,18 +36,27 @@ import grpc
 _CACHE_EPOCHS = 8
 _CACHE_TRIALS = 6
 
+_SERVER_RESPONSE_COUNT = 10
 
 _UNARY_UNARY = "/test/UnaryUnary"
+_UNARY_STREAM = "/test/UnaryStream"
 
 
 def _unary_unary_handler(request, context):
     return request
 
 
+def _unary_stream_handler(request, context):
+    for _ in range(_SERVER_RESPONSE_COUNT):
+        yield request
+
+
 class _GenericHandler(grpc.GenericRpcHandler):
     def service(self, handler_call_details):
         if handler_call_details.method == _UNARY_UNARY:
             return grpc.unary_unary_rpc_method_handler(_unary_unary_handler)
+        elif handler_call_details.method == _UNARY_STREAM:
+            return grpc.unary_stream_rpc_method_handler(_unary_stream_handler)
         else:
             raise NotImplementedError()
 
@@ -175,6 +184,16 @@ class SimpleStubsTest(unittest.TestCase):
                 self.assert_eventually(
                     lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count() <= _MAXIMUM_CHANNELS + 1,
                     message=lambda: f"{grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()} channels remain")
+
+    def test_unary_stream(self):
+        with _server(grpc.local_server_credentials()) as (_, port):
+            target = f'localhost:{port}'
+            request = b'0000'
+            for response in grpc.unary_stream(request,
+                                             target,
+                                             _UNARY_STREAM,
+                                             channel_credentials=grpc.local_channel_credentials()):
+                self.assertEqual(request, response)
 
 
     # TODO: Test request_serializer

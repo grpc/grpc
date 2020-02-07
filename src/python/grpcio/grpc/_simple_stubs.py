@@ -7,7 +7,7 @@ import logging
 import threading
 
 import grpc
-from typing import Any, Callable, Optional, Sequence, Text, Tuple, Union
+from typing import Any, AnyStr, Callable, Iterator, Optional, Sequence, Tuple, Union
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,8 +26,8 @@ if _MAXIMUM_CHANNELS_KEY in os.environ:
 else:
     _MAXIMUM_CHANNELS = 2 ** 8
 
-def _create_channel(target: Text,
-                    options: Sequence[Tuple[Text, Text]],
+def _create_channel(target: str,
+                    options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
     if channel_credentials is None:
@@ -98,8 +98,8 @@ class ChannelCache:
 
 
     def get_channel(self,
-                    target: Text,
-                    options: Sequence[Tuple[Text, Text]],
+                    target: str,
+                    options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
         key = (target, options, channel_credentials, compression)
@@ -123,20 +123,19 @@ class ChannelCache:
             return len(self._mapping)
 
 
-# TODO: s/Text/str/g
 def unary_unary(request: Any,
-                target: Text,
-                method: Text,
+                target: str,
+                method: str,
                 request_serializer: Optional[Callable[[Any], bytes]] = None,
                 request_deserializer: Optional[Callable[[bytes], Any]] = None,
-                options: Sequence[Tuple[Text, Text]] = (),
+                options: Sequence[Tuple[AnyStr, AnyStr]] = (),
                 # TODO: Somehow make insecure_channel opt-in, not the default.
                 channel_credentials: Optional[grpc.ChannelCredentials] = None,
                 call_credentials: Optional[grpc.CallCredentials] = None,
                 compression: Optional[grpc.Compression] = None,
                 wait_for_ready: Optional[bool] = None,
                 timeout: Optional[float] = None,
-                metadata: Optional[Sequence[Tuple[Text, Union[Text, bytes]]]] = None) -> Any:
+                metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> Any:
     """Invokes a unary RPC without an explicitly specified channel.
 
     This is backed by a cache of channels evicted by a background thread
@@ -144,10 +143,37 @@ def unary_unary(request: Any,
 
     TODO: Document the parameters and return value.
     """
-
-    # TODO: Warn if the timeout is greater than the channel eviction time.
     channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
     multicallable = channel.unary_unary(method, request_serializer, request_deserializer)
+    return multicallable(request,
+                         metadata=metadata,
+                         wait_for_ready=wait_for_ready,
+                         credentials=call_credentials,
+                         timeout=timeout)
+
+
+def unary_stream(request: Any,
+                 target: str,
+                 method: str,
+                 request_serializer: Optional[Callable[[Any], bytes]] = None,
+                 request_deserializer: Optional[Callable[[bytes], Any]] = None,
+                 options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+                 # TODO: Somehow make insecure_channel opt-in, not the default.
+                 channel_credentials: Optional[grpc.ChannelCredentials] = None,
+                 call_credentials: Optional[grpc.CallCredentials] = None,
+                 compression: Optional[grpc.Compression] = None,
+                 wait_for_ready: Optional[bool] = None,
+                 timeout: Optional[float] = None,
+                 metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> Iterator[Any]:
+    """Invokes a unary-stream RPC without an explicitly specified channel.
+
+    This is backed by a cache of channels evicted by a background thread
+    on a periodic basis.
+
+    TODO: Document the parameters and return value.
+    """
+    channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
+    multicallable = channel.unary_stream(method, request_serializer, request_deserializer)
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
