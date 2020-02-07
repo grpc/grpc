@@ -1534,7 +1534,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/decode.h )
   s.files += %w( third_party/upb/upb/encode.c )
   s.files += %w( third_party/upb/upb/encode.h )
-  s.files += %w( third_party/upb/upb/generated_util.h )
   s.files += %w( third_party/upb/upb/msg.c )
   s.files += %w( third_party/upb/upb/msg.h )
   s.files += %w( third_party/upb/upb/port.c )
