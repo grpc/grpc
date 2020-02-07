@@ -229,7 +229,7 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
   GPR_ASSERT(upb_strview_eql(application_protocols[0],
                              upb_strview_makez(ALTS_APPLICATION_PROTOCOL)));
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(
-      server_start) == 1);
+                 server_start) == 1);
   grpc_gcp_ServerHandshakeParameters* value;
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_get(
       server_start, grpc_gcp_ALTS, &value));
