@@ -7,7 +7,7 @@ import logging
 import threading
 
 import grpc
-from typing import Any, AnyStr, Callable, Iterator, Optional, Sequence, Tuple, Union
+from typing import Any, AnyStr, Callable, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -122,8 +122,10 @@ class ChannelCache:
         with self._lock:
             return len(self._mapping)
 
+RequestType = TypeVar('RequestType')
+ResponseType = TypeVar('ResponseType')
 
-def unary_unary(request: Any,
+def unary_unary(request: RequestType,
                 target: str,
                 method: str,
                 request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -135,7 +137,7 @@ def unary_unary(request: Any,
                 compression: Optional[grpc.Compression] = None,
                 wait_for_ready: Optional[bool] = None,
                 timeout: Optional[float] = None,
-                metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> Any:
+                metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> ResponseType:
     """Invokes a unary RPC without an explicitly specified channel.
 
     This is backed by a cache of channels evicted by a background thread
@@ -152,7 +154,7 @@ def unary_unary(request: Any,
                          timeout=timeout)
 
 
-def unary_stream(request: Any,
+def unary_stream(request: RequestType,
                  target: str,
                  method: str,
                  request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -164,7 +166,7 @@ def unary_stream(request: Any,
                  compression: Optional[grpc.Compression] = None,
                  wait_for_ready: Optional[bool] = None,
                  timeout: Optional[float] = None,
-                 metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> Iterator[Any]:
+                 metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
 
     This is backed by a cache of channels evicted by a background thread
@@ -175,6 +177,35 @@ def unary_stream(request: Any,
     channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
     multicallable = channel.unary_stream(method, request_serializer, request_deserializer)
     return multicallable(request,
+                         metadata=metadata,
+                         wait_for_ready=wait_for_ready,
+                         credentials=call_credentials,
+                         timeout=timeout)
+
+
+def stream_unary(request_iterator: Iterator[RequestType],
+                 target: str,
+                 method: str,
+                 request_serializer: Optional[Callable[[Any], bytes]] = None,
+                 request_deserializer: Optional[Callable[[bytes], Any]] = None,
+                 options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+                 # TODO: Somehow make insecure_channel opt-in, not the default.
+                 channel_credentials: Optional[grpc.ChannelCredentials] = None,
+                 call_credentials: Optional[grpc.CallCredentials] = None,
+                 compression: Optional[grpc.Compression] = None,
+                 wait_for_ready: Optional[bool] = None,
+                 timeout: Optional[float] = None,
+                 metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> ResponseType:
+    """Invokes a stream-unary RPC without an explicitly specified channel.
+
+    This is backed by a cache of channels evicted by a background thread
+    on a periodic basis.
+
+    TODO: Document the parameters and return value.
+    """
+    channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
+    multicallable = channel.stream_unary(method, request_serializer, request_deserializer)
+    return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
                          credentials=call_credentials,

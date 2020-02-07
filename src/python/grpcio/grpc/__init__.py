@@ -2035,9 +2035,9 @@ __all__ = (
     'unary_unary',
 )
 
-if sys.version_info[0] > 2:
-    from grpc._simple_stubs import unary_unary, unary_stream
-    __all__ = __all__ + (unary_unary, unary_stream)
+if sys.version_info[0] >= 3:
+    from grpc._simple_stubs import unary_unary, unary_stream, stream_unary
+    __all__ = __all__ + (unary_unary, unary_stream, stream_unary)
 
 ############################### Extension Shims ################################
 
