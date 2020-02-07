@@ -40,8 +40,9 @@ namespace grpc_impl {
 class CompletionQueue;
 
 /// Generic stubs provide a type-unaware interface to call gRPC methods
-/// by name.
-template <class MessageType>
+/// by name. In practice, the Request and Response types should be basic
+/// types like grpc::ByteBuffer or proto::MessageLite (the base protobuf).
+template <class RequestType, class ResponseType>
 class TemplatedGenericStub final {
  public:
   explicit TemplatedGenericStub(std::shared_ptr<grpc::ChannelInterface> channel)
@@ -51,7 +52,7 @@ class TemplatedGenericStub final {
   /// start it. Let it be started explicitly with StartCall and a tag.
   /// The return value only indicates whether or not registration of the call
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
-  std::unique_ptr<ClientAsyncReaderWriter<MessageType, MessageType>>
+  std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>>
   PrepareCall(ClientContext* context, const grpc::string& method,
               CompletionQueue* cq) {
     return CallInternal(channel_.get(), context, method, cq, false, nullptr);
@@ -61,11 +62,11 @@ class TemplatedGenericStub final {
   /// start it. Let it be started explicitly with StartCall.
   /// The return value only indicates whether or not registration of the call
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
-  std::unique_ptr<ClientAsyncResponseReader<MessageType>> PrepareUnaryCall(
+  std::unique_ptr<ClientAsyncResponseReader<ResponseType>> PrepareUnaryCall(
       ClientContext* context, const grpc::string& method,
-      const MessageType& request, CompletionQueue* cq) {
-    return std::unique_ptr<ClientAsyncResponseReader<MessageType>>(
-        internal::ClientAsyncResponseReaderFactory<MessageType>::Create(
+      const RequestType& request, CompletionQueue* cq) {
+    return std::unique_ptr<ClientAsyncResponseReader<ResponseType>>(
+        internal::ClientAsyncResponseReaderFactory<ResponseType>::Create(
             channel_.get(), cq,
             grpc::internal::RpcMethod(method.c_str(),
                                       grpc::internal::RpcMethod::NORMAL_RPC),
@@ -78,7 +79,7 @@ class TemplatedGenericStub final {
   /// (i.e, initial metadata has been sent).
   /// The return value only indicates whether or not registration of the call
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
-  std::unique_ptr<ClientAsyncReaderWriter<MessageType, MessageType>> Call(
+  std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>> Call(
       ClientContext* context, const grpc::string& method, CompletionQueue* cq,
       void* tag) {
     return CallInternal(channel_.get(), context, method, cq, true, tag);
@@ -88,7 +89,7 @@ class TemplatedGenericStub final {
   /// Setup and start a unary call to a named method \a method using
   /// \a context and specifying the \a request and \a response buffers.
   void UnaryCall(ClientContext* context, const grpc::string& method,
-                 const MessageType* request, MessageType* response,
+                 const RequestType* request, ResponseType* response,
                  std::function<void(grpc::Status)> on_completion) {
     UnaryCallInternal(context, method, request, response,
                       std::move(on_completion));
@@ -99,7 +100,7 @@ class TemplatedGenericStub final {
   /// Like any other reactor-based RPC, it will not be activated until
   /// StartCall is invoked on its reactor.
   void PrepareUnaryCall(ClientContext* context, const grpc::string& method,
-                        const MessageType* request, MessageType* response,
+                        const RequestType* request, ResponseType* response,
                         ClientUnaryReactor* reactor) {
     PrepareUnaryCallInternal(context, method, request, response, reactor);
   }
@@ -109,7 +110,7 @@ class TemplatedGenericStub final {
   /// until StartCall is invoked on its reactor.
   void PrepareBidiStreamingCall(
       ClientContext* context, const grpc::string& method,
-      ClientBidiReactor<MessageType, MessageType>* reactor) {
+      ClientBidiReactor<RequestType, ResponseType>* reactor) {
     PrepareBidiStreamingCallInternal(context, method, reactor);
   }
 #endif
@@ -124,7 +125,7 @@ class TemplatedGenericStub final {
     /// Setup and start a unary call to a named method \a method using
     /// \a context and specifying the \a request and \a response buffers.
     void UnaryCall(ClientContext* context, const grpc::string& method,
-                   const MessageType* request, MessageType* response,
+                   const RequestType* request, ResponseType* response,
                    std::function<void(grpc::Status)> on_completion) {
       stub_->UnaryCallInternal(context, method, request, response,
                                std::move(on_completion));
@@ -135,7 +136,7 @@ class TemplatedGenericStub final {
     /// Like any other reactor-based RPC, it will not be activated until
     /// StartCall is invoked on its reactor.
     void PrepareUnaryCall(ClientContext* context, const grpc::string& method,
-                          const MessageType* request, MessageType* response,
+                          const RequestType* request, ResponseType* response,
                           ClientUnaryReactor* reactor) {
       stub_->PrepareUnaryCallInternal(context, method, request, response,
                                       reactor);
@@ -146,7 +147,7 @@ class TemplatedGenericStub final {
     /// until StartCall is invoked on its reactor.
     void PrepareBidiStreamingCall(
         ClientContext* context, const grpc::string& method,
-        ClientBidiReactor<MessageType, MessageType>* reactor) {
+        ClientBidiReactor<RequestType, ResponseType>* reactor) {
       stub_->PrepareBidiStreamingCallInternal(context, method, reactor);
     }
 
@@ -163,7 +164,7 @@ class TemplatedGenericStub final {
   std::shared_ptr<grpc::ChannelInterface> channel_;
 
   void UnaryCallInternal(ClientContext* context, const grpc::string& method,
-                         const MessageType* request, MessageType* response,
+                         const RequestType* request, ResponseType* response,
                          std::function<void(grpc::Status)> on_completion) {
     internal::CallbackUnaryCall(
         channel_.get(),
@@ -174,10 +175,10 @@ class TemplatedGenericStub final {
 
   void PrepareUnaryCallInternal(ClientContext* context,
                                 const grpc::string& method,
-                                const MessageType* request,
-                                MessageType* response,
+                                const RequestType* request,
+                                ResponseType* response,
                                 ClientUnaryReactor* reactor) {
-    internal::ClientCallbackUnaryFactory::Create<MessageType, MessageType>(
+    internal::ClientCallbackUnaryFactory::Create<RequestType, ResponseType>(
         channel_.get(),
         grpc::internal::RpcMethod(method.c_str(),
                                   grpc::internal::RpcMethod::NORMAL_RPC),
@@ -186,20 +187,20 @@ class TemplatedGenericStub final {
 
   void PrepareBidiStreamingCallInternal(
       ClientContext* context, const grpc::string& method,
-      ClientBidiReactor<MessageType, MessageType>* reactor) {
-    internal::ClientCallbackReaderWriterFactory<MessageType, MessageType>::
+      ClientBidiReactor<RequestType, ResponseType>* reactor) {
+    internal::ClientCallbackReaderWriterFactory<RequestType, ResponseType>::
         Create(channel_.get(),
                grpc::internal::RpcMethod(
                    method.c_str(), grpc::internal::RpcMethod::BIDI_STREAMING),
                context, reactor);
   }
 
-  std::unique_ptr<ClientAsyncReaderWriter<MessageType, MessageType>>
+  std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>>
   CallInternal(grpc::ChannelInterface* channel, ClientContext* context,
                const grpc::string& method, CompletionQueue* cq, bool start,
                void* tag) {
-    return std::unique_ptr<ClientAsyncReaderWriter<MessageType, MessageType>>(
-        internal::ClientAsyncReaderWriterFactory<MessageType, MessageType>::
+    return std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>>(
+        internal::ClientAsyncReaderWriterFactory<RequestType, ResponseType>::
             Create(
                 channel, cq,
                 grpc::internal::RpcMethod(
@@ -208,7 +209,7 @@ class TemplatedGenericStub final {
   }
 };
 
-typedef TemplatedGenericStub<grpc::ByteBuffer> GenericStub;
+typedef TemplatedGenericStub<grpc::ByteBuffer, grpc::ByteBuffer> GenericStub;
 
 }  // namespace grpc_impl
 
