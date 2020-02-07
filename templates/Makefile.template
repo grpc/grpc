@@ -1493,6 +1493,7 @@
       "language": "c",
       "src": sorted(used_abseil_srcs),
       "hdr": sorted(used_abseil_hdrs),
+      "secure": False,
     })
   %>
   ${makelib(grpc_abseil_lib)}
