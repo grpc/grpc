@@ -62,7 +62,8 @@ UniquePtr<char> BootstrapString(const XdsBootstrap& bootstrap) {
                "    creds=[\n",
                bootstrap.server().server_uri.c_str());
   gpr_strvec_add(&v, tmp);
-  for (const auto& creds : bootstrap.server().channel_creds) {
+  for (size_t i = 0; i < bootstrap.server().channel_creds.size(); ++i) {
+    const auto& creds = bootstrap.server().channel_creds[i];
     gpr_asprintf(&tmp, "      {type=\"%s\", config=%s},\n",
                  creds.type.c_str(), creds.config.Dump().c_str());
     gpr_strvec_add(&v, tmp);
