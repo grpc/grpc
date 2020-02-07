@@ -14,9 +14,9 @@ _PYTHON3_BIN_PATH = "PYTHON3_BIN_PATH"
 _PYTHON3_LIB_PATH = "PYTHON3_LIB_PATH"
 
 _HEADERS_HELP = (
-  "Are Python headers installed? Try installing python-dev or " +
-  "python3-dev on Debian-based systems. Try python-devel or python3-devel " +
-  "on Redhat-based systems."
+    "Are Python headers installed? Try installing python-dev or " +
+    "python3-dev on Debian-based systems. Try python-devel or python3-devel " +
+    "on Redhat-based systems."
 )
 
 def _tpl(repository_ctx, tpl, substitutions = {}, out = None):
@@ -246,11 +246,11 @@ def _get_python_include(repository_ctx, python_bin):
     _execute(
         repository_ctx,
         [
-          python_bin,
-          "-c",
-          "import os;" +
-          "main_header = os.path.join('{}', 'Python.h');".format(include_path) +
-          "assert os.path.exists(main_header), main_header + ' does not exist.'"
+            python_bin,
+            "-c",
+            "import os;" +
+            "main_header = os.path.join('{}', 'Python.h');".format(include_path) +
+            "assert os.path.exists(main_header), main_header + ' does not exist.'",
         ],
         error_msg = "Unable to find Python headers for {}".format(python_bin),
         error_details = _HEADERS_HELP,
