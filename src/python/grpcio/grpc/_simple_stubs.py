@@ -210,3 +210,32 @@ def stream_unary(request_iterator: Iterator[RequestType],
                          wait_for_ready=wait_for_ready,
                          credentials=call_credentials,
                          timeout=timeout)
+
+
+def stream_stream(request_iterator: Iterator[RequestType],
+                  target: str,
+                  method: str,
+                  request_serializer: Optional[Callable[[Any], bytes]] = None,
+                  request_deserializer: Optional[Callable[[bytes], Any]] = None,
+                  options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+                  # TODO: Somehow make insecure_channel opt-in, not the default.
+                  channel_credentials: Optional[grpc.ChannelCredentials] = None,
+                  call_credentials: Optional[grpc.CallCredentials] = None,
+                  compression: Optional[grpc.Compression] = None,
+                  wait_for_ready: Optional[bool] = None,
+                  timeout: Optional[float] = None,
+                  metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None) -> Iterator[ResponseType]:
+    """Invokes a stream-stream RPC without an explicitly specified channel.
+
+    This is backed by a cache of channels evicted by a background thread
+    on a periodic basis.
+
+    TODO: Document the parameters and return value.
+    """
+    channel = ChannelCache.get().get_channel(target, options, channel_credentials, compression)
+    multicallable = channel.stream_stream(method, request_serializer, request_deserializer)
+    return multicallable(request_iterator,
+                         metadata=metadata,
+                         wait_for_ready=wait_for_ready,
+                         credentials=call_credentials,
+                         timeout=timeout)
