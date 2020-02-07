@@ -136,6 +136,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "work_serializer_test",
+    size = "enormous",
     srcs = ["work_serializer_test.cc"],
     exec_properties = LARGE_MACHINE,
     external_deps = [
