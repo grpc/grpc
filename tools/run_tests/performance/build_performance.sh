@@ -18,6 +18,7 @@ source ~/.rvm/scripts/rvm
 set -ex
 
 cd "$(dirname "$0")/../../.."
+bazel=`pwd`/tools/bazel
 
 CONFIG=${CONFIG:-opt}
 
@@ -73,7 +74,7 @@ do
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --compiler python2.7 --build_only -j 8
     ;;
   "python_asyncio")
-    bazel build -c opt //src/python/grpcio_tests/tests_aio/benchmark:worker
+    $bazel build -c opt //src/python/grpcio_tests/tests_aio/benchmark:worker
     ;;
   *)
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8
