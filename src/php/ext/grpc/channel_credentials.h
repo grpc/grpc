@@ -40,6 +40,11 @@ static inline wrapped_grpc_channel_credentials
       (char*)(obj) - XtOffsetOf(wrapped_grpc_channel_credentials, std));
 }
 
+/* Wrap grpc_channel_credentials into a PHP object */
+zval* grpc_php_wrap_channel_credentials(grpc_channel_credentials* wrapped,
+                                        char* hashstr,
+                                        zend_bool has_call_creds TSRMLS_DC);
+
 /* Initializes the ChannelCredentials PHP class */
 void grpc_init_channel_credentials(TSRMLS_D);
 

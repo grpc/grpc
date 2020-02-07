@@ -775,6 +775,14 @@ PHP_METHOD(Channel, getChannelInfo) {
     PHP_GRPC_ADD_ZVAL(return_value, "args", sizeof("args"), args_arr);
     PHP_GRPC_FREE_STD_ZVAL(args_arr);
   }
+  if (channel->wrapper->creds) {
+    zval* creds_object = grpc_php_wrap_channel_credentials(
+        grpc_channel_credentials_copy(channel->wrapper->creds),
+        strdup(channel->wrapper->creds_hashstr), false);
+    PHP_GRPC_ADD_ZVAL(return_value, "credentials", sizeof("credentials"),
+                      creds_object);
+    PHP_GRPC_FREE_STD_ZVAL(creds_object);
+  }
 }
 
 /**
@@ -825,6 +833,16 @@ PHP_METHOD(Channel, getPersistentList) {
       PHP_GRPC_ADD_ZVAL(ret_arr, "args", sizeof("args"), args_arr);
       PHP_GRPC_FREE_STD_ZVAL(args_arr);
     }
+
+    if (le->channel->creds) {
+      zval* creds_object = grpc_php_wrap_channel_credentials(
+          grpc_channel_credentials_copy(le->channel->creds),
+          strdup(le->channel->creds_hashstr), false);
+      PHP_GRPC_ADD_ZVAL(ret_arr, "credentials", sizeof("credentials"),
+                        creds_object);
+      PHP_GRPC_FREE_STD_ZVAL(creds_object);
+    }
+
     add_assoc_zval(return_value, le->channel->key, ret_arr);
     PHP_GRPC_FREE_STD_ZVAL(ret_arr);
   PHP_GRPC_HASH_FOREACH_END()
