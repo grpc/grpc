@@ -175,6 +175,35 @@ static bool php_grpc_not_channel_arg_key(const char* key) {
   return false;
 }
 
+zval* php_grpc_channel_args_to_array(grpc_channel_args* args) {
+  if (args == NULL) {
+    return NULL;
+  }
+
+  zval* args_arr;
+  PHP_GRPC_MAKE_STD_ZVAL(args_arr);
+  array_init(args_arr);
+  for (size_t i = 0; i < args->num_args; i++) {
+    switch (args->args[i].type) {
+      case GRPC_ARG_STRING:
+        PHP_GRPC_ADD_STRING_TO_ARRAY(args_arr, args->args[i].key,
+                                     strlen(args->args[i].key) + 1,
+                                     args->args[i].value.string, true);
+        break;
+      case GRPC_ARG_INTEGER:
+        PHP_GRPC_ADD_LONG_TO_ARRAY(args_arr, args->args[i].key,
+                                   strlen(args->args[i].key) + 1,
+                                   args->args[i].value.integer);
+        break;
+      default:
+        zend_throw_exception(spl_ce_InvalidArgumentException,
+                             "args values must be int or string", 1);
+        break;
+    }
+  }
+  return args_arr;
+}
+
 int php_grpc_read_args_array(zval *args_array,
                              grpc_channel_args *args TSRMLS_DC) {
   HashTable *array_hash;
@@ -740,6 +769,12 @@ PHP_METHOD(Channel, getChannelInfo) {
   // Info about the channel is closed or not
   PHP_GRPC_ADD_BOOL_TO_ARRAY(return_value, "is_valid",
               sizeof("is_valid"), (channel->wrapper == NULL));
+
+  zval* args_arr = php_grpc_channel_args_to_array(channel->wrapper->args);
+  if (args_arr) {
+    PHP_GRPC_ADD_ZVAL(return_value, "args", sizeof("args"), args_arr);
+    PHP_GRPC_FREE_STD_ZVAL(args_arr);
+  }
 }
 
 /**
@@ -784,6 +819,12 @@ PHP_METHOD(Channel, getPersistentList) {
     PHP_GRPC_ADD_STRING_TO_ARRAY(ret_arr, "ob",
                 sizeof("ob"),
                 grpc_connectivity_state_name(state), true);
+
+    zval* args_arr = php_grpc_channel_args_to_array(le->channel->args);
+    if (args_arr) {
+      PHP_GRPC_ADD_ZVAL(ret_arr, "args", sizeof("args"), args_arr);
+      PHP_GRPC_FREE_STD_ZVAL(args_arr);
+    }
     add_assoc_zval(return_value, le->channel->key, ret_arr);
     PHP_GRPC_FREE_STD_ZVAL(ret_arr);
   PHP_GRPC_HASH_FOREACH_END()

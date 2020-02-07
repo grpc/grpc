@@ -86,6 +86,28 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
       $this->channel1->close();
   }
 
+  public function testPersistentChannelWithArgs()
+  {
+      $channel_args = [
+          'str_arg' => 'str_arg_value',
+          'int_arg' => 1234,
+      ];
+      $this->channel1 = new Grpc\Channel('localhost:1', $channel_args);
+      $channel1_info = $this->channel1->getChannelInfo();
+      $plist_info = $this->channel1->getPersistentList();
+      $this->assertEquals($channel1_info['target'], 'localhost:1');
+      $this->assertEquals($channel1_info['ref_count'], 2);
+      $this->assertEquals(
+          $channel1_info['connectivity_status'],
+          GRPC\CHANNEL_IDLE
+      );
+      $this->assertEquals($channel1_info['args'], $channel_args);
+      $this->assertArrayHasKey($channel1_info['key'], $plist_info);
+      $this->assertEquals($plist_info[$channel1_info['key']]['args'], $channel_args);
+      $this->assertEquals(count($plist_info), 1);
+      $this->channel1->close();
+  }
+
   public function testPersistentChannelCreateMultipleChannels()
   {
       $this->channel1 = new Grpc\Channel('localhost:1', []);

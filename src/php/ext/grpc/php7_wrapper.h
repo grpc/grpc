@@ -46,6 +46,8 @@
    add_assoc_long_ex(val, key, key_len, str);
 #define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
    add_assoc_bool_ex(val, key, key_len, str);
+#define PHP_GRPC_ADD_ZVAL(val, key, key_len, zval) \
+   add_assoc_zval_ex(val, key, key_len, zval);
 #define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
    add_assoc_long_ex(val, key, key_len+1, str);
 
@@ -183,6 +185,8 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
    add_assoc_long_ex(val, key, key_len - 1, str);
 #define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
    add_assoc_bool_ex(val, key, key_len - 1, str);
+#define PHP_GRPC_ADD_ZVAL(val, key, key_len, zval) \
+   add_assoc_zval_ex(val, key, key_len-1, zval);
 #define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
    add_assoc_long_ex(val, key, key_len, str);
 
