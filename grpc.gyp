@@ -2548,6 +2548,15 @@
       ],
     },
     {
+      'target_name': 'upb_textformat',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'third_party/upb/upb/textencode.c',
+      ],
+    },
+    {
       'target_name': 'z',
       'type': 'static_library',
       'dependencies': [

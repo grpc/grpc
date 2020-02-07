@@ -25,31 +25,47 @@ import yaml
 out = {}
 
 try:
-    out['libs'] = [{
-        'name':
-            'upb',
-        'build':
-            'all',
-        'language':
-            'c',
-        'src': [
-            "third_party/upb/upb/decode.c",
-            "third_party/upb/upb/encode.c",
-            "third_party/upb/upb/msg.c",
-            "third_party/upb/upb/port.c",
-            "third_party/upb/upb/table.c",
-            "third_party/upb/upb/upb.c",
-        ],
-        'headers': [
-            "third_party/upb/upb/decode.h",
-            "third_party/upb/upb/encode.h",
-            "third_party/upb/upb/msg.h",
-            "third_party/upb/upb/port_def.inc",
-            "third_party/upb/upb/port_undef.inc",
-            "third_party/upb/upb/table.int.h",
-            "third_party/upb/upb/upb.h",
-        ],
-    }]
+    out['libs'] = [
+        {
+            'name':
+                'upb',
+            'build':
+                'all',
+            'language':
+                'c',
+            'src': [
+                "third_party/upb/upb/decode.c",
+                "third_party/upb/upb/encode.c",
+                "third_party/upb/upb/msg.c",
+                "third_party/upb/upb/port.c",
+                "third_party/upb/upb/table.c",
+                "third_party/upb/upb/upb.c",
+            ],
+            'headers': [
+                "third_party/upb/upb/decode.h",
+                "third_party/upb/upb/encode.h",
+                "third_party/upb/upb/msg.h",
+                "third_party/upb/upb/port_def.inc",
+                "third_party/upb/upb/port_undef.inc",
+                "third_party/upb/upb/table.int.h",
+                "third_party/upb/upb/upb.h",
+            ],
+        },
+        {
+            'name':
+                'upb_textformat',
+            'build':
+                'all',
+            'language':
+                'c',
+            'src': [
+                "third_party/upb/upb/textencode.c",
+            ],
+            'headers': [
+                "third_party/upb/upb/textencode.h",
+            ],
+        },
+    ]
 except:
     pass
 
