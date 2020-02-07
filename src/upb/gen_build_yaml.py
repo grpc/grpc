@@ -50,6 +50,7 @@ try:
             "third_party/upb/upb/table.int.h",
             "third_party/upb/upb/upb.h",
         ],
+        'secure': False,
     }]
 except:
     pass
