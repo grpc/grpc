@@ -476,7 +476,7 @@ current_test_subprocess = subprocess.Popen([
   '--target_name', 'ipv4-svc_cfg_bad_json.resolver-tests-version-4.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
-  '--expected_service_config_error', 'could not parse',
+  '--expected_service_config_error', 'JSON parse error',
   '--expected_lb_policy', '',
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',

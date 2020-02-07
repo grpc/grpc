@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef enum AioChannelStatus:
-    AIO_CHANNEL_STATUS_UNKNOWN
-    AIO_CHANNEL_STATUS_READY
-    AIO_CHANNEL_STATUS_CLOSING
-    AIO_CHANNEL_STATUS_DESTROYED
+FROM debian:stretch
 
-cdef class AioChannel:
-    cdef:
-        grpc_channel * channel
-        CallbackCompletionQueue cq
-        object loop
-        bytes _target
-        AioChannelStatus _status
+# gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
+RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-config && apt-get clean
+
+# debian stretch has cmake 3.7: https://packages.debian.org/stretch/cmake
+RUN apt-get update && apt-get install -y cmake && apt-get clean
+
+# C++ distribtests are setup in a way that requires git
+RUN apt-get update && apt-get install -y git && apt-get clean
+
+CMD ["bash"]

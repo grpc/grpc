@@ -172,7 +172,7 @@ class XdsLb : public LoadBalancingPolicy {
 
     RefCountedPtr<XdsLb> xds_policy_;
     PickerList pickers_;
-    RefCountedPtr<XdsDropConfig> drop_config_;
+    RefCountedPtr<XdsApi::DropConfig> drop_config_;
   };
 
   class FallbackHelper : public ChannelControlHelper {
@@ -286,7 +286,7 @@ class XdsLb : public LoadBalancingPolicy {
     ~LocalityMap() { xds_policy_.reset(DEBUG_LOCATION, "LocalityMap"); }
 
     void UpdateLocked(
-        const XdsPriorityListUpdate::LocalityMap& locality_map_update);
+        const XdsApi::PriorityListUpdate::LocalityMap& locality_map_update);
     void ResetBackoffLocked();
     void UpdateXdsPickerLocked();
     OrphanablePtr<Locality> ExtractLocalityLocked(
@@ -316,10 +316,10 @@ class XdsLb : public LoadBalancingPolicy {
     static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
     static void OnFailoverTimerLocked(void* arg, grpc_error* error);
 
-    const XdsPriorityListUpdate& priority_list_update() const {
+    const XdsApi::PriorityListUpdate& priority_list_update() const {
       return xds_policy_->priority_list_update_;
     }
-    const XdsPriorityListUpdate::LocalityMap* locality_map_update() const {
+    const XdsApi::PriorityListUpdate::LocalityMap* locality_map_update() const {
       return xds_policy_->priority_list_update_.Find(priority_);
     }
 
@@ -431,10 +431,10 @@ class XdsLb : public LoadBalancingPolicy {
   // The priority that is being used.
   uint32_t current_priority_ = UINT32_MAX;
   // The update for priority_list_.
-  XdsPriorityListUpdate priority_list_update_;
+  XdsApi::PriorityListUpdate priority_list_update_;
 
   // The config for dropping calls.
-  RefCountedPtr<XdsDropConfig> drop_config_;
+  RefCountedPtr<XdsApi::DropConfig> drop_config_;
 
   // The stats for client-side load reporting.
   XdsClientStats client_stats_;
@@ -594,7 +594,7 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
 
   ~EndpointWatcher() { xds_policy_.reset(DEBUG_LOCATION, "EndpointWatcher"); }
 
-  void OnEndpointChanged(EdsUpdate update) override {
+  void OnEndpointChanged(XdsApi::EdsUpdate update) override {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO, "[xdslb %p] Received EDS update from xds client",
               xds_policy_.get());
@@ -1032,6 +1032,8 @@ void XdsLb::UpdatePrioritiesLocked() {
   for (uint32_t priority = 0; priority < priorities_.size(); ++priority) {
     LocalityMap* locality_map = priorities_[priority].get();
     const auto* locality_map_update = priority_list_update_.Find(priority);
+    // If we have more current priorities than exist in the update, stop here.
+    if (locality_map_update == nullptr) break;
     // Propagate locality_map_update.
     // TODO(juanlishen): Find a clean way to skip duplicate update for a
     // priority.
@@ -1154,7 +1156,7 @@ XdsLb::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
 }
 
 void XdsLb::LocalityMap::UpdateLocked(
-    const XdsPriorityListUpdate::LocalityMap& locality_map_update) {
+    const XdsApi::PriorityListUpdate::LocalityMap& locality_map_update) {
   if (xds_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Start Updating priority %" PRIu32,

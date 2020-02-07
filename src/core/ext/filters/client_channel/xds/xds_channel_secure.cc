@@ -64,7 +64,8 @@ grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
 }
 
 grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
-                               const grpc_channel_args& args) {
+                               const grpc_channel_args& args,
+                               grpc_error** error) {
   grpc_channel_credentials* creds = nullptr;
   RefCountedPtr<grpc_channel_credentials> creds_to_unref;
   if (!bootstrap.server().channel_creds.empty()) {
@@ -77,7 +78,11 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
         break;
       }
     }
-    if (creds == nullptr) return nullptr;
+    if (creds == nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "no supported credential types found");
+      return nullptr;
+    }
     creds_to_unref.reset(creds);
   } else {
     creds = grpc_channel_credentials_find_in_args(&args);

@@ -25,6 +25,8 @@ from tests_aio.interop import methods
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
+_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
+
 
 class InteropTestCaseMixin:
     """Unit test methods.
@@ -104,6 +106,30 @@ class InsecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
         await self._server.stop(None)
 
 
+class SecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
+
+    async def setUp(self):
+        server_credentials = grpc.ssl_server_credentials([
+            (resources.private_key(), resources.certificate_chain())
+        ])
+        channel_credentials = grpc.ssl_channel_credentials(
+            resources.test_root_certificates())
+        channel_options = ((
+            'grpc.ssl_target_name_override',
+            _SERVER_HOST_OVERRIDE,
+        ),)
+
+        address, self._server = await start_test_server(
+            secure=True, server_credentials=server_credentials)
+        self._channel = aio.secure_channel(address, channel_credentials,
+                                           channel_options)
+        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+
+    async def tearDown(self):
+        await self._channel.close()
+        await self._server.stop(None)
+
+
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     unittest.main(verbosity=2)

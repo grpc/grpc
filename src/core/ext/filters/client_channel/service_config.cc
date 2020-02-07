@@ -214,7 +214,7 @@ UniquePtr<char> ServiceConfig::ParseJsonMethodName(const Json& json,
   }
   char* path;
   gpr_asprintf(&path, "/%s/%s", service_name,
-               method_name == nullptr ? "*" : method_name);
+               method_name == nullptr ? "" : method_name);
   return grpc_core::UniquePtr<char>(path);
 }
 
@@ -225,15 +225,14 @@ ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) {
   }
   const auto* value = parsed_method_configs_table_->Get(path);
   // If we didn't find a match for the path, try looking for a wildcard
-  // entry (i.e., change "/service/method" to "/service/*").
+  // entry (i.e., change "/service/method" to "/service/").
   if (value == nullptr) {
     char* path_str = grpc_slice_to_c_string(path);
     const char* sep = strrchr(path_str, '/') + 1;
     const size_t len = (size_t)(sep - path_str);
-    char* buf = (char*)gpr_malloc(len + 2);  // '*' and NUL
+    char* buf = (char*)gpr_malloc(len + 1);  // trailing NUL
     memcpy(buf, path_str, len);
-    buf[len] = '*';
-    buf[len + 1] = '\0';
+    buf[len] = '\0';
     grpc_slice wildcard_path = grpc_slice_from_copied_string(buf);
     gpr_free(buf);
     value = parsed_method_configs_table_->Get(wildcard_path);

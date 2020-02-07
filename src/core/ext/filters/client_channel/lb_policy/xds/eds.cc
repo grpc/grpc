@@ -147,7 +147,7 @@ class EdsLb : public LoadBalancingPolicy {
 
    private:
     RefCountedPtr<EdsLb> eds_policy_;
-    RefCountedPtr<XdsDropConfig> drop_config_;
+    RefCountedPtr<XdsApi::DropConfig> drop_config_;
     RefCountedPtr<ChildPickerWrapper> child_picker_;
   };
 
@@ -254,8 +254,8 @@ class EdsLb : public LoadBalancingPolicy {
   // Note that this is not owned, so this pointer must never be derefernced.
   EndpointWatcher* endpoint_watcher_ = nullptr;
   // The latest data from the endpoint watcher.
-  XdsPriorityListUpdate priority_list_update_;
-  RefCountedPtr<XdsDropConfig> drop_config_;
+  XdsApi::PriorityListUpdate priority_list_update_;
+  RefCountedPtr<XdsApi::DropConfig> drop_config_;
 
   XdsClientStats client_stats_;
 
@@ -450,7 +450,7 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
 
   ~EndpointWatcher() { eds_policy_.reset(DEBUG_LOCATION, "EndpointWatcher"); }
 
-  void OnEndpointChanged(EdsUpdate update) override {
+  void OnEndpointChanged(XdsApi::EdsUpdate update) override {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
       gpr_log(GPR_INFO, "[edslb %p] Received EDS update from xds client",
               eds_policy_.get());
