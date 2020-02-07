@@ -15,7 +15,7 @@
 
 import asyncio
 from concurrent.futures import Executor
-from typing import Any, Optional, Sequence, Text
+from typing import Any, Optional, Sequence
 
 import grpc
 from grpc import _common, _compression
@@ -58,7 +58,7 @@ class Server:
         """
         self._server.add_generic_rpc_handlers(generic_rpc_handlers)
 
-    def add_insecure_port(self, address: Text) -> int:
+    def add_insecure_port(self, address: str) -> int:
         """Opens an insecure port for accepting RPCs.
 
         This method may only be called before starting the server.
@@ -72,7 +72,7 @@ class Server:
         """
         return self._server.add_insecure_port(_common.encode(address))
 
-    def add_secure_port(self, address: Text,
+    def add_secure_port(self, address: str,
                         server_credentials: grpc.ServerCredentials) -> int:
         """Opens a secure port for accepting RPCs.
 
