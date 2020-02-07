@@ -501,6 +501,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    shard_count = 10,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -515,12 +516,13 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//src/proto/grpc/testing/xds:ads_for_test_proto",
+        "//src/proto/grpc/testing/xds:cds_for_test_proto",
         "//src/proto/grpc/testing/xds:eds_for_test_proto",
+        "//src/proto/grpc/testing/xds:lds_rds_for_test_proto",
         "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    shard_count = 10,
 )
 
 grpc_cc_test(
@@ -713,6 +715,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    shard_count = 5,
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:gpr",
@@ -724,7 +727,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    shard_count = 5,
 )
 
 grpc_cc_test(

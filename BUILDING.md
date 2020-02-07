@@ -12,9 +12,16 @@ Other should follow the user instructions. See the [How to use](https://github.c
  $ [sudo] apt-get install build-essential autoconf libtool pkg-config
 ```
 
-If you plan to build from source and run tests, install the following as well:
+If you plan to build using CMake
 ```sh
- $ [sudo] apt-get install libgflags-dev libgtest-dev
+ $ [sudo] apt-get install cmake
+```
+
+If you are a contributor and plan to build and run tests, install the following as well:
+```sh
+ $ # libgflags-dev is only required if building with make (deprecated)
+ $ [sudo] apt-get install libgflags-dev
+ $ # clang and LLVM C++ lib is only required for sanitizer builds
  $ [sudo] apt-get install clang-5.0 libc++-dev
 ```
 
@@ -36,12 +43,15 @@ packages from [Homebrew](https://brew.sh):
  $ brew install autoconf automake libtool shtool
 ```
 
-If you plan to build from source and run tests, install the following as well:
+If you plan to build using CMake, follow the instructions from https://cmake.org/download/
+
+If you are a contributor and plan to build and run tests, install the following as well:
 ```sh
+ $ # gflags is only required if building with make (deprecated) 
  $ brew install gflags
 ```
 
-*Tip*: when building, 
+*Tip*: when building,
 you *may* want to explicitly set the `LIBTOOL` and `LIBTOOLIZE`
 environment variables when running `make` to ensure the version
 installed by `brew` is being used:
@@ -56,14 +66,12 @@ To prepare for cmake + Microsoft Visual C++ compiler build
 - Install Visual Studio 2015 or 2017 (Visual C++ compiler will be used).
 - Install [Git](https://git-scm.com/).
 - Install [CMake](https://cmake.org/download/).
-- Install [Active State Perl](https://www.activestate.com/activeperl/) (`choco install activeperl`) - *required by boringssl*
-- Install [Go](https://golang.org/dl/) (`choco install golang`) - *required by boringssl*
 - Install [nasm](https://www.nasm.us/) and add it to `PATH` (`choco install nasm`) - *required by boringssl*
 - (Optional) Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
 
 # Clone the repository (including submodules)
 
-Before building, you need to clone the gRPC github repository and download submodules containing source code 
+Before building, you need to clone the gRPC github repository and download submodules containing source code
 for gRPC's dependencies (that's done by the `submodule` command or `--recursive` flag). The following commands will clone the gRPC
 repository at the latest stable version.
 
@@ -116,7 +124,9 @@ $ bazel test --config=dbg //test/...
 NOTE: If you are gRPC maintainer and you have access to our test cluster, you should use the our [gRPC's Remote Execution environment](tools/remote_build/README.md)
 to get significant improvement to the build and test speed (and a bunch of other very useful features).
 
-## CMake: Linux/Unix, Using Make
+## Building with CMake
+
+### Linux/Unix, Using Make
 
 Run from grpc directory after cloning the repo with --recursive or updating submodules.
 ```
@@ -128,12 +138,12 @@ $ make
 
 If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
 
-## Building with CMake: Windows, Using Visual Studio 2015 or 2017 (can only build with OPENSSL_NO_ASM).
+### Windows, Using Visual Studio 2015 or 2017
 
 When using the "Visual Studio" generator,
-cmake will generate a solution (`grpc.sln`) that contains a VS project for 
+cmake will generate a solution (`grpc.sln`) that contains a VS project for
 every target defined in `CMakeLists.txt` (+ few extra convenience projects
-added automatically by cmake). After opening the solution with Visual Studio 
+added automatically by cmake). After opening the solution with Visual Studio
 you will be able to browse and build the code.
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
@@ -143,20 +153,88 @@ you will be able to browse and build the code.
 > cmake --build . --config Release
 ```
 
-## Building with CMake: Windows, Using Ninja (faster build, supports boringssl's assembly optimizations).
+If you want to build DLLs, run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+
+### Windows, Using Ninja (faster build).
 
 Please note that when using Ninja, you will still need Visual C++ (part of Visual Studio)
 installed to be able to compile the C/C++ sources.
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
-> md .build
-> cd .build
+> cd cmake
+> md build
+> cd build
 > call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
-> cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+> cmake ..\.. -GNinja -DCMAKE_BUILD_TYPE=Release
 > cmake --build .
 ```
 
-## Building with make (on UNIX systems)
+If you want to build DLLs, run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+
+### Dependency management
+
+gRPC's CMake build system provides two modes for handling dependencies.
+* module - build dependencies alongside gRPC.
+* package - use external copies of dependencies that are already available
+on your system.
+
+This behavior is controlled by the `gRPC_<depname>_PROVIDER` CMake variables,
+ie `gRPC_CARES_PROVIDER`.
+
+### Install after build
+
+Perform the following steps to install gRPC using CMake.
+* Set `-DgRPC_INSTALL=ON`
+* Build the `install` target
+
+The install destination is controlled by the
+[`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html) variable.
+
+If you are running CMake v3.13 or newer you can build gRPC's dependencies
+in "module" mode and install them alongside gRPC in a single step.
+[Example](test/distrib/cpp/run_distrib_test_cmake_module_install.sh)
+
+If you are using an older version of gRPC, you will need to select "package"
+mode (rather than "module" mode) for the dependencies.
+This means you will need to have external copies of these libraries available
+on your system. This [example](test/distrib/cpp/run_distrib_test_cmake.sh) shows
+how to install dependencies with cmake before proceeding to installing gRPC itself. 
+
+```
+# NOTE: all of gRPC's dependencies need to be already installed
+$ cmake ../.. -DgRPC_INSTALL=ON                \
+              -DCMAKE_BUILD_TYPE=Release       \
+              -DgRPC_ABSL_PROVIDER=package     \
+              -DgRPC_CARES_PROVIDER=package    \
+              -DgRPC_PROTOBUF_PROVIDER=package \
+              -DgRPC_SSL_PROVIDER=package      \
+              -DgRPC_ZLIB_PROVIDER=package
+$ make
+$ make install
+```
+
+### Cross-compiling
+
+You can use CMake to cross-compile gRPC for another architecture. In order to
+do so, you will first need to build `protoc` and `grpc_cpp_plugin`
+for the host architecture. These tools are used during the build of gRPC, so
+we need copies of executables that can be run natively.
+
+You will likely need to install the toolchain for the platform you are
+targeting for your cross-compile. Once you have done so, you can write a
+toolchain file to tell CMake where to find the compilers and system tools
+that will be used for this build.
+
+This toolchain file is specified to CMake by setting the `CMAKE_TOOLCHAIN_FILE`
+variable.
+```
+$ cmake ../.. -DCMAKE_TOOLCHAIN_FILE=path/to/file
+$ make
+```
+
+[Cross-compile example](test/distrib/cpp/run_distrib_test_raspberry_pi.sh)
+
+## Building with make on UNIX systems (deprecated)
 
 NOTE: `make` used to be gRPC's default build system, but we're no longer recommending it. You should use `bazel` or `cmake` instead. The `Makefile` is only intended for internal usage and is not meant for public consumption.
 

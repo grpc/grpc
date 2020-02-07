@@ -321,6 +321,10 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options);
 
+std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin,
+    grpc_security_level min_security_level);
+
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {
   /// service accounts of target endpoint that will be acceptable

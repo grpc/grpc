@@ -563,7 +563,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
           test_server_authorization_check));
 
   TlsCredentialsOptions options = TlsCredentialsOptions(
-      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, key_materials_config,
+      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+      GRPC_TLS_SERVER_VERIFICATION, key_materials_config,
       credential_reload_config, server_authorization_check_config);
   grpc_tls_credentials_options* c_options = options.c_credentials_options();
   EXPECT_EQ(c_options->cert_request_type(),
@@ -661,8 +662,9 @@ TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
           test_server_authorization_check));
 
   TlsCredentialsOptions options = TlsCredentialsOptions(
-      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, nullptr,
-      credential_reload_config, server_authorization_check_config);
+      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+      GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config,
+      server_authorization_check_config);
   std::shared_ptr<grpc_impl::ChannelCredentials> channel_credentials =
       grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials != nullptr);

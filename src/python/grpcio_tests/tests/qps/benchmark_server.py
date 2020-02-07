@@ -29,8 +29,8 @@ class BenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
             yield messages_pb2.SimpleResponse(payload=payload)
 
 
-class GenericBenchmarkServer(
-        benchmark_service_pb2_grpc.BenchmarkServiceServicer):
+class GenericBenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer
+                            ):
     """Generic Server implementation for the Benchmark service."""
 
     def __init__(self, resp_size):

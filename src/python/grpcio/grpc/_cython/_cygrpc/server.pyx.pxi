@@ -12,14 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import logging
-import time
-import grpc
-
-_LOGGER = logging.getLogger(__name__)
-
 
 cdef class Server:
 
@@ -126,7 +118,7 @@ cdef class Server:
 
   def cancel_all_calls(self):
     if not self.is_shutting_down:
-      raise RuntimeError("the server must be shutting down to cancel all calls")
+      raise UsageError("the server must be shutting down to cancel all calls")
     elif self.is_shutdown:
       return
     else:
@@ -144,7 +136,7 @@ cdef class Server:
         pass
       elif not self.is_shutting_down:
         if self.backup_shutdown_queue is None:
-          raise RuntimeError('Server shutdown failed: no completion queue.')
+          raise InternalError('Server shutdown failed: no completion queue.')
         else:
           # the user didn't call shutdown - use our backup queue
           self._c_shutdown(self.backup_shutdown_queue, None)

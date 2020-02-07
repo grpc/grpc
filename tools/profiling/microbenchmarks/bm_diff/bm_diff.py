@@ -46,20 +46,18 @@ def _median(ary):
 def _args():
     argp = argparse.ArgumentParser(
         description='Perform diff on microbenchmarks')
-    argp.add_argument(
-        '-t',
-        '--track',
-        choices=sorted(bm_constants._INTERESTING),
-        nargs='+',
-        default=sorted(bm_constants._INTERESTING),
-        help='Which metrics to track')
-    argp.add_argument(
-        '-b',
-        '--benchmarks',
-        nargs='+',
-        choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        help='Which benchmarks to run')
+    argp.add_argument('-t',
+                      '--track',
+                      choices=sorted(bm_constants._INTERESTING),
+                      nargs='+',
+                      default=sorted(bm_constants._INTERESTING),
+                      help='Which metrics to track')
+    argp.add_argument('-b',
+                      '--benchmarks',
+                      nargs='+',
+                      choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      help='Which benchmarks to run')
     argp.add_argument(
         '-l',
         '--loops',
@@ -68,19 +66,20 @@ def _args():
         help=
         'Number of times to loops the benchmarks. Must match what was passed to bm_run.py'
     )
-    argp.add_argument(
-        '-r',
-        '--regex',
-        type=str,
-        default="",
-        help='Regex to filter benchmarks run')
+    argp.add_argument('-r',
+                      '--regex',
+                      type=str,
+                      default="",
+                      help='Regex to filter benchmarks run')
     argp.add_argument('--counters', dest='counters', action='store_true')
     argp.add_argument('--no-counters', dest='counters', action='store_false')
     argp.set_defaults(counters=True)
     argp.add_argument('-n', '--new', type=str, help='New benchmark name')
     argp.add_argument('-o', '--old', type=str, help='Old benchmark name')
-    argp.add_argument(
-        '-v', '--verbose', type=bool, help='Print details of before/after')
+    argp.add_argument('-v',
+                      '--verbose',
+                      type=bool,
+                      help='Print details of before/after')
     args = argp.parse_args()
     global verbose
     if args.verbose: verbose = True
@@ -166,19 +165,21 @@ def diff(bms, loops, regex, track, old, new, counters):
             ]).splitlines():
                 stripped_line = line.strip().replace("/", "_").replace(
                     "<", "_").replace(">", "_").replace(", ", "_")
-                js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
-                                        (bm, stripped_line, new, loop),
-                                        badjson_files, nonexistant_files)
-                js_old_opt = _read_json('%s.%s.opt.%s.%d.json' %
-                                        (bm, stripped_line, old, loop),
-                                        badjson_files, nonexistant_files)
+                js_new_opt = _read_json(
+                    '%s.%s.opt.%s.%d.json' % (bm, stripped_line, new, loop),
+                    badjson_files, nonexistant_files)
+                js_old_opt = _read_json(
+                    '%s.%s.opt.%s.%d.json' % (bm, stripped_line, old, loop),
+                    badjson_files, nonexistant_files)
                 if counters:
-                    js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                                            (bm, stripped_line, new, loop),
-                                            badjson_files, nonexistant_files)
-                    js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                                            (bm, stripped_line, old, loop),
-                                            badjson_files, nonexistant_files)
+                    js_new_ctr = _read_json(
+                        '%s.%s.counters.%s.%d.json' %
+                        (bm, stripped_line, new, loop), badjson_files,
+                        nonexistant_files)
+                    js_old_ctr = _read_json(
+                        '%s.%s.counters.%s.%d.json' %
+                        (bm, stripped_line, old, loop), badjson_files,
+                        nonexistant_files)
                 else:
                     js_new_ctr = None
                     js_old_ctr = None

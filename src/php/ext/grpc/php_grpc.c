@@ -26,12 +26,17 @@
 #include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
+#include <inttypes.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <ext/spl/spl_exceptions.h>
 #include <zend_exceptions.h>
+
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+#include <pthread.h>
+#endif
 
 ZEND_DECLARE_MODULE_GLOBALS(grpc)
 static PHP_GINIT_FUNCTION(grpc);

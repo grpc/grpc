@@ -16,16 +16,17 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
 #include <gmock/gmock.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "src/core/tsi/transport_security.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/test_config.h"
 
@@ -118,7 +119,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
 TEST_F(TlsSecurityConnectorTest, NoKeysAndConfig) {
   grpc_ssl_certificate_config_reload_status reload_status;
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_FAILED_PRECONDITION);
   options_->Unref();
 }
@@ -127,7 +128,7 @@ TEST_F(TlsSecurityConnectorTest, NoKeySuccessReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(SUCCESS);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   options_->Unref();
@@ -137,7 +138,7 @@ TEST_F(TlsSecurityConnectorTest, NoKeyFailReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(FAIL);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_INTERNAL);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   options_->Unref();
@@ -148,7 +149,7 @@ TEST_F(TlsSecurityConnectorTest, NoKeyAsyncReload) {
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetOptions(ASYNC);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
@@ -159,7 +160,7 @@ TEST_F(TlsSecurityConnectorTest, NoKeyUnchangedReload) {
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetOptions(UNCHANGED);
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
@@ -170,7 +171,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeyNoReload) {
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   options_->Unref();
 }
@@ -180,7 +181,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeySuccessReload) {
   SetOptions(SUCCESS);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   options_->Unref();
@@ -191,7 +192,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeyFailReload) {
   SetOptions(FAIL);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   options_->Unref();
@@ -203,7 +204,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeyAsyncReload) {
   SetOptions(ASYNC);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
@@ -215,7 +216,7 @@ TEST_F(TlsSecurityConnectorTest, WithKeyUnchangedReload) {
   SetOptions(UNCHANGED);
   SetKeyMaterialsConfig();
   grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, &reload_status);
+      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
   options_->Unref();
@@ -254,6 +255,35 @@ TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailInit) {
   EXPECT_EQ(connector, nullptr);
 }
 
+TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameSuccess) {
+  const char* target_name = "foo.test.google.fr";
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, target_name,
+                 &peer.properties[0]) == TSI_OK);
+  grpc_error* error = grpc_core::TlsCheckHostName(target_name, &peer);
+  tsi_peer_destruct(&peer);
+  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
+  options_->Unref();
+}
+
+TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
+  const char* target_name = "foo.test.google.fr";
+  const char* another_name = "bar.test.google.fr";
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, another_name,
+                 &peer.properties[0]) == TSI_OK);
+  grpc_error* error = grpc_core::TlsCheckHostName(target_name, &peer);
+  tsi_peer_destruct(&peer);
+  EXPECT_NE(error, GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
+  options_->Unref();
+}
+
 TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorSuccess) {
   SetOptions(SUCCESS);
   auto cred = std::unique_ptr<grpc_server_credentials>(
@@ -274,8 +304,8 @@ TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorFailInit) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;

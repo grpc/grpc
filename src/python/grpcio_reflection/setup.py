@@ -70,8 +70,8 @@ INSTALL_REQUIRES = (
 try:
     import reflection_commands as _reflection_commands
     # we are in the build environment, otherwise the above import fails
-    SETUP_REQUIRES = (
-        'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
+    SETUP_REQUIRES = ('grpcio-tools=={version}'.format(
+        version=grpc_version.VERSION),)
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
         'preprocess': _reflection_commands.Preprocess,
@@ -85,18 +85,17 @@ except ImportError:
         'build_package_protos': _NoOpCommand,
     }
 
-setuptools.setup(
-    name='grpcio-reflection',
-    version=grpc_version.VERSION,
-    license='Apache License 2.0',
-    description='Standard Protobuf Reflection Service for gRPC',
-    long_description=open(_README_PATH, 'r').read(),
-    author='The gRPC Authors',
-    author_email='grpc-io@googlegroups.com',
-    classifiers=CLASSIFIERS,
-    url='https://grpc.io',
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages('.'),
-    install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS)
+setuptools.setup(name='grpcio-reflection',
+                 version=grpc_version.VERSION,
+                 license='Apache License 2.0',
+                 description='Standard Protobuf Reflection Service for gRPC',
+                 long_description=open(_README_PATH, 'r').read(),
+                 author='The gRPC Authors',
+                 author_email='grpc-io@googlegroups.com',
+                 classifiers=CLASSIFIERS,
+                 url='https://grpc.io',
+                 package_dir=PACKAGE_DIRECTORIES,
+                 packages=setuptools.find_packages('.'),
+                 install_requires=INSTALL_REQUIRES,
+                 setup_requires=SETUP_REQUIRES,
+                 cmdclass=COMMAND_CLASS)

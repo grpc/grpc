@@ -35,6 +35,7 @@
 
 extern "C" {
 #include <openssl/crypto.h>
+#include <openssl/pem.h>
 }
 
 #define SSL_TSI_TEST_ALPN1 "foo"
@@ -187,6 +188,15 @@ static void check_alpn(ssl_tsi_test_fixture* ssl_fixture,
   }
 }
 
+static void check_security_level(const tsi_peer* peer) {
+  const tsi_peer_property* security_level =
+      tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  GPR_ASSERT(security_level != nullptr);
+  const char* expected_match = "TSI_PRIVACY_AND_INTEGRITY";
+  GPR_ASSERT(memcmp(security_level->value.data, expected_match,
+                    security_level->value.length) == 0);
+}
+
 static const tsi_peer_property*
 check_basic_authenticated_peer_and_get_common_name(const tsi_peer* peer) {
   const tsi_peer_property* cert_type_property =
@@ -271,7 +281,7 @@ static void check_client_peer(ssl_tsi_test_fixture* ssl_fixture,
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   if (!ssl_fixture->force_client_auth) {
     GPR_ASSERT(peer->property_count ==
-               (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 2 : 1));
+               (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 3 : 2));
   } else {
     const tsi_peer_property* property =
         check_basic_authenticated_peer_and_get_common_name(peer);
@@ -297,6 +307,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
+    check_security_level(&peer);
     if (ssl_fixture->server_name_indication != nullptr) {
       check_server1_peer(&peer);
     } else {
@@ -310,6 +321,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
                    ssl_fixture->base.server_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
+    check_security_level(&peer);
     check_client_peer(ssl_fixture, &peer);
   } else {
     GPR_ASSERT(ssl_fixture->base.server_result == nullptr);
@@ -825,7 +837,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer peer;
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
-  // One for common name, one for certificate, and six for SAN fields.
+  // One for common name, one for certificate, one for security level, and six
+  // for SAN fields.
   size_t expected_property_count = 8;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name
@@ -855,6 +868,42 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer_destruct(&peer);
 }
 
+void ssl_tsi_test_extract_cert_chain() {
+  gpr_log(GPR_INFO, "ssl_tsi_test_extract_cert_chain");
+  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server1.pem");
+  char* ca = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+  char* chain = static_cast<char*>(
+      gpr_zalloc(sizeof(char) * (strlen(cert) + strlen(ca) + 1)));
+  memcpy(chain, cert, strlen(cert));
+  memcpy(chain + strlen(cert), ca, strlen(ca));
+  STACK_OF(X509)* cert_chain = sk_X509_new_null();
+  GPR_ASSERT(cert_chain != nullptr);
+  BIO* bio = BIO_new_mem_buf(chain, strlen(chain));
+  GPR_ASSERT(bio != nullptr);
+  STACK_OF(X509_INFO)* certInfos =
+      PEM_X509_INFO_read_bio(bio, nullptr, nullptr, nullptr);
+  GPR_ASSERT(certInfos != nullptr);
+  for (int i = 0; i < sk_X509_INFO_num(certInfos); i++) {
+    X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
+    if (certInfo->x509 != nullptr) {
+      GPR_ASSERT(sk_X509_push(cert_chain, certInfo->x509) != 0);
+      X509_up_ref(certInfo->x509);
+    }
+  }
+  tsi_peer_property chain_property;
+  GPR_ASSERT(tsi_ssl_get_cert_chain_contents(cert_chain, &chain_property) ==
+             TSI_OK);
+  GPR_ASSERT(memcmp(chain, chain_property.value.data,
+                    chain_property.value.length) == 0);
+  BIO_free(bio);
+  gpr_free(chain);
+  gpr_free(cert);
+  gpr_free(ca);
+  tsi_peer_property_destruct(&chain_property);
+  sk_X509_INFO_pop_free(certInfos, X509_INFO_free);
+  sk_X509_pop_free(cert_chain, X509_free);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -881,6 +930,7 @@ int main(int argc, char** argv) {
   ssl_tsi_test_handshaker_factory_internals();
   ssl_tsi_test_duplicate_root_certificates();
   ssl_tsi_test_extract_x509_subject_names();
+  ssl_tsi_test_extract_cert_chain();
   grpc_shutdown();
   return 0;
 }

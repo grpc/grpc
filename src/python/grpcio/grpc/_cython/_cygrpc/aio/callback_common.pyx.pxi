@@ -14,7 +14,7 @@
 
 
 cdef class CallbackFailureHandler:
-    
+
     def __cinit__(self,
                   str core_function_name,
                   object error_details,
@@ -36,10 +36,15 @@ cdef class CallbackWrapper:
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
         self.context.failure_handler = <cpython.PyObject*>failure_handler
+        self.context.callback_wrapper = <cpython.PyObject*>self
         # NOTE(lidiz) Not using a list here, because this class is critical in
         # data path. We should make it as efficient as possible.
         self._reference_of_future = future
         self._reference_of_failure_handler = failure_handler
+        # NOTE(lidiz) We need to ensure when Core invokes our callback, the
+        # callback function itself is not deallocated. Othersise, we will get
+        # a segfault. We can view this as Core holding a ref.
+        cpython.Py_INCREF(self)
 
     @staticmethod
     cdef void functor_run(
@@ -47,12 +52,12 @@ cdef class CallbackWrapper:
             int success):
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
-        if waiter.cancelled():
-            return
-        if success == 0:
-            (<CallbackFailureHandler>context.failure_handler).handle(waiter)
-        else:
-            waiter.set_result(None)
+        if not waiter.cancelled():
+            if success == 0:
+                (<CallbackFailureHandler>context.failure_handler).handle(waiter)
+            else:
+                waiter.set_result(None)
+        cpython.Py_DECREF(<object>context.callback_wrapper)
 
     cdef grpc_experimental_completion_queue_functor *c_functor(self):
         return &self.context.functor
@@ -61,7 +66,7 @@ cdef class CallbackWrapper:
 cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_completion_queue_shutdown',
     'Unknown',
-    RuntimeError)
+    InternalError)
 
 
 cdef class CallbackCompletionQueue:
@@ -78,7 +83,7 @@ cdef class CallbackCompletionQueue:
 
     cdef grpc_completion_queue* c_ptr(self):
         return self._cq
-    
+
     async def shutdown(self):
         grpc_completion_queue_shutdown(self._cq)
         await self._shutdown_completed
@@ -99,9 +104,6 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
         CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
-    # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
-    # when calling "await". This is an over-optimization by Cython.
-    cpython.Py_INCREF(wrapper)
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
         batch_operation_tag.c_ops,
@@ -112,10 +114,19 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         raise ExecuteBatchError("Failed grpc_call_start_batch: {}".format(error))
 
     await future
-    cpython.Py_DECREF(wrapper)
+
     cdef grpc_event c_event
     # Tag.event must be called, otherwise messages won't be parsed from C
     batch_operation_tag.event(c_event)
+
+
+cdef prepend_send_initial_metadata_op(tuple ops, tuple metadata):
+    # Eventually, this function should be the only function that produces
+    # SendInitialMetadataOperation. So we have more control over the flag.
+    return (SendInitialMetadataOperation(
+        metadata,
+        _EMPTY_FLAG
+    ),) + ops
 
 
 async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
@@ -142,27 +153,23 @@ async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
 
 async def _send_message(GrpcCallWrapper grpc_call_wrapper,
                         bytes message,
-                        bint metadata_sent,
+                        Operation send_initial_metadata_op,
+                        int write_flag,
                         object loop):
-    cdef SendMessageOperation op = SendMessageOperation(message, _EMPTY_FLAG)
-    cdef tuple ops
-    if metadata_sent:
-        ops = (op,)
-    else:
-        ops = (
-            # Initial metadata must be sent before first outbound message.
-            SendInitialMetadataOperation(None, _EMPTY_FLAG),
-            op,
-        )
+    cdef SendMessageOperation op = SendMessageOperation(message, write_flag)
+    cdef tuple ops = (op,)
+    if send_initial_metadata_op is not None:
+        ops = (send_initial_metadata_op,) + ops
     await execute_batch(grpc_call_wrapper, ops, loop)
 
 
 async def _send_initial_metadata(GrpcCallWrapper grpc_call_wrapper,
                                  tuple metadata,
+                                 int flags,
                                  object loop):
     cdef SendInitialMetadataOperation op = SendInitialMetadataOperation(
         metadata,
-        _EMPTY_FLAG)
+        flags)
     cdef tuple ops = (op,)
     await execute_batch(grpc_call_wrapper, ops, loop)
 
@@ -173,3 +180,21 @@ async def _receive_initial_metadata(GrpcCallWrapper grpc_call_wrapper,
     cdef tuple ops = (op,)
     await execute_batch(grpc_call_wrapper, ops, loop)
     return op.initial_metadata()
+
+async def _send_error_status_from_server(GrpcCallWrapper grpc_call_wrapper,
+                                         grpc_status_code code,
+                                         str details,
+                                         tuple trailing_metadata,
+                                         Operation send_initial_metadata_op,
+                                         object loop):
+    assert code != StatusCode.ok, 'Expecting non-ok status code.'
+    cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
+        trailing_metadata,
+        code,
+        details,
+        _EMPTY_FLAGS,
+    )
+    cdef tuple ops = (op,)
+    if send_initial_metadata_op is not None:
+        ops = (send_initial_metadata_op,) + ops
+    await execute_batch(grpc_call_wrapper, ops, loop)

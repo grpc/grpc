@@ -488,7 +488,7 @@ class CheckingResultHandler : public ResultHandler {
     const char* service_config_json =
         result.service_config == nullptr
             ? nullptr
-            : result.service_config->service_config_json();
+            : result.service_config->json_string().c_str();
     CheckServiceConfigResultLocked(
         service_config_json, GRPC_ERROR_REF(result.service_config_error), args);
     if (args->expected_service_config_string == "") {

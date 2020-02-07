@@ -34,7 +34,7 @@
     return "abseil/" + label[5:].replace(":", "/")
 
   def lib_and_transitive_deps(lib):
-    return list(sorted(set({lib} | lib_maps[lib].transitive_deps)))
+    return list(sorted(set({lib} | set(lib_maps[lib].transitive_deps))))
 
   def non_abseil_lib_and_transitive_deps(lib):
     return [l for l in lib_and_transitive_deps(lib) if not is_absl_lib(l)]
@@ -184,7 +184,7 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.5'
+      ss.dependency 'BoringSSL-GRPC', '0.0.7'
       abseil_version = '0.20190808.1'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version

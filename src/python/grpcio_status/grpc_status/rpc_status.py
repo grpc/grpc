@@ -25,8 +25,9 @@ _GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
 
 
 class _Status(
-        collections.namedtuple(
-            '_Status', ('code', 'details', 'trailing_metadata')), grpc.Status):
+        collections.namedtuple('_Status',
+                               ('code', 'details', 'trailing_metadata')),
+        grpc.Status):
     pass
 
 
@@ -60,8 +61,8 @@ def from_call(call):
             if call.code().value[0] != rich_status.code:
                 raise ValueError(
                     'Code in Status proto (%s) doesn\'t match status code (%s)'
-                    % (_code_to_grpc_status_code(rich_status.code),
-                       call.code()))
+                    %
+                    (_code_to_grpc_status_code(rich_status.code), call.code()))
             if call.details() != rich_status.message:
                 raise ValueError(
                     'Message in Status proto (%s) doesn\'t match status details (%s)'
@@ -82,8 +83,7 @@ def to_status(status):
     Returns:
       A grpc.Status instance representing the input google.rpc.status.Status message.
     """
-    return _Status(
-        code=_code_to_grpc_status_code(status.code),
-        details=status.message,
-        trailing_metadata=((_GRPC_DETAILS_METADATA_KEY,
-                            status.SerializeToString()),))
+    return _Status(code=_code_to_grpc_status_code(status.code),
+                   details=status.message,
+                   trailing_metadata=((_GRPC_DETAILS_METADATA_KEY,
+                                       status.SerializeToString()),))

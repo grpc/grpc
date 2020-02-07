@@ -36,7 +36,7 @@ static const char iam_selector[] = "selector";
 static const char overridden_iam_token[] = "overridden_token";
 static const char overridden_iam_selector[] = "overridden_selector";
 
-typedef enum { NONE, OVERRIDE, DESTROY } override_mode;
+typedef enum { NONE, OVERRIDE, DESTROY, FAIL } override_mode;
 
 static void* tag(intptr_t t) { return (void*)t; }
 
@@ -174,6 +174,7 @@ static void request_response_with_payload_and_call_creds(
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
       break;
     case DESTROY:
+    case FAIL:
       GPR_ASSERT(grpc_call_set_credentials(c, nullptr) == GRPC_CALL_OK);
       break;
   }
@@ -312,6 +313,7 @@ static void request_response_with_payload_and_call_creds(
                                    overridden_iam_selector));
       break;
     case DESTROY:
+    case FAIL:
       GPR_ASSERT(!contains_metadata(&request_metadata_recv,
                                     GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
                                     iam_token));
@@ -365,6 +367,13 @@ static void test_request_response_with_payload_and_deleted_call_creds(
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_deleted_call_creds", config,
       DESTROY);
+}
+
+static void test_request_response_with_payload_fail_to_send_call_creds(
+    grpc_end2end_test_config config) {
+  request_response_with_payload_and_call_creds(
+      "test_request_response_with_payload_fail_to_send_call_creds", config,
+      FAIL);
 }
 
 static void test_request_with_server_rejecting_client_creds(
@@ -471,6 +480,10 @@ void call_creds(grpc_end2end_test_config config) {
     test_request_response_with_payload_and_overridden_call_creds(config);
     test_request_response_with_payload_and_deleted_call_creds(config);
     test_request_with_server_rejecting_client_creds(config);
+  }
+  if (config.feature_mask &
+      FEATURE_MASK_DOES_NOT_SUPPORT_SEND_CALL_CREDENTIALS) {
+    test_request_response_with_payload_fail_to_send_call_creds(config);
   }
 }
 

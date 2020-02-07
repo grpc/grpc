@@ -36,16 +36,15 @@ namespace {
 
 constexpr char kCds[] = "cds_experimental";
 
-// Parsed config for this LB policy.
-class ParsedCdsConfig : public LoadBalancingPolicy::Config {
+// Config for this LB policy.
+class CdsConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit ParsedCdsConfig(grpc_core::UniquePtr<char> cluster)
-      : cluster_(std::move(cluster)) {}
-  const char* cluster() const { return cluster_.get(); }
+  explicit CdsConfig(std::string cluster) : cluster_(std::move(cluster)) {}
+  const std::string& cluster() const { return cluster_; }
   const char* name() const override { return kCds; }
 
  private:
-  grpc_core::UniquePtr<char> cluster_;
+  std::string cluster_;
 };
 
 // CDS LB policy.
@@ -64,7 +63,7 @@ class CdsLb : public LoadBalancingPolicy {
    public:
     explicit ClusterWatcher(RefCountedPtr<CdsLb> parent)
         : parent_(std::move(parent)) {}
-    void OnClusterChanged(CdsUpdate cluster_data) override;
+    void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override;
     void OnError(grpc_error* error) override;
 
    private:
@@ -90,7 +89,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  RefCountedPtr<ParsedCdsConfig> config_;
+  RefCountedPtr<CdsConfig> config_;
 
   // Current channel args from the resolver.
   const grpc_channel_args* args_ = nullptr;
@@ -112,47 +111,34 @@ class CdsLb : public LoadBalancingPolicy {
 // CdsLb::ClusterWatcher
 //
 
-void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
+void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client",
             parent_.get());
   }
   // Construct config for child policy.
-  char* lrs_str = nullptr;
-  if (cluster_data.lrs_load_reporting_server_name != nullptr) {
-    gpr_asprintf(&lrs_str, "    \"lrsLoadReportingServerName\": \"%s\",\n",
-                 cluster_data.lrs_load_reporting_server_name.get());
+  Json::Object child_config = {
+      {"edsServiceName",
+       (cluster_data.eds_service_name.empty() ? parent_->config_->cluster()
+                                              : cluster_data.eds_service_name)},
+  };
+  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
+    child_config["lrsLoadReportingServerName"] =
+        cluster_data.lrs_load_reporting_server_name.value();
   }
-  char* json_str;
-  gpr_asprintf(&json_str,
-               "[{\n"
-               "  \"xds_experimental\": {\n"
-               "%s"
-               "    \"edsServiceName\": \"%s\"\n"
-               "  }\n"
-               "}]",
-               (lrs_str == nullptr ? "" : lrs_str),
-               (cluster_data.eds_service_name == nullptr
-                    ? parent_->config_->cluster()
-                    : cluster_data.eds_service_name.get()));
-  gpr_free(lrs_str);
-  grpc_core::UniquePtr<char> json_str_deleter(json_str);
+  Json json = Json::Array{
+      Json::Object{
+          {"xds_experimental", std::move(child_config)},
+      },
+  };
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    std::string json_str = json.Dump();
     gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
-            parent_.get(), json_str);
-  }
-  grpc_json* json = grpc_json_parse_string(json_str);
-  if (json == nullptr) {
-    char* msg;
-    gpr_asprintf(&msg, "Could not parse LB config: %s", json_str);
-    OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
-    gpr_free(msg);
-    return;
+            parent_.get(), json_str.c_str());
   }
   grpc_error* error = GRPC_ERROR_NONE;
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
-  grpc_json_destroy(json);
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
     return;
@@ -162,7 +148,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
     LoadBalancingPolicy::Args args;
     args.combiner = parent_->combiner();
     args.args = parent_->args_;
-    args.channel_control_helper = MakeUnique<Helper>(parent_->Ref());
+    args.channel_control_helper = grpc_core::MakeUnique<Helper>(parent_->Ref());
     parent_->child_policy_ =
         LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
             "xds_experimental", std::move(args));
@@ -179,14 +165,15 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
 
 void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
   gpr_log(GPR_ERROR, "[cdslb %p] xds error obtaining data for cluster %s: %s",
-          parent_.get(), parent_->config_->cluster(), grpc_error_string(error));
+          parent_.get(), parent_->config_->cluster().c_str(),
+          grpc_error_string(error));
   // Go into TRANSIENT_FAILURE if we have not yet created the child
   // policy (i.e., we have not yet received data from xds).  Otherwise,
   // we keep running with the data we had previously.
   if (parent_->child_policy_ == nullptr) {
     parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        MakeUnique<TransientFailurePicker>(error));
+        grpc_core::MakeUnique<TransientFailurePicker>(error));
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -258,8 +245,8 @@ void CdsLb::ShutdownLocked() {
   }
   if (xds_client_ != nullptr) {
     if (cluster_watcher_ != nullptr) {
-      xds_client_->CancelClusterDataWatch(StringView(config_->cluster()),
-                                          cluster_watcher_);
+      xds_client_->CancelClusterDataWatch(
+          StringView(config_->cluster().c_str()), cluster_watcher_);
     }
     xds_client_.reset();
   }
@@ -281,15 +268,14 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   args_ = args.args;
   args.args = nullptr;
   // If cluster name changed, cancel watcher and restart.
-  if (old_config == nullptr ||
-      strcmp(old_config->cluster(), config_->cluster()) != 0) {
+  if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
     if (old_config != nullptr) {
-      xds_client_->CancelClusterDataWatch(StringView(old_config->cluster()),
-                                          cluster_watcher_);
+      xds_client_->CancelClusterDataWatch(
+          StringView(old_config->cluster().c_str()), cluster_watcher_);
     }
-    auto watcher = MakeUnique<ClusterWatcher>(Ref());
+    auto watcher = grpc_core::MakeUnique<ClusterWatcher>(Ref());
     cluster_watcher_ = watcher.get();
-    xds_client_->WatchClusterData(StringView(config_->cluster()),
+    xds_client_->WatchClusterData(StringView(config_->cluster().c_str()),
                                   std::move(watcher));
   }
 }
@@ -308,9 +294,9 @@ class CdsFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kCds; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const Json& json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-    if (json == nullptr) {
+    if (json.type() == Json::Type::JSON_NULL) {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -318,36 +304,23 @@ class CdsFactory : public LoadBalancingPolicyFactory {
           "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
-    GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-    InlinedVector<grpc_error*, 3> error_list;
-    const char* cluster = nullptr;
-    for (const grpc_json* field = json->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr) continue;
-      if (strcmp(field->key, "cluster") == 0) {
-        if (cluster != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:cluster error:Duplicate entry"));
-        }
-        if (field->type != GRPC_JSON_STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:cluster error:type should be string"));
-          continue;
-        }
-        cluster = field->value;
-      }
-    }
-    if (cluster == nullptr) {
+    std::vector<grpc_error*> error_list;
+    std::string cluster;
+    auto it = json.object_value().find("cluster");
+    if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "required field 'cluster' not present"));
-    }
-    if (error_list.empty()) {
-      return MakeRefCounted<ParsedCdsConfig>(
-          grpc_core::UniquePtr<char>(gpr_strdup(cluster)));
+    } else if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:cluster error:type should be string"));
     } else {
+      cluster = it->second.string_value();
+    }
+    if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
       return nullptr;
     }
+    return MakeRefCounted<CdsConfig>(std::move(cluster));
   }
 };
 

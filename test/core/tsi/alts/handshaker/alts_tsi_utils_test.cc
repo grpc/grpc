@@ -18,6 +18,7 @@
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+#include "test/core/util/test_config.h"
 
 #define ALTS_TSI_UTILS_TEST_OUT_FRAME "Hello Google"
 
@@ -66,7 +67,8 @@ static void deserialize_response_test() {
   grpc_byte_buffer_destroy(buffer);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   /* Tests. */
   grpc_init();
   deserialize_response_test();
