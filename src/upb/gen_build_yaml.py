@@ -43,7 +43,6 @@ try:
         'headers': [
             "third_party/upb/upb/decode.h",
             "third_party/upb/upb/encode.h",
-            "third_party/upb/upb/generated_util.h",
             "third_party/upb/upb/msg.h",
             "third_party/upb/upb/port_def.inc",
             "third_party/upb/upb/port_undef.inc",
