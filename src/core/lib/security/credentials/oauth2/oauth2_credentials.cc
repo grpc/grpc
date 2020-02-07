@@ -609,12 +609,12 @@ class StsTokenFetcherCredentials
     MaybeAddToBody(&body_strvec, "scope", scope_.get());
     MaybeAddToBody(&body_strvec, "requested_token_type",
                    requested_token_type_.get());
-    if (actor_token_path_ != nullptr) {
+    if ((actor_token_path_ != nullptr) && *actor_token_path_ != '\0') {
       err = LoadTokenFile(actor_token_path_.get(), &actor_token);
       if (err != GRPC_ERROR_NONE) return cleanup();
       MaybeAddToBody(
           &body_strvec, "actor_token",
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)));
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)));
       MaybeAddToBody(&body_strvec, "actor_token_type", actor_token_type_.get());
     }
     return cleanup();
