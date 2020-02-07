@@ -99,7 +99,7 @@ class GenericStub final {
   void PrepareUnaryCall(ClientContext* context, const grpc::string& method,
                         const grpc::ByteBuffer* request,
                         grpc::ByteBuffer* response,
-                        grpc_impl::ClientUnaryReactor* reactor) {
+                        ClientUnaryReactor* reactor) {
     PrepareUnaryCallInternal(context, method, request, response, reactor);
   }
 
@@ -108,8 +108,7 @@ class GenericStub final {
   /// until StartCall is invoked on its reactor.
   void PrepareBidiStreamingCall(
       ClientContext* context, const grpc::string& method,
-      grpc_impl::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
-          reactor) {
+      ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>* reactor) {
     PrepareBidiStreamingCallInternal(context, method, reactor);
   }
 #endif
@@ -137,7 +136,7 @@ class GenericStub final {
     void PrepareUnaryCall(ClientContext* context, const grpc::string& method,
                           const grpc::ByteBuffer* request,
                           grpc::ByteBuffer* response,
-                          grpc_impl::ClientUnaryReactor* reactor) {
+                          ClientUnaryReactor* reactor) {
       stub_->PrepareUnaryCallInternal(context, method, request, response,
                                       reactor);
     }
@@ -147,8 +146,7 @@ class GenericStub final {
     /// until StartCall is invoked on its reactor.
     void PrepareBidiStreamingCall(
         ClientContext* context, const grpc::string& method,
-        grpc_impl::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
-            reactor) {
+        ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>* reactor) {
       stub_->PrepareBidiStreamingCallInternal(context, method, reactor);
     }
 
@@ -179,7 +177,7 @@ class GenericStub final {
                                 const grpc::string& method,
                                 const grpc::ByteBuffer* request,
                                 grpc::ByteBuffer* response,
-                                grpc_impl::ClientUnaryReactor* reactor) {
+                                ClientUnaryReactor* reactor) {
     internal::ClientCallbackUnaryFactory::Create<grpc::ByteBuffer,
                                                  grpc::ByteBuffer>(
         channel_.get(),
@@ -190,8 +188,7 @@ class GenericStub final {
 
   void PrepareBidiStreamingCallInternal(
       ClientContext* context, const grpc::string& method,
-      grpc_impl::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
-          reactor) {
+      ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>* reactor) {
     internal::ClientCallbackReaderWriterFactory<grpc::ByteBuffer,
                                                 grpc::ByteBuffer>::
         Create(channel_.get(),
