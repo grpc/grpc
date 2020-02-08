@@ -31,6 +31,7 @@ from typing import Callable, Optional
 
 import test_common
 import grpc
+import grpc.experimental
 
 _REQUEST = b"0000"
 
@@ -151,17 +152,17 @@ class SimpleStubsTest(unittest.TestCase):
     def test_unary_unary_insecure(self):
         with _server(None) as (_, port):
             target = f'localhost:{port}'
-            response = grpc.unary_unary(
-                        _REQUEST,
-                        target,
-                        _UNARY_UNARY,
-                        channel_credentials=grpc.insecure_channel_credentials())
+            response = grpc.experimental.unary_unary(
+                _REQUEST,
+                target,
+                _UNARY_UNARY,
+                channel_credentials=grpc.experimental.insecure_channel_credentials())
             self.assertEqual(_REQUEST, response)
 
     def test_unary_unary_secure(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            response = grpc.unary_unary(
+            response = grpc.experimental.unary_unary(
                 _REQUEST,
                 target,
                 _UNARY_UNARY,
@@ -171,10 +172,7 @@ class SimpleStubsTest(unittest.TestCase):
     def test_channel_credentials_default(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            response = grpc.unary_unary(
-                _REQUEST,
-                target,
-                _UNARY_UNARY)
+            response = grpc.experimental.unary_unary(_REQUEST, target, _UNARY_UNARY)
             self.assertEqual(_REQUEST, response)
 
     def test_channels_cached(self):
@@ -187,14 +185,14 @@ class SimpleStubsTest(unittest.TestCase):
             def _invoke(seed: str):
                 run_kwargs = dict(kwargs)
                 run_kwargs["options"] = ((test_name + seed, ""),)
-                grpc.unary_unary(*args, **run_kwargs)
+                grpc.experimental.unary_unary(*args, **run_kwargs)
 
             self.assert_cached(_invoke)
 
     def test_channels_evicted(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            response = grpc.unary_unary(
+            response = grpc.experimental.unary_unary(
                 _REQUEST,
                 target,
                 _UNARY_UNARY,
@@ -213,7 +211,7 @@ class SimpleStubsTest(unittest.TestCase):
                 # Ensure we get a new channel each time.
                 options = (("foo", str(i)),)
                 # Send messages at full blast.
-                grpc.unary_unary(
+                grpc.experimental.unary_unary(
                     _REQUEST,
                     target,
                     _UNARY_UNARY,
@@ -229,7 +227,7 @@ class SimpleStubsTest(unittest.TestCase):
     def test_unary_stream(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            for response in grpc.unary_stream(
+            for response in grpc.experimental.unary_stream(
                     _REQUEST,
                     target,
                     _UNARY_STREAM,
@@ -244,7 +242,7 @@ class SimpleStubsTest(unittest.TestCase):
 
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            response = grpc.stream_unary(
+            response = grpc.experimental.stream_unary(
                 request_iter(),
                 target,
                 _STREAM_UNARY,
@@ -259,7 +257,7 @@ class SimpleStubsTest(unittest.TestCase):
 
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            for response in grpc.stream_stream(
+            for response in grpc.experimental.stream_stream(
                     request_iter(),
                     target,
                     _STREAM_STREAM,

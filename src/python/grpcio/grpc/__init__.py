@@ -569,6 +569,7 @@ class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
 
 ############  Authentication & Authorization Interfaces & Classes  #############
 
+
 class ChannelCredentials(object):
     """An encapsulation of the data required to create a secure Channel.
 
@@ -597,13 +598,6 @@ class CallCredentials(object):
 
     def __init__(self, credentials):
         self._credentials = credentials
-
-
-_insecure_channel_credentials = object()
-
-
-def insecure_channel_credentials():
-    return ChannelCredentials(_insecure_channel_credentials)
 
 
 class AuthMetadataContext(six.with_metaclass(abc.ABCMeta)):
@@ -1885,6 +1879,7 @@ def secure_channel(target, credentials, options=None, compression=None):
       A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
+    from grpc.experimental import _insecure_channel_credentials
     if credentials._credentials is _insecure_channel_credentials:
         raise ValueError(
             "secure_channel cannot be called with insecure credentials." +
@@ -2031,7 +2026,6 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
-    'insecure_channel_credentials',
     'local_channel_credentials',
     'local_server_credentials',
     'ssl_server_credentials',
@@ -2042,12 +2036,7 @@ __all__ = (
     'secure_channel',
     'intercept_channel',
     'server',
-    'unary_unary',
 )
-
-if sys.version_info[0] >= 3:
-    from grpc._simple_stubs import unary_unary, unary_stream, stream_unary, stream_stream
-    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)
 
 ############################### Extension Shims ################################
 
