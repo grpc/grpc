@@ -1,13 +1,26 @@
-# TODO: Flowerbox.
+# Copyright 2020 The gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Functions that obviate explicit stubs and explicit channels."""
 
 import collections
 import datetime
 import os
 import logging
 import threading
+from typing import Any, AnyStr, Callable, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
 import grpc
-from typing import Any, AnyStr, Callable, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,14 +29,14 @@ if _EVICTION_PERIOD_KEY in os.environ:
     _EVICTION_PERIOD = datetime.timedelta(
         seconds=float(os.environ[_EVICTION_PERIOD_KEY]))
     _LOGGER.info(
-        f"Setting managed channel eviction period to {_EVICTION_PERIOD}")
+        "Setting managed channel eviction period to %s", _EVICTION_PERIOD)
 else:
     _EVICTION_PERIOD = datetime.timedelta(minutes=10)
 
 _MAXIMUM_CHANNELS_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM"
 if _MAXIMUM_CHANNELS_KEY in os.environ:
     _MAXIMUM_CHANNELS = int(os.environ[_MAXIMUM_CHANNELS_KEY])
-    _LOGGER.info(f"Setting maximum managed channels to {_MAXIMUM_CHANNELS}")
+    _LOGGER.info("Setting maximum managed channels to %d", _MAXIMUM_CHANNELS)
 else:
     _MAXIMUM_CHANNELS = 2**8
 
@@ -72,7 +85,7 @@ class ChannelCache:
     # TODO: Type annotate key.
     def _evict_locked(self, key):
         channel, _ = self._mapping.pop(key)
-        _LOGGER.info(f"Evicting channel {channel} with configuration {key}.")
+        _LOGGER.info("Evicting channel %s with configuration %s.", channel, key)
         channel.close()
         del channel
 
@@ -89,7 +102,7 @@ class ChannelCache:
                     ChannelCache._singleton._evict_locked(key)
                     # And immediately reevaluate.
                 else:
-                    key, (channel, eviction_time) = next(
+                    key, (_, eviction_time) = next(
                         iter(ChannelCache._singleton._mapping.items()))
                     now = datetime.datetime.now()
                     if eviction_time <= now:
@@ -142,8 +155,7 @@ ResponseType = TypeVar('ResponseType')
 #
 #  Make this the default option.
 
-
-# TODO: Make LocalChannelCredentials the default.
+# pylint: disable=too-many-arguments
 def unary_unary(
         request: RequestType,
         target: str,
@@ -215,6 +227,7 @@ def unary_unary(
                          timeout=timeout)
 
 
+# pylint: disable=too-many-arguments
 def unary_stream(
         request: RequestType,
         target: str,
@@ -285,6 +298,7 @@ def unary_stream(
                          timeout=timeout)
 
 
+# pylint: disable=too-many-arguments
 def stream_unary(
         request_iterator: Iterator[RequestType],
         target: str,
@@ -355,6 +369,7 @@ def stream_unary(
                          timeout=timeout)
 
 
+# pylint: disable=too-many-arguments
 def stream_stream(
         request_iterator: Iterator[RequestType],
         target: str,

@@ -56,10 +56,12 @@ def insecure_channel_credentials():
 class ExperimentalApiWarning(Warning):
     """A warning that an API is experimental."""
 
+
 def warn_experimental(api_name):
-    msg = ("{} is an experimental API. It is subject to change or ".format(api_name) +
-           "removal between minor releases. Proceed with caution.")
+    msg = ("{} is an experimental API. It is subject to change or ".format(
+        api_name) + "removal between minor releases. Proceed with caution.")
     warnings.warn(msg, ExperimentalApiWarning, stacklevel=2)
+
 
 __all__ = (
     'ChannelOptions',
@@ -71,4 +73,3 @@ __all__ = (
 if sys.version_info[0] >= 3:
     from grpc._simple_stubs import unary_unary, unary_stream, stream_unary, stream_stream
     __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)
-
