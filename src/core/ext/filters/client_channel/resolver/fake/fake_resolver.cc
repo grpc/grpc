@@ -45,6 +45,8 @@
 
 namespace grpc_core {
 
+// This cannot be in an anonymous namespace, because it is a friend of
+// FakeResolverResponseGenerator.
 class FakeResolver : public Resolver {
  public:
   explicit FakeResolver(ResolverArgs args);
@@ -87,7 +89,7 @@ class FakeResolver : public Resolver {
 };
 
 FakeResolver::FakeResolver(ResolverArgs args)
-    : Resolver(args.work_serializer, std::move(args.result_handler)),
+    : Resolver(std::move(args.work_serializer), std::move(args.result_handler)),
       response_generator_(
           FakeResolverResponseGenerator::GetFromArgs(args.args)) {
   // Channels sharing the same subchannels may have different resolver response
@@ -171,7 +173,7 @@ class FakeResolverResponseSetter {
                                       bool has_result = false,
                                       bool immediate = true)
       : resolver_(std::move(resolver)),
-        result_(result),
+        result_(std::move(result)),
         has_result_(has_result),
         immediate_(immediate) {}
   void SetResponseLocked();
@@ -185,26 +187,32 @@ class FakeResolverResponseSetter {
   bool immediate_;
 };
 
+// Deletes object when done
 void FakeResolverResponseSetter::SetReresolutionResponseLocked() {
   if (!resolver_->shutdown_) {
     resolver_->reresolution_result_ = std::move(result_);
     resolver_->has_reresolution_result_ = has_result_;
   }
+  delete this;
 }
 
+// Deletes object when done
 void FakeResolverResponseSetter::SetResponseLocked() {
   if (!resolver_->shutdown_) {
     resolver_->next_result_ = std::move(result_);
     resolver_->has_next_result_ = true;
     resolver_->MaybeSendResultLocked();
   }
+  delete this;
 }
 
+// Deletes object when done
 void FakeResolverResponseSetter::SetFailureLocked() {
   if (!resolver_->shutdown_) {
     resolver_->return_failure_ = true;
     if (immediate_) resolver_->MaybeSendResultLocked();
   }
+  delete this;
 }
 
 //
@@ -231,7 +239,6 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
   resolver->work_serializer()->Run(
       [arg]() {
         arg->SetResponseLocked();
-        delete arg;
       },
       DEBUG_LOCATION);
 }
@@ -245,11 +252,10 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
     resolver = resolver_->Ref();
   }
   FakeResolverResponseSetter* arg =
-      new FakeResolverResponseSetter(resolver, std::move(result), true);
+      new FakeResolverResponseSetter(resolver, std::move(result), true /* has_result */);
   resolver->work_serializer()->Run(
       [arg]() {
         arg->SetReresolutionResponseLocked();
-        delete arg;
       },
       DEBUG_LOCATION);
 }
@@ -266,7 +272,6 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
   resolver->work_serializer()->Run(
       [arg]() {
         arg->SetReresolutionResponseLocked();
-        delete arg;
       },
       DEBUG_LOCATION);
 }
@@ -283,7 +288,6 @@ void FakeResolverResponseGenerator::SetFailure() {
   resolver->work_serializer()->Run(
       [arg]() {
         arg->SetFailureLocked();
-        delete arg;
       },
       DEBUG_LOCATION);
 }
@@ -296,11 +300,10 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
     resolver = resolver_->Ref();
   }
   FakeResolverResponseSetter* arg = new FakeResolverResponseSetter(
-      resolver, Resolver::Result(), false, false);
+      resolver, Resolver::Result(), false /* has_result */, false /* immediate */);
   resolver->work_serializer()->Run(
       [arg]() {
         arg->SetFailureLocked();
-        delete arg;
       },
       DEBUG_LOCATION);
 }
@@ -316,7 +319,6 @@ void FakeResolverResponseGenerator::SetFakeResolver(
     resolver_->work_serializer()->Run(
         [arg]() {
           arg->SetResponseLocked();
-          delete arg;
         },
         DEBUG_LOCATION);
     has_result_ = false;

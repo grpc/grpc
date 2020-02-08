@@ -28,7 +28,7 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/test_config.h"
 
-static std::shared_ptr<WorkSerializer>* g_work_serializer;
+static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
@@ -72,8 +72,8 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  {
-    auto work_serializer = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+  
+    auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
     g_work_serializer = &work_serializer;
 
     grpc_core::ResolverFactory* dns =
@@ -90,7 +90,6 @@ int main(int argc, char** argv) {
     } else {
       test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
     }
-  }
   grpc_shutdown();
 
   return 0;

@@ -332,6 +332,8 @@ class Subchannel {
 
   class ConnectedSubchannelStateWatcher;
 
+  class AsyncWatcherNotifier;
+
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state);
 

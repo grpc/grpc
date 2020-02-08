@@ -362,17 +362,17 @@ class Subchannel::ConnectedSubchannelStateWatcher
   Subchannel* subchannel_;
 };
 
-namespace {
-// Deletes itself when done
-class AsyncWatcherNotifier {
+// Asynchronously notifies the \a watcher of a change in the connectvity state
+// of \a subchannel to the current \a state. Deletes itself when done.
+class Subchannel::AsyncWatcherNotifier {
  public:
   AsyncWatcherNotifier(
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher,
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-      grpc_connectivity_state state)
-      : watcher_(std::move(watcher)),
-        connected_subchannel_(std::move(connected_subchannel)),
-        state_(state) {
+      Subchannel* subchannel, grpc_connectivity_state state)
+      : watcher_(std::move(watcher)), state_(state) {
+    if (state_ == GRPC_CHANNEL_READY) {
+      connected_subchannel_ = subchannel->connected_subchannel_;
+    }
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_INIT(
                      &closure_,
@@ -386,12 +386,13 @@ class AsyncWatcherNotifier {
                      this, nullptr),
                  GRPC_ERROR_NONE);
   }
+
+ private:
   RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_connectivity_state state_;
   grpc_closure closure_;
 };
-}  // namespace
 
 //
 // Subchannel::ConnectivityStateWatcherList
@@ -410,11 +411,7 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     Subchannel* subchannel, grpc_connectivity_state state) {
   for (const auto& p : watchers_) {
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-    if (state == GRPC_CHANNEL_READY) {
-      connected_subchannel = subchannel->connected_subchannel_;
-    }
-    new AsyncWatcherNotifier(p.second, connected_subchannel, state);
+    new AsyncWatcherNotifier(p.second, subchannel, state);
   }
 }
 
@@ -453,11 +450,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       grpc_connectivity_state initial_state,
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
     if (state_ != initial_state) {
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-      if (state_ == GRPC_CHANNEL_READY) {
-        connected_subchannel = subchannel_->connected_subchannel_;
-      }
-      new AsyncWatcherNotifier(watcher, connected_subchannel, state_);
+      new AsyncWatcherNotifier(watcher, subchannel_, state_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
@@ -818,7 +811,7 @@ void Subchannel::WatchConnectivityState(
   }
   if (health_check_service_name == nullptr) {
     if (state_ != initial_state) {
-      new AsyncWatcherNotifier(watcher, connected_subchannel_, state_);
+      new AsyncWatcherNotifier(watcher, this, state_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {

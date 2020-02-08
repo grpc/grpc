@@ -380,7 +380,7 @@ grpc_ares_request* my_dns_lookup_ares_locked(
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     bool /*check_grpclb*/, char** /*service_config_json*/,
     int /*query_timeout*/,
-    std::shared_ptr<WorkSerializer> /*combiner*/) {
+    std::shared_ptr<grpc_core::WorkSerializer> /*work_serializer*/) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;

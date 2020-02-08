@@ -26,8 +26,8 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/test_config.h"
 
 constexpr int kMinResolutionPeriodMs = 1000;
@@ -37,14 +37,14 @@ constexpr int kMinResolutionPeriodForCheckMs = 900;
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolve_address;
 
-static std::shared_ptr<WorkSerializer>* g_work_serializer;
+static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
     char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<WorkSerializer> work_serializer);
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 // Counter incremented by test_resolve_address_impl indicating the number of
 // times a system-level resolution has happened.
@@ -95,7 +95,7 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
     char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<WorkSerializer> work_serializer) {
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
       addresses, check_grpclb, service_config_json, query_timeout_ms,
@@ -320,7 +320,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
-  auto work_serializer = grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
   g_default_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;

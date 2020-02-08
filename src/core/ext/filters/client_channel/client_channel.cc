@@ -149,9 +149,7 @@ class ChannelData {
   RefCountedPtr<ServiceConfig> service_config() const {
     return service_config_;
   }
-  WorkSerializer* work_serializer() const {
-    return work_serializer_.get();
-  }
+  WorkSerializer* work_serializer() const { return work_serializer_.get(); }
 
   RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
       SubchannelInterface* subchannel) const;

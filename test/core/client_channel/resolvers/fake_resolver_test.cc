@@ -63,7 +63,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 };
 
 static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
-    std::shared_ptr<WorkSerializer> work_serializer,
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
     grpc_core::FakeResolverResponseGenerator* response_generator,
     std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
   grpc_core::ResolverFactory* factory =
@@ -118,8 +118,8 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
 
 static void test_fake_resolver() {
   grpc_core::ExecCtx exec_ctx;
-  std::shared_ptr<WorkSerializer> work_serializer =
-      grpc_core::MakeRefCounted<grpc_core::LogicalThread>();
+  std::shared_ptr<grpc_core::WorkSerializer> work_serializer =
+      std::make_shared<grpc_core::WorkSerializer>();
   // Create resolver.
   ResultHandler* result_handler = new ResultHandler();
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>

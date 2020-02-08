@@ -169,7 +169,7 @@ class XdsClientStats {
     Mutex load_metric_stats_mu_;
     LoadMetricMap load_metric_stats_;
     // Can be accessed from either the control plane work_serializer or the data
-    // plane work_serializer.
+    // plane mutex.
     Atomic<uint8_t> picker_refcount_{0};
   };
 

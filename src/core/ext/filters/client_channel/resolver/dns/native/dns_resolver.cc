@@ -97,7 +97,7 @@ class NativeDnsResolver : public Resolver {
 };
 
 NativeDnsResolver::NativeDnsResolver(ResolverArgs args)
-    : Resolver(args.work_serializer, std::move(args.result_handler)),
+    : Resolver(std::move(args.work_serializer), std::move(args.result_handler)),
       backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
