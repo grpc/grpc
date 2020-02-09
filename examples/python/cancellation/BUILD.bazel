@@ -15,6 +15,7 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 package(default_testonly = 1)

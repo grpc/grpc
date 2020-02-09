@@ -23,6 +23,7 @@
 # each change must be ported from one to the other.
 #
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "//bazel:generate_objc.bzl",
     "generate_objc",
@@ -39,7 +40,7 @@ def proto_library_objc_wrapper(
     """proto_library for adding dependencies to google/protobuf protos
     use_well_known_protos - ignored in open source version
     """
-    native.proto_library(
+    proto_library(
         name = name,
         srcs = srcs,
         deps = deps,
