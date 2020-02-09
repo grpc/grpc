@@ -52,7 +52,7 @@ using grpc::testing::TestService;
 
 class TestServiceImpl : public TestService::Service {
  public:
-  TestServiceImpl(std::string i) : hostname_(i) {}
+  TestServiceImpl(const std::string& i) : hostname_(i) {}
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
@@ -65,7 +65,7 @@ class TestServiceImpl : public TestService::Service {
   std::string hostname_;
 };
 
-void RunServer(const int port, std::string hostname) {
+void RunServer(const int port, const std::string& hostname) {
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
 

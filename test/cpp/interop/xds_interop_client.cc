@@ -117,7 +117,7 @@ class XdsStatsWatcher {
 
 class TestClient {
  public:
-  TestClient(std::shared_ptr<Channel> channel)
+  TestClient(const std::shared_ptr<Channel>& channel)
       : stub_(TestService::NewStub(channel)) {}
 
   void UnaryCall() {
