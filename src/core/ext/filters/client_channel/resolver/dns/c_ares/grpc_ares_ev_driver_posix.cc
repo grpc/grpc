@@ -98,7 +98,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    std::shared_ptr<WorkSerializer> /*work_serializer*/) {
+    std::shared_ptr<WorkSerializer> work_serializer) { /* NOLINT */
   return MakeUnique<GrpcPolledFdFactoryPosix>();
 }
 

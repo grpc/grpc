@@ -577,7 +577,8 @@ class GrpcPolledFdWindows {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     GRPC_ERROR_REF(error);  // ref owned by lambda
     polled_fd->work_serializer_->Run(
-        [polled_fd, error]() { OnIocpReadableLocked(error); }, DEBUG_LOCATION);
+        [polled_fd, error]() { polled_fd->OnIocpReadableLocked(error); },
+        DEBUG_LOCATION);
   }
 
   // TODO(apolcyn): improve this error handling to be less conversative.
