@@ -23,7 +23,6 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <functional>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
