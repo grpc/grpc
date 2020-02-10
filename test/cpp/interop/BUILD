@@ -204,10 +204,10 @@ grpc_cc_binary(
         "xds_interop_client.cc",
     ],
     deps = [
+        "//:grpc++",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
-        "//:grpc++",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -219,10 +219,10 @@ grpc_cc_binary(
         "xds_interop_server.cc",
     ],
     deps = [
+        "//:grpc++",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
-        "//:grpc++",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
