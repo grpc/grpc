@@ -122,8 +122,8 @@ class Resolver : public InternallyRefCounted<Resolver> {
   }
 
  protected:
-  explicit Resolver(std::shared_ptr<WorkSerializer> work_serializer,
-                    std::unique_ptr<ResultHandler> result_handler);
+  Resolver(std::shared_ptr<WorkSerializer> work_serializer,
+           std::unique_ptr<ResultHandler> result_handler);
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;

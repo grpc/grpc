@@ -151,7 +151,7 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
         DropCategory{std::move(name), parts_per_million});
   }
 
-  // The only method invoked from the data plane combiner.
+  // The only method invoked from the data plane mutex.
   bool ShouldDrop(const std::string** category_name) const;
 
   const DropCategoryList& drop_category_list() const {

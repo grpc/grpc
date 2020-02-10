@@ -33,7 +33,8 @@ namespace {
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args)
-      : Resolver(args.work_serializer, std::move(args.result_handler)),
+      : Resolver(std::move(args.work_serializer),
+                 std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
     char* path = args.uri->path;

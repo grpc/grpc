@@ -372,8 +372,9 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     }
     port.reset(gpr_strdup(default_port));
   }
-  error = grpc_ares_ev_driver_create_locked(
-      &r->ev_driver, interested_parties, query_timeout_ms, work_serializer, r);
+  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
+                                            query_timeout_ms,
+                                            std::move(work_serializer), r);
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
   channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
   // If dns_server is specified, use it.
@@ -624,7 +625,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   // Look up name using c-ares lib.
   grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
       r, dns_server, name, default_port, interested_parties, check_grpclb,
-      query_timeout_ms, work_serializer);
+      query_timeout_ms, std::move(work_serializer));
   return r;
 }
 

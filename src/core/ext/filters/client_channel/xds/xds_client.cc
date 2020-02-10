@@ -179,26 +179,27 @@ class XdsClient::ChannelState::AdsCallState
             &msg,
             "timeout obtaining resource {type=%s name=%s} from xds server",
             type_url_.c_str(), name_.c_str());
-        grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+        grpc_error* watcher_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
         gpr_free(msg);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
           gpr_log(GPR_INFO, "[xds_client %p] %s", ads_calld_->xds_client(),
-                  grpc_error_string(error));
+                  grpc_error_string(watcher_error));
         }
         if (type_url_ == kLdsTypeUrl || type_url_ == kRdsTypeUrl) {
-          ads_calld_->xds_client()->service_config_watcher_->OnError(error);
+          ads_calld_->xds_client()->service_config_watcher_->OnError(
+              watcher_error);
         } else if (type_url_ == kCdsTypeUrl) {
           ClusterState& state = ads_calld_->xds_client()->cluster_map_[name_];
           for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(error));
+            p.first->OnError(GRPC_ERROR_REF(watcher_error));
           }
-          GRPC_ERROR_UNREF(error);
+          GRPC_ERROR_UNREF(watcher_error);
         } else if (type_url_ == kEdsTypeUrl) {
           EndpointState& state = ads_calld_->xds_client()->endpoint_map_[name_];
           for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(error));
+            p.first->OnError(GRPC_ERROR_REF(watcher_error));
           }
-          GRPC_ERROR_UNREF(error);
+          GRPC_ERROR_UNREF(watcher_error);
         } else {
           GPR_UNREACHABLE_CODE(return );
         }
@@ -241,8 +242,8 @@ class XdsClient::ChannelState::AdsCallState
   static void OnRequestSent(void* arg, grpc_error* error);
   void OnRequestSentLocked(grpc_error* error);
   static void OnResponseReceived(void* arg, grpc_error* error);
-  static void OnStatusReceived(void* arg, grpc_error* error);
   void OnResponseReceivedLocked();
+  static void OnStatusReceived(void* arg, grpc_error* error);
   void OnStatusReceivedLocked(grpc_error* error);
 
   bool IsCurrentCallOnChannel() const;
@@ -342,10 +343,10 @@ class XdsClient::ChannelState::LrsCallState
   };
 
   static void OnInitialRequestSent(void* arg, grpc_error* error);
-  static void OnResponseReceived(void* arg, grpc_error* error);
-  static void OnStatusReceived(void* arg, grpc_error* error);
   void OnInitialRequestSentLocked();
+  static void OnResponseReceived(void* arg, grpc_error* error);
   void OnResponseReceivedLocked();
+  static void OnStatusReceived(void* arg, grpc_error* error);
   void OnStatusReceivedLocked(grpc_error* error);
 
   bool IsCurrentCallOnChannel() const;

@@ -310,7 +310,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Args used to instantiate an LB policy.
   struct Args {
     /// The work_serializer under which all LB policy calls will be run.
-    /// Policy does NOT take ownership of the reference to the work_serializer.
     std::shared_ptr<WorkSerializer> work_serializer;
     /// Channel control helper.
     /// Note: LB policies MUST NOT call any method on the helper from
@@ -396,7 +395,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void ShutdownLocked() = 0;
 
  private:
-  /// Logical Thread under which LB policy actions take place.
+  /// Work Serializer under which LB policy actions take place.
   std::shared_ptr<WorkSerializer> work_serializer_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;

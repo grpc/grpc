@@ -57,7 +57,7 @@ class SockaddrResolver : public Resolver {
 
 SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
                                    ResolverArgs args)
-    : Resolver(args.work_serializer, std::move(args.result_handler)),
+    : Resolver(std::move(args.work_serializer), std::move(args.result_handler)),
       addresses_(std::move(addresses)),
       channel_args_(grpc_channel_args_copy(args.args)) {}
 
