@@ -1,3 +1,4 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "//bazel:build_defs.bzl",
     "generated_file_staleness_test",
@@ -57,12 +58,12 @@ config_setting(
 
 cc_library(
     name = "port",
+    srcs = [
+        "upb/port.c",
+    ],
     textual_hdrs = [
         "upb/port_def.inc",
         "upb/port_undef.inc",
-    ],
-    srcs = [
-        "upb/port.c",
     ],
 )
 
@@ -185,8 +186,8 @@ cc_library(
         "//conditions:default": COPTS,
     }),
     deps = [
-        ":reflection",
         ":port",
+        ":reflection",
         ":table",
         ":upb",
     ],
@@ -215,8 +216,8 @@ cc_library(
     deps = [
         ":descriptor_upbproto",
         ":handlers",
-        ":reflection",
         ":port",
+        ":reflection",
         ":table",
         ":upb",
     ],

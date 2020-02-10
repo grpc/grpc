@@ -70,7 +70,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
     virtual ~Parser() = default;
 
     virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(
-        const grpc_json* /* json */, grpc_error** error) {
+        const Json& /* json */, grpc_error** error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -78,7 +78,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
     }
 
     virtual std::unique_ptr<ParsedConfig> ParsePerMethodParams(
-        const grpc_json* /* json */, grpc_error** error) {
+        const Json& /* json */, grpc_error** error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -125,16 +125,12 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const char* json,
+  static RefCountedPtr<ServiceConfig> Create(StringView json_string,
                                              grpc_error** error);
 
-  // Takes ownership of \a json_tree.
-  ServiceConfig(grpc_core::UniquePtr<char> service_config_json,
-                grpc_core::UniquePtr<char> json_string, grpc_json* json_tree,
-                grpc_error** error);
-  ~ServiceConfig();
+  ServiceConfig(std::string json_string, Json json, grpc_error** error);
 
-  const char* service_config_json() const { return service_config_json_.get(); }
+  const std::string& json_string() const { return json_string_; }
 
   /// Retrieves the global parsed config at index \a index. The
   /// lifetime of the returned object is tied to the lifetime of the
@@ -163,24 +159,21 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
  private:
   // Helper functions to parse the service config
-  grpc_error* ParseGlobalParams(const grpc_json* json_tree);
-  grpc_error* ParsePerMethodParams(const grpc_json* json_tree);
-
-  // Returns the number of names specified in the method config \a json.
-  static int CountNamesInMethodConfig(grpc_json* json);
+  grpc_error* ParseGlobalParams();
+  grpc_error* ParsePerMethodParams();
 
   // Returns a path string for the JSON name object specified by \a json.
   // Returns null on error, and stores error in \a error.
-  static grpc_core::UniquePtr<char> ParseJsonMethodName(grpc_json* json,
-                                                        grpc_error** error);
+  static UniquePtr<char> ParseJsonMethodName(const Json& json,
+                                             grpc_error** error);
 
   grpc_error* ParseJsonMethodConfigToServiceConfigVectorTable(
-      const grpc_json* json,
-      SliceHashTable<const ParsedConfigVector*>::Entry* entries, size_t* idx);
+      const Json& json,
+      InlinedVector<SliceHashTable<const ParsedConfigVector*>::Entry, 10>*
+          entries);
 
-  grpc_core::UniquePtr<char> service_config_json_;
-  grpc_core::UniquePtr<char> json_string_;  // Underlying storage for json_tree.
-  grpc_json* json_tree_;
+  std::string json_string_;
+  Json json_;
 
   InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
       parsed_global_configs_;

@@ -17,12 +17,11 @@ gRPC Async API objects may only be used on the thread on which they were
 created. AsyncIO doesn't provide thread safety for most of its APIs.
 """
 
-import abc
-from typing import Any, Optional, Sequence, Text, Tuple
-import six
+from typing import Any, Optional, Sequence, Tuple
 
 import grpc
-from grpc._cython.cygrpc import EOF, AbortError, init_grpc_aio
+from grpc._cython.cygrpc import (EOF, AbortError, BaseError, UsageError,
+                                 init_grpc_aio)
 
 from ._base_call import Call, RpcContext, UnaryStreamCall, UnaryUnaryCall
 from ._call import AioRpcError
@@ -34,7 +33,7 @@ from ._typing import ChannelArgumentType
 
 
 def insecure_channel(
-        target: Text,
+        target: str,
         options: Optional[ChannelArgumentType] = None,
         compression: Optional[grpc.Compression] = None,
         interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]] = None):
@@ -57,7 +56,7 @@ def insecure_channel(
 
 
 def secure_channel(
-        target: Text,
+        target: str,
         credentials: grpc.ChannelCredentials,
         options: Optional[ChannelArgumentType] = None,
         compression: Optional[grpc.Compression] = None,
@@ -88,4 +87,4 @@ __all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
            'UnaryUnaryMultiCallable', 'ClientCallDetails',
            'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
            'insecure_channel', 'server', 'Server', 'EOF', 'secure_channel',
-           'AbortError')
+           'AbortError', 'BaseError', 'UsageError')
