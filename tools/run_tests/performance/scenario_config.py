@@ -906,10 +906,20 @@ class PythonAsyncIOLanguage:
             unconstrained_client='async')
 
         yield _ping_pong_scenario(
-            'python_asyncio_to_cpp_protobuf_async_unary_ping_pong',
+            'python_asyncio_to_cpp_protobuf_async_unary_ping_pong_1thread',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
+            server_language='c++',
+            categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'python_asyncio_to_cpp_protobuf_async_unary_ping_pong_max',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            async_client_threads=0,
             server_language='c++',
             categories=[SMOKETEST, SCALABLE])
 
