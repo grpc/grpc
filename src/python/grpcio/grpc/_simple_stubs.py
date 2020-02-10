@@ -28,8 +28,8 @@ _EVICTION_PERIOD_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"
 if _EVICTION_PERIOD_KEY in os.environ:
     _EVICTION_PERIOD = datetime.timedelta(
         seconds=float(os.environ[_EVICTION_PERIOD_KEY]))
-    _LOGGER.info(
-        "Setting managed channel eviction period to %s", _EVICTION_PERIOD)
+    _LOGGER.info("Setting managed channel eviction period to %s",
+                 _EVICTION_PERIOD)
 else:
     _EVICTION_PERIOD = datetime.timedelta(minutes=10)
 
@@ -154,6 +154,7 @@ ResponseType = TypeVar('ResponseType')
 #   +----------+-------+--------+
 #
 #  Make this the default option.
+
 
 # pylint: disable=too-many-arguments
 def unary_unary(
