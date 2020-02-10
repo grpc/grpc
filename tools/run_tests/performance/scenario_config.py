@@ -829,27 +829,34 @@ class PythonAsyncIOLanguage:
         return 1200
 
     def scenarios(self):
-        yield _ping_pong_scenario(
-            'python_asyncio_protobuf_async_unary_ping_pong_64_max',
-            rpc_type='UNARY',
-            client_type='ASYNC_CLIENT',
-            server_type='ASYNC_SERVER',
-            outstanding=64,
-            channels=1,
-            unconstrained_client='async',
-            categories=[SMOKETEST, SCALABLE])
+        for outstanding in [32, 64, 128, 256]:
+            for channels in [1, 5]:
+                yield _ping_pong_scenario(
+                    'python_asyncio_protobuf_async_unary_ping_pong_%dx%d_max' %
+                    (
+                        outstanding,
+                        channels,
+                    ),
+                    rpc_type='UNARY',
+                    client_type='ASYNC_CLIENT',
+                    server_type='ASYNC_SERVER',
+                    outstanding=outstanding,
+                    channels=channels,
+                    unconstrained_client='async',
+                    categories=[SMOKETEST, SCALABLE])
 
-        yield _ping_pong_scenario(
-            'python_asyncio_protobuf_async_unary_ping_pong_128_1thread',
-            rpc_type='UNARY',
-            client_type='ASYNC_CLIENT',
-            server_type='ASYNC_SERVER',
-            outstanding=128,
-            channels=1,
-            async_client_threads=1,
-            async_server_threads=1,
-            unconstrained_client='async',
-            categories=[SMOKETEST, SCALABLE])
+            yield _ping_pong_scenario(
+                'python_asyncio_protobuf_async_unary_ping_pong_%d_1thread' %
+                outstanding,
+                rpc_type='UNARY',
+                client_type='ASYNC_CLIENT',
+                server_type='ASYNC_SERVER',
+                outstanding=outstanding,
+                channels=1,
+                async_client_threads=1,
+                async_server_threads=1,
+                unconstrained_client='async',
+                categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
             'python_asyncio_generic_async_streaming_ping_pong',

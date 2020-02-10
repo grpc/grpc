@@ -34,10 +34,22 @@ from tests.unit.framework.common import get_socket
 _NUM_CORES = multiprocessing.cpu_count()
 _NUM_CORE_PYTHON_CAN_USE = 1
 _WORKER_ENTRY_FILE = os.path.split(os.path.abspath(__file__))[0] + '/worker.py'
-_SubWorker = collections.namedtuple('_SubWorker',
-                                    ['process', 'port', 'channel', 'stub'])
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class _SubWorker(
+        collections.namedtuple('_SubWorker',
+                               ['process', 'port', 'channel', 'stub'])):
+
+    def _repr(self):
+        return f'<_SubWorker pid={self.process.pid} port={self.port}>'
+
+    def __repr__(self):
+        return self._repr()
+
+    def __str__(self):
+        return self._repr()
 
 
 def _get_server_status(start_time: float, end_time: float,
@@ -231,9 +243,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             for worker in sub_workers:
                 await worker.stub.QuitWorker(control_pb2.Void())
                 await worker.channel.close()
-                _LOGGER.info('Waiting for sub worker [%s] to quit...', worker)
+                _LOGGER.info('Waiting for [%s] to quit...', worker)
                 await worker.process.wait()
-                _LOGGER.info('Sub worker [%s] quit', worker)
 
     async def _run_single_client(self, config, request_iterator, context):
         running_tasks = []
