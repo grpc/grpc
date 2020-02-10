@@ -28,7 +28,7 @@ _EVICTION_PERIOD_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"
 if _EVICTION_PERIOD_KEY in os.environ:
     _EVICTION_PERIOD = datetime.timedelta(
         seconds=float(os.environ[_EVICTION_PERIOD_KEY]))
-    _LOGGER.info("Setting managed channel eviction period to %s",
+    _LOGGER.debug("Setting managed channel eviction period to %s",
                  _EVICTION_PERIOD)
 else:
     _EVICTION_PERIOD = datetime.timedelta(minutes=10)
@@ -36,7 +36,7 @@ else:
 _MAXIMUM_CHANNELS_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM"
 if _MAXIMUM_CHANNELS_KEY in os.environ:
     _MAXIMUM_CHANNELS = int(os.environ[_MAXIMUM_CHANNELS_KEY])
-    _LOGGER.info("Setting maximum managed channels to %d", _MAXIMUM_CHANNELS)
+    _LOGGER.debug("Setting maximum managed channels to %d", _MAXIMUM_CHANNELS)
 else:
     _MAXIMUM_CHANNELS = 2**8
 
@@ -47,13 +47,13 @@ def _create_channel(target: str, options: Sequence[Tuple[str, str]],
     channel_credentials = channel_credentials or grpc.local_channel_credentials(
     )
     if channel_credentials._credentials is grpc.experimental._insecure_channel_credentials:
-        _LOGGER.info(f"Creating insecure channel with options '{options}' " +
+        _LOGGER.debug(f"Creating insecure channel with options '{options}' " +
                      f"and compression '{compression}'")
         return grpc.insecure_channel(target,
                                      options=options,
                                      compression=compression)
     else:
-        _LOGGER.info(
+        _LOGGER.debug(
             f"Creating secure channel with credentials '{channel_credentials}', "
             + f"options '{options}' and compression '{compression}'")
         return grpc.secure_channel(target,
@@ -85,7 +85,7 @@ class ChannelCache:
     # TODO: Type annotate key.
     def _evict_locked(self, key):
         channel, _ = self._mapping.pop(key)
-        _LOGGER.info("Evicting channel %s with configuration %s.", channel, key)
+        _LOGGER.debug("Evicting channel %s with configuration %s.", channel, key)
         channel.close()
         del channel
 
