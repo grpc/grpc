@@ -1054,12 +1054,12 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
             state_(new_state),
             connected_subchannel_(std::move(connected_subchannel)) {
         parent_->parent_->chand_->work_serializer_->Run(
-            [this]() { ApplyUpdateInControlPlaneLogicalThread(); },
+            [this]() { ApplyUpdateInControlPlaneWorkSerializer(); },
             DEBUG_LOCATION);
       }
 
      private:
-      void ApplyUpdateInControlPlaneLogicalThread() {
+      void ApplyUpdateInControlPlaneWorkSerializer() {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
           gpr_log(GPR_INFO,
                   "chand=%p: processing connectivity change in work serializer "

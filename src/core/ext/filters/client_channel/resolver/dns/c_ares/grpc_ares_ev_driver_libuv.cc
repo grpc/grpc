@@ -161,7 +161,7 @@ class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
       std::shared_ptr<WorkSerializer> work_serializer) override {
-    return new GrpcPolledFdLibuv(as, work_serializer);
+    return new GrpcPolledFdLibuv(as, std::move(work_serializer));
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {}
