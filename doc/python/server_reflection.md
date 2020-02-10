@@ -6,7 +6,7 @@ and more examples how to use server reflection.
 
 ## Enable server reflection in Python servers
 
-gRPC Python Server Reflection is an add-on library. To use it, first install 
+gRPC Python Server Reflection is an add-on library. To use it, first install
 the [grpcio-reflection] PyPI package into your project.
 
 Note that with Python you need to manually register the service
@@ -29,7 +29,7 @@ def serve():
     server.start()
 ```
 
-Please see [greeter_server_with_reflection.py] in the examples directory for the full 
+Please see [greeter_server_with_reflection.py] in the examples directory for the full
 example, which extends the gRPC [Python `Greeter` example] on a reflection-enabled server.
 
 After starting the server, you can verify that the server reflection

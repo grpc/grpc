@@ -1007,21 +1007,21 @@ languages. Therefore they are not part of our interop matrix.
 
 #### rpc_soak
 
-The client performs many large_unary RPCs in sequence over the same channel. 
+The client performs many large_unary RPCs in sequence over the same channel.
 The number of RPCs is configured by the experimental flag, `soak_iterations`.
 
 #### channel_soak
 
-The client performs many large_unary RPCs in sequence. Before each RPC, it 
-tears down and rebuilds the channel. The number of RPCs is configured by 
+The client performs many large_unary RPCs in sequence. Before each RPC, it
+tears down and rebuilds the channel. The number of RPCs is configured by
 the experimental flag, `soak_iterations`.
 
-This tests puts stress on several gRPC components; the resolver, the load 
+This tests puts stress on several gRPC components; the resolver, the load
 balancer, and the RPC hotpath.
 
 #### long_lived_channel
 
-The client performs a number of large_unary RPCs over a single long-lived 
+The client performs a number of large_unary RPCs over a single long-lived
 channel with a fixed but configurable interval between each RPC.
 
 ### TODO Tests

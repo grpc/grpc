@@ -1,6 +1,6 @@
 # gRPC Security Audit
 
-A third-party security audit of gRPC C++ stack was performed by [Cure53](https://cure53.de) in October 2019. The full report can be found [here](https://github.com/grpc/grpc/tree/master/doc/grpc_security_audit.pdf). 
+A third-party security audit of gRPC C++ stack was performed by [Cure53](https://cure53.de) in October 2019. The full report can be found [here](https://github.com/grpc/grpc/tree/master/doc/grpc_security_audit.pdf).
 
 # Addressing grpc_security_audit
 
@@ -21,7 +21,7 @@ Below is a list of alternatives that gRPC team considered.
 
 
 ### Alternative #1: Rewrite gpr_free to take void\*\*
-One solution is to change the API of `gpr_free` so that it automatically nulls the given pointer after freeing it. 
+One solution is to change the API of `gpr_free` so that it automatically nulls the given pointer after freeing it.
 
 ```
 gpr_free (void** ptr) {
@@ -30,7 +30,7 @@ gpr_free (void** ptr) {
 }
 ```
 
-This defensive programming pattern would help protect gRPC from the potential exploits and latent dangling pointer bugs mentioned in the security report. 
+This defensive programming pattern would help protect gRPC from the potential exploits and latent dangling pointer bugs mentioned in the security report.
 
 However, performance would be a significant concern as we are now unconditionally adding a store to every gpr_free call, and there are potentially hundreds of these per RPC. At the RPC layer, this can add up to prohibitive costs.
 
@@ -61,7 +61,7 @@ Because of performance and maintainability concerns, GRP-01-002 will be addresse
 ## GRP-01-003 Calls to malloc suffer from potential integer overflows
 The vulnerability, as defined by the report, is that calls to `gpr_malloc` in the C-core codebase may suffer from potential integer overflow in cases where we multiply the array element size by the size of the array. The penetration testers did not identify a concrete place where this occurred, but rather emphasized that the coding pattern itself had potential to lead to vulnerabilities. The report’s suggested solution for GRP-01-003 was to create a `calloc(size_t nmemb, size_t size)` wrapper that contains integer overflow checks.
 
-However, gRPC team firmly believes that gRPC Core should only use integer overflow checks in the places where they’re needed; for example, any place where remote input influences the input to `gpr_malloc` in an unverified way. This is because bounds-checking is very expensive at the RPC layer. 
+However, gRPC team firmly believes that gRPC Core should only use integer overflow checks in the places where they’re needed; for example, any place where remote input influences the input to `gpr_malloc` in an unverified way. This is because bounds-checking is very expensive at the RPC layer.
 
 Determining exactly where bounds-checking is needed requires an audit of tracing each `gpr_malloc` (or `gpr_realloc` or `gpr_zalloc`) call up the stack to determine if the sufficient bounds-checking was performed. This kind of audit, done manually, is fairly expensive engineer-wise.
 

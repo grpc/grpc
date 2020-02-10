@@ -8,7 +8,7 @@ Server
 ------
 The code for the custom http2 server can be found
 [here](https://github.com/grpc/grpc/tree/master/test/http2_test).
-It is responsible for handling requests and sending responses, and also for 
+It is responsible for handling requests and sending responses, and also for
 fulfilling the behavior of each particular test case.
 
 Server should accept these arguments:
@@ -51,7 +51,7 @@ the user application having to do a thing.
 Client Procedure:
  1. Client sends two UnaryCall requests (and sleeps for 1 second in-between).
  TODO: resolve [9300](https://github.com/grpc/grpc/issues/9300) and remove the 1 second sleep
- 
+
     ```
     {
       response_size: 314159
@@ -78,7 +78,7 @@ RST_STREAM immediately after sending headers to the client.
 
 Procedure:
  1. Client sends UnaryCall with:
- 
+
     ```
     {
       response_size: 314159
@@ -93,7 +93,7 @@ Client asserts:
 
 Server Procedure:
   1. Server sends a RST_STREAM with error code 0 after sending headers to the client.
-  
+
 *At the moment the error code and message returned are not standardized throughout all
 languages. Those checks will be added once all client languages behave the same way. [#9142](https://github.com/grpc/grpc/issues/9142) is in flight.*
 
@@ -104,7 +104,7 @@ RST_STREAM halfway through sending data to the client.
 
 Procedure:
  1. Client sends UnaryCall with:
- 
+
     ```
     {
       response_size: 314159
@@ -118,7 +118,7 @@ Client asserts:
 * Call was not successful.
 
 Server Procedure:
-  1. Server sends a RST_STREAM with error code 0 after sending half of 
+  1. Server sends a RST_STREAM with error code 0 after sending half of
      the requested data to the client.
 
 ### rst_after_data
@@ -128,7 +128,7 @@ RST_STREAM after sending all of the data to the client.
 
 Procedure:
  1. Client sends UnaryCall with:
- 
+
     ```
     {
       response_size: 314159
@@ -156,7 +156,7 @@ server.
 
 Procedure:
  1. Client sends UnaryCall with:
- 
+
     ```
     {
       response_size: 314159
@@ -165,16 +165,16 @@ Procedure:
       }
     }
     ```
-  
+
 Client asserts:
 * call was successful.
 * response payload body is 314159 bytes in size.
 
 Server Procedure:
-  1. Server tracks the number of outstanding pings (i.e. +1 when it sends a ping, and -1 
+  1. Server tracks the number of outstanding pings (i.e. +1 when it sends a ping, and -1
   when it receives an ack from the client).
   2. Server sends pings before and after sending headers, also before and after sending data.
-  
+
 Server Asserts:
 * Number of outstanding pings is 0 when the connection is lost.
 
@@ -185,10 +185,10 @@ This test verifies that the client observes the MAX_CONCURRENT_STREAMS limit set
 Client Procedure:
   1. Client sends initial UnaryCall to allow the server to update its MAX_CONCURRENT_STREAMS settings.
   2. Client concurrently sends 10 UnaryCalls.
-  
+
 Client Asserts:
 * All UnaryCalls were successful, and had the correct type and payload size.
- 
+
 Server Procedure:
   1. Sets MAX_CONCURRENT_STREAMS to one after the connection is made.
 
