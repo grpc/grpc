@@ -836,8 +836,6 @@ class PythonAsyncIOLanguage:
             server_type='ASYNC_SERVER',
             outstanding=64,
             channels=1,
-            async_client_threads=0,
-            async_server_threads=0,
             unconstrained_client='async',
             categories=[SMOKETEST, SCALABLE])
 
@@ -848,8 +846,6 @@ class PythonAsyncIOLanguage:
             server_type='ASYNC_SERVER',
             outstanding=128,
             channels=1,
-            client_threads_per_cq=1,
-            server_threads_per_cq=1,
             async_client_threads=1,
             async_server_threads=1,
             unconstrained_client='async',
@@ -860,6 +856,7 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_GENERIC_SERVER',
+            async_server_threads=1,
             use_generic_payload=True,
             categories=[SMOKETEST, SCALABLE])
 
@@ -867,19 +864,22 @@ class PythonAsyncIOLanguage:
             'python_asyncio_protobuf_async_streaming_ping_pong',
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
-            server_type='ASYNC_SERVER')
-
-        yield _ping_pong_scenario(
-            'python_asyncio_protobuf_async_unary_ping_pong',
-            rpc_type='UNARY',
-            client_type='ASYNC_CLIENT',
-            server_type='ASYNC_SERVER')
+            server_type='ASYNC_SERVER',
+            async_server_threads=1)
 
         yield _ping_pong_scenario(
             'python_asyncio_protobuf_async_unary_ping_pong',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
+            async_server_threads=1)
+
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_unary_ping_pong',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            async_server_threads=1,
             categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
@@ -887,7 +887,6 @@ class PythonAsyncIOLanguage:
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            async_client_threads=1,
             unconstrained_client='async')
 
         yield _ping_pong_scenario(
@@ -895,7 +894,6 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            async_client_threads=1,
             unconstrained_client='async')
 
         yield _ping_pong_scenario(
