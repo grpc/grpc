@@ -104,7 +104,7 @@ def _server(credentials: Optional[grpc.ServerCredentials]):
             port = server.add_secure_port(target, credentials)
         server.add_generic_rpc_handlers((_GenericHandler(),))
         server.start()
-        yield server, port
+        yield port
     finally:
         server.stop(None)
 
@@ -154,7 +154,7 @@ class SimpleStubsTest(unittest.TestCase):
             self.fail(message() + " after " + str(timeout))
 
     def test_unary_unary_insecure(self):
-        with _server(None) as (_, port):
+        with _server(None) as port:
             target = f'localhost:{port}'
             response = grpc.experimental.unary_unary(
                 _REQUEST,
@@ -165,7 +165,7 @@ class SimpleStubsTest(unittest.TestCase):
             self.assertEqual(_REQUEST, response)
 
     def test_unary_unary_secure(self):
-        with _server(grpc.local_server_credentials()) as (_, port):
+        with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'
             response = grpc.experimental.unary_unary(
                 _REQUEST,
@@ -175,14 +175,14 @@ class SimpleStubsTest(unittest.TestCase):
             self.assertEqual(_REQUEST, response)
 
     def test_channel_credentials_default(self):
-        with _server(grpc.local_server_credentials()) as (_, port):
+        with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'
             response = grpc.experimental.unary_unary(_REQUEST, target,
                                                      _UNARY_UNARY)
             self.assertEqual(_REQUEST, response)
 
     def test_channels_cached(self):
-        with _server(grpc.local_server_credentials()) as (_, port):
+        with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'
             test_name = inspect.stack()[0][3]
             args = (_REQUEST, target, _UNARY_UNARY)
@@ -196,7 +196,7 @@ class SimpleStubsTest(unittest.TestCase):
             self.assert_cached(_invoke)
 
     def test_channels_evicted(self):
-        with _server(grpc.local_server_credentials()) as (_, port):
+        with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'
             response = grpc.experimental.unary_unary(
                 _REQUEST,
@@ -211,7 +211,7 @@ class SimpleStubsTest(unittest.TestCase):
             )
 
     def test_total_channels_enforced(self):
-        with _server(grpc.local_server_credentials()) as (_, port):
+        with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'
             for i in range(_STRESS_EPOCHS):
                 # Ensure we get a new channel each time.
@@ -231,7 +231,7 @@ class SimpleStubsTest(unittest.TestCase):
                 )
 
     def test_unary_stream(self):
-        with _server(grpc.local_server_credentials()) as (_, port):
+        with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'
             for response in grpc.experimental.unary_stream(
                     _REQUEST,
@@ -246,7 +246,7 @@ class SimpleStubsTest(unittest.TestCase):
             for _ in range(_CLIENT_REQUEST_COUNT):
                 yield _REQUEST
 
-        with _server(grpc.local_server_credentials()) as (_, port):
+        with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'
             response = grpc.experimental.stream_unary(
                 request_iter(),
@@ -261,7 +261,7 @@ class SimpleStubsTest(unittest.TestCase):
             for _ in range(_CLIENT_REQUEST_COUNT):
                 yield _REQUEST
 
-        with _server(grpc.local_server_credentials()) as (_, port):
+        with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'
             for response in grpc.experimental.stream_stream(
                     request_iter(),
