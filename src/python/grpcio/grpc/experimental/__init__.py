@@ -20,7 +20,6 @@ import sys
 import warnings
 
 import grpc
-import grpc._simple_stubs
 
 
 class ChannelOptions(object):
