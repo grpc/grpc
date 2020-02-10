@@ -22,6 +22,12 @@ from typing import Any, AnyStr, Callable, Iterator, OrderedDict, Optional, Seque
 
 import grpc
 
+RequestType = TypeVar('RequestType')
+ResponseType = TypeVar('ResponseType')
+
+OptionsType = Sequence[Tuple[str, str]]
+CacheKey = Tuple[str, OptionsType, Optional[grpc.ChannelCredentials], Optional[grpc.Compression]]
+
 _LOGGER = logging.getLogger(__name__)
 
 _EVICTION_PERIOD_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"
@@ -60,9 +66,6 @@ def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                                    credentials=channel_credentials,
                                    options=options,
                                    compression=compression)
-
-OptionsType = Sequence[Tuple[str, str]]
-CacheKey = Tuple[str, OptionsType, Optional[grpc.ChannelCredentials], Optional[grpc.Compression]]
 
 class ChannelCache:
     # NOTE(rbellevi): Untyped due to reference cycle.
@@ -147,9 +150,6 @@ class ChannelCache:
         with self._lock:
             return len(self._mapping)
 
-
-RequestType = TypeVar('RequestType')
-ResponseType = TypeVar('ResponseType')
 
 # TODO(rbellevi): Consider a credential type that has the
 #   following functionality matrix:
