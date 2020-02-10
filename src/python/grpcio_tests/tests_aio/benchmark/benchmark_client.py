@@ -140,6 +140,8 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
             await call.write(self._request)
             await call.read()
             self._record_query_time(time.time() - start_time)
+        await call.done_writing()
+        assert grpc.StatusCode.OK == await call.code()
 
     async def run(self):
         await super().run()
