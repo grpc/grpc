@@ -3677,7 +3677,6 @@ add_library(grpc++
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
-  src/cpp/client/generic_stub.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
@@ -4811,7 +4810,6 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
-  src/cpp/client/generic_stub.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc

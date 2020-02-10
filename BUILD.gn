@@ -1396,7 +1396,6 @@ config("grpc_config") {
         "src/cpp/client/create_channel_internal.h",
         "src/cpp/client/create_channel_posix.cc",
         "src/cpp/client/credentials_cc.cc",
-        "src/cpp/client/generic_stub.cc",
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/client/secure_credentials.h",
