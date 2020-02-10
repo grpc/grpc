@@ -18,7 +18,7 @@ import datetime
 import os
 import logging
 import threading
-from typing import Any, AnyStr, Callable, Iterator, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, AnyStr, Callable, Iterator, OrderedDict, Optional, Sequence, Tuple, TypeVar, Union
 
 import grpc
 
@@ -61,12 +61,18 @@ def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                                    options=options,
                                    compression=compression)
 
+OptionsType = Sequence[Tuple[str, str]]
+CacheKey = Tuple[str, OptionsType, Optional[grpc.ChannelCredentials], Optional[grpc.Compression]]
 
 class ChannelCache:
+    # NOTE(rbellevi): Untyped due to reference cycle.
     _singleton = None
-    _lock = threading.RLock()
-    _condition = threading.Condition(lock=_lock)
-    _eviction_ready = threading.Event()
+    _lock: threading.RLock = threading.RLock()
+    _condition: threading.Condition = threading.Condition(lock=_lock)
+    _eviction_ready: threading.Event = threading.Event()
+
+    _mapping: OrderedDict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
+    _eviction_thread: threading.Thread
 
     def __init__(self):
         self._mapping = collections.OrderedDict()
@@ -82,14 +88,12 @@ class ChannelCache:
         ChannelCache._eviction_ready.wait()
         return ChannelCache._singleton
 
-    # TODO: Type annotate key.
-    def _evict_locked(self, key):
+    def _evict_locked(self, key: CacheKey):
         channel, _ = self._mapping.pop(key)
         _LOGGER.debug("Evicting channel %s with configuration %s.", channel, key)
         channel.close()
         del channel
 
-    # TODO: Refactor. Way too deeply nested.
     @staticmethod
     def _perform_evictions():
         while True:
@@ -110,6 +114,11 @@ class ChannelCache:
                         continue
                     else:
                         time_to_eviction = (eviction_time - now).total_seconds()
+                        # NOTE: We aim to *eventually* coalesce to a state in
+                        # which no overdue channels are in the cache and the
+                        # length of the cache is longer than _MAXIMUM_CHANNELS.
+                        # We tolerate momentary states in which these two
+                        # criteria are not met.
                         ChannelCache._condition.wait(timeout=time_to_eviction)
 
     def get_channel(self, target: str, options: Sequence[Tuple[str, str]],
@@ -117,7 +126,6 @@ class ChannelCache:
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
         key = (target, options, channel_credentials, compression)
         with self._lock:
-            # TODO: Can the get and the pop be turned into a single operation?
             channel_data = self._mapping.get(key, None)
             if channel_data is not None:
                 channel = channel_data[0]
