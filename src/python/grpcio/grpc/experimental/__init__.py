@@ -17,7 +17,6 @@ These APIs are subject to be removed during any minor version release.
 """
 
 import sys
-import warnings
 
 import grpc
 
@@ -52,19 +51,8 @@ def insecure_channel_credentials():
     return grpc.ChannelCredentials(_insecure_channel_credentials)
 
 
-class ExperimentalApiWarning(Warning):
-    """A warning that an API is experimental."""
-
-
-def warn_experimental(api_name):
-    msg = ("{} is an experimental API. It is subject to change or ".format(
-        api_name) + "removal between minor releases. Proceed with caution.")
-    warnings.warn(msg, ExperimentalApiWarning, stacklevel=2)
-
-
 __all__ = (
     'ChannelOptions',
-    'ExperimentalApiWarning',
     'UsageError',
     'insecure_channel_credentials',
 )
