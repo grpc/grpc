@@ -187,18 +187,15 @@ class XdsClient::ChannelState::AdsCallState
         }
         if (type_url_ == XdsApi::kLdsTypeUrl ||
             type_url_ == XdsApi::kRdsTypeUrl) {
-          ads_calld_->xds_client()->service_config_watcher_->OnError(
-              error);
+          ads_calld_->xds_client()->service_config_watcher_->OnError(error);
         } else if (type_url_ == XdsApi::kCdsTypeUrl) {
-          ClusterState& state =
-              ads_calld_->xds_client()->cluster_map_[name_];
+          ClusterState& state = ads_calld_->xds_client()->cluster_map_[name_];
           for (const auto& p : state.watchers) {
             p.first->OnError(GRPC_ERROR_REF(watcher_error));
           }
           GRPC_ERROR_UNREF(error);
         } else if (type_url_ == XdsApi::kEdsTypeUrl) {
-          EndpointState& state =
-              ads_calld_->xds_client()->endpoint_map_[name_];
+          EndpointState& state = ads_calld_->xds_client()->endpoint_map_[name_];
           for (const auto& p : state.watchers) {
             p.first->OnError(GRPC_ERROR_REF(watcher_error));
           }
@@ -1142,9 +1139,10 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
   std::string type_url;
   // Note that ParseAdsResponse() also validates the response.
   grpc_error* parse_error = xds_client()->api_.ParseAdsResponse(
-      response_slice, xds_client()->server_name_, xds_client()->route_config_name_,
-      EdsServiceNamesForRequest(), &lds_update, &rds_update,
-      &cds_update_map, &eds_update_map, &version, &nonce, &type_url);
+      response_slice, xds_client()->server_name_,
+      xds_client()->route_config_name_, EdsServiceNamesForRequest(),
+      &lds_update, &rds_update, &cds_update_map, &eds_update_map, &version,
+      &nonce, &type_url);
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
     // Ignore unparsable response.
