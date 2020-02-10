@@ -72,24 +72,24 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  
-    auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
-    g_work_serializer = &work_serializer;
 
-    grpc_core::ResolverFactory* dns =
-        grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  g_work_serializer = &work_serializer;
 
-    test_succeeds(dns, "dns:10.2.1.1");
-    test_succeeds(dns, "dns:10.2.1.1:1234");
-    test_succeeds(dns, "dns:www.google.com");
-    test_succeeds(dns, "dns:///www.google.com");
-    grpc_core::UniquePtr<char> resolver =
-        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-    if (gpr_stricmp(resolver.get(), "native") == 0) {
-      test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
-    } else {
-      test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
-    }
+  grpc_core::ResolverFactory* dns =
+      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+
+  test_succeeds(dns, "dns:10.2.1.1");
+  test_succeeds(dns, "dns:10.2.1.1:1234");
+  test_succeeds(dns, "dns:www.google.com");
+  test_succeeds(dns, "dns:///www.google.com");
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (gpr_stricmp(resolver.get(), "native") == 0) {
+    test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
+  } else {
+    test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
+  }
   grpc_shutdown();
 
   return 0;

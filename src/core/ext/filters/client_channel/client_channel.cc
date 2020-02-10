@@ -1062,7 +1062,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       void ApplyUpdateInControlPlaneLogicalThread() {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
           gpr_log(GPR_INFO,
-                  "chand=%p: processing connectivity change in logical thread "
+                  "chand=%p: processing connectivity change in work serializer "
                   "for subchannel wrapper %p subchannel %p "
                   "(connected_subchannel=%p state=%s): watcher=%p",
                   parent_->parent_->chand_, parent_->parent_.get(),
@@ -3843,7 +3843,7 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
   // The picker being null means that the channel is currently in IDLE state.
   // The incoming call will make the channel exit IDLE.
   if (chand->picker() == nullptr) {
-    // Bounce into the control plane logical thread to exit IDLE.
+    // Bounce into the control plane work serializer to exit IDLE.
     ExecCtx::Run(
         DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(

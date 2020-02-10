@@ -236,11 +236,8 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
   }
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, std::move(result));
-  resolver->work_serializer()->Run(
-      [arg]() {
-        arg->SetResponseLocked();
-      },
-      DEBUG_LOCATION);
+  resolver->work_serializer()->Run([arg]() { arg->SetResponseLocked(); },
+                                   DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(
@@ -251,13 +248,10 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  FakeResolverResponseSetter* arg =
-      new FakeResolverResponseSetter(resolver, std::move(result), true /* has_result */);
+  FakeResolverResponseSetter* arg = new FakeResolverResponseSetter(
+      resolver, std::move(result), true /* has_result */);
   resolver->work_serializer()->Run(
-      [arg]() {
-        arg->SetReresolutionResponseLocked();
-      },
-      DEBUG_LOCATION);
+      [arg]() { arg->SetReresolutionResponseLocked(); }, DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
@@ -270,10 +264,7 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, Resolver::Result());
   resolver->work_serializer()->Run(
-      [arg]() {
-        arg->SetReresolutionResponseLocked();
-      },
-      DEBUG_LOCATION);
+      [arg]() { arg->SetReresolutionResponseLocked(); }, DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetFailure() {
@@ -285,11 +276,8 @@ void FakeResolverResponseGenerator::SetFailure() {
   }
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, Resolver::Result());
-  resolver->work_serializer()->Run(
-      [arg]() {
-        arg->SetFailureLocked();
-      },
-      DEBUG_LOCATION);
+  resolver->work_serializer()->Run([arg]() { arg->SetFailureLocked(); },
+                                   DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetFailureOnReresolution() {
@@ -300,12 +288,10 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
     resolver = resolver_->Ref();
   }
   FakeResolverResponseSetter* arg = new FakeResolverResponseSetter(
-      resolver, Resolver::Result(), false /* has_result */, false /* immediate */);
-  resolver->work_serializer()->Run(
-      [arg]() {
-        arg->SetFailureLocked();
-      },
-      DEBUG_LOCATION);
+      resolver, Resolver::Result(), false /* has_result */,
+      false /* immediate */);
+  resolver->work_serializer()->Run([arg]() { arg->SetFailureLocked(); },
+                                   DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetFakeResolver(
@@ -316,11 +302,8 @@ void FakeResolverResponseGenerator::SetFakeResolver(
   if (has_result_) {
     FakeResolverResponseSetter* arg =
         new FakeResolverResponseSetter(resolver_, std::move(result_));
-    resolver_->work_serializer()->Run(
-        [arg]() {
-          arg->SetResponseLocked();
-        },
-        DEBUG_LOCATION);
+    resolver_->work_serializer()->Run([arg]() { arg->SetResponseLocked(); },
+                                      DEBUG_LOCATION);
     has_result_ = false;
   }
 }

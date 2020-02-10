@@ -38,8 +38,8 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   ~LocalSubchannelPool() override;
 
   // Implements interface methods.
-  // Thread-unsafe. Intended to be invoked within the client_channel logical
-  // thread.
+  // Thread-unsafe. Intended to be invoked within the client_channel work
+  // serializer.
   Subchannel* RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
   void UnregisterSubchannel(SubchannelKey* key) override;

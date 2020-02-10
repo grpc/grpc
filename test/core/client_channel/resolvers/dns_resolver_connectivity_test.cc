@@ -161,14 +161,14 @@ int main(int argc, char** argv) {
 
   grpc_init();
   gpr_mu_init(&g_mu);
-    auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
-    g_work_serializer = &work_serializer;
-    grpc_set_resolver_impl(&test_resolver);
-    grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
-    grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
-    
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  g_work_serializer = &work_serializer;
+  grpc_set_resolver_impl(&test_resolver);
+  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
+  grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
+
   {
-    grpc_core::ExecCtx exec_ctx;    
+    grpc_core::ExecCtx exec_ctx;
     ResultHandler* result_handler = new ResultHandler();
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = create_resolver(
         "dns:test",
