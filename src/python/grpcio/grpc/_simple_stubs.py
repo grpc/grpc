@@ -18,8 +18,8 @@ import datetime
 import os
 import logging
 import threading
-from typing import (Any, AnyStr, Callable, Iterator, OrderedDict, Optional,
-                    Sequence, Tuple, TypeVar, Union)
+from typing import (Any, AnyStr, Callable, Dict, Iterator, Optional, Sequence,
+                    Tuple, TypeVar, Union)
 
 import grpc
 
@@ -77,7 +77,7 @@ class ChannelCache:
     _condition: threading.Condition = threading.Condition(lock=_lock)
     _eviction_ready: threading.Event = threading.Event()
 
-    _mapping: OrderedDict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
+    _mapping: Dict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
     _eviction_thread: threading.Thread
 
     def __init__(self):
