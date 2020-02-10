@@ -829,8 +829,8 @@ class PythonAsyncIOLanguage:
         return 1200
 
     def scenarios(self):
-        for outstanding in [32, 64, 128, 256]:
-            for channels in [1, 5]:
+        for outstanding in [32, 64, 128, 256, 512]:
+            for channels in [1, 4]:
                 yield _ping_pong_scenario(
                     'python_asyncio_protobuf_async_unary_ping_pong_%dx%d_max' %
                     (
@@ -843,7 +843,7 @@ class PythonAsyncIOLanguage:
                     outstanding=outstanding,
                     channels=channels,
                     unconstrained_client='async',
-                    categories=[SMOKETEST, SCALABLE])
+                    categories=[SCALABLE])
 
             yield _ping_pong_scenario(
                 'python_asyncio_protobuf_async_unary_ping_pong_%d_1thread' %
@@ -856,7 +856,7 @@ class PythonAsyncIOLanguage:
                 async_client_threads=1,
                 async_server_threads=1,
                 unconstrained_client='async',
-                categories=[SMOKETEST, SCALABLE])
+                categories=[SCALABLE])
 
         yield _ping_pong_scenario(
             'python_asyncio_generic_async_streaming_ping_pong',
@@ -872,14 +872,16 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            async_server_threads=1)
+            async_server_threads=1,
+            categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
             'python_asyncio_protobuf_async_unary_ping_pong',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            async_server_threads=1)
+            async_server_threads=1,
+            categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
             'python_asyncio_protobuf_async_unary_ping_pong',

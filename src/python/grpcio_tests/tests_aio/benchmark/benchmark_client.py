@@ -17,6 +17,7 @@ import abc
 import asyncio
 import time
 import logging
+import random
 
 import grpc
 from grpc.experimental import aio
@@ -41,16 +42,26 @@ class BenchmarkClient(abc.ABC):
 
     def __init__(self, address: str, config: control_pb2.ClientConfig,
                  hist: histogram.Histogram):
+        unique_option = (('iv', random.random()),)
+        channel_args = tuple(
+            (arg.name, arg.str_value) if arg.HasField('str_value') else (
+                arg.name, int(arg.int_value)) for arg in config.channel_args)
+
         # Creates the channel
         if config.HasField('security_params'):
             channel_credentials = grpc.ssl_channel_credentials(
-                resources.test_root_certificates())
-            self._channel = aio.secure_channel(address, channel_credentials, ((
+                resources.test_root_certificates(),)
+            server_host_override_option = ((
                 'grpc.ssl_target_name_override',
                 config.security_params.server_host_override,
-            ),))
+            ),)
+            self._channel = aio.secure_channel(
+                address, channel_credentials,
+                unique_option + channel_args + server_host_override_option)
         else:
-            self._channel = aio.insecure_channel(address)
+            self._channel = aio.insecure_channel(address,
+                                                 options=unique_option +
+                                                 channel_args)
 
         # Creates the stub
         if config.payload_config.WhichOneof('payload') == 'simple_params':

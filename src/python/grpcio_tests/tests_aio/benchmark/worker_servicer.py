@@ -63,7 +63,13 @@ def _get_server_status(start_time: float, end_time: float,
 
 
 def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
-    server = aio.server(options=(('grpc.so_reuseport', 1),))
+    channel_args = tuple(
+        (arg.name,
+         arg.str_value) if arg.HasField('str_value') else (arg.name,
+                                                           int(arg.int_value))
+        for arg in config.channel_args)
+
+    server = aio.server(options=channel_args + (('grpc.so_reuseport', 1),))
     if config.server_type == control_pb2.ASYNC_SERVER:
         servicer = benchmark_servicer.BenchmarkServicer()
         benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
