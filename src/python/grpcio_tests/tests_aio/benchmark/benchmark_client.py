@@ -42,7 +42,10 @@ class BenchmarkClient(abc.ABC):
 
     def __init__(self, address: str, config: control_pb2.ClientConfig,
                  hist: histogram.Histogram):
+        # Disables underlying reuse of subchannels
         unique_option = (('iv', random.random()),)
+
+        # Parses the channel argument from config
         channel_args = tuple(
             (arg.name, arg.str_value) if arg.HasField('str_value') else (
                 arg.name, int(arg.int_value)) for arg in config.channel_args)

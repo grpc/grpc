@@ -829,7 +829,7 @@ class PythonAsyncIOLanguage:
         return 1200
 
     def scenarios(self):
-        for outstanding in [32, 64, 128, 256, 512]:
+        for outstanding in [64, 128, 256]:
             for channels in [1, 4]:
                 yield _ping_pong_scenario(
                     'python_asyncio_protobuf_async_unary_ping_pong_%dx%d_max' %
@@ -840,7 +840,7 @@ class PythonAsyncIOLanguage:
                     rpc_type='UNARY',
                     client_type='ASYNC_CLIENT',
                     server_type='ASYNC_SERVER',
-                    outstanding=outstanding,
+                    outstanding=outstanding * channels,
                     channels=channels,
                     unconstrained_client='async',
                     categories=[SCALABLE])
