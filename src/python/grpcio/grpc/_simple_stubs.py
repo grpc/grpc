@@ -18,7 +18,8 @@ import datetime
 import os
 import logging
 import threading
-from typing import Any, AnyStr, Callable, Iterator, OrderedDict, Optional, Sequence, Tuple, TypeVar, Union
+from typing import (Any, AnyStr, Callable, Iterator, OrderedDict, Optional,
+                    Sequence, Tuple, TypeVar, Union)
 
 import grpc
 
@@ -26,7 +27,8 @@ RequestType = TypeVar('RequestType')
 ResponseType = TypeVar('ResponseType')
 
 OptionsType = Sequence[Tuple[str, str]]
-CacheKey = Tuple[str, OptionsType, Optional[grpc.ChannelCredentials], Optional[grpc.Compression]]
+CacheKey = Tuple[str, OptionsType, Optional[grpc.ChannelCredentials], Optional[
+    grpc.Compression]]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ if _EVICTION_PERIOD_KEY in os.environ:
     _EVICTION_PERIOD = datetime.timedelta(
         seconds=float(os.environ[_EVICTION_PERIOD_KEY]))
     _LOGGER.debug("Setting managed channel eviction period to %s",
-                 _EVICTION_PERIOD)
+                  _EVICTION_PERIOD)
 else:
     _EVICTION_PERIOD = datetime.timedelta(minutes=10)
 
@@ -54,7 +56,7 @@ def _create_channel(target: str, options: Sequence[Tuple[str, str]],
     )
     if channel_credentials._credentials is grpc.experimental._insecure_channel_credentials:
         _LOGGER.debug(f"Creating insecure channel with options '{options}' " +
-                     f"and compression '{compression}'")
+                      f"and compression '{compression}'")
         return grpc.insecure_channel(target,
                                      options=options,
                                      compression=compression)
@@ -66,6 +68,7 @@ def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                                    credentials=channel_credentials,
                                    options=options,
                                    compression=compression)
+
 
 class ChannelCache:
     # NOTE(rbellevi): Untyped due to reference cycle.
@@ -93,7 +96,8 @@ class ChannelCache:
 
     def _evict_locked(self, key: CacheKey):
         channel, _ = self._mapping.pop(key)
-        _LOGGER.debug("Evicting channel %s with configuration %s.", channel, key)
+        _LOGGER.debug("Evicting channel %s with configuration %s.", channel,
+                      key)
         channel.close()
         del channel
 
