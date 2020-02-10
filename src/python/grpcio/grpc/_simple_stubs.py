@@ -228,6 +228,7 @@ def unary_unary(
     Returns:
       The response to the RPC.
     """
+    grpc.experimental.warn_experimental("unary_unary")
     channel = ChannelCache.get().get_channel(target, options,
                                              channel_credentials, compression)
     multicallable = channel.unary_unary(method, request_serializer,
@@ -298,6 +299,7 @@ def unary_stream(
     Returns:
       An iterator of responses.
     """
+    grpc.experimental.warn_experimental("unary_stream")
     channel = ChannelCache.get().get_channel(target, options,
                                              channel_credentials, compression)
     multicallable = channel.unary_stream(method, request_serializer,
@@ -368,6 +370,7 @@ def stream_unary(
     Returns:
       The response to the RPC.
     """
+    grpc.experimental.warn_experimental("stream_unary")
     channel = ChannelCache.get().get_channel(target, options,
                                              channel_credentials, compression)
     multicallable = channel.stream_unary(method, request_serializer,
@@ -438,6 +441,7 @@ def stream_stream(
     Returns:
       An iterator of responses.
     """
+    grpc.experimental.warn_experimental("stream_stream")
     channel = ChannelCache.get().get_channel(target, options,
                                              channel_credentials, compression)
     multicallable = channel.stream_stream(method, request_serializer,
