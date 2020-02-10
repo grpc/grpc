@@ -16,6 +16,7 @@
 import abc
 import asyncio
 import time
+import logging
 
 import grpc
 from grpc.experimental import aio
@@ -131,7 +132,7 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
         self._running = True
         senders = (
             self._one_streamming_call() for _ in range(self._concurrency))
-        await asyncio.wait(senders)
+        await asyncio.gather(*senders)
         self._stopped.set()
 
     async def stop(self):
