@@ -1812,30 +1812,6 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "json_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "uses_polling": false
-  }, 
-  {
-    "args": [], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
     "name": "lame_client_test", 
     "platforms": [
       "linux", 
@@ -5034,7 +5010,7 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "json_test_new", 
+    "name": "json_test", 
     "platforms": [
       "linux", 
       "mac", 
