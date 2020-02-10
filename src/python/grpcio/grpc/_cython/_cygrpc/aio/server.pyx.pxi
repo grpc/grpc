@@ -477,7 +477,7 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
         _LOGGER.info('Aborting RPC due to server stop.')
     except Exception as e:
         if rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
-            if isinstance(asyncio.CancelledError, e) or isinstance(ExecuteBatchError, e):
+            if isinstance(ExecuteBatchError, e):
                 _LOGGER.info('Aborting RPC due to server stop.')
                 return
 
