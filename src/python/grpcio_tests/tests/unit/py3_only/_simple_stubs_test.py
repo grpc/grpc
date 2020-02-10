@@ -13,6 +13,8 @@
 # limitations under the License.
 """Tests for Simple Stubs."""
 
+# TODO(https://github.com/grpc/grpc/issues/21965): Run under setuptools.
+
 import os
 
 _MAXIMUM_CHANNELS = 10
