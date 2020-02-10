@@ -8,7 +8,7 @@ States of Connectivity
 ----------------------
 
 gRPC Channels provide the abstraction over which clients can communicate with
-servers.The client-side channel object can be constructed using little more
+servers. The client-side channel object can be constructed using little more
 than a DNS name. Channels encapsulate a range of functionality including name
 resolution, establishing a TCP connection (with retries and backoff) and TLS
 handshakes. Channels can also handle errors on established connections and

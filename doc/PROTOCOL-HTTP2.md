@@ -223,7 +223,7 @@ SETTINGS_TIMEOUT(4)|INTERNAL
 STREAM_CLOSED|No mapping as there is no open stream to propagate to. Implementations should log.
 FRAME_SIZE_ERROR|INTERNAL
 REFUSED_STREAM|UNAVAILABLE - Indicates that no processing occurred and the request can be retried, possibly elsewhere.
-CANCEL(8)|Mapped to call cancellation when sent by a client.Mapped to CANCELLED when sent by a server. Note that servers should only use this mechanism when they need to cancel a call but the payload byte sequence is incomplete.
+CANCEL(8)|Mapped to call cancellation when sent by a client. Mapped to CANCELLED when sent by a server. Note that servers should only use this mechanism when they need to cancel a call but the payload byte sequence is incomplete.
 COMPRESSION_ERROR|INTERNAL
 CONNECT_ERROR|INTERNAL
 ENHANCE_YOUR_CALM|RESOURCE_EXHAUSTED ...with additional error detail provided by runtime to indicate that the exhausted resource is bandwidth.
