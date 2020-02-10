@@ -43,6 +43,8 @@ _CACHE_TRIALS = 6
 _SERVER_RESPONSE_COUNT = 10
 _CLIENT_REQUEST_COUNT = _SERVER_RESPONSE_COUNT
 
+_STRESS_EPOCHS = _MAXIMUM_CHANNELS * 10
+
 _UNARY_UNARY = "/test/UnaryUnary"
 _UNARY_STREAM = "/test/UnaryStream"
 _STREAM_UNARY = "/test/StreamUnary"
@@ -211,7 +213,7 @@ class SimpleStubsTest(unittest.TestCase):
     def test_total_channels_enforced(self):
         with _server(grpc.local_server_credentials()) as (_, port):
             target = f'localhost:{port}'
-            for i in range(99):
+            for i in range(_STRESS_EPOCHS):
                 # Ensure we get a new channel each time.
                 options = (("foo", str(i)),)
                 # Send messages at full blast.
