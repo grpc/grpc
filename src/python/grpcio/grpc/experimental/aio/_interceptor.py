@@ -53,6 +53,7 @@ class UnaryUnaryClientInterceptor(metaclass=ABCMeta):
             client_call_details: ClientCallDetails,
             request: RequestType) -> Union[UnaryUnaryCall, ResponseType]:
         """Intercepts a unary-unary invocation asynchronously.
+
         Args:
           continuation: A coroutine that proceeds with the invocation by
             executing the next interceptor in chain or invoking the
@@ -65,8 +66,10 @@ class UnaryUnaryClientInterceptor(metaclass=ABCMeta):
           client_call_details: A ClientCallDetails object describing the
             outgoing RPC.
           request: The request value for the RPC.
+
         Returns:
-            An object with the RPC response.
+          An object with the RPC response.
+
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
