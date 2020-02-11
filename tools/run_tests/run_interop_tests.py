@@ -630,13 +630,13 @@ class PythonLanguage:
 
     def client_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
+            '/usr/bin/python3.7', 'src/python/grpcio_tests/setup.py',
             'run_interop', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py37_native/bin/python',
+            '/usr/bin/python3.7',
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
