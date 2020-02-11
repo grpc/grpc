@@ -1750,9 +1750,13 @@ XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
 
 void XdsClient::Orphan() {
   shutting_down_ = true;
+  /* Reset chand_, otherwise we will never shut down. */
   chand_.reset();
-  cluster_map_.clear();
-  endpoint_map_.clear();
+  /* We do not clear cluster_map_ and endpoint_map_ because the maps contain
+   * refs for watchers which in turn hold refs to the loadbalancing policies.
+   * At this point, it is possible for Ads calls to be in progress. Unreffing
+   * the loadbalancing policies before those calls are done would lead to issues
+   * such as https://github.com/grpc/grpc/issues/20928. */
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
 }
 
