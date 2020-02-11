@@ -16,13 +16,29 @@ suggestions by opening issues on our GitHub repo `grpc/grpc <https://github.com/
 The design doc can be found here as `gRFC <https://github.com/grpc/proposal/pull/155>`_.
 
 
+Caveats
+-------
+
+gRPC Async API objects may only be used on the thread on which they were
+created. AsyncIO doesn't provide thread safety for most of its APIs.
+
+
 Module Contents
 ---------------
 
 Turn-On AsyncIO Mode
 ^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: init_grpc_aio
+.. function:: init_grpc_aio
+
+    Turn-on AsyncIO mode for gRPC Python.
+
+    This function is idempotent, and it should be invoked before creation of
+    AsyncIO stack objects. Otherwise, the application might deadlock.
+
+    This function enables AsyncIO IO manager and disables threading for entire
+    process. After this point, there should not be blocking calls unless it is
+    taken cared by AsyncIO.
 
 
 Create Client
