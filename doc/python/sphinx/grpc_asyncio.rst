@@ -49,10 +49,10 @@ gRPC Exceptions
 ^^^^^^^^^^^^^^^
 
 .. autoexception:: BaseError
-.. autoexception:: AioRpcError
 .. autoexception:: UsageError
 .. autoexception:: AbortError
 .. autoexception:: InternalError
+.. autoexception:: AioRpcError
 
 
 Client-Side Context
@@ -88,6 +88,7 @@ Multi-Callable Interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: UnaryUnaryMultiCallable()
+    :undoc-members: __init__
 .. autoclass:: UnaryStreamMultiCallable()
 .. autoclass:: StreamUnaryMultiCallable()
 .. autoclass:: StreamStreamMultiCallable()

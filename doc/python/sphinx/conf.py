@@ -64,15 +64,7 @@ autodoc_default_options = {
     'members': None,
 }
 
-autodoc_mock_imports = [
-    # 'grpc._cython.cygrpc',
-    'grpc_channelz.v1.channelz_pb2',
-    'grpc_channelz.v1.channelz_pb2_grpc',
-    'grpc_health.v1.health_pb2',
-    'grpc_health.v1.health_pb2_grpc',
-    'grpc_reflection.v1alpha.reflection_pb2',
-    'grpc_reflection.v1alpha.reflection_pb2_grpc',
-]
+autodoc_mock_imports = []
 
 autodoc_typehints = 'description'
 
