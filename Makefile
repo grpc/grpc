@@ -8658,7 +8658,7 @@ endif
 
 
 LIBUPB_TEXTFORMAT_SRC = \
-    third_party/upb/upb/textencode.c \
+    third_party/upb/upb/text_encode.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -23706,7 +23706,7 @@ third_party/upb/upb/encode.c: $(OPENSSL_DEP)
 third_party/upb/upb/msg.c: $(OPENSSL_DEP)
 third_party/upb/upb/port.c: $(OPENSSL_DEP)
 third_party/upb/upb/table.c: $(OPENSSL_DEP)
-third_party/upb/upb/textencode.c: $(OPENSSL_DEP)
+third_party/upb/upb/text_encode.c: $(OPENSSL_DEP)
 third_party/upb/upb/upb.c: $(OPENSSL_DEP)
 endif
 

@@ -59,10 +59,10 @@ try:
             'language':
                 'c',
             'src': [
-                "third_party/upb/upb/textencode.c",
+                "third_party/upb/upb/text_encode.c",
             ],
             'headers': [
-                "third_party/upb/upb/textencode.h",
+                "third_party/upb/upb/text_encode.h",
             ],
         },
     ]

@@ -2536,7 +2536,7 @@
       'dependencies': [
       ],
       'sources': [
-        'third_party/upb/upb/textencode.c',
+        'third_party/upb/upb/text_encode.c',
       ],
     },
     {

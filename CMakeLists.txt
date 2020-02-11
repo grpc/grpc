@@ -5957,7 +5957,7 @@ endif()
 
 
 add_library(upb_textformat
-  third_party/upb/upb/textencode.c
+  third_party/upb/upb/text_encode.c
 )
 
 set_target_properties(upb_textformat PROPERTIES

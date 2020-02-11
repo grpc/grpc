@@ -57,7 +57,7 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
-#include "upb/textencode.h"
+#include "upb/text_encode.h"
 #include "upb/upb.h"
 
 namespace grpc_core {
@@ -276,7 +276,7 @@ void MaybeLogDiscoveryRequest(XdsClient* client, TraceFlag* tracer,
     const upb_msgdef* msg_type =
         envoy_api_v2_DiscoveryRequest_getmsgdef(symtab);
     char buf[10240];
-    upb_textencode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_text_encode(request, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s", client,
             buf);
   }
@@ -386,7 +386,7 @@ void MaybeLogDiscoveryResponse(XdsClient* client, TraceFlag* tracer,
     const upb_msgdef* msg_type =
         envoy_api_v2_DiscoveryResponse_getmsgdef(symtab);
     char buf[10240];
-    upb_textencode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_text_encode(response, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", client, buf);
   }
 }
@@ -399,7 +399,7 @@ void MaybeLogRouteConfiguration(
     const upb_msgdef* msg_type =
         envoy_api_v2_RouteConfiguration_getmsgdef(symtab);
     char buf[10240];
-    upb_textencode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_text_encode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", client, buf);
   }
 }
@@ -410,7 +410,7 @@ void MaybeLogCluster(XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_msgdef* msg_type = envoy_api_v2_Cluster_getmsgdef(symtab);
     char buf[10240];
-    upb_textencode(cluster, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_text_encode(cluster, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", client, buf);
   }
 }
@@ -423,7 +423,7 @@ void MaybeLogClusterLoadAssignment(
     const upb_msgdef* msg_type =
         envoy_api_v2_ClusterLoadAssignment_getmsgdef(symtab);
     char buf[10240];
-    upb_textencode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_text_encode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] ClusterLoadAssignment: %s", client,
             buf);
   }
@@ -1038,7 +1038,7 @@ void MaybeLogLrsRequest(
     const upb_msgdef* msg_type =
         envoy_service_load_stats_v2_LoadStatsRequest_getmsgdef(symtab);
     char buf[10240];
-    upb_textencode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_text_encode(request, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s", client,
             buf);
   }
