@@ -16,10 +16,13 @@
 These APIs are subject to be removed during any minor version release.
 """
 
+import functools
 import sys
 import warnings
 
 import grpc
+
+_EXPERIMENTAL_APIS_USED = set()
 
 
 class ChannelOptions(object):
@@ -56,16 +59,30 @@ class ExperimentalApiWarning(Warning):
     """A warning that an API is experimental."""
 
 
-def warn_experimental(api_name):
-    msg = ("{} is an experimental API. It is subject to change or ".format(
-        api_name) + "removal between minor releases. Proceed with caution.")
-    warnings.warn(msg, ExperimentalApiWarning, stacklevel=2)
+def _warn_experimental(api_name, stack_offset):
+    if api_name not in _EXPERIMENTAL_APIS_USED:
+        _EXPERIMENTAL_APIS_USED.add(api_name)
+        msg = ("'{}' is an experimental API. It is subject to change or ".
+               format(api_name) +
+               "removal between minor releases. Proceed with caution.")
+        warnings.warn(msg, ExperimentalApiWarning, stacklevel=2 + stack_offset)
+
+
+def experimental_api(f):
+
+    @functools.wraps(f)
+    def _wrapper(*args, **kwargs):
+        _warn_experimental(f.__name__, 1)
+        return f(*args, **kwargs)
+
+    return _wrapper
 
 
 __all__ = (
     'ChannelOptions',
     'ExperimentalApiWarning',
     'UsageError',
+    'experimental_api',
     'insecure_channel_credentials',
 )
 
