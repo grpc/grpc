@@ -17,6 +17,14 @@ cdef bint _grpc_aio_initialized = 0
 
 
 def init_grpc_aio():
+    """Turn-on AsyncIO mode for gRPC Python.
+
+    This function enables AsyncIO IO manager and disables threading for entire
+    process. After this point, there should not be blocking calls unless it is
+    taken cared by AsyncIO.
+
+    This function is idempotent.
+    """
     global _grpc_aio_initialized
 
     if _grpc_aio_initialized:

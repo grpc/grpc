@@ -35,6 +35,19 @@ class ClientCallDetails(
             'ClientCallDetails',
             ('method', 'timeout', 'metadata', 'credentials', 'wait_for_ready')),
         grpc.ClientCallDetails):
+    """Describes an RPC to be invoked.
+
+    This is an EXPERIMENTAL API.
+
+    Args:
+        method: The method name of the RPC.
+        timeout: An optional duration of time in seconds to allow for the RPC.
+        metadata: Optional metadata to be transmitted to the service-side of
+          the RPC.
+        credentials: An optional CallCredentials for the RPC.
+        wait_for_ready: This is an EXPERIMENTAL argument. An optional flag to
+          enable wait for ready mechanism.
+    """
 
     method: str
     timeout: Optional[float]

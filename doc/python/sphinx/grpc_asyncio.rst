@@ -6,18 +6,23 @@ gRPC AsyncIO API
 Overview
 --------
 
-gRPC AsyncIO API is a new version of gRPC Python whose architecture is
+gRPC AsyncIO API is the **new version** of gRPC Python whose architecture is
 tailored to AsyncIO. Underlying, it is using C-Core's callback API, and
 replaced all IO operations with methods provided by the AsyncIO library.
 
 This stack currently is under active development. Feel free to offer
-suggestions by opening issues on `grpc/grpc <https://github.com/grpc/grpc>`_.
+suggestions by opening issues on our GitHub repo `grpc/grpc <https://github.com/grpc/grpc>`_.
 
 The design doc can be found here as `gRFC <https://github.com/grpc/proposal/pull/155>`_.
 
 
 Module Contents
 ---------------
+
+Turn-On AsyncIO Mode
+^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: init_grpc_aio
 
 
 Create Client
@@ -27,16 +32,16 @@ Create Client
 .. autofunction:: secure_channel
 
 
-Create Server
-^^^^^^^^^^^^^
-
-.. autofunction:: server
-
-
 Channel Object
 ^^^^^^^^^^^^^^
 
 .. autoclass:: Channel
+
+
+Create Server
+^^^^^^^^^^^^^
+
+.. autofunction:: server
 
 
 Server Object
@@ -55,6 +60,12 @@ gRPC Exceptions
 .. autoexception:: AioRpcError
 
 
+Shared Context
+^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: RpcContext
+
+
 Client-Side Context
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -63,6 +74,12 @@ Client-Side Context
 .. autoclass:: UnaryStreamCall
 .. autoclass:: StreamUnaryCall
 .. autoclass:: StreamStreamCall
+
+
+Server-Side Context
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: ServicerContext
 
 
 Client-Side Interceptor
@@ -78,31 +95,10 @@ Client-Side Interceptor
 .. .. autoclass:: ServicerContext
 
 
-.. Service-Side Interceptor
-.. ^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. .. autoclass:: ServerInterceptor
-
-
 Multi-Callable Interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: UnaryUnaryMultiCallable()
-    :undoc-members: __init__
+.. autoclass:: UnaryUnaryMultiCallable
 .. autoclass:: UnaryStreamMultiCallable()
 .. autoclass:: StreamUnaryMultiCallable()
 .. autoclass:: StreamStreamMultiCallable()
-
-
-.. Future Interfaces
-.. ^^^^^^^^^^^^^^^^^
-
-.. .. autoexception:: FutureTimeoutError
-.. .. autoexception:: FutureCancelledError
-.. .. autoclass:: Future
-
-
-.. Compression
-.. ^^^^^^^^^^^
-
-.. .. autoclass:: Compression
