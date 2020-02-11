@@ -118,8 +118,9 @@ def _ping_pong_scenario(name,
                         unconstrained_client=None,
                         client_language=None,
                         server_language=None,
-                        async_client_threads=0,
                         async_server_threads=0,
+                        client_processes=0,
+                        server_processes=0,
                         server_threads_per_cq=0,
                         client_threads_per_cq=0,
                         warmup_seconds=WARMUP_SECONDS,
@@ -143,6 +144,7 @@ def _ping_pong_scenario(name,
             'outstanding_rpcs_per_channel': 1,
             'client_channels': 1,
             'async_client_threads': 1,
+            'client_processes': client_processes,
             'threads_per_cq': client_threads_per_cq,
             'rpc_type': rpc_type,
             'histogram_params': HISTOGRAM_PARAMS,
@@ -152,6 +154,7 @@ def _ping_pong_scenario(name,
             'server_type': server_type,
             'security_params': _get_secargs(secure),
             'async_server_threads': async_server_threads,
+            'server_processes': server_processes,
             'threads_per_cq': server_threads_per_cq,
             'channel_args': [],
         },
@@ -188,7 +191,7 @@ def _ping_pong_scenario(name,
             'num_clients'] = num_clients if num_clients is not None else 0  # use as many clients as available.
         scenario['client_config']['outstanding_rpcs_per_channel'] = deep
         scenario['client_config']['client_channels'] = wide
-        scenario['client_config']['async_client_threads'] = async_client_threads
+        scenario['client_config']['async_client_threads'] = 0
         if offered_load is not None:
             optimization_target = 'latency'
     else:
@@ -220,7 +223,7 @@ def _ping_pong_scenario(name,
         scenario['SERVER_LANGUAGE'] = server_language
     if categories:
         scenario['CATEGORIES'] = categories
-    if len(excluded_poll_engines):
+    if excluded_poll_engines:
         # The polling engines for which this scenario is excluded
         scenario['EXCLUDED_POLL_ENGINES'] = excluded_poll_engines
     return scenario
@@ -794,7 +797,7 @@ class PythonLanguage:
                                   client_type='SYNC_CLIENT',
                                   server_type='ASYNC_SERVER',
                                   server_language='c++',
-                                  async_server_threads=1,
+                                  async_server_threads=0,
                                   categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
@@ -842,6 +845,8 @@ class PythonAsyncIOLanguage:
                     server_type='ASYNC_SERVER',
                     outstanding=outstanding * channels,
                     channels=channels,
+                    client_processes=0,
+                    server_processes=0,
                     unconstrained_client='async',
                     categories=[SCALABLE])
 
@@ -853,8 +858,8 @@ class PythonAsyncIOLanguage:
                 server_type='ASYNC_SERVER',
                 outstanding=outstanding,
                 channels=1,
-                async_client_threads=1,
-                async_server_threads=1,
+                client_processes=1,
+                server_processes=1,
                 unconstrained_client='async',
                 categories=[SCALABLE])
 
@@ -863,7 +868,8 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_GENERIC_SERVER',
-            async_server_threads=1,
+            client_processes=1,
+            server_processes=1,
             use_generic_payload=True,
             categories=[SMOKETEST, SCALABLE])
 
@@ -872,7 +878,8 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            async_server_threads=1,
+            client_processes=1,
+            server_processes=1,
             categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
@@ -880,7 +887,8 @@ class PythonAsyncIOLanguage:
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            async_server_threads=1,
+            client_processes=1,
+            server_processes=1,
             categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
@@ -888,7 +896,8 @@ class PythonAsyncIOLanguage:
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
-            async_server_threads=1,
+            client_processes=1,
+            server_processes=1,
             categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
@@ -911,6 +920,8 @@ class PythonAsyncIOLanguage:
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
             server_language='c++',
+            client_processes=1,
+            unconstrained_client='async',
             categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
@@ -919,15 +930,18 @@ class PythonAsyncIOLanguage:
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
             unconstrained_client='async',
-            async_client_threads=0,
+            client_processes=0,
             server_language='c++',
             categories=[SMOKETEST, SCALABLE])
 
         yield _ping_pong_scenario(
-            'python_asyncio_to_cpp_protobuf_sync_streaming_ping_pong',
+            'python_asyncio_to_cpp_protobuf_sync_streaming_ping_pong_1thread',
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
+            client_processes=1,
+            server_processes=1,
+            unconstrained_client='async',
             server_language='c++')
 
         yield _ping_pong_scenario(
@@ -937,6 +951,8 @@ class PythonAsyncIOLanguage:
             server_type='ASYNC_SERVER',
             req_size=1024 * 1024,
             resp_size=1024 * 1024,
+            client_processes=1,
+            server_processes=1,
             categories=[SMOKETEST, SCALABLE])
 
     def __str__(self):

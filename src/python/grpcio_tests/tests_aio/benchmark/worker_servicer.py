@@ -55,8 +55,9 @@ class _SubWorker(
 def _get_server_status(start_time: float, end_time: float,
                        port: int) -> control_pb2.ServerStatus:
     """Creates ServerStatus proto message."""
-    end_time = time.time()
+    end_time = time.monotonic()
     elapsed_time = end_time - start_time
+    # TODO(lidiz) Collect accurate time system to compute QPS/core-second.
     stats = stats_pb2.ServerStats(time_elapsed=elapsed_time,
                                   time_user=elapsed_time,
                                   time_system=elapsed_time)
@@ -108,8 +109,9 @@ def _get_client_status(start_time: float, end_time: float,
                       ) -> control_pb2.ClientStatus:
     """Creates ClientStatus proto message."""
     latencies = qps_data.get_data()
-    end_time = time.time()
+    end_time = time.monotonic()
     elapsed_time = end_time - start_time
+    # TODO(lidiz) Collect accurate time system to compute QPS/core-second.
     stats = stats_pb2.ClientStats(latencies=latencies,
                                   time_elapsed=elapsed_time,
                                   time_user=elapsed_time,
@@ -181,11 +183,11 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         await server.start()
         _LOGGER.info('Server started at port [%d]', port)
 
-        start_time = time.time()
+        start_time = time.monotonic()
         await context.write(_get_server_status(start_time, start_time, port))
 
         async for request in request_iterator:
-            end_time = time.time()
+            end_time = time.monotonic()
             status = _get_server_status(start_time, end_time, port)
             if request.mark.reset:
                 start_time = end_time
@@ -197,35 +199,32 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         config = config_request.setup
         _LOGGER.info('Received ServerConfig: %s', config)
 
-        if config.async_server_threads <= 0:
-            _LOGGER.info('async_server_threads can\'t be [%d]',
-                         config.async_server_threads)
-            _LOGGER.info('Using async_server_threads == [%d]', _NUM_CORES)
-            config.async_server_threads = _NUM_CORES
+        if config.server_processes <= 0:
+            _LOGGER.info('Using server_processes == [%d]', _NUM_CORES)
+            config.server_processes = _NUM_CORES
 
         if config.port == 0:
             config.port = _pick_an_unused_port()
         _LOGGER.info('Port picked [%d]', config.port)
 
-        if config.async_server_threads == 1:
-            # If async_server_threads == 1, start the server in this process.
+        if config.server_processes == 1:
+            # If server_processes == 1, start the server in this process.
             await self._run_single_server(config, request_iterator, context)
         else:
-            # If async_server_threads > 1, offload to other processes.
+            # If server_processes > 1, offload to other processes.
             sub_workers = await asyncio.gather(*(
-                _create_sub_worker()
-                for _ in range(config.async_server_threads)))
+                _create_sub_worker() for _ in range(config.server_processes)))
 
             calls = [worker.stub.RunServer() for worker in sub_workers]
 
-            config_request.setup.async_server_threads = 1
+            config_request.setup.server_processes = 1
 
             for call in calls:
                 await call.write(config_request)
                 # An empty status indicates the peer is ready
                 await call.read()
 
-            start_time = time.time()
+            start_time = time.monotonic()
             await context.write(
                 _get_server_status(
                     start_time,
@@ -236,7 +235,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             _LOGGER.info('Servers are ready to serve.')
 
             async for request in request_iterator:
-                end_time = time.time()
+                end_time = time.monotonic()
 
                 for call in calls:
                     await call.write(request)
@@ -265,7 +264,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         running_tasks = []
         qps_data = histogram.Histogram(config.histogram_params.resolution,
                                        config.histogram_params.max_possible)
-        start_time = time.time()
+        start_time = time.monotonic()
 
         # Create a client for each channel as asyncio.Task
         for i in range(config.client_channels):
@@ -274,16 +273,16 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             _LOGGER.info('Client created against server [%s]', server)
             running_tasks.append(self._loop.create_task(client.run()))
 
-        end_time = time.time()
+        end_time = time.monotonic()
         await context.write(_get_client_status(start_time, end_time, qps_data))
 
         # Respond to stat requests
         async for request in request_iterator:
-            end_time = time.time()
+            end_time = time.monotonic()
             status = _get_client_status(start_time, end_time, qps_data)
             if request.mark.reset:
                 qps_data.reset()
-                start_time = time.time()
+                start_time = time.monotonic()
             await context.write(status)
 
         # Cleanup the clients
@@ -295,39 +294,38 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         config = config_request.setup
         _LOGGER.info('Received ClientConfig: %s', config)
 
-        if config.async_client_threads <= 0:
-            _LOGGER.info('async_client_threads can\'t be [%d]',
-                         config.async_client_threads)
-            _LOGGER.info('Using async_client_threads == [%d]', _NUM_CORES)
-            config.async_client_threads = _NUM_CORES
+        if config.client_processes <= 0:
+            _LOGGER.info('client_processes can\'t be [%d]',
+                         config.client_processes)
+            _LOGGER.info('Using client_processes == [%d]', _NUM_CORES)
+            config.client_processes = _NUM_CORES
 
-        if config.async_client_threads == 1:
-            # If async_client_threads == 1, run the benchmark in this process.
+        if config.client_processes == 1:
+            # If client_processes == 1, run the benchmark in this process.
             await self._run_single_client(config, request_iterator, context)
         else:
-            # If async_client_threads > 1, offload the work to other processes.
+            # If client_processes > 1, offload the work to other processes.
             sub_workers = await asyncio.gather(*(
-                _create_sub_worker()
-                for _ in range(config.async_client_threads)))
+                _create_sub_worker() for _ in range(config.client_processes)))
 
             calls = [worker.stub.RunClient() for worker in sub_workers]
 
-            config_request.setup.async_client_threads = 1
+            config_request.setup.client_processes = 1
 
             for call in calls:
                 await call.write(config_request)
                 # An empty status indicates the peer is ready
                 await call.read()
 
-            start_time = time.time()
+            start_time = time.monotonic()
             result = histogram.Histogram(config.histogram_params.resolution,
                                          config.histogram_params.max_possible)
-            end_time = time.time()
+            end_time = time.monotonic()
             await context.write(_get_client_status(start_time, end_time,
                                                    result))
 
             async for request in request_iterator:
-                end_time = time.time()
+                end_time = time.monotonic()
 
                 for call in calls:
                     _LOGGER.debug('Fetching status...')
@@ -340,7 +338,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
                 status = _get_client_status(start_time, end_time, result)
                 if request.mark.reset:
                     result.reset()
-                    start_time = time.time()
+                    start_time = time.monotonic()
                 _LOGGER.debug('Reporting count=[%d]',
                               status.stats.latencies.count)
                 await context.write(status)

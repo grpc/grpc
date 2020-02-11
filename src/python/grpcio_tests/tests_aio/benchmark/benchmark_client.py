@@ -104,9 +104,9 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
         self._stopped = asyncio.Event()
 
     async def _send_request(self):
-        start_time = time.time()
+        start_time = time.monotonic()
         await self._stub.UnaryCall(self._request)
-        self._record_query_time(time.time() - start_time)
+        self._record_query_time(time.monotonic() - start_time)
 
     async def _infinite_sender(self) -> None:
         while self._running:
@@ -141,7 +141,6 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
             await call.read()
             self._record_query_time(time.time() - start_time)
         await call.done_writing()
-        assert grpc.StatusCode.OK == await call.code()
 
     async def run(self):
         await super().run()
