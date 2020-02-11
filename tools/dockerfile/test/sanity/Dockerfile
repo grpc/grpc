@@ -80,8 +80,8 @@ RUN apt-get update && apt-get install -y \
       libtool \
       curl \
       shellcheck
-RUN python2 -m pip install simplejson mako virtualenv lxml
-RUN python3 -m pip install simplejson mako virtualenv lxml
+RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
+RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
 
 RUN apt-get update && apt-get -y install wget xz-utils
 RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
