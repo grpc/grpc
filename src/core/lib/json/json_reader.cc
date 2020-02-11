@@ -26,6 +26,7 @@
 #include "src/core/lib/json/json.h"
 
 #define GRPC_JSON_MAX_DEPTH 255
+#define GRPC_JSON_MAX_ERRORS 16
 
 namespace grpc_core {
 
@@ -113,6 +114,7 @@ class JsonReader {
   uint16_t unicode_char_ = 0;
   uint16_t unicode_high_surrogate_ = 0;
   std::vector<grpc_error*> errors_;
+  bool truncated_errors_ = false;
 
   Json root_value_;
   std::vector<Json*> stack_;
@@ -171,11 +173,15 @@ Json* JsonReader::CreateAndLinkValue() {
     Json* parent = stack_.back();
     if (parent->type() == Json::Type::OBJECT) {
       if (parent->object_value().find(key_) != parent->object_value().end()) {
-        char* msg;
-        gpr_asprintf(&msg, "duplicate key \"%s\" at index %" PRIuPTR,
-                     key_.c_str(), CurrentIndex());
-        errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
-        gpr_free(msg);
+        if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
+          truncated_errors_ = true;
+        } else {
+          char* msg;
+          gpr_asprintf(&msg, "duplicate key \"%s\" at index %" PRIuPTR,
+                       key_.c_str(), CurrentIndex());
+          errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+          gpr_free(msg);
+        }
       }
       value = &(*parent->mutable_object())[std::move(key_)];
     } else {
@@ -189,11 +195,15 @@ Json* JsonReader::CreateAndLinkValue() {
 
 bool JsonReader::StartContainer(Json::Type type) {
   if (stack_.size() == GRPC_JSON_MAX_DEPTH) {
-    char* msg;
-    gpr_asprintf(&msg, "exceeded max stack depth (%d) at index %" PRIuPTR,
-                 GRPC_JSON_MAX_DEPTH, CurrentIndex());
-    errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
-    gpr_free(msg);
+    if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
+      truncated_errors_ = true;
+    } else {
+      char* msg;
+      gpr_asprintf(&msg, "exceeded max stack depth (%d) at index %" PRIuPTR,
+                   GRPC_JSON_MAX_DEPTH, CurrentIndex());
+      errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+      gpr_free(msg);
+    }
     return false;
   }
   Json* value = CreateAndLinkValue();
@@ -808,6 +818,11 @@ JsonReader::Status JsonReader::Run() {
 grpc_error* JsonReader::Parse(StringView input, Json* output) {
   JsonReader reader(input);
   Status status = reader.Run();
+  if (reader.truncated_errors_) {
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "too many errors encountered during JSON parsing -- fix reported "
+        "errors and try again to see additional errors"));
+  }
   if (status == Status::GRPC_JSON_INTERNAL_ERROR) {
     char* msg;
     gpr_asprintf(&msg, "internal error in JSON parser at index %" PRIuPTR,
