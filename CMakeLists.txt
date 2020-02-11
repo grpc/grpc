@@ -5957,6 +5957,8 @@ endif()
 
 
 add_library(upb_textformat
+  third_party/upb/upb/def.c
+  third_party/upb/upb/reflection.c
   third_party/upb/upb/text_encode.c
 )
 
@@ -5989,6 +5991,7 @@ target_include_directories(upb_textformat
 )
 target_link_libraries(upb_textformat
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb
 )
 
 

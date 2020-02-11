@@ -59,10 +59,17 @@ try:
             'language':
                 'c',
             'src': [
+                "third_party/upb/upb/def.c",
+                "third_party/upb/upb/reflection.c",
                 "third_party/upb/upb/text_encode.c",
             ],
             'headers': [
+                "third_party/upb/upb/def.h",
+                "third_party/upb/upb/reflection.h",
                 "third_party/upb/upb/text_encode.h",
+            ],
+            'deps': [
+                "upb",
             ],
         },
     ]

@@ -8658,6 +8658,8 @@ endif
 
 
 LIBUPB_TEXTFORMAT_SRC = \
+    third_party/upb/upb/def.c \
+    third_party/upb/upb/reflection.c \
     third_party/upb/upb/text_encode.c \
 
 PUBLIC_HEADERS_C += \
@@ -8688,18 +8690,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/upb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_TEXTFORMAT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/upb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_TEXTFORMAT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_textformat$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_textformat$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_TEXTFORMAT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_TEXTFORMAT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_textformat.so.9 -o $(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_textformat.so.9 -o $(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)upb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE).so.9
 	$(Q) ln -sf $(SHARED_PREFIX)upb_textformat$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_textformat$(SHARED_VERSION_CORE).so
 endif
@@ -23702,9 +23704,11 @@ third_party/abseil-cpp/absl/strings/string_view.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/strings/substitute.cc: $(OPENSSL_DEP)
 third_party/abseil-cpp/absl/types/bad_optional_access.cc: $(OPENSSL_DEP)
 third_party/upb/upb/decode.c: $(OPENSSL_DEP)
+third_party/upb/upb/def.c: $(OPENSSL_DEP)
 third_party/upb/upb/encode.c: $(OPENSSL_DEP)
 third_party/upb/upb/msg.c: $(OPENSSL_DEP)
 third_party/upb/upb/port.c: $(OPENSSL_DEP)
+third_party/upb/upb/reflection.c: $(OPENSSL_DEP)
 third_party/upb/upb/table.c: $(OPENSSL_DEP)
 third_party/upb/upb/text_encode.c: $(OPENSSL_DEP)
 third_party/upb/upb/upb.c: $(OPENSSL_DEP)
