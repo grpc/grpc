@@ -330,6 +330,7 @@ static void on_readable_locked(fd_node* fdn, grpc_error* error) {
 
 static void on_readable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
+  GRPC_ERROR_REF(error); /* ref owned by lambda */
   fdn->ev_driver->work_serializer->Run(
       [fdn, error]() { on_readable_locked(fdn, error); }, DEBUG_LOCATION);
 }
@@ -359,7 +360,7 @@ static void on_writable_locked(fd_node* fdn, grpc_error* error) {
 
 static void on_writable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
-  GRPC_ERROR_REF(error);
+  GRPC_ERROR_REF(error); /* ref owned by lambda */
   fdn->ev_driver->work_serializer->Run(
       [fdn, error]() { on_writable_locked(fdn, error); }, DEBUG_LOCATION);
 }
