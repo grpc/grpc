@@ -346,7 +346,7 @@ class CallData {
   void MaybeApplyServiceConfigToCallLocked(grpc_call_element* elem);
 
   // Invoked by channel for queued picks when the picker is updated.
-  static void PickSubchannel(void* arg, grpc_error* error);
+  static void PickSubchannel(grpc_call_element* elem);
 
   // Helper function for performing a pick while holding the data plane
   // mutex.  Returns true if the pick is complete, in which case the caller
@@ -733,7 +733,8 @@ class CallData {
   // Applies service config to the call.  Must be invoked once we know
   // that the resolver has returned results to the channel.
   void ApplyServiceConfigToCallLocked(grpc_call_element* elem);
-
+  // Invoked when retry_timer_ fires.
+  static void RetryTimerCallback(void* arg, grpc_error* error);
   // State for handling deadlines.
   // The code in deadline_filter.c requires this to be the first field.
   // TODO(roth): This is slightly sub-optimal in that grpc_deadline_state
@@ -2143,7 +2144,7 @@ void CallData::StartTransportStreamOpBatch(
               "chand=%p calld=%p: grabbing data plane mutex to perform pick",
               chand, calld);
     }
-    PickSubchannel(elem, GRPC_ERROR_NONE);
+    PickSubchannel(elem);
   } else {
     // For all other batches, release the call combiner.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2570,8 +2571,9 @@ void CallData::DoRetry(grpc_call_element* elem,
             this, next_attempt_time - ExecCtx::Get()->Now());
   }
   // Schedule retry after computed delay.
-  GRPC_CLOSURE_INIT(&pick_closure_, PickSubchannel, elem,
+  GRPC_CLOSURE_INIT(&pick_closure_, RetryTimerCallback, elem,
                     grpc_schedule_on_exec_ctx);
+  GRPC_CALL_STACK_REF(owning_call_, "retry_timer");
   grpc_timer_init(&retry_timer_, next_attempt_time, &pick_closure_);
   // Update bookkeeping.
   if (retry_state != nullptr) retry_state->retry_dispatched = true;
@@ -3849,10 +3851,20 @@ const char* PickResultTypeName(
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
-void CallData::PickSubchannel(void* arg, grpc_error* error) {
+void CallData::RetryTimerCallback(void* arg, grpc_error* error) {
+  if (error != GRPC_ERROR_NONE) {
+    return;
+  }
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  PickSubchannel(elem);
+  GRPC_CALL_STACK_UNREF(static_cast<CallData*>(elem->call_data)->owning_call_,
+                        "retry_timer");
+}
+
+void CallData::PickSubchannel(grpc_call_element* elem) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  grpc_error* error = GRPC_ERROR_NONE;
   bool pick_complete;
   {
     MutexLock lock(chand->data_plane_mu());
