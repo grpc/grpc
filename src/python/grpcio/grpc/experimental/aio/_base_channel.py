@@ -14,13 +14,12 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 
 import abc
-from typing import Any, AsyncIterable, Optional, Sequence
+from typing import Any, AsyncIterable, Optional
 
 import grpc
 
 from . import _base_call
-from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
-                      SerializingFunction)
+from ._typing import DeserializingFunction, MetadataType, SerializingFunction
 
 _IMMUTABLE_EMPTY_TUPLE = tuple()
 

@@ -14,12 +14,11 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from concurrent.futures import Executor
-from typing import Any, Optional, Sequence, NoReturn
+from typing import Generic, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._typing import ChannelArgumentType, MetadataType, RequestType, ResponseType
+from ._typing import MetadataType, RequestType, ResponseType
 
 
 class Server(abc.ABC):
@@ -125,9 +124,10 @@ class Server(abc.ABC):
         """
 
 
-class ServicerContext(abc.ABC):
+class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     """A context object passed to method implementations."""
 
+    @abc.abstractmethod
     async def read(self) -> RequestType:
         """Reads one message from the RPC.
 
@@ -141,6 +141,7 @@ class ServicerContext(abc.ABC):
           An RpcError exception if the read failed.
         """
 
+    @abc.abstractmethod
     async def write(self, message: ResponseType) -> None:
         """Writes one message to the RPC.
 
@@ -151,6 +152,7 @@ class ServicerContext(abc.ABC):
           An RpcError exception if the write failed.
         """
 
+    @abc.abstractmethod
     async def send_initial_metadata(self,
                                     initial_metadata: MetadataType) -> None:
         """Sends the initial metadata value to the client.
@@ -162,6 +164,7 @@ class ServicerContext(abc.ABC):
           initial_metadata: The initial :term:`metadata`.
         """
 
+    @abc.abstractmethod
     async def abort(self, code: grpc.StatusCode, details: str,
                     trailing_metadata: MetadataType) -> NoReturn:
         """Raises an exception to terminate the RPC with a non-OK status.
@@ -182,6 +185,7 @@ class ServicerContext(abc.ABC):
             RPC to the gRPC runtime.
         """
 
+    @abc.abstractmethod
     async def set_trailing_metadata(self,
                                     trailing_metadata: MetadataType) -> None:
         """Sends the trailing metadata for the RPC.
@@ -193,6 +197,7 @@ class ServicerContext(abc.ABC):
           trailing_metadata: The trailing :term:`metadata`.
         """
 
+    @abc.abstractmethod
     def invocation_metadata(self) -> Optional[MetadataType]:
         """Accesses the metadata from the sent by the client.
 
@@ -200,6 +205,7 @@ class ServicerContext(abc.ABC):
           The invocation :term:`metadata`.
         """
 
+    @abc.abstractmethod
     def set_code(self, code: grpc.StatusCode) -> None:
         """Sets the value to be used as status code upon RPC completion.
 
@@ -210,6 +216,7 @@ class ServicerContext(abc.ABC):
           code: A StatusCode object to be sent to the client.
         """
 
+    @abc.abstractmethod
     def set_details(self, details: str) -> None:
         """Sets the value to be used as detail string upon RPC completion.
 
@@ -221,6 +228,7 @@ class ServicerContext(abc.ABC):
             termination of the RPC.
         """
 
+    @abc.abstractmethod
     def set_compression(self, compression: grpc.Compression) -> None:
         """Set the compression algorithm to be used for the entire call.
 
@@ -231,6 +239,7 @@ class ServicerContext(abc.ABC):
             grpc.compression.Gzip.
         """
 
+    @abc.abstractmethod
     def disable_next_message_compression(self) -> None:
         """Disables compression for the next response message.
 
