@@ -878,19 +878,24 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_);
     }
-    chand_->subchannel_wrappers_.erase(this);
-    auto* subchannel_node = subchannel_->channelz_node();
-    if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
-      GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
-      --it->second;
-      if (it->second == 0) {
-        chand_->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
-        chand_->subchannel_refcount_map_.erase(it);
+    auto *subchannel_wrapper = this;
+    auto *subchannel = subchannel_;
+    auto *chand = chand_;
+    chand_->work_serializer()->Run([chand, subchannel, subchannel_wrapper]() {
+      chand->subchannel_wrappers_.erase(subchannel_wrapper);
+      auto* subchannel_node = subchannel->channelz_node();
+      if (subchannel_node != nullptr) {
+        auto it = chand->subchannel_refcount_map_.find(subchannel);
+        GPR_ASSERT(it != chand->subchannel_refcount_map_.end());
+        --it->second;
+        if (it->second == 0) {
+          chand->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
+          chand->subchannel_refcount_map_.erase(it);
+        }
       }
-    }
-    GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
-    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
+      GRPC_SUBCHANNEL_UNREF(subchannel, "unref from LB");
+      GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "SubchannelWrapper");
+    }, DEBUG_LOCATION);
   }
 
   grpc_connectivity_state CheckConnectivityState() override {
