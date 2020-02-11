@@ -25,6 +25,8 @@
 
 #include "src/core/lib/json/json.h"
 
+#define GRPC_JSON_MAX_DEPTH 255
+
 namespace grpc_core {
 
 namespace {
@@ -92,7 +94,7 @@ class JsonReader {
   void StringAddUtf32(uint32_t c);
 
   Json* CreateAndLinkValue();
-  void StartContainer(Json::Type type);
+  bool StartContainer(Json::Type type);
   void EndContainer();
   void SetKey();
   void SetString();
@@ -185,7 +187,15 @@ Json* JsonReader::CreateAndLinkValue() {
   return value;
 }
 
-void JsonReader::StartContainer(Json::Type type) {
+bool JsonReader::StartContainer(Json::Type type) {
+  if (stack_.size() == GRPC_JSON_MAX_DEPTH) {
+    char* msg;
+    gpr_asprintf(&msg, "exceeded max stack depth (%d) at index %" PRIuPTR,
+                 GRPC_JSON_MAX_DEPTH, CurrentIndex());
+    errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+    gpr_free(msg);
+    return false;
+  }
   Json* value = CreateAndLinkValue();
   if (type == Json::Type::OBJECT) {
     *value = Json::Object();
@@ -194,6 +204,7 @@ void JsonReader::StartContainer(Json::Type type) {
     *value = Json::Array();
   }
   stack_.push_back(value);
+  return true;
 }
 
 void JsonReader::EndContainer() {
@@ -483,13 +494,17 @@ JsonReader::Status JsonReader::Run() {
 
               case '{':
                 container_just_begun_ = true;
-                StartContainer(Json::Type::OBJECT);
+                if (!StartContainer(Json::Type::OBJECT)) {
+                  return Status::GRPC_JSON_PARSE_ERROR;
+                }
                 state_ = State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN;
                 break;
 
               case '[':
                 container_just_begun_ = true;
-                StartContainer(Json::Type::ARRAY);
+                if (!StartContainer(Json::Type::ARRAY)) {
+                  return Status::GRPC_JSON_PARSE_ERROR;
+                }
                 break;
               default:
                 return Status::GRPC_JSON_PARSE_ERROR;
