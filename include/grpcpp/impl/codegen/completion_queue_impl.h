@@ -406,14 +406,15 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     return true;
   }
 
-#ifndef NDEBUG
-  mutable grpc::internal::Mutex server_list_mutex_;
-  std::list<const Server*> server_list_ /* GUARDED_BY(server_list_mutex_) */;
-#endif
-
   grpc_completion_queue* cq_;  // owned
 
   gpr_atm avalanches_in_flight_;
+
+  // List of servers associated with this CQ. Even though this is only used with
+  // NDEBUG, instantiate it in all cases since otherwise the size will be
+  // inconsistent.
+  mutable grpc::internal::Mutex server_list_mutex_;
+  std::list<const Server*> server_list_ /* GUARDED_BY(server_list_mutex_) */;
 };
 
 /// A specific type of completion queue used by the processing of notifications

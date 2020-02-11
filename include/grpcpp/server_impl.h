@@ -386,11 +386,10 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // It is protected by mu_
   CompletionQueue* callback_cq_ = nullptr;
 
-#ifndef NDEBUG
   // List of CQs passed in by user that must be Shutdown only after Server is
-  // Shutdown.
+  // Shutdown.  Even though this is only used with NDEBUG, instantiate it in all
+  // cases since otherwise the size will be inconsistent.
   std::vector<CompletionQueue*> cq_list_;
-#endif
 };
 
 }  // namespace grpc_impl
