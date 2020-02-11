@@ -16,7 +16,7 @@ import asyncio
 import collections
 import functools
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Optional, Iterator, Sequence, Text, Union
+from typing import Callable, Optional, Iterator, Sequence, Union
 
 import grpc
 from grpc._cython import cygrpc
@@ -36,7 +36,7 @@ class ClientCallDetails(
             ('method', 'timeout', 'metadata', 'credentials', 'wait_for_ready')),
         grpc.ClientCallDetails):
 
-    method: Text
+    method: str
     timeout: Optional[float]
     metadata: Optional[MetadataType]
     credentials: Optional[grpc.CallCredentials]

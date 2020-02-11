@@ -19,7 +19,7 @@ RPC, e.g. cancellation.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import AsyncIterable, Awaitable, Generic, Optional, Text, Union
+from typing import AsyncIterable, Awaitable, Generic, Optional, Union
 
 import grpc
 
@@ -110,7 +110,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def details(self) -> Text:
+    async def details(self) -> str:
         """Accesses the details sent by the server.
 
         Returns:

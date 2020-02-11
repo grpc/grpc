@@ -17,7 +17,7 @@ gRPC Async API objects may only be used on the thread on which they were
 created. AsyncIO doesn't provide thread safety for most of its APIs.
 """
 
-from typing import Any, Optional, Sequence, Text, Tuple
+from typing import Any, Optional, Sequence, Tuple
 
 import grpc
 from grpc._cython.cygrpc import (EOF, AbortError, BaseError, UsageError,
@@ -33,7 +33,7 @@ from ._typing import ChannelArgumentType
 
 
 def insecure_channel(
-        target: Text,
+        target: str,
         options: Optional[ChannelArgumentType] = None,
         compression: Optional[grpc.Compression] = None,
         interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]] = None):
@@ -56,7 +56,7 @@ def insecure_channel(
 
 
 def secure_channel(
-        target: Text,
+        target: str,
         credentials: grpc.ChannelCredentials,
         options: Optional[ChannelArgumentType] = None,
         compression: Optional[grpc.Compression] = None,
