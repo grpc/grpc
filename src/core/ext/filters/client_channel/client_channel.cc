@@ -126,6 +126,7 @@ class ChannelData {
   size_t per_rpc_retry_buffer_size() const {
     return per_rpc_retry_buffer_size_;
   }
+  grpc_channel_stack* owning_stack() const { return owning_stack_; }
 
   // Note: Does NOT return a new ref.
   grpc_error* disconnect_error() const {
@@ -3848,6 +3849,7 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
   // The picker being null means that the channel is currently in IDLE state.
   // The incoming call will make the channel exit IDLE.
   if (chand->picker() == nullptr) {
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack(), "PickSubchannelLocked");
     // Bounce into the control plane work serializer to exit IDLE.
     ExecCtx::Run(
         DEBUG_LOCATION,
@@ -3857,6 +3859,8 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
               chand->work_serializer()->Run(
                   [chand]() {
                     chand->CheckConnectivityState(/*try_to_connect=*/true);
+                    GRPC_CHANNEL_STACK_UNREF(chand->owning_stack(),
+                                             "PickSubchannelLocked");
                   },
                   DEBUG_LOCATION);
             },
