@@ -21,11 +21,11 @@ from typing import Any, Optional, Sequence, Tuple
 
 import grpc
 from grpc._cython.cygrpc import (EOF, AbortError, BaseError, UsageError,
-                                 init_grpc_aio)
+                                 InternalError, init_grpc_aio)
 
-from ._base_call import Call, RpcContext, UnaryStreamCall, UnaryUnaryCall
+from ._base_call import Call, RpcContext, UnaryStreamCall, UnaryUnaryCall, StreamUnaryCall, StreamStreamCall
 from ._call import AioRpcError
-from ._channel import Channel, UnaryUnaryMultiCallable
+from ._channel import Channel, UnaryUnaryMultiCallable, UnaryStreamMultiCallable, StreamUnaryMultiCallable, StreamStreamMultiCallable
 from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
                            UnaryUnaryClientInterceptor)
 from ._server import Server, server
@@ -83,8 +83,11 @@ def secure_channel(
 ###################################  __all__  #################################
 
 __all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
-           'UnaryStreamCall', 'init_grpc_aio', 'Channel',
-           'UnaryUnaryMultiCallable', 'ClientCallDetails',
+           'UnaryStreamCall', 'StreamUnaryCall', 'StreamStreamCall',
+           'init_grpc_aio', 'Channel', 'UnaryUnaryMultiCallable',
+           'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
+           'StreamStreamMultiCallable', 'ClientCallDetails',
            'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
            'insecure_channel', 'server', 'Server', 'EOF', 'secure_channel',
-           'AbortError', 'BaseError', 'UsageError')
+           'AbortError', 'BaseError', 'UsageError'
+           'InternalError')
