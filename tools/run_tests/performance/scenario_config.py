@@ -832,7 +832,7 @@ class PythonAsyncIOLanguage:
         return 1200
 
     def scenarios(self):
-        for outstanding in [64, 128, 256]:
+        for outstanding in [64, 128, 256, 512]:
             for channels in [1, 4]:
                 yield _ping_pong_scenario(
                     'python_asyncio_protobuf_async_unary_ping_pong_%dx%d_max' %
@@ -868,6 +868,7 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_GENERIC_SERVER',
+            channels=1,
             client_processes=1,
             server_processes=1,
             use_generic_payload=True,
@@ -878,6 +879,7 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
+            channels=1,
             client_processes=1,
             server_processes=1,
             categories=[SMOKETEST, SCALABLE])
@@ -896,6 +898,7 @@ class PythonAsyncIOLanguage:
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
+            channels=1,
             client_processes=1,
             server_processes=1,
             categories=[SMOKETEST, SCALABLE])
@@ -905,6 +908,7 @@ class PythonAsyncIOLanguage:
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
+            channels=1,
             unconstrained_client='async')
 
         yield _ping_pong_scenario(
@@ -912,6 +916,7 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
+            channels=1,
             unconstrained_client='async')
 
         yield _ping_pong_scenario(
@@ -920,6 +925,7 @@ class PythonAsyncIOLanguage:
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
             server_language='c++',
+            channels=1,
             client_processes=1,
             unconstrained_client='async',
             categories=[SMOKETEST, SCALABLE])
@@ -930,6 +936,7 @@ class PythonAsyncIOLanguage:
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
             unconstrained_client='async',
+            channels=1,
             client_processes=0,
             server_language='c++',
             categories=[SMOKETEST, SCALABLE])
@@ -939,6 +946,7 @@ class PythonAsyncIOLanguage:
             rpc_type='STREAMING',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
+            channels=1,
             client_processes=1,
             server_processes=1,
             unconstrained_client='async',
@@ -951,6 +959,7 @@ class PythonAsyncIOLanguage:
             server_type='ASYNC_SERVER',
             req_size=1024 * 1024,
             resp_size=1024 * 1024,
+            channels=1,
             client_processes=1,
             server_processes=1,
             categories=[SMOKETEST, SCALABLE])
