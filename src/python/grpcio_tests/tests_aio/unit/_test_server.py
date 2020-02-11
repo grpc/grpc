@@ -130,8 +130,9 @@ async def start_test_server(port=0,
 
     if secure:
         if server_credentials is None:
-            server_credentials = grpc.local_server_credentials(
-                grpc.LocalConnectionType.LOCAL_TCP)
+            server_credentials = grpc.ssl_server_credentials([
+                (resources.private_key(), resources.certificate_chain())
+            ])
         port = server.add_secure_port('[::]:%d' % port, server_credentials)
     else:
         port = server.add_insecure_port('[::]:%d' % port)
@@ -139,4 +140,4 @@ async def start_test_server(port=0,
     await server.start()
 
     # NOTE(lidizheng) returning the server to prevent it from deallocation
-    return '0.0.0.0:%d' % port, server
+    return 'localhost:%d' % port, server

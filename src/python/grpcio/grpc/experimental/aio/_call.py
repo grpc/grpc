@@ -281,13 +281,8 @@ class _UnaryResponseMixin(Call):
             if self._cython_call.is_locally_cancelled():
                 raise asyncio.CancelledError()
             else:
-                call_status = self._cython_call._status
-                debug_error_string = ""
-                if call_status is not None:
-                    debug_error_string = call_status._debug_error_string
                 raise _create_rpc_error(self._cython_call._initial_metadata,
-                                        call_status,
-                                        debug_error_string)
+                                        self._cython_call._status)
         else:
             return response
 
