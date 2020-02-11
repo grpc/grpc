@@ -2342,19 +2342,6 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
   maxlen: 2048
-- name: api_fuzzer
-  build: fuzzer
-  language: c
-  src:
-  - test/core/end2end/fuzzers/api_fuzzer.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  corpus_dirs:
-  - test/core/end2end/fuzzers/api_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
-  maxlen: 2048
 - name: arena_test
   cpu_cost: 10
   build: test
