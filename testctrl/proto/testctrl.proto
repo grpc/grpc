@@ -1,0 +1,116 @@
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "control.proto";
+
+package proto;
+
+message UserInfo {
+  // The GitHub username that is responsible for an operation.
+  string requester = 1;
+
+  // The GitHub username that has approved the operation this operation, since
+  // the requester alone was not authorized to perform the operation.
+  string approver = 2;
+}
+
+message VCSInfo {
+  // The GitHub URL of the repository under test. This URL must service requests
+  // from `git clone`, since it will be used for building.
+  string repository_url = 1;
+
+  // The SHA-1 for a specific commit that will be built and tested.
+  string commit_hash = 2;
+
+  // An optional reference to an open pull request number.  This currently only
+  // adds metadata, but it is reserved for future use.
+  string pull_request_number = 3;
+}
+
+message CacheSettings {
+  // Disables the binary cache, forcing all code to be cleanly built.
+  // Defaults to false.
+  bool disable_bin_cache = 1;
+
+  // Disables the container image cache, forcing all layers to be rebuilt.
+  // Defaults to false.
+  bool disable_container_cache = 2;
+}
+
+message RunTestsRequest {
+  // Encapsulates information about the requesting user.
+  UserInfo user_info = 1;
+
+  // The version control configuration, which sets the repository and snapshot
+  // for building appropriate containers and executing the tests.
+  VCSInfo vcs_info = 2;
+
+  // Configures the caching system, providing options to invalidate it.
+  CacheSettings cache_settings = 3;
+
+  // The test scenarios to run.
+  repeated Scenario scenarios = 4;
+}
+
+message RunTestsResponse {
+  // Unique identifier that can be used to differentiate a request from another
+  // in order to dequeue the set of tests before building and running or view
+  // the results.  Note this identifier should be indefinitely valid.
+  string uid = 1;
+
+  // Timestamp containing the time that the tests were enqueued.
+  //google.protobuf.Timestamp enqueue_time = 3;
+}
+
+enum TestStatus {
+  QUEUED = 0;
+  BUILDING = 1;
+  RUNNING = 2;
+  PASS = 3;
+  FAIL = 4;
+  ERROR = 5;
+}
+
+message TestInvocation {
+  string uid = 1;
+  TestStatus status = 2;
+  RunTestsRequest request = 3;
+}
+
+message ListTestsRequest {}
+
+message ListTestsResponse {
+  repeated TestInvocation invocations = 1;
+}
+
+// Experimental: reserved for future use.
+
+// message StopTestsRequest {}
+// message StopTestsResponse {}
+
+service TestCtrl {
+  // Enqueues the building and execution of a set of test scenarios.  Due to
+  // limited capacity and unequal priorities, tests will likely not be run in
+  // the order they are received.
+  rpc RunTests(RunTestsRequest) returns (TestInvocation) {}
+
+  // List all running or queued tests.
+  rpc ListTests(ListTestsRequest) returns (ListTestsResponse) {}
+
+  // RESERVED FOR FUTURE USE:
+
+  // rpc StopTests(StopTestsRequest) returns (StopTestsResponse) {}
+}
