@@ -31,7 +31,7 @@ import sys
 import time
 from typing import Callable, Optional
 
-import test_common
+import tests.unit import test_common
 import grpc
 import grpc.experimental
 
