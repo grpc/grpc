@@ -39,14 +39,8 @@ namespace grpc {
 template <typename T>
 class TimePoint {
  public:
-  TimePoint(const T& /*time*/) { you_need_a_specialization_of_TimePoint(); }
-  gpr_timespec raw_time() {
-    gpr_timespec t;
-    return t;
-  }
-
- private:
-  void you_need_a_specialization_of_TimePoint();
+  TimePoint(const T& /*time*/) = delete;
+  gpr_timespec raw_time() = delete;
 };
 
 template <>
