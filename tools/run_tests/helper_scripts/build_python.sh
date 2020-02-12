@@ -145,7 +145,7 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv
+  $PYTHON -m pip install --user virtualenv==16.7.9
   $PYTHON -m virtualenv "$VENV"
   VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 fi
