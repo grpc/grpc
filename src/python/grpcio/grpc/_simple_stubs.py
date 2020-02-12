@@ -169,7 +169,6 @@ class ChannelCache:
 #  Make this the default option.
 
 
-# pylint: disable=too-many-arguments
 @experimental_api
 def unary_unary(
         request: RequestType,
@@ -241,7 +240,6 @@ def unary_unary(
                          timeout=timeout)
 
 
-# pylint: disable=too-many-arguments
 @experimental_api
 def unary_stream(
         request: RequestType,
@@ -312,7 +310,6 @@ def unary_stream(
                          timeout=timeout)
 
 
-# pylint: disable=too-many-arguments
 @experimental_api
 def stream_unary(
         request_iterator: Iterator[RequestType],
@@ -383,7 +380,6 @@ def stream_unary(
                          timeout=timeout)
 
 
-# pylint: disable=too-many-arguments
 @experimental_api
 def stream_stream(
         request_iterator: Iterator[RequestType],

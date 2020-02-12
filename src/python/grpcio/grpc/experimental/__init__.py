@@ -82,7 +82,6 @@ __all__ = (
     'ChannelOptions',
     'ExperimentalApiWarning',
     'UsageError',
-    'experimental_api',
     'insecure_channel_credentials',
 )
 
