@@ -41,6 +41,9 @@ class Server(abc.ABC):
     def add_insecure_port(self, address: str) -> int:
         """Opens an insecure port for accepting RPCs.
 
+        A port is a communication endpoint that used by networking protocols,
+        like TCP and UDP. To date, we only support TCP.
+
         This method may only be called before starting the server.
 
         Args:
@@ -55,6 +58,9 @@ class Server(abc.ABC):
     def add_secure_port(self, address: str,
                         server_credentials: grpc.ServerCredentials) -> int:
         """Opens a secure port for accepting RPCs.
+
+        A port is a communication endpoint that used by networking protocols,
+        like TCP and UDP. To date, we only support TCP.
 
         This method may only be called before starting the server.
 
@@ -102,7 +108,7 @@ class Server(abc.ABC):
     @abc.abstractmethod
     async def wait_for_termination(self,
                                    timeout: Optional[float] = None) -> bool:
-        """Block current coroutine until the server stops.
+        """Continues current coroutine once the server stops.
 
         This is an EXPERIMENTAL API.
 
@@ -131,8 +137,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     async def read(self) -> RequestType:
         """Reads one message from the RPC.
 
-        Only one read operation is allowed simultaneously. Mixing new streaming API and old
-        streaming API will resulted in undefined behavior.
+        Only one read operation is allowed simultaneously.
 
         Returns:
           A response message of the RPC.
@@ -145,8 +150,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     async def write(self, message: ResponseType) -> None:
         """Writes one message to the RPC.
 
-        Only one write operation is allowed simultaneously. Mixing new streaming API and old
-        streaming API will resulted in undefined behavior.
+        Only one write operation is allowed simultaneously.
 
         Raises:
           An RpcError exception if the write failed.
@@ -218,7 +222,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def set_details(self, details: str) -> None:
-        """Sets the value to be used as detail string upon RPC completion.
+        """Sets the value to be used the as detail string upon RPC completion.
 
         This method need not be called by method implementations if they have
         no details to transmit.

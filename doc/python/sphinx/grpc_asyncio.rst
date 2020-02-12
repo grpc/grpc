@@ -7,8 +7,9 @@ Overview
 --------
 
 gRPC AsyncIO API is the **new version** of gRPC Python whose architecture is
-tailored to AsyncIO. Underlying, it is using C-Core's callback API, and
-replaced all IO operations with methods provided by the AsyncIO library.
+tailored to AsyncIO. Underlying, it utilizes the same C-extension, gRPC C-Core,
+as existing stack, and it replaces all gRPC IO operations with methods provided
+by the AsyncIO library.
 
 This stack currently is under active development. Feel free to offer
 suggestions by opening issues on our GitHub repo `grpc/grpc <https://github.com/grpc/grpc>`_.
@@ -26,23 +27,34 @@ created. AsyncIO doesn't provide thread safety for most of its APIs.
 Module Contents
 ---------------
 
-Turn-On AsyncIO Mode
-^^^^^^^^^^^^^^^^^^^^
+Enable AsyncIO in gRPC
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. function:: init_grpc_aio
 
-    Turn-on AsyncIO mode for gRPC Python.
+    Enable AsyncIO for gRPC Python.
 
-    This function is idempotent, and it should be invoked before creation of
+    This function is idempotent and it should be invoked before creation of
     AsyncIO stack objects. Otherwise, the application might deadlock.
 
-    This function enables AsyncIO IO manager and disables threading for entire
-    process. After this point, there should not be blocking calls unless it is
-    taken cared by AsyncIO.
+    This function configurates the gRPC C-Core to invoke AsyncIO methods for IO
+    operations (e.g., socket read, write). The configuration applies to the
+    entire process.
+
+    After invoking this function, making blocking function calls in coroutines
+    or in the thread running event loop will block the event loop, potentially
+    starving all RPCs in the process. Refer to the Python language
+    documentation on AsyncIO for more details (`running-blocking-code <https://docs.python.org/3/library/asyncio-dev.html#running-blocking-code>`_).
 
 
-Create Client
-^^^^^^^^^^^^^
+Create Channel
+^^^^^^^^^^^^^^
+
+Channels are the abstraction of clients, where most of networking logic
+happens, for example, managing one or more underlying connections, name
+resolution, load balancing, flow control, etc.. If you are using ProtoBuf,
+Channel objects works best when further encapsulate into stub objects, then the
+application can invoke remote functions as if they are local functions.
 
 .. autofunction:: insecure_channel
 .. autofunction:: secure_channel

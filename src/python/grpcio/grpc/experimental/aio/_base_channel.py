@@ -25,7 +25,7 @@ _IMMUTABLE_EMPTY_TUPLE = tuple()
 
 
 class UnaryUnaryMultiCallable(abc.ABC):
-    """Factory an asynchronous unary-unary RPC stub call from client-side."""
+    """Enables asynchronous invocation of a unary-call RPC."""
 
     @abc.abstractmethod
     def __call__(self,
@@ -53,17 +53,17 @@ class UnaryUnaryMultiCallable(abc.ABC):
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-          A Call object instance which is an awaitable object.
+          A UnaryUnaryCall object.
 
         Raises:
-          RpcError: Indicating that the RPC terminated with non-OK status. The
+          RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
 
 
 class UnaryStreamMultiCallable(abc.ABC):
-    """Affords invoking a unary-stream RPC from client-side in an asynchronous way."""
+    """Enables asynchronous invocation of a server-streaming RPC."""
 
     @abc.abstractmethod
     def __call__(self,
@@ -91,12 +91,17 @@ class UnaryStreamMultiCallable(abc.ABC):
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-          A Call object instance which is an awaitable object.
+          A UnaryStreamCall object.
+
+        Raises:
+          RpcError: Indicates that the RPC terminated with non-OK status. The
+            raised RpcError will also be a Call for the RPC affording the RPC's
+            metadata, status code, and details.
         """
 
 
 class StreamUnaryMultiCallable(abc.ABC):
-    """Affords invoking a stream-unary RPC from client-side in an asynchronous way."""
+    """Enables asynchronous invocation of a client-streaming RPC."""
 
     @abc.abstractmethod
     def __call__(self,
@@ -123,17 +128,17 @@ class StreamUnaryMultiCallable(abc.ABC):
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-          A Call object instance which is an awaitable object.
+          A StreamUnaryCall object.
 
         Raises:
-          RpcError: Indicating that the RPC terminated with non-OK status. The
+          RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
 
 
 class StreamStreamMultiCallable(abc.ABC):
-    """Affords invoking a stream-stream RPC from client-side in an asynchronous way."""
+    """Enables asynchronous invocation of a bidirectional-streaming RPC."""
 
     @abc.abstractmethod
     def __call__(self,
@@ -160,19 +165,21 @@ class StreamStreamMultiCallable(abc.ABC):
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-          A Call object instance which is an awaitable object.
+          A StreamStreamCall object.
 
         Raises:
-          RpcError: Indicating that the RPC terminated with non-OK status. The
+          RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
 
 
 class Channel(abc.ABC):
-    """Asynchronous Channel implementation.
+    """Enables asynchronous RPC invocation as a client.
 
-    A cygrpc.AioChannel-backed implementation.
+    Channel objects implement the Asynchronous Context Manager (aka. async
+    with) type, although they are not supportted to be entered and exited
+    multiple times.
     """
 
     @abc.abstractmethod
@@ -208,7 +215,7 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def get_state(self,
                   try_to_connect: bool = False) -> grpc.ChannelConnectivity:
-        """Check the connectivity state of a channel.
+        """Checks the connectivity state of a channel.
 
         This is an EXPERIMENTAL API.
 
@@ -228,7 +235,7 @@ class Channel(abc.ABC):
             self,
             last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        """Wait for a change in connectivity state.
+        """Waits for a change in connectivity state.
 
         This is an EXPERIMENTAL API.
 
@@ -238,8 +245,8 @@ class Channel(abc.ABC):
 
         There is an inherent race between the invocation of
         "Channel.wait_for_state_change" and "Channel.get_state". The state can
-        change arbitrary times during the race, so there is no way to observe
-        every state transition.
+        change arbitrary many times during the race, so there is no way to
+        observe every state transition.
 
         If there is a need to put a timeout for this function, please refer to
         "asyncio.wait_for".
