@@ -364,7 +364,7 @@ resolver_component_tests:
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
   expected_chosen_service_config: null
-  expected_service_config_error: 'could not parse'
+  expected_service_config_error: 'JSON parse error'
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
@@ -436,8 +436,8 @@ resolver_component_tests:
     - {TTL: '2100', data: 5.5.5.5, type: A}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
-  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}'
-  expected_service_config_error: 'Service config parsing error'
+  expected_chosen_service_config: '{"loadBalancingPolicy":["round_robin"]}'
+  expected_service_config_error: 'field:loadBalancingPolicy error:type should be string'
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
@@ -447,5 +447,5 @@ resolver_component_tests:
     ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers:
     - {TTL: '2100', data: 1.2.3.4, type: A}
     _grpc_config.ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers:
-    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}}]',
+    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":["round_robin"]}}]',
       type: TXT}

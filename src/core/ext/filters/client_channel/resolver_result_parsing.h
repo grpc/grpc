@@ -109,10 +109,10 @@ class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
 class ClientChannelServiceConfigParser : public ServiceConfig::Parser {
  public:
   std::unique_ptr<ServiceConfig::ParsedConfig> ParseGlobalParams(
-      const grpc_json* json, grpc_error** error) override;
+      const Json& json, grpc_error** error) override;
 
   std::unique_ptr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
-      const grpc_json* json, grpc_error** error) override;
+      const Json& json, grpc_error** error) override;
 
   static size_t ParserIndex();
   static void Register();

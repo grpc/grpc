@@ -231,14 +231,10 @@ class TestServer(AioTestBase):
         # Uses reader API
         self.assertEqual(_RESPONSE, await call.read())
 
-        # Uses async generator API
-        response_cnt = 0
-        async for response in call:
-            response_cnt += 1
-            self.assertEqual(_RESPONSE, response)
-
-        self.assertEqual(_NUM_STREAM_RESPONSES - 1, response_cnt)
-        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+        # Uses async generator API, mixed!
+        with self.assertRaises(aio.UsageError):
+            async for response in call:
+                self.assertEqual(_RESPONSE, response)
 
     async def test_stream_unary_async_generator(self):
         stream_unary_call = self._channel.stream_unary(_STREAM_UNARY_ASYNC_GEN)

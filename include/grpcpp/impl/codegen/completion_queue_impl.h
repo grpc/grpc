@@ -32,11 +32,14 @@
 #ifndef GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_IMPL_H
 #define GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_IMPL_H
 
+#include <list>
+
 #include <grpc/impl/codegen/atm.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/codegen/time.h>
 
 struct grpc_completion_queue;
@@ -250,6 +253,11 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   }
 
  private:
+  // Friends for access to server registration lists that enable checking and
+  // logging on shutdown
+  friend class ::grpc_impl::ServerBuilder;
+  friend class ::grpc_impl::Server;
+
   // Friend synchronous wrappers so that they can access Pluck(), which is
   // a semi-private API geared towards the synchronous implementation.
   template <class R>
@@ -274,7 +282,6 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
   friend class ::grpc_impl::internal::ErrorMethodHandler;
-  friend class ::grpc_impl::Server;
   friend class ::grpc_impl::ServerContextBase;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
@@ -379,13 +386,39 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     }
   }
 
+  void RegisterServer(const Server* server) {
+#ifndef NDEBUG
+    grpc::internal::MutexLock l(&server_list_mutex_);
+    server_list_.push_back(server);
+#endif
+  }
+  void UnregisterServer(const Server* server) {
+#ifndef NDEBUG
+    grpc::internal::MutexLock l(&server_list_mutex_);
+    server_list_.remove(server);
+#endif
+  }
+  bool ServerListEmpty() const {
+#ifndef NDEBUG
+    grpc::internal::MutexLock l(&server_list_mutex_);
+    return server_list_.empty();
+#endif
+    return true;
+  }
+
   grpc_completion_queue* cq_;  // owned
 
   gpr_atm avalanches_in_flight_;
+
+  // List of servers associated with this CQ. Even though this is only used with
+  // NDEBUG, instantiate it in all cases since otherwise the size will be
+  // inconsistent.
+  mutable grpc::internal::Mutex server_list_mutex_;
+  std::list<const Server*> server_list_ /* GUARDED_BY(server_list_mutex_) */;
 };
 
 /// A specific type of completion queue used by the processing of notifications
-/// by servers. Instantiated by \a ServerBuilder.
+/// by servers. Instantiated by \a ServerBuilder or Server (for health checker).
 class ServerCompletionQueue : public CompletionQueue {
  public:
   bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }

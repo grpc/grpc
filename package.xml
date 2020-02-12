@@ -56,6 +56,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_abseil.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
@@ -75,6 +76,7 @@
     <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/string_util.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/sync_abseil.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_posix.h" role="src" />
@@ -436,6 +438,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/string_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/sync_abseil.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time.cc" role="src" />
@@ -560,8 +563,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/logical_thread.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/logical_thread.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/nameser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/poller/eventmanager_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/poller/eventmanager_libuv.h" role="src" />
@@ -655,12 +656,11 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_reader_new.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_writer_new.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />

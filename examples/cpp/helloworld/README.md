@@ -255,6 +255,10 @@ main loop in `HandleRpcs` to query the queue.
 
 For a working example, refer to [greeter_async_server.cc](greeter_async_server.cc).
 
+#### Flags for the client
 
+```sh
+./greeter_client --target="a target string used to create a GRPC client channel"
+```
 
-
+The Default value for --target is "localhost:50051".

@@ -46,7 +46,7 @@ do
     ;;  # C++ has already been built.
   "java")
     (cd ../grpc-java/ &&
-      ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist)
+      ./gradlew -PskipCodegen=true -PskipAndroid=true :grpc-benchmarks:installDist)
     ;;
   "go")
     tools/run_tests/performance/build_performance_go.sh

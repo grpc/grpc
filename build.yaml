@@ -248,6 +248,7 @@ filegroups:
   - src/core/lib/gpr/string_util_windows.cc
   - src/core/lib/gpr/string_windows.cc
   - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
   - src/core/lib/gpr/sync_posix.cc
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
@@ -287,6 +288,7 @@ filegroups:
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
+  - include/grpc/support/sync_abseil.h
   - include/grpc/support/sync_custom.h
   - include/grpc/support/sync_generic.h
   - include/grpc/support/sync_posix.h
@@ -337,6 +339,7 @@ filegroups:
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/sync.h
+  - include/grpc/impl/codegen/sync_abseil.h
   - include/grpc/impl/codegen/sync_custom.h
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
@@ -595,7 +598,6 @@ filegroups:
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
-  - src/cpp/client/generic_stub.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
@@ -716,7 +718,6 @@ filegroups:
   - src/core/lib/iomgr/is_epollexclusive_available.cc
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
-  - src/core/lib/iomgr/logical_thread.cc
   - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
@@ -770,11 +771,9 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/json/json.cc
+  - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_reader_new.cc
   - src/core/lib/json/json_writer.cc
-  - src/core/lib/json/json_writer_new.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -898,7 +897,6 @@ filegroups:
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
-  - src/core/lib/iomgr/logical_thread.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
@@ -939,6 +937,7 @@ filegroups:
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
+  - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
@@ -2346,19 +2345,6 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
   maxlen: 2048
-- name: api_fuzzer
-  build: fuzzer
-  language: c
-  src:
-  - test/core/end2end/fuzzers/api_fuzzer.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  corpus_dirs:
-  - test/core/end2end/fuzzers/api_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
-  maxlen: 2048
 - name: arena_test
   cpu_cost: 10
   build: test
@@ -3302,16 +3288,6 @@ targets:
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
-- name: json_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
 - name: lame_client_test
   build: test
   language: c
@@ -5396,27 +5372,17 @@ targets:
   - mac
   - linux
   - posix
-- name: json_test_new
+- name: json_test
   gtest: true
   build: test
   language: c++
   src:
-  - test/core/json/json_test_new.cc
+  - test/core/json/json_test.cc
   deps:
   - grpc_test_util
   - grpc
   - gpr
   uses_polling: false
-- name: logical_thread_test
-  cpu_cost: 10
-  build: test
-  language: c++
-  src:
-  - test/core/iomgr/logical_thread_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
 - name: message_allocator_end2end_test
   gtest: true
   cpu_cost: 0.5
@@ -6088,6 +6054,16 @@ targets:
   - alts_test_util
   - gpr
   - grpc
+- name: work_serializer_test
+  cpu_cost: 10
+  build: test
+  language: c++
+  src:
+  - test/core/iomgr/work_serializer_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
@@ -6133,6 +6109,40 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: xds_interop_client
+  build: test
+  run: false
+  language: c++
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_client.cc
+  deps:
+  - grpc++_test_config
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  platforms:
+  - linux
+- name: xds_interop_server
+  build: test
+  run: false
+  language: c++
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_server.cc
+  deps:
+  - grpc++_test_config
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  platforms:
+  - linux
 - name: public_headers_must_be_c89
   build: test
   language: c89

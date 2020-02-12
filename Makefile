@@ -1010,7 +1010,6 @@ algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 alts_credentials_fuzzer: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer
-api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 arena_test: $(BINDIR)/$(CONFIG)/arena_test
 avl_test: $(BINDIR)/$(CONFIG)/avl_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
@@ -1095,7 +1094,6 @@ init_test: $(BINDIR)/$(CONFIG)/init_test
 inproc_callback_test: $(BINDIR)/$(CONFIG)/inproc_callback_test
 invalid_call_argument_test: $(BINDIR)/$(CONFIG)/invalid_call_argument_test
 json_fuzzer_test: $(BINDIR)/$(CONFIG)/json_fuzzer_test
-json_test: $(BINDIR)/$(CONFIG)/json_test
 lame_client_test: $(BINDIR)/$(CONFIG)/lame_client_test
 load_file_test: $(BINDIR)/$(CONFIG)/load_file_test
 low_level_ping_pong_benchmark: $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
@@ -1256,8 +1254,7 @@ interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
 json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
-json_test_new: $(BINDIR)/$(CONFIG)/json_test_new
-logical_thread_test: $(BINDIR)/$(CONFIG)/logical_thread_test
+json_test: $(BINDIR)/$(CONFIG)/json_test
 message_allocator_end2end_test: $(BINDIR)/$(CONFIG)/message_allocator_end2end_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
@@ -1308,9 +1305,12 @@ timer_test: $(BINDIR)/$(CONFIG)/timer_test
 transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_common_api_test: $(BINDIR)/$(CONFIG)/transport_security_common_api_test
+work_serializer_test: $(BINDIR)/$(CONFIG)/work_serializer_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 xds_bootstrap_test: $(BINDIR)/$(CONFIG)/xds_bootstrap_test
 xds_end2end_test: $(BINDIR)/$(CONFIG)/xds_end2end_test
+xds_interop_client: $(BINDIR)/$(CONFIG)/xds_interop_client
+xds_interop_server: $(BINDIR)/$(CONFIG)/xds_interop_server
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
 boringssl_crypto_test: $(BINDIR)/$(CONFIG)/boringssl_crypto_test
@@ -1373,7 +1373,6 @@ address_sorting_test_unsecure: $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure
 address_sorting_test: $(BINDIR)/$(CONFIG)/address_sorting_test
 cancel_ares_query_test: $(BINDIR)/$(CONFIG)/cancel_ares_query_test
 alts_credentials_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry
-api_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
 client_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry
 hpack_parser_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry
 http_request_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry
@@ -1527,7 +1526,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/init_test \
   $(BINDIR)/$(CONFIG)/inproc_callback_test \
   $(BINDIR)/$(CONFIG)/invalid_call_argument_test \
-  $(BINDIR)/$(CONFIG)/json_test \
   $(BINDIR)/$(CONFIG)/lame_client_test \
   $(BINDIR)/$(CONFIG)/load_file_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
@@ -1614,7 +1612,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds_nosec_test \
   $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry \
-  $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry \
   $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry \
@@ -1727,8 +1724,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
-  $(BINDIR)/$(CONFIG)/json_test_new \
-  $(BINDIR)/$(CONFIG)/logical_thread_test \
+  $(BINDIR)/$(CONFIG)/json_test \
   $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
@@ -1779,9 +1775,12 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
+  $(BINDIR)/$(CONFIG)/work_serializer_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
+  $(BINDIR)/$(CONFIG)/xds_interop_client \
+  $(BINDIR)/$(CONFIG)/xds_interop_server \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
@@ -1903,8 +1902,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
-  $(BINDIR)/$(CONFIG)/json_test_new \
-  $(BINDIR)/$(CONFIG)/logical_thread_test \
+  $(BINDIR)/$(CONFIG)/json_test \
   $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
@@ -1955,9 +1953,12 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
+  $(BINDIR)/$(CONFIG)/work_serializer_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
+  $(BINDIR)/$(CONFIG)/xds_interop_client \
+  $(BINDIR)/$(CONFIG)/xds_interop_server \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
@@ -2139,8 +2140,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/inproc_callback_test || ( echo test inproc_callback_test failed ; exit 1 )
 	$(E) "[RUN]     Testing invalid_call_argument_test"
 	$(Q) $(BINDIR)/$(CONFIG)/invalid_call_argument_test || ( echo test invalid_call_argument_test failed ; exit 1 )
-	$(E) "[RUN]     Testing json_test"
-	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing load_file_test"
@@ -2417,10 +2416,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test || ( echo test inproc_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
-	$(E) "[RUN]     Testing json_test_new"
-	$(Q) $(BINDIR)/$(CONFIG)/json_test_new || ( echo test json_test_new failed ; exit 1 )
-	$(E) "[RUN]     Testing logical_thread_test"
-	$(Q) $(BINDIR)/$(CONFIG)/logical_thread_test || ( echo test logical_thread_test failed ; exit 1 )
+	$(E) "[RUN]     Testing json_test"
+	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_allocator_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_allocator_end2end_test || ( echo test message_allocator_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
@@ -2505,6 +2502,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_security_common_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_common_api_test || ( echo test transport_security_common_api_test failed ; exit 1 )
+	$(E) "[RUN]     Testing work_serializer_test"
+	$(Q) $(BINDIR)/$(CONFIG)/work_serializer_test || ( echo test work_serializer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing xds_bootstrap_test"
@@ -3584,7 +3583,6 @@ LIBALTS_TEST_UTIL_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -3638,11 +3636,9 @@ LIBALTS_TEST_UTIL_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -3763,6 +3759,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -3779,6 +3776,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -3886,6 +3884,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/string_util_windows.cc \
     src/core/lib/gpr/string_windows.cc \
     src/core/lib/gpr/sync.cc \
+    src/core/lib/gpr/sync_abseil.cc \
     src/core/lib/gpr/sync_posix.cc \
     src/core/lib/gpr/sync_windows.cc \
     src/core/lib/gpr/time.cc \
@@ -3919,6 +3918,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -3935,6 +3935,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -4042,7 +4043,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -4096,11 +4096,9 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -4383,6 +4381,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -4520,7 +4519,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -4574,11 +4572,9 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -4788,6 +4784,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -4942,7 +4939,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -4996,11 +4992,9 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -5121,6 +5115,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -5137,6 +5132,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -5273,7 +5269,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -5327,11 +5322,9 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -5452,6 +5445,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -5468,6 +5462,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -5567,7 +5562,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
-    src/core/lib/iomgr/logical_thread.cc \
     src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -5621,11 +5615,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json.cc \
+    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/json/json_writer_new.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -5832,6 +5824,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -6084,7 +6077,6 @@ LIBGRPC++_SRC = \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
-    src/cpp/client/generic_stub.cc \
     src/cpp/common/alarm.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
@@ -6250,6 +6242,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -6266,6 +6259,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -6939,6 +6933,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -7119,6 +7114,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -7192,7 +7188,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
-    src/cpp/client/generic_stub.cc \
     src/cpp/common/alarm.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
@@ -7358,6 +7353,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -7374,6 +7370,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -9279,38 +9276,6 @@ deps_alts_credentials_fuzzer: $(ALTS_CREDENTIALS_FUZZER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ALTS_CREDENTIALS_FUZZER_OBJS:.o=.dep)
-endif
-endif
-
-
-API_FUZZER_SRC = \
-    test/core/end2end/fuzzers/api_fuzzer.cc \
-
-API_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/api_fuzzer: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/api_fuzzer: $(API_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(API_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/api_fuzzer
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fuzzers/api_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_api_fuzzer: $(API_FUZZER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(API_FUZZER_OBJS:.o=.dep)
 endif
 endif
 
@@ -12017,38 +11982,6 @@ deps_json_fuzzer_test: $(JSON_FUZZER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(JSON_FUZZER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-JSON_TEST_SRC = \
-    test/core/json/json_test.cc \
-
-JSON_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/json_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/json_test: $(JSON_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(JSON_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/json_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/json/json_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_json_test: $(JSON_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(JSON_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -18367,15 +18300,15 @@ endif
 endif
 
 
-JSON_TEST_NEW_SRC = \
-    test/core/json/json_test_new.cc \
+JSON_TEST_SRC = \
+    test/core/json/json_test.cc \
 
-JSON_TEST_NEW_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_TEST_NEW_SRC))))
+JSON_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/json_test_new: openssl_dep_error
+$(BINDIR)/$(CONFIG)/json_test: openssl_dep_error
 
 else
 
@@ -18386,69 +18319,26 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
-$(BINDIR)/$(CONFIG)/json_test_new: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/json_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/json_test_new: $(PROTOBUF_DEP) $(JSON_TEST_NEW_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/json_test: $(PROTOBUF_DEP) $(JSON_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(JSON_TEST_NEW_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/json_test_new
+	$(Q) $(LDXX) $(LDFLAGS) $(JSON_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/json_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/json/json_test_new.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/json/json_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_json_test_new: $(JSON_TEST_NEW_OBJS:.o=.dep)
+deps_json_test: $(JSON_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(JSON_TEST_NEW_OBJS:.o=.dep)
-endif
-endif
-
-
-LOGICAL_THREAD_TEST_SRC = \
-    test/core/iomgr/logical_thread_test.cc \
-
-LOGICAL_THREAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LOGICAL_THREAD_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/logical_thread_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
-
-$(BINDIR)/$(CONFIG)/logical_thread_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/logical_thread_test: $(PROTOBUF_DEP) $(LOGICAL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(LOGICAL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/logical_thread_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/iomgr/logical_thread_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_logical_thread_test: $(LOGICAL_THREAD_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LOGICAL_THREAD_TEST_OBJS:.o=.dep)
+-include $(JSON_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -20677,6 +20567,49 @@ endif
 endif
 
 
+WORK_SERIALIZER_TEST_SRC = \
+    test/core/iomgr/work_serializer_test.cc \
+
+WORK_SERIALIZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WORK_SERIALIZER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/work_serializer_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/work_serializer_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/work_serializer_test: $(PROTOBUF_DEP) $(WORK_SERIALIZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(WORK_SERIALIZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/work_serializer_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/work_serializer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_work_serializer_test: $(WORK_SERIALIZER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(WORK_SERIALIZER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 WRITES_PER_RPC_TEST_SRC = \
     test/cpp/performance/writes_per_rpc_test.cc \
 
@@ -20820,6 +20753,112 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+
+
+XDS_INTEROP_CLIENT_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
+    test/cpp/interop/xds_interop_client.cc \
+
+XDS_INTEROP_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(XDS_INTEROP_CLIENT_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/xds_interop_client: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/xds_interop_client: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/xds_interop_client: $(PROTOBUF_DEP) $(XDS_INTEROP_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(XDS_INTEROP_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/xds_interop_client
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/xds_interop_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_xds_interop_client: $(XDS_INTEROP_CLIENT_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(XDS_INTEROP_CLIENT_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/xds_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+
+XDS_INTEROP_SERVER_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
+    test/cpp/interop/xds_interop_server.cc \
+
+XDS_INTEROP_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(XDS_INTEROP_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/xds_interop_server: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/xds_interop_server: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/xds_interop_server: $(PROTOBUF_DEP) $(XDS_INTEROP_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(XDS_INTEROP_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/xds_interop_server
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/xds_interop_server.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_xds_interop_server: $(XDS_INTEROP_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(XDS_INTEROP_SERVER_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/xds_interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \
@@ -22925,41 +22964,6 @@ deps_alts_credentials_fuzzer_one_entry: $(ALTS_CREDENTIALS_FUZZER_ONE_ENTRY_OBJS
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ALTS_CREDENTIALS_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
-endif
-endif
-
-
-API_FUZZER_ONE_ENTRY_SRC = \
-    test/core/end2end/fuzzers/api_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.cc \
-
-API_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_ONE_ENTRY_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/api_fuzzer_one_entry: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/api_fuzzer_one_entry: $(API_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(API_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fuzzers/api_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-$(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_api_fuzzer_one_entry: $(API_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(API_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
 

@@ -367,7 +367,8 @@ cdef class _AioCall(GrpcCallWrapper):
         """Sends one single raw message in bytes."""
         await _send_message(self,
                             message,
-                            True,
+                            None,
+                            False,
                             self._loop)
 
     async def send_receive_close(self):
