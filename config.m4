@@ -488,6 +488,7 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/timeval.c \
     third_party/abseil-cpp/absl/base/dynamic_annotations.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
+    third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc \
@@ -496,6 +497,12 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
+    third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
+    third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
+    third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
+    third_party/abseil-cpp/absl/debugging/stacktrace.cc \
+    third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/strings/ascii.cc \
     third_party/abseil-cpp/absl/strings/charconv.cc \
@@ -519,6 +526,14 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/str_split.cc \
     third_party/abseil-cpp/absl/strings/string_view.cc \
     third_party/abseil-cpp/absl/strings/substitute.cc \
+    third_party/abseil-cpp/absl/synchronization/barrier.cc \
+    third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/mutex.cc \
+    third_party/abseil-cpp/absl/synchronization/notification.cc \
     third_party/abseil-cpp/absl/time/civil_time.cc \
     third_party/abseil-cpp/absl/time/clock.cc \
     third_party/abseil-cpp/absl/time/duration.cc \
@@ -921,10 +936,14 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal/str_format)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/synchronization)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/synchronization/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time/internal/cctz/src)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/types)

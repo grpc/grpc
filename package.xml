@@ -940,12 +940,15 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/bits.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/cycleclock.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/cycleclock.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/direct_mmap.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/endian.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/errno_saver.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/hide_ptr.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/identity.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/inline_variable.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/invoke.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/low_level_alloc.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/low_level_scheduling.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/per_thread_tls.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/raw_logging.cc" role="src" />
@@ -981,6 +984,30 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/inlined_vector.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/compressed_tuple.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/inlined_vector.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/address_is_readable.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/demangle.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/demangle.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_aarch64-inl.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_arm-inl.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_config.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_generic-inl.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_powerpc-inl.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_unimplemented-inl.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_win32-inl.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_x86-inl.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/symbolize.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/vdso_support.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/stacktrace.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/stacktrace.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_elf.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_unimplemented.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_win32.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/memory/memory.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/meta/type_traits.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128.cc" role="src" />
@@ -1040,6 +1067,24 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/strip.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/barrier.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/barrier.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/blocking_counter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/blocking_counter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/mutex_nonprod.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/notification.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/notification.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/civil_time.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/civil_time.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/clock.cc" role="src" />
