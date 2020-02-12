@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &driver-name e1-driver
+  labels: &driverLabels
+    app: e1
+    language: java
+    purpose: driver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      <<: *driverLabels
+  template:
+    metadata:
+      labels:
+        <<: *driverLabels
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: purpose
+                  operator: In
+                  values: ["driver"]
+      containers:
+        - name: *driver-name
+          image: &worker-image "gcr.io/grpc-testing/benreed_performance_cxx_worker:latest"
+          command: ["/bin/bash"]
+          args: ["-c", "sleep 48h"]
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &server-name e1-server
+  labels: &serverLabels
+    app: e1
+    language: java
+    purpose: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      <<: *serverLabels
+  template:
+    metadata:
+      labels:
+        <<: *serverLabels
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: purpose
+                  operator: In
+                  values: ["server"]
+      containers:
+        - name: *server-name
+          image: &worker-image "gcr.io/grpc-testing/benreed_performance_java_worker:latest"
+          env:
+            - name: WORKER_KIND
+              value: server
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &client-name e1-client
+  labels: &clientLabels
+    app: e1
+    language: java
+    purpose: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      <<: *clientLabels
+  template:
+    metadata:
+      labels:
+        <<: *clientLabels
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: purpose
+                  operator: In
+                  values: ["client"]
+      containers:
+        - name: *client-name
+          image: &worker-image "gcr.io/grpc-testing/benreed_performance_java_worker:latest"
+

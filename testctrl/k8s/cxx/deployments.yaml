@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &driver-name e1-driver
+  labels: &driverLabels
+    app: e1
+    language: cxx
+    purpose: driver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      <<: *driverLabels
+  template:
+    metadata:
+      labels:
+        <<: *driverLabels
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: purpose
+                  operator: In
+                  values: ["driver"]
+      containers:
+        - name: *driver-name
+          image: &worker-image "gcr.io/grpc-testing/benreed_performance_cxx_worker@sha256:82b6360a84c19f23ed7ee9522614103c0e1c39f0788939ce0e8d8c15aea9d314"
+          command: ["/bin/bash"]
+          args: ["-c", "sleep 2h"]
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &server-name e1-server
+  labels: &serverLabels
+    app: e1
+    language: cxx
+    purpose: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      <<: *serverLabels
+  template:
+    metadata:
+      labels:
+        <<: *serverLabels
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: purpose
+                  operator: In
+                  values: ["server"]
+      containers:
+        - name: *server-name
+          image: &worker-image "gcr.io/grpc-testing/benreed_performance_cxx_worker@sha256:82b6360a84c19f23ed7ee9522614103c0e1c39f0788939ce0e8d8c15aea9d314"
+          env:
+            - name: WORKER_KIND
+              value: server
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &client-name e1-client
+  labels: &clientLabels
+    app: e1
+    language: cxx
+    purpose: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      <<: *clientLabels
+  template:
+    metadata:
+      labels:
+        <<: *clientLabels
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: purpose
+                  operator: In
+                  values: ["client"]
+      containers:
+        - name: *client-name
+          image: &worker-image "gcr.io/grpc-testing/benreed_performance_cxx_worker@sha256:82b6360a84c19f23ed7ee9522614103c0e1c39f0788939ce0e8d8c15aea9d314"
+
