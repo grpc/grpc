@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/codeblooded/testctrl/proto"
+	"github.com/grpc/grpc/testctrl/proto"
 )
 
 // Worker is an abstraction of a test component, such as a client or server.

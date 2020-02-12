@@ -20,7 +20,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/codeblooded/testctrl/proto"
+	"github.com/grpc/grpc/testctrl/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

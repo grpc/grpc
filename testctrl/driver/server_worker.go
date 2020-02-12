@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/codeblooded/testctrl/proto"
+	"github.com/grpc/grpc/testctrl/proto"
 	"google.golang.org/grpc"
 )
 
