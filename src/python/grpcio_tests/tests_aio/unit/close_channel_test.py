@@ -16,7 +16,6 @@
 import asyncio
 import logging
 import unittest
-from weakref import WeakSet
 
 import grpc
 from grpc.experimental import aio

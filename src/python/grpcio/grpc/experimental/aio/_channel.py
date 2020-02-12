@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+
 import asyncio
 import sys
 from typing import Any, AsyncIterable, Iterable, Optional, Sequence
@@ -357,14 +358,17 @@ class Channel:
         call_tasks = []
         for task in tasks:
             stack = task.get_stack(limit=1)
+
+            # If the Task is created by a C-extension, the stack will be empty.
             if not stack:
                 continue
 
             # Locate ones created by `aio.Call`.
             frame = stack[0]
-            if 'self' in frame.f_locals:
-                if isinstance(frame.f_locals['self'], _base_call.Call):
-                    calls.append(frame.f_locals['self'])
+            candidate = frame.f_locals.get('self')
+            if candidate:
+                if isinstance(candidate, _base_call.Call):
+                    calls.append(candidate)
                     call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
