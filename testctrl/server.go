@@ -17,7 +17,7 @@ package main
 import (
 	"context"
 
-	"github.com/codeblooded/testctrl/proto"
+	"github.com/grpc/grpc/testctrl/proto"
 	"github.com/google/uuid"
 )
 
