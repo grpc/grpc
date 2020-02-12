@@ -12,7 +12,6 @@
   "unit.channel_ready_test.TestChannelReady",
   "unit.channel_test.TestChannel",
   "unit.close_channel_test.TestCloseChannel",
-  "unit.close_channel_test.TestOngoingCalls",
   "unit.compression_test.TestCompression",
   "unit.connectivity_test.TestConnectivityState",
   "unit.done_callback_test.TestDoneCallback",
