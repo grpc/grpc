@@ -14,7 +14,7 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, NoReturn, Optional, Sequence
+from typing import Generic, Optional, Sequence
 
 import grpc
 
@@ -166,7 +166,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     async def abort(self, code: grpc.StatusCode, details: str,
-                    trailing_metadata: MetadataType) -> NoReturn:
+                    trailing_metadata: MetadataType) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supercede any existing
