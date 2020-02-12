@@ -14,7 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
 import sys
-from typing import Any, AsyncIterable, Optional, Sequence
+from typing import Any, AsyncIterable, Iterable, Optional, Sequence
 
 import grpc
 from grpc import _common, _compression, _grpcio_metadata
@@ -34,11 +34,11 @@ _USER_AGENT = 'grpc-python-asyncio/{}'.format(_grpcio_metadata.__version__)
 
 if sys.version_info[1] < 7:
 
-    def _all_tasks() -> Sequence[asyncio.Task]:
+    def _all_tasks() -> Iterable[asyncio.Task]:
         return asyncio.Task.all_tasks()
 else:
 
-    def _all_tasks() -> Sequence[asyncio.Task]:
+    def _all_tasks() -> Iterable[asyncio.Task]:
         return asyncio.all_tasks()
 
 
