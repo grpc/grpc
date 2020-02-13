@@ -699,7 +699,6 @@ XdsLb::~XdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] destroying xds LB policy", this);
   }
-  grpc_channel_args_destroy(args_);
 }
 
 void XdsLb::ShutdownLocked() {
@@ -737,6 +736,8 @@ void XdsLb::ShutdownLocked() {
     xds_client_from_channel_.reset();
   }
   xds_client_.reset();
+  // Destroy the args now since they might hold a ref to the xds client.
+  grpc_channel_args_destroy(args_);
 }
 
 //

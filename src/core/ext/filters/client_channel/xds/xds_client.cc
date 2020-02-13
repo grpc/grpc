@@ -1746,7 +1746,10 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
   }
 }
 
-XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
+XdsClient::~XdsClient() {
+  gpr_log(GPR_INFO, "[xds_client %p] Destroying xds client", this);
+  GRPC_COMBINER_UNREF(combiner_, "xds_client");
+}
 
 void XdsClient::Orphan() {
   shutting_down_ = true;
@@ -1905,13 +1908,13 @@ void XdsClient::NotifyOnError(grpc_error* error) {
 
 void* XdsClient::ChannelArgCopy(void* p) {
   XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Ref().release();
+  xds_client->Ref(DEBUG_LOCATION, "channel arg").release();
   return p;
 }
 
 void XdsClient::ChannelArgDestroy(void* p) {
   XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Unref();
+  xds_client->Unref(DEBUG_LOCATION, "channel arg");
 }
 
 int XdsClient::ChannelArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
