@@ -216,13 +216,7 @@ grpc_cc_test(
     name = "bm_fullstack_trickle",
     size = "large",
     srcs = ["bm_fullstack_trickle.cc"],
-    tags = [
-        "no_mac",  # to emulate "excluded_poll_engines: poll"
-        "no_windows",
-        "noasan",
-        "nomsan",
-        "notsan",
-    ],
+    tags = ["manual"],
     deps = [":helpers"],
 )
 
@@ -293,12 +287,9 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "bm_threadpool",
+    size = "large",
     srcs = ["bm_threadpool.cc"],
-    tags = [
-        "no_mac",
-        "no_windows",
-        "notsan",
-    ],
+    tags = ["manual"],
     uses_polling = False,
     deps = [":helpers"],
 )
