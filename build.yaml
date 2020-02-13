@@ -248,6 +248,7 @@ filegroups:
   - src/core/lib/gpr/string_util_windows.cc
   - src/core/lib/gpr/string_windows.cc
   - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
   - src/core/lib/gpr/sync_posix.cc
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
@@ -287,6 +288,7 @@ filegroups:
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
+  - include/grpc/support/sync_abseil.h
   - include/grpc/support/sync_custom.h
   - include/grpc/support/sync_generic.h
   - include/grpc/support/sync_posix.h
@@ -337,6 +339,7 @@ filegroups:
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/sync.h
+  - include/grpc/impl/codegen/sync_abseil.h
   - include/grpc/impl/codegen/sync_custom.h
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
@@ -2341,19 +2344,6 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
-  maxlen: 2048
-- name: api_fuzzer
-  build: fuzzer
-  language: c
-  src:
-  - test/core/end2end/fuzzers/api_fuzzer.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  corpus_dirs:
-  - test/core/end2end/fuzzers/api_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
 - name: arena_test
   cpu_cost: 10
@@ -6119,6 +6109,40 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: xds_interop_client
+  build: test
+  run: false
+  language: c++
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_client.cc
+  deps:
+  - grpc++_test_config
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  platforms:
+  - linux
+- name: xds_interop_server
+  build: test
+  run: false
+  language: c++
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_server.cc
+  deps:
+  - grpc++_test_config
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  platforms:
+  - linux
 - name: public_headers_must_be_c89
   build: test
   language: c89

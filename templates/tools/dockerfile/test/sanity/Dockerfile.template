@@ -28,8 +28,8 @@
         libtool ${"\\"}
         curl ${"\\"}
         shellcheck
-  RUN python2 -m pip install simplejson mako virtualenv lxml
-  RUN python3 -m pip install simplejson mako virtualenv lxml
+  RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
+  RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
 
   <%include file="../../clang5.include"/>
   <%include file="../../bazel.include"/>
