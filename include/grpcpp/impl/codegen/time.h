@@ -39,6 +39,10 @@ namespace grpc {
 template <typename T>
 class TimePoint {
  public:
+  // If you see the error with methods below, you may need either
+  // i) using the existing types having a conversion class such as
+  // gpr_timespec and std::chrono::system_clock::time_point or
+  // ii) writing a new TimePoint<YourType> to address your case.
   TimePoint(const T& /*time*/) = delete;
   gpr_timespec raw_time() = delete;
 };
