@@ -4334,6 +4334,50 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upbdefs.c \
+    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upbdefs.c \
+    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upbdefs.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upbdefs.c \
+    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/address.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/base.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/http.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/percent.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/range.upbdefs.c \
+    src/core/ext/upb-generated/google/api/annotations.upbdefs.c \
+    src/core/ext/upb-generated/google/api/http.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/any.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/empty.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/struct.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c \
+    src/core/ext/upb-generated/google/rpc/status.upbdefs.c \
+    src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c \
+    src/core/ext/upb-generated/validate/validate.upbdefs.c \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
@@ -5778,6 +5822,50 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upbdefs.c \
+    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upbdefs.c \
+    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upbdefs.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upbdefs.c \
+    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/address.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/base.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/http.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/percent.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/range.upbdefs.c \
+    src/core/ext/upb-generated/google/api/annotations.upbdefs.c \
+    src/core/ext/upb-generated/google/api/http.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/any.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/empty.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/struct.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c \
+    src/core/ext/upb-generated/google/rpc/status.upbdefs.c \
+    src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c \
+    src/core/ext/upb-generated/validate/validate.upbdefs.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \

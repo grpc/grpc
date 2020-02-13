@@ -1717,6 +1717,7 @@ filegroups:
   - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   uses:
   - envoy_ads_upb
+  - envoy_ads_upbdefs
   - grpc_base
   - grpc_client_channel
 - name: grpc_xds_client_secure
@@ -1735,6 +1736,7 @@ filegroups:
   - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   uses:
   - envoy_ads_upb
+  - envoy_ads_upbdefs
   - grpc_base
   - grpc_client_channel
   - grpc_secure
