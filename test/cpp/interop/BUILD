@@ -231,8 +231,8 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "http2_client",
     srcs = [
-        "http2_client.h",
         "http2_client.cc",
+        "http2_client.h",
     ],
     deps = [
         "//:grpc++",
