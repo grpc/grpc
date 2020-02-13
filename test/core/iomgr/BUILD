@@ -136,14 +136,16 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "work_serializer_test",
-    size = "enormous",
     srcs = ["work_serializer_test.cc"],
     exec_properties = LARGE_MACHINE,
     external_deps = [
         "gtest",
     ],
     language = "C++",
-    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    tags = [
+        "no_windows", # LARGE_MACHINE is not configured for windows RBE
+        "notap", # TODO(yashykt@): TSAN on TAP runs very slow. Fix it for TAP.
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
