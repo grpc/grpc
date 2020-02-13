@@ -26,12 +26,9 @@ out = {}
 
 try:
     out['libs'] = [{
-        'name':
-            'upb',
-        'build':
-            'all',
-        'language':
-            'c',
+        'name': 'upb',
+        'build': 'all',
+        'language': 'c',
         'src': [
             "third_party/upb/upb/decode.c",
             "third_party/upb/upb/encode.c",
