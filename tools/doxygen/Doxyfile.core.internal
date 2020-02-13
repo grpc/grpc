@@ -805,6 +805,7 @@ doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
+doc/xds-test-descriptions.md \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \

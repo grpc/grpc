@@ -796,6 +796,7 @@ doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
+doc/xds-test-descriptions.md \
 src/objective-c/GRPCClient/GRPCCall+ChannelArg.h \
 src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h \
 src/objective-c/GRPCClient/GRPCCall+Cronet.h \
