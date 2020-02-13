@@ -765,10 +765,13 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
     third_party/boringssl-with-bazel/src/third_party/fiat/curve25519.c \
     third_party/upb/upb/decode.c \
+    third_party/upb/upb/def.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
     third_party/upb/upb/port.c \
+    third_party/upb/upb/reflection.c \
     third_party/upb/upb/table.c \
+    third_party/upb/upb/text_encode.c \
     third_party/upb/upb/upb.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \

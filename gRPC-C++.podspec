@@ -641,11 +641,14 @@ Pod::Spec.new do |s|
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
                       'third_party/upb/upb/decode.h',
+                      'third_party/upb/upb/def.h',
                       'third_party/upb/upb/encode.h',
                       'third_party/upb/upb/msg.h',
                       'third_party/upb/upb/port_def.inc',
                       'third_party/upb/upb/port_undef.inc',
+                      'third_party/upb/upb/reflection.h',
                       'third_party/upb/upb/table.int.h',
+                      'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.h'
 
     ss.private_header_files = 'include/grpcpp/impl/codegen/core_codegen.h',
@@ -1025,11 +1028,14 @@ Pod::Spec.new do |s|
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',
                               'third_party/upb/upb/decode.h',
+                              'third_party/upb/upb/def.h',
                               'third_party/upb/upb/encode.h',
                               'third_party/upb/upb/msg.h',
                               'third_party/upb/upb/port_def.inc',
                               'third_party/upb/upb/port_undef.inc',
+                              'third_party/upb/upb/reflection.h',
                               'third_party/upb/upb/table.int.h',
+                              'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h'
   end
 

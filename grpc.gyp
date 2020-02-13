@@ -2528,15 +2528,6 @@
         'third_party/upb/upb/port.c',
         'third_party/upb/upb/table.c',
         'third_party/upb/upb/upb.c',
-      ],
-    },
-    {
-      'target_name': 'upb_textformat',
-      'type': 'static_library',
-      'dependencies': [
-        'upb',
-      ],
-      'sources': [
         'third_party/upb/upb/def.c',
         'third_party/upb/upb/reflection.c',
         'third_party/upb/upb/text_encode.c',

@@ -965,6 +965,8 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_interface.h',
                       'third_party/upb/upb/decode.c',
                       'third_party/upb/upb/decode.h',
+                      'third_party/upb/upb/def.c',
+                      'third_party/upb/upb/def.h',
                       'third_party/upb/upb/encode.c',
                       'third_party/upb/upb/encode.h',
                       'third_party/upb/upb/msg.c',
@@ -972,8 +974,12 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/port.c',
                       'third_party/upb/upb/port_def.inc',
                       'third_party/upb/upb/port_undef.inc',
+                      'third_party/upb/upb/reflection.c',
+                      'third_party/upb/upb/reflection.h',
                       'third_party/upb/upb/table.c',
                       'third_party/upb/upb/table.int.h',
+                      'third_party/upb/upb/text_encode.c',
+                      'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.c',
                       'third_party/upb/upb/upb.h'
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
@@ -1341,11 +1347,14 @@ Pod::Spec.new do |s|
                               'src/core/tsi/transport_security_grpc.h',
                               'src/core/tsi/transport_security_interface.h',
                               'third_party/upb/upb/decode.h',
+                              'third_party/upb/upb/def.h',
                               'third_party/upb/upb/encode.h',
                               'third_party/upb/upb/msg.h',
                               'third_party/upb/upb/port_def.inc',
                               'third_party/upb/upb/port_undef.inc',
+                              'third_party/upb/upb/reflection.h',
                               'third_party/upb/upb/table.int.h',
+                              'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h'
   end
 

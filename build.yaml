@@ -335,7 +335,7 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upb-generated/google/rpc/status.upbdefs.c
   deps:
-  - upb_textformat
+  - upb
 - name: gpr_base
   src:
   - src/core/lib/gpr/alloc.cc
