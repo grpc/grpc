@@ -41,13 +41,11 @@ class XdsResolver : public Resolver {
     server_name_.reset(gpr_strdup(path));
   }
 
+  ~XdsResolver() override { grpc_channel_args_destroy(args_); }
+
   void StartLocked() override;
 
-  void ShutdownLocked() override {
-    xds_client_.reset();
-    // Destroy the args now since they might hold a ref to the xds client.
-    grpc_channel_args_destroy(args_);
-  }
+  void ShutdownLocked() override { xds_client_.reset(); }
 
  private:
   class ServiceConfigWatcher : public XdsClient::ServiceConfigWatcherInterface {
