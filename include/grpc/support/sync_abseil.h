@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2020 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,11 @@
  *
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
+#ifndef GRPC_SUPPORT_SYNC_ABSEIL_H
+#define GRPC_SUPPORT_SYNC_ABSEIL_H
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/json/json.h"
+#include <grpc/impl/codegen/sync_abseil.h>
 
-bool squelch = true;
-bool leak_check = true;
-
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  grpc_error* error = GRPC_ERROR_NONE;
-  grpc_core::Json::Parse(
-      grpc_core::StringView(reinterpret_cast<const char*>(data), size), &error);
-  GRPC_ERROR_UNREF(error);
-  return 0;
-}
+#endif /* GRPC_SUPPORT_SYNC_ABSEIL_H */

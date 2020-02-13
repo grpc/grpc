@@ -21,8 +21,12 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/json/json.h"
+
+#define GRPC_JSON_MAX_DEPTH 255
+#define GRPC_JSON_MAX_ERRORS 16
 
 namespace grpc_core {
 
@@ -30,7 +34,7 @@ namespace {
 
 class JsonReader {
  public:
-  static grpc_json* Parse(char* input, size_t size);
+  static grpc_error* Parse(StringView input, Json* output);
 
  private:
   enum class Status {
@@ -76,61 +80,51 @@ class JsonReader {
    */
   static constexpr uint32_t GRPC_JSON_READ_CHAR_EOF = 0x7ffffff0;
 
-  JsonReader(char* input, size_t size)
-      : input_(reinterpret_cast<uint8_t*>(input)),
-        remaining_input_(size),
-        string_ptr_(input_) {
-    StringClear();
-  }
+  explicit JsonReader(StringView input)
+      : original_input_(reinterpret_cast<const uint8_t*>(input.data())),
+        input_(original_input_),
+        remaining_input_(input.size()) {}
 
-  void StringClear();
+  Status Run();
+  uint32_t ReadChar();
+  bool IsComplete();
+
+  size_t CurrentIndex() const { return input_ - original_input_ - 1; }
+
   void StringAddChar(uint32_t c);
   void StringAddUtf32(uint32_t c);
-  uint32_t ReadChar();
-  grpc_json* CreateAndLink(grpc_json_type type);
-  void ContainerBegins(grpc_json_type type);
-  grpc_json_type ContainerEnds();
+
+  Json* CreateAndLinkValue();
+  bool StartContainer(Json::Type type);
+  void EndContainer();
   void SetKey();
   void SetString();
   bool SetNumber();
   void SetTrue();
   void SetFalse();
   void SetNull();
-  bool IsComplete();
-  Status Run();
+
+  const uint8_t* original_input_;
+  const uint8_t* input_;
+  size_t remaining_input_;
 
   State state_ = State::GRPC_JSON_STATE_VALUE_BEGIN;
-
-  int depth_ = 0;
-  int in_object_ = 0;
-  int in_array_ = 0;
-  int escaped_string_was_key_ = 0;
-  int container_just_begun_ = 0;
+  bool escaped_string_was_key_ = false;
+  bool container_just_begun_ = false;
   uint16_t unicode_char_ = 0;
   uint16_t unicode_high_surrogate_ = 0;
+  std::vector<grpc_error*> errors_;
+  bool truncated_errors_ = false;
 
-  grpc_json* top_ = nullptr;
-  grpc_json* current_container_ = nullptr;
-  grpc_json* current_value_ = nullptr;
-  uint8_t* input_;
-  size_t remaining_input_;
-  uint8_t* string_ptr_;
-  uint8_t* key_ = nullptr;
-  uint8_t* string_ = nullptr;
+  Json root_value_;
+  std::vector<Json*> stack_;
+
+  std::string key_;
+  std::string string_;
 };
 
-void JsonReader::StringClear() {
-  if (string_ != nullptr) {
-    GPR_ASSERT(string_ptr_ < input_);
-    *string_ptr_++ = 0;
-  }
-  string_ = string_ptr_;
-}
-
 void JsonReader::StringAddChar(uint32_t c) {
-  GPR_ASSERT(string_ptr_ < input_);
-  GPR_ASSERT(c <= 0xff);
-  *string_ptr_++ = static_cast<uint8_t>(c);
+  string_.push_back(static_cast<uint8_t>(c));
 }
 
 void JsonReader::StringAddUtf32(uint32_t c) {
@@ -162,8 +156,8 @@ void JsonReader::StringAddUtf32(uint32_t c) {
 
 uint32_t JsonReader::ReadChar() {
   if (remaining_input_ == 0) return GRPC_JSON_READ_CHAR_EOF;
-  uint32_t r = *input_++;
-  remaining_input_--;
+  const uint32_t r = *input_++;
+  --remaining_input_;
   if (r == 0) {
     remaining_input_ = 0;
     return GRPC_JSON_READ_CHAR_EOF;
@@ -171,71 +165,98 @@ uint32_t JsonReader::ReadChar() {
   return r;
 }
 
-/* Helper function to create a new grpc_json object and link it into
- * our tree-in-progress inside our opaque structure.
- */
-grpc_json* JsonReader::CreateAndLink(grpc_json_type type) {
-  grpc_json* json = grpc_json_create(type);
-  json->parent = current_container_;
-  json->prev = current_value_;
-  current_value_ = json;
-  if (json->prev) {
-    json->prev->next = json;
-  }
-  if (json->parent) {
-    if (!json->parent->child) {
-      json->parent->child = json;
+Json* JsonReader::CreateAndLinkValue() {
+  Json* value;
+  if (stack_.empty()) {
+    value = &root_value_;
+  } else {
+    Json* parent = stack_.back();
+    if (parent->type() == Json::Type::OBJECT) {
+      if (parent->object_value().find(key_) != parent->object_value().end()) {
+        if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
+          truncated_errors_ = true;
+        } else {
+          char* msg;
+          gpr_asprintf(&msg, "duplicate key \"%s\" at index %" PRIuPTR,
+                       key_.c_str(), CurrentIndex());
+          errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+          gpr_free(msg);
+        }
+      }
+      value = &(*parent->mutable_object())[std::move(key_)];
+    } else {
+      GPR_ASSERT(parent->type() == Json::Type::ARRAY);
+      parent->mutable_array()->emplace_back();
+      value = &parent->mutable_array()->back();
     }
-    if (json->parent->type == GRPC_JSON_OBJECT) {
-      json->key = reinterpret_cast<char*>(key_);
+  }
+  return value;
+}
+
+bool JsonReader::StartContainer(Json::Type type) {
+  if (stack_.size() == GRPC_JSON_MAX_DEPTH) {
+    if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
+      truncated_errors_ = true;
+    } else {
+      char* msg;
+      gpr_asprintf(&msg, "exceeded max stack depth (%d) at index %" PRIuPTR,
+                   GRPC_JSON_MAX_DEPTH, CurrentIndex());
+      errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+      gpr_free(msg);
     }
+    return false;
   }
-  if (top_ == nullptr) {
-    top_ = json;
+  Json* value = CreateAndLinkValue();
+  if (type == Json::Type::OBJECT) {
+    *value = Json::Object();
+  } else {
+    GPR_ASSERT(type == Json::Type::ARRAY);
+    *value = Json::Array();
   }
-  return json;
-}
-
-void JsonReader::ContainerBegins(grpc_json_type type) {
-  GPR_ASSERT(type == GRPC_JSON_ARRAY || type == GRPC_JSON_OBJECT);
-  grpc_json* container = CreateAndLink(type);
-  current_container_ = container;
-  current_value_ = nullptr;
-}
-
-grpc_json_type JsonReader::ContainerEnds() {
-  grpc_json_type container_type = GRPC_JSON_TOP_LEVEL;
-  GPR_ASSERT(current_container_);
-  current_value_ = current_container_;
-  current_container_ = current_container_->parent;
-  if (current_container_ != nullptr) {
-    container_type = current_container_->type;
-  }
-  return container_type;
-}
-
-void JsonReader::SetKey() { key_ = string_; }
-
-void JsonReader::SetString() {
-  grpc_json* json = CreateAndLink(GRPC_JSON_STRING);
-  json->value = reinterpret_cast<char*>(string_);
-}
-
-bool JsonReader::SetNumber() {
-  grpc_json* json = CreateAndLink(GRPC_JSON_NUMBER);
-  json->value = reinterpret_cast<char*>(string_);
+  stack_.push_back(value);
   return true;
 }
 
-void JsonReader::SetTrue() { CreateAndLink(GRPC_JSON_TRUE); }
+void JsonReader::EndContainer() {
+  GPR_ASSERT(!stack_.empty());
+  stack_.pop_back();
+}
 
-void JsonReader::SetFalse() { CreateAndLink(GRPC_JSON_FALSE); }
+void JsonReader::SetKey() {
+  key_ = std::move(string_);
+  string_.clear();
+}
 
-void JsonReader::SetNull() { CreateAndLink(GRPC_JSON_NULL); }
+void JsonReader::SetString() {
+  Json* value = CreateAndLinkValue();
+  *value = std::move(string_);
+  string_.clear();
+}
+
+bool JsonReader::SetNumber() {
+  Json* value = CreateAndLinkValue();
+  *value = Json(std::move(string_), /*is_number=*/true);
+  string_.clear();
+  return true;
+}
+
+void JsonReader::SetTrue() {
+  Json* value = CreateAndLinkValue();
+  *value = true;
+  string_.clear();
+}
+
+void JsonReader::SetFalse() {
+  Json* value = CreateAndLinkValue();
+  *value = false;
+  string_.clear();
+}
+
+void JsonReader::SetNull() { CreateAndLinkValue(); }
 
 bool JsonReader::IsComplete() {
-  return (depth_ == 0 && (state_ == State::GRPC_JSON_STATE_END ||
-                          state_ == State::GRPC_JSON_STATE_VALUE_END));
+  return (stack_.empty() && (state_ == State::GRPC_JSON_STATE_END ||
+                             state_ == State::GRPC_JSON_STATE_VALUE_END));
 }
 
 /* Call this function to start parsing the input. It will return the following:
@@ -246,7 +267,7 @@ bool JsonReader::IsComplete() {
  *      internal state.
  */
 JsonReader::Status JsonReader::Run() {
-  uint32_t c, success;
+  uint32_t c;
 
   /* This state-machine is a strict implementation of ECMA-404 */
   while (true) {
@@ -277,8 +298,9 @@ JsonReader::Status JsonReader::Run() {
           case State::GRPC_JSON_STATE_OBJECT_KEY_STRING:
           case State::GRPC_JSON_STATE_VALUE_STRING:
             if (c != ' ') return Status::GRPC_JSON_PARSE_ERROR;
-            if (unicode_high_surrogate_ != 0)
+            if (unicode_high_surrogate_ != 0) {
               return Status::GRPC_JSON_PARSE_ERROR;
+            }
             StringAddChar(c);
             break;
 
@@ -286,9 +308,7 @@ JsonReader::Status JsonReader::Run() {
           case State::GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
           case State::GRPC_JSON_STATE_VALUE_NUMBER_EPM:
-            success = static_cast<uint32_t>(SetNumber());
-            if (!success) return Status::GRPC_JSON_PARSE_ERROR;
-            StringClear();
+            if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
             state_ = State::GRPC_JSON_STATE_VALUE_END;
             break;
 
@@ -314,16 +334,16 @@ JsonReader::Status JsonReader::Run() {
           case State::GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
           case State::GRPC_JSON_STATE_VALUE_NUMBER_EPM:
-            if (depth_ == 0) {
+            if (stack_.empty()) {
               return Status::GRPC_JSON_PARSE_ERROR;
-            } else if ((c == '}') && !in_object_) {
+            } else if (c == '}' &&
+                       stack_.back()->type() != Json::Type::OBJECT) {
               return Status::GRPC_JSON_PARSE_ERROR;
-            } else if ((c == ']') && !in_array_) {
+              return Status::GRPC_JSON_PARSE_ERROR;
+            } else if (c == ']' && stack_.back()->type() != Json::Type::ARRAY) {
               return Status::GRPC_JSON_PARSE_ERROR;
             }
-            success = static_cast<uint32_t>(SetNumber());
-            if (!success) return Status::GRPC_JSON_PARSE_ERROR;
-            StringClear();
+            if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
             state_ = State::GRPC_JSON_STATE_VALUE_END;
             /* The missing break here is intentional. */
             /* fallthrough */
@@ -335,48 +355,38 @@ JsonReader::Status JsonReader::Run() {
               if (state_ != State::GRPC_JSON_STATE_VALUE_END) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
-              if (in_object_) {
+              if (!stack_.empty() &&
+                  stack_.back()->type() == Json::Type::OBJECT) {
                 state_ = State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN;
-              } else if (in_array_) {
+              } else if (!stack_.empty() &&
+                         stack_.back()->type() == Json::Type::ARRAY) {
                 state_ = State::GRPC_JSON_STATE_VALUE_BEGIN;
               } else {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
             } else {
-              if (depth_-- == 0) return Status::GRPC_JSON_PARSE_ERROR;
-              if ((c == '}') && !in_object_) {
+              if (stack_.empty()) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
-              if ((c == '}') &&
-                  (state_ == State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN) &&
+              if (c == '}' && stack_.back()->type() != Json::Type::OBJECT) {
+                return Status::GRPC_JSON_PARSE_ERROR;
+              }
+              if (c == '}' &&
+                  state_ == State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN &&
                   !container_just_begun_) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
-              if ((c == ']') && !in_array_)
+              if (c == ']' && stack_.back()->type() != Json::Type::ARRAY) {
                 return Status::GRPC_JSON_PARSE_ERROR;
-              if ((c == ']') &&
-                  (state_ == State::GRPC_JSON_STATE_VALUE_BEGIN) &&
+              }
+              if (c == ']' && state_ == State::GRPC_JSON_STATE_VALUE_BEGIN &&
                   !container_just_begun_) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
               state_ = State::GRPC_JSON_STATE_VALUE_END;
-              switch (ContainerEnds()) {
-                case GRPC_JSON_OBJECT:
-                  in_object_ = 1;
-                  in_array_ = 0;
-                  break;
-                case GRPC_JSON_ARRAY:
-                  in_object_ = 0;
-                  in_array_ = 1;
-                  break;
-                case GRPC_JSON_TOP_LEVEL:
-                  GPR_ASSERT(depth_ == 0);
-                  in_object_ = 0;
-                  in_array_ = 0;
-                  state_ = State::GRPC_JSON_STATE_END;
-                  break;
-                default:
-                  GPR_UNREACHABLE_CODE(return Status::GRPC_JSON_INTERNAL_ERROR);
+              EndContainer();
+              if (stack_.empty()) {
+                state_ = State::GRPC_JSON_STATE_END;
               }
             }
             break;
@@ -390,12 +400,12 @@ JsonReader::Status JsonReader::Run() {
       case '\\':
         switch (state_) {
           case State::GRPC_JSON_STATE_OBJECT_KEY_STRING:
-            escaped_string_was_key_ = 1;
+            escaped_string_was_key_ = true;
             state_ = State::GRPC_JSON_STATE_STRING_ESCAPE;
             break;
 
           case State::GRPC_JSON_STATE_VALUE_STRING:
-            escaped_string_was_key_ = 0;
+            escaped_string_was_key_ = false;
             state_ = State::GRPC_JSON_STATE_STRING_ESCAPE;
             break;
 
@@ -417,7 +427,7 @@ JsonReader::Status JsonReader::Run() {
         break;
 
       default:
-        container_just_begun_ = 0;
+        container_just_begun_ = false;
         switch (state_) {
           case State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN:
             if (c != '"') return Status::GRPC_JSON_PARSE_ERROR;
@@ -431,7 +441,6 @@ JsonReader::Status JsonReader::Run() {
             if (c == '"') {
               state_ = State::GRPC_JSON_STATE_OBJECT_KEY_END;
               SetKey();
-              StringClear();
             } else {
               if (c < 32) return Status::GRPC_JSON_PARSE_ERROR;
               StringAddChar(c);
@@ -445,7 +454,6 @@ JsonReader::Status JsonReader::Run() {
             if (c == '"') {
               state_ = State::GRPC_JSON_STATE_VALUE_END;
               SetString();
-              StringClear();
             } else {
               if (c < 32) return Status::GRPC_JSON_PARSE_ERROR;
               StringAddChar(c);
@@ -495,20 +503,18 @@ JsonReader::Status JsonReader::Run() {
                 break;
 
               case '{':
-                container_just_begun_ = 1;
-                ContainerBegins(GRPC_JSON_OBJECT);
-                depth_++;
+                container_just_begun_ = true;
+                if (!StartContainer(Json::Type::OBJECT)) {
+                  return Status::GRPC_JSON_PARSE_ERROR;
+                }
                 state_ = State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN;
-                in_object_ = 1;
-                in_array_ = 0;
                 break;
 
               case '[':
-                container_just_begun_ = 1;
-                ContainerBegins(GRPC_JSON_ARRAY);
-                depth_++;
-                in_object_ = 0;
-                in_array_ = 1;
+                container_just_begun_ = true;
+                if (!StartContainer(Json::Type::ARRAY)) {
+                  return Status::GRPC_JSON_PARSE_ERROR;
+                }
                 break;
               default:
                 return Status::GRPC_JSON_PARSE_ERROR;
@@ -809,29 +815,41 @@ JsonReader::Status JsonReader::Run() {
   GPR_UNREACHABLE_CODE(return Status::GRPC_JSON_INTERNAL_ERROR);
 }
 
-grpc_json* JsonReader::Parse(char* input, size_t size) {
-  JsonReader reader(input, size);
+grpc_error* JsonReader::Parse(StringView input, Json* output) {
+  JsonReader reader(input);
   Status status = reader.Run();
-  grpc_json* json = reader.top_;
-  if ((status != Status::GRPC_JSON_DONE) && json != nullptr) {
-    grpc_json_destroy(json);
-    json = nullptr;
+  if (reader.truncated_errors_) {
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "too many errors encountered during JSON parsing -- fix reported "
+        "errors and try again to see additional errors"));
   }
-  return json;
+  if (status == Status::GRPC_JSON_INTERNAL_ERROR) {
+    char* msg;
+    gpr_asprintf(&msg, "internal error in JSON parser at index %" PRIuPTR,
+                 reader.CurrentIndex());
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+    gpr_free(msg);
+  } else if (status == Status::GRPC_JSON_PARSE_ERROR) {
+    char* msg;
+    gpr_asprintf(&msg, "JSON parse error at index %" PRIuPTR,
+                 reader.CurrentIndex());
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+    gpr_free(msg);
+  }
+  if (!reader.errors_.empty()) {
+    return GRPC_ERROR_CREATE_FROM_VECTOR("JSON parsing failed",
+                                         &reader.errors_);
+  }
+  *output = std::move(reader.root_value_);
+  return GRPC_ERROR_NONE;
 }
 
 }  // namespace
 
+Json Json::Parse(StringView json_str, grpc_error** error) {
+  Json value;
+  *error = JsonReader::Parse(json_str, &value);
+  return value;
+}
+
 }  // namespace grpc_core
-
-/* And finally, let's define our public API. */
-grpc_json* grpc_json_parse_string_with_len(char* input, size_t size) {
-  if (input == nullptr) return nullptr;
-  return grpc_core::JsonReader::Parse(input, size);
-}
-
-#define UNBOUND_JSON_STRING_LENGTH 0x7fffffff
-
-grpc_json* grpc_json_parse_string(char* input) {
-  return grpc_json_parse_string_with_len(input, UNBOUND_JSON_STRING_LENGTH);
-}

@@ -39,6 +39,7 @@
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
 #include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/sync_abseil.h>
 #include <grpc/impl/codegen/sync_custom.h>
 #include <grpc/impl/codegen/sync_generic.h>
 #include <grpc/load_reporting.h>
@@ -52,6 +53,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/sync_abseil.h>
 #include <grpc/support/sync_custom.h>
 #include <grpc/support/sync_generic.h>
 #include <grpc/support/thd_id.h>

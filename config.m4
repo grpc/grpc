@@ -230,6 +230,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/string_util_windows.cc \
     src/core/lib/gpr/string_windows.cc \
     src/core/lib/gpr/sync.cc \
+    src/core/lib/gpr/sync_abseil.cc \
     src/core/lib/gpr/sync_posix.cc \
     src/core/lib/gpr/sync_windows.cc \
     src/core/lib/gpr/time.cc \
@@ -345,11 +346,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/iomgr/work_serializer.cc \
-    src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_reader_new.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/json/json_writer_new.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
     src/core/lib/security/context/security_context.cc \

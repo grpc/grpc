@@ -805,6 +805,7 @@ doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
+doc/xds-test-descriptions.md \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
@@ -842,6 +843,8 @@ include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync.h \
+include/grpc/impl/codegen/sync_abseil.h \
+include/grpc/impl/codegen/sync_abseil.h \
 include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
@@ -865,6 +868,7 @@ include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \
+include/grpc/support/sync_abseil.h \
 include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
@@ -1242,6 +1246,7 @@ src/core/lib/gpr/string_util_windows.cc \
 src/core/lib/gpr/string_windows.cc \
 src/core/lib/gpr/string_windows.h \
 src/core/lib/gpr/sync.cc \
+src/core/lib/gpr/sync_abseil.cc \
 src/core/lib/gpr/sync_posix.cc \
 src/core/lib/gpr/sync_windows.cc \
 src/core/lib/gpr/time.cc \
@@ -1463,12 +1468,9 @@ src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/iomgr/work_serializer.cc \
 src/core/lib/iomgr/work_serializer.h \
-src/core/lib/json/json.cc \
 src/core/lib/json/json.h \
 src/core/lib/json/json_reader.cc \
-src/core/lib/json/json_reader_new.cc \
 src/core/lib/json/json_writer.cc \
-src/core/lib/json/json_writer_new.cc \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \
