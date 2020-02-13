@@ -625,8 +625,14 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       if (last_dot_pos == grpc::string::npos) {
         var["ImportStatement"] = "import " + module_name;
       } else {
-        var["ImportStatement"] = "from " + module_name.substr(0, last_dot_pos) +
-                                 " import " +
+        auto import_module = module_name.substr(0, last_dot_pos);
+        if (import_module.size() == 0) {
+            // If `strip_prefixes` is set, and the entire prefix is stripped
+            // up to (but not including!) the dot, we'll leave the dot as
+            // written, which will turn this import into a relative import.
+            import_module = ".";
+        }
+        var["ImportStatement"] = "from " + import_module + " import " +
                                  module_name.substr(last_dot_pos + 1);
       }
       out->Print(var, "$ImportStatement$ as $ModuleAlias$\n");
