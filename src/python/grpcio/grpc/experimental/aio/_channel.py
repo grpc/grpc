@@ -65,11 +65,6 @@ class _BaseMultiCallable:
     _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
-
-    _channel: cygrpc.AioChannel
-    _method: bytes
-    _request_serializer: SerializingFunction
-    _response_deserializer: DeserializingFunction
     _interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
     _loop: asyncio.AbstractEventLoop
 
@@ -368,8 +363,9 @@ class Channel:
             candidate = frame.f_locals.get('self')
             if candidate:
                 if isinstance(candidate, _base_call.Call):
-                    calls.append(candidate)
-                    call_tasks.append(task)
+                    if candidate._cython_call._channel is self._channel:
+                        calls.append(candidate)
+                        call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.

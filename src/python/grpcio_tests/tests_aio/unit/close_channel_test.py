@@ -120,6 +120,18 @@ class TestCloseChannel(AioTestBase):
         for call in calls:
             self.assertTrue(call.cancelled())
 
+    async def test_channel_isolation(self):
+        async with aio.insecure_channel(self._server_target) as channel1:
+            async with aio.insecure_channel(self._server_target) as channel2:
+                stub1 = test_pb2_grpc.TestServiceStub(channel1)
+                stub2 = test_pb2_grpc.TestServiceStub(channel2)
+
+                call1 = stub1.UnaryCall(messages_pb2.SimpleRequest())
+                call2 = stub2.UnaryCall(messages_pb2.SimpleRequest())
+
+            self.assertFalse(call1.cancelled())
+            self.assertTrue(call2.cancelled())
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
