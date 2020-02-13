@@ -124,9 +124,18 @@
   <h3 id="methods">Methods
   </h3>
   <a id="Grpc_Core_SerializationContext_Complete_" data-uid="Grpc.Core.SerializationContext.Complete*"></a>
+  <h4 id="Grpc_Core_SerializationContext_Complete" data-uid="Grpc.Core.SerializationContext.Complete">Complete()</h4>
+  <div class="markdown level1 summary"><p>Complete the payload written to the buffer writer. <code>Complete()</code> can only be called once.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void Complete()</code></pre>
+  </div>
+  <a id="Grpc_Core_SerializationContext_Complete_" data-uid="Grpc.Core.SerializationContext.Complete*"></a>
   <h4 id="Grpc_Core_SerializationContext_Complete_System_Byte___" data-uid="Grpc.Core.SerializationContext.Complete(System.Byte[])">Complete(Byte[])</h4>
   <div class="markdown level1 summary"><p>Use the byte array as serialized form of current message and mark serialization process as complete.
-Complete() can only be called once. By calling this method the caller gives up the ownership of the
+<code>Complete(byte[])</code> can only be called once. By calling this method the caller gives up the ownership of the
 payload which must not be accessed afterwards.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -148,6 +157,62 @@ payload which must not be accessed afterwards.</p>
         <td><span class="xref">System.Byte</span>[]</td>
         <td><span class="parametername">payload</span></td>
         <td><p>the serialized form of current message</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_SerializationContext_GetBufferWriter_" data-uid="Grpc.Core.SerializationContext.GetBufferWriter*"></a>
+  <h4 id="Grpc_Core_SerializationContext_GetBufferWriter" data-uid="Grpc.Core.SerializationContext.GetBufferWriter">GetBufferWriter()</h4>
+  <div class="markdown level1 summary"><p>Gets buffer writer that can be used to write the serialized data. Once serialization is finished,
+<code>Complete()</code> needs to be called.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual IBufferWriter&lt;byte&gt; GetBufferWriter()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">IBufferWriter</span>&lt;<span class="xref">System.Byte</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_SerializationContext_SetPayloadLength_" data-uid="Grpc.Core.SerializationContext.SetPayloadLength*"></a>
+  <h4 id="Grpc_Core_SerializationContext_SetPayloadLength_System_Int32_" data-uid="Grpc.Core.SerializationContext.SetPayloadLength(System.Int32)">SetPayloadLength(Int32)</h4>
+  <div class="markdown level1 summary"><p>Sets the payload length when writing serialized data into a buffer writer. If the serializer knows the full payload
+length in advance, providing that information before obtaining the buffer writer using <code>GetBufferWriter()</code> can improve
+serialization efficiency by avoiding copies. The provided payload length must be the same as the data written to the writer.
+Calling this method is optional. If the payload length is not set then the length is calculated using the data written to
+the buffer writer when <code>Complete()</code> is called.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void SetPayloadLength(int payloadLength)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">payloadLength</span></td>
+        <td><p>The total length of the payload in bytes.</p>
 </td>
       </tr>
     </tbody>

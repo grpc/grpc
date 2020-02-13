@@ -224,7 +224,9 @@
   </table>
   <a id="Grpc_Core_RpcException__ctor_" data-uid="Grpc.Core.RpcException.#ctor*"></a>
   <h4 id="Grpc_Core_RpcException__ctor_Grpc_Core_Status_Grpc_Core_Metadata_System_String_" data-uid="Grpc.Core.RpcException.#ctor(Grpc.Core.Status,Grpc.Core.Metadata,System.String)">RpcException(Status, Metadata, String)</h4>
-  <div class="markdown level1 summary"><p>Creates a new <code>RpcException</code> associated with given status, message and trailing response metadata.</p>
+  <div class="markdown level1 summary"><p>Creates a new <code>RpcException</code> associated with given status, message and trailing response metadata.
+NOTE: the exception message is not sent to the remote peer. Use <code>status.Details</code> to pass error
+details to the peer.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -263,7 +265,9 @@
   </table>
   <a id="Grpc_Core_RpcException__ctor_" data-uid="Grpc.Core.RpcException.#ctor*"></a>
   <h4 id="Grpc_Core_RpcException__ctor_Grpc_Core_Status_System_String_" data-uid="Grpc.Core.RpcException.#ctor(Grpc.Core.Status,System.String)">RpcException(Status, String)</h4>
-  <div class="markdown level1 summary"><p>Creates a new <code>RpcException</code> associated with given status and message.</p>
+  <div class="markdown level1 summary"><p>Creates a new <code>RpcException</code> associated with given status and message.
+NOTE: the exception message is not sent to the remote peer. Use <code>status.Details</code> to pass error
+details to the peer.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
