@@ -1746,10 +1746,7 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
   }
 }
 
-XdsClient::~XdsClient() {
-  gpr_log(GPR_INFO, "[xds_client %p] Destroying xds client", this);
-  GRPC_COMBINER_UNREF(combiner_, "xds_client");
-}
+XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
 
 void XdsClient::Orphan() {
   shutting_down_ = true;
