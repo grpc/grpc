@@ -47,10 +47,10 @@ You can download the pre-compiled `grpc.dll` extension from the PECL
 
 ### Build from source
 
-Clone this repository
+Clone this repository at the [latest stable release tag](https://github.com/grpc/grpc/releases)
 
 ```sh
-$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 ```
 
 #### Build and install the gRPC C core library
@@ -184,7 +184,7 @@ in the future.
 You can also just build the `grpc_php_plugin` by running:
 
 ```sh
-$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 $ cd grpc
 $ git submodule update --init
 $ make grpc_php_plugin
@@ -246,7 +246,7 @@ $ protoc -I=. echo.proto --php_out=. --grpc_out=. \
 You will need the source code to run tests
 
 ```sh
-$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 $ cd grpc
 $ git submodule update --init
 ```

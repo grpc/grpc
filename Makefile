@@ -1010,7 +1010,6 @@ algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 alts_credentials_fuzzer: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer
-api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 arena_test: $(BINDIR)/$(CONFIG)/arena_test
 avl_test: $(BINDIR)/$(CONFIG)/avl_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
@@ -1374,7 +1373,6 @@ address_sorting_test_unsecure: $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure
 address_sorting_test: $(BINDIR)/$(CONFIG)/address_sorting_test
 cancel_ares_query_test: $(BINDIR)/$(CONFIG)/cancel_ares_query_test
 alts_credentials_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry
-api_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
 client_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry
 hpack_parser_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry
 http_request_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry
@@ -1614,7 +1612,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds_nosec_test \
   $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry \
-  $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry \
   $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry \
@@ -3762,6 +3759,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -3778,6 +3776,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -3885,6 +3884,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/string_util_windows.cc \
     src/core/lib/gpr/string_windows.cc \
     src/core/lib/gpr/sync.cc \
+    src/core/lib/gpr/sync_abseil.cc \
     src/core/lib/gpr/sync_posix.cc \
     src/core/lib/gpr/sync_windows.cc \
     src/core/lib/gpr/time.cc \
@@ -3918,6 +3918,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -3934,6 +3935,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -3942,7 +3944,7 @@ PUBLIC_HEADERS_C += \
 LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBGPR_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGPR_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr.a
@@ -4423,6 +4425,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -4825,6 +4828,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -5155,6 +5159,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -5171,6 +5176,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -5483,6 +5489,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -5499,6 +5506,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -5515,7 +5523,7 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_UNSECURE_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
@@ -5904,6 +5912,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -5925,7 +5934,7 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
@@ -6321,6 +6330,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -6337,6 +6347,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -7010,6 +7021,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -7190,6 +7202,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -7428,6 +7441,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
@@ -7444,6 +7458,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
@@ -7566,7 +7581,7 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARE
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
@@ -7738,7 +7753,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
@@ -8553,7 +8568,7 @@ $(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include
 $(LIBBORINGSSL_OBJS): CXXFLAGS += -fno-exceptions
 $(LIBBORINGSSL_OBJS): CFLAGS += -g
 
-$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBBORINGSSL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBBORINGSSL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl.a
@@ -8593,7 +8608,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
@@ -8648,7 +8663,7 @@ $(LIBDIR)/$(CONFIG)/libbenchmark.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark.a
@@ -8683,18 +8698,7 @@ PUBLIC_HEADERS_C += \
 LIBUPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_SRC))))
 
 
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL.
-
-$(LIBDIR)/$(CONFIG)/libupb.a: openssl_dep_error
-
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): openssl_dep_error
-
-else
-
-
-$(LIBDIR)/$(CONFIG)/libupb.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBUPB_OBJS) 
+$(LIBDIR)/$(CONFIG)/libupb.a:  $(LIBUPB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb.a
@@ -8706,12 +8710,12 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
@@ -8723,12 +8727,8 @@ else
 endif
 endif
 
-endif
-
-ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBUPB_OBJS:.o=.dep)
-endif
 endif
 
 
@@ -9140,7 +9140,7 @@ PUBLIC_HEADERS_C += \
 LIBEND2END_NOSEC_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TESTS_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(LIBGRPC_ABSEIL_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
@@ -9194,17 +9194,7 @@ LIBGRPC_ABSEIL_SRC = \
 LIBGRPC_ABSEIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ABSEIL_SRC))))
 
 
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL.
-
-$(LIBDIR)/$(CONFIG)/libgrpc_abseil.a: openssl_dep_error
-
-
-else
-
-
-$(LIBDIR)/$(CONFIG)/libgrpc_abseil.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_ABSEIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_abseil.a:  $(LIBGRPC_ABSEIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
@@ -9216,12 +9206,8 @@ endif
 
 
 
-endif
-
-ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_ABSEIL_OBJS:.o=.dep)
-endif
 endif
 
 
@@ -9352,38 +9338,6 @@ deps_alts_credentials_fuzzer: $(ALTS_CREDENTIALS_FUZZER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ALTS_CREDENTIALS_FUZZER_OBJS:.o=.dep)
-endif
-endif
-
-
-API_FUZZER_SRC = \
-    test/core/end2end/fuzzers/api_fuzzer.cc \
-
-API_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/api_fuzzer: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/api_fuzzer: $(API_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(API_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/api_fuzzer
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fuzzers/api_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_api_fuzzer: $(API_FUZZER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(API_FUZZER_OBJS:.o=.dep)
 endif
 endif
 
@@ -23076,41 +23030,6 @@ endif
 endif
 
 
-API_FUZZER_ONE_ENTRY_SRC = \
-    test/core/end2end/fuzzers/api_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.cc \
-
-API_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_ONE_ENTRY_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/api_fuzzer_one_entry: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/api_fuzzer_one_entry: $(API_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(API_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fuzzers/api_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-$(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_api_fuzzer_one_entry: $(API_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(API_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
-endif
-endif
-
-
 CLIENT_FUZZER_ONE_ENTRY_SRC = \
     test/core/end2end/fuzzers/client_fuzzer.cc \
     test/core/util/one_corpus_entry_fuzzer.cc \
@@ -23691,43 +23610,6 @@ test/cpp/util/string_ref_helper.cc: $(OPENSSL_DEP)
 test/cpp/util/subprocess.cc: $(OPENSSL_DEP)
 test/cpp/util/test_config_cc.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/dynamic_annotations.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/internal/cycleclock.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/internal/raw_logging.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/internal/spinlock.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/internal/sysinfo.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/internal/thread_identity.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/internal/throw_delegate.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/base/log_severity.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/numeric/int128.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/ascii.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/charconv.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/escaping.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/internal/escaping.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/internal/memutil.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/internal/ostringstream.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/internal/utf8.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/match.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/numbers.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/str_cat.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/str_replace.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/str_split.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/string_view.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/strings/substitute.cc: $(OPENSSL_DEP)
-third_party/abseil-cpp/absl/types/bad_optional_access.cc: $(OPENSSL_DEP)
-third_party/upb/upb/decode.c: $(OPENSSL_DEP)
-third_party/upb/upb/def.c: $(OPENSSL_DEP)
-third_party/upb/upb/encode.c: $(OPENSSL_DEP)
-third_party/upb/upb/msg.c: $(OPENSSL_DEP)
-third_party/upb/upb/port.c: $(OPENSSL_DEP)
-third_party/upb/upb/reflection.c: $(OPENSSL_DEP)
-third_party/upb/upb/table.c: $(OPENSSL_DEP)
-third_party/upb/upb/text_encode.c: $(OPENSSL_DEP)
-third_party/upb/upb/upb.c: $(OPENSSL_DEP)
 endif
 
 .PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean

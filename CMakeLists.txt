@@ -654,7 +654,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c h2_uds_nosec_test)
   endif()
   add_dependencies(buildtests_c alts_credentials_fuzzer_one_entry)
-  add_dependencies(buildtests_c api_fuzzer_one_entry)
   add_dependencies(buildtests_c client_fuzzer_one_entry)
   add_dependencies(buildtests_c hpack_parser_fuzzer_test_one_entry)
   add_dependencies(buildtests_c http_request_fuzzer_test_one_entry)
@@ -1287,6 +1286,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -1303,6 +1303,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -1385,6 +1386,7 @@ add_library(gpr
   src/core/lib/gpr/string_util_windows.cc
   src/core/lib/gpr/string_windows.cc
   src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_abseil.cc
   src/core/lib/gpr/sync_posix.cc
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
@@ -1459,6 +1461,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -1475,6 +1478,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -1987,6 +1991,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -2397,6 +2402,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -2731,6 +2737,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -2747,6 +2754,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -3073,6 +3081,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -3089,6 +3098,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -3525,6 +3535,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -3975,6 +3986,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -3991,6 +4003,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -4674,6 +4687,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -4871,6 +4885,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -5107,6 +5122,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -5123,6 +5139,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -18243,34 +18260,6 @@ target_include_directories(alts_credentials_fuzzer_one_entry
 )
 
 target_link_libraries(alts_credentials_fuzzer_one_entry
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(api_fuzzer_one_entry
-  test/core/end2end/fuzzers/api_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.cc
-)
-
-target_include_directories(api_fuzzer_one_entry
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(api_fuzzer_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc

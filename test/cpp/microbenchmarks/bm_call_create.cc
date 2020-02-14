@@ -513,7 +513,8 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "channel_stack_init",
-      grpc_channel_stack_init(1, FilterDestroy, channel_stack, &filters[0],
+      grpc_channel_stack_init(1, FilterDestroy, channel_stack,
+                              filters.size() == 0 ? nullptr : &filters[0],
                               filters.size(), &channel_args,
                               fixture.flags & REQUIRES_TRANSPORT
                                   ? &dummy_transport::dummy_transport
