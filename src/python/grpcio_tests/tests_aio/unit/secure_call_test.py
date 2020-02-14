@@ -9,6 +9,8 @@ from tests_aio.unit._test_server import start_test_server
 from tests.unit import resources
 
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
+_NUM_STREAM_RESPONSES = 5
+_RESPONSE_PAYLOAD_SIZE = 42
 
 
 class _SecureCallMixin:
@@ -37,12 +39,43 @@ class _SecureCallMixin:
 
 
 class TestUnaryUnarySecureCall(_SecureCallMixin, AioTestBase):
-    """Calls made over a secure channel."""
+    """unary_unary Calls made over a secure channel."""
 
-    async def test_call_ok_with_credentials(self):
+    async def test_call_ok_over_secure_channel(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
         response = await call
         self.assertIsInstance(response, messages_pb2.SimpleResponse)
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_call_with_credentials(self):
+        call_credentials = grpc.composite_call_credentials(
+            grpc.access_token_call_credentials("abc"),
+            grpc.access_token_call_credentials("def"),
+        )
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest(), credentials=call_credentials)
+        response = await call
+
+        self.assertIsInstance(response, messages_pb2.SimpleResponse)
+
+
+class TestUnaryStreamSecureCall(_SecureCallMixin, AioTestBase):
+    """unary_stream calls over a secure channel"""
+
+    async def test_unary_stream_async_generator_credentials(self):
+        request = messages_pb2.StreamingOutputCallRequest()
+        request.response_parameters.extend(
+            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,)
+            for _ in range(_NUM_STREAM_RESPONSES)
+        )
+        call = self._stub.StreamingOutputCall(request)
+
+        async for response in call:
+            self.assertIsInstance(
+                response,
+                messages_pb2.StreamingOutputCallResponse
+            )
+            self.assertEqual(len(response.payload.body), _RESPONSE_PAYLOAD_SIZE)
+
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
 

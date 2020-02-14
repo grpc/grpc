@@ -22,6 +22,7 @@
   "unit.interceptor_test.TestInterceptedUnaryUnaryCall",
   "unit.interceptor_test.TestUnaryUnaryClientInterceptor",
   "unit.metadata_test.TestMetadata",
+  "unit.secure_call_test.TestUnaryStreamSecureCall",
   "unit.secure_call_test.TestUnaryUnarySecureCall",
   "unit.server_test.TestServer",
   "unit.timeout_test.TestTimeout",
