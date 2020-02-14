@@ -16,12 +16,10 @@
 import asyncio
 import logging
 import unittest
-from weakref import WeakSet
 
 import grpc
 from grpc.experimental import aio
 from grpc.experimental.aio import _base_call
-from grpc.experimental.aio._channel import _OngoingCalls
 
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests_aio.unit._test_base import AioTestBase
@@ -29,47 +27,6 @@ from tests_aio.unit._test_server import start_test_server
 
 _UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
 _LONG_TIMEOUT_THAT_SHOULD_NOT_EXPIRE = 60
-
-
-class TestOngoingCalls(unittest.TestCase):
-
-    class FakeCall(_base_call.RpcContext):
-
-        def add_done_callback(self, callback):
-            self.callback = callback
-
-        def cancel(self):
-            raise NotImplementedError
-
-        def cancelled(self):
-            raise NotImplementedError
-
-        def done(self):
-            raise NotImplementedError
-
-        def time_remaining(self):
-            raise NotImplementedError
-
-    def test_trace_call(self):
-        ongoing_calls = _OngoingCalls()
-        self.assertEqual(ongoing_calls.size(), 0)
-
-        call = TestOngoingCalls.FakeCall()
-        ongoing_calls.trace_call(call)
-        self.assertEqual(ongoing_calls.size(), 1)
-        self.assertEqual(ongoing_calls.calls, WeakSet([call]))
-
-        call.callback(call)
-        self.assertEqual(ongoing_calls.size(), 0)
-        self.assertEqual(ongoing_calls.calls, WeakSet())
-
-    def test_deleted_call(self):
-        ongoing_calls = _OngoingCalls()
-
-        call = TestOngoingCalls.FakeCall()
-        ongoing_calls.trace_call(call)
-        del (call)
-        self.assertEqual(ongoing_calls.size(), 0)
 
 
 class TestCloseChannel(AioTestBase):
@@ -114,14 +71,10 @@ class TestCloseChannel(AioTestBase):
 
         calls = [stub.UnaryCall(messages_pb2.SimpleRequest()) for _ in range(2)]
 
-        self.assertEqual(channel._ongoing_calls.size(), 2)
-
         await channel.close()
 
         for call in calls:
             self.assertTrue(call.cancelled())
-
-        self.assertEqual(channel._ongoing_calls.size(), 0)
 
     async def test_close_unary_stream(self):
         channel = aio.insecure_channel(self._server_target)
@@ -130,14 +83,10 @@ class TestCloseChannel(AioTestBase):
         request = messages_pb2.StreamingOutputCallRequest()
         calls = [stub.StreamingOutputCall(request) for _ in range(2)]
 
-        self.assertEqual(channel._ongoing_calls.size(), 2)
-
         await channel.close()
 
         for call in calls:
             self.assertTrue(call.cancelled())
-
-        self.assertEqual(channel._ongoing_calls.size(), 0)
 
     async def test_close_stream_unary(self):
         channel = aio.insecure_channel(self._server_target)
@@ -150,22 +99,16 @@ class TestCloseChannel(AioTestBase):
         for call in calls:
             self.assertTrue(call.cancelled())
 
-        self.assertEqual(channel._ongoing_calls.size(), 0)
-
     async def test_close_stream_stream(self):
         channel = aio.insecure_channel(self._server_target)
         stub = test_pb2_grpc.TestServiceStub(channel)
 
         calls = [stub.FullDuplexCall() for _ in range(2)]
 
-        self.assertEqual(channel._ongoing_calls.size(), 2)
-
         await channel.close()
 
         for call in calls:
             self.assertTrue(call.cancelled())
-
-        self.assertEqual(channel._ongoing_calls.size(), 0)
 
     async def test_close_async_context(self):
         async with aio.insecure_channel(self._server_target) as channel:
@@ -173,12 +116,21 @@ class TestCloseChannel(AioTestBase):
             calls = [
                 stub.UnaryCall(messages_pb2.SimpleRequest()) for _ in range(2)
             ]
-            self.assertEqual(channel._ongoing_calls.size(), 2)
 
         for call in calls:
             self.assertTrue(call.cancelled())
 
-        self.assertEqual(channel._ongoing_calls.size(), 0)
+    async def test_channel_isolation(self):
+        async with aio.insecure_channel(self._server_target) as channel1:
+            async with aio.insecure_channel(self._server_target) as channel2:
+                stub1 = test_pb2_grpc.TestServiceStub(channel1)
+                stub2 = test_pb2_grpc.TestServiceStub(channel2)
+
+                call1 = stub1.UnaryCall(messages_pb2.SimpleRequest())
+                call2 = stub2.UnaryCall(messages_pb2.SimpleRequest())
+
+            self.assertFalse(call1.cancelled())
+            self.assertTrue(call2.cancelled())
 
 
 if __name__ == '__main__':
