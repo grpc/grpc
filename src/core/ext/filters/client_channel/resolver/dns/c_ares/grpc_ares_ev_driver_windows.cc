@@ -594,7 +594,6 @@ class GrpcPolledFdWindows {
          * the connection is TCP and read the leftovers
          * in subsequent c-ares reads. */
         if (winsocket_->read_info.wsa_error != WSAEMSGSIZE) {
-          GRPC_ERROR_UNREF(error);
           error = GRPC_WSA_ERROR(winsocket_->read_info.wsa_error,
                                  "OnIocpReadableInner");
           GRPC_CARES_TRACE_LOG(
@@ -617,7 +616,6 @@ class GrpcPolledFdWindows {
         "fd:|%s| OnIocpReadable finishing. read buf length now:|%d|", GetName(),
         GRPC_SLICE_LENGTH(read_buf_));
     ScheduleAndNullReadClosure(error);
-    GRPC_ERROR_UNREF(error);
   }
 
   static void OnIocpWriteable(void* arg, grpc_error* error) {
@@ -633,7 +631,6 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(socket_type_ == SOCK_STREAM);
     if (error == GRPC_ERROR_NONE) {
       if (winsocket_->write_info.wsa_error != 0) {
-        GRPC_ERROR_UNREF(error);
         error = GRPC_WSA_ERROR(winsocket_->write_info.wsa_error,
                                "OnIocpWriteableInner");
         GRPC_CARES_TRACE_LOG(
@@ -655,7 +652,6 @@ class GrpcPolledFdWindows {
       write_buf_ = grpc_empty_slice();
     }
     ScheduleAndNullWriteClosure(error);
-    GRPC_ERROR_UNREF(error);
   }
 
   bool gotten_into_driver_list() const { return gotten_into_driver_list_; }

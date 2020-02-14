@@ -187,13 +187,14 @@ class XdsClient::ChannelState::AdsCallState
         }
         if (type_url_ == XdsApi::kLdsTypeUrl ||
             type_url_ == XdsApi::kRdsTypeUrl) {
-          ads_calld_->xds_client()->service_config_watcher_->OnError(error);
+          ads_calld_->xds_client()->service_config_watcher_->OnError(
+              watcher_error);
         } else if (type_url_ == XdsApi::kCdsTypeUrl) {
           ClusterState& state = ads_calld_->xds_client()->cluster_map_[name_];
           for (const auto& p : state.watchers) {
             p.first->OnError(GRPC_ERROR_REF(watcher_error));
           }
-          GRPC_ERROR_UNREF(error);
+          GRPC_ERROR_UNREF(watcher_error);
         } else if (type_url_ == XdsApi::kEdsTypeUrl) {
           EndpointState& state = ads_calld_->xds_client()->endpoint_map_[name_];
           for (const auto& p : state.watchers) {
