@@ -430,7 +430,7 @@ struct alts_tsi_handshaker_continue_handshaker_next_args {
 };
 
 static void alts_tsi_handshaker_create_channel(void* arg,
-                                               grpc_error* unused_error) {
+                                               grpc_error* /* unused_error */) {
   alts_tsi_handshaker_continue_handshaker_next_args* next_args =
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
