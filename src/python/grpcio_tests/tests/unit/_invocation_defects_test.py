@@ -177,7 +177,7 @@ def _defective_handler_multi_callable(channel):
 
 
 class InvocationDefectsTest(unittest.TestCase):
-    """Tests the handling of exception-raising user code."""
+    """Tests the handling of exception-raising user code on the client-side."""
 
     def setUp(self):
         self._control = test_control.PauseFailControl()
