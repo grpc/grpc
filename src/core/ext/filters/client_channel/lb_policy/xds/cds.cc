@@ -118,9 +118,18 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   }
   // Construct config for child policy.
   Json::Object child_config = {
-      {"edsServiceName",
-       (cluster_data.eds_service_name.empty() ? parent_->config_->cluster()
-                                              : cluster_data.eds_service_name)},
+      {"clusterName", parent_->config_->cluster()},
+      {"edsServiceName", cluster_data.eds_service_name},
+      {"localityPickingPolicy", Json::Array{
+          Json::Object{
+              {"weighted_target_experimental", Json::Object()},
+          },
+      }},
+      {"endpointPickingPolicy", Json::Array{
+          Json::Object{
+              {"round_robin", Json::Object()},
+          },
+      }},
   };
   if (cluster_data.lrs_load_reporting_server_name.has_value()) {
     child_config["lrsLoadReportingServerName"] =

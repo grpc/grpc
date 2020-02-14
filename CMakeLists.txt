@@ -1856,6 +1856,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
@@ -3369,6 +3370,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc

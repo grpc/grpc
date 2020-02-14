@@ -76,39 +76,44 @@ constexpr char kEds[] = "eds_experimental";
 
 class EdsLbConfig : public LoadBalancingPolicy::Config {
  public:
-  EdsLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
-              RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy,
-              std::string eds_service_name,
-              Optional<std::string> lrs_load_reporting_server_name)
-      : child_policy_(std::move(child_policy)),
-        fallback_policy_(std::move(fallback_policy)),
+  EdsLbConfig(
+      std::string cluster_name, std::string eds_service_name,
+      Optional<std::string> lrs_load_reporting_server_name,
+      RefCountedPtr<LoadBalancingPolicy::Config> locality_picking_policy,
+      RefCountedPtr<LoadBalancingPolicy::Config> endpoint_picking_policy,
+      RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy)
+      : cluster_name_(std::move(cluster_name)),
         eds_service_name_(std::move(eds_service_name)),
         lrs_load_reporting_server_name_(
-            std::move(lrs_load_reporting_server_name)) {}
+            std::move(lrs_load_reporting_server_name)),
+        locality_picking_policy_(std::move(locality_picking_policy)),
+        endpoint_picking_policy_(std::move(endpoint_picking_policy)),
+        fallback_policy_(std::move(fallback_policy)) {}
 
   const char* name() const override { return kEds; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
-    return child_policy_;
+  const std::string& cluster_name() const { return cluster_name_; }
+  const std::string& eds_service_name() const { return eds_service_name_; }
+  const Optional<std::string>& lrs_load_reporting_server_name() const {
+    return lrs_load_reporting_server_name_;
+  };
+  RefCountedPtr<LoadBalancingPolicy::Config> locality_picking_policy() const {
+    return locality_picking_policy_;
   }
-
+  RefCountedPtr<LoadBalancingPolicy::Config> endpoint_picking_policy() const {
+    return endpoint_picking_policy_;
+  }
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy() const {
     return fallback_policy_;
   }
 
-  const char* eds_service_name() const {
-    return eds_service_name_.empty() ? nullptr : eds_service_name_.c_str();
-  };
-
-  const Optional<std::string>& lrs_load_reporting_server_name() const {
-    return lrs_load_reporting_server_name_;
-  };
-
  private:
-  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
-  RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
+  std::string cluster_name_;
   std::string eds_service_name_;
   Optional<std::string> lrs_load_reporting_server_name_;
+  RefCountedPtr<LoadBalancingPolicy::Config> locality_picking_policy_;
+  RefCountedPtr<LoadBalancingPolicy::Config> endpoint_picking_policy_;
+  RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
 };
 
 class EdsLb : public LoadBalancingPolicy {
@@ -136,18 +141,16 @@ class EdsLb : public LoadBalancingPolicy {
   // A picker that handles drops.
   class DropPicker : public SubchannelPicker {
    public:
-    explicit DropPicker(RefCountedPtr<EdsLb> eds_policy)
-        : eds_policy_(std::move(eds_policy)),
-          drop_config_(eds_policy_->drop_config_),
-          child_picker_(eds_policy_->child_picker_) {}
-
-    ~DropPicker() { eds_policy_.reset(DEBUG_LOCATION, "DropPicker"); }
+    explicit DropPicker(EdsLb* eds_policy)
+        : drop_config_(eds_policy->drop_config_),
+          drop_stats_(eds_policy->drop_stats_),
+          child_picker_(eds_policy->child_picker_) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
-    RefCountedPtr<EdsLb> eds_policy_;
     RefCountedPtr<XdsApi::DropConfig> drop_config_;
+    RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<ChildPickerWrapper> child_picker_;
   };
 
@@ -209,6 +212,7 @@ class EdsLb : public LoadBalancingPolicy {
   void UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const char* name, const grpc_channel_args* args);
+  ServerAddressList CreateChildPolicyAddresses();
   grpc_channel_args* CreateChildPolicyArgsLocked(
       const grpc_channel_args* args_in);
   void MaybeUpdateDropPickerLocked();
@@ -222,11 +226,19 @@ class EdsLb : public LoadBalancingPolicy {
       const char* name, const grpc_channel_args* args);
   void MaybeExitFallbackMode();
 
-  const char* eds_service_name() const {
-    if (config_ != nullptr && config_->eds_service_name() != nullptr) {
+  const StringView GetEdsResourceName() const {
+    if (xds_client_from_channel_ == nullptr) return server_name_;
+    if (!config_->eds_service_name().empty()) {
       return config_->eds_service_name();
     }
-    return server_name_.c_str();
+    return config_->cluster_name();
+  }
+
+  // Returns a pair containing the cluster and eds_service_name to use
+  // for LRS load reporting.
+  std::pair<StringView, StringView> GetLrsClusterKey() const {
+    if (xds_client_from_channel_ == nullptr) return {server_name_, nullptr};
+    return {config_->cluster_name(), config_->eds_service_name()};
   }
 
   XdsClient* xds_client() const {
@@ -257,7 +269,7 @@ class EdsLb : public LoadBalancingPolicy {
   XdsApi::PriorityListUpdate priority_list_update_;
   RefCountedPtr<XdsApi::DropConfig> drop_config_;
 
-  XdsClientStats client_stats_;
+  RefCountedPtr<XdsClusterDropStats> drop_stats_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
@@ -296,7 +308,7 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
   // Handle drop.
   const std::string* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
-    eds_policy_->client_stats_.AddCallDropped(*drop_category);
+    if (drop_stats_ != nullptr) drop_stats_->AddCallDropped(*drop_category);
     PickResult result;
     result.type = PickResult::PICK_COMPLETE;
     return result;
@@ -561,8 +573,9 @@ void EdsLb::ShutdownLocked() {
   }
   shutting_down_ = true;
   MaybeCancelFallbackAtStartupChecks();
-  // Remove the child policy's interested_parties pollset_set from the
-  // xDS policy's interested_parties.
+  // Drop our ref to the child's picker, in case it's holding a ref to
+  // the child.
+  child_picker_.reset();
   if (child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
                                      interested_parties());
@@ -583,22 +596,16 @@ void EdsLb::ShutdownLocked() {
         pending_fallback_policy_->interested_parties(), interested_parties());
     pending_fallback_policy_.reset();
   }
-  // Drop our ref to the child's picker, in case it's holding a ref to
-  // the child.
-  child_picker_.reset();
-  // Cancel the endpoint watch here instead of in our dtor, because the
-  // watcher holds a ref to us.
-  xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
-                                        endpoint_watcher_);
-  if (config_->lrs_load_reporting_server_name().has_value()) {
-    // TODO(roth): We should pass the cluster name (in addition to the
-    // eds_service_name) when adding the client stats. To do so, we need to
-    // first find a way to plumb the cluster name down into this LB policy.
-    xds_client()->RemoveClientStats(
-        StringView(config_->lrs_load_reporting_server_name().value().c_str()),
-        StringView(eds_service_name()), &client_stats_);
+  drop_stats_.reset();
+  // Cancel the endpoint watch here instead of in our dtor if we are using the
+  // XdsResolver, because the watcher holds a ref to us and we might not be
+  // destroying the Xds client leading to a situation where the Xds lb policy is
+  // never destroyed.
+  if (xds_client_from_channel_ != nullptr) {
+    xds_client()->CancelEndpointDataWatch(GetEdsResourceName(),
+                                          endpoint_watcher_);
+    xds_client_from_channel_.reset();
   }
-  xds_client_from_channel_.reset();
   xds_client_.reset();
 }
 
@@ -608,7 +615,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   }
   const bool is_initial_update = args_ == nullptr;
   // Update config.
-  const char* old_eds_service_name = eds_service_name();
+  StringView old_eds_resource_name = GetEdsResourceName();
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
   // Update fallback address list.
@@ -617,8 +624,6 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  // Update child policy if needed.
-  if (child_policy_ != nullptr) UpdateChildPolicyLocked();
   // Update the existing fallback policy. The fallback policy config and/or the
   // fallback addresses may be new.
   if (fallback_policy_ != nullptr) UpdateFallbackPolicyLocked();
@@ -627,7 +632,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
     if (xds_client_from_channel_ == nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       xds_client_ = MakeOrphanable<XdsClient>(
-          combiner(), interested_parties(), StringView(eds_service_name()),
+          combiner(), interested_parties(), GetEdsResourceName(),
           nullptr /* service config watcher */, *args_, &error);
       // TODO(roth): If we decide that we care about fallback mode, add
       // proper error handling here.
@@ -645,46 +650,33 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
     fallback_at_startup_checks_pending_ = true;
     grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
   }
-  // Update endpoint watcher if needed.
+  // Update drop stats for load reporting if needed.
   if (is_initial_update ||
-      strcmp(old_eds_service_name, eds_service_name()) != 0) {
+      config_->lrs_load_reporting_server_name() !=
+          old_config->lrs_load_reporting_server_name()) {
+    drop_stats_.reset();
+    if (config_->lrs_load_reporting_server_name().has_value()) {
+      const auto key = GetLrsClusterKey();
+      drop_stats_ = xds_client()->AddClusterDropStats(
+          config_->lrs_load_reporting_server_name().value(),
+          key.first /*cluster_name*/, key.second /*eds_service_name*/);
+    }
+    MaybeUpdateDropPickerLocked();
+  }
+  // Update child policy if needed.
+  // Note that this comes after updating drop_stats_, since we want that
+  // to be used by any new picker we create here.
+  if (child_policy_ != nullptr) UpdateChildPolicyLocked();
+  // Update endpoint watcher if needed.
+  if (is_initial_update || old_eds_resource_name != GetEdsResourceName()) {
     if (!is_initial_update) {
-      xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
+      xds_client()->CancelEndpointDataWatch(old_eds_resource_name,
                                             endpoint_watcher_);
     }
     auto watcher =
         MakeUnique<EndpointWatcher>(Ref(DEBUG_LOCATION, "EndpointWatcher"));
     endpoint_watcher_ = watcher.get();
-    xds_client()->WatchEndpointData(StringView(eds_service_name()),
-                                    std::move(watcher));
-  }
-  // Update load reporting if needed.
-  // TODO(roth): Ideally, we should not collect any stats if load reporting
-  // is disabled, which would require changing this code to recreate
-  // all of the pickers whenever load reporting is enabled or disabled
-  // here.
-  if (is_initial_update ||
-      (config_->lrs_load_reporting_server_name().has_value()) !=
-          (old_config->lrs_load_reporting_server_name().has_value()) ||
-      (config_->lrs_load_reporting_server_name().has_value() &&
-       old_config->lrs_load_reporting_server_name().has_value() &&
-       config_->lrs_load_reporting_server_name().value() !=
-           old_config->lrs_load_reporting_server_name().value())) {
-    if (old_config != nullptr &&
-        old_config->lrs_load_reporting_server_name().has_value()) {
-      xds_client()->RemoveClientStats(
-          StringView(
-              old_config->lrs_load_reporting_server_name().value().c_str()),
-          StringView(old_eds_service_name), &client_stats_);
-    }
-    if (config_->lrs_load_reporting_server_name().has_value()) {
-      // TODO(roth): We should pass the cluster name (in addition to the
-      // eds_service_name) when adding the client stats. To do so, we need to
-      // first find a way to plumb the cluster name down into this LB policy.
-      xds_client()->AddClientStats(
-          StringView(config_->lrs_load_reporting_server_name().value().c_str()),
-          StringView(eds_service_name()), &client_stats_);
-    }
+    xds_client()->WatchEndpointData(GetEdsResourceName(), std::move(watcher));
   }
 }
 
@@ -711,12 +703,52 @@ void EdsLb::ResetBackoffLocked() {
 // child policy-related methods
 //
 
+void* LocalityNameCopy(void* p) {
+  XdsLocalityName* name = static_cast<XdsLocalityName*>(p);
+  name->Ref(DEBUG_LOCATION, "channel_args").release();
+  return p;
+}
+void LocalityNameDestroy(void* p) {
+  XdsLocalityName* name = static_cast<XdsLocalityName*>(p);
+  name->Unref(DEBUG_LOCATION, "channel_args");
+}
+int LocalityNameCmp(void* p1, void* p2) {
+  XdsLocalityName* name1 = static_cast<XdsLocalityName*>(p1);
+  XdsLocalityName* name2 = static_cast<XdsLocalityName*>(p2);
+  return name1->Compare(*name2);
+}
+const grpc_arg_pointer_vtable locality_name_arg_vtable = {
+    LocalityNameCopy, LocalityNameDestroy, LocalityNameCmp};
+
+ServerAddressList EdsLb::CreateChildPolicyAddresses() {
+  ServerAddressList addresses;
+  for (size_t priority = 0; priority < priority_list_update_.size();
+       ++priority) {
+    const auto* locality_map = priority_list_update_.Find(priority);
+    GPR_ASSERT(locality_map != nullptr);
+    for (const auto& p : locality_map->localities) {
+      const auto& locality = p.second;
+      for (size_t i = 0; i < locality.serverlist.size(); ++i) {
+        const ServerAddress& address = locality.serverlist[i];
+        grpc_arg new_arg = grpc_channel_arg_pointer_create(
+            const_cast<char*>(GRPC_ARG_ADDRESS_EDS_LOCALITY),
+            locality.name.get(), &locality_name_arg_vtable);
+        grpc_channel_args* args = grpc_channel_args_copy_and_add(
+            address.args(), &new_arg, 1);
+        addresses.emplace_back(address.address(), args);
+      }
+    }
+  }
+  return addresses;
+}
+
 void EdsLb::UpdateChildPolicyLocked() {
   if (shutting_down_) return;
   // Construct update args.
   UpdateArgs update_args;
+  update_args.addresses = CreateChildPolicyAddresses();
 // FIXME:
-  update_args.config = config_->child_policy();
+//  update_args.config = config_->child_policy();
   update_args.args = CreateChildPolicyArgsLocked(args_);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
@@ -815,8 +847,8 @@ void EdsLb::UpdateChildPolicyLocked() {
 grpc_channel_args* EdsLb::CreateChildPolicyArgsLocked(
     const grpc_channel_args* args_in) {
   const grpc_arg args_to_add[] = {
-      // A channel arg indicating if the target is a backend inferred from a
-      // grpclb load balancer.
+      // A channel arg indicating if the target is a backend inferred from an
+      // xds load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER),
           1),
@@ -862,7 +894,7 @@ EdsLb::CreateChildPolicyLocked(const char* name,
 void EdsLb::MaybeUpdateDropPickerLocked() {
   if (child_picker_ == nullptr) return;
   channel_control_helper()->UpdateState(
-      child_state_, MakeUnique<DropPicker>(Ref(DEBUG_LOCATION, "DropPicker")));
+      child_state_, MakeUnique<DropPicker>(this));
 }
 
 //
@@ -1066,17 +1098,83 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     std::vector<grpc_error*> error_list;
-    // Child policy.
-    RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    auto it = json.object_value().find("childPolicy");
-    if (it != json.object_value().end()) {
-      grpc_error* parse_error = GRPC_ERROR_NONE;
-      child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-          it->second, &parse_error);
-      if (child_policy == nullptr) {
-        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-        error_list.push_back(parse_error);
+    // Cluster name.
+    std::string cluster_name;
+    auto it = json.object_value().find("clusterName");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:clusterName error:required field missing"));
+    } else {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:clusterName error:type should be string"));
+      } else {
+        cluster_name = it->second.string_value();
       }
+    }
+    // EDS service name.
+    std::string eds_service_name;
+    it = json.object_value().find("edsServiceName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:edsServiceName error:type should be string"));
+      } else {
+        eds_service_name = it->second.string_value();
+      }
+    }
+    // LRS load reporting server name.
+    Optional<std::string> lrs_load_reporting_server_name;
+    it = json.object_value().find("lrsLoadReportingServerName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:lrsLoadReportingServerName error:type should be string"));
+      } else {
+        lrs_load_reporting_server_name.emplace(it->second.string_value());
+      }
+    }
+    // Locality-picking policy.
+    RefCountedPtr<LoadBalancingPolicy::Config> locality_picking_policy;
+    Json locality_picking_policy_config;
+    it = json.object_value().find("localityPickingPolicy");
+    if (it == json.object_value().end()) {
+      locality_picking_policy_config = Json::Array{
+        Json::Object{
+            {"weighted_target_experimental", Json::Object()},
+        },
+      };
+    } else {
+      locality_picking_policy_config = it->second;
+    }
+    grpc_error* parse_error = GRPC_ERROR_NONE;
+    locality_picking_policy =
+        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            locality_picking_policy_config, &parse_error);
+    if (locality_picking_policy == nullptr) {
+      GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+      error_list.push_back(parse_error);
+    }
+    // Endpoint-picking policy.
+    RefCountedPtr<LoadBalancingPolicy::Config> endpoint_picking_policy;
+    Json endpoint_picking_policy_config;
+    it = json.object_value().find("endpointPickingPolicy");
+    if (it == json.object_value().end()) {
+      endpoint_picking_policy_config = Json::Array{
+        Json::Object{
+            {"round_robin", Json::Object()},
+        },
+      };
+    } else {
+      endpoint_picking_policy_config = it->second;
+    }
+    parse_error = GRPC_ERROR_NONE;
+    endpoint_picking_policy =
+        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            endpoint_picking_policy_config, &parse_error);
+    if (endpoint_picking_policy == nullptr) {
+      GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+      error_list.push_back(parse_error);
     }
     // Fallback policy.
     RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy;
@@ -1090,38 +1188,12 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(parse_error);
       }
     }
-    // EDS service name.
-    const char* eds_service_name = nullptr;
-    it = json.object_value().find("edsServiceName");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:edsServiceName error:type should be string"));
-      } else {
-        eds_service_name = it->second.string_value().c_str();
-      }
-    }
-    // LRS load reporting server name.
-    const char* lrs_load_reporting_server_name = nullptr;
-    it = json.object_value().find("lrsLoadReportingServerName");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be string"));
-      } else {
-        lrs_load_reporting_server_name = it->second.string_value().c_str();
-      }
-    }
     if (error_list.empty()) {
-      Optional<std::string> optional_lrs_load_reporting_server_name;
-      if (lrs_load_reporting_server_name != nullptr) {
-        optional_lrs_load_reporting_server_name.emplace(
-            std::string(lrs_load_reporting_server_name));
-      }
       return MakeRefCounted<EdsLbConfig>(
-          std::move(child_policy), std::move(fallback_policy),
-          eds_service_name == nullptr ? "" : eds_service_name,
-          std::move(optional_lrs_load_reporting_server_name));
+          std::move(cluster_name), std::move(eds_service_name),
+          std::move(lrs_load_reporting_server_name),
+          std::move(locality_picking_policy),
+          std::move(endpoint_picking_policy), std::move(fallback_policy));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Xds Parser", &error_list);
       return nullptr;

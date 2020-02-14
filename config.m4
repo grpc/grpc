@@ -61,6 +61,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \

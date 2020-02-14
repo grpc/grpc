@@ -77,16 +77,14 @@ class LrsLbConfig : public LoadBalancingPolicy::Config {
  public:
   LrsLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
               std::string cluster_name, std::string eds_service_name,
-              std::string lrs_load_reporting_server_name, std::string region,
-              std::string zone, std::string subzone)
+              std::string lrs_load_reporting_server_name,
+              RefCountedPtr<XdsLocalityName> locality_name)
       : child_policy_(std::move(child_policy)),
         cluster_name_(std::move(cluster_name)),
         eds_service_name_(std::move(eds_service_name)),
         lrs_load_reporting_server_name_(
             std::move(lrs_load_reporting_server_name)),
-        region_(std::move(region)),
-        zone_(std::move(zone)),
-        subzone_(std::move(subzone)) {}
+        locality_name_(std::move(locality_name)) {}
 
   const char* name() const override { return kLrs; }
 
@@ -98,18 +96,16 @@ class LrsLbConfig : public LoadBalancingPolicy::Config {
   const std::string& lrs_load_reporting_server_name() const {
     return lrs_load_reporting_server_name_;
   };
-  const std::string& region() const { return region_; }
-  const std::string& zone() const { return zone_; }
-  const std::string& subzone() const { return subzone_; }
+  RefCountedPtr<XdsLocalityName> locality_name() const {
+    return locality_name_;
+  }
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
   std::string cluster_name_;
   std::string eds_service_name_;
   std::string lrs_load_reporting_server_name_;
-  std::string region_;
-  std::string zone_;
-  std::string subzone_;
+  RefCountedPtr<XdsLocalityName> locality_name_;
 };
 
 class LrsLb : public LoadBalancingPolicy {
@@ -127,18 +123,15 @@ class LrsLb : public LoadBalancingPolicy {
    public:
     LoadReportingPicker(
         std::unique_ptr<SubchannelPicker> picker,
-        RefCountedPtr<XdsClientStats::LocalityStats> locality_stats)
+        RefCountedPtr<XdsClusterLocalityStats> locality_stats)
         : picker_(std::move(picker)),
-          locality_stats_(std::move(locality_stats)) {
-      locality_stats_->RefByPicker();
-    }
-    ~LoadReportingPicker() { locality_stats_->UnrefByPicker(); }
+          locality_stats_(std::move(locality_stats)) {}
 
     PickResult Pick(PickArgs args);
 
    private:
     std::unique_ptr<SubchannelPicker> picker_;
-    RefCountedPtr<XdsClientStats::LocalityStats> locality_stats_;
+    RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
   };
 
   class Helper : public ChannelControlHelper {
@@ -181,12 +174,10 @@ class LrsLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // The xds client.
-// FIXME: rename to remove "_from_channel" suffix
   RefCountedPtr<XdsClient> xds_client_;
 
   // The stats for client-side load reporting.
-// FIXME: refactor this, since it will only ever need one locality here
-  XdsClientStats client_stats_;
+  RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
@@ -205,7 +196,7 @@ LoadBalancingPolicy::PickResult LrsLb::LoadReportingPicker::Pick(
     // Record a call started.
     locality_stats_->AddCallStarted();
     // Intercept the recv_trailing_metadata op to record call completion.
-    XdsClientStats::LocalityStats* locality_stats =
+    XdsClusterLocalityStats* locality_stats =
         locality_stats_->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
     result.recv_trailing_metadata_ready =
         // Note: This callback does not run in either the control plane
@@ -257,13 +248,7 @@ void LrsLb::ShutdownLocked() {
         pending_child_policy_->interested_parties(), interested_parties());
     pending_child_policy_.reset();
   }
-// FIXME: do this
-  // TODO(roth): We should pass the cluster name (in addition to the
-  // eds_service_name) when adding the client stats. To do so, we need to
-  // first find a way to plumb the cluster name down into this LB policy.
-  xds_client_->RemoveClientStats(
-      StringView(config_->lrs_load_reporting_server_name().c_str()),
-      StringView(config_->eds_service_name()), &client_stats_);
+  locality_stats_.reset();
   xds_client_.reset();
 }
 
@@ -277,7 +262,6 @@ void LrsLb::ResetBackoffLocked() {
 }
 
 void LrsLb::UpdateLocked(UpdateArgs args) {
-  if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
     gpr_log(GPR_INFO, "[lrs_lb %p] Received update", this);
   }
@@ -290,24 +274,18 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  // Update child policy.
-  UpdateChildPolicyLocked();
   // Update load reporting.
   if (is_initial_update ||
       config_->lrs_load_reporting_server_name() !=
            old_config->lrs_load_reporting_server_name()) {
-    if (old_config != nullptr) {
-      xds_client_->RemoveClientStats(
-          StringView(old_config->lrs_load_reporting_server_name()),
-          StringView(old_config->eds_service_name()), &client_stats_);
-    }
-    // TODO(roth): We should pass the cluster name (in addition to the
-    // eds_service_name) when adding the client stats. To do so, we need to
-    // first find a way to plumb the cluster name down into this LB policy.
-    xds_client_->AddClientStats(
-        StringView(config_->lrs_load_reporting_server_name()),
-        StringView(config_->eds_service_name()), &client_stats_);
+    locality_stats_ = xds_client_->AddClusterLocalityStats(
+        config_->lrs_load_reporting_server_name(),
+        config_->cluster_name(), config_->eds_service_name(),
+        config_->locality_name());
+// FIXME: update load reporting picker
   }
+  // Update child policy.
+  UpdateChildPolicyLocked();
 }
 
 OrphanablePtr<LoadBalancingPolicy> LrsLb::CreateChildPolicyLocked(
@@ -494,11 +472,7 @@ void LrsLb::Helper::UpdateState(
   lrs_policy_->channel_control_helper()->UpdateState(
       state,
       grpc_core::MakeUnique<LoadReportingPicker>(
-          std::move(picker),
-          lrs_policy_->client_stats_.FindLocalityStats(
-              MakeRefCounted<XdsLocalityName>(
-                  lrs_policy_->config_->region(), lrs_policy_->config_->zone(),
-                  lrs_policy_->config_->subzone()))));
+          std::move(picker), lrs_policy_->locality_stats_));
 }
 
 void LrsLb::Helper::RequestReresolution() {
@@ -586,19 +560,17 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // Locality.
-    std::string region;
-    std::string zone;
-    std::string subzone;
+    RefCountedPtr<XdsLocalityName> locality_name;
     it = json.object_value().find("locality");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:locality error:required field missing"));
     } else {
       std::vector<grpc_error*> child_errors =
-          ParseLocality(it->second, &region, &zone, &subzone);
+          ParseLocality(it->second, &locality_name);
       if (!child_errors.empty()) {
         error_list.push_back(
-            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
+            GRPC_ERROR_CREATE_FROM_VECTOR("field:locality", &child_errors));
       }
     }
     // LRS load reporting server name.
@@ -622,46 +594,54 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
     return MakeRefCounted<LrsLbConfig>(
         std::move(child_policy), std::move(cluster_name),
         eds_service_name == nullptr ? "" : eds_service_name,
-        std::move(lrs_load_reporting_server_name), std::move(region),
-        std::move(zone), std::move(subzone));
+        std::move(lrs_load_reporting_server_name), std::move(locality_name));
   }
 
  private:
   static std::vector<grpc_error*> ParseLocality(
-      const Json& json, std::string* region, std::string* zone,
-      std::string* subzone) {
+      const Json& json, RefCountedPtr<XdsLocalityName>* name) {
     std::vector<grpc_error*> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "locality field is not an object"));
       return error_list;
     }
+    std::string region;
     auto it = json.object_value().find("region");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "\"region\" field is not a string"));
       } else {
-        *region = it->second.string_value();
+        region = it->second.string_value();
       }
     }
+    std::string zone;
     it = json.object_value().find("zone");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "\"zone\" field is not a string"));
       } else {
-        *zone = it->second.string_value();
+        zone = it->second.string_value();
       }
     }
+    std::string subzone;
     it = json.object_value().find("subzone");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "\"subzone\" field is not a string"));
       } else {
-        *subzone = it->second.string_value();
+        subzone = it->second.string_value();
       }
+    }
+    if (region.empty() && zone.empty() && subzone.empty()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "at least one of region, zone, or subzone must be set"));
+    }
+    if (error_list.empty()) {
+      *name = MakeRefCounted<XdsLocalityName>(region, zone, subzone);
     }
     return error_list;
   }

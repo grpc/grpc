@@ -29,5 +29,8 @@
 #define GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER \
   "grpc.address_is_backend_from_xds_load_balancer"
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H \
-        */
+// Channel arg indicating the EDS locality of an address.
+// Value is a ref to an XdsLocalityName object.
+#define GRPC_ARG_ADDRESS_EDS_LOCALITY "grpc.address_eds_locality"
+
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H */
