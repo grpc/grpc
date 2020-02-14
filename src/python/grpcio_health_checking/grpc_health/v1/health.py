@@ -15,11 +15,14 @@
 
 import collections
 import threading
-
+import sys
 import grpc
 
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
+
+if sys.version_info[0] > 2:
+    from ._async import AsyncHealthServicer
 
 SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name['Health'].full_name
 
