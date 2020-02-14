@@ -19,7 +19,7 @@ type ClientWorker struct {
 
 func NewClientWorker(address string) (Worker, error) {
 	worker := new(ClientWorker)
-	connection, err := grpc.Dial(address)
+	connection, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return nil, fmt.Errorf("Unable to connect to client worker: %v", err)
 	}

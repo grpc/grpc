@@ -19,7 +19,7 @@ type ServerWorker struct {
 
 func NewServerWorker(address string) (Worker, error) {
 	worker := new(ServerWorker)
-	connection, err := grpc.Dial(address)
+	connection, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return nil, fmt.Errorf("Unable to connect to server worker: %v", err)
 	}
