@@ -13,7 +13,7 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
-from typing import Any, AsyncIterable, Optional, Sequence, AbstractSet, Text
+from typing import Any, AsyncIterable, Optional, Sequence, AbstractSet
 from weakref import WeakSet
 
 import logging
@@ -321,7 +321,7 @@ class Channel:
     _unary_unary_interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
     _ongoing_calls: _OngoingCalls
 
-    def __init__(self, target: Text, options: ChannelArgumentType,
+    def __init__(self, target: str, options: ChannelArgumentType,
                  credentials: Optional[grpc.ChannelCredentials],
                  compression: Optional[grpc.Compression],
                  interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]):
@@ -470,7 +470,7 @@ class Channel:
 
     def unary_unary(
             self,
-            method: Text,
+            method: str,
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> UnaryUnaryMultiCallable:
@@ -496,7 +496,7 @@ class Channel:
 
     def unary_stream(
             self,
-            method: Text,
+            method: str,
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> UnaryStreamMultiCallable:
@@ -507,7 +507,7 @@ class Channel:
 
     def stream_unary(
             self,
-            method: Text,
+            method: str,
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamUnaryMultiCallable:
@@ -518,7 +518,7 @@ class Channel:
 
     def stream_stream(
             self,
-            method: Text,
+            method: str,
             request_serializer: Optional[SerializingFunction] = None,
             response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamStreamMultiCallable:

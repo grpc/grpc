@@ -115,6 +115,9 @@ message SimpleResponse {
   string server_id = 4;
   // gRPCLB Path.
   GrpclbRouteType grpclb_route_type = 5;
+
+  // Server hostname.
+  string hostname = 6;
 }
 
 // Client-streaming request.
@@ -189,4 +192,18 @@ message ReconnectParams {
 message ReconnectInfo {
   bool passed = 1;
   repeated int32 backoff_ms = 2;
+}
+
+message LoadBalancerStatsRequest {
+  // Request stats for the next num_rpcs sent by client.
+  int32 num_rpcs = 1;
+  // If num_rpcs have not completed within timeout_sec, return partial results.
+  int32 timeout_sec = 2;
+}
+
+message LoadBalancerStatsResponse {
+  // The number of completed RPCs for each peer.
+  map<string, int32> rpcs_by_peer = 1;
+  // The number of RPCs that failed to record a remote peer.
+  int32 num_failures = 2;
 }

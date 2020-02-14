@@ -33,16 +33,25 @@
 
 namespace grpc_core {
 
+// Forward declaration to avoid circular dependency.
+class XdsClient;
+
+// Locality name.
 class XdsLocalityName : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
-    bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
-                    const RefCountedPtr<XdsLocalityName>& rhs) const {
+    bool operator()(const XdsLocalityName* lhs,
+                    const XdsLocalityName* rhs) const {
       int cmp_result = lhs->region_.compare(rhs->region_);
       if (cmp_result != 0) return cmp_result < 0;
       cmp_result = lhs->zone_.compare(rhs->zone_);
       if (cmp_result != 0) return cmp_result < 0;
       return lhs->sub_zone_.compare(rhs->sub_zone_) < 0;
+    }
+
+    bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
+                    const RefCountedPtr<XdsLocalityName>& rhs) const {
+      return (*this)(lhs.get(), rhs.get());
     }
   };
 
@@ -77,148 +86,112 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   UniquePtr<char> human_readable_string_;
 };
 
-// The stats classes (i.e., XdsClientStats, LocalityStats, and LoadMetric) can
-// be taken a snapshot (and reset) to populate the load report. The snapshots
-// are contained in the respective Snapshot structs. The Snapshot structs have
-// no synchronization. The stats classes use several different synchronization
-// methods. 1. Most of the counters are Atomic<>s for performance. 2. Some of
-// the Map<>s are protected by Mutex if we are not guaranteed that the accesses
-// to them are synchronized by the callers. 3. The Map<>s to which the accesses
-// are already synchronized by the callers do not have additional
-// synchronization here. Note that the Map<>s we mentioned in 2 and 3 refer to
-// the map's tree structure rather than the content in each tree node.
-class XdsClientStats {
+// Drop stats for an xds cluster.
+class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
  public:
-  class LocalityStats : public RefCounted<LocalityStats> {
-   public:
-    class LoadMetric {
-     public:
-      struct Snapshot {
-        bool IsAllZero() const;
+  using DroppedRequestsMap = std::map<std::string /* category */, uint64_t>;
 
-        uint64_t num_requests_finished_with_metric;
-        double total_metric_value;
-      };
+  XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
+                      StringView lrs_server_name, StringView cluster_name,
+                      StringView eds_service_name);
+  ~XdsClusterDropStats();
 
-      // Returns a snapshot of this instance and reset all the accumulative
-      // counters.
-      Snapshot GetSnapshotAndReset();
+  // Returns a snapshot of this instance and resets all the counters.
+  DroppedRequestsMap GetSnapshotAndReset();
 
-     private:
-      uint64_t num_requests_finished_with_metric_{0};
-      double total_metric_value_{0};
-    };
-
-    using LoadMetricMap = std::map<std::string, LoadMetric>;
-    using LoadMetricSnapshotMap = std::map<std::string, LoadMetric::Snapshot>;
-
-    struct Snapshot {
-      // TODO(juanlishen): Change this to const method when const_iterator is
-      // added to Map<>.
-      bool IsAllZero();
-
-      uint64_t total_successful_requests;
-      uint64_t total_requests_in_progress;
-      uint64_t total_error_requests;
-      uint64_t total_issued_requests;
-      LoadMetricSnapshotMap load_metric_stats;
-    };
-
-    // Returns a snapshot of this instance and reset all the accumulative
-    // counters.
-    Snapshot GetSnapshotAndReset();
-
-    // Each XdsLb::PickerWrapper holds a ref to the perspective LocalityStats.
-    // If the refcount is 0, there won't be new calls recorded to the
-    // LocalityStats, so the LocalityStats can be safely deleted when all the
-    // in-progress calls have finished.
-    // Only be called from the control plane combiner.
-    void RefByPicker() { picker_refcount_.FetchAdd(1, MemoryOrder::ACQ_REL); }
-    // Might be called from the control plane combiner or the data plane
-    // combiner.
-    // TODO(juanlishen): Once https://github.com/grpc/grpc/pull/19390 is merged,
-    //  this method will also only be invoked in the control plane combiner.
-    //  We may then be able to simplify the LocalityStats' lifetime by making it
-    //  RefCounted<> and populating the protobuf in its dtor.
-    void UnrefByPicker() { picker_refcount_.FetchSub(1, MemoryOrder::ACQ_REL); }
-    // Only be called from the control plane combiner.
-    // The only place where the picker_refcount_ can be increased is
-    // RefByPicker(), which also can only be called from the control plane
-    // combiner. Also, if the picker_refcount_ is 0, total_requests_in_progress_
-    // can't be increased from 0. So it's safe to delete the LocalityStats right
-    // after this method returns true.
-    bool IsSafeToDelete() {
-      return picker_refcount_.FetchAdd(0, MemoryOrder::ACQ_REL) == 0 &&
-             total_requests_in_progress_.FetchAdd(0, MemoryOrder::ACQ_REL) == 0;
-    }
-
-    void AddCallStarted();
-    void AddCallFinished(bool fail = false);
-
-   private:
-    Atomic<uint64_t> total_successful_requests_{0};
-    Atomic<uint64_t> total_requests_in_progress_{0};
-    // Requests that were issued (not dropped) but failed.
-    Atomic<uint64_t> total_error_requests_{0};
-    Atomic<uint64_t> total_issued_requests_{0};
-    // Protects load_metric_stats_. A mutex is necessary because the length of
-    // load_metric_stats_ can be accessed by both the callback intercepting the
-    // call's recv_trailing_metadata (not from any combiner) and the load
-    // reporting thread (from the control plane combiner).
-    Mutex load_metric_stats_mu_;
-    LoadMetricMap load_metric_stats_;
-    // Can be accessed from either the control plane combiner or the data plane
-    // combiner.
-    Atomic<uint8_t> picker_refcount_{0};
-  };
-
-  // TODO(juanlishen): The value type of Map<> must be movable in current
-  // implementation. To avoid making LocalityStats movable, we wrap it by
-  // std::unique_ptr<>. We should remove this wrapper if the value type of Map<>
-  // doesn't have to be movable.
-  using LocalityStatsMap =
-      std::map<RefCountedPtr<XdsLocalityName>, RefCountedPtr<LocalityStats>,
-               XdsLocalityName::Less>;
-  using LocalityStatsSnapshotMap =
-      std::map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
-               XdsLocalityName::Less>;
-  using DroppedRequestsMap = std::map<std::string, uint64_t>;
-  using DroppedRequestsSnapshotMap = DroppedRequestsMap;
-
-  struct Snapshot {
-    // TODO(juanlishen): Change this to const method when const_iterator is
-    // added to Map<>.
-    bool IsAllZero();
-
-    LocalityStatsSnapshotMap upstream_locality_stats;
-    uint64_t total_dropped_requests;
-    DroppedRequestsSnapshotMap dropped_requests;
-    // The actual load report interval.
-    grpc_millis load_report_interval;
-  };
-
-  // Returns a snapshot of this instance and reset all the accumulative
-  // counters.
-  Snapshot GetSnapshotAndReset();
-
-  void MaybeInitLastReportTime();
-  RefCountedPtr<LocalityStats> FindLocalityStats(
-      const RefCountedPtr<XdsLocalityName>& locality_name);
-  void PruneLocalityStats();
   void AddCallDropped(const std::string& category);
 
  private:
-  // The stats for each locality.
-  LocalityStatsMap upstream_locality_stats_;
-  Atomic<uint64_t> total_dropped_requests_{0};
+  RefCountedPtr<XdsClient> xds_client_;
+  StringView lrs_server_name_;
+  StringView cluster_name_;
+  StringView eds_service_name_;
   // Protects dropped_requests_. A mutex is necessary because the length of
   // dropped_requests_ can be accessed by both the picker (from data plane
-  // combiner) and the load reporting thread (from the control plane combiner).
-  Mutex dropped_requests_mu_;
+  // mutex) and the load reporting thread (from the control plane combiner).
+  Mutex mu_;
   DroppedRequestsMap dropped_requests_;
-  // The timestamp of last reporting. For the LB-policy-wide first report, the
-  // last_report_time is the time we scheduled the first reporting timer.
-  grpc_millis last_report_time_ = -1;
+};
+
+// Locality stats for an xds cluster.
+class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
+ public:
+  struct BackendMetric {
+    uint64_t num_requests_finished_with_metric;
+    double total_metric_value;
+
+    BackendMetric& operator+=(const BackendMetric& other) {
+      num_requests_finished_with_metric +=
+          other.num_requests_finished_with_metric;
+      total_metric_value += other.total_metric_value;
+      return *this;
+    }
+
+    bool IsZero() const {
+      return num_requests_finished_with_metric == 0 && total_metric_value == 0;
+    }
+  };
+
+  struct Snapshot {
+    uint64_t total_successful_requests;
+    uint64_t total_requests_in_progress;
+    uint64_t total_error_requests;
+    uint64_t total_issued_requests;
+    std::map<std::string, BackendMetric> backend_metrics;
+
+    Snapshot& operator+=(const Snapshot& other) {
+      total_successful_requests += other.total_successful_requests;
+      total_requests_in_progress += other.total_requests_in_progress;
+      total_error_requests += other.total_error_requests;
+      total_issued_requests += other.total_issued_requests;
+      for (const auto& p : other.backend_metrics) {
+        backend_metrics[p.first] += p.second;
+      }
+      return *this;
+    }
+
+    bool IsZero() const {
+      if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
+          total_error_requests != 0 || total_issued_requests != 0) {
+        return false;
+      }
+      for (const auto& p : backend_metrics) {
+        if (!p.second.IsZero()) return false;
+      }
+      return true;
+    }
+  };
+
+  XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client,
+                          StringView lrs_server_name, StringView cluster_name,
+                          StringView eds_service_name,
+                          RefCountedPtr<XdsLocalityName> name);
+  ~XdsClusterLocalityStats();
+
+  // Returns a snapshot of this instance and resets all the counters.
+  Snapshot GetSnapshotAndReset();
+
+  void AddCallStarted();
+  void AddCallFinished(bool fail = false);
+
+ private:
+  RefCountedPtr<XdsClient> xds_client_;
+  StringView lrs_server_name_;
+  StringView cluster_name_;
+  StringView eds_service_name_;
+  RefCountedPtr<XdsLocalityName> name_;
+
+  Atomic<uint64_t> total_successful_requests_{0};
+  Atomic<uint64_t> total_requests_in_progress_{0};
+  Atomic<uint64_t> total_error_requests_{0};
+  Atomic<uint64_t> total_issued_requests_{0};
+
+  // Protects backend_metrics_. A mutex is necessary because the length of
+  // backend_metrics_ can be accessed by both the callback intercepting the
+  // call's recv_trailing_metadata (not from the control plane combiner) and
+  // the load reporting thread (from the control plane combiner).
+  Mutex backend_metrics_mu_;
+  std::map<std::string, BackendMetric> backend_metrics_;
 };
 
 }  // namespace grpc_core

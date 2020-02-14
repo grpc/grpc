@@ -26,6 +26,8 @@
 
 #include "src/core/lib/json/json.h"
 
+#include "src/core/lib/gprpp/string_view.h"
+
 namespace grpc_core {
 
 namespace {
@@ -43,35 +45,33 @@ namespace {
  */
 class JsonWriter {
  public:
-  static char* Dump(const grpc_json* json, int indent);
+  static std::string Dump(const Json& value, int indent);
 
  private:
   explicit JsonWriter(int indent) : indent_(indent) {}
 
   void OutputCheck(size_t needed);
   void OutputChar(char c);
-  void OutputStringWithLen(const char* str, size_t len);
-  void OutputString(const char* str);
+  void OutputString(const StringView str);
   void OutputIndent();
   void ValueEnd();
   void EscapeUtf16(uint16_t utf16);
-  void EscapeString(const char* string);
-  void ContainerBegins(grpc_json_type type);
-  void ContainerEnds(grpc_json_type type);
-  void ObjectKey(const char* string);
-  void ValueRaw(const char* string);
-  void ValueRawWithLen(const char* string, size_t len);
-  void ValueString(const char* string);
-  void DumpRecursive(const grpc_json* json, int in_object);
+  void EscapeString(const std::string& string);
+  void ContainerBegins(Json::Type type);
+  void ContainerEnds(Json::Type type);
+  void ObjectKey(const std::string& string);
+  void ValueRaw(const std::string& string);
+  void ValueString(const std::string& string);
+
+  void DumpObject(const Json::Object& object);
+  void DumpArray(const Json::Array& array);
+  void DumpValue(const Json& value);
 
   int indent_;
   int depth_ = 0;
-  int container_empty_ = 1;
-  int got_key_ = 0;
-  char* output_ = nullptr;
-  size_t free_space_ = 0;
-  size_t string_len_ = 0;
-  size_t allocated_ = 0;
+  bool container_empty_ = true;
+  bool got_key_ = false;
+  std::string output_;
 };
 
 /* This function checks if there's enough space left in the output buffer,
@@ -79,31 +79,22 @@ class JsonWriter {
  * bytes at a time (or multiples thereof).
  */
 void JsonWriter::OutputCheck(size_t needed) {
-  if (free_space_ >= needed) return;
-  needed -= free_space_;
+  size_t free_space = output_.capacity() - output_.size();
+  if (free_space >= needed) return;
+  needed -= free_space;
   /* Round up by 256 bytes. */
   needed = (needed + 0xff) & ~0xffU;
-  output_ = static_cast<char*>(gpr_realloc(output_, allocated_ + needed));
-  free_space_ += needed;
-  allocated_ += needed;
+  output_.reserve(output_.capacity() + needed);
 }
 
 void JsonWriter::OutputChar(char c) {
   OutputCheck(1);
-  output_[string_len_++] = c;
-  free_space_--;
+  output_.push_back(c);
 }
 
-void JsonWriter::OutputStringWithLen(const char* str, size_t len) {
-  OutputCheck(len);
-  memcpy(output_ + string_len_, str, len);
-  string_len_ += len;
-  free_space_ -= len;
-}
-
-void JsonWriter::OutputString(const char* str) {
-  size_t len = strlen(str);
-  OutputStringWithLen(str, len);
+void JsonWriter::OutputString(const StringView str) {
+  OutputCheck(str.size());
+  output_.append(str.data(), str.size());
 }
 
 void JsonWriter::OutputIndent() {
@@ -119,16 +110,16 @@ void JsonWriter::OutputIndent() {
     return;
   }
   while (spaces >= (sizeof(spacesstr) - 1)) {
-    OutputStringWithLen(spacesstr, sizeof(spacesstr) - 1);
+    OutputString(StringView(spacesstr, sizeof(spacesstr) - 1));
     spaces -= static_cast<unsigned>(sizeof(spacesstr) - 1);
   }
   if (spaces == 0) return;
-  OutputStringWithLen(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces);
+  OutputString(StringView(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
 }
 
 void JsonWriter::ValueEnd() {
   if (container_empty_) {
-    container_empty_ = 0;
+    container_empty_ = false;
     if (indent_ == 0 || depth_ == 0) return;
     OutputChar('\n');
   } else {
@@ -140,17 +131,17 @@ void JsonWriter::ValueEnd() {
 
 void JsonWriter::EscapeUtf16(uint16_t utf16) {
   static const char hex[] = "0123456789abcdef";
-  OutputStringWithLen("\\u", 2);
+  OutputString(StringView("\\u", 2));
   OutputChar(hex[(utf16 >> 12) & 0x0f]);
   OutputChar(hex[(utf16 >> 8) & 0x0f]);
   OutputChar(hex[(utf16 >> 4) & 0x0f]);
   OutputChar(hex[(utf16)&0x0f]);
 }
 
-void JsonWriter::EscapeString(const char* string) {
+void JsonWriter::EscapeString(const std::string& string) {
   OutputChar('"');
-  while (true) {
-    uint8_t c = static_cast<uint8_t>(*string++);
+  for (size_t idx = 0; idx < string.size(); ++idx) {
+    uint8_t c = static_cast<uint8_t>(string[idx]);
     if (c == 0) {
       break;
     } else if (c >= 32 && c <= 126) {
@@ -159,19 +150,19 @@ void JsonWriter::EscapeString(const char* string) {
     } else if (c < 32 || c == 127) {
       switch (c) {
         case '\b':
-          OutputStringWithLen("\\b", 2);
+          OutputString(StringView("\\b", 2));
           break;
         case '\f':
-          OutputStringWithLen("\\f", 2);
+          OutputString(StringView("\\f", 2));
           break;
         case '\n':
-          OutputStringWithLen("\\n", 2);
+          OutputString(StringView("\\n", 2));
           break;
         case '\r':
-          OutputStringWithLen("\\r", 2);
+          OutputString(StringView("\\r", 2));
           break;
         case '\t':
-          OutputStringWithLen("\\t", 2);
+          OutputString(StringView("\\t", 2));
           break;
         default:
           EscapeUtf16(c);
@@ -196,7 +187,13 @@ void JsonWriter::EscapeString(const char* string) {
       }
       for (i = 0; i < extra; i++) {
         utf32 <<= 6;
-        c = static_cast<uint8_t>(*string++);
+        ++idx;
+        /* Breaks out and bail if we hit the end of the string. */
+        if (idx == string.size()) {
+          valid = 0;
+          break;
+        }
+        c = static_cast<uint8_t>(string[idx]);
         /* Breaks out and bail on any invalid UTF-8 sequence, including \0. */
         if ((c & 0xc0) != 0x80) {
           valid = 0;
@@ -239,98 +236,101 @@ void JsonWriter::EscapeString(const char* string) {
   OutputChar('"');
 }
 
-void JsonWriter::ContainerBegins(grpc_json_type type) {
+void JsonWriter::ContainerBegins(Json::Type type) {
   if (!got_key_) ValueEnd();
   OutputIndent();
-  OutputChar(type == GRPC_JSON_OBJECT ? '{' : '[');
-  container_empty_ = 1;
-  got_key_ = 0;
+  OutputChar(type == Json::Type::OBJECT ? '{' : '[');
+  container_empty_ = true;
+  got_key_ = false;
   depth_++;
 }
 
-void JsonWriter::ContainerEnds(grpc_json_type type) {
+void JsonWriter::ContainerEnds(Json::Type type) {
   if (indent_ && !container_empty_) OutputChar('\n');
   depth_--;
   if (!container_empty_) OutputIndent();
-  OutputChar(type == GRPC_JSON_OBJECT ? '}' : ']');
-  container_empty_ = 0;
-  got_key_ = 0;
+  OutputChar(type == Json::Type::OBJECT ? '}' : ']');
+  container_empty_ = false;
+  got_key_ = false;
 }
 
-void JsonWriter::ObjectKey(const char* string) {
+void JsonWriter::ObjectKey(const std::string& string) {
   ValueEnd();
   OutputIndent();
   EscapeString(string);
   OutputChar(':');
-  got_key_ = 1;
+  got_key_ = true;
 }
 
-void JsonWriter::ValueRaw(const char* string) {
+void JsonWriter::ValueRaw(const std::string& string) {
   if (!got_key_) ValueEnd();
   OutputIndent();
   OutputString(string);
-  got_key_ = 0;
+  got_key_ = false;
 }
 
-void JsonWriter::ValueRawWithLen(const char* string, size_t len) {
-  if (!got_key_) ValueEnd();
-  OutputIndent();
-  OutputStringWithLen(string, len);
-  got_key_ = 0;
-}
-
-void JsonWriter::ValueString(const char* string) {
+void JsonWriter::ValueString(const std::string& string) {
   if (!got_key_) ValueEnd();
   OutputIndent();
   EscapeString(string);
-  got_key_ = 0;
+  got_key_ = false;
 }
 
-void JsonWriter::DumpRecursive(const grpc_json* json, int in_object) {
-  while (json != nullptr) {
-    if (in_object) ObjectKey(json->key);
-    switch (json->type) {
-      case GRPC_JSON_OBJECT:
-      case GRPC_JSON_ARRAY:
-        ContainerBegins(json->type);
-        if (json->child != nullptr) {
-          DumpRecursive(json->child, json->type == GRPC_JSON_OBJECT);
-        }
-        ContainerEnds(json->type);
-        break;
-      case GRPC_JSON_STRING:
-        ValueString(json->value);
-        break;
-      case GRPC_JSON_NUMBER:
-        ValueRaw(json->value);
-        break;
-      case GRPC_JSON_TRUE:
-        ValueRawWithLen("true", 4);
-        break;
-      case GRPC_JSON_FALSE:
-        ValueRawWithLen("false", 5);
-        break;
-      case GRPC_JSON_NULL:
-        ValueRawWithLen("null", 4);
-        break;
-      default:
-        GPR_UNREACHABLE_CODE(abort());
-    }
-    json = json->next;
+void JsonWriter::DumpObject(const Json::Object& object) {
+  ContainerBegins(Json::Type::OBJECT);
+  for (const auto& p : object) {
+    ObjectKey(p.first.data());
+    DumpValue(p.second);
+  }
+  ContainerEnds(Json::Type::OBJECT);
+}
+
+void JsonWriter::DumpArray(const Json::Array& array) {
+  ContainerBegins(Json::Type::ARRAY);
+  for (const auto& v : array) {
+    DumpValue(v);
+  }
+  ContainerEnds(Json::Type::ARRAY);
+}
+
+void JsonWriter::DumpValue(const Json& value) {
+  switch (value.type()) {
+    case Json::Type::OBJECT:
+      DumpObject(value.object_value());
+      break;
+    case Json::Type::ARRAY:
+      DumpArray(value.array_value());
+      break;
+    case Json::Type::STRING:
+      ValueString(value.string_value());
+      break;
+    case Json::Type::NUMBER:
+      ValueRaw(value.string_value());
+      break;
+    case Json::Type::JSON_TRUE:
+      ValueRaw(std::string("true", 4));
+      break;
+    case Json::Type::JSON_FALSE:
+      ValueRaw(std::string("false", 5));
+      break;
+    case Json::Type::JSON_NULL:
+      ValueRaw(std::string("null", 4));
+      break;
+    default:
+      GPR_UNREACHABLE_CODE(abort());
   }
 }
 
-char* JsonWriter::Dump(const grpc_json* json, int indent) {
+std::string JsonWriter::Dump(const Json& value, int indent) {
   JsonWriter writer(indent);
-  writer.DumpRecursive(json, 0);
-  writer.OutputChar(0);
-  return writer.output_;
+  writer.DumpValue(value);
+  return std::move(writer.output_);
 }
 
 }  // namespace
 
-}  // namespace grpc_core
-
-char* grpc_json_dump_to_string(const grpc_json* json, int indent) {
-  return grpc_core::JsonWriter::Dump(json, indent);
+std::string Json::Dump(int indent) const {
+  return JsonWriter::Dump(*this, indent);
 }
+
+}  // namespace grpc_core
