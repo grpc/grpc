@@ -64,9 +64,11 @@ type Worker interface {
 
 // ScenarioResults encompass the results of the server and client.
 type ScenarioResults struct {
-	// TODO: Switch to specific type, avoid interface{}
-	ServerResults interface{}
-	ClientResults interface{}
+	// ServerStats is a protobuf with the server statistics after a scenario run.
+	ServerStats *proto.ServerStats
+
+	// ClientStats is a protobuf with the client statistics after a scenario run.
+	ClientStats *proto.ClientStats
 }
 
 // RunScenario runs a singular test scenario on a single server and client
@@ -157,7 +159,7 @@ func RunScenario(scenario *proto.Scenario, server, client Worker) (*ScenarioResu
 
 	log.Println("Closing server and client connections.")
 	return &ScenarioResults{
-		ServerResults: serverResults,
-		ClientResults: clientResults,
+		ServerStats: serverResults.(*proto.ServerStatus).Stats,
+		ClientStats: clientResults.(*proto.ClientStatus).Stats,
 	}, nil
 }
