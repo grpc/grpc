@@ -13,12 +13,10 @@
 # limitations under the License.
 """Reference implementation for health checking in gRPC Python."""
 
-import logging
 import asyncio
 import collections
 
 import grpc
-from grpc.experimental import aio
 
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
@@ -28,14 +26,12 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
     """An AsyncIO implementation of health checking servicer."""
 
     def __init__(self):
-        self._lock = asyncio.Lock()
         self._server_status = dict()
         self._server_watchers = collections.defaultdict(asyncio.Condition)
         self._gracefully_shutting_down = False
 
     async def Check(self, request: _health_pb2.HealthCheckRequest, context):
         status = self._server_status.get(request.service)
-        logging.debug('Status %s, %s', request.service, status)
 
         if status is None:
             await context.abort(grpc.StatusCode.NOT_FOUND)
