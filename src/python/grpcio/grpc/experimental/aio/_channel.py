@@ -363,9 +363,21 @@ class Channel:
             candidate = frame.f_locals.get('self')
             if candidate:
                 if isinstance(candidate, _base_call.Call):
-                    if candidate._cython_call._channel is self._channel:
-                        calls.append(candidate)
-                        call_tasks.append(task)
+                    if hasattr(candidate, '_channel'):
+                        # For intercepted Call object
+                        if candidate._channel is not self._channel:
+                            continue
+                    elif hasattr(candidate, '_cython_call'):
+                        # For normal Call object
+                        if candidate._cython_call._channel is not self._channel:
+                            continue
+                    else:
+                        # Unidentified Call object
+                        raise cygrpc.InternalError(
+                            f'Unrecognized call object: {candidate}')
+
+                    calls.append(candidate)
+                    call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
