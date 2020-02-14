@@ -766,24 +766,17 @@ class CallOpClientRecvStatus {
 
   void FinishOp(bool* /*status*/) {
     if (recv_status_ == nullptr || hijacked_) return;
-    if (static_cast<StatusCode>(status_code_) == StatusCode::OK) {
-      *recv_status_ = Status();
-      GPR_CODEGEN_DEBUG_ASSERT(debug_error_string_ == nullptr);
-    } else {
-      *recv_status_ =
-          Status(static_cast<StatusCode>(status_code_),
-                 GRPC_SLICE_IS_EMPTY(error_message_)
-                     ? grpc::string()
-                     : grpc::string(GRPC_SLICE_START_PTR(error_message_),
-                                    GRPC_SLICE_END_PTR(error_message_)),
-                 metadata_map_->GetBinaryErrorDetails());
-      if (debug_error_string_ != nullptr) {
-        client_context_->set_debug_error_string(debug_error_string_);
-        g_core_codegen_interface->gpr_free((void*)debug_error_string_);
-      }
+    *recv_status_ =
+        Status(static_cast<StatusCode>(status_code_),
+                GRPC_SLICE_IS_EMPTY(error_message_)
+                    ? grpc::string()
+                    : grpc::string(GRPC_SLICE_START_PTR(error_message_),
+                                  GRPC_SLICE_END_PTR(error_message_)),
+                metadata_map_->GetBinaryErrorDetails());
+    if (debug_error_string_ != nullptr) {
+      client_context_->set_debug_error_string(debug_error_string_);
+      g_core_codegen_interface->gpr_free((void*)debug_error_string_);
     }
-    // TODO(soheil): Find callers that set debug string even for status OK,
-    //               and fix them.
     g_core_codegen_interface->grpc_slice_unref(error_message_);
   }
 
