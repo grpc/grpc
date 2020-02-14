@@ -204,6 +204,63 @@
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_ChannelBase_ShutdownAsync_" data-uid="Grpc.Core.ChannelBase.ShutdownAsync*"></a>
+  <h4 id="Grpc_Core_ChannelBase_ShutdownAsync" data-uid="Grpc.Core.ChannelBase.ShutdownAsync">ShutdownAsync()</h4>
+  <div class="markdown level1 summary"><p>Shuts down the channel cleanly. It is strongly recommended to shutdown
+the channel once you stopped using it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task ShutdownAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="Grpc_Core_ChannelBase_ShutdownAsync_remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>Guidance for implementors:
+This method doesn&apos;t wait for all calls on this channel to finish (nor does
+it have to explicitly cancel all outstanding calls). It is user&apos;s responsibility to make sure
+all the calls on this channel have finished (successfully or with an error)
+before shutting down the channel to ensure channel shutdown won&apos;t impact
+the outcome of those remote calls.</p>
+</div>
+  <a id="Grpc_Core_ChannelBase_ShutdownAsyncCore_" data-uid="Grpc.Core.ChannelBase.ShutdownAsyncCore*"></a>
+  <h4 id="Grpc_Core_ChannelBase_ShutdownAsyncCore" data-uid="Grpc.Core.ChannelBase.ShutdownAsyncCore">ShutdownAsyncCore()</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected virtual Task ShutdownAsyncCore()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="extensionmethods">Extension Methods</h3>
   <div>
       <a class="xref" href="Grpc.Core.Interceptors.ChannelExtensions.html#Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_Grpc_Core_Interceptors_Interceptor_">ChannelExtensions.Intercept(ChannelBase, Interceptor)</a>

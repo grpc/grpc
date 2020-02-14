@@ -100,6 +100,9 @@ a remote call so in general you should reuse a single channel for as many calls 
       <a class="xref" href="Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_Target">ChannelBase.Target</a>
     </div>
     <div>
+      <a class="xref" href="Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_ShutdownAsync">ChannelBase.ShutdownAsync()</a>
+    </div>
+    <div>
       <span class="xref">System.Object.Equals(System.Object)</span>
     </div>
     <div>
@@ -437,15 +440,14 @@ Starting an RPC on a new channel will request connection implicitly.</p>
   </table>
   <h5 class="overrides">Overrides</h5>
   <div><a class="xref" href="Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_CreateCallInvoker">ChannelBase.CreateCallInvoker()</a></div>
-  <a id="Grpc_Core_Channel_ShutdownAsync_" data-uid="Grpc.Core.Channel.ShutdownAsync*"></a>
-  <h4 id="Grpc_Core_Channel_ShutdownAsync" data-uid="Grpc.Core.Channel.ShutdownAsync">ShutdownAsync()</h4>
-  <div class="markdown level1 summary"><p>Shuts down the channel cleanly. It is strongly recommended to shutdown
-all previously created channels before exiting from the process.</p>
+  <a id="Grpc_Core_Channel_ShutdownAsyncCore_" data-uid="Grpc.Core.Channel.ShutdownAsyncCore*"></a>
+  <h4 id="Grpc_Core_Channel_ShutdownAsyncCore" data-uid="Grpc.Core.Channel.ShutdownAsyncCore">ShutdownAsyncCore()</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task ShutdownAsync()</code></pre>
+    <pre><code class="lang-csharp hljs">protected override Task ShutdownAsyncCore()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -462,13 +464,8 @@ all previously created channels before exiting from the process.</p>
       </tr>
     </tbody>
   </table>
-  <h5 id="Grpc_Core_Channel_ShutdownAsync_remarks">Remarks</h5>
-  <div class="markdown level1 remarks"><p>This method doesn&apos;t wait for all calls on this channel to finish (nor does
-it explicitly cancel all outstanding calls). It is user&apos;s responsibility to make sure
-all the calls on this channel have finished (successfully or with an error)
-before shutting down the channel to ensure channel shutdown won&apos;t impact
-the outcome of those remote calls.</p>
-</div>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_ShutdownAsyncCore">ChannelBase.ShutdownAsyncCore()</a></div>
   <a id="Grpc_Core_Channel_TryWaitForStateChangedAsync_" data-uid="Grpc.Core.Channel.TryWaitForStateChangedAsync*"></a>
   <h4 id="Grpc_Core_Channel_TryWaitForStateChangedAsync_Grpc_Core_ChannelState_System_Nullable_System_DateTime__" data-uid="Grpc.Core.Channel.TryWaitForStateChangedAsync(Grpc.Core.ChannelState,System.Nullable{System.DateTime})">TryWaitForStateChangedAsync(ChannelState, Nullable&lt;DateTime&gt;)</h4>
   <div class="markdown level1 summary"><p>Returned tasks completes once channel state has become different from

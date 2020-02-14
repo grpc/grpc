@@ -118,6 +118,15 @@ references:
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse)
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>
   nameWithType.vb: AsyncClientStreamingCall(Of TRequest, TResponse)
+- uid: Grpc.Core.AsyncClientStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},System.Threading.Tasks.Task{`1},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)
+  name: AsyncClientStreamingCall(IClientStreamWriter<TRequest>, Task<TResponse>, Func<Object, Task<Metadata>>, Func<Object, Status>, Func<Object, Metadata>, Action<Object>, Object)
+  href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2__ctor_Grpc_Core_IClientStreamWriter__0__System_Threading_Tasks_Task__1__System_Func_System_Object_System_Threading_Tasks_Task_Grpc_Core_Metadata___System_Func_System_Object_Grpc_Core_Status__System_Func_System_Object_Grpc_Core_Metadata__System_Action_System_Object__System_Object_
+  commentId: M:Grpc.Core.AsyncClientStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},System.Threading.Tasks.Task{`1},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)
+  name.vb: AsyncClientStreamingCall(IClientStreamWriter(Of TRequest), Task(Of TResponse), Func(Of Object, Task(Of Metadata)), Func(Of Object, Status), Func(Of Object, Metadata), Action(Of Object), Object)
+  fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.AsyncClientStreamingCall(Grpc.Core.IClientStreamWriter<TRequest>, System.Threading.Tasks.Task<TResponse>, System.Func<System.Object, System.Threading.Tasks.Task<Grpc.Core.Metadata>>, System.Func<System.Object, Grpc.Core.Status>, System.Func<System.Object, Grpc.Core.Metadata>, System.Action<System.Object>, System.Object)
+  fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).AsyncClientStreamingCall(Grpc.Core.IClientStreamWriter(Of TRequest), System.Threading.Tasks.Task(Of TResponse), System.Func(Of System.Object, System.Threading.Tasks.Task(Of Grpc.Core.Metadata)), System.Func(Of System.Object, Grpc.Core.Status), System.Func(Of System.Object, Grpc.Core.Metadata), System.Action(Of System.Object), System.Object)
+  nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.AsyncClientStreamingCall(IClientStreamWriter<TRequest>, Task<TResponse>, Func<Object, Task<Metadata>>, Func<Object, Status>, Func<Object, Metadata>, Action<Object>, Object)
+  nameWithType.vb: AsyncClientStreamingCall(Of TRequest, TResponse).AsyncClientStreamingCall(IClientStreamWriter(Of TRequest), Task(Of TResponse), Func(Of Object, Task(Of Metadata)), Func(Of Object, Status), Func(Of Object, Metadata), Action(Of Object), Object)
 - uid: Grpc.Core.AsyncClientStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},System.Threading.Tasks.Task{`1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
   name: AsyncClientStreamingCall(IClientStreamWriter<TRequest>, Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2__ctor_Grpc_Core_IClientStreamWriter__0__System_Threading_Tasks_Task__1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
@@ -264,6 +273,15 @@ references:
   fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse)
   nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>
   nameWithType.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)
+- uid: Grpc.Core.AsyncDuplexStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},Grpc.Core.IAsyncStreamReader{`1},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)
+  name: AsyncDuplexStreamingCall(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Func<Object, Task<Metadata>>, Func<Object, Status>, Func<Object, Metadata>, Action<Object>, Object)
+  href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2__ctor_Grpc_Core_IClientStreamWriter__0__Grpc_Core_IAsyncStreamReader__1__System_Func_System_Object_System_Threading_Tasks_Task_Grpc_Core_Metadata___System_Func_System_Object_Grpc_Core_Status__System_Func_System_Object_Grpc_Core_Metadata__System_Action_System_Object__System_Object_
+  commentId: M:Grpc.Core.AsyncDuplexStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},Grpc.Core.IAsyncStreamReader{`1},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)
+  name.vb: AsyncDuplexStreamingCall(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Func(Of Object, Task(Of Metadata)), Func(Of Object, Status), Func(Of Object, Metadata), Action(Of Object), Object)
+  fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.AsyncDuplexStreamingCall(Grpc.Core.IClientStreamWriter<TRequest>, Grpc.Core.IAsyncStreamReader<TResponse>, System.Func<System.Object, System.Threading.Tasks.Task<Grpc.Core.Metadata>>, System.Func<System.Object, Grpc.Core.Status>, System.Func<System.Object, Grpc.Core.Metadata>, System.Action<System.Object>, System.Object)
+  fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).AsyncDuplexStreamingCall(Grpc.Core.IClientStreamWriter(Of TRequest), Grpc.Core.IAsyncStreamReader(Of TResponse), System.Func(Of System.Object, System.Threading.Tasks.Task(Of Grpc.Core.Metadata)), System.Func(Of System.Object, Grpc.Core.Status), System.Func(Of System.Object, Grpc.Core.Metadata), System.Action(Of System.Object), System.Object)
+  nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.AsyncDuplexStreamingCall(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Func<Object, Task<Metadata>>, Func<Object, Status>, Func<Object, Metadata>, Action<Object>, Object)
+  nameWithType.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse).AsyncDuplexStreamingCall(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Func(Of Object, Task(Of Metadata)), Func(Of Object, Status), Func(Of Object, Metadata), Action(Of Object), Object)
 - uid: Grpc.Core.AsyncDuplexStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},Grpc.Core.IAsyncStreamReader{`1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
   name: AsyncDuplexStreamingCall(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2__ctor_Grpc_Core_IClientStreamWriter__0__Grpc_Core_IAsyncStreamReader__1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
@@ -393,6 +411,15 @@ references:
   fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse)
   nameWithType: AsyncServerStreamingCall<TResponse>
   nameWithType.vb: AsyncServerStreamingCall(Of TResponse)
+- uid: Grpc.Core.AsyncServerStreamingCall`1.#ctor(Grpc.Core.IAsyncStreamReader{`0},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)
+  name: AsyncServerStreamingCall(IAsyncStreamReader<TResponse>, Func<Object, Task<Metadata>>, Func<Object, Status>, Func<Object, Metadata>, Action<Object>, Object)
+  href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1__ctor_Grpc_Core_IAsyncStreamReader__0__System_Func_System_Object_System_Threading_Tasks_Task_Grpc_Core_Metadata___System_Func_System_Object_Grpc_Core_Status__System_Func_System_Object_Grpc_Core_Metadata__System_Action_System_Object__System_Object_
+  commentId: M:Grpc.Core.AsyncServerStreamingCall`1.#ctor(Grpc.Core.IAsyncStreamReader{`0},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)
+  name.vb: AsyncServerStreamingCall(IAsyncStreamReader(Of TResponse), Func(Of Object, Task(Of Metadata)), Func(Of Object, Status), Func(Of Object, Metadata), Action(Of Object), Object)
+  fullName: Grpc.Core.AsyncServerStreamingCall<TResponse>.AsyncServerStreamingCall(Grpc.Core.IAsyncStreamReader<TResponse>, System.Func<System.Object, System.Threading.Tasks.Task<Grpc.Core.Metadata>>, System.Func<System.Object, Grpc.Core.Status>, System.Func<System.Object, Grpc.Core.Metadata>, System.Action<System.Object>, System.Object)
+  fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse).AsyncServerStreamingCall(Grpc.Core.IAsyncStreamReader(Of TResponse), System.Func(Of System.Object, System.Threading.Tasks.Task(Of Grpc.Core.Metadata)), System.Func(Of System.Object, Grpc.Core.Status), System.Func(Of System.Object, Grpc.Core.Metadata), System.Action(Of System.Object), System.Object)
+  nameWithType: AsyncServerStreamingCall<TResponse>.AsyncServerStreamingCall(IAsyncStreamReader<TResponse>, Func<Object, Task<Metadata>>, Func<Object, Status>, Func<Object, Metadata>, Action<Object>, Object)
+  nameWithType.vb: AsyncServerStreamingCall(Of TResponse).AsyncServerStreamingCall(IAsyncStreamReader(Of TResponse), Func(Of Object, Task(Of Metadata)), Func(Of Object, Status), Func(Of Object, Metadata), Action(Of Object), Object)
 - uid: Grpc.Core.AsyncServerStreamingCall`1.#ctor(Grpc.Core.IAsyncStreamReader{`0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
   name: AsyncServerStreamingCall(IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1__ctor_Grpc_Core_IAsyncStreamReader__0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
@@ -527,6 +554,15 @@ references:
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse)
   nameWithType: AsyncUnaryCall<TResponse>
   nameWithType.vb: AsyncUnaryCall(Of TResponse)
+- uid: Grpc.Core.AsyncUnaryCall`1.#ctor(System.Threading.Tasks.Task{`0},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)
+  name: AsyncUnaryCall(Task<TResponse>, Func<Object, Task<Metadata>>, Func<Object, Status>, Func<Object, Metadata>, Action<Object>, Object)
+  href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1__ctor_System_Threading_Tasks_Task__0__System_Func_System_Object_System_Threading_Tasks_Task_Grpc_Core_Metadata___System_Func_System_Object_Grpc_Core_Status__System_Func_System_Object_Grpc_Core_Metadata__System_Action_System_Object__System_Object_
+  commentId: M:Grpc.Core.AsyncUnaryCall`1.#ctor(System.Threading.Tasks.Task{`0},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)
+  name.vb: AsyncUnaryCall(Task(Of TResponse), Func(Of Object, Task(Of Metadata)), Func(Of Object, Status), Func(Of Object, Metadata), Action(Of Object), Object)
+  fullName: Grpc.Core.AsyncUnaryCall<TResponse>.AsyncUnaryCall(System.Threading.Tasks.Task<TResponse>, System.Func<System.Object, System.Threading.Tasks.Task<Grpc.Core.Metadata>>, System.Func<System.Object, Grpc.Core.Status>, System.Func<System.Object, Grpc.Core.Metadata>, System.Action<System.Object>, System.Object)
+  fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).AsyncUnaryCall(System.Threading.Tasks.Task(Of TResponse), System.Func(Of System.Object, System.Threading.Tasks.Task(Of Grpc.Core.Metadata)), System.Func(Of System.Object, Grpc.Core.Status), System.Func(Of System.Object, Grpc.Core.Metadata), System.Action(Of System.Object), System.Object)
+  nameWithType: AsyncUnaryCall<TResponse>.AsyncUnaryCall(Task<TResponse>, Func<Object, Task<Metadata>>, Func<Object, Status>, Func<Object, Metadata>, Action<Object>, Object)
+  nameWithType.vb: AsyncUnaryCall(Of TResponse).AsyncUnaryCall(Task(Of TResponse), Func(Of Object, Task(Of Metadata)), Func(Of Object, Status), Func(Of Object, Metadata), Action(Of Object), Object)
 - uid: Grpc.Core.AsyncUnaryCall`1.#ctor(System.Threading.Tasks.Task{`0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
   name: AsyncUnaryCall(Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1__ctor_System_Threading_Tasks_Task__0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
@@ -1593,19 +1629,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Channel.ResolvedTarget
   nameWithType: Channel.ResolvedTarget
-- uid: Grpc.Core.Channel.ShutdownAsync
-  name: ShutdownAsync()
-  href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ShutdownAsync
-  commentId: M:Grpc.Core.Channel.ShutdownAsync
-  fullName: Grpc.Core.Channel.ShutdownAsync()
-  nameWithType: Channel.ShutdownAsync()
-- uid: Grpc.Core.Channel.ShutdownAsync*
-  name: ShutdownAsync
-  href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ShutdownAsync_
-  commentId: Overload:Grpc.Core.Channel.ShutdownAsync
+- uid: Grpc.Core.Channel.ShutdownAsyncCore
+  name: ShutdownAsyncCore()
+  href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ShutdownAsyncCore
+  commentId: M:Grpc.Core.Channel.ShutdownAsyncCore
+  fullName: Grpc.Core.Channel.ShutdownAsyncCore()
+  nameWithType: Channel.ShutdownAsyncCore()
+- uid: Grpc.Core.Channel.ShutdownAsyncCore*
+  name: ShutdownAsyncCore
+  href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ShutdownAsyncCore_
+  commentId: Overload:Grpc.Core.Channel.ShutdownAsyncCore
   isSpec: "True"
-  fullName: Grpc.Core.Channel.ShutdownAsync
-  nameWithType: Channel.ShutdownAsync
+  fullName: Grpc.Core.Channel.ShutdownAsyncCore
+  nameWithType: Channel.ShutdownAsyncCore
 - uid: Grpc.Core.Channel.ShutdownToken
   name: ShutdownToken
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ShutdownToken
@@ -1696,6 +1732,32 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ChannelBase.CreateCallInvoker
   nameWithType: ChannelBase.CreateCallInvoker
+- uid: Grpc.Core.ChannelBase.ShutdownAsync
+  name: ShutdownAsync()
+  href: api/Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_ShutdownAsync
+  commentId: M:Grpc.Core.ChannelBase.ShutdownAsync
+  fullName: Grpc.Core.ChannelBase.ShutdownAsync()
+  nameWithType: ChannelBase.ShutdownAsync()
+- uid: Grpc.Core.ChannelBase.ShutdownAsync*
+  name: ShutdownAsync
+  href: api/Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_ShutdownAsync_
+  commentId: Overload:Grpc.Core.ChannelBase.ShutdownAsync
+  isSpec: "True"
+  fullName: Grpc.Core.ChannelBase.ShutdownAsync
+  nameWithType: ChannelBase.ShutdownAsync
+- uid: Grpc.Core.ChannelBase.ShutdownAsyncCore
+  name: ShutdownAsyncCore()
+  href: api/Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_ShutdownAsyncCore
+  commentId: M:Grpc.Core.ChannelBase.ShutdownAsyncCore
+  fullName: Grpc.Core.ChannelBase.ShutdownAsyncCore()
+  nameWithType: ChannelBase.ShutdownAsyncCore()
+- uid: Grpc.Core.ChannelBase.ShutdownAsyncCore*
+  name: ShutdownAsyncCore
+  href: api/Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_ShutdownAsyncCore_
+  commentId: Overload:Grpc.Core.ChannelBase.ShutdownAsyncCore
+  isSpec: "True"
+  fullName: Grpc.Core.ChannelBase.ShutdownAsyncCore
+  nameWithType: ChannelBase.ShutdownAsyncCore
 - uid: Grpc.Core.ChannelBase.Target
   name: Target
   href: api/Grpc.Core.ChannelBase.html#Grpc_Core_ChannelBase_Target
@@ -3212,44 +3274,6 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.KeyCertificatePair.PrivateKey
   nameWithType: KeyCertificatePair.PrivateKey
-- uid: Grpc.Core.LiteClientBase
-  name: LiteClientBase
-  href: api/Grpc.Core.LiteClientBase.html
-  commentId: T:Grpc.Core.LiteClientBase
-  fullName: Grpc.Core.LiteClientBase
-  nameWithType: LiteClientBase
-- uid: Grpc.Core.LiteClientBase.#ctor
-  name: LiteClientBase()
-  href: api/Grpc.Core.LiteClientBase.html#Grpc_Core_LiteClientBase__ctor
-  commentId: M:Grpc.Core.LiteClientBase.#ctor
-  fullName: Grpc.Core.LiteClientBase.LiteClientBase()
-  nameWithType: LiteClientBase.LiteClientBase()
-- uid: Grpc.Core.LiteClientBase.#ctor(Grpc.Core.CallInvoker)
-  name: LiteClientBase(CallInvoker)
-  href: api/Grpc.Core.LiteClientBase.html#Grpc_Core_LiteClientBase__ctor_Grpc_Core_CallInvoker_
-  commentId: M:Grpc.Core.LiteClientBase.#ctor(Grpc.Core.CallInvoker)
-  fullName: Grpc.Core.LiteClientBase.LiteClientBase(Grpc.Core.CallInvoker)
-  nameWithType: LiteClientBase.LiteClientBase(CallInvoker)
-- uid: Grpc.Core.LiteClientBase.#ctor*
-  name: LiteClientBase
-  href: api/Grpc.Core.LiteClientBase.html#Grpc_Core_LiteClientBase__ctor_
-  commentId: Overload:Grpc.Core.LiteClientBase.#ctor
-  isSpec: "True"
-  fullName: Grpc.Core.LiteClientBase.LiteClientBase
-  nameWithType: LiteClientBase.LiteClientBase
-- uid: Grpc.Core.LiteClientBase.CallInvoker
-  name: CallInvoker
-  href: api/Grpc.Core.LiteClientBase.html#Grpc_Core_LiteClientBase_CallInvoker
-  commentId: P:Grpc.Core.LiteClientBase.CallInvoker
-  fullName: Grpc.Core.LiteClientBase.CallInvoker
-  nameWithType: LiteClientBase.CallInvoker
-- uid: Grpc.Core.LiteClientBase.CallInvoker*
-  name: CallInvoker
-  href: api/Grpc.Core.LiteClientBase.html#Grpc_Core_LiteClientBase_CallInvoker_
-  commentId: Overload:Grpc.Core.LiteClientBase.CallInvoker
-  isSpec: "True"
-  fullName: Grpc.Core.LiteClientBase.CallInvoker
-  nameWithType: LiteClientBase.CallInvoker
 - uid: Grpc.Core.Logging
   name: Grpc.Core.Logging
   href: api/Grpc.Core.Logging.html
@@ -4585,6 +4609,12 @@ references:
   commentId: T:Grpc.Core.SerializationContext
   fullName: Grpc.Core.SerializationContext
   nameWithType: SerializationContext
+- uid: Grpc.Core.SerializationContext.Complete
+  name: Complete()
+  href: api/Grpc.Core.SerializationContext.html#Grpc_Core_SerializationContext_Complete
+  commentId: M:Grpc.Core.SerializationContext.Complete
+  fullName: Grpc.Core.SerializationContext.Complete()
+  nameWithType: SerializationContext.Complete()
 - uid: Grpc.Core.SerializationContext.Complete(System.Byte[])
   name: Complete(Byte[])
   href: api/Grpc.Core.SerializationContext.html#Grpc_Core_SerializationContext_Complete_System_Byte___
@@ -4601,6 +4631,32 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.SerializationContext.Complete
   nameWithType: SerializationContext.Complete
+- uid: Grpc.Core.SerializationContext.GetBufferWriter
+  name: GetBufferWriter()
+  href: api/Grpc.Core.SerializationContext.html#Grpc_Core_SerializationContext_GetBufferWriter
+  commentId: M:Grpc.Core.SerializationContext.GetBufferWriter
+  fullName: Grpc.Core.SerializationContext.GetBufferWriter()
+  nameWithType: SerializationContext.GetBufferWriter()
+- uid: Grpc.Core.SerializationContext.GetBufferWriter*
+  name: GetBufferWriter
+  href: api/Grpc.Core.SerializationContext.html#Grpc_Core_SerializationContext_GetBufferWriter_
+  commentId: Overload:Grpc.Core.SerializationContext.GetBufferWriter
+  isSpec: "True"
+  fullName: Grpc.Core.SerializationContext.GetBufferWriter
+  nameWithType: SerializationContext.GetBufferWriter
+- uid: Grpc.Core.SerializationContext.SetPayloadLength(System.Int32)
+  name: SetPayloadLength(Int32)
+  href: api/Grpc.Core.SerializationContext.html#Grpc_Core_SerializationContext_SetPayloadLength_System_Int32_
+  commentId: M:Grpc.Core.SerializationContext.SetPayloadLength(System.Int32)
+  fullName: Grpc.Core.SerializationContext.SetPayloadLength(System.Int32)
+  nameWithType: SerializationContext.SetPayloadLength(Int32)
+- uid: Grpc.Core.SerializationContext.SetPayloadLength*
+  name: SetPayloadLength
+  href: api/Grpc.Core.SerializationContext.html#Grpc_Core_SerializationContext_SetPayloadLength_
+  commentId: Overload:Grpc.Core.SerializationContext.SetPayloadLength
+  isSpec: "True"
+  fullName: Grpc.Core.SerializationContext.SetPayloadLength
+  nameWithType: SerializationContext.SetPayloadLength
 - uid: Grpc.Core.Server
   name: Server
   href: api/Grpc.Core.Server.html

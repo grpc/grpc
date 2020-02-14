@@ -144,6 +144,63 @@
   <h3 id="constructors">Constructors
   </h3>
   <a id="Grpc_Core_AsyncUnaryCall_1__ctor_" data-uid="Grpc.Core.AsyncUnaryCall`1.#ctor*"></a>
+  <h4 id="Grpc_Core_AsyncUnaryCall_1__ctor_System_Threading_Tasks_Task__0__System_Func_System_Object_System_Threading_Tasks_Task_Grpc_Core_Metadata___System_Func_System_Object_Grpc_Core_Status__System_Func_System_Object_Grpc_Core_Metadata__System_Action_System_Object__System_Object_" data-uid="Grpc.Core.AsyncUnaryCall`1.#ctor(System.Threading.Tasks.Task{`0},System.Func{System.Object,System.Threading.Tasks.Task{Grpc.Core.Metadata}},System.Func{System.Object,Grpc.Core.Status},System.Func{System.Object,Grpc.Core.Metadata},System.Action{System.Object},System.Object)">AsyncUnaryCall(Task&lt;TResponse&gt;, Func&lt;Object, Task&lt;Metadata&gt;&gt;, Func&lt;Object, Status&gt;, Func&lt;Object, Metadata&gt;, Action&lt;Object&gt;, Object)</h4>
+  <div class="markdown level1 summary"><p>Creates a new AsyncUnaryCall object with the specified properties.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public AsyncUnaryCall(Task&lt;TResponse&gt; responseAsync, Func&lt;object, Task&lt;Metadata&gt;&gt; responseHeadersAsync, Func&lt;object, Status&gt; getStatusFunc, Func&lt;object, Metadata&gt; getTrailersFunc, Action&lt;object&gt; disposeAction, object state)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;TResponse&gt;</td>
+        <td><span class="parametername">responseAsync</span></td>
+        <td><p>The response of the asynchronous call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Object</span>, <span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;&gt;</td>
+        <td><span class="parametername">responseHeadersAsync</span></td>
+        <td><p>Response headers of the asynchronous call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Object</span>, <a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="parametername">getStatusFunc</span></td>
+        <td><p>Delegate returning the status of the call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Object</span>, <a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">getTrailersFunc</span></td>
+        <td><p>Delegate returning the trailing metadata of the call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><span class="parametername">disposeAction</span></td>
+        <td><p>Delegate to invoke when Dispose is called on the call object.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">state</span></td>
+        <td><p>State object for use with the callback parameters.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_AsyncUnaryCall_1__ctor_" data-uid="Grpc.Core.AsyncUnaryCall`1.#ctor*"></a>
   <h4 id="Grpc_Core_AsyncUnaryCall_1__ctor_System_Threading_Tasks_Task__0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.AsyncUnaryCall`1.#ctor(System.Threading.Tasks.Task{`0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncUnaryCall(Task&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
   <div class="markdown level1 summary"><p>Creates a new AsyncUnaryCall object with the specified properties.</p>
 </div>
