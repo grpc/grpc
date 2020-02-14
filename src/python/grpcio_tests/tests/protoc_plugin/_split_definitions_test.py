@@ -165,11 +165,33 @@ class _GrpcBeforeProtoProtocStyle(object):
         return pb2_grpc_protoc_exit_code, pb2_protoc_exit_code
 
 
+class _RelativeImportGrpcStyle(object):
+
+    def name(self):
+        return 'RelativeImportGrpcStyle'
+
+    def grpc_in_pb2_expected(self):
+        return False
+
+    def protoc(self, proto_path, python_out, absolute_proto_file_names):
+        strip_prefixes = ['split_messages.sub']
+
+        pb2_protoc_exit_code = _protoc(proto_path, python_out, None, None,
+                                       absolute_proto_file_names)
+        pb2_grpc_protoc_exit_code = _protoc(proto_path, None,
+                                            'grpc_2_0,{}'.format(
+                                                ",".join(strip_prefixes)),
+                                            python_out,
+                                            absolute_proto_file_names)
+        return pb2_protoc_exit_code, pb2_grpc_protoc_exit_code
+
+
 _PROTOC_STYLES = (
     _Mid2016ProtocStyle(),
     _SingleProtocExecutionProtocStyle(),
     _ProtoBeforeGrpcProtocStyle(),
     _GrpcBeforeProtoProtocStyle(),
+    _RelativeImportGrpcStyle(),
 )
 
 
