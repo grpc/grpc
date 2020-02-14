@@ -195,11 +195,11 @@ class InvocationDefectsTest(unittest.TestCase):
         self._channel.close()
 
     def testIterableStreamRequestBlockingUnaryResponse(self):
-        requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
+        requests = object()
         multi_callable = _stream_unary_multi_callable(self._channel)
 
         with self.assertRaises(grpc.RpcError) as exception_context:
-            response = multi_callable(
+            multi_callable(
                 requests,
                 metadata=(('test',
                            'IterableStreamRequestBlockingUnaryResponse'),))
@@ -208,7 +208,7 @@ class InvocationDefectsTest(unittest.TestCase):
                       exception_context.exception.code())
 
     def testIterableStreamRequestFutureUnaryResponse(self):
-        requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
+        requests = object()
         multi_callable = _stream_unary_multi_callable(self._channel)
         response_future = multi_callable.future(
             requests,
@@ -221,7 +221,7 @@ class InvocationDefectsTest(unittest.TestCase):
                       exception_context.exception.code())
 
     def testIterableStreamRequestStreamResponse(self):
-        requests = [b'\x77\x58' for _ in range(test_constants.STREAM_LENGTH)]
+        requests = object()
         multi_callable = _stream_stream_multi_callable(self._channel)
         response_iterator = multi_callable(
             requests,
