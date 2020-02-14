@@ -51,5 +51,5 @@ class GenericBenchmarkServicer(
         return self._response
 
     async def StreamingCall(self, request_iterator, unused_context):
-        async for request in request_iterator:
+        async for _ in request_iterator:
             yield self._response
