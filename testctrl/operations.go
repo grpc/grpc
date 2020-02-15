@@ -21,7 +21,7 @@ import (
 	pb "github.com/grpc/grpc/testctrl/proto"
 )
 
-type OperationsServerImpl struct {}
+type OperationsServerImpl struct{}
 
 func (o *OperationsServerImpl) ListOperations(ctx context.Context, req *pb.ListOperationsRequest) (*pb.ListOperationsResponse, error) {
 	return nil, nil
@@ -42,4 +42,3 @@ func (o *OperationsServerImpl) CancelOperation(ctx context.Context, req *pb.Canc
 func (o *OperationsServerImpl) WaitOperation(ctx context.Context, req *pb.WaitOperationRequest) (*pb.Operation, error) {
 	return nil, nil
 }
-

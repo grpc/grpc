@@ -98,4 +98,3 @@ func main() {
 		runService(*port, *enableReflection)
 	}
 }
-
