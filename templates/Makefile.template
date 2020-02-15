@@ -1493,6 +1493,7 @@
       "language": "c",
       "src": sorted(used_abseil_srcs),
       "hdr": sorted(used_abseil_hdrs),
+      "secure": False,
     })
   %>
   ${makelib(grpc_abseil_lib)}
@@ -1584,7 +1585,7 @@
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
   $(UPB_DEP) \
-  $(LIBGRPC_ABSEIL_DEP) \
+  $(GRPC_ABSEIL_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':

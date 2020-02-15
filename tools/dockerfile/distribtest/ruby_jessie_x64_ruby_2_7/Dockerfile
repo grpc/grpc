@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ RUN apt-get update && apt-get install -y \
 RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
-# Install Ruby 2.5
-RUN /bin/bash -l -c "rvm install ruby-2.5.7"
-RUN /bin/bash -l -c "rvm use --default ruby-2.5.7"
+# Install Ruby 2.7
+RUN /bin/bash -l -c "rvm install ruby-2.7.0"
+RUN /bin/bash -l -c "rvm use --default ruby-2.7.0"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5.7' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.7.0' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install bundler --no-document"
 
 RUN mkdir /var/local/jenkins
 

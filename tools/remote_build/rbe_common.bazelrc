@@ -55,7 +55,7 @@ build:asan --copt=-gmlt
 # use double the default value for "moderate" and "long" timeout as sanitizer
 # tests tend to be slower
 build:asan --test_timeout=60,600,1800,3600
-build:asan --test_tag_filters=-no_linux,-qps_json_driver
+build:asan --test_tag_filters=-no_linux,-noasan,-qps_json_driver
 
 # memory sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -78,7 +78,7 @@ build:tsan --copt=-gmlt
 # use double the default value for "moderate" and "long" timeout as sanitizer
 # tests tend to be slower
 build:tsan --test_timeout=60,600,1800,3600
-build:tsan --test_tag_filters=-no_linux,-qps_json_driver
+build:tsan --test_tag_filters=-no_linux,-notsan,-qps_json_driver
 build:tsan --extra_execution_platforms=@rbe_default//config:platform
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc

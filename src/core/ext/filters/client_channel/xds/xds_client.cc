@@ -1751,8 +1751,16 @@ XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
 void XdsClient::Orphan() {
   shutting_down_ = true;
   chand_.reset();
-  cluster_map_.clear();
-  endpoint_map_.clear();
+  // We do not clear cluster_map_ and endpoint_map_ if the xds client was
+  // created by the XdsResolver because the maps contain refs for watchers which
+  // in turn hold refs to the loadbalancing policies. At this point, it is
+  // possible for ADS calls to be in progress. Unreffing the loadbalancing
+  // policies before those calls are done would lead to issues such as
+  // https://github.com/grpc/grpc/issues/20928.
+  if (service_config_watcher_ != nullptr) {
+    cluster_map_.clear();
+    endpoint_map_.clear();
+  }
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
 }
 
@@ -1902,13 +1910,13 @@ void XdsClient::NotifyOnError(grpc_error* error) {
 
 void* XdsClient::ChannelArgCopy(void* p) {
   XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Ref().release();
+  xds_client->Ref(DEBUG_LOCATION, "channel arg").release();
   return p;
 }
 
 void XdsClient::ChannelArgDestroy(void* p) {
   XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Unref();
+  xds_client->Unref(DEBUG_LOCATION, "channel arg");
 }
 
 int XdsClient::ChannelArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
