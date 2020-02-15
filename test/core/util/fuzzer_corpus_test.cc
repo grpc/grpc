@@ -48,15 +48,21 @@ DEFINE_string(directory, "", "Use this directory as test data");
 class FuzzerCorpusTest : public ::testing::TestWithParam<std::string> {};
 
 TEST_P(FuzzerCorpusTest, RunOneExample) {
+  grpc_init();
   gpr_log(GPR_DEBUG, "Example file: %s", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
   leak_check = false;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(GetParam().c_str(), 0, &buffer)));
-  LLVMFuzzerTestOneInput(GRPC_SLICE_START_PTR(buffer),
-                         GRPC_SLICE_LENGTH(buffer));
+  uint8_t* data;
+  size_t length = GRPC_SLICE_LENGTH(buffer);
+  data = (const uint8_t*) gpr_malloc(length);
+  memcpy(data, GPR_SLICE_START_PTR(buffer), length);
   grpc_slice_unref(buffer);
+  grpc_shutdown_blocking();
+  LLVMFuzzerTestOneInput(data, length);
+  gpr_free(data);
 }
 
 class ExampleGenerator
