@@ -27,7 +27,7 @@ from ._base_call import Call, RpcContext, UnaryStreamCall, UnaryUnaryCall
 from ._call import AioRpcError
 from ._channel import Channel, UnaryUnaryMultiCallable
 from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
-                           UnaryUnaryClientInterceptor)
+                           UnaryUnaryClientInterceptor, ServerInterceptor)
 from ._server import Server, server
 from ._typing import ChannelArgumentType
 
@@ -86,5 +86,5 @@ __all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
            'UnaryStreamCall', 'init_grpc_aio', 'Channel',
            'UnaryUnaryMultiCallable', 'ClientCallDetails',
            'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
-           'insecure_channel', 'server', 'Server', 'EOF', 'secure_channel',
-           'AbortError', 'BaseError', 'UsageError')
+           'ServerInterceptor', 'insecure_channel', 'server', 'Server', 'EOF',
+           'secure_channel', 'AbortError', 'BaseError', 'UsageError')

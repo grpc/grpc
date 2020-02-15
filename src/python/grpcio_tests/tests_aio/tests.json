@@ -18,6 +18,7 @@
   "unit.init_test.TestInsecureChannel",
   "unit.init_test.TestSecureChannel",
   "unit.interceptor_test.TestInterceptedUnaryUnaryCall",
+  "unit.interceptor_test.TestServerInterceptor",
   "unit.interceptor_test.TestUnaryUnaryClientInterceptor",
   "unit.metadata_test.TestMetadata",
   "unit.server_test.TestServer",
