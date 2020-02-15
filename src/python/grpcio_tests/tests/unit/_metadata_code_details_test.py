@@ -250,7 +250,6 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             test_common.metadata_transmitted(_SERVER_TRAILING_METADATA,
                                              call.trailing_metadata()))
         self.assertIs(grpc.StatusCode.OK, call.code())
-        self.assertEqual(_DETAILS, call.details())
 
     def testSuccessfulUnaryStream(self):
         self._servicer.set_details(_DETAILS)
@@ -271,7 +270,6 @@ class MetadataCodeDetailsTest(unittest.TestCase):
                 _SERVER_TRAILING_METADATA,
                 response_iterator_call.trailing_metadata()))
         self.assertIs(grpc.StatusCode.OK, response_iterator_call.code())
-        self.assertEqual(_DETAILS, response_iterator_call.details())
 
     def testSuccessfulStreamUnary(self):
         self._servicer.set_details(_DETAILS)
@@ -290,7 +288,6 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             test_common.metadata_transmitted(_SERVER_TRAILING_METADATA,
                                              call.trailing_metadata()))
         self.assertIs(grpc.StatusCode.OK, call.code())
-        self.assertEqual(_DETAILS, call.details())
 
     def testSuccessfulStreamStream(self):
         self._servicer.set_details(_DETAILS)
@@ -312,7 +309,6 @@ class MetadataCodeDetailsTest(unittest.TestCase):
                 _SERVER_TRAILING_METADATA,
                 response_iterator_call.trailing_metadata()))
         self.assertIs(grpc.StatusCode.OK, response_iterator_call.code())
-        self.assertEqual(_DETAILS, response_iterator_call.details())
 
     def testAbortedUnaryUnary(self):
         test_cases = zip(_ABORT_CODES, _EXPECTED_CLIENT_CODES,
