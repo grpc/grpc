@@ -76,6 +76,12 @@ _generate_pb2_src = rule(
             providers = ["files_to_run"],
             cfg = "host",
         ),
+        "out_path": attr.string(
+            doc = """This attribute used to specify an output path for protoc 
+                     (e.g.: use a value like 'sub/dir' which will appear as --python_out=sub/dir)""",
+            default = '',
+            mandatory = False,
+        ),
         "_protoc": attr.label(
             default = Label("//external:protocol_compiler"),
             providers = ["files_to_run"],
@@ -90,6 +96,7 @@ def py_proto_library(
         name,
         deps,
         plugin = None,
+	out_path = None,
         **kwargs):
     """Generate python code for a protobuf.
 
@@ -109,6 +116,7 @@ def py_proto_library(
         name = codegen_target,
         deps = deps,
         plugin = plugin,
+	out_path = out_path,
         **kwargs
     )
 
@@ -190,6 +198,12 @@ _generate_pb2_grpc_src = rule(
             providers = ["files_to_run"],
             cfg = "host",
         ),
+        "out_path": attr.string(
+            doc = """This attribute used to specify an output path for protoc 
+                     (e.g.: use a value like 'sub/dir' which will appear as --python_out=sub/dir)""",
+            default = '',
+            mandatory = False,
+        ),
         "_grpc_plugin": attr.label(
             executable = True,
             providers = ["files_to_run"],
@@ -211,6 +225,7 @@ def py_grpc_library(
         srcs,
         deps,
         plugin = None,
+	out_path = None,
         strip_prefixes = [],
         **kwargs):
     """Generate python code for gRPC services defined in a protobuf.
@@ -242,6 +257,7 @@ def py_grpc_library(
         deps = srcs,
         strip_prefixes = strip_prefixes,
         plugin = plugin,
+	out_path = out_path,
         **kwargs
     )
 

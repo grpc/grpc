@@ -43,7 +43,24 @@ def _strip_proto_extension(proto_filename):
         ))
     return proto_filename[:-len(_PROTO_EXTENSION)]
 
-def proto_path_to_generated_filename(proto_path, fmt_str):
+def _split_path(path_with_filename):
+    """Separate path from filename"""
+    splitted = path_with_filename.split('/')
+    path = '/'.join(splitted[:len(splitted)-1])
+    file = splitted[len(splitted)-1:][0]
+    return (path, file)
+
+def _join_path(iterable):
+    """Concatenate a list of strings using / as a separator"""
+    stripped = list()
+
+    for item in iterable:
+        if item != '':
+	    stripped.append(item)
+
+    return '/'.join(stripped)
+
+def proto_path_to_generated_filename(proto_path, fmt_str, out_path=''):
     """Calculates the name of a generated file for a protobuf path.
 
     For example, "examples/protos/helloworld.proto" might map to
@@ -53,11 +70,13 @@ def proto_path_to_generated_filename(proto_path, fmt_str):
       proto_path: The path to the .proto file.
       fmt_str: A format string used to calculate the generated filename. For
         example, "{}.pb.h" might be used to calculate a C++ header filename.
+      out_path: Append a suffix to the path (i.e. you want to generate files to a subdirectory)
 
     Returns:
       The generated filename.
     """
-    return fmt_str.format(_strip_proto_extension(proto_path))
+    path, file = _split_path(_strip_proto_extension(proto_path))
+    return fmt_str.format(_join_path([path, out_path, file]))
 
 def get_include_directory(source_file):
     """Returns the include directory path for the source_file. I.e. all of the
@@ -200,6 +219,7 @@ def declare_out_files(protos, context, generated_file_format):
             proto_path_to_generated_filename(
                 out_file_path,
                 generated_file_format,
+		context.attr.out_path,
             ),
         )
         for out_file_path in out_file_paths
@@ -225,12 +245,15 @@ def get_out_dir(protos, context):
         out_dir = get_include_directory(protos[0])
         ws_root = protos[0].owner.workspace_root
         if ws_root and out_dir.find(ws_root) >= 0:
-            out_dir = "".join(out_dir.rsplit(ws_root, 1))
+            out = "".join(out_dir.rsplit(ws_root, 1))
+            out_dir = _join_path([out, context.attr.out_path])
         return struct(
             path = out_dir,
             import_path = out_dir[out_dir.find(_VIRTUAL_IMPORTS) + 1:],
         )
-    return struct(path = context.genfiles_dir.path, import_path = None)
+    else:
+        out_dir = _join_path([context.genfiles_dir.path, context.attr.out_path])
+        return struct(path = out_dir, import_path = None)
 
 def is_in_virtual_imports(source_file, virtual_folder = _VIRTUAL_IMPORTS):
     """Determines if source_file is virtual (is placed in _virtual_imports
