@@ -174,9 +174,54 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.7'
     abseil_version = '0.20190808.1'
+    ss.dependency 'abseil/algorithm/algorithm', abseil_version
+    ss.dependency 'abseil/algorithm/container', abseil_version
+    ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/base/config', abseil_version
+    ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/base/dynamic_annotations', abseil_version
+    ss.dependency 'abseil/base/log_severity', abseil_version
+    ss.dependency 'abseil/container/btree', abseil_version
+    ss.dependency 'abseil/container/fixed_array', abseil_version
+    ss.dependency 'abseil/container/flat_hash_map', abseil_version
+    ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/container/node_hash_map', abseil_version
+    ss.dependency 'abseil/container/node_hash_set', abseil_version
+    ss.dependency 'abseil/debugging/failure_signal_handler', abseil_version
+    ss.dependency 'abseil/debugging/leak_check', abseil_version
+    ss.dependency 'abseil/debugging/stacktrace', abseil_version
+    ss.dependency 'abseil/debugging/symbolize', abseil_version
+    ss.dependency 'abseil/flags/config', abseil_version
+    ss.dependency 'abseil/flags/flag', abseil_version
+    ss.dependency 'abseil/flags/marshalling', abseil_version
+    ss.dependency 'abseil/flags/parse', abseil_version
+    ss.dependency 'abseil/flags/usage', abseil_version
+    ss.dependency 'abseil/functional/bind_front', abseil_version
+    ss.dependency 'abseil/functional/function_ref', abseil_version
+    ss.dependency 'abseil/hash/hash', abseil_version
+    ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/meta/type_traits', abseil_version
+    ss.dependency 'abseil/numeric/int128', abseil_version
+    ss.dependency 'abseil/random/bit_gen_ref', abseil_version
+    ss.dependency 'abseil/random/distributions', abseil_version
+    ss.dependency 'abseil/random/random', abseil_version
+    ss.dependency 'abseil/random/seed_gen_exception', abseil_version
+    ss.dependency 'abseil/random/seed_sequences', abseil_version
+    ss.dependency 'abseil/strings/cord', abseil_version
+    ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
+    ss.dependency 'abseil/synchronization/synchronization', abseil_version
+    ss.dependency 'abseil/time/time', abseil_version
+    ss.dependency 'abseil/types/any', abseil_version
+    ss.dependency 'abseil/types/bad_any_cast', abseil_version
+    ss.dependency 'abseil/types/bad_optional_access', abseil_version
+    ss.dependency 'abseil/types/bad_variant_access', abseil_version
+    ss.dependency 'abseil/types/compare', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
+    ss.dependency 'abseil/types/span', abseil_version
+    ss.dependency 'abseil/types/variant', abseil_version
+    ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
