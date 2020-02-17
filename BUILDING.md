@@ -132,6 +132,7 @@ Run from grpc directory after cloning the repo with --recursive or updating subm
 $ mkdir -p cmake/build
 $ cd cmake/build
 $ cmake ../..
+$ cd ../..
 $ make
 ```
 
