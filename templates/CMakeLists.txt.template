@@ -370,18 +370,18 @@
   # These options allow users to enable or disable the building of the various
   # protoc plugins. For example, running CMake with
   # -DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF will disable building the C# plugin.
-  set(_gRPC_PLUGIN_LIST)
+  set(gRPC_PLUGIN_LIST)
   % for tgt in targets:
   % if tgt.build == 'protoc':
   option(gRPC_BUILD_${tgt.name.upper()} "Build ${tgt.name}" ON)
   if (gRPC_BUILD_${tgt.name.upper()})
-    list(APPEND _gRPC_PLUGIN_LIST ${tgt.name})
+    list(APPEND gRPC_PLUGIN_LIST ${tgt.name})
   endif ()
   % endif
   % endfor
 
   add_custom_target(plugins
-    DEPENDS <%text>${_gRPC_PLUGIN_LIST}</%text>
+    DEPENDS <%text>${gRPC_PLUGIN_LIST}</%text>
   )
 
   add_custom_target(tools_c
@@ -653,7 +653,11 @@
 
   <%def name="cc_install(tgt)">
   if(gRPC_INSTALL)
+  % if tgt.build == 'protoc' and 'grpc_plugin_support' in tgt.get('deps', []):
+    install(TARGETS ${tgt.name} EXPORT gRPCPluginTargets
+  % else:
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
+  % endif
       RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
       LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
       ARCHIVE DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
@@ -663,6 +667,10 @@
 
   if(gRPC_INSTALL)
     install(EXPORT gRPCTargets
+      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
+      NAMESPACE gRPC::
+    )
+    install(EXPORT gRPCPluginTargets
       DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
       NAMESPACE gRPC::
     )

@@ -10,3 +10,16 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/modules)
 
 # Targets
 include(${CMAKE_CURRENT_LIST_DIR}/gRPCTargets.cmake)
+if(CMAKE_CROSSCOMPILING)
+  foreach(_plugin @gRPC_PLUGIN_LIST@)
+    find_program(${_plugin}_EXECUTABLE ${_plugin})
+    add_executable(gRPC::${_plugin} IMPORTED)
+    if(EXISTS ${${_plugin}_EXECUTABLE})
+      set_target_properties(gRPC::${_plugin} PROPERTIES
+        IMPORTED_LOCATION "${${_plugin}_EXECUTABLE}"
+      )
+    endif()
+  endforeach()
+else()
+  include(${CMAKE_CURRENT_LIST_DIR}/gRPCPluginTargets.cmake)
+endif()
