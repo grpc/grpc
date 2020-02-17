@@ -52,11 +52,24 @@ Mac systems with Homebrew:
 brew install gflags
 ```
 
-Once the prerequisites are satisfied, you can build the command line tool with
-the command:
+Once the prerequisites are satisfied, generate makefiles:
+
+```
+$ mkdir -p cmake/build
+$ cd cmake/build
+$ cmake -DgRPC_BUILD_TESTS=ON ../..
+```
+
+Finally you can build the command line tool with the command:
 
 ```
 $ make grpc_cli
+```
+
+To speed up compilation time on linux, you can use make with following flag:
+
+```
+$ make grpc_cli -j$(nproc)
 ```
 
 The main file can be found at
