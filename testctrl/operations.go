@@ -21,24 +21,24 @@ import (
 	pb "github.com/grpc/grpc/testctrl/proto"
 )
 
-type OperationsServerImpl struct{}
+type operationsServerImpl struct{}
 
-func (o *OperationsServerImpl) ListOperations(ctx context.Context, req *pb.ListOperationsRequest) (*pb.ListOperationsResponse, error) {
+func (o *operationsServerImpl) ListOperations(ctx context.Context, req *pb.ListOperationsRequest) (*pb.ListOperationsResponse, error) {
 	return nil, nil
 }
 
-func (o *OperationsServerImpl) GetOperation(ctx context.Context, req *pb.GetOperationRequest) (*pb.Operation, error) {
+func (o *operationsServerImpl) GetOperation(ctx context.Context, req *pb.GetOperationRequest) (*pb.Operation, error) {
 	return nil, nil
 }
 
-func (o *OperationsServerImpl) DeleteOperation(ctx context.Context, req *pb.DeleteOperationRequest) (*emptyPb.Empty, error) {
+func (o *operationsServerImpl) DeleteOperation(ctx context.Context, req *pb.DeleteOperationRequest) (*emptyPb.Empty, error) {
 	return nil, nil
 }
 
-func (o *OperationsServerImpl) CancelOperation(ctx context.Context, req *pb.CancelOperationRequest) (*emptyPb.Empty, error) {
+func (o *operationsServerImpl) CancelOperation(ctx context.Context, req *pb.CancelOperationRequest) (*emptyPb.Empty, error) {
 	return nil, nil
 }
 
-func (o *OperationsServerImpl) WaitOperation(ctx context.Context, req *pb.WaitOperationRequest) (*pb.Operation, error) {
+func (o *operationsServerImpl) WaitOperation(ctx context.Context, req *pb.WaitOperationRequest) (*pb.Operation, error) {
 	return nil, nil
 }
