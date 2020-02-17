@@ -21,6 +21,8 @@
 
 #include <grpcpp/channel_impl.h>
 
+#include "absl/strings/string_view.h"
+
 namespace grpc {
 
 typedef ::grpc_impl::Channel Channel;
@@ -30,6 +32,8 @@ namespace experimental {
 /// TODO(roth): Once we see whether this proves useful, either create a gRFC
 /// and change this to be a method of the Channel class, or remove it.
 void ChannelResetConnectionBackoff(Channel* channel);
+
+absl::string_view TestThisAbseilFunction();
 }  // namespace experimental
 
 }  // namespace grpc
