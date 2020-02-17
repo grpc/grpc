@@ -21,7 +21,7 @@ import "google/protobuf/duration.proto";
 import "control.proto";
 import "operations.proto";
 
-service TestSession {
+service TestSessions {
   // Starts a set of test scenarios.
   //
   // This is a long-running operation that is managed by the Operations service

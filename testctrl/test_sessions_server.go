@@ -21,8 +21,8 @@ import (
 	// "github.com/google/uuid"
 )
 
-type testSessionServerImpl struct{}
+type testSessionsServerImpl struct{}
 
-func (t *testSessionServerImpl) StartTestSession(ctx context.Context, req *pb.StartTestSessionRequest) (*pb.Operation, error) {
+func (t *testSessionsServerImpl) StartTestSession(ctx context.Context, req *pb.StartTestSessionRequest) (*pb.Operation, error) {
 	return nil, nil
 }
