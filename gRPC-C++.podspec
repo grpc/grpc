@@ -214,9 +214,40 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     abseil_version = '0.20190808.1'
+    ss.dependency 'abseil/algorithm/algorithm', abseil_version
+    ss.dependency 'abseil/algorithm/container', abseil_version
+    ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/base/config', abseil_version
+    ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/base/dynamic_annotations', abseil_version
+    ss.dependency 'abseil/base/log_severity', abseil_version
+    ss.dependency 'abseil/container/fixed_array', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/debugging/leak_check', abseil_version
+    ss.dependency 'abseil/debugging/stacktrace', abseil_version
+    ss.dependency 'abseil/debugging/symbolize', abseil_version
+    ss.dependency 'abseil/flags/config', abseil_version
+    ss.dependency 'abseil/flags/flag', abseil_version
+    ss.dependency 'abseil/flags/marshalling', abseil_version
+    ss.dependency 'abseil/flags/parse', abseil_version
+    ss.dependency 'abseil/flags/usage', abseil_version
+    ss.dependency 'abseil/hash/hash', abseil_version
+    ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/meta/type_traits', abseil_version
+    ss.dependency 'abseil/numeric/int128', abseil_version
+    ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
+    ss.dependency 'abseil/synchronization/synchronization', abseil_version
+    ss.dependency 'abseil/time/time', abseil_version
+    ss.dependency 'abseil/types/any', abseil_version
+    ss.dependency 'abseil/types/bad_any_cast', abseil_version
+    ss.dependency 'abseil/types/bad_optional_access', abseil_version
+    ss.dependency 'abseil/types/bad_variant_access', abseil_version
+    ss.dependency 'abseil/types/compare', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
+    ss.dependency 'abseil/types/span', abseil_version
+    ss.dependency 'abseil/types/variant', abseil_version
+    ss.dependency 'abseil/utility/utility', abseil_version
 
     ss.source_files = 'include/grpcpp/impl/codegen/core_codegen.h',
                       'src/core/ext/filters/client_channel/backend_metric.h',

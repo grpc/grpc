@@ -100,30 +100,65 @@ set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
 
 set(gRPC_ABSL_USED_TARGETS
   absl_algorithm
+  absl_algorithm_container
+  absl_any
   absl_atomic_hook
+  absl_bad_any_cast
+  absl_bad_any_cast_impl
   absl_bad_optional_access
+  absl_bad_variant_access
   absl_base
   absl_base_internal
   absl_bits
+  absl_city
+  absl_civil_time
+  absl_compare
   absl_compressed_tuple
   absl_config
   absl_core_headers
+  absl_debugging_internal
+  absl_demangle_internal
   absl_dynamic_annotations
   absl_endian
+  absl_fixed_array
+  absl_flags
+  absl_flags_config
+  absl_flags_handle
+  absl_flags_internal
+  absl_flags_marshalling
+  absl_flags_parse
+  absl_flags_path_util
+  absl_flags_program_name
+  absl_flags_registry
+  absl_flags_usage
+  absl_flags_usage_internal
+  absl_graphcycles_internal
+  absl_hash
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
+  absl_kernel_timeout_internal
+  absl_leak_check
   absl_log_severity
+  absl_malloc_internal
   absl_memory
   absl_optional
   absl_raw_logging_internal
   absl_span
   absl_spinlock_wait
+  absl_stacktrace
+  absl_str_format
+  absl_str_format_internal
   absl_strings
   absl_strings_internal
+  absl_symbolize
+  absl_synchronization
   absl_throw_delegate
+  absl_time
+  absl_time_zone
   absl_type_traits
   absl_utility
+  absl_variant
   absl_meta
 )
 
@@ -1438,9 +1473,40 @@ target_include_directories(gpr
 )
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::algorithm
+  absl::algorithm_container
+  absl::base
+  absl::config
+  absl::core_headers
+  absl::dynamic_annotations
+  absl::log_severity
+  absl::fixed_array
   absl::inlined_vector
+  absl::leak_check
+  absl::stacktrace
+  absl::symbolize
+  absl::flags_config
+  absl::flags
+  absl::flags_marshalling
+  absl::flags_parse
+  absl::flags_usage
+  absl::hash
+  absl::memory
+  absl::type_traits
+  absl::int128
+  absl::str_format
   absl::strings
+  absl::synchronization
+  absl::time
+  absl::any
+  absl::bad_any_cast
+  absl::bad_optional_access
+  absl::bad_variant_access
+  absl::compare
   absl::optional
+  absl::span
+  absl::variant
+  absl::utility
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -18571,7 +18637,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgpr -labsl_bad_any_cast_impl -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_flags_parse -labsl_flags_usage -labsl_flags_usage_internal -labsl_flags -labsl_flags_internal -labsl_flags_registry -labsl_bad_optional_access -labsl_flags_marshalling -labsl_str_format_internal -labsl_flags_config -labsl_flags_program_name -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_leak_check -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "gpr.pc")
 
@@ -18581,7 +18647,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_any_cast_impl -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_flags_parse -labsl_flags_usage -labsl_flags_usage_internal -labsl_flags -labsl_flags_internal -labsl_flags_registry -labsl_bad_optional_access -labsl_flags_marshalling -labsl_str_format_internal -labsl_flags_config -labsl_flags_program_name -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_leak_check -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -18591,7 +18657,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc_unsecure -labsl_bad_any_cast_impl -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_flags_parse -labsl_flags_usage -labsl_flags_usage_internal -labsl_flags -labsl_flags_internal -labsl_flags_registry -labsl_bad_optional_access -labsl_flags_marshalling -labsl_str_format_internal -labsl_flags_config -labsl_flags_program_name -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_leak_check -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc_unsecure.pc")
 
@@ -18601,7 +18667,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${PACKAGE_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc++ -labsl_bad_any_cast_impl -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_flags_parse -labsl_flags_usage -labsl_flags_usage_internal -labsl_flags -labsl_flags_internal -labsl_flags_registry -labsl_bad_optional_access -labsl_flags_marshalling -labsl_str_format_internal -labsl_flags_config -labsl_flags_program_name -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_leak_check -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 
@@ -18611,6 +18677,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${PACKAGE_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc++_unsecure -labsl_bad_any_cast_impl -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_flags_parse -labsl_flags_usage -labsl_flags_usage_internal -labsl_flags -labsl_flags_internal -labsl_flags_registry -labsl_bad_optional_access -labsl_flags_marshalling -labsl_str_format_internal -labsl_flags_config -labsl_flags_program_name -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_leak_check -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++_unsecure.pc")

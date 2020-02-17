@@ -270,9 +270,40 @@ filegroups:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   deps:
+  - absl/algorithm:algorithm
+  - absl/algorithm:container
+  - absl/base:base
+  - absl/base:config
+  - absl/base:core_headers
+  - absl/base:dynamic_annotations
+  - absl/base:log_severity
+  - absl/container:fixed_array
   - absl/container:inlined_vector
+  - absl/debugging:leak_check
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - absl/flags:config
+  - absl/flags:flag
+  - absl/flags:marshalling
+  - absl/flags:parse
+  - absl/flags:usage
+  - absl/hash:hash
+  - absl/memory:memory
+  - absl/meta:type_traits
+  - absl/numeric:int128
+  - absl/strings:str_format
   - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:any
+  - absl/types:bad_any_cast
+  - absl/types:bad_optional_access
+  - absl/types:bad_variant_access
+  - absl/types:compare
   - absl/types:optional
+  - absl/types:span
+  - absl/types:variant
+  - absl/utility:utility
   uses:
   - gpr_base_headers
 - name: gpr_base_headers
