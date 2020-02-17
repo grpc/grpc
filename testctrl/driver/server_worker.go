@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type ServerWorker struct {
+type serverWorker struct {
 	address    string
 	connection *grpc.ClientConn
 	client     proto.WorkerServiceClient
@@ -18,7 +18,7 @@ type ServerWorker struct {
 }
 
 func NewServerWorker(address string) (Worker, error) {
-	worker := new(ServerWorker)
+	worker := new(serverWorker)
 	connection, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return nil, fmt.Errorf("Unable to connect to server worker: %v", err)
@@ -29,11 +29,11 @@ func NewServerWorker(address string) (Worker, error) {
 	return worker, nil
 }
 
-func (s *ServerWorker) GetAddress() string {
+func (s *serverWorker) GetAddress() string {
 	return s.address
 }
 
-func (s *ServerWorker) GetResponse() (interface{}, error) {
+func (s *serverWorker) GetResponse() (interface{}, error) {
 	status, err := s.stream.Recv()
 	if err != nil {
 		return nil, err
@@ -41,17 +41,17 @@ func (s *ServerWorker) GetResponse() (interface{}, error) {
 	return status, nil
 }
 
-func (s *ServerWorker) GetScenario() *proto.Scenario {
+func (s *serverWorker) GetScenario() *proto.Scenario {
 	return s.scenario
 }
 
-func (s *ServerWorker) Start() error {
+func (s *serverWorker) Start() error {
 	stream, err := s.client.RunServer(context.Background())
 	s.stream = stream
 	return err
 }
 
-func (s *ServerWorker) SendScenario(scenario *proto.Scenario) {
+func (s *serverWorker) SendScenario(scenario *proto.Scenario) {
 	s.scenario = scenario
 
 	setupArgs := &proto.ServerArgs{
@@ -63,19 +63,19 @@ func (s *ServerWorker) SendScenario(scenario *proto.Scenario) {
 	s.stream.Send(setupArgs)
 }
 
-func (s *ServerWorker) Warmup() {
+func (s *serverWorker) Warmup() {
 	s.sendResetMark()
 }
 
-func (s *ServerWorker) Run() {
+func (s *serverWorker) Run() {
 	s.sendResetMark()
 }
 
-func (s *ServerWorker) Finalize() {
+func (s *serverWorker) Finalize() {
 	s.sendResetMark()
 }
 
-func (s *ServerWorker) Close() {
+func (s *serverWorker) Close() {
 	s.stream.CloseSend()
 	if _, err := s.client.QuitWorker(context.Background(), &proto.Void{}); err != nil {
 		log.Printf("Failed to quit server worker safely, relying on K8s cleanup: %v\n", err)
@@ -83,7 +83,7 @@ func (s *ServerWorker) Close() {
 	s.connection.Close()
 }
 
-func (s *ServerWorker) getResetMark() *proto.ServerArgs {
+func (s *serverWorker) getResetMark() *proto.ServerArgs {
 	return &proto.ServerArgs{
 		Argtype: &proto.ServerArgs_Mark{
 			Mark: &proto.Mark{
@@ -93,6 +93,6 @@ func (s *ServerWorker) getResetMark() *proto.ServerArgs {
 	}
 }
 
-func (s *ServerWorker) sendResetMark() {
+func (s *serverWorker) sendResetMark() {
 	s.stream.Send(s.getResetMark())
 }
