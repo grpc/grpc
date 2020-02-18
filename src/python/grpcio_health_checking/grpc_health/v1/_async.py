@@ -39,25 +39,25 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
             return _health_pb2.HealthCheckResponse(status=status)
 
     async def Watch(self, request: _health_pb2.HealthCheckRequest, context):
-        status = self._server_status.get(request.service)
-
-        if status is None:
-            status = _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN
-
+        condition = self._server_watchers[request.service]
         try:
-            condition = self._server_watchers[request.service]
             async with condition:
-                # Responds with current health state
-                await context.write(
-                    _health_pb2.HealthCheckResponse(status=status))
-
-                # Polling on health state changes
                 while True:
-                    await condition.wait()
-
                     status = self._server_status.get(request.service)
-                    await context.write(
-                        _health_pb2.HealthCheckResponse(status=status))
+
+                    if status:
+                        # Responds with current health state
+                        await context.write(
+                            _health_pb2.HealthCheckResponse(status=status))
+                    else:
+                        # Responds with default value
+                        await context.write(
+                            _health_pb2.HealthCheckResponse(
+                                status=_health_pb2.HealthCheckResponse.
+                                SERVICE_UNKNOWN))
+
+                    # Polling on health state changes
+                    await condition.wait()
         finally:
             del self._server_watchers[request.service]
 

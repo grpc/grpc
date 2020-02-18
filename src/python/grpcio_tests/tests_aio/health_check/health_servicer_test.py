@@ -143,6 +143,8 @@ class HealthServicerTest(AioTestBase):
 
         await self._servicer.set('some-other-service',
                                  health_pb2.HealthCheckResponse.SERVING)
+        # The change of health status in other service should be isolated.
+        # Hence, no additional notification should be observed.
         with self.assertRaises(asyncio.TimeoutError):
             await asyncio.wait_for(queue.get(), test_constants.SHORT_TIMEOUT)
 
@@ -193,8 +195,8 @@ class HealthServicerTest(AioTestBase):
         await task
 
         # Wait for the serving coroutine to process client cancellation.
-        timeout = time.time() + test_constants.TIME_ALLOWANCE
-        while (time.time() < timeout and self._servicer._server_watchers):
+        timeout = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while (time.monotonic() < timeout and self._servicer._server_watchers):
             await asyncio.sleep(1)
         self.assertFalse(self._servicer._server_watchers,
                          'There should not be any watcher left')
