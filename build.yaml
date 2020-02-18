@@ -643,16 +643,6 @@ filegroups:
 - name: grpc++_reflection_proto
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
-- name: grpc++_test
-  public_headers:
-  - include/grpc++/test/mock_stream.h
-  - include/grpc++/test/server_context_test_spouse.h
-  - include/grpcpp/test/default_reactor_test_peer.h
-  - include/grpcpp/test/mock_stream.h
-  - include/grpcpp/test/server_context_test_spouse.h
-  deps:
-  - grpc++
-  - grpc
 - name: grpc_base
   src:
   - src/core/lib/avl/avl.cc
@@ -1984,6 +1974,22 @@ libs:
   - grpc
   filegroups:
   - grpc++_reflection_proto
+- name: grpc++_test
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc++/test/mock_stream.h
+  - include/grpc++/test/server_context_test_spouse.h
+  - include/grpcpp/test/channel_test_peer.h
+  - include/grpcpp/test/default_reactor_test_peer.h
+  - include/grpcpp/test/mock_stream.h
+  - include/grpcpp/test/server_context_test_spouse.h
+  src:
+  - src/cpp/client/channel_test_peer.cc
+  deps:
+  - grpc++
+  - grpc
+  secure: false
 - name: grpc++_test_config
   build: private
   language: c++
@@ -4909,6 +4915,7 @@ targets:
   - test/cpp/end2end/interceptors_util.cc
   deps:
   - grpc++_test_util
+  - grpc++_test
   - grpc_test_util
   - grpc++
   - grpc
@@ -5421,6 +5428,7 @@ targets:
   - test/cpp/end2end/mock_test.cc
   deps:
   - grpc++_test_util
+  - grpc++_test
   - grpc_test_util
   - grpc++
   - grpc
@@ -5751,6 +5759,7 @@ targets:
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
   - grpc_test_util
+  - grpc++_test
   - grpc++
   - grpc
   - gpr

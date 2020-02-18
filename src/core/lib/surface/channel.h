@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
@@ -62,7 +64,18 @@ grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
 size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
 void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 
-struct registered_call;
+namespace grpc_core {
+
+struct RegisteredCall;
+struct CallRegistrationTable {
+  grpc_core::Mutex mu;
+  std::map<std::pair<const char*, const char*>, RegisteredCall*>
+      map /* GUARDED_BY(mu) */;
+  int method_registration_attempts /* GUARDED_BY(mu) */ = 0;
+};
+
+}  // namespace grpc_core
+
 struct grpc_channel {
   int is_client;
   grpc_compression_options compression_options;
@@ -70,9 +83,7 @@ struct grpc_channel {
   gpr_atm call_size_estimate;
   grpc_resource_user* resource_user;
 
-  gpr_mu registered_call_mu;
-  registered_call* registered_calls;
-
+  grpc_core::CallRegistrationTable registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
 
   char* target;

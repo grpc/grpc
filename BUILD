@@ -2262,12 +2262,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_test",
+    srcs = [
+        "src/cpp/client/channel_test_peer.cc",
+    ],
     public_hdrs = [
         "include/grpc++/test/mock_stream.h",
         "include/grpc++/test/server_context_test_spouse.h",
+        "include/grpcpp/test/channel_test_peer.h",
+        "include/grpcpp/test/default_reactor_test_peer.h",
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
-        "include/grpcpp/test/default_reactor_test_peer.h",
     ],
     deps = [
         ":grpc++",

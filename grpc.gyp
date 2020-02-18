@@ -1902,6 +1902,17 @@
       ],
     },
     {
+      'target_name': 'grpc++_test',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'grpc',
+      ],
+      'sources': [
+        'src/cpp/client/channel_test_peer.cc',
+      ],
+    },
+    {
       'target_name': 'grpc++_test_config',
       'type': 'static_library',
       'dependencies': [
