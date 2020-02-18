@@ -164,7 +164,7 @@ class LrsLb : public LoadBalancingPolicy {
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const char* name, const grpc_channel_args* args);
-  void UpdateChildPolicyLocked();
+  void UpdateChildPolicyLocked(ServerAddressList addresses);
 
   // Current channel args and config from the resolver.
   const grpc_channel_args* args_ = nullptr;
@@ -285,7 +285,7 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
 // FIXME: update load reporting picker
   }
   // Update child policy.
-  UpdateChildPolicyLocked();
+  UpdateChildPolicyLocked(std::move(args.addresses));
 }
 
 OrphanablePtr<LoadBalancingPolicy> LrsLb::CreateChildPolicyLocked(
@@ -317,14 +317,10 @@ OrphanablePtr<LoadBalancingPolicy> LrsLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-void LrsLb::UpdateChildPolicyLocked() {
+void LrsLb::UpdateChildPolicyLocked(ServerAddressList addresses) {
   // Construct update args.
   UpdateArgs update_args;
-// FIXME: pass through addresses from parent?  that way we can move the
-// addresses from the config to the addresses field in the priority
-// policy, and it will work regardless of whether or not the LRS policy
-// is in the tree
-//  update_args.addresses = std::move(serverlist);
+  update_args.addresses = std::move(addresses);
   update_args.config = config_->child_policy();
   update_args.args = grpc_channel_args_copy(args_);
   // If the child policy name changes, we need to create a new child
@@ -375,10 +371,7 @@ void LrsLb::UpdateChildPolicyLocked() {
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-// FIXME: don't default to RR here?
-  const char* child_policy_name = update_args.config == nullptr
-                                      ? "round_robin"
-                                      : update_args.config->name();
+  const char* child_policy_name = update_args.config->name();
   const bool create_policy =
       // case 1
       child_policy_ == nullptr ||
