@@ -15,7 +15,7 @@
 
 import asyncio
 import collections
-
+from typing import MutableMapping
 import grpc
 
 from grpc_health.v1 import health_pb2 as _health_pb2
@@ -24,13 +24,18 @@ from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
 class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
     """An AsyncIO implementation of health checking servicer."""
+    _server_status: MutableMapping[
+        str, '_health_pb2.HealthCheckResponse.ServingStatus']
+    _server_watchers: MutableMapping[str, asyncio.Condition]
+    _gracefully_shutting_down: bool
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._server_status = dict()
         self._server_watchers = collections.defaultdict(asyncio.Condition)
         self._gracefully_shutting_down = False
 
-    async def Check(self, request: _health_pb2.HealthCheckRequest, context):
+    async def Check(self, request: _health_pb2.HealthCheckRequest,
+                    context) -> None:
         status = self._server_status.get(request.service)
 
         if status is None:
@@ -38,7 +43,8 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
         else:
             return _health_pb2.HealthCheckResponse(status=status)
 
-    async def Watch(self, request: _health_pb2.HealthCheckRequest, context):
+    async def Watch(self, request: _health_pb2.HealthCheckRequest,
+                    context) -> None:
         condition = self._server_watchers[request.service]
         last_status = None
         try:
@@ -66,7 +72,8 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
                 del self._server_watchers[request.service]
 
     async def _set(self, service: str,
-                   status: _health_pb2.HealthCheckResponse.ServingStatus):
+                   status: _health_pb2.HealthCheckResponse.ServingStatus
+                  ) -> None:
         if service in self._server_watchers:
             condition = self._server_watchers.get(service)
             async with condition:
@@ -76,7 +83,8 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
             self._server_status[service] = status
 
     async def set(self, service: str,
-                  status: _health_pb2.HealthCheckResponse.ServingStatus):
+                  status: _health_pb2.HealthCheckResponse.ServingStatus
+                 ) -> None:
         """Sets the status of a service.
 
         Args:
@@ -89,7 +97,7 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
         else:
             await self._set(service, status)
 
-    async def enter_graceful_shutdown(self):
+    async def enter_graceful_shutdown(self) -> None:
         """Permanently sets the status of all services to NOT_SERVING.
 
         This should be invoked when the server is entering a graceful shutdown
