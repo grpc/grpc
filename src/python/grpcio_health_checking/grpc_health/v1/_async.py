@@ -43,18 +43,13 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
         try:
             async with condition:
                 while True:
-                    status = self._server_status.get(request.service)
+                    status = self._server_status.get(
+                        request.service,
+                        _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN)
 
-                    if status:
-                        # Responds with current health state
-                        await context.write(
-                            _health_pb2.HealthCheckResponse(status=status))
-                    else:
-                        # Responds with default value
-                        await context.write(
-                            _health_pb2.HealthCheckResponse(
-                                status=_health_pb2.HealthCheckResponse.
-                                SERVICE_UNKNOWN))
+                    # Responds with current health state
+                    await context.write(
+                        _health_pb2.HealthCheckResponse(status=status))
 
                     # Polling on health state changes
                     await condition.wait()
