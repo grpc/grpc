@@ -75,7 +75,7 @@ _KNOWN_ERRORS = [
     'LLVM ERROR: IO failure on output stream.',
     'MSBUILD : error MSB1009: Project file does not exist.',
     'fatal: git fetch_pack: expected ACK/NAK',
-    'Failed to fetch from http://github.com/grpc/grpc.git',
+    'Failed to fetch from https://github.com/grpc/grpc.git',
     ('hudson.remoting.RemotingSystemException: java.io.IOException: '
      'Backing channel is disconnected.'),
     'hudson.remoting.ChannelClosedException',
