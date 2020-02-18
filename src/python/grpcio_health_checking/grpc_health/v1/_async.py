@@ -40,6 +40,7 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
 
     async def Watch(self, request: _health_pb2.HealthCheckRequest, context):
         condition = self._server_watchers[request.service]
+        last_status = None
         try:
             async with condition:
                 while True:
@@ -47,14 +48,22 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
                         request.service,
                         _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN)
 
-                    # Responds with current health state
-                    await context.write(
-                        _health_pb2.HealthCheckResponse(status=status))
+                    # NOTE(lidiz) If the observed status is the same, it means
+                    # intermediate statuses has been discarded. It's consider
+                    # acceptable since peer only interested in eventual status.
+                    if status != last_status:
+                        # Responds with current health state
+                        await context.write(
+                            _health_pb2.HealthCheckResponse(status=status))
+
+                    # Records the last sent status
+                    last_status = status
 
                     # Polling on health state changes
                     await condition.wait()
         finally:
-            del self._server_watchers[request.service]
+            if request.service in self._server_watchers:
+                del self._server_watchers[request.service]
 
     async def _set(self, service: str,
                    status: _health_pb2.HealthCheckResponse.ServingStatus):

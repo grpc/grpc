@@ -16,6 +16,7 @@
 import asyncio
 import logging
 import time
+import random
 import unittest
 
 import grpc
@@ -33,6 +34,8 @@ _SERVING_SERVICE = 'grpc.test.TestServiceServing'
 _UNKNOWN_SERVICE = 'grpc.test.TestServiceUnknown'
 _NOT_SERVING_SERVICE = 'grpc.test.TestServiceNotServing'
 _WATCH_SERVICE = 'grpc.test.WatchService'
+
+_LARGE_NUMBER_OF_STATUS_CHANGE = 1000
 
 
 async def _pipe_to_queue(call, queue):
@@ -221,6 +224,31 @@ class HealthServicerTest(AioTestBase):
         resp = await self._stub.Check(request)
         self.assertEqual(health_pb2.HealthCheckResponse.NOT_SERVING,
                          resp.status)
+
+        call.cancel()
+        await task
+        self.assertTrue(queue.empty())
+
+    async def test_no_duplicate_status(self):
+        request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
+        call = self._stub.Watch(request)
+        queue = asyncio.Queue()
+        task = self.loop.create_task(_pipe_to_queue(call, queue))
+
+        self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
+                         (await queue.get()).status)
+        last_status = health_pb2.HealthCheckResponse.SERVICE_UNKNOWN
+
+        for _ in range(_LARGE_NUMBER_OF_STATUS_CHANGE):
+            if random.randint(0, 1) == 0:
+                status = health_pb2.HealthCheckResponse.SERVING
+            else:
+                status = health_pb2.HealthCheckResponse.NOT_SERVING
+
+            await self._servicer.set(_WATCH_SERVICE, status)
+            if status != last_status:
+                self.assertEqual(status, (await queue.get()).status)
+            last_status = status
 
         call.cancel()
         await task
