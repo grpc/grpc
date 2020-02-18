@@ -31,6 +31,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/test/channel_test_peer.h>
 
 #include <mutex>
 #include <thread>
@@ -810,6 +811,19 @@ TEST_P(End2endTest, MultipleRpcs) {
   for (int i = 0; i < 10; ++i) {
     threads[i].join();
   }
+}
+
+TEST_P(End2endTest, ManyStubs) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  ChannelTestPeer peer(channel_.get());
+  int registered_calls_pre = peer.registered_calls();
+  int registration_attempts_pre = peer.registration_attempts();
+  for (int i = 0; i < 1000; ++i) {
+    grpc::testing::EchoTestService::NewStub(channel_);
+  }
+  EXPECT_EQ(peer.registered_calls(), registered_calls_pre);
+  EXPECT_GT(peer.registration_attempts(), registration_attempts_pre);
 }
 
 TEST_P(End2endTest, EmptyBinaryMetadata) {
