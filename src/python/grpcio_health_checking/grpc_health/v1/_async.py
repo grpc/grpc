@@ -22,7 +22,7 @@ from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
 
-class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
+class HealthServicer(_health_pb2_grpc.HealthServicer):
     """An AsyncIO implementation of health checking servicer."""
     _server_status: MutableMapping[
         str, '_health_pb2.HealthCheckResponse.ServingStatus']
@@ -88,7 +88,7 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
         """Sets the status of a service.
 
         Args:
-          service: string, the name of the service. NOTE, '' must be set.
+          service: string, the name of the service.
           status: HealthCheckResponse.status enum value indicating the status of
             the service
         """
@@ -103,8 +103,6 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
         This should be invoked when the server is entering a graceful shutdown
         period. After this method is invoked, future attempts to set the status
         of a service will be ignored.
-
-        This is an EXPERIMENTAL API.
         """
         if self._gracefully_shutting_down:
             return

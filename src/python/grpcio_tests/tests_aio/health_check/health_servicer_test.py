@@ -46,8 +46,9 @@ async def _pipe_to_queue(call, queue):
 class HealthServicerTest(AioTestBase):
 
     async def setUp(self):
-        self._servicer = health.AsyncHealthServicer()
-        await self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
+        self._servicer = health.aio.HealthServicer()
+        await self._servicer.set(health.OVERALL_HEALTH,
+                                 health_pb2.HealthCheckResponse.SERVING)
         await self._servicer.set(_SERVING_SERVICE,
                                  health_pb2.HealthCheckResponse.SERVING)
         await self._servicer.set(_UNKNOWN_SERVICE,
@@ -99,7 +100,7 @@ class HealthServicerTest(AioTestBase):
         self.assertEqual(health.SERVICE_NAME, 'grpc.health.v1.Health')
 
     async def test_watch_empty_service(self):
-        request = health_pb2.HealthCheckRequest(service='')
+        request = health_pb2.HealthCheckRequest(service=health.OVERALL_HEALTH)
 
         call = self._stub.Watch(request)
         queue = asyncio.Queue()
@@ -206,7 +207,7 @@ class HealthServicerTest(AioTestBase):
         self.assertTrue(queue.empty())
 
     async def test_graceful_shutdown(self):
-        request = health_pb2.HealthCheckRequest(service='')
+        request = health_pb2.HealthCheckRequest(service=health.OVERALL_HEALTH)
         call = self._stub.Watch(request)
         queue = asyncio.Queue()
         task = self.loop.create_task(_pipe_to_queue(call, queue))
@@ -219,7 +220,8 @@ class HealthServicerTest(AioTestBase):
                          (await queue.get()).status)
 
         # This should be a no-op.
-        await self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
+        await self._servicer.set(health.OVERALL_HEALTH,
+                                 health_pb2.HealthCheckResponse.SERVING)
 
         resp = await self._stub.Check(request)
         self.assertEqual(health_pb2.HealthCheckResponse.NOT_SERVING,
