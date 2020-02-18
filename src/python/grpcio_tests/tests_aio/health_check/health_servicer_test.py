@@ -35,7 +35,7 @@ _UNKNOWN_SERVICE = 'grpc.test.TestServiceUnknown'
 _NOT_SERVING_SERVICE = 'grpc.test.TestServiceNotServing'
 _WATCH_SERVICE = 'grpc.test.WatchService'
 
-_LARGE_NUMBER_OF_STATUS_CHANGE = 1000
+_LARGE_NUMBER_OF_STATUS_CHANGES = 1000
 
 
 async def _pipe_to_queue(call, queue):
@@ -239,7 +239,7 @@ class HealthServicerTest(AioTestBase):
                          (await queue.get()).status)
         last_status = health_pb2.HealthCheckResponse.SERVICE_UNKNOWN
 
-        for _ in range(_LARGE_NUMBER_OF_STATUS_CHANGE):
+        for _ in range(_LARGE_NUMBER_OF_STATUS_CHANGES):
             if random.randint(0, 1) == 0:
                 status = health_pb2.HealthCheckResponse.SERVING
             else:
