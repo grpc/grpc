@@ -15,6 +15,7 @@
 
 import asyncio
 import collections
+from typing import Mapping, AbstractSet
 
 import grpc
 
@@ -24,10 +25,14 @@ from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
 class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
     """An AsyncIO implementation of health checking servicer."""
+    _server_status: Mapping[str,
+                            '_health_pb2.HealthCheckResponse.ServingStatus']
+    _server_watchers: Mapping[str, AbstractSet[asyncio.Queue]]
+    _gracefully_shutting_down: bool
 
     def __init__(self):
         self._server_status = dict()
-        self._server_watchers = collections.defaultdict(asyncio.Condition)
+        self._server_watchers = collections.defaultdict(set)
         self._gracefully_shutting_down = False
 
     async def Check(self, request: _health_pb2.HealthCheckRequest, context):
@@ -39,35 +44,37 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
             return _health_pb2.HealthCheckResponse(status=status)
 
     async def Watch(self, request: _health_pb2.HealthCheckRequest, context):
-        condition = self._server_watchers[request.service]
+        queue = asyncio.Queue()
+        self._server_watchers[request.service].add(queue)
+
         try:
-            async with condition:
-                while True:
-                    status = self._server_status.get(
-                        request.service,
-                        _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN)
+            status = self._server_status.get(
+                request.service,
+                _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN)
+            while True:
+                # Responds with current health state
+                await context.write(
+                    _health_pb2.HealthCheckResponse(status=status))
 
-                    # Responds with current health state
-                    await context.write(
-                        _health_pb2.HealthCheckResponse(status=status))
-
-                    # Polling on health state changes
-                    await condition.wait()
+                # Polling on health state changes
+                status = await queue.get()
         finally:
-            del self._server_watchers[request.service]
+            self._server_watchers[request.service].remove(queue)
+            if not self._server_watchers[request.service]:
+                del self._server_watchers[request.service]
 
-    async def _set(self, service: str,
-                   status: _health_pb2.HealthCheckResponse.ServingStatus):
+    def _set(self, service: str,
+             status: _health_pb2.HealthCheckResponse.ServingStatus):
+        self._server_status[service] = status
+
         if service in self._server_watchers:
-            condition = self._server_watchers.get(service)
-            async with condition:
-                self._server_status[service] = status
-                condition.notify_all()
-        else:
-            self._server_status[service] = status
+            # Only iterate through the watchers if there is at least one.
+            # Otherwise, it creates empty sets.
+            for watcher in self._server_watchers[service]:
+                watcher.put_nowait(status)
 
-    async def set(self, service: str,
-                  status: _health_pb2.HealthCheckResponse.ServingStatus):
+    def set(self, service: str,
+            status: _health_pb2.HealthCheckResponse.ServingStatus):
         """Sets the status of a service.
 
         Args:
@@ -78,7 +85,7 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
         if self._gracefully_shutting_down:
             return
         else:
-            await self._set(service, status)
+            self._set(service, status)
 
     async def enter_graceful_shutdown(self):
         """Permanently sets the status of all services to NOT_SERVING.
@@ -94,5 +101,4 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
         else:
             self._gracefully_shutting_down = True
             for service in self._server_status:
-                await self._set(service,
-                                _health_pb2.HealthCheckResponse.NOT_SERVING)
+                self._set(service, _health_pb2.HealthCheckResponse.NOT_SERVING)

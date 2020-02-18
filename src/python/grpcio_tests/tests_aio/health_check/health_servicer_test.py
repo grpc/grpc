@@ -44,13 +44,13 @@ class HealthServicerTest(AioTestBase):
 
     async def setUp(self):
         self._servicer = health.AsyncHealthServicer()
-        await self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
-        await self._servicer.set(_SERVING_SERVICE,
-                                 health_pb2.HealthCheckResponse.SERVING)
-        await self._servicer.set(_UNKNOWN_SERVICE,
-                                 health_pb2.HealthCheckResponse.UNKNOWN)
-        await self._servicer.set(_NOT_SERVING_SERVICE,
-                                 health_pb2.HealthCheckResponse.NOT_SERVING)
+        self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
+        self._servicer.set(_SERVING_SERVICE,
+                           health_pb2.HealthCheckResponse.SERVING)
+        self._servicer.set(_UNKNOWN_SERVICE,
+                           health_pb2.HealthCheckResponse.UNKNOWN)
+        self._servicer.set(_NOT_SERVING_SERVICE,
+                           health_pb2.HealthCheckResponse.NOT_SERVING)
         self._server = aio.server()
         port = self._server.add_insecure_port('[::]:0')
         health_pb2_grpc.add_HealthServicer_to_server(self._servicer,
@@ -118,13 +118,13 @@ class HealthServicerTest(AioTestBase):
         self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
                          (await queue.get()).status)
 
-        await self._servicer.set(_WATCH_SERVICE,
-                                 health_pb2.HealthCheckResponse.SERVING)
+        self._servicer.set(_WATCH_SERVICE,
+                           health_pb2.HealthCheckResponse.SERVING)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
                          (await queue.get()).status)
 
-        await self._servicer.set(_WATCH_SERVICE,
-                                 health_pb2.HealthCheckResponse.NOT_SERVING)
+        self._servicer.set(_WATCH_SERVICE,
+                           health_pb2.HealthCheckResponse.NOT_SERVING)
         self.assertEqual(health_pb2.HealthCheckResponse.NOT_SERVING,
                          (await queue.get()).status)
 
@@ -141,8 +141,8 @@ class HealthServicerTest(AioTestBase):
         self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
                          (await queue.get()).status)
 
-        await self._servicer.set('some-other-service',
-                                 health_pb2.HealthCheckResponse.SERVING)
+        self._servicer.set('some-other-service',
+                           health_pb2.HealthCheckResponse.SERVING)
         # The change of health status in other service should be isolated.
         # Hence, no additional notification should be observed.
         with self.assertRaises(asyncio.TimeoutError):
@@ -166,8 +166,8 @@ class HealthServicerTest(AioTestBase):
         self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
                          (await queue2.get()).status)
 
-        await self._servicer.set(_WATCH_SERVICE,
-                                 health_pb2.HealthCheckResponse.SERVING)
+        self._servicer.set(_WATCH_SERVICE,
+                           health_pb2.HealthCheckResponse.SERVING)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
                          (await queue1.get()).status)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
@@ -190,8 +190,8 @@ class HealthServicerTest(AioTestBase):
                          (await queue.get()).status)
 
         call.cancel()
-        await self._servicer.set(_WATCH_SERVICE,
-                                 health_pb2.HealthCheckResponse.SERVING)
+        self._servicer.set(_WATCH_SERVICE,
+                           health_pb2.HealthCheckResponse.SERVING)
         await task
 
         # Wait for the serving coroutine to process client cancellation.
@@ -216,7 +216,7 @@ class HealthServicerTest(AioTestBase):
                          (await queue.get()).status)
 
         # This should be a no-op.
-        await self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
+        self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
 
         resp = await self._stub.Check(request)
         self.assertEqual(health_pb2.HealthCheckResponse.NOT_SERVING,
