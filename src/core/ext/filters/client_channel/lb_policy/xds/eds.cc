@@ -205,6 +205,11 @@ class EdsLb : public LoadBalancingPolicy {
     LoadBalancingPolicy* child_ = nullptr;
   };
 
+  struct PriorityChildState {
+    int child_number;
+    std::set<RefCountedPtr<XdsLocalityName>, RefCountedPtrLess> localities;
+  };
+
   ~EdsLb();
 
   void ShutdownLocked() override;
@@ -270,6 +275,9 @@ class EdsLb : public LoadBalancingPolicy {
   RefCountedPtr<XdsApi::DropConfig> drop_config_;
 
   RefCountedPtr<XdsClusterDropStats> drop_stats_;
+
+  // State used to retain child policy names for priority policy.
+  std::vector<PriorityChildState> priority_child_states_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
@@ -740,6 +748,73 @@ ServerAddressList EdsLb::CreateChildPolicyAddresses() {
     }
   }
   return addresses;
+}
+
+RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
+  // Figure out which child names were already in use and which
+  // localities are in each one.
+  std::set<int> child_numbers_in_use;
+  std::map<XdsLocalityName*, int /*child_number*/, XdsLocalityName::Less>
+      locality_child_map;
+  for (const PriorityChildState& state : priority_child_states_) {
+    child_numbers_in_use.insert(state.child_number);
+    for (const auto& locality_name : state.localities) {
+      locality_child_map[locality_name.get()] = state.child_number;
+    }
+  }
+  // Construct new list of children.
+  std::vector<PriorityChildState> priority_child_states;
+  for (uint32_t priority = 0; priority < priority_list_update_.size();
+       ++priority) {
+    LocalityMap* locality_map = priority_list_update_.Find(priority);
+    GPR_ASSERT(locality_map != nullptr);
+    // Choose child number for this priority.
+    PriorityChildState state;
+    std::string child_name;
+    state.child_number = -1;
+    for (const auto& p : locality_map->localities) {
+      const RefCountedPtr<XdsLocalityName>& locality_name = p.first;
+      state.localities.insert(locality_name);
+      auto it = locality_child_map.find(locality_name.get());
+      if (it != locality_child_map.end()) {
+        state.child_number = it->second;
+        locality_child_map.erase(it);
+        break;
+      }
+    }
+    if (state.child_number == -1) {
+// FIXME: better error handling
+      GPR_ASSERT(child_numbers_in_use.size() < INT_MAX);
+      for (state.child_number = 0;
+           child_numbers_in_use.find(state.child_number) !=
+               child_numbers_in_use.end();
+           ++state.child_number);
+      child_numbers_in_use.insert(state.child_number);
+    }
+    priority_child_states.push_back(state);
+  }
+  // Construct JSON config.
+  Json::Object priority_config = {
+      {},
+  };
+  Json json = Json::Array{
+      Json::Object{
+          {"priority_experimental", std::move(priority_config)},
+      },
+  };
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    std::string json_str = json.Dump();
+    gpr_log(GPR_INFO, "[edslb %p] generated config for child policy: %s",
+            this, json_str.c_str());
+  }
+  grpc_error* error = GRPC_ERROR_NONE;
+  RefCountedPtr<LoadBalancingPolicy::Config> config =
+      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
+  if (error != GRPC_ERROR_NONE) {
+// FIXME: how do we handle this error?
+    GPR_ASSERT(false);
+  }
+  return config;
 }
 
 void EdsLb::UpdateChildPolicyLocked() {
