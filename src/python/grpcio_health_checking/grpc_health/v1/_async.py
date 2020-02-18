@@ -55,7 +55,7 @@ class AsyncHealthServicer(_health_pb2_grpc.HealthServicer):
                         _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN)
 
                     # NOTE(lidiz) If the observed status is the same, it means
-                    # intermediate statuses has been discarded. It's consider
+                    # there are missing intermediate statuses. It's considered
                     # acceptable since peer only interested in eventual status.
                     if status != last_status:
                         # Responds with current health state
