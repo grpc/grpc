@@ -279,38 +279,38 @@ endfunction()
 # These options allow users to enable or disable the building of the various
 # protoc plugins. For example, running CMake with
 # -DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF will disable building the C# plugin.
-set(_gRPC_PLUGIN_LIST)
+set(gRPC_PLUGIN_LIST)
 option(gRPC_BUILD_GRPC_CPP_PLUGIN "Build grpc_cpp_plugin" ON)
 if (gRPC_BUILD_GRPC_CPP_PLUGIN)
-  list(APPEND _gRPC_PLUGIN_LIST grpc_cpp_plugin)
+  list(APPEND gRPC_PLUGIN_LIST grpc_cpp_plugin)
 endif ()
 option(gRPC_BUILD_GRPC_CSHARP_PLUGIN "Build grpc_csharp_plugin" ON)
 if (gRPC_BUILD_GRPC_CSHARP_PLUGIN)
-  list(APPEND _gRPC_PLUGIN_LIST grpc_csharp_plugin)
+  list(APPEND gRPC_PLUGIN_LIST grpc_csharp_plugin)
 endif ()
 option(gRPC_BUILD_GRPC_NODE_PLUGIN "Build grpc_node_plugin" ON)
 if (gRPC_BUILD_GRPC_NODE_PLUGIN)
-  list(APPEND _gRPC_PLUGIN_LIST grpc_node_plugin)
+  list(APPEND gRPC_PLUGIN_LIST grpc_node_plugin)
 endif ()
 option(gRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN "Build grpc_objective_c_plugin" ON)
 if (gRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN)
-  list(APPEND _gRPC_PLUGIN_LIST grpc_objective_c_plugin)
+  list(APPEND gRPC_PLUGIN_LIST grpc_objective_c_plugin)
 endif ()
 option(gRPC_BUILD_GRPC_PHP_PLUGIN "Build grpc_php_plugin" ON)
 if (gRPC_BUILD_GRPC_PHP_PLUGIN)
-  list(APPEND _gRPC_PLUGIN_LIST grpc_php_plugin)
+  list(APPEND gRPC_PLUGIN_LIST grpc_php_plugin)
 endif ()
 option(gRPC_BUILD_GRPC_PYTHON_PLUGIN "Build grpc_python_plugin" ON)
 if (gRPC_BUILD_GRPC_PYTHON_PLUGIN)
-  list(APPEND _gRPC_PLUGIN_LIST grpc_python_plugin)
+  list(APPEND gRPC_PLUGIN_LIST grpc_python_plugin)
 endif ()
 option(gRPC_BUILD_GRPC_RUBY_PLUGIN "Build grpc_ruby_plugin" ON)
 if (gRPC_BUILD_GRPC_RUBY_PLUGIN)
-  list(APPEND _gRPC_PLUGIN_LIST grpc_ruby_plugin)
+  list(APPEND gRPC_PLUGIN_LIST grpc_ruby_plugin)
 endif ()
 
 add_custom_target(plugins
-  DEPENDS ${_gRPC_PLUGIN_LIST}
+  DEPENDS ${gRPC_PLUGIN_LIST}
 )
 
 add_custom_target(tools_c
@@ -10861,7 +10861,7 @@ target_link_libraries(grpc_cpp_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_cpp_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10898,7 +10898,7 @@ target_link_libraries(grpc_csharp_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_csharp_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10935,7 +10935,7 @@ target_link_libraries(grpc_node_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_node_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_node_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10972,7 +10972,7 @@ target_link_libraries(grpc_objective_c_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_objective_c_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11009,7 +11009,7 @@ target_link_libraries(grpc_php_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_php_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_php_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11046,7 +11046,7 @@ target_link_libraries(grpc_python_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_python_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_python_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11083,7 +11083,7 @@ target_link_libraries(grpc_ruby_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_ruby_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -15149,6 +15149,10 @@ endif()
 
 if(gRPC_INSTALL)
   install(EXPORT gRPCTargets
+    DESTINATION ${gRPC_INSTALL_CMAKEDIR}
+    NAMESPACE gRPC::
+  )
+  install(EXPORT gRPCPluginTargets
     DESTINATION ${gRPC_INSTALL_CMAKEDIR}
     NAMESPACE gRPC::
   )
