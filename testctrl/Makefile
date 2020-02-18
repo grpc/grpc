@@ -1,6 +1,10 @@
 build: deps
 	go build
 
+clean:
+	rm testctrl
+	rm proto/*.pb.go
+
 deps:
 	go get -v -d ./...
 
@@ -10,5 +14,5 @@ proto:
 test:
 	go test ./...
 
-.PHONY: build deps proto test
+.PHONY: build clean deps proto test
 
