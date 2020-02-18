@@ -216,7 +216,10 @@ grpc_cc_test(
     name = "bm_fullstack_trickle",
     size = "large",
     srcs = ["bm_fullstack_trickle.cc"],
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "notap",
+    ],
     deps = [":helpers"],
 )
 
@@ -310,7 +313,10 @@ grpc_cc_test(
     name = "bm_threadpool",
     size = "large",
     srcs = ["bm_threadpool.cc"],
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "notap",
+    ],
     uses_polling = False,
     deps = [":helpers"],
 )
