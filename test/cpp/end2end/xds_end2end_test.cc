@@ -434,7 +434,7 @@ class AdsServiceImpl : public AdsService {
   // to.
   struct EdsResourceState {
     int version = 0;
-    DiscoveryResponse resource;
+    ClusterLoadAssignment resource;
     std::set<SubscriberState*> subscribers;
   };
 
@@ -541,16 +541,19 @@ class AdsServiceImpl : public AdsService {
   void HandleEdsRequest(Stream* stream, const std::string& name) {
     gpr_log(GPR_INFO, "ADS[%p]: Handle EDS update name %s", this, name.c_str());
     DiscoveryResponse response;
+    response.set_type_url(kEdsTypeUrl);
+    response.set_version_info(kDefaultVersionString);
+    response.set_nonce(kDefaultNonceString);
     {
       grpc_core::MutexLock lock(&ads_mu_);
       if (eds_ignore_) return;
       auto eds_resource = resources_map_.eds_resources_state.find(name);
       GPR_ASSERT(eds_resource != resources_map_.eds_resources_state.end());
-      response = eds_resource->second.resource;
+      response.add_resources()->PackFrom(eds_resource->second.resource);
     }
+    IncreaseResponseCount();
     gpr_log(GPR_INFO, "ADS[%p]: EDS request: sending response '%s'", this,
             response.DebugString().c_str());
-    IncreaseResponseCount();
     stream->Write(response);
   }
 
@@ -1086,7 +1089,7 @@ class AdsServiceImpl : public AdsService {
 
   void set_cds_ignore() { cds_ignore_ = true; }
 
-  void SetEdsResponse(const DiscoveryResponse& response, int delay_ms = 0,
+  void SetEdsResponse(const ClusterLoadAssignment& assignment, int delay_ms = 0,
                       const std::string& name = kDefaultResourceName) {
     if (delay_ms > 0) {
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
@@ -1098,12 +1101,12 @@ class AdsServiceImpl : public AdsService {
               name.c_str());
       EdsResourceState state;
       state.version++;
-      state.resource = response;
+      state.resource = assignment;
       resources_map_.eds_resources_state.emplace(name, std::move(state));
       // no subscribers yet
     } else {
       entry->second.version++;
-      entry->second.resource = response;
+      entry->second.resource = assignment;
       gpr_log(GPR_INFO,
               "ADS[%p]: Updating an existing EDS resource %s to version %u",
               this, name.c_str(), entry->second.version);
@@ -1149,7 +1152,7 @@ class AdsServiceImpl : public AdsService {
     gpr_log(GPR_INFO, "ADS[%p]: shut down", this);
   }
 
-  static DiscoveryResponse BuildResponse(const ResponseArgs& args) {
+  static ClusterLoadAssignment BuildResponse(const ResponseArgs& args) {
     ClusterLoadAssignment assignment;
     assignment.set_cluster_name(kDefaultResourceName);
     for (const auto& locality : args.locality_list) {
@@ -1186,10 +1189,7 @@ class AdsServiceImpl : public AdsService {
         drop_percentage->set_denominator(args.drop_denominator);
       }
     }
-    DiscoveryResponse response;
-    response.set_type_url(kEdsTypeUrl);
-    response.add_resources()->PackFrom(assignment);
-    return response;
+    return assignment;
   }
 
   void NotifyDoneWithAdsCall() {
