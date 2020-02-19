@@ -683,21 +683,16 @@ TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
 // server credentials.
 TEST_F(CredentialsTest, LoadTlsServerCredentials) {
   grpc_init();
-  //std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
-  //    new TestTlsCredentialReload());
-  //std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
-  //    new TlsCredentialReloadConfig(test_credential_reload));
+  std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
+      new TestTlsCredentialReload());
+  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
+      new TlsCredentialReloadConfig(test_credential_reload));
 
-  // The server builder is needed in order to properly initialize the C-core.
-  //ServerBuilder builder;
-  //(void)builder;
-  //TlsCredentialsOptions options = TlsCredentialsOptions(
-  //    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-  //    GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config, nullptr);
-  //std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
-  //    grpc::experimental::TlsServerCredentials(options);
-  ::grpc::SslServerCredentialsOptions options;
-  std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials = ::grpc::SslServerCredentials(options);
+  TlsCredentialsOptions options = TlsCredentialsOptions(
+      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+      GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config, nullptr);
+  std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
+      grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
   grpc_shutdown();
 }
