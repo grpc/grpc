@@ -79,11 +79,11 @@ type ScenarioResults struct {
 func RunScenario(scenario *proto.Scenario, server, client Worker) (*ScenarioResults, error) {
 	log.Println("Calling start RPCs on server and client workers.")
 	if err := server.Start(); err != nil {
-		log.Println("Failed to run server: %v\n", err)
+		log.Printf("Failed to run server: %v\n", err)
 		return nil, err
 	}
 	if err := client.Start(); err != nil {
-		log.Println("Failed to run client: %v\n", err)
+		log.Printf("Failed to run client: %v\n", err)
 		return nil, err
 	}
 	defer server.Close()
@@ -113,7 +113,7 @@ func RunScenario(scenario *proto.Scenario, server, client Worker) (*ScenarioResu
 		return nil, err
 	}
 
-	log.Println("Driver going to sleep for %ds to allow server and client to warmup\n", scenario.WarmupSeconds)
+	log.Printf("Driver going to sleep for %ds to allow server and client to warmup\n", scenario.WarmupSeconds)
 	warmupDuration, err := time.ParseDuration(fmt.Sprintf("%ds", scenario.WarmupSeconds))
 	if err != nil {
 		log.Printf("Failed to parse warmup duration (%d seconds): %v\n", scenario.WarmupSeconds, err)
@@ -121,7 +121,7 @@ func RunScenario(scenario *proto.Scenario, server, client Worker) (*ScenarioResu
 	}
 	time.Sleep(warmupDuration)
 
-	log.Println("Sending mark to begin tests which will run for %ds\n", scenario.BenchmarkSeconds)
+	log.Printf("Sending mark to begin tests which will run for %ds\n", scenario.BenchmarkSeconds)
 	server.Run()
 	if _, err := server.GetResponse(); err != nil {
 		log.Printf("Sent run mark to server, but failed to receive adequate reply: %v\n", err)
@@ -135,7 +135,7 @@ func RunScenario(scenario *proto.Scenario, server, client Worker) (*ScenarioResu
 
 	// NOTE: This diverges from the C++ implementation which waits for scenario.warmup_seconds + scenario.benchmark_seconds
 	// for the tests to finish.  For clarity, I just use the benchmark seconds here.  It's an easy fix, however.
-	log.Println("Driver going to sleep for %ds to allow server and client to run tests\n", scenario.BenchmarkSeconds)
+	log.Printf("Driver going to sleep for %ds to allow server and client to run tests\n", scenario.BenchmarkSeconds)
 	benchmarkDuration, err := time.ParseDuration(fmt.Sprintf("%ds", scenario.BenchmarkSeconds))
 	if err != nil {
 		log.Printf("Failed to parse benchmark duration (%d seconds): %v\n", scenario.BenchmarkSeconds, err)
