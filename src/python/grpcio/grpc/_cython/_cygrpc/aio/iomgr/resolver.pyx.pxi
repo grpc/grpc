@@ -17,11 +17,13 @@ cdef class _AsyncioResolver:
     def __cinit__(self):
         self._grpc_resolver = NULL
         self._task_resolve = None
+        self._loop = None
 
     @staticmethod
     cdef _AsyncioResolver create(grpc_custom_resolver* grpc_resolver):
         resolver = _AsyncioResolver()
         resolver._grpc_resolver = grpc_resolver
+        resolver._loop = _current_io_loop().asyncio_loop()
         return resolver
 
     def __repr__(self):
@@ -52,11 +54,16 @@ cdef class _AsyncioResolver:
                 grpc_socket_error("getaddrinfo {}".format(error_msg).encode())
             )
 
+        _current_io_loop().io_mark()
+
     cdef void resolve(self, char* host, char* port):
         assert not self._task_resolve
 
-        loop = asyncio.get_event_loop()
-        self._task_resolve = asyncio.ensure_future(
-            loop.getaddrinfo(host, port)
-        )
-        self._task_resolve.add_done_callback(self._resolve_cb)
+        def callback():
+            self._task_resolve = asyncio.ensure_future(
+                self._loop.getaddrinfo(host, port),
+                loop=self._loop
+            )
+            self._task_resolve.add_done_callback(self._resolve_cb)
+
+        self._loop.call_soon_threadsafe(callback)

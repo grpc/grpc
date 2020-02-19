@@ -18,19 +18,30 @@ cdef class _AsyncioTimer:
         self._grpc_timer = NULL
         self._timer_handler = None
         self._active = 0
+        self._loop = None
 
     @staticmethod
     cdef _AsyncioTimer create(grpc_custom_timer * grpc_timer, deadline):
         timer = _AsyncioTimer()
         timer._grpc_timer = grpc_timer
         timer._deadline = deadline
-        timer._timer_handler = asyncio.get_event_loop().call_later(deadline, timer._on_deadline)
         timer._active = 1
+        timer._loop = _current_io_loop().asyncio_loop()
+
+        def callback():
+            if timer._active == 1:
+                timer._timer_handler = timer._loop.call_later(deadline, timer._on_deadline)
+
+        timer._loop.call_soon_threadsafe(callback)
         return timer
 
     def _on_deadline(self):
+        if self._active == 0:
+            return
+
         self._active = 0
         grpc_custom_timer_callback(self._grpc_timer, <grpc_error*>0)
+        _current_io_loop().io_mark()
 
     def __repr__(self):
         class_name = self.__class__.__name__ 
@@ -41,5 +52,7 @@ cdef class _AsyncioTimer:
         if self._active == 0:
             return
 
-        self._timer_handler.cancel()
+        if self._timer_handler:
+            self._loop.call_soon_threadsafe(self._timer_handler.cancel)
+
         self._active = 0

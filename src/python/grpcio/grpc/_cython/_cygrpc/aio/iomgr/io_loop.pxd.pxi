@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef class _AsyncioTimer:
+cdef class _IOLoop:
     cdef:
-        grpc_custom_timer * _grpc_timer
-        object _deadline
-        object _timer_handler
-        object _loop
-        int _active
+        cdef object _asyncio_loop
+        cdef object _thread
+        cdef object _io_ev
+  
+        # Starting synchronization attributes
+        cdef object _loop_started_cv
+        cdef object _loop_started
 
-    @staticmethod
-    cdef _AsyncioTimer create(grpc_custom_timer * grpc_timer, deadline)
-
-    cdef stop(self)
+    cpdef void io_mark(self)
+    cdef void io_wait(self, size_t timeout_ms)
+    cdef object asyncio_loop(self)

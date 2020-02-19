@@ -16,6 +16,7 @@ cdef class _AsyncioResolver:
     cdef:
         grpc_custom_resolver* _grpc_resolver
         object _task_resolve
+        object _loop
 
     @staticmethod
     cdef _AsyncioResolver create(grpc_custom_resolver* grpc_resolver)

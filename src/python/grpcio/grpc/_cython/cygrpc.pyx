@@ -65,6 +65,7 @@ ELSE:
     include "_cygrpc/fork_posix.pyx.pxi"
 
 # Following pxi files are part of the Aio module
+include "_cygrpc/aio/iomgr/io_loop.pyx.pxi"
 include "_cygrpc/aio/iomgr/iomgr.pyx.pxi"
 include "_cygrpc/aio/iomgr/socket.pyx.pxi"
 include "_cygrpc/aio/iomgr/timer.pyx.pxi"

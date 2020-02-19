@@ -47,7 +47,7 @@ cdef class CallbackWrapper:
     @staticmethod
     cdef void functor_run(
             grpc_experimental_completion_queue_functor* functor,
-            int succeed)
+            int succeed) with gil
 
     cdef grpc_experimental_completion_queue_functor *c_functor(self)
 

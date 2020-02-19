@@ -260,6 +260,52 @@ class TestGevent(setuptools.Command):
         if not result.value.wasSuccessful():
             sys.exit('Test failure')
 
+class TestAsyncio(setuptools.Command):
+    """Command to run tests w/asyncio."""
+
+    BANNED_TESTS = (
+        # Fork support is not compatible with Aio
+        'fork._fork_interop_test.ForkInteropTest',
+        'unit._cython._fork_test',
+
+        # Next tests imply the usage by the gRPC library syscalls that do not
+        # consider the existence of an installed iomgr.
+        'unit._local_credentials_test.LocalCredentialsTest.test_local_tcp',
+
+        # segfaults
+        'unit._local_credentials_test.LocalCredentialsTest.test_uds',
+
+        # needs investigation
+        'health_check._health_servicer_test',
+
+        # hangs forever
+        'unit._cython._channel_test.ChannelTest.test_single_channel_lonely_connectivity',
+        'unit._cython._channel_test.ChannelTest.test_multiple_channels_lonely_connectivity',
+        'unit._abort_test.AbortTest.test_abort'
+    )
+    description = 'run tests with Asyncio IO manager.'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        # distutils requires this override.
+        pass
+
+    def run(self):
+        import grpc.experimental.aio
+        grpc.experimental.aio.init_grpc_aio()
+
+        import tests
+        loader = tests.Loader()
+        loader.loadTestsFromNames(['tests'])
+        runner = tests.Runner(dedicated_threads=True)
+        runner.skip_tests(self.BANNED_TESTS)
+        result = runner.run(loader.suite)
+        if not result.wasSuccessful():
+            sys.exit('Test failure')
+
 
 class RunInterop(test.test):
 

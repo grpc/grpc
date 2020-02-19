@@ -25,9 +25,15 @@ cdef class CallbackFailureHandler:
         self._exception_type = exception_type
 
     cdef handle(self, object future):
-        future.set_exception(self._exception_type(
+        excp = self._exception_type(
             'Failed "%s": %s' % (self._core_function_name, self._error_details)
-        ))
+        )
+
+        loop = future.get_loop() 
+        if loop == _current_io_loop().asyncio_loop():
+            future.set_exception(excp)
+        else:
+            loop.call_soon_threadsafe(future.set_exception, excp)
 
 
 cdef class CallbackWrapper:
@@ -49,14 +55,20 @@ cdef class CallbackWrapper:
     @staticmethod
     cdef void functor_run(
             grpc_experimental_completion_queue_functor* functor,
-            int success):
+            int success) with gil:
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
-        if not waiter.cancelled():
-            if success == 0:
-                (<CallbackFailureHandler>context.failure_handler).handle(waiter)
-            else:
+        if waiter.cancelled():
+            return
+
+        if success == 0:
+            (<CallbackFailureHandler>context.failure_handler).handle(waiter)
+        else:
+            loop = waiter.get_loop() 
+            if loop == _current_io_loop().asyncio_loop():
                 waiter.set_result(None)
+            else:
+                loop.call_soon_threadsafe(waiter.set_result, None)
         cpython.Py_DECREF(<object>context.callback_wrapper)
 
     cdef grpc_experimental_completion_queue_functor *c_functor(self):

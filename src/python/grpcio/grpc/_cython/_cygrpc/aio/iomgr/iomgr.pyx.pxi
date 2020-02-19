@@ -11,10 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 import platform
-
 from cpython cimport Py_INCREF, Py_DECREF
 from libc cimport string
 
@@ -195,23 +192,29 @@ cdef void asyncio_timer_stop(grpc_custom_timer* grpc_timer) with gil:
     Py_DECREF(timer)
 
 
-cdef void asyncio_init_loop() with gil:
+cdef void asyncio_init_loop():
     pass
 
 
-cdef void asyncio_destroy_loop() with gil:
+cdef void asyncio_destroy_loop():
     pass
 
 
-cdef void asyncio_kick_loop() with gil:
+cdef void asyncio_kick_loop():
+    # GIL is not acquired in purpose, holding the GIL 
+    # would mean having a deadlock when the synchronous stack
+    # is executed on top of the Aio module
     pass
 
 
 cdef void asyncio_run_loop(size_t timeout_ms) with gil:
-    pass
+    # Block until arrives a new input/output event
+    _current_io_loop().io_wait(timeout_ms)
 
-
+ 
 def install_asyncio_iomgr():
+    _IOLoop()
+
     asyncio_resolver_vtable.resolve = asyncio_resolve
     asyncio_resolver_vtable.resolve_async = asyncio_resolve_async
 
