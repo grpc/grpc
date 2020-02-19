@@ -43,7 +43,7 @@ func (a *Adapter) ConnectWithinCluster() error {
 // call in their examples.  This argument ensures forward compatibility once master is stable. For
 // now, an implementation can provide `context.Background()`.
 func (a *Adapter) CreateDeployment(_ context.Context, d *appsv1.Deployment) (*appsv1.Deployment, error) {
-	deploymentsClient := ka.clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
+	deploymentsClient := a.clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
 	deployment, err := deploymentsClient.Create(d)
 	if err != nil {
 		return nil, err

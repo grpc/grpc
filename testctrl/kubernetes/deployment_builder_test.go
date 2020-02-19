@@ -19,7 +19,7 @@ func TestContainerPorts(t *testing.T) {
 	}
 
 	d = NewDeploymentBuilder("", ServerRole, "")
-	if hasServerPort(d.ContainerPorts()) {
+	if !hasServerPort(d.ContainerPorts()) {
 		t.Errorf("%s has unexpected server port", string(d.role))
 	}
 }
