@@ -1,34 +1,35 @@
 package kubernetes
 
 import (
-	"strings"
 	"testing"
-
-	apiv1 "k8s.io/api/core/v1"
 )
 
 func TestContainerPorts(t *testing.T) {
-	d := NewDeploymentBuilder("", ClientRole, "")
-	if hasServerPort(d.ContainerPorts()) {
-		t.Errorf("%s has unexpected server port", string(d.role))
-	}
+	for _, e := range []struct{
+		role DeploymentRole
+		needsServerPort bool
+	}{
+		{ClientRole, false},
+		{DriverRole, false},
+		{ServerRole, true},
+	}{
+		d := NewDeploymentBuilder("", e.role, "")
+		ports := d.ContainerPorts()
 
-	d = NewDeploymentBuilder("", DriverRole, "")
-	if hasServerPort(d.ContainerPorts()) {
-		t.Errorf("%s has unexpected server port", string(d.role))
-	}
+		serverPortFound := false
+		for _, port := range ports {
+			if port.Name == "serverPort" {
+				serverPortFound = true
+			}
+		}
 
-	d = NewDeploymentBuilder("", ServerRole, "")
-	if !hasServerPort(d.ContainerPorts()) {
-		t.Errorf("%s has unexpected server port", string(d.role))
-	}
-}
-
-func hasServerPort(ports []apiv1.ContainerPort) bool {
-	for _, port := range ports {
-		if strings.Compare(port.Name, "serverPort") == 0 {
-			return true
+		if serverPortFound != e.needsServerPort {
+			negationExpr := ""
+			if !e.needsServerPort {
+				negationExpr = "not "
+			}
+			t.Errorf("expected %s pod ports to %scontain a missing \"serverPort\"", string(d.role), negationExpr)
 		}
 	}
-	return false
 }
+
