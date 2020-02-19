@@ -208,7 +208,7 @@ elseif(UNIX)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
 endif()
 
-if(WIN32 AND MSVC)
+if(WIN32)
   set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
 endif()
 
