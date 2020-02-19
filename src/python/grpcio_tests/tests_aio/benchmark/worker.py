@@ -46,6 +46,13 @@ if __name__ == '__main__':
                         type=int,
                         dest='port',
                         help='The port the worker should listen on')
+    parser.add_argument('--uvloop',
+                        action='store_true',
+                        help='Use uvloop or not')
     args = parser.parse_args()
+
+    if args.uvloop:
+        import uvloop
+        uvloop.install()
 
     asyncio.get_event_loop().run_until_complete(run_worker_server(args.port))

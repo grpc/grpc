@@ -33,7 +33,7 @@ from tests_aio.benchmark import benchmark_client, benchmark_servicer
 
 _NUM_CORES = multiprocessing.cpu_count()
 _WORKER_ENTRY_FILE = os.path.join(
-    os.path.split(os.path.abspath(__file__))[0], '/worker.py')
+    os.path.split(os.path.abspath(__file__))[0], 'worker.py')
 
 _LOGGER = logging.getLogger(__name__)
 
