@@ -988,7 +988,7 @@ void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
   }
   if (!locality_name.zone().empty()) {
     envoy_api_v2_core_Locality_set_zone(
-        locality, upb_strview_makez(locality_name.region().c_str()));
+        locality, upb_strview_makez(locality_name.zone().c_str()));
   }
   if (!locality_name.sub_zone().empty()) {
     envoy_api_v2_core_Locality_set_sub_zone(
@@ -1046,9 +1046,9 @@ grpc_slice XdsApi::CreateLrsRequest(
           upb_strview_make(eds_service_name.data(), eds_service_name.size()));
     }
     // Add locality stats.
-    for (auto& p : load_report.locality_stats) {
+    for (const auto& p : load_report.locality_stats) {
       const XdsLocalityName& locality_name = *p.first;
-      auto& snapshot = p.second;
+      const auto& snapshot = p.second;
       envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
           envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
               cluster_stats, arena.ptr());
@@ -1057,7 +1057,7 @@ grpc_slice XdsApi::CreateLrsRequest(
     }
     // Add dropped requests.
     uint64_t total_dropped_requests = 0;
-    for (auto& p : load_report.dropped_requests) {
+    for (const auto& p : load_report.dropped_requests) {
       const char* category = p.first.c_str();
       const uint64_t count = p.second;
       envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
