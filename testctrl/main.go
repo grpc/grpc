@@ -71,7 +71,7 @@ func runService(port int, enableReflection bool) {
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterOperationsServer(grpcServer, &operationsServerImpl{})
-	pb.RegisterTestSessionServer(grpcServer, &testSessionsServerImpl{})
+	pb.RegisterTestSessionsServer(grpcServer, &testSessionsServerImpl{})
 
 	if enableReflection {
 		log.Println("Enabling reflection for grpc_cli; avoid this flag in production.")
