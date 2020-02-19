@@ -40,6 +40,9 @@ TraceFlag* TraceFlagList::root_tracer_ = nullptr;
 
 bool TraceFlagList::Set(const char* name, bool enabled) {
   TraceFlag* t;
+  if (0 == strcmp(name, "")) {
+    return true;
+  }
   if (0 == strcmp(name, "all")) {
     for (t = root_tracer_; t; t = t->next_tracer_) {
       t->set_enabled(enabled);
@@ -60,8 +63,7 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
         found = true;
       }
     }
-    // check for unknowns, but ignore "", to allow to GRPC_TRACE=
-    if (!found && 0 != strcmp(name, "")) {
+    if (!found) {
       gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
       return false; /* early return */
     }
