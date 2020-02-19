@@ -126,6 +126,32 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
   }
 }
 
+bool grpc_sockaddr_is_loopback(const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr;
+  grpc_resolved_address addr4_normalized;
+  if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
+    resolved_addr = &addr4_normalized;
+  }
+  addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  if (addr->sa_family == GRPC_AF_INET) {
+    // Check for 127.0.0.1
+    const grpc_sockaddr_in* addr4 =
+        reinterpret_cast<const grpc_sockaddr_in*>(addr);
+    return addr4->sin_addr.s_addr == htonl(INADDR_LOOPBACK);
+  } else if (addr->sa_family == GRPC_AF_INET6) {
+    // Check for ::1
+    const grpc_sockaddr_in6* addr6 =
+        reinterpret_cast<const grpc_sockaddr_in6*>(addr);
+    for (int i = 0; i < 15; i++) {
+      if (addr6->sin6_addr.s6_addr[i] != 0) return false;
+    }
+    return addr6->sin6_addr.s6_addr[15] == 1;
+  } else {
+    // UDP socket is not considered as loopback.
+    return false;
+  }
+}
+
 void grpc_sockaddr_make_wildcards(int port, grpc_resolved_address* wild4_out,
                                   grpc_resolved_address* wild6_out) {
   grpc_sockaddr_make_wildcard4(port, wild4_out);

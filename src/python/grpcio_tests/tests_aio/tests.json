@@ -29,6 +29,7 @@
   "unit.context_peer_test.TestContextPeer",
   "unit.done_callback_test.TestDoneCallback",
   "unit.init_test.TestInit",
+  "unit.local_credentials_test.TestLocalCredentials",
   "unit.metadata_test.TestMetadata",
   "unit.outside_init_test.TestOutsideInit",
   "unit.secure_call_test.TestStreamStreamSecureCall",

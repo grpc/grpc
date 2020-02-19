@@ -20,17 +20,20 @@
 
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
-#include <stdbool.h>
-#include <string.h>
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -66,45 +69,24 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   return ctx;
 }
 
+static void uri_to_sockaddr(const char* uri_str, grpc_resolved_address* addr) {
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_str);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
+  if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
+}
+
 void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                       grpc_closure* on_peer_checked,
                       grpc_local_connect_type type) {
-  int fd = grpc_endpoint_get_fd(ep);
-  grpc_resolved_address resolved_addr;
-  memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = GRPC_MAX_SOCKADDR_SIZE;
-  bool is_endpoint_local = false;
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr),
-                  &resolved_addr.len) == 0) {
-    grpc_resolved_address addr_normalized;
-    grpc_resolved_address* addr =
-        grpc_sockaddr_is_v4mapped(&resolved_addr, &addr_normalized)
-            ? &addr_normalized
-            : &resolved_addr;
-    grpc_sockaddr* sock_addr = reinterpret_cast<grpc_sockaddr*>(&addr->addr);
-    // UDS
-    if (type == UDS && grpc_is_unix_socket(addr)) {
-      is_endpoint_local = true;
-      // IPV4
-    } else if (type == LOCAL_TCP && sock_addr->sa_family == GRPC_AF_INET) {
-      const grpc_sockaddr_in* addr4 =
-          reinterpret_cast<const grpc_sockaddr_in*>(sock_addr);
-      if (grpc_htonl(addr4->sin_addr.s_addr) == INADDR_LOOPBACK) {
-        is_endpoint_local = true;
-      }
-      // IPv6
-    } else if (type == LOCAL_TCP && sock_addr->sa_family == GRPC_AF_INET6) {
-      const grpc_sockaddr_in6* addr6 =
-          reinterpret_cast<const grpc_sockaddr_in6*>(addr);
-      if (memcmp(&addr6->sin6_addr, &in6addr_loopback,
-                 sizeof(in6addr_loopback)) == 0) {
-        is_endpoint_local = true;
-      }
-    }
-  }
+  absl::string_view peer_address = grpc_endpoint_get_peer(ep);
+  grpc_resolved_address peer_resolved_address;
+  uri_to_sockaddr(std::string(peer_address).c_str(), &peer_resolved_address);
   grpc_error* error = GRPC_ERROR_NONE;
-  if (!is_endpoint_local) {
+  if (!grpc_sockaddr_is_loopback(&peer_resolved_address)) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
