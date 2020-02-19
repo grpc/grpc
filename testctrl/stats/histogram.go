@@ -220,4 +220,3 @@ func (h *Histogram) Merge(h2 *Histogram) {
 		h.Buckets[i].Count += b.Count
 	}
 }
-
