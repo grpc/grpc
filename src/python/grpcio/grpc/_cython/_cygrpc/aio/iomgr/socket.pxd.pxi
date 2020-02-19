@@ -39,6 +39,9 @@ cdef class _AsyncioSocket:
         object _py_socket
         object _peername
 
+        # Caches the IOLoop.
+        object _io_loop
+
 
     @staticmethod
     cdef _AsyncioSocket create(

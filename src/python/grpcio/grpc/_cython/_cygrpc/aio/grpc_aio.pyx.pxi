@@ -16,6 +16,9 @@
 cdef bint _grpc_aio_initialized = 0
 
 
+cdef bint grpc_aio_initialized():
+    return _grpc_aio_initialized
+
 def init_grpc_aio():
     global _grpc_aio_initialized
 
