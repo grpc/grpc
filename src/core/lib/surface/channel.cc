@@ -93,7 +93,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->target = target;
   channel->resource_user = resource_user;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
-  new (&channel->registration_table) grpc_core::CallRegistrationTable;
+  channel->registration_table.Init();
 
   gpr_atm_no_barrier_store(
       &channel->call_size_estimate,
@@ -427,22 +427,21 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   GPR_ASSERT(!reserved);
   grpc_core::ExecCtx exec_ctx;
 
-  grpc_core::MutexLock l(&channel->registration_table.mu);
-  channel->registration_table.method_registration_attempts++;
+  grpc_core::MutexLock lock(&channel->registration_table->mu);
+  channel->registration_table->method_registration_attempts++;
   auto key = std::make_pair(host, method);
-  auto rc_posn = channel->registration_table.map.find(key);
-  if (rc_posn != channel->registration_table.map.end()) {
+  auto rc_posn = channel->registration_table->map.find(key);
+  if (rc_posn != channel->registration_table->map.end()) {
     return rc_posn->second;
   }
-  grpc_core::RegisteredCall* rc = static_cast<grpc_core::RegisteredCall*>(
-      gpr_malloc(sizeof(grpc_core::RegisteredCall)));
+  grpc_core::RegisteredCall* rc = new grpc_core::RegisteredCall;
   rc->path = grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
                                      grpc_core::ExternallyManagedSlice(method));
   rc->authority =
       host ? grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
                                      grpc_core::ExternallyManagedSlice(host))
            : GRPC_MDNULL;
-  channel->registration_table.map.insert({key, rc});
+  channel->registration_table->map.insert({key, rc});
   return rc;
 }
 
@@ -492,13 +491,13 @@ static void destroy_channel(void* arg, grpc_error* /*error*/) {
     channel->channelz_node.reset();
   }
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
-  for (auto registered_call_entry : channel->registration_table.map) {
+  for (auto& registered_call_entry : channel->registration_table->map) {
     grpc_core::RegisteredCall* rc = registered_call_entry.second;
     GRPC_MDELEM_UNREF(rc->path);
     GRPC_MDELEM_UNREF(rc->authority);
-    gpr_free(rc);
+    delete rc;
   }
-  channel->registration_table.~CallRegistrationTable();
+  channel->registration_table.Destroy();
   if (channel->resource_user != nullptr) {
     grpc_resource_user_free(channel->resource_user,
                             GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);

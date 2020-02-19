@@ -26,7 +26,9 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata.h"
 
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* args,
@@ -83,7 +85,8 @@ struct grpc_channel {
   gpr_atm call_size_estimate;
   grpc_resource_user* resource_user;
 
-  grpc_core::CallRegistrationTable registration_table;
+  grpc_core::ManualConstructor<grpc_core::CallRegistrationTable>
+      registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
 
   char* target;

@@ -27,13 +27,13 @@ namespace grpc {
 namespace testing {
 
 int ChannelTestPeer::registered_calls() const {
-  grpc_core::MutexLock l(&channel_->c_channel_->registration_table.mu);
-  return static_cast<int>(channel_->c_channel_->registration_table.map.size());
+  grpc_core::MutexLock l(&channel_->c_channel_->registration_table->mu);
+  return static_cast<int>(channel_->c_channel_->registration_table->map.size());
 }
 
 int ChannelTestPeer::registration_attempts() const {
-  grpc_core::MutexLock l(&channel_->c_channel_->registration_table.mu);
-  return channel_->c_channel_->registration_table.method_registration_attempts;
+  grpc_core::MutexLock l(&channel_->c_channel_->registration_table->mu);
+  return channel_->c_channel_->registration_table->method_registration_attempts;
 }
 
 }  // namespace testing
