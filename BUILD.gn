@@ -936,6 +936,7 @@ config("grpc_config") {
         "//third_party/zlib",
         ":gpr",
         ":upb",
+        ":absl/strings:strings",
         "//third_party/cares",
         ":address_sorting",
     ]

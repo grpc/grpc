@@ -494,6 +494,7 @@
       'dependencies': [
         'gpr',
         'upb',
+        'absl/strings:strings',
       ],
       'sources': [
         'src/core/lib/surface/init.cc',
@@ -1420,6 +1421,7 @@
       'dependencies': [
         'gpr',
         'upb',
+        'absl/strings:strings',
       ],
       'sources': [
         'src/core/lib/surface/init.cc',

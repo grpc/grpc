@@ -745,13 +745,13 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     std::vector<grpc_error*> error_list;
     // Weight map.
     WeightedTargetLbConfig::WeightMap weight_map;
-    auto it = json.object_value().find("weights");
+    auto it = json.object_value().find("targets");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:weights error:required field not present"));
+          "field:targets error:required field not present"));
     } else if (it->second.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:weights error:type should be object"));
+          "field:targets error:type should be object"));
     } else {
       for (const auto& p : it->second.object_value()) {
         WeightedTargetLbConfig::ChildConfig child_config;
@@ -761,7 +761,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
           // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
           // string is not static in this case.
           char* msg;
-          gpr_asprintf(&msg, "field:weights key:%s", p.first.c_str());
+          gpr_asprintf(&msg, "field:targets key:%s", p.first.c_str());
           grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
           gpr_free(msg);
           for (grpc_error* child_error : child_errors) {

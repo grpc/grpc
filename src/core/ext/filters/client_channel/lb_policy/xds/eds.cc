@@ -25,6 +25,9 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -79,8 +82,7 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
   EdsLbConfig(
       std::string cluster_name, std::string eds_service_name,
       Optional<std::string> lrs_load_reporting_server_name,
-      RefCountedPtr<LoadBalancingPolicy::Config> locality_picking_policy,
-      RefCountedPtr<LoadBalancingPolicy::Config> endpoint_picking_policy,
+      Json locality_picking_policy, Json endpoint_picking_policy,
       RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy)
       : cluster_name_(std::move(cluster_name)),
         eds_service_name_(std::move(eds_service_name)),
@@ -97,10 +99,10 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
   const Optional<std::string>& lrs_load_reporting_server_name() const {
     return lrs_load_reporting_server_name_;
   };
-  RefCountedPtr<LoadBalancingPolicy::Config> locality_picking_policy() const {
+  const Json& locality_picking_policy() const {
     return locality_picking_policy_;
   }
-  RefCountedPtr<LoadBalancingPolicy::Config> endpoint_picking_policy() const {
+  const Json& endpoint_picking_policy() const {
     return endpoint_picking_policy_;
   }
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy() const {
@@ -111,8 +113,8 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
   std::string cluster_name_;
   std::string eds_service_name_;
   Optional<std::string> lrs_load_reporting_server_name_;
-  RefCountedPtr<LoadBalancingPolicy::Config> locality_picking_policy_;
-  RefCountedPtr<LoadBalancingPolicy::Config> endpoint_picking_policy_;
+  Json locality_picking_policy_;
+  Json endpoint_picking_policy_;
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
 };
 
@@ -205,19 +207,16 @@ class EdsLb : public LoadBalancingPolicy {
     LoadBalancingPolicy* child_ = nullptr;
   };
 
-  struct PriorityChildState {
-    int child_number;
-    std::set<RefCountedPtr<XdsLocalityName>, RefCountedPtrLess> localities;
-  };
-
   ~EdsLb();
 
   void ShutdownLocked() override;
 
+  void UpdatePriorityList(XdsApi::PriorityListUpdate priority_list_update);
   void UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const char* name, const grpc_channel_args* args);
   ServerAddressList CreateChildPolicyAddresses();
+  RefCountedPtr<Config> CreateChildPolicyConfig();
   grpc_channel_args* CreateChildPolicyArgsLocked(
       const grpc_channel_args* args_in);
   void MaybeUpdateDropPickerLocked();
@@ -272,12 +271,11 @@ class EdsLb : public LoadBalancingPolicy {
   EndpointWatcher* endpoint_watcher_ = nullptr;
   // The latest data from the endpoint watcher.
   XdsApi::PriorityListUpdate priority_list_update_;
-  RefCountedPtr<XdsApi::DropConfig> drop_config_;
-
-  RefCountedPtr<XdsClusterDropStats> drop_stats_;
-
   // State used to retain child policy names for priority policy.
-  std::vector<PriorityChildState> priority_child_states_;
+  std::vector<int /*child_number*/> priority_child_numbers_;
+
+  RefCountedPtr<XdsApi::DropConfig> drop_config_;
+  RefCountedPtr<XdsClusterDropStats> drop_stats_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
@@ -500,8 +498,7 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
       return;
     }
     // Update the child policy with the new priority and endpoint data.
-    eds_policy_->priority_list_update_ = std::move(update.priority_list_update);
-    eds_policy_->UpdateChildPolicyLocked();
+    eds_policy_->UpdatePriorityList(std::move(update.priority_list_update));
   }
 
   void OnError(grpc_error* error) override {
@@ -711,6 +708,75 @@ void EdsLb::ResetBackoffLocked() {
 // child policy-related methods
 //
 
+void EdsLb::UpdatePriorityList(
+    XdsApi::PriorityListUpdate priority_list_update) {
+  // Build some maps from locality to child number and the reverse from
+  // the old data in priority_list_update_ and priority_child_numbers_.
+  std::map<XdsLocalityName*, int /*child_number*/, XdsLocalityName::Less>
+      locality_child_map;
+  std::map<int, std::set<XdsLocalityName*>> child_locality_map;
+  for (uint32_t priority = 0; priority < priority_list_update_.size();
+       ++priority) {
+    auto* locality_map = priority_list_update_.Find(priority);
+    GPR_ASSERT(locality_map != nullptr);
+    int child_number = priority_child_numbers_[priority];
+    for (const auto& p : locality_map->localities) {
+      XdsLocalityName* locality_name = p.first.get();
+      locality_child_map[locality_name] = child_number;
+      child_locality_map[child_number].insert(locality_name);
+    }
+  }
+  // Construct new list of children.
+  std::vector<int> priority_child_numbers;
+  for (uint32_t priority = 0; priority < priority_list_update.size();
+       ++priority) {
+    auto* locality_map = priority_list_update.Find(priority);
+    GPR_ASSERT(locality_map != nullptr);
+    int child_number = -1;
+    // If one of the localities in this priority already existed, reuse its
+    // child number.
+    for (const auto& p : locality_map->localities) {
+      XdsLocalityName* locality_name = p.first.get();
+      if (child_number == -1) {
+        auto it = locality_child_map.find(locality_name);
+        if (it != locality_child_map.end()) {
+          child_number = it->second;
+          locality_child_map.erase(it);
+          // Remove localities that *used* to be in this child number, so
+          // that we don't incorrectly reuse this child number for a
+          // subsequent priority.
+          for (XdsLocalityName* old_locality
+               : child_locality_map[child_number]) {
+            locality_child_map.erase(old_locality);
+          }
+        }
+      } else {
+        // Remove all localities that are now in this child number, so
+        // that we don't accidentally reuse this child number for a
+        // subsequent priority.
+        locality_child_map.erase(locality_name);
+      }
+    }
+    // If we didn't find an existing child number, assign a new one.
+    if (child_number == -1) {
+// FIXME: better error handling
+      GPR_ASSERT(child_locality_map.size() < INT_MAX);
+      for (child_number = 0;
+           child_locality_map.find(child_number) != child_locality_map.end();
+           ++child_number);
+      // Add entry so we know that the child number is in use.
+      // (Don't need to add the list of localities, since we won't use them.)
+      child_locality_map[child_number];
+    }
+    priority_child_numbers.push_back(child_number);
+  }
+  // Save update.
+  priority_list_update_ = std::move(priority_list_update);
+  priority_child_numbers_ = std::move(priority_child_numbers);
+  // Update child policy.
+  UpdateChildPolicyLocked();
+}
+
 void* LocalityNameCopy(void* p) {
   XdsLocalityName* name = static_cast<XdsLocalityName*>(p);
   name->Ref(DEBUG_LOCATION, "channel_args").release();
@@ -751,58 +817,78 @@ ServerAddressList EdsLb::CreateChildPolicyAddresses() {
 }
 
 RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
-  // Figure out which child names were already in use and which
-  // localities are in each one.
-  std::set<int> child_numbers_in_use;
-  std::map<XdsLocalityName*, int /*child_number*/, XdsLocalityName::Less>
-      locality_child_map;
-  for (const PriorityChildState& state : priority_child_states_) {
-    child_numbers_in_use.insert(state.child_number);
-    for (const auto& locality_name : state.localities) {
-      locality_child_map[locality_name.get()] = state.child_number;
-    }
-  }
-  // Construct new list of children.
-  std::vector<PriorityChildState> priority_child_states;
-  for (uint32_t priority = 0; priority < priority_list_update_.size();
+  Json::Object priority_children;
+  Json::Array priority_priorities;
+  for (size_t priority = 0; priority < priority_list_update_.size();
        ++priority) {
-    LocalityMap* locality_map = priority_list_update_.Find(priority);
+    const auto* locality_map = priority_list_update_.Find(priority);
     GPR_ASSERT(locality_map != nullptr);
-    // Choose child number for this priority.
-    PriorityChildState state;
-    std::string child_name;
-    state.child_number = -1;
+    Json::Object weighted_targets;
     for (const auto& p : locality_map->localities) {
-      const RefCountedPtr<XdsLocalityName>& locality_name = p.first;
-      state.localities.insert(locality_name);
-      auto it = locality_child_map.find(locality_name.get());
-      if (it != locality_child_map.end()) {
-        state.child_number = it->second;
-        locality_child_map.erase(it);
-        break;
+      XdsLocalityName* locality_name = p.first.get();
+      const auto& locality = p.second;
+      // Construct JSON object containing locality name.
+      Json::Object locality_name_json;
+      if (!locality_name->region().empty()) {
+        locality_name_json["region"] = locality_name->region();
       }
+      if (!locality_name->zone().empty()) {
+        locality_name_json["zone"] = locality_name->zone();
+      }
+      if (!locality_name->sub_zone().empty()) {
+        locality_name_json["subzone"] = locality_name->sub_zone();
+      }
+      // Construct endpoint-picking policy.
+      // Wrap it in the LRS policy if load reporting is enabled.
+      Json endpoint_picking_policy;
+      if (config_->lrs_load_reporting_server_name().has_value()) {
+        Json::Object lrs_config = {
+            {"cluster", config_->cluster_name()},
+            {"locality", locality_name_json},
+            {"lrsLoadReportingServerName",
+             config_->lrs_load_reporting_server_name().value()},
+            {"childPolicy", config_->endpoint_picking_policy()},
+        };
+        if (!config_->eds_service_name().empty()) {
+          lrs_config["edsServiceName"] = config_->eds_service_name();
+        }
+        endpoint_picking_policy = Json::Array{Json::Object{
+            {"lrs_experimental", std::move(lrs_config)},
+        }};
+      } else {
+        endpoint_picking_policy = config_->endpoint_picking_policy();
+      }
+      // Wrap that in the eds_locality_filter policy.
+      Json::Array eds_locality_policy = {Json::Object{
+          {"eds_locality_filter_experimental", Json::Object{
+              {"locality", locality_name_json},
+              {"childPolicy", std::move(endpoint_picking_policy)},
+          }},
+      }};
+      // Add weighted target entry.
+      weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
+          {"weight", locality.lb_weight},
+          {"childPolicy", Json::Array{std::move(eds_locality_policy)}},
+      };
     }
-    if (state.child_number == -1) {
-// FIXME: better error handling
-      GPR_ASSERT(child_numbers_in_use.size() < INT_MAX);
-      for (state.child_number = 0;
-           child_numbers_in_use.find(state.child_number) !=
-               child_numbers_in_use.end();
-           ++state.child_number);
-      child_numbers_in_use.insert(state.child_number);
-    }
-    priority_child_states.push_back(state);
+    // Add priority entry.
+    const int child_number = priority_child_numbers_[priority];
+    std::string child_name = absl::StrCat("child", child_number);
+    priority_priorities.emplace_back(std::move(child_name));
+    priority_children[child_name] = config_->locality_picking_policy();
+    Json::Object& config =
+        *(*priority_children[child_name].mutable_array())[0].mutable_object();
+    auto it = config.begin();
+    GPR_ASSERT(it != config.end());
+    (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
   }
-  // Construct JSON config.
-  Json::Object priority_config = {
-      {},
-  };
-  Json json = Json::Array{
-      Json::Object{
-          {"priority_experimental", std::move(priority_config)},
-      },
-  };
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+  Json json = Json::Array{Json::Object{
+      {"priority_experimental", Json::Object{
+          {"children", std::move(priority_children)},
+          {"priorities", std::move(priority_priorities)},
+      }},
+  }};
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     std::string json_str = json.Dump();
     gpr_log(GPR_INFO, "[edslb %p] generated config for child policy: %s",
             this, json_str.c_str());
@@ -822,9 +908,9 @@ void EdsLb::UpdateChildPolicyLocked() {
   // Construct update args.
   UpdateArgs update_args;
   update_args.addresses = CreateChildPolicyAddresses();
-// FIXME:
-//  update_args.config = config_->child_policy();
+  update_args.config = CreateChildPolicyConfig();
   update_args.args = CreateChildPolicyArgsLocked(args_);
+// FIXME: child policy name cannot change here!
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -874,9 +960,7 @@ void EdsLb::UpdateChildPolicyLocked() {
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-  const char* child_policy_name = update_args.config == nullptr
-                                      ? "round_robin"
-                                      : update_args.config->name();
+  const char* child_policy_name = update_args.config->name();
   const bool create_policy =
       // case 1
       child_policy_ == nullptr ||
@@ -1210,44 +1294,40 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // Locality-picking policy.
-    RefCountedPtr<LoadBalancingPolicy::Config> locality_picking_policy;
-    Json locality_picking_policy_config;
+    Json locality_picking_policy;
     it = json.object_value().find("localityPickingPolicy");
     if (it == json.object_value().end()) {
-      locality_picking_policy_config = Json::Array{
+      locality_picking_policy = Json::Array{
         Json::Object{
-            {"weighted_target_experimental", Json::Object()},
+            {"weighted_target_experimental", Json::Object{
+                {"targets", Json::Object()},
+            }},
         },
       };
     } else {
-      locality_picking_policy_config = it->second;
+      locality_picking_policy = it->second;
     }
     grpc_error* parse_error = GRPC_ERROR_NONE;
-    locality_picking_policy =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            locality_picking_policy_config, &parse_error);
-    if (locality_picking_policy == nullptr) {
+    if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            locality_picking_policy, &parse_error) == nullptr) {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
       error_list.push_back(parse_error);
     }
     // Endpoint-picking policy.
-    RefCountedPtr<LoadBalancingPolicy::Config> endpoint_picking_policy;
-    Json endpoint_picking_policy_config;
+    Json endpoint_picking_policy;
     it = json.object_value().find("endpointPickingPolicy");
     if (it == json.object_value().end()) {
-      endpoint_picking_policy_config = Json::Array{
+      endpoint_picking_policy = Json::Array{
         Json::Object{
             {"round_robin", Json::Object()},
         },
       };
     } else {
-      endpoint_picking_policy_config = it->second;
+      endpoint_picking_policy = it->second;
     }
     parse_error = GRPC_ERROR_NONE;
-    endpoint_picking_policy =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            endpoint_picking_policy_config, &parse_error);
-    if (endpoint_picking_policy == nullptr) {
+    if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            endpoint_picking_policy, &parse_error) == nullptr) {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
       error_list.push_back(parse_error);
     }

@@ -1111,6 +1111,8 @@ filegroups:
 - name: grpc_lb_policy_eds
   src:
   - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  deps:
+  - absl/strings:strings
   plugin: grpc_lb_policy_eds
   uses:
   - grpc_base
@@ -1135,6 +1137,8 @@ filegroups:
 - name: grpc_lb_policy_eds_secure
   src:
   - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  deps:
+  - absl/strings:strings
   plugin: grpc_lb_policy_eds
   uses:
   - grpc_base

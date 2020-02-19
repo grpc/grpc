@@ -1416,6 +1416,9 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_xds_client",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
 )
 
 grpc_cc_library(
@@ -1431,6 +1434,9 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client_secure",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
 )
 

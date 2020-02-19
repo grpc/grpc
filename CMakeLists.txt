@@ -1924,6 +1924,7 @@ target_link_libraries(grpc
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   upb
+  absl::strings
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -3423,6 +3424,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   upb
+  absl::strings
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_unsecure "-framework CoreFoundation")
