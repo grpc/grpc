@@ -41,7 +41,7 @@ cdef class _AsyncioTimer:
 
         self._active = 0
         grpc_custom_timer_callback(self._grpc_timer, <grpc_error*>0)
-        _current_io_loop().io_mark()
+        _fast_io_mark()
 
     def __repr__(self):
         class_name = self.__class__.__name__ 

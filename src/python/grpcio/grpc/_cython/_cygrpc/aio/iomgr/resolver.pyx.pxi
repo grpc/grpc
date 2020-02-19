@@ -54,7 +54,7 @@ cdef class _AsyncioResolver:
                 grpc_socket_error("getaddrinfo {}".format(error_msg).encode())
             )
 
-        _current_io_loop().io_mark()
+        _fast_io_mark()
 
     cdef void resolve(self, char* host, char* port):
         assert not self._task_resolve

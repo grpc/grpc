@@ -35,7 +35,6 @@ cdef class _AsyncioSocket:
         self._server = None
         self._py_socket = None
         self._peername = None
-        self._io_loop = None
         self._loop = None 
 
     @staticmethod
@@ -48,7 +47,6 @@ cdef class _AsyncioSocket:
         socket._writer = writer
         if writer is not None:
             socket._peername = writer.get_extra_info('peername')
-        socket._io_loop = _current_io_loop()
         socket._loop = _current_io_loop().asyncio_loop()
         return socket
 
@@ -57,7 +55,6 @@ cdef class _AsyncioSocket:
         socket = _AsyncioSocket()
         socket._grpc_socket = grpc_socket
         socket._py_socket = py_socket
-        socket._io_loop = _current_io_loop()
         socket._loop = _current_io_loop().asyncio_loop()
         return socket
 
@@ -87,7 +84,7 @@ cdef class _AsyncioSocket:
                 <grpc_error*>0
             )
 
-        self._io_loop.io_mark()
+        _fast_io_mark()
 
     async def _async_read(self, size_t length):
         self._task_read = None
@@ -111,7 +108,7 @@ cdef class _AsyncioSocket:
                 <grpc_error*>0
             )
 
-        self._io_loop.io_mark()
+        _fast_io_mark()
 
     cdef void connect(self,
                       object host,
@@ -156,7 +153,7 @@ cdef class _AsyncioSocket:
                 grpc_socket_error("Socket write failed: {}".format(connection_error).encode()),
             )
 
-        self._io_loop.io_mark()
+        _fast_io_mark()
 
     cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb):
         """Performs write to network socket in AsyncIO.
@@ -213,7 +210,7 @@ cdef class _AsyncioSocket:
         # * grpc_error: An error object
         self._grpc_accept_cb(self._grpc_socket, self._grpc_client_socket, grpc_error_none())
 
-        self._io_loop.io_mark()
+        _fast_io_mark()
 
     cdef listen(self):
         self._py_socket.listen(_ASYNCIO_STREAM_DEFAULT_SOCKET_BACKLOG)

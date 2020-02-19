@@ -22,6 +22,6 @@ cdef class _IOLoop:
         cdef object _loop_started_cv
         cdef object _loop_started
 
-    cpdef void io_mark(self)
+    cdef inline void io_mark(self)
     cdef void io_wait(self, size_t timeout_ms)
     cdef object asyncio_loop(self)

@@ -61,7 +61,7 @@ cdef class _IOLoop:
             # unresponsive, proactively we close the process.
             sys.exit(1)
 
-    cpdef void io_mark(self):
+    cdef inline void io_mark(self):
         # Wake up all threads that were waiting
         # for an IO event.
         self._io_ev.set()
@@ -82,6 +82,11 @@ cdef class _IOLoop:
     cdef object asyncio_loop(self):
         return self._asyncio_loop
 
+
 cdef _IOLoop _current_io_loop():
     global _io_loop
     return _io_loop
+
+cdef inline void _fast_io_mark():
+    global _io_loop
+    _io_loop.io_mark()
