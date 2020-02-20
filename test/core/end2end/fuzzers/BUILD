@@ -21,21 +21,6 @@ licenses(["notice"])  # Apache v2
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-    name = "api_fuzzer",
-    size = "enormous",
-    srcs = ["api_fuzzer.cc"],
-    corpus = "api_fuzzer_corpus",
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/end2end:ssl_test_data",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_fuzzer(
     name = "client_fuzzer",
     srcs = ["client_fuzzer.cc"],
     corpus = "client_fuzzer_corpus",

@@ -1879,6 +1879,11 @@ def secure_channel(target, credentials, options=None, compression=None):
       A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
+    from grpc.experimental import _insecure_channel_credentials
+    if credentials._credentials is _insecure_channel_credentials:
+        raise ValueError(
+            "secure_channel cannot be called with insecure credentials." +
+            " Call insecure_channel instead.")
     return _channel.Channel(target, () if options is None else options,
                             credentials._credentials, compression)
 

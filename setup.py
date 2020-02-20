@@ -241,7 +241,7 @@ if "linux" in sys.platform:
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 if "win32" in sys.platform:
-  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32',)
+  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32', 'dbghelp',)
 if BUILD_WITH_SYSTEM_OPENSSL:
   EXTENSION_LIBRARIES += ('ssl', 'crypto',)
 if BUILD_WITH_SYSTEM_ZLIB:

@@ -12,14 +12,14 @@ extension-pkg-whitelist=grpc._cython.cygrpc
 
 # TODO(https://github.com/PyCQA/pylint/issues/1345): How does the inspection
 # not include "unused_" and "ignored_" by default?
-dummy-variables-rgx=^ignored_|^unused_
+dummy-variables-rgx=^ignored_|^unused_|_
 
 [DESIGN]
 
 # NOTE(nathaniel): Not particularly attached to this value; it just seems to
 # be what works for us at the moment (excepting the dead-code-walking Beta
 # API).
-max-args=7
+max-args=14
 max-parents=8
 
 [MISCELLANEOUS]
