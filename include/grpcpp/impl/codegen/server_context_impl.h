@@ -474,7 +474,7 @@ class ServerContextBase {
     ::grpc::Status status() const { return status_; }
 
    private:
-    void MaybeDone() override {}
+    void CallOnDone() override {}
     ::grpc_impl::internal::ServerReactor* reactor() override {
       return reactor_;
     }
