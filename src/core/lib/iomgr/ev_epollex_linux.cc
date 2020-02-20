@@ -190,7 +190,15 @@ struct grpc_fd {
     grpc_iomgr_unregister_object(&iomgr_object);
 
     POLLABLE_UNREF(pollable_obj, "fd_pollable");
-    pollset_fds.clear();
+
+    // To clear out the allocations of pollset_fds, we need to swap its
+    // contents with a newly-constructed (and soon to be destructed) local
+    // variable of its same type. This is because InlinedVector::clear is _not_
+    // guaranteed to actually free up allocations and this is important since
+    // this object doesn't have a conventional destructor.
+    grpc_core::InlinedVector<int, 1> pollset_fds_tmp;
+    pollset_fds_tmp.swap(pollset_fds);
+
     gpr_mu_destroy(&pollable_mu);
     gpr_mu_destroy(&orphan_mu);
 
