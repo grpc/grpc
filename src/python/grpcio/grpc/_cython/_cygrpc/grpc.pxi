@@ -26,16 +26,6 @@ ctypedef unsigned int       uint32_t
 ctypedef unsigned long long uint64_t
 
 
-cdef extern from "grpc/support/sync.h":
-
-  ctypedef struct gpr_event:
-    # We don't care about the internals
-    pass
-
-  void gpr_event_init(gpr_event* ev) nogil
-  void* gpr_event_set(gpr_event* ev, void* value) nogil
-  void* gpr_event_wait(gpr_event* ev, gpr_timespec abs_deadline) nogil
-
 cdef extern from "grpc/support/alloc.h":
 
   void *gpr_malloc(size_t size) nogil

@@ -261,8 +261,16 @@ class TestGevent(setuptools.Command):
             sys.exit('Test failure')
 
 
-class TestAsyncio(setuptools.Command):
-    """Command to run tests w/asyncio."""
+class TestSyncOverAio(setuptools.Command):
+    """Command to run sync tests with asyncio.
+
+    Run all original tests that are written for the synchronous stack by first
+    initializing the Aio module. This would assert the synchronous stack is able
+    to work using the IOMGR installed by the Aio module.
+
+    Some of the synchronous features, like forking, can not be provided in this
+    specific scenario, tests that were designed for checking these features are banned. 
+    """
 
     BANNED_TESTS = (
         # Fork support is not compatible with Aio

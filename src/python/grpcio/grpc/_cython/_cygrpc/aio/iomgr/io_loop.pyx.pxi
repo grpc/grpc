@@ -11,10 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import sys
 import threading
 
-_RESOLUTION_MS = 0.001
+_SECONDS_PER_MILLISECOND = 0.001
 cdef _IOLoop _io_loop = None
 
 cdef class _IOLoop:
@@ -27,8 +28,7 @@ cdef class _IOLoop:
 
         self._asyncio_loop = None
         self._io_ev = threading.Event()
-        self._loop_started_cv = threading.Condition()
-        self._loop_started = False
+        self._loop_started_ev = threading.Event()
 
         self._thread = threading.Thread(target=self._run_forever, daemon=True)
         self._thread.start()
@@ -37,17 +37,12 @@ cdef class _IOLoop:
         # the thread is really started, we wait till
         # the whole Asyncio loop is initialized and
         # ready to be used.
-        with self._loop_started_cv:
-            if not self._loop_started:
-                self._loop_started_cv.wait()
+        self._loop_started_ev.wait()
 
         _io_loop = self
 
-
     def _loop_started_cb(self):
-        with self._loop_started_cv:
-            self._loop_started = True
-            self._loop_started_cv.notify_all()
+        self._loop_started_ev.set()
 
     def _run_forever(self):
         self._asyncio_loop = asyncio.new_event_loop()
@@ -56,7 +51,7 @@ cdef class _IOLoop:
         try:
             self._asyncio_loop.run_forever()
         except Exception as exp:
-            print("An error ocurred with the IO loop {}".format(exp))
+            sys.stderr("An error ocurred with the IO loop {}{}".format(exp, os.linesep))
             # Without the IO loop running the program would become
             # unresponsive, proactively we close the process.
             sys.exit(1)
@@ -72,12 +67,13 @@ cdef class _IOLoop:
 
     cdef void io_wait(self, size_t timeout_ms):
         if threading.get_ident() == self._thread.ident:
-            # Reentrance is not allowed, otherwise we will be
-            # blocking the Asyncio loop.
+            # (TODO) Fix any use case that could imply io loop reentrance.
+            # As an example, the backup channel poller is executing this code path
+            _LOGGER.warning("IO Loop reentrance is not allowed")
             return
 
         if timeout_ms > 0:
-            self._io_ev.wait(timeout_ms * _RESOLUTION_MS)
+            self._io_ev.wait(timeout_ms * _SECONDS_PER_MILLISECOND)
 
     cdef object asyncio_loop(self):
         return self._asyncio_loop

@@ -17,10 +17,7 @@ cdef class _IOLoop:
         cdef object _asyncio_loop
         cdef object _thread
         cdef object _io_ev
-  
-        # Starting synchronization attributes
-        cdef object _loop_started_cv
-        cdef object _loop_started
+        cdef object _loop_started_ev
 
     cpdef void io_mark(self)
     cdef void io_wait(self, size_t timeout_ms)
