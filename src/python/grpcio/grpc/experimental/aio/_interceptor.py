@@ -35,6 +35,19 @@ class ClientCallDetails(
             'ClientCallDetails',
             ('method', 'timeout', 'metadata', 'credentials', 'wait_for_ready')),
         grpc.ClientCallDetails):
+    """Describes an RPC to be invoked.
+
+    This is an EXPERIMENTAL API.
+
+    Args:
+        method: The method name of the RPC.
+        timeout: An optional duration of time in seconds to allow for the RPC.
+        metadata: Optional metadata to be transmitted to the service-side of
+          the RPC.
+        credentials: An optional CallCredentials for the RPC.
+        wait_for_ready: This is an EXPERIMENTAL argument. An optional flag to
+          enable wait for ready mechanism.
+    """
 
     method: str
     timeout: Optional[float]
@@ -53,6 +66,7 @@ class UnaryUnaryClientInterceptor(metaclass=ABCMeta):
             client_call_details: ClientCallDetails,
             request: RequestType) -> Union[UnaryUnaryCall, ResponseType]:
         """Intercepts a unary-unary invocation asynchronously.
+
         Args:
           continuation: A coroutine that proceeds with the invocation by
             executing the next interceptor in chain or invoking the
@@ -65,8 +79,10 @@ class UnaryUnaryClientInterceptor(metaclass=ABCMeta):
           client_call_details: A ClientCallDetails object describing the
             outgoing RPC.
           request: The request value for the RPC.
+
         Returns:
-            An object with the RPC response.
+          An object with the RPC response.
+
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.

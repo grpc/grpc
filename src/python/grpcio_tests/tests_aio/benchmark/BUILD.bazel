@@ -17,16 +17,67 @@ package(
     default_visibility = ["//visibility:public"],
 )
 
+py_library(
+    name = "benchmark_client",
+    srcs = ["benchmark_client.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/qps:histogram",
+        "//src/python/grpcio_tests/tests/unit:resources",
+    ],
+)
+
+py_library(
+    name = "benchmark_servicer",
+    srcs = ["benchmark_servicer.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)
+
+py_library(
+    name = "worker_servicer",
+    srcs = ["worker_servicer.py"],
+    data = [
+        "//src/python/grpcio_tests/tests/unit/credentials",
+    ],
+    srcs_version = "PY3",
+    deps = [
+        ":benchmark_client",
+        ":benchmark_servicer",
+        "//src/proto/grpc/core:stats_py_pb2",
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:control_py_pb2",
+        "//src/proto/grpc/testing:payloads_py_pb2",
+        "//src/proto/grpc/testing:stats_py_pb2",
+        "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/qps:histogram",
+        "//src/python/grpcio_tests/tests/unit:resources",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
+    ],
+)
+
 py_binary(
     name = "server",
     srcs = ["server.py"],
     python_version = "PY3",
+    deps = [":benchmark_servicer"],
+)
+
+py_binary(
+    name = "worker",
+    srcs = ["worker.py"],
+    imports = ["../../"],
+    python_version = "PY3",
     deps = [
-        "//src/proto/grpc/testing:benchmark_service_py_pb2",
-        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
-        "//src/proto/grpc/testing:py_messages_proto",
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests/unit/framework/common",
-        "@six",
+        ":worker_servicer",
+        "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
     ],
 )

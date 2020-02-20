@@ -410,7 +410,7 @@ LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m pthread ws2_32
+LIBS = m pthread ws2_32 dbghelp
 LDFLAGS += -pthread
 endif
 

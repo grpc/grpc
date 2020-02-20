@@ -115,11 +115,7 @@ Podfile.lock
 .idea/
 
 # Bazel files
-bazel-bin
-bazel-genfiles
-bazel-grpc
-bazel-out
-bazel-testlogs
+bazel-*
 bazel_format_virtual_environment/
 tools/bazel-*
 
