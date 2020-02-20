@@ -214,74 +214,29 @@ grpc_proto_library(
     ],
 )
 
-proto_library(
-    name = "test_proto_descriptor",
-    srcs = ["test.proto"],
-    deps = [
-        ":empty_proto_descriptor",
-        ":messages_proto_descriptor",
-    ],
-)
-
 py_proto_library(
     name = "py_test_proto",
-    deps = [":test_proto_descriptor"],
+    deps = [":test_proto_only"],
 )
 
 py_grpc_library(
     name = "test_py_pb2_grpc",
-    srcs = [":test_proto_descriptor"],
+    srcs = [":test_proto_only"],
     deps = [":py_test_proto"],
-)
-
-proto_library(
-    name = "worker_service_descriptor",
-    srcs = ["worker_service.proto"],
-    deps = [":control_descriptor"],
 )
 
 py_proto_library(
     name = "worker_service_py_pb2",
-    deps = [":worker_service_descriptor"],
+    deps = [":worker_service_proto_only"],
 )
 
 py_grpc_library(
     name = "worker_service_py_pb2_grpc",
-    srcs = [":worker_service_descriptor"],
+    srcs = [":worker_service_proto_only"],
     deps = [":worker_service_py_pb2"],
-)
-
-proto_library(
-    name = "stats_descriptor",
-    srcs = ["stats.proto"],
-    deps = ["//src/proto/grpc/core:stats_descriptor"],
-)
-
-py_proto_library(
-    name = "stats_py_pb2",
-    deps = [":stats_descriptor"],
-)
-
-proto_library(
-    name = "payloads_descriptor",
-    srcs = ["payloads.proto"],
-)
-
-py_proto_library(
-    name = "payloads_py_pb2",
-    deps = [":payloads_descriptor"],
-)
-
-proto_library(
-    name = "control_descriptor",
-    srcs = ["control.proto"],
-    deps = [
-        ":payloads_descriptor",
-        ":stats_descriptor",
-    ],
 )
 
 py_proto_library(
     name = "control_py_pb2",
-    deps = [":control_descriptor"],
+    deps = [":control_proto_only"],
 )
