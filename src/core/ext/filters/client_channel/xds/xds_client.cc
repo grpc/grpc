@@ -1841,14 +1841,19 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
     StringView lrs_server, StringView cluster_name,
     StringView eds_service_name) {
-  auto cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
-      Ref(DEBUG_LOCATION, "DropStats"), lrs_server, cluster_name,
-      eds_service_name);
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  LoadReportState& load_report_state = load_report_map_[std::make_pair(
-      std::string(cluster_name), std::string(eds_service_name))];
-  load_report_state.drop_stats.insert(cluster_drop_stats.get());
+  auto key =
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+  // We jump through some hoops here to make sure that the StringViews
+  // stored in the XdsClusterDropStats object point to the strings
+  // in the load_report_map_ key, so that they have the same lifetime.
+  auto it = load_report_map_.emplace(
+      std::make_pair(std::move(key), LoadReportState())).first;
+  auto cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
+      Ref(DEBUG_LOCATION, "DropStats"), lrs_server,
+      it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/);
+  it->second.drop_stats.insert(cluster_drop_stats.get());
   chand_->MaybeStartLrsCall();
   return cluster_drop_stats;
 }
@@ -1881,14 +1886,20 @@ void XdsClient::RemoveClusterDropStats(
 RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
     StringView lrs_server, StringView cluster_name, StringView eds_service_name,
     RefCountedPtr<XdsLocalityName> locality) {
-  auto cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
-      Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server, cluster_name,
-      eds_service_name, locality);
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  LoadReportState& load_report_state = load_report_map_[std::make_pair(
-      std::string(cluster_name), std::string(eds_service_name))];
-  load_report_state.locality_stats[std::move(locality)].insert(
+  auto key =
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+  // We jump through some hoops here to make sure that the StringViews
+  // stored in the XdsClusterLocalityStats object point to the strings
+  // in the load_report_map_ key, so that they have the same lifetime.
+  auto it = load_report_map_.emplace(
+      std::make_pair(std::move(key), LoadReportState())).first;
+  auto cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
+      Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server,
+      it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/,
+      locality);
+  it->second.locality_stats[std::move(locality)].insert(
       cluster_locality_stats.get());
   chand_->MaybeStartLrsCall();
   return cluster_locality_stats;
