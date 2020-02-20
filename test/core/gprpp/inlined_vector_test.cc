@@ -63,7 +63,7 @@ TEST(InlinedVectorTest, ValuesAreInlined) {
 
 TEST(InlinedVectorTest, PushBackWithMove) {
   InlinedVector<std::unique_ptr<int>, 1> v;
-  std::unique_ptr<int> i = grpc_core::MakeUnique<int>(3);
+  std::unique_ptr<int> i = absl::make_unique<int>(3);
   v.push_back(std::move(i));
   EXPECT_EQ(nullptr, i.get());
   EXPECT_EQ(1UL, v.size());
@@ -304,15 +304,15 @@ TEST(InlinedVectorTest, MoveAssignmentAllocatedAllocated) {
 // and move methods are called correctly.
 class Value {
  public:
-  explicit Value(int v) : value_(grpc_core::MakeUnique<int>(v)) {}
+  explicit Value(int v) : value_(absl::make_unique<int>(v)) {}
 
   // copyable
   Value(const Value& v) {
-    value_ = grpc_core::MakeUnique<int>(*v.value_);
+    value_ = absl::make_unique<int>(*v.value_);
     copied_ = true;
   }
   Value& operator=(const Value& v) {
-    value_ = grpc_core::MakeUnique<int>(*v.value_);
+    value_ = absl::make_unique<int>(*v.value_);
     copied_ = true;
     return *this;
   }
@@ -463,10 +463,10 @@ TEST(InlinedVectorTest, MoveAssignmentMovesElementsAllocated) {
 TEST(InlinedVectorTest, PopBackInlined) {
   InlinedVector<std::unique_ptr<int>, 2> v;
   // Add two elements, pop one out
-  v.push_back(grpc_core::MakeUnique<int>(3));
+  v.push_back(absl::make_unique<int>(3));
   EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
-  v.push_back(grpc_core::MakeUnique<int>(5));
+  v.push_back(absl::make_unique<int>(5));
   EXPECT_EQ(2UL, v.size());
   EXPECT_EQ(5, *v[1]);
   v.pop_back();
@@ -478,7 +478,7 @@ TEST(InlinedVectorTest, PopBackAllocated) {
   InlinedVector<std::unique_ptr<int>, kInlinedSize> v;
   // Add elements to ensure allocated backing.
   for (size_t i = 0; i < kInlinedSize + 1; ++i) {
-    v.push_back(grpc_core::MakeUnique<int>(3));
+    v.push_back(absl::make_unique<int>(3));
     EXPECT_EQ(i + 1, v.size());
   }
   size_t sz = v.size();
@@ -494,7 +494,7 @@ TEST(InlinedVectorTest, Resize) {
   EXPECT_EQ(5UL, v.size());
   EXPECT_EQ(nullptr, v[4]);
   // Size down.
-  v[4] = grpc_core::MakeUnique<int>(5);
+  v[4] = absl::make_unique<int>(5);
   v.resize(1);
   EXPECT_EQ(1UL, v.size());
 }
