@@ -68,10 +68,14 @@ void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 
 namespace grpc_core {
 
-struct RegisteredCall;
+struct RegisteredCall {
+  grpc_mdelem path;
+  grpc_mdelem authority;
+};
+
 struct CallRegistrationTable {
   grpc_core::Mutex mu;
-  std::map<std::pair<const char*, const char*>, RegisteredCall*>
+  std::map<std::pair<const char*, const char*>, RegisteredCall>
       map /* GUARDED_BY(mu) */;
   int method_registration_attempts /* GUARDED_BY(mu) */ = 0;
 };
@@ -85,6 +89,11 @@ struct grpc_channel {
   gpr_atm call_size_estimate;
   grpc_resource_user* resource_user;
 
+  // TODO(vjpai): Once the grpc_channel is allocated via new rather than malloc,
+  //              expand the members of the CallRegistrationTable directly into
+  //              the grpc_channel. For now it is kept separate so that all the
+  //              manual constructing can be done with a single call rather than
+  //              a separate manual construction for each field.
   grpc_core::ManualConstructor<grpc_core::CallRegistrationTable>
       registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;

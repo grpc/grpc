@@ -54,15 +54,6 @@
  *  (OK, Cancelled, Unknown). */
 #define NUM_CACHED_STATUS_ELEMS 3
 
-namespace grpc_core {
-
-struct RegisteredCall {
-  grpc_mdelem path;
-  grpc_mdelem authority;
-};
-
-}  // namespace grpc_core
-
 static void destroy_channel(void* arg, grpc_error* error);
 
 grpc_channel* grpc_channel_create_with_builder(
@@ -432,17 +423,18 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   auto key = std::make_pair(host, method);
   auto rc_posn = channel->registration_table->map.find(key);
   if (rc_posn != channel->registration_table->map.end()) {
-    return rc_posn->second;
+    return &rc_posn->second;
   }
-  grpc_core::RegisteredCall* rc = new grpc_core::RegisteredCall;
-  rc->path = grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
+  grpc_core::RegisteredCall rc;
+  rc.path = grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
                                      grpc_core::ExternallyManagedSlice(method));
-  rc->authority =
+  rc.authority =
       host ? grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
                                      grpc_core::ExternallyManagedSlice(host))
            : GRPC_MDNULL;
-  channel->registration_table->map.insert({key, rc});
-  return rc;
+  auto insertion_result = channel->registration_table->map.insert({key, rc});
+  GPR_DEBUG_ASSERT(insertion_result.second);
+  return &insertion_result.first->second;
 }
 
 grpc_call* grpc_channel_create_registered_call(
@@ -492,10 +484,9 @@ static void destroy_channel(void* arg, grpc_error* /*error*/) {
   }
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   for (auto& registered_call_entry : channel->registration_table->map) {
-    grpc_core::RegisteredCall* rc = registered_call_entry.second;
+    grpc_core::RegisteredCall* rc = &registered_call_entry.second;
     GRPC_MDELEM_UNREF(rc->path);
     GRPC_MDELEM_UNREF(rc->authority);
-    delete rc;
   }
   channel->registration_table.Destroy();
   if (channel->resource_user != nullptr) {
