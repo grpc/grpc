@@ -751,7 +751,12 @@ class LrsServiceImpl : public LrsService {
         IncreaseRequestCount();
         // Send response.
         LoadStatsResponse response;
-        auto server_name = request.cluster_stats()[0].cluster_name();
+        std::string server_name;
+        auto it = request.node().metadata().fields().find(
+            "PROXYLESS_CLIENT_HOSTNAME");
+        if (it != request.node().metadata().fields().end()) {
+          server_name = it->second.string_value();
+        }
         GPR_ASSERT(server_name != "");
         response.add_clusters(server_name);
         response.mutable_load_reporting_interval()->set_seconds(

@@ -185,7 +185,8 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
 }
 
 void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
-                  const char* build_version, envoy_api_v2_core_Node* node_msg) {
+                  const char* build_version, const std::string& server_name,
+                  envoy_api_v2_core_Node* node_msg) {
   if (node != nullptr) {
     if (!node->id.empty()) {
       envoy_api_v2_core_Node_set_id(node_msg,
@@ -199,6 +200,18 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
       google_protobuf_Struct* metadata =
           envoy_api_v2_core_Node_mutable_metadata(node_msg, arena);
       PopulateMetadata(arena, metadata, node->metadata.object_value());
+    }
+    if (!server_name.empty()) {
+      google_protobuf_Struct* metadata =
+          envoy_api_v2_core_Node_mutable_metadata(node_msg, arena);
+      google_protobuf_Struct_FieldsEntry* field =
+          google_protobuf_Struct_add_fields(metadata, arena);
+      google_protobuf_Struct_FieldsEntry_set_key(
+          field, upb_strview_makez("PROXYLESS_CLIENT_HOSTNAME"));
+      google_protobuf_Value* value =
+          google_protobuf_Struct_FieldsEntry_mutable_value(field, arena);
+      google_protobuf_Value_set_string_value(
+          value, upb_strview_make(server_name.data(), server_name.size()));
     }
     if (!node->locality_region.empty() || !node->locality_zone.empty() ||
         !node->locality_subzone.empty()) {
@@ -260,7 +273,7 @@ envoy_api_v2_DiscoveryRequest* CreateDiscoveryRequest(
   if (build_version != nullptr) {
     envoy_api_v2_core_Node* node_msg =
         envoy_api_v2_DiscoveryRequest_mutable_node(request, arena);
-    PopulateNode(arena, node, build_version, node_msg);
+    PopulateNode(arena, node, build_version, "", node_msg);
   }
   return request;
 }
@@ -960,15 +973,7 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
   envoy_api_v2_core_Node* node_msg =
       envoy_service_load_stats_v2_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(arena.ptr(), node_, build_version_, node_msg);
-  // Add cluster stats. There is only one because we only use one server name in
-  // one channel.
-  envoy_api_v2_endpoint_ClusterStats* cluster_stats =
-      envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
-          request, arena.ptr());
-  // Set the cluster name.
-  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
-      cluster_stats, upb_strview_makez(server_name.c_str()));
+  PopulateNode(arena.ptr(), node_, build_version_, server_name, node_msg);
   return SerializeLrsRequest(request, arena.ptr());
 }
 
@@ -988,7 +993,7 @@ void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
   }
   if (!locality_name.zone().empty()) {
     envoy_api_v2_core_Locality_set_zone(
-        locality, upb_strview_makez(locality_name.region().c_str()));
+        locality, upb_strview_makez(locality_name.zone().c_str()));
   }
   if (!locality_name.sub_zone().empty()) {
     envoy_api_v2_core_Locality_set_sub_zone(
@@ -1046,9 +1051,9 @@ grpc_slice XdsApi::CreateLrsRequest(
           upb_strview_make(eds_service_name.data(), eds_service_name.size()));
     }
     // Add locality stats.
-    for (auto& p : load_report.locality_stats) {
+    for (const auto& p : load_report.locality_stats) {
       const XdsLocalityName& locality_name = *p.first;
-      auto& snapshot = p.second;
+      const auto& snapshot = p.second;
       envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
           envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
               cluster_stats, arena.ptr());
@@ -1057,7 +1062,7 @@ grpc_slice XdsApi::CreateLrsRequest(
     }
     // Add dropped requests.
     uint64_t total_dropped_requests = 0;
-    for (auto& p : load_report.dropped_requests) {
+    for (const auto& p : load_report.dropped_requests) {
       const char* category = p.first.c_str();
       const uint64_t count = p.second;
       envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =

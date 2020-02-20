@@ -22,7 +22,8 @@
 
 #include "absl/base/call_once.h"
 #include "absl/strings/str_cat.h"
-#include "include/grpc++/grpc++.h"
+#include "include/grpc/grpc.h"
+#include "include/grpcpp/grpcpp.h"
 #include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
@@ -100,6 +101,13 @@ static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusDisabled);
 
 static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
+  // Avoid a data race between registering plugin and shutdown of previous
+  // test (order-dependent) by doing an init/shutdown so that any previous
+  // shutdowns are fully complete first.
+  grpc_init();
+  grpc_shutdown_blocking();
+
+  // Now start the test by registering the plugin (once in the execution)
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid
   // initialization costs varying between runs.

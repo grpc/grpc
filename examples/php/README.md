@@ -16,7 +16,7 @@ This requires `php` >= 5.5, `pecl`, `composer`
  - Install the `protoc` compiler plugin `grpc_php_plugin`
 
    ```sh
-   $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+   $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
    $ cd grpc
    $ make grpc_php_plugin
    ```

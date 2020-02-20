@@ -21,6 +21,7 @@ import grpc
 from grpc import _common, _compression
 from grpc._cython import cygrpc
 
+from . import _base_server
 from ._typing import ChannelArgumentType
 
 
@@ -30,7 +31,7 @@ def _augment_channel_arguments(base_options: ChannelArgumentType,
     return tuple(base_options) + compression_option
 
 
-class Server:
+class Server(_base_server.Server):
     """Serves RPCs."""
 
     def __init__(self, thread_pool: Optional[Executor],

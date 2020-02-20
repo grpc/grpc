@@ -466,6 +466,7 @@
         'src/core/lib/gpr/string_util_windows.cc',
         'src/core/lib/gpr/string_windows.cc',
         'src/core/lib/gpr/sync.cc',
+        'src/core/lib/gpr/sync_abseil.cc',
         'src/core/lib/gpr/sync_posix.cc',
         'src/core/lib/gpr/sync_windows.cc',
         'src/core/lib/gpr/time.cc',

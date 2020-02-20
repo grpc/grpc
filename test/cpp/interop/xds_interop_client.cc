@@ -227,6 +227,7 @@ int main(int argc, char** argv) {
 
   std::vector<std::thread> test_threads;
 
+  test_threads.reserve(FLAGS_num_channels);
   for (int i = 0; i < FLAGS_num_channels; i++) {
     test_threads.emplace_back(
         std::thread(&RunTestLoop, FLAGS_server, duration_per_query));
