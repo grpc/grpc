@@ -47,7 +47,7 @@ class SubchannelNode : public BaseNode {
   // subchannel unrefs the transport.
   void SetChildSocket(RefCountedPtr<SocketNode> socket);
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
@@ -64,8 +64,6 @@ class SubchannelNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  void PopulateConnectivityState(grpc_json* json);
-
   Atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
   Mutex socket_mu_;
   RefCountedPtr<SocketNode> child_socket_;

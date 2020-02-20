@@ -51,7 +51,7 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
-SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
+SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src', 'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext', 'upb-generated'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
@@ -241,7 +241,7 @@ if "linux" in sys.platform:
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 if "win32" in sys.platform:
-  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32',)
+  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32', 'dbghelp',)
 if BUILD_WITH_SYSTEM_OPENSSL:
   EXTENSION_LIBRARIES += ('ssl', 'crypto',)
 if BUILD_WITH_SYSTEM_ZLIB:

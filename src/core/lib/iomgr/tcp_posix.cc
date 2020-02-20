@@ -1385,7 +1385,8 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
 
 static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
                                             TcpZerocopySendRecord* record,
-                                            uint32_t seq, const char* tag) {
+                                            uint32_t seq,
+                                            const char* /* tag */) {
   if (record->Unref()) {
     tcp->tcp_zerocopy_send_ctx.PutSendRecord(record);
   }

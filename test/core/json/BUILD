@@ -36,6 +36,9 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "json_test",
     srcs = ["json_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [

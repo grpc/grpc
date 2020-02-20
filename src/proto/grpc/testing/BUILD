@@ -14,8 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 grpc_package(
@@ -26,9 +27,10 @@ grpc_package(
 exports_files([
     "echo.proto",
     "echo_messages.proto",
-    "test.proto",
     "empty.proto",
     "messages.proto",
+    "simple_messages.proto",
+    "test.proto",
 ])
 
 grpc_proto_library(

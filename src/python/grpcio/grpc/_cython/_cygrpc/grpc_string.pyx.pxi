@@ -35,7 +35,7 @@ cdef bytes _encode(object string_or_none):
   elif isinstance(string_or_none, (bytes,)):
     return <bytes>string_or_none
   elif isinstance(string_or_none, (unicode,)):
-    return string_or_none.encode('ascii')
+    return string_or_none.encode('utf8')
   else:
     raise TypeError('Expected str, not {}'.format(type(string_or_none)))
 

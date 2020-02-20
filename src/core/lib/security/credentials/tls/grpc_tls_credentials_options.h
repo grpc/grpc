@@ -273,7 +273,8 @@ struct grpc_tls_credentials_options
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_;
-  grpc_tls_server_verification_option server_verification_option_;
+  grpc_tls_server_verification_option server_verification_option_ =
+      GRPC_TLS_SERVER_VERIFICATION;
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
   grpc_core::RefCountedPtr<grpc_tls_credential_reload_config>
       credential_reload_config_;
