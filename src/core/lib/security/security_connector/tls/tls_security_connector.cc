@@ -266,9 +266,14 @@ int TlsChannelSecurityConnector::cmp(
 bool TlsChannelSecurityConnector::check_call_host(
     grpc_core::StringView host, grpc_auth_context* auth_context,
     grpc_closure* on_call_host_checked, grpc_error** error) {
-  return grpc_ssl_check_call_host(host, target_name_.get(),
-                                  overridden_target_name_.get(), auth_context,
-                                  error);
+  const TlsCredentials* creds =
+      static_cast<const TlsCredentials*>(channel_creds());
+  if (creds->options().server_verification_option() ==
+      GRPC_TLS_SERVER_VERIFICATION) {
+    return grpc_ssl_check_call_host(host, target_name_.get(),
+                                    overridden_target_name_.get(), auth_context,
+                                    error);
+  }
 }
 
 void TlsChannelSecurityConnector::cancel_check_call_host(
