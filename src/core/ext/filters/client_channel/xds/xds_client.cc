@@ -822,13 +822,13 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   } else if (type_url == XdsApi::kCdsTypeUrl) {
     resource_names = ClusterNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateCdsRequest(
-        resource_names, state.version, state.nonce,
-        GRPC_ERROR_REF(state.error), !sent_initial_message_);
+        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
+        !sent_initial_message_);
   } else if (type_url == XdsApi::kEdsTypeUrl) {
     resource_names = EdsServiceNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateEdsRequest(
-        resource_names, state.version, state.nonce,
-        GRPC_ERROR_REF(state.error), !sent_initial_message_);
+        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
+        !sent_initial_message_);
   } else {
     request_payload_slice = xds_client()->api_.CreateUnsupportedTypeNackRequest(
         type_url, state.nonce, GRPC_ERROR_REF(state.error));
@@ -1749,8 +1749,8 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
       build_version_(GenerateBuildVersionString()),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
-      bootstrap_(XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace,
-                                            error)),
+      bootstrap_(
+          XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
       api_(this, &grpc_xds_client_trace,
            bootstrap_ == nullptr ? nullptr : bootstrap_->node(),
            build_version_.get()),

@@ -58,8 +58,9 @@ class XdsBootstrap {
 
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error reading the file.
-  static std::unique_ptr<XdsBootstrap> ReadFromFile(
-      XdsClient* client, TraceFlag* tracer, grpc_error** error);
+  static std::unique_ptr<XdsBootstrap> ReadFromFile(XdsClient* client,
+                                                    TraceFlag* tracer,
+                                                    grpc_error** error);
 
   // Do not instantiate directly -- use ReadFromFile() above instead.
   XdsBootstrap(Json json, grpc_error** error);

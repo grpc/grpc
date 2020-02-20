@@ -64,8 +64,8 @@ UniquePtr<char> BootstrapString(const XdsBootstrap& bootstrap) {
   gpr_strvec_add(&v, tmp);
   for (size_t i = 0; i < bootstrap.server().channel_creds.size(); ++i) {
     const auto& creds = bootstrap.server().channel_creds[i];
-    gpr_asprintf(&tmp, "      {type=\"%s\", config=%s},\n",
-                 creds.type.c_str(), creds.config.Dump().c_str());
+    gpr_asprintf(&tmp, "      {type=\"%s\", config=%s},\n", creds.type.c_str(),
+                 creds.config.Dump().c_str());
     gpr_strvec_add(&v, tmp);
   }
   gpr_strvec_add(&v, gpr_strdup("    ]\n  }\n]"));
@@ -76,8 +76,9 @@ UniquePtr<char> BootstrapString(const XdsBootstrap& bootstrap) {
 
 }  // namespace
 
-std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(
-    XdsClient* client, TraceFlag* tracer, grpc_error** error) {
+std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
+                                                         TraceFlag* tracer,
+                                                         grpc_error** error) {
   grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
   if (path == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -87,7 +88,8 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(
   if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] Got bootstrap file location from "
-            "GRPC_XDS_BOOTSTRAP environment variable: %s", client, path.get());
+            "GRPC_XDS_BOOTSTRAP environment variable: %s",
+            client, path.get());
   }
   grpc_slice contents;
   *error = grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
@@ -95,15 +97,15 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(
   StringView contents_str_view = StringViewFromSlice(contents);
   if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
     UniquePtr<char> str = StringViewToCString(contents_str_view);
-    gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s",
-            client, str.get());
+    gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
+            str.get());
   }
   Json json = Json::Parse(contents_str_view, error);
   grpc_slice_unref_internal(contents);
   if (*error != GRPC_ERROR_NONE) {
     char* msg;
     gpr_asprintf(&msg, "Failed to parse bootstrap file %s", path.get());
-    grpc_error *error_out =
+    grpc_error* error_out =
         GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, error, 1);
     gpr_free(msg);
     GRPC_ERROR_UNREF(*error);

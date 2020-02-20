@@ -181,7 +181,9 @@ class XdsApi {
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          const char* build_version)
-      : client_(client), tracer_(tracer), node_(node),
+      : client_(client),
+        tracer_(tracer),
+        node_(node),
         build_version_(build_version) {}
 
   // Creates a request to nack an unsupported resource type.

@@ -638,9 +638,8 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
           envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_config(
               http_connection_manager);
       XdsApi::RdsUpdate rds_update;
-      grpc_error* error = RouteConfigParse(
-          client, tracer, symtab, route_config, expected_server_name,
-          &rds_update);
+      grpc_error* error = RouteConfigParse(client, tracer, symtab, route_config,
+                                           expected_server_name, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
       lds_update->rds_update.emplace(std::move(rds_update));
       const upb_strview route_config_name =
@@ -706,9 +705,9 @@ grpc_error* RdsResponseParse(XdsClient* client, TraceFlag* tracer,
     if (!upb_strview_eql(name, expected_name)) continue;
     // Parse the route_config.
     XdsApi::RdsUpdate local_rds_update;
-    grpc_error* error = RouteConfigParse(
-        client, tracer, symtab, route_config, expected_server_name,
-        &local_rds_update);
+    grpc_error* error =
+        RouteConfigParse(client, tracer, symtab, route_config,
+                         expected_server_name, &local_rds_update);
     if (error != GRPC_ERROR_NONE) return error;
     *rds_update = std::move(local_rds_update);
     return GRPC_ERROR_NONE;

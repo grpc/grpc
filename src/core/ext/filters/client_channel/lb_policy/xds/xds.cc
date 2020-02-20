@@ -653,8 +653,7 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
         xds_policy_->channel_control_helper()->RequestReresolution();
       }
     } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] xds watcher reported error (ignoring): %s",
+      gpr_log(GPR_INFO, "[xdslb %p] xds watcher reported error (ignoring): %s",
               xds_policy_.get(), grpc_error_string(error));
     }
     GRPC_ERROR_UNREF(error);
@@ -681,8 +680,8 @@ XdsLb::XdsLb(Args args)
           args.args, GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS,
           {GRPC_XDS_DEFAULT_FAILOVER_TIMEOUT_MS, 0, INT_MAX})) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] created -- xds client from channel: %p",
-            this, xds_client_from_channel_.get());
+    gpr_log(GPR_INFO, "[xdslb %p] created -- xds client from channel: %p", this,
+            xds_client_from_channel_.get());
   }
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
