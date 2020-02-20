@@ -237,6 +237,11 @@ py_grpc_library(
 )
 
 py_proto_library(
+    name = "stats_py_pb2",
+    deps = [":stats_proto_only"],
+)
+
+py_proto_library(
     name = "control_py_pb2",
     deps = [":control_proto_only"],
 )
