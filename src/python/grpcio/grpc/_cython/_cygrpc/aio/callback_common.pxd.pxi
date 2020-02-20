@@ -18,7 +18,7 @@ cdef class CallbackFailureHandler:
     cdef object _error_details
     cdef object _exception_type
 
-    cdef handle(self, object future)
+    cdef handle(self, object future, object future_loop)
 
 
 cdef struct CallbackContext:
@@ -29,12 +29,14 @@ cdef struct CallbackContext:
     #       callback function in the only way Core understands.
     #     waiter: An asyncio.Future object that fulfills when the callback is
     #       invoked by Core.
+    #     waiter_loop: Asyncio loop where the future is being awaited.
     #     failure_handler: A CallbackFailureHandler object that called when Core
     #       returns 'success == 0' state.
     #     wrapper: A self-reference to the CallbackWrapper to help life cycle
     #       management.
     grpc_experimental_completion_queue_functor functor
     cpython.PyObject *waiter
+    cpython.PyObject *waiter_loop
     cpython.PyObject *failure_handler
     cpython.PyObject *callback_wrapper
 
@@ -42,6 +44,7 @@ cdef struct CallbackContext:
 cdef class CallbackWrapper:
     cdef CallbackContext context
     cdef object _reference_of_future
+    cdef object _reference_of_loop
     cdef object _reference_of_failure_handler
 
     @staticmethod

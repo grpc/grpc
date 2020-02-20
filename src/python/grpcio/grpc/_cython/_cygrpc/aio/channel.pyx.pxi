@@ -78,6 +78,7 @@ cdef class AioChannel:
         cdef object future = self.loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
+            self.loop,
             _WATCH_CONNECTIVITY_FAILURE_HANDLER)
         grpc_channel_watch_connectivity_state(
             self.channel,

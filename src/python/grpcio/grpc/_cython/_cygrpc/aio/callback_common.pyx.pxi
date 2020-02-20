@@ -24,28 +24,29 @@ cdef class CallbackFailureHandler:
         self._error_details = error_details
         self._exception_type = exception_type
 
-    cdef handle(self, object future):
-        excp = self._exception_type(
+    cdef handle(self, object future, object future_loop):
+        exception = self._exception_type(
             'Failed "%s": %s' % (self._core_function_name, self._error_details)
         )
 
-        loop = future.get_loop() 
-        if loop == _current_io_loop().asyncio_loop():
-            future.set_exception(excp)
+        if future_loop == _current_io_loop().asyncio_loop():
+            future.set_exception(exception)
         else:
-            loop.call_soon_threadsafe(future.set_exception, excp)
+            future_loop.call_soon_threadsafe(future.set_exception, exception)
 
 
 cdef class CallbackWrapper:
 
-    def __cinit__(self, object future, CallbackFailureHandler failure_handler):
+    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
+        self.context.waiter_loop = <cpython.PyObject*>loop
         self.context.failure_handler = <cpython.PyObject*>failure_handler
         self.context.callback_wrapper = <cpython.PyObject*>self
         # NOTE(lidiz) Not using a list here, because this class is critical in
         # data path. We should make it as efficient as possible.
         self._reference_of_future = future
+        self._reference_of_loop = loop
         self._reference_of_failure_handler = failure_handler
         # NOTE(lidiz) We need to ensure when Core invokes our callback, the
         # callback function itself is not deallocated. Othersise, we will get
@@ -58,17 +59,17 @@ cdef class CallbackWrapper:
             int success) with gil:
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
+        cdef object waiter_loop = <object>context.waiter_loop
         if waiter.cancelled():
             return
 
         if success == 0:
-            (<CallbackFailureHandler>context.failure_handler).handle(waiter)
+            (<CallbackFailureHandler>context.failure_handler).handle(waiter, waiter_loop)
         else:
-            loop = waiter.get_loop() 
-            if loop == _current_io_loop().asyncio_loop():
+            if waiter_loop == _current_io_loop().asyncio_loop():
                 waiter.set_result(None)
             else:
-                loop.call_soon_threadsafe(waiter.set_result, None)
+                waiter_loop.call_soon_threadsafe(waiter.set_result, None)
         cpython.Py_DECREF(<object>context.callback_wrapper)
 
     cdef grpc_experimental_completion_queue_functor *c_functor(self):
@@ -84,9 +85,11 @@ cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler
 cdef class CallbackCompletionQueue:
 
     def __cinit__(self):
-        self._shutdown_completed = asyncio.get_event_loop().create_future()
+        loop = asyncio.get_event_loop()
+        self._shutdown_completed = loop.create_future()
         self._wrapper = CallbackWrapper(
             self._shutdown_completed,
+            loop,
             CQ_SHUTDOWN_FAILURE_HANDLER)
         self._cq = grpc_completion_queue_create_for_callback(
             self._wrapper.c_functor(),
@@ -115,6 +118,7 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef object future = loop.create_future()
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
+        loop,
         CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
