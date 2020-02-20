@@ -201,14 +201,12 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
     if (!server_name.empty()) {
       google_protobuf_Struct* metadata =
           envoy_api_v2_core_Node_mutable_metadata(node_msg, arena);
-      google_protobuf_Struct_FieldsEntry* field =
-          google_protobuf_Struct_add_fields(metadata, arena);
-      google_protobuf_Struct_FieldsEntry_set_key(
-          field, upb_strview_makez("PROXYLESS_CLIENT_HOSTNAME"));
-      google_protobuf_Value* value =
-          google_protobuf_Struct_FieldsEntry_mutable_value(field, arena);
+      google_protobuf_Value* value = google_protobuf_Value_new(arena);
       google_protobuf_Value_set_string_value(
           value, upb_strview_make(server_name.data(), server_name.size()));
+      google_protobuf_Struct_fields_set(
+          metadata, upb_strview_makez("PROXYLESS_CLIENT_HOSTNAME"), value,
+          arena);
     }
     if (!node->locality_region.empty() || !node->locality_zone.empty() ||
         !node->locality_subzone.empty()) {
