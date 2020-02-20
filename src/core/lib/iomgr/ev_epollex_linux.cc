@@ -41,11 +41,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "absl/container/inlined_vector.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -196,7 +196,7 @@ struct grpc_fd {
     // variable of its same type. This is because InlinedVector::clear is _not_
     // guaranteed to actually free up allocations and this is important since
     // this object doesn't have a conventional destructor.
-    grpc_core::InlinedVector<int, 1> pollset_fds_tmp;
+    absl::InlinedVector<int, 1> pollset_fds_tmp;
     pollset_fds_tmp.swap(pollset_fds);
 
     gpr_mu_destroy(&pollable_mu);
@@ -240,8 +240,8 @@ struct grpc_fd {
 
   // Protects pollable_obj and pollset_fds.
   gpr_mu pollable_mu;
-  grpc_core::InlinedVector<int, 1> pollset_fds;  // Used in PO_MULTI.
-  pollable* pollable_obj = nullptr;              // Used in PO_FD.
+  absl::InlinedVector<int, 1> pollset_fds;  // Used in PO_MULTI.
+  pollable* pollable_obj = nullptr;         // Used in PO_FD.
 
   grpc_core::LockfreeEvent read_closure;
   grpc_core::LockfreeEvent write_closure;
