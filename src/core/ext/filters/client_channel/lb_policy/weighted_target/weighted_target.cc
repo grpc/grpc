@@ -142,7 +142,9 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     void Orphan() override;
 
-    void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config);
+    void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
+                      const ServerAddressList& addresses,
+                      const grpc_channel_args* args);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -212,8 +214,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
   const grpc_millis child_retention_interval_ms_;
 
-  // Current channel args and config from the resolver.
-  const grpc_channel_args* args_ = nullptr;
+  // Current config from the resolver.
   RefCountedPtr<WeightedTargetLbConfig> config_;
 
   // Internal state.
@@ -255,7 +256,7 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
 }
 
 //
-// ctor and dtor
+// WeightedTargetLb
 //
 
 WeightedTargetLb::WeightedTargetLb(Args args)
@@ -269,7 +270,6 @@ WeightedTargetLb::~WeightedTargetLb() {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] destroying weighted_target LB policy",
             this);
   }
-  grpc_channel_args_destroy(args_);
 }
 
 void WeightedTargetLb::ShutdownLocked() {
@@ -279,10 +279,6 @@ void WeightedTargetLb::ShutdownLocked() {
   shutting_down_ = true;
   targets_.clear();
 }
-
-//
-// public methods
-//
 
 void WeightedTargetLb::ResetBackoffLocked() {
   for (auto& p : targets_) p.second->ResetBackoffLocked();
@@ -295,10 +291,6 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   }
   // Update config.
   config_ = std::move(args.config);
-  // Update args.
-  grpc_channel_args_destroy(args_);
-  args_ = args.args;
-  args.args = nullptr;
   // Deactivate the targets not in the new config.
   for (auto iter = targets_.begin(); iter != targets_.end();) {
     const std::string& name = iter->first;
@@ -323,7 +315,7 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
       child = MakeOrphanable<WeightedChild>(
           Ref(DEBUG_LOCATION, "WeightedChild"), name);
     }
-    child->UpdateLocked(config);
+    child->UpdateLocked(config, args.addresses, args.args);
   }
 }
 
@@ -490,7 +482,8 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 }
 
 void WeightedTargetLb::WeightedChild::UpdateLocked(
-    const WeightedTargetLbConfig::ChildConfig& config) {
+    const WeightedTargetLbConfig::ChildConfig& config,
+    const ServerAddressList& addresses, const grpc_channel_args* args) {
   if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;
@@ -501,7 +494,8 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.config = config.config;
-  update_args.args = grpc_channel_args_copy(weighted_target_policy_->args_);
+  update_args.addresses = addresses;
+  update_args.args = grpc_channel_args_copy(args);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -550,11 +544,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-  // TODO(juanlishen): If the child policy is not configured via service config,
-  // use whatever algorithm is specified by the balancer.
-  const char* child_policy_name = update_args.config == nullptr
-                                      ? "round_robin"
-                                      : update_args.config->name();
+  const char* child_policy_name = update_args.config->name();
   const bool create_policy =
       // case 1
       child_policy_ == nullptr ||

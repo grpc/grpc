@@ -234,6 +234,7 @@ class PriorityLb : public LoadBalancingPolicy {
   // Current channel args and config from the resolver.
   const grpc_channel_args* args_ = nullptr;
   RefCountedPtr<PriorityLbConfig> config_;
+  ServerAddressList addresses_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -295,14 +296,16 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   }
   // Update config.
   config_ = std::move(args.config);
-  // Unset current_priority_, since it was an index into the old
-  // config's priority list and may no longer be valid.  It will be
-  // reset later.
-  current_priority_ = UINT32_MAX;
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
+  // Update addresses.
+  addresses_ = std::move(args.addresses);
+  // Unset current_priority_, since it was an index into the old
+  // config's priority list and may no longer be valid.  It will be
+  // reset later.
+  current_priority_ = UINT32_MAX;
   // Deactivate children that are not present in the new config.
   DeactivateChildrenNotInConfig();
   // Update all existing children.
@@ -387,6 +390,11 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
   }
   // If the child for the priority does not exist yet, create it.
   const std::string& child_name = config_->priorities().at(priority);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
+    gpr_log(GPR_INFO,
+            "[priority_lb %p] start trying priority %d, child %s",
+            this, priority, child_name.c_str());
+  }
   auto& child = children_[child_name];
   if (child == nullptr) {
     // If this is the first child being created, report CONNECTING.
@@ -406,6 +414,11 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
   child->MaybeReactivateLocked();
   // If the child is in state READY, switch to it.
   if (child->connectivity_state() == GRPC_CHANNEL_READY) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
+      gpr_log(GPR_INFO,
+              "[priority_lb %p] selected priority %d, child %s",
+              this, priority, child_name.c_str());
+    }
     current_priority_ = priority;
     UpdatePickerLocked();
     return;
@@ -421,6 +434,11 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
 }
 
 void PriorityLb::SwitchToHigherPriorityLocked(uint32_t priority) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
+    gpr_log(GPR_INFO,
+            "[priority_lb %p] switching to higher priority %d, child %s",
+            this, priority, config_->priorities().at(priority).c_str());
+  }
   current_priority_ = priority;
   // Deactivate lower priorities.
   for (uint32_t p = priority + 1; p < config_->priorities().size(); ++p) {
@@ -496,6 +514,7 @@ void PriorityLb::ChildPriority::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.config = std::move(config);
+  update_args.addresses = priority_policy_->addresses_;
   update_args.args = grpc_channel_args_copy(priority_policy_->args_);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
