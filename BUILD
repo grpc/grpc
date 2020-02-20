@@ -1546,6 +1546,9 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
 )
 
 grpc_cc_library(

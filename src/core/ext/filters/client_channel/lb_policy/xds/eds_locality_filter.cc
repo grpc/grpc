@@ -28,7 +28,7 @@ TraceFlag grpc_lb_eds_locality_filter_trace(false, "eds_locality_filter_lb");
 
 namespace {
 
-constexpr char kEdsLocalityFilter[] = "eds_locality_filterexperimental";
+constexpr char kEdsLocalityFilter[] = "eds_locality_filter_experimental";
 
 class EdsLocalityFilterLbConfig : public LoadBalancingPolicy::Config {
  public:

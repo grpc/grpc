@@ -119,10 +119,11 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   // Construct config for child policy.
   Json::Object child_config = {
       {"clusterName", parent_->config_->cluster()},
-      {"edsServiceName", cluster_data.eds_service_name},
       {"localityPickingPolicy", Json::Array{
           Json::Object{
-              {"weighted_target_experimental", Json::Object()},
+              {"weighted_target_experimental", Json::Object{
+                  {"targets", Json::Object()},
+              }},
           },
       }},
       {"endpointPickingPolicy", Json::Array{
@@ -131,13 +132,16 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
           },
       }},
   };
+  if (!cluster_data.eds_service_name.empty()) {
+    child_config["edsServiceName"] = cluster_data.eds_service_name;
+  }
   if (cluster_data.lrs_load_reporting_server_name.has_value()) {
     child_config["lrsLoadReportingServerName"] =
         cluster_data.lrs_load_reporting_server_name.value();
   }
   Json json = Json::Array{
       Json::Object{
-          {"xds_experimental", std::move(child_config)},
+          {"eds_experimental", std::move(child_config)},
       },
   };
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
@@ -160,7 +164,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     args.channel_control_helper = grpc_core::MakeUnique<Helper>(parent_->Ref());
     parent_->child_policy_ =
         LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-            "xds_experimental", std::move(args));
+            config->name(), std::move(args));
     grpc_pollset_set_add_pollset_set(
         parent_->child_policy_->interested_parties(),
         parent_->interested_parties());

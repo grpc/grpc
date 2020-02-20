@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -71,7 +70,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_eds_trace(false, "edslb");
+TraceFlag grpc_lb_eds_trace(false, "eds_lb");
 
 namespace {
 
@@ -232,6 +231,7 @@ class EdsLb : public LoadBalancingPolicy {
 
   const StringView GetEdsResourceName() const {
     if (xds_client_from_channel_ == nullptr) return server_name_;
+    if (config_ == nullptr) return "";
     if (!config_->eds_service_name().empty()) {
       return config_->eds_service_name();
     }
@@ -874,13 +874,16 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
     // Add priority entry.
     const int child_number = priority_child_numbers_[priority];
     std::string child_name = absl::StrCat("child", child_number);
-    priority_priorities.emplace_back(std::move(child_name));
-    priority_children[child_name] = config_->locality_picking_policy();
+    priority_priorities.emplace_back(child_name);
+    Json locality_picking_config = config_->locality_picking_policy();
     Json::Object& config =
-        *(*priority_children[child_name].mutable_array())[0].mutable_object();
+        *(*locality_picking_config.mutable_array())[0].mutable_object();
     auto it = config.begin();
     GPR_ASSERT(it != config.end());
     (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
+    priority_children[child_name] = Json::Object{
+        {"config", std::move(locality_picking_config)},
+    };
   }
   Json json = Json::Array{Json::Object{
       {"priority_experimental", Json::Object{
@@ -1311,7 +1314,9 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
     if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
             locality_picking_policy, &parse_error) == nullptr) {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-      error_list.push_back(parse_error);
+      error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "localityPickingPolicy", &parse_error, 1));
+      GRPC_ERROR_UNREF(parse_error);
     }
     // Endpoint-picking policy.
     Json endpoint_picking_policy;
@@ -1329,7 +1334,9 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
     if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
             endpoint_picking_policy, &parse_error) == nullptr) {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-      error_list.push_back(parse_error);
+      error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "endpointPickingPolicy", &parse_error, 1));
+      GRPC_ERROR_UNREF(parse_error);
     }
     // Fallback policy.
     RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy;
@@ -1350,7 +1357,8 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
           std::move(locality_picking_policy),
           std::move(endpoint_picking_policy), std::move(fallback_policy));
     } else {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR("Xds Parser", &error_list);
+      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+          "eds_experimental LB policy config", &error_list);
       return nullptr;
     }
   }

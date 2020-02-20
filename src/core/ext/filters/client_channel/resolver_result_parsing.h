@@ -118,12 +118,6 @@ class ClientChannelServiceConfigParser : public ServiceConfig::Parser {
   static void Register();
 };
 
-// Parses a JSON field of the form generated for a google.proto.Duration
-// proto message, as per:
-//   https://developers.google.com/protocol-buffers/docs/proto3#json
-// On success, returns true and sets *duration.
-bool ParseDuration(const Json& field, grpc_millis* duration);
-
 }  // namespace internal
 }  // namespace grpc_core
 

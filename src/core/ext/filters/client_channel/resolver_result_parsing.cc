@@ -57,6 +57,8 @@ void ClientChannelServiceConfigParser::Register() {
       grpc_core::MakeUnique<ClientChannelServiceConfigParser>());
 }
 
+namespace {
+
 // Parses a JSON field of the form generated for a google.proto.Duration
 // proto message, as per:
 //   https://developers.google.com/protocol-buffers/docs/proto3#json
@@ -88,8 +90,6 @@ bool ParseDuration(const Json& field, grpc_millis* duration) {
   *duration = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
   return true;
 }
-
-namespace {
 
 std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
     const Json& json, grpc_error** error) {

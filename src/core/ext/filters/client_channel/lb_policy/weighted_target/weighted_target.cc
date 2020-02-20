@@ -67,7 +67,7 @@ TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");
 
 namespace {
 
-constexpr char kWeightedTarget[] = "weighted_target";
+constexpr char kWeightedTarget[] = "weighted_target_experimental";
 
 class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
  public:
@@ -76,17 +76,17 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
   };
 
-  using WeightMap = std::map<std::string, ChildConfig>;
+  using TargetMap = std::map<std::string, ChildConfig>;
 
-  explicit WeightedTargetLbConfig(WeightMap weight_map)
-      : weight_map_(std::move(weight_map)) {}
+  explicit WeightedTargetLbConfig(TargetMap target_map)
+      : target_map_(std::move(target_map)) {}
 
   const char* name() const override { return kWeightedTarget; }
 
-  const WeightMap& weight_map() const { return weight_map_; }
+  const TargetMap& target_map() const { return target_map_; }
 
  private:
-  WeightMap weight_map_;
+  TargetMap target_map_;
 };
 
 class WeightedTargetLb : public LoadBalancingPolicy {
@@ -221,7 +221,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
   // Children.
 // FIXME: maybe key this by StringView, with string stored in value obj?
-  std::map<std::string, OrphanablePtr<WeightedChild>> localities_;
+  std::map<std::string, OrphanablePtr<WeightedChild>> targets_;
 };
 
 //
@@ -277,7 +277,7 @@ void WeightedTargetLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] shutting down", this);
   }
   shutting_down_ = true;
-  localities_.clear();
+  targets_.clear();
 }
 
 //
@@ -285,7 +285,7 @@ void WeightedTargetLb::ShutdownLocked() {
 //
 
 void WeightedTargetLb::ResetBackoffLocked() {
-  for (auto& p : localities_) p.second->ResetBackoffLocked();
+  for (auto& p : targets_) p.second->ResetBackoffLocked();
 }
 
 void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
@@ -299,26 +299,26 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  // Deactivate the localities not in the new config.
-  for (auto iter = localities_.begin(); iter != localities_.end();) {
+  // Deactivate the targets not in the new config.
+  for (auto iter = targets_.begin(); iter != targets_.end();) {
     const std::string& name = iter->first;
     WeightedChild* child = iter->second.get();
-    if (config_->weight_map().find(name) != config_->weight_map().end()) {
+    if (config_->target_map().find(name) != config_->target_map().end()) {
       ++iter;
       continue;
     }
     if (child_retention_interval_ms_ == 0) {
-      iter = localities_.erase(iter);
+      iter = targets_.erase(iter);
     } else {
       child->DeactivateLocked();
       ++iter;
     }
   }
-  // Add or update the localities in the new config.
-  for (const auto& p : config_->weight_map()) {
+  // Add or update the targets in the new config.
+  for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     const WeightedTargetLbConfig::ChildConfig& config = p.second;
-    OrphanablePtr<WeightedChild>& child = localities_[name];
+    OrphanablePtr<WeightedChild>& child = targets_[name];
     if (child == nullptr) {
       child = MakeOrphanable<WeightedChild>(
           Ref(DEBUG_LOCATION, "WeightedChild"), name);
@@ -339,11 +339,11 @@ void WeightedTargetLb::UpdateStateLocked() {
   size_t num_connecting = 0;
   size_t num_idle = 0;
   size_t num_transient_failures = 0;
-  for (const auto& p : localities_) {
+  for (const auto& p : targets_) {
     const auto& child_name = p.first;
     const WeightedChild* child = p.second.get();
-    // Skip the localities that are not in the latest update.
-    if (config_->weight_map().find(child_name) == config_->weight_map().end()) {
+    // Skip the targets that are not in the latest update.
+    if (config_->target_map().find(child_name) == config_->target_map().end()) {
       continue;
     }
     switch (child->connectivity_state()) {
@@ -494,6 +494,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;
+  // Reactivate if needed.
   if (delayed_removal_timer_callback_pending_) {
     grpc_timer_cancel(&delayed_removal_timer_);
   }
@@ -637,7 +638,7 @@ void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimerLocked(
   WeightedChild* self = static_cast<WeightedChild*>(arg);
   self->delayed_removal_timer_callback_pending_ = false;
   if (error == GRPC_ERROR_NONE && !self->shutdown_ && self->weight_ == 0) {
-    self->weighted_target_policy_->localities_.erase(self->name_);
+    self->weighted_target_policy_->targets_.erase(self->name_);
   }
   self->Unref(DEBUG_LOCATION, "WeightedChild+timer");
 }
@@ -744,7 +745,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     }
     std::vector<grpc_error*> error_list;
     // Weight map.
-    WeightedTargetLbConfig::WeightMap weight_map;
+    WeightedTargetLbConfig::TargetMap target_map;
     auto it = json.object_value().find("targets");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -756,7 +757,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
       for (const auto& p : it->second.object_value()) {
         WeightedTargetLbConfig::ChildConfig child_config;
         std::vector<grpc_error*> child_errors =
-            ParseChildConfig(it->second, &child_config);
+            ParseChildConfig(p.second, &child_config);
         if (!child_errors.empty()) {
           // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
           // string is not static in this case.
@@ -769,15 +770,16 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
           }
           error_list.push_back(error);
         } else {
-          weight_map[p.first] = std::move(child_config);
+          target_map[p.first] = std::move(child_config);
         }
       }
     }
     if (!error_list.empty()) {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR("PriorityLb Parser", &error_list);
+      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+          "weighted_target_experimental LB policy config", &error_list);
       return nullptr;
     }
-    return MakeRefCounted<WeightedTargetLbConfig>(std::move(weight_map));
+    return MakeRefCounted<WeightedTargetLbConfig>(std::move(target_map));
   }
 
  private:
@@ -793,7 +795,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     auto it = json.object_value().find("weight");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "require field \"weight\" not specified"));
+          "required field \"weight\" not specified"));
     } else if (it->second.type() != Json::Type::NUMBER) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:weight error:must be of type number"));

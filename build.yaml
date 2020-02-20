@@ -1214,6 +1214,8 @@ filegroups:
 - name: grpc_lb_policy_priority
   src:
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  deps:
+  - absl/strings:strings
   plugin: grpc_lb_policy_priority
   uses:
   - grpc_base
