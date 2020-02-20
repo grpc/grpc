@@ -23,7 +23,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_perf_multilang_rc
 # TODO(jtattermusch): add back "node" language once the scenarios are passing again
 # See https://github.com/grpc/grpc/issues/20234
 tools/run_tests/run_performance_tests.py \
-    -l c++ csharp ruby java python go php7 php7_protobuf_c \
+    -l c++ csharp ruby java python python_asyncio go php7 php7_protobuf_c \
     --netperf \
     --category smoketest \
     -u kbuilder \

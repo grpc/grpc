@@ -333,6 +333,9 @@ async def _handle_unary_unary_rpc(object method_handler,
                                   object loop):
     # Receives request message
     cdef bytes request_raw = await _receive_message(rpc_state, loop)
+    if request_raw is None:
+        # The RPC was cancelled immediately after start on client side.
+        return
 
     # Deserializes the request message
     cdef object request_message = deserialize(
@@ -364,6 +367,8 @@ async def _handle_unary_stream_rpc(object method_handler,
                                    object loop):
     # Receives request message
     cdef bytes request_raw = await _receive_message(rpc_state, loop)
+    if request_raw is None:
+        return
 
     # Deserializes the request message
     cdef object request_message = deserialize(
