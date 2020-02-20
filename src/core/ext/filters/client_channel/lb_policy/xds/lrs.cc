@@ -581,7 +581,8 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (!error_list.empty()) {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR("Xds Parser", &error_list);
+      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+          "lrs_experimental LB policy config", &error_list);
       return nullptr;
     }
     return MakeRefCounted<LrsLbConfig>(

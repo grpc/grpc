@@ -843,7 +843,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
       Json endpoint_picking_policy;
       if (config_->lrs_load_reporting_server_name().has_value()) {
         Json::Object lrs_config = {
-            {"cluster", config_->cluster_name()},
+            {"clusterName", config_->cluster_name()},
             {"locality", locality_name_json},
             {"lrsLoadReportingServerName",
              config_->lrs_load_reporting_server_name().value()},
@@ -901,6 +901,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
   if (error != GRPC_ERROR_NONE) {
 // FIXME: how do we handle this error?
+gpr_log(GPR_ERROR, "ERROR PARSING LB CONFIG: %s", grpc_error_string(error));
     GPR_ASSERT(false);
   }
   return config;

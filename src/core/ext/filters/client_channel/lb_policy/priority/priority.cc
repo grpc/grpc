@@ -387,6 +387,7 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
   // If there are no more priorities to try, report TRANSIENT_FAILURE.
   if (priority >= config_->priorities().size()) {
     UpdatePickerLocked();
+    return;
   }
   // If the child for the priority does not exist yet, create it.
   const std::string& child_name = config_->priorities().at(priority);
@@ -443,10 +444,12 @@ void PriorityLb::SwitchToHigherPriorityLocked(uint32_t priority) {
   // Deactivate lower priorities.
   for (uint32_t p = priority + 1; p < config_->priorities().size(); ++p) {
     const std::string& child_name = config_->priorities().at(p);
+    auto it = children_.find(child_name);
+    if (it == children_.end()) continue;
     if (child_retention_interval_ms_ == 0) {
-      children_.erase(child_name);
+      children_.erase(it);
     } else {
-      children_[child_name]->DeactivateLocked();
+      it->second->DeactivateLocked();
     }
   }
   // Update picker.
