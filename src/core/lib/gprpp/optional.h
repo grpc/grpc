@@ -63,6 +63,20 @@ class Optional {
   bool set_ = false;
 };
 
+template <typename T, typename U>
+bool operator==(const Optional<T>& x, const Optional<U>& y) {
+  if (x.has_value() != y.has_value()) return false;
+  if (!x.has_value()) return true;
+  return static_cast<bool>(x.value() == y.value());
+}
+
+template <typename T, typename U>
+bool operator!=(const Optional<T>& x, const Optional<U>& y) {
+  if (x.has_value() != y.has_value()) return true;
+  if (!x.has_value()) return false;
+  return static_cast<bool>(x.value() != y.value());
+}
+
 } /* namespace grpc_core */
 
 #endif
