@@ -185,7 +185,8 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
 }
 
 void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
-                  const char* build_version, envoy_api_v2_core_Node* node_msg) {
+                  const char* build_version, const std::string& server_name,
+                  envoy_api_v2_core_Node* node_msg) {
   if (node != nullptr) {
     if (!node->id.empty()) {
       envoy_api_v2_core_Node_set_id(node_msg,
@@ -199,6 +200,18 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
       google_protobuf_Struct* metadata =
           envoy_api_v2_core_Node_mutable_metadata(node_msg, arena);
       PopulateMetadata(arena, metadata, node->metadata.object_value());
+    }
+    if (!server_name.empty()) {
+      google_protobuf_Struct* metadata =
+          envoy_api_v2_core_Node_mutable_metadata(node_msg, arena);
+      google_protobuf_Struct_FieldsEntry* field =
+          google_protobuf_Struct_add_fields(metadata, arena);
+      google_protobuf_Struct_FieldsEntry_set_key(
+          field, upb_strview_makez("PROXYLESS_CLIENT_HOSTNAME"));
+      google_protobuf_Value* value =
+          google_protobuf_Struct_FieldsEntry_mutable_value(field, arena);
+      google_protobuf_Value_set_string_value(
+          value, upb_strview_make(server_name.data(), server_name.size()));
     }
     if (!node->locality_region.empty() || !node->locality_zone.empty() ||
         !node->locality_subzone.empty()) {
@@ -260,7 +273,7 @@ envoy_api_v2_DiscoveryRequest* CreateDiscoveryRequest(
   if (build_version != nullptr) {
     envoy_api_v2_core_Node* node_msg =
         envoy_api_v2_DiscoveryRequest_mutable_node(request, arena);
-    PopulateNode(arena, node, build_version, node_msg);
+    PopulateNode(arena, node, build_version, "", node_msg);
   }
   return request;
 }
@@ -960,15 +973,7 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
   envoy_api_v2_core_Node* node_msg =
       envoy_service_load_stats_v2_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(arena.ptr(), node_, build_version_, node_msg);
-  // Add cluster stats. There is only one because we only use one server name in
-  // one channel.
-  envoy_api_v2_endpoint_ClusterStats* cluster_stats =
-      envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
-          request, arena.ptr());
-  // Set the cluster name.
-  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
-      cluster_stats, upb_strview_makez(server_name.c_str()));
+  PopulateNode(arena.ptr(), node_, build_version_, server_name, node_msg);
   return SerializeLrsRequest(request, arena.ptr());
 }
 
