@@ -11,9 +11,6 @@
 extern upb_def_init google_api_http_proto_upbdefinit;
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
 
-static const upb_msglayout *layouts[0] = {
-};
-
 static const char descriptor[296] =
   "\n\034google/api/annotations.proto\022\ngoogle.a"
   "pi\032\025google/api/http.proto\032 google/protob"
@@ -32,7 +29,7 @@ static upb_def_init *deps[3] = {
 
 upb_def_init google_api_annotations_proto_upbdefinit = {
   deps,
-  layouts,
+  NULL,
   "google/api/annotations.proto",
   UPB_STRVIEW_INIT(descriptor, 296)
 };

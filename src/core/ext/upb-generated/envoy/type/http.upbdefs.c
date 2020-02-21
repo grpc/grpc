@@ -9,9 +9,6 @@
 #include "upb/def.h"
 
 
-static const upb_msglayout *layouts[0] = {
-};
-
 static const char descriptor[136] =
   "\n\025envoy/type/http.proto\022\nenvoy.type*2\n\017C"
   "odecClientType\022\t\n\005HTTP1\020\000\022\t\n\005HTTP2\020\001\022\t\n\005"
@@ -24,7 +21,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init envoy_type_http_proto_upbdefinit = {
   deps,
-  layouts,
+  NULL,
   "envoy/type/http.proto",
   UPB_STRVIEW_INIT(descriptor, 136)
 };

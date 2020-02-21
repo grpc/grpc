@@ -10,9 +10,6 @@
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
 
-static const upb_msglayout *layouts[0] = {
-};
-
 static const char descriptor[4871] =
   "\n\024gogoproto/gogo.proto\022\tgogoproto\032 googl"
   "e/protobuf/descriptor.proto:N\n\023goproto_e"
@@ -144,7 +141,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init gogoproto_gogo_proto_upbdefinit = {
   deps,
-  layouts,
+  NULL,
   "gogoproto/gogo.proto",
   UPB_STRVIEW_INIT(descriptor, 4871)
 };
