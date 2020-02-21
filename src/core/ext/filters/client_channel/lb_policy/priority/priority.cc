@@ -126,7 +126,7 @@ class PriorityLb : public LoadBalancingPolicy {
     void Orphan() override;
 
     std::unique_ptr<SubchannelPicker> GetPicker() {
-      return grpc_core::MakeUnique<RefCountedPickerWrapper>(picker_wrapper_);
+      return absl::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
     }
 
     grpc_connectivity_state connectivity_state() const {
@@ -375,7 +375,7 @@ void PriorityLb::UpdatePickerLocked() {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_core::MakeUnique<TransientFailurePicker>(error));
+        absl::make_unique<TransientFailurePicker>(error));
     return;
   }
   channel_control_helper()->UpdateState(
@@ -402,8 +402,7 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
     if (children_.size() == 1) {
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_CONNECTING,
-          grpc_core::MakeUnique<QueuePicker>(
-              Ref(DEBUG_LOCATION, "QueuePicker")));
+          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
     }
     child = MakeOrphanable<ChildPriority>(
         Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
@@ -942,7 +941,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_priority_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::PriorityLbFactory>());
+          absl::make_unique<grpc_core::PriorityLbFactory>());
 }
 
 void grpc_lb_policy_priority_shutdown() {}

@@ -487,7 +487,7 @@ class EdsLocalityFilterLbFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_eds_locality_filter_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::EdsLocalityFilterLbFactory>());
+          absl::make_unique<grpc_core::EdsLocalityFilterLbFactory>());
 }
 
 void grpc_lb_policy_eds_locality_filter_shutdown() {}

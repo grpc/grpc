@@ -348,7 +348,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_cds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::CdsFactory>());
+          absl::make_unique<grpc_core::CdsLbFactory>());
 }
 
 void grpc_lb_policy_cds_shutdown() {}

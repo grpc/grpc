@@ -380,16 +380,16 @@ void WeightedTargetLb::UpdateStateLocked() {
   std::unique_ptr<SubchannelPicker> picker;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = grpc_core::MakeUnique<WeightedPicker>(
+      picker = absl::make_unique<WeightedPicker>(
           Ref(DEBUG_LOCATION, "WeightedPicker"), std::move(picker_list));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
-      picker = grpc_core::MakeUnique<QueuePicker>(
+      picker = absl::make_unique<QueuePicker>(
           Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      picker = grpc_core::MakeUnique<TransientFailurePicker>(
+      picker = absl::make_unique<TransientFailurePicker>(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "weighted_target: all children report state TRANSIENT_FAILURE"));
   }
@@ -830,7 +830,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_weighted_target_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::WeightedTargetLbFactory>());
+          absl::make_unique<grpc_core::WeightedTargetLbFactory>());
 }
 
 void grpc_lb_policy_weighted_target_shutdown() {}

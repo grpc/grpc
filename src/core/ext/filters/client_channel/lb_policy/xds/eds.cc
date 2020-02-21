@@ -679,7 +679,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
                                             endpoint_watcher_);
     }
     auto watcher =
-        MakeUnique<EndpointWatcher>(Ref(DEBUG_LOCATION, "EndpointWatcher"));
+        absl::make_unique<EndpointWatcher>(Ref(DEBUG_LOCATION, "EndpointWatcher"));
     endpoint_watcher_ = watcher.get();
     xds_client()->WatchEndpointData(GetEdsResourceName(), std::move(watcher));
   }
@@ -1057,7 +1057,7 @@ EdsLb::CreateChildPolicyLocked(const char* name,
 void EdsLb::MaybeUpdateDropPickerLocked() {
   if (child_picker_ == nullptr) return;
   channel_control_helper()->UpdateState(
-      child_state_, MakeUnique<DropPicker>(this));
+      child_state_, absl::make_unique<DropPicker>(this));
 }
 
 //
@@ -1376,7 +1376,7 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_eds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::EdsLbFactory>());
+          absl::make_unique<grpc_core::EdsLbFactory>());
 }
 
 void grpc_lb_policy_eds_shutdown() {}

@@ -464,7 +464,7 @@ void LrsLb::Helper::UpdateState(
 // in RLS, where we might return TF but still be able to route some calls?
   lrs_policy_->channel_control_helper()->UpdateState(
       state,
-      grpc_core::MakeUnique<LoadReportingPicker>(
+      absl::make_unique<LoadReportingPicker>(
           std::move(picker), lrs_policy_->locality_stats_));
 }
 
@@ -652,7 +652,7 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_lrs_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::LrsLbFactory>());
+          absl::make_unique<grpc_core::LrsLbFactory>());
 }
 
 void grpc_lb_policy_lrs_shutdown() {}
