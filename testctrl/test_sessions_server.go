@@ -16,13 +16,43 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"log"
 
+	"github.com/grpc/grpc/testctrl/kubernetes"
 	pb "github.com/grpc/grpc/testctrl/proto"
-	// "github.com/google/uuid"
+	"github.com/google/uuid"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
-type testSessionsServerImpl struct{}
+type testSessionsServerImpl struct{
+	adapter *kubernetes.Adapter
+}
 
 func (t *testSessionsServerImpl) StartTestSession(ctx context.Context, req *pb.StartTestSessionRequest) (*pb.Operation, error) {
-	return nil, nil
+	sessionID := uuid.New().String()
+
+	containerImageMap := map[kubernetes.DeploymentRole]string{
+		kubernetes.ClientRole: req.WorkerContainerImage,
+		kubernetes.DriverRole: req.DriverContainerImage,
+		kubernetes.ServerRole: req.WorkerContainerImage,
+	}
+
+	for role, image := range containerImageMap {
+		d := kubernetes.NewDeploymentBuilder(sessionID, role, image).Deployment()
+
+		d, err := t.adapter.CreateDeployment(context.Background(), d)
+		if err != nil {
+			log.Printf("Deployment of %s for session %s failed: %v", string(role), sessionID, err)
+			// TODO: ADD CLEAN UP LOGIC TO REMOVE OTHER SESSION DEPLOYMENTS
+			break
+		}
+
+		log.Printf("Deployment of %s for session %s succeeded", string(role), sessionID)
+	}
+
+	operation := new(pb.Operation)
+	operation.Name = fmt.Sprintf("testSessions/%s", sessionID)
+	operation.Done = false
+	return operation, nil
 }
