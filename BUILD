@@ -558,6 +558,7 @@ grpc_cc_library(
     external_deps = [
         "absl/memory",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,

@@ -176,6 +176,7 @@ Pod::Spec.new do |s|
     abseil_version = '0.20190808.1'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
