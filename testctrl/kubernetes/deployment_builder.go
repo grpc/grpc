@@ -104,6 +104,7 @@ func (d *DeploymentBuilder) SetServerPort(p int32) {
 
 // Deployment builds a Kubernetes deployment object.
 func (d *DeploymentBuilder) Deployment() *appsv1.Deployment {
+	var zero int32 = 0
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        d.sessionID,
@@ -116,6 +117,12 @@ func (d *DeploymentBuilder) Deployment() *appsv1.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: d.Labels(),
 			},
+			Strategy: appsv1.DeploymentStrategy{
+				// disable rolling updates
+				Type: "Recreate",
+				RollingUpdate: nil,
+			},
+			RevisionHistoryLimit: &zero,  // disable rollbacks
 			Template: d.PodTemplateSpec(),
 		},
 	}
@@ -154,14 +161,14 @@ func (d *DeploymentBuilder) ContainerPorts() []apiv1.ContainerPort {
 	var ports []apiv1.ContainerPort
 
 	ports = append(ports, apiv1.ContainerPort{
-		Name:          "driverPort",
+		Name:          "driver-port",
 		Protocol:      apiv1.ProtocolTCP,
 		ContainerPort: d.driverPort,
 	})
 
 	if d.role == ServerRole {
 		ports = append(ports, apiv1.ContainerPort{
-			Name:          "serverPort",
+			Name:          "server-port",
 			Protocol:      apiv1.ProtocolTCP,
 			ContainerPort: d.serverPort,
 		})
