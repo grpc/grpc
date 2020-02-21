@@ -117,6 +117,9 @@ message ClientConfig {
   // If 0, disabled. Else, specifies the period between gathering latency
   // medians in milliseconds.
   int32 median_latency_collection_interval_millis = 20;
+
+  // Number of client processes. 0 indicates no restriction.
+  int32 client_processes = 21;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -163,6 +166,9 @@ message ServerConfig {
   // Buffer pool size (no buffer pool specified if unset)
   int32 resource_quota_size = 1001;
   repeated ChannelArg channel_args = 1002;
+
+  // Number of server processes. 0 indicates no restriction.
+  int32 server_processes = 21;
 }
 
 message ServerArgs {

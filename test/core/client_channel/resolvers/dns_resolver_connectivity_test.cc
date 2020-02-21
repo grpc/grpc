@@ -75,7 +75,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
-    *addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
+    *addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address dummy_resolved_address;
     memset(&dummy_resolved_address, 0, sizeof(dummy_resolved_address));
     dummy_resolved_address.len = 123;

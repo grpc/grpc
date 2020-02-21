@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import itertools
-import threading
 import unittest
 import logging
 
@@ -33,26 +31,6 @@ _UNARY_STREAM = '/test/UnaryStream'
 _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
 _DEFECTIVE_GENERIC_RPC_HANDLER = '/test/DefectiveGenericRpcHandler'
-
-
-class _Callback(object):
-
-    def __init__(self):
-        self._condition = threading.Condition()
-        self._value = None
-        self._called = False
-
-    def __call__(self, value):
-        with self._condition:
-            self._value = value
-            self._called = True
-            self._condition.notify_all()
-
-    def value(self):
-        with self._condition:
-            while not self._called:
-                self._condition.wait()
-            return self._value
 
 
 class _Handler(object):
@@ -199,6 +177,7 @@ def _defective_handler_multi_callable(channel):
 
 
 class InvocationDefectsTest(unittest.TestCase):
+    """Tests the handling of exception-raising user code on the client-side."""
 
     def setUp(self):
         self._control = test_control.PauseFailControl()
@@ -216,34 +195,43 @@ class InvocationDefectsTest(unittest.TestCase):
         self._channel.close()
 
     def testIterableStreamRequestBlockingUnaryResponse(self):
-        requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
+        requests = object()
         multi_callable = _stream_unary_multi_callable(self._channel)
 
-        with self.assertRaises(grpc.RpcError):
-            response = multi_callable(
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            multi_callable(
                 requests,
                 metadata=(('test',
                            'IterableStreamRequestBlockingUnaryResponse'),))
 
+        self.assertIs(grpc.StatusCode.UNKNOWN,
+                      exception_context.exception.code())
+
     def testIterableStreamRequestFutureUnaryResponse(self):
-        requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
+        requests = object()
         multi_callable = _stream_unary_multi_callable(self._channel)
         response_future = multi_callable.future(
             requests,
             metadata=(('test', 'IterableStreamRequestFutureUnaryResponse'),))
 
-        with self.assertRaises(grpc.RpcError):
-            response = response_future.result()
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            response_future.result()
+
+        self.assertIs(grpc.StatusCode.UNKNOWN,
+                      exception_context.exception.code())
 
     def testIterableStreamRequestStreamResponse(self):
-        requests = [b'\x77\x58' for _ in range(test_constants.STREAM_LENGTH)]
+        requests = object()
         multi_callable = _stream_stream_multi_callable(self._channel)
         response_iterator = multi_callable(
             requests,
             metadata=(('test', 'IterableStreamRequestStreamResponse'),))
 
-        with self.assertRaises(grpc.RpcError):
+        with self.assertRaises(grpc.RpcError) as exception_context:
             next(response_iterator)
+
+        self.assertIs(grpc.StatusCode.UNKNOWN,
+                      exception_context.exception.code())
 
     def testIteratorStreamRequestStreamResponse(self):
         requests_iterator = FailAfterFewIterationsCounter(
@@ -253,18 +241,21 @@ class InvocationDefectsTest(unittest.TestCase):
             requests_iterator,
             metadata=(('test', 'IteratorStreamRequestStreamResponse'),))
 
-        with self.assertRaises(grpc.RpcError):
+        with self.assertRaises(grpc.RpcError) as exception_context:
             for _ in range(test_constants.STREAM_LENGTH // 2 + 1):
                 next(response_iterator)
+
+        self.assertIs(grpc.StatusCode.UNKNOWN,
+                      exception_context.exception.code())
 
     def testDefectiveGenericRpcHandlerUnaryResponse(self):
         request = b'\x07\x08'
         multi_callable = _defective_handler_multi_callable(self._channel)
 
         with self.assertRaises(grpc.RpcError) as exception_context:
-            response = multi_callable(
-                request,
-                metadata=(('test', 'DefectiveGenericRpcHandlerUnary'),))
+            multi_callable(request,
+                           metadata=(('test',
+                                      'DefectiveGenericRpcHandlerUnary'),))
 
         self.assertIs(grpc.StatusCode.UNKNOWN,
                       exception_context.exception.code())

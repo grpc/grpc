@@ -56,6 +56,7 @@ typedef enum {
 #define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
 
 #define GRPC_AUTHORIZATION_METADATA_KEY "authorization"
+#define GRPC_AUTH_QUOTA_PROJECT_METADATA_KEY "x-goog-user-project"
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
   "x-goog-iam-authorization-token"
 #define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
