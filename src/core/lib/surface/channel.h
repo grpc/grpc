@@ -73,7 +73,9 @@ struct RegisteredCall {
   grpc_mdelem authority;
 
   explicit RegisteredCall(const char* method, const char* host);
-  RegisteredCall(const RegisteredCall& other) = delete;
+  // TODO(vjpai): delete copy constructor once all supported compilers allow
+  //              std::map value_type to be MoveConstructible.
+  RegisteredCall(const RegisteredCall& other);
   RegisteredCall(RegisteredCall&& other);
 
   ~RegisteredCall();

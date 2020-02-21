@@ -421,6 +421,14 @@ RegisteredCall::RegisteredCall(const char* method, const char* host) {
            : GRPC_MDNULL;
 }
 
+// TODO(vjpai): Delete copy-constructor when allowed by all supported compilers.
+RegisteredCall::RegisteredCall(const RegisteredCall& other) {
+  path = other.path;
+  authority = other.authority;
+  GRPC_MDELEM_REF(path);
+  GRPC_MDELEM_REF(authority);
+}
+
 RegisteredCall::RegisteredCall(RegisteredCall&& other) {
   path = other.path;
   authority = other.authority;
