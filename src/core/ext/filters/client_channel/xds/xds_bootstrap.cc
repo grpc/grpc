@@ -113,7 +113,7 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
     return nullptr;
   }
   std::unique_ptr<XdsBootstrap> result =
-      grpc_core::MakeUnique<XdsBootstrap>(std::move(json), error);
+      absl::make_unique<XdsBootstrap>(std::move(json), error);
   if (*error == GRPC_ERROR_NONE && GRPC_TRACE_FLAG_ENABLED(*tracer)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] Bootstrap config for creating xds client:\n%s",
@@ -269,7 +269,7 @@ grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
 
 grpc_error* XdsBootstrap::ParseNode(Json* json) {
   InlinedVector<grpc_error*, 1> error_list;
-  node_ = grpc_core::MakeUnique<Node>();
+  node_ = absl::make_unique<Node>();
   auto it = json->mutable_object()->find("id");
   if (it != json->mutable_object()->end()) {
     if (it->second.type() != Json::Type::STRING) {

@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_testing/grpc_version.py.template`!!!
+set -ex
 
-VERSION = '1.28.0.dev0'
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+tools/run_tests/helper_scripts/prep_xds.sh
+python3 tools/run_tests/run_xds_tests.py \
+    --test_case=all \
+    --project_id=grpc-testing \
+    --gcp_suffix=$(date '+%s') \
+    --verbose \
+    --client_cmd='bazel run test/cpp/interop:xds_interop_client -- --server=xds-experimental:///{service_host}:{service_port} --stats_port={stats_port} --qps={qps}'

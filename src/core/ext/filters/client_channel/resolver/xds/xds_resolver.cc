@@ -113,7 +113,7 @@ void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
   xds_client_ = MakeOrphanable<XdsClient>(
       combiner(), interested_parties_, server_name_,
-      grpc_core::MakeUnique<ServiceConfigWatcher>(Ref()), *args_, &error);
+      absl::make_unique<ServiceConfigWatcher>(Ref()), *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -151,7 +151,7 @@ class XdsResolverFactory : public ResolverFactory {
 
 void grpc_resolver_xds_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::XdsResolverFactory>());
+      absl::make_unique<grpc_core::XdsResolverFactory>());
 }
 
 void grpc_resolver_xds_shutdown() {}

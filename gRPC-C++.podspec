@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.27.0-dev'
+  version = '1.28.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -215,6 +215,8 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
     abseil_version = '0.20190808.1'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
 
