@@ -979,19 +979,27 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
 
 namespace {
 
-void LocalityStatsPopulate(
-    envoy_api_v2_endpoint_UpstreamLocalityStats* output,
-    const std::pair<const RefCountedPtr<XdsLocalityName>,
-                    XdsClientStats::LocalityStats::Snapshot>& input,
-    upb_arena* arena) {
-  // Set sub_zone.
+void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
+                           const XdsLocalityName& locality_name,
+                           const XdsClusterLocalityStats::Snapshot& snapshot,
+                           upb_arena* arena) {
+  // Set locality.
   envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(output,
                                                                    arena);
-  envoy_api_v2_core_Locality_set_sub_zone(
-      locality, upb_strview_makez(input.first->sub_zone().c_str()));
+  if (!locality_name.region().empty()) {
+    envoy_api_v2_core_Locality_set_region(
+        locality, upb_strview_makez(locality_name.region().c_str()));
+  }
+  if (!locality_name.zone().empty()) {
+    envoy_api_v2_core_Locality_set_zone(
+        locality, upb_strview_makez(locality_name.zone().c_str()));
+  }
+  if (!locality_name.sub_zone().empty()) {
+    envoy_api_v2_core_Locality_set_sub_zone(
+        locality, upb_strview_makez(locality_name.sub_zone().c_str()));
+  }
   // Set total counts.
-  const XdsClientStats::LocalityStats::Snapshot& snapshot = input.second;
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(
       output, snapshot.total_successful_requests);
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_requests_in_progress(
@@ -1000,16 +1008,15 @@ void LocalityStatsPopulate(
       output, snapshot.total_error_requests);
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_requests(
       output, snapshot.total_issued_requests);
-  // Add load metric stats.
-  for (auto& p : snapshot.load_metric_stats) {
-    const char* metric_name = p.first.c_str();
-    const XdsClientStats::LocalityStats::LoadMetric::Snapshot& metric_value =
-        p.second;
+  // Add backend metrics.
+  for (const auto& p : snapshot.backend_metrics) {
+    const std::string& metric_name = p.first;
+    const XdsClusterLocalityStats::BackendMetric& metric_value = p.second;
     envoy_api_v2_endpoint_EndpointLoadMetricStats* load_metric =
         envoy_api_v2_endpoint_UpstreamLocalityStats_add_load_metric_stats(
             output, arena);
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_metric_name(
-        load_metric, upb_strview_makez(metric_name));
+        load_metric, upb_strview_make(metric_name.data(), metric_name.size()));
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
         load_metric, metric_value.num_requests_finished_with_metric);
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_total_metric_value(
@@ -1020,74 +1027,64 @@ void LocalityStatsPopulate(
 }  // namespace
 
 grpc_slice XdsApi::CreateLrsRequest(
-    std::map<StringView, std::set<XdsClientStats*>, StringLess>
-        client_stats_map) {
+    ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
-  // Get the snapshots.
-  std::map<StringView, grpc_core::InlinedVector<XdsClientStats::Snapshot, 1>,
-           StringLess>
-      snapshot_map;
-  for (auto& p : client_stats_map) {
-    const StringView& cluster_name = p.first;
-    for (auto* client_stats : p.second) {
-      XdsClientStats::Snapshot snapshot = client_stats->GetSnapshotAndReset();
-      // Prune unused locality stats.
-      client_stats->PruneLocalityStats();
-      if (snapshot.IsAllZero()) continue;
-      snapshot_map[cluster_name].emplace_back(std::move(snapshot));
-    }
-  }
-  // When all the counts are zero, return empty slice.
-  if (snapshot_map.empty()) return grpc_empty_slice();
   // Create a request.
   envoy_service_load_stats_v2_LoadStatsRequest* request =
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
-  for (auto& p : snapshot_map) {
-    const StringView& cluster_name = p.first;
-    const auto& snapshot_list = p.second;
-    for (size_t i = 0; i < snapshot_list.size(); ++i) {
-      const auto& snapshot = snapshot_list[i];
-      // Add cluster stats.
-      envoy_api_v2_endpoint_ClusterStats* cluster_stats =
-          envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
-              request, arena.ptr());
-      // Set the cluster name.
-      envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+  for (auto& p : cluster_load_report_map) {
+    const std::string& cluster_name = p.first.first;
+    const std::string& eds_service_name = p.first.second;
+    const ClusterLoadReport& load_report = p.second;
+    // Add cluster stats.
+    envoy_api_v2_endpoint_ClusterStats* cluster_stats =
+        envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
+            request, arena.ptr());
+    // Set the cluster name.
+    envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+        cluster_stats,
+        upb_strview_make(cluster_name.data(), cluster_name.size()));
+    // Set EDS service name, if non-empty.
+    if (!eds_service_name.empty()) {
+      envoy_api_v2_endpoint_ClusterStats_set_cluster_service_name(
           cluster_stats,
-          upb_strview_make(cluster_name.data(), cluster_name.size()));
-      // Add locality stats.
-      for (auto& p : snapshot.upstream_locality_stats) {
-        envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
-            envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
-                cluster_stats, arena.ptr());
-        LocalityStatsPopulate(locality_stats, p, arena.ptr());
-      }
-      // Add dropped requests.
-      for (auto& p : snapshot.dropped_requests) {
-        const char* category = p.first.c_str();
-        const uint64_t count = p.second;
-        envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
-            envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(
-                cluster_stats, arena.ptr());
-        envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_category(
-            dropped_requests, upb_strview_makez(category));
-        envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_dropped_count(
-            dropped_requests, count);
-      }
-      // Set total dropped requests.
-      envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(
-          cluster_stats, snapshot.total_dropped_requests);
-      // Set real load report interval.
-      gpr_timespec timespec =
-          grpc_millis_to_timespec(snapshot.load_report_interval, GPR_TIMESPAN);
-      google_protobuf_Duration* load_report_interval =
-          envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(
-              cluster_stats, arena.ptr());
-      google_protobuf_Duration_set_seconds(load_report_interval,
-                                           timespec.tv_sec);
-      google_protobuf_Duration_set_nanos(load_report_interval,
-                                         timespec.tv_nsec);
+          upb_strview_make(eds_service_name.data(), eds_service_name.size()));
     }
+    // Add locality stats.
+    for (const auto& p : load_report.locality_stats) {
+      const XdsLocalityName& locality_name = *p.first;
+      const auto& snapshot = p.second;
+      envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
+          envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
+              cluster_stats, arena.ptr());
+      LocalityStatsPopulate(locality_stats, locality_name, snapshot,
+                            arena.ptr());
+    }
+    // Add dropped requests.
+    uint64_t total_dropped_requests = 0;
+    for (const auto& p : load_report.dropped_requests) {
+      const char* category = p.first.c_str();
+      const uint64_t count = p.second;
+      envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
+          envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(cluster_stats,
+                                                                  arena.ptr());
+      envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_category(
+          dropped_requests, upb_strview_makez(category));
+      envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_dropped_count(
+          dropped_requests, count);
+      total_dropped_requests += count;
+    }
+    // Set total dropped requests.
+    envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(
+        cluster_stats, total_dropped_requests);
+    // Set real load report interval.
+    gpr_timespec timespec =
+        grpc_millis_to_timespec(load_report.load_report_interval, GPR_TIMESPAN);
+    google_protobuf_Duration* load_report_interval =
+        envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(
+            cluster_stats, arena.ptr());
+    google_protobuf_Duration_set_seconds(load_report_interval, timespec.tv_sec);
+    google_protobuf_Duration_set_nanos(load_report_interval, timespec.tv_nsec);
   }
   return SerializeLrsRequest(request, arena.ptr());
 }
