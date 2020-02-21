@@ -71,6 +71,10 @@ argp.add_argument(
     'Continue with test even when an error occurs during setup. Intended for '
     'manual testing, where attempts to recreate any GCP resources already '
     'existing will result in an error')
+argp.add_argument('--service_port',
+                  default=55551,
+                  type=int,
+                  help='The port on which the test server will listen.')
 argp.add_argument('--verbose',
                   help='verbose log output',
                   default=False,
@@ -97,7 +101,7 @@ TARGET_PROXY_NAME = 'test-target-proxy' + args.gcp_suffix
 FORWARDING_RULE_NAME = 'test-forwarding-rule' + args.gcp_suffix
 KEEP_GCP_RESOURCES = args.keep_gcp_resources
 TOLERATE_GCP_ERRORS = args.tolerate_gcp_errors
-SERVICE_PORT = 55551
+SERVICE_PORT = args.service_port
 STATS_PORT = 55552
 INSTANCE_GROUP_SIZE = 2
 WAIT_FOR_OPERATION_SEC = 60
