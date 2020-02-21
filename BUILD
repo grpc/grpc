@@ -72,19 +72,14 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
-config_setting(
-    name = "grpc_disable_absl",
-    values = {"define": "GRPC_USE_ABSL=0"},
-)
-
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "guantao"
+g_stands_for = "galactic"
 
 core_version = "9.0.0"
 
-version = "1.27.0-dev"
+version = "1.28.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -567,7 +562,9 @@ grpc_cc_library(
         "src/core/lib/profiling/timers.h",
     ],
     external_deps = [
+        "absl/memory",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,

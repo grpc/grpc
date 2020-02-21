@@ -31,6 +31,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "absl/strings/str_format.h"
+
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -413,14 +415,9 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
 
   arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
   if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    char* socket_name = nullptr;
-    gpr_asprintf(&socket_name, "chttp2 listener %s", addr);
     state->channelz_listen_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
-            addr, socket_name);
-    // TODO(veblush): Remove this once gpr_asprintf is replaced by
-    // absl::StrFormat
-    gpr_free(socket_name);
+            addr, absl::StrFormat("chttp2 listener %s", addr));
   }
 
   /* Register with the server only upon success */

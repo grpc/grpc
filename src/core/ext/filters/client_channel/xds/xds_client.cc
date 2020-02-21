@@ -1848,8 +1848,9 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
   // We jump through some hoops here to make sure that the StringViews
   // stored in the XdsClusterDropStats object point to the strings
   // in the load_report_map_ key, so that they have the same lifetime.
-  auto it = load_report_map_.emplace(
-      std::make_pair(std::move(key), LoadReportState())).first;
+  auto it = load_report_map_
+                .emplace(std::make_pair(std::move(key), LoadReportState()))
+                .first;
   auto cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
       Ref(DEBUG_LOCATION, "DropStats"), lrs_server,
       it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/);
@@ -1893,8 +1894,9 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
   // We jump through some hoops here to make sure that the StringViews
   // stored in the XdsClusterLocalityStats object point to the strings
   // in the load_report_map_ key, so that they have the same lifetime.
-  auto it = load_report_map_.emplace(
-      std::make_pair(std::move(key), LoadReportState())).first;
+  auto it = load_report_map_
+                .emplace(std::make_pair(std::move(key), LoadReportState()))
+                .first;
   auto cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
       Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server,
       it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/,

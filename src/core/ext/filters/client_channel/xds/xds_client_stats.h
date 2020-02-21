@@ -49,6 +49,11 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
                     const RefCountedPtr<XdsLocalityName>& rhs) const {
       return (*this)(lhs.get(), rhs.get());
     }
+
+    bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
+                    const RefCountedPtr<XdsLocalityName>& rhs) const {
+      return (*this)(lhs.get(), rhs.get());
+    }
   };
 
   XdsLocalityName(std::string region, std::string zone, std::string subzone)

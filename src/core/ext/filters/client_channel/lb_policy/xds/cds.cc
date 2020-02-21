@@ -161,7 +161,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     LoadBalancingPolicy::Args args;
     args.combiner = parent_->combiner();
     args.args = parent_->args_;
-    args.channel_control_helper = grpc_core::MakeUnique<Helper>(parent_->Ref());
+    args.channel_control_helper = absl::make_unique<Helper>(parent_->Ref());
     parent_->child_policy_ =
         LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
             config->name(), std::move(args));
@@ -186,7 +186,7 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
   if (parent_->child_policy_ == nullptr) {
     parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_core::MakeUnique<TransientFailurePicker>(error));
+        absl::make_unique<TransientFailurePicker>(error));
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -286,7 +286,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
       xds_client_->CancelClusterDataWatch(
           StringView(old_config->cluster().c_str()), cluster_watcher_);
     }
-    auto watcher = grpc_core::MakeUnique<ClusterWatcher>(Ref());
+    auto watcher = absl::make_unique<ClusterWatcher>(Ref());
     cluster_watcher_ = watcher.get();
     xds_client_->WatchClusterData(StringView(config_->cluster().c_str()),
                                   std::move(watcher));
@@ -348,7 +348,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_cds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::CdsLbFactory>());
+          absl::make_unique<grpc_core::CdsFactory>());
 }
 
 void grpc_lb_policy_cds_shutdown() {}

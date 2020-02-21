@@ -849,7 +849,7 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
                                             endpoint_watcher_);
     }
-    auto watcher = grpc_core::MakeUnique<EndpointWatcher>(
+    auto watcher = absl::make_unique<EndpointWatcher>(
         Ref(DEBUG_LOCATION, "EndpointWatcher"));
     endpoint_watcher_ = watcher.get();
     xds_client()->WatchEndpointData(StringView(eds_service_name()),
@@ -1077,7 +1077,7 @@ void XdsLb::UpdateXdsPickerLocked() {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_core::MakeUnique<TransientFailurePicker>(error));
+        absl::make_unique<TransientFailurePicker>(error));
     return;
   }
   priorities_[current_priority_]->UpdateXdsPickerLocked();
@@ -1168,7 +1168,7 @@ XdsLb::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
   if (priority_ == 0) {
     xds_policy_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING,
-        grpc_core::MakeUnique<QueuePicker>(
+        absl::make_unique<QueuePicker>(
             xds_policy_->Ref(DEBUG_LOCATION, "QueuePicker")));
   }
 }
@@ -1244,8 +1244,8 @@ void XdsLb::LocalityMap::UpdateXdsPickerLocked() {
         std::make_pair(end, locality->GetLoadReportingPicker()));
   }
   xds_policy()->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, grpc_core::MakeUnique<LocalityPicker>(
-                              xds_policy(), std::move(picker_list)));
+      GRPC_CHANNEL_READY,
+      absl::make_unique<LocalityPicker>(xds_policy(), std::move(picker_list)));
 }
 
 OrphanablePtr<XdsLb::LocalityMap::Locality>
@@ -1902,7 +1902,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_xds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::XdsFactory>());
+          absl::make_unique<grpc_core::XdsFactory>());
 }
 
 void grpc_lb_policy_xds_shutdown() {}

@@ -138,6 +138,17 @@ grpc_error* grpc_metadata_batch_add_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 
+/** Add \a elem_to_add as the last element in \a batch, only
+    when the current batch doesn't have the same key in the
+    given element, using \a storage as backing storage for the
+    linked list element.  \a storage is owned by the caller
+    and must survive for the lifetime of batch. This usually
+    means it should be around for the lifetime of the call.
+    Takes ownership of \a elem_to_add */
+grpc_error* grpc_metadata_batch_add_tail_when_key_not_exist(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
+
 inline grpc_error* GRPC_MUST_USE_RESULT grpc_metadata_batch_add_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_metadata_batch_callouts_index idx) {
