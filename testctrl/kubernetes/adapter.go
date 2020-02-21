@@ -72,6 +72,7 @@ func (a *Adapter) CreateDeployment(_ context.Context, d *appsv1.Deployment) (*ap
 	return deployment, nil
 }
 
+// DeleteDeployment kills a deployment which propagates to its managed pods.
 func (a *Adapter) DeleteDeployment(_ context.Context, d *appsv1.Deployment) error {
 	var propagationPolicy metav1.DeletionPropagation = "Foreground"
 	return a.deploymentsClient().Delete(d.Name, &metav1.DeleteOptions{
