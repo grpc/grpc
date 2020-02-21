@@ -71,6 +71,10 @@ namespace grpc_core {
 struct RegisteredCall {
   grpc_mdelem path;
   grpc_mdelem authority;
+
+  explicit RegisteredCall(const char* method, const char* host);
+  RegisteredCall(const RegisteredCall& other);
+  ~RegisteredCall();
 };
 
 struct CallRegistrationTable {

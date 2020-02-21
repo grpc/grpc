@@ -410,6 +410,32 @@ grpc_call* grpc_channel_create_pollset_set_call(
       deadline);
 }
 
+
+namespace grpc_core {
+
+RegisteredCall::RegisteredCall(const char* method, const char* host) {
+  path = grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
+                                 grpc_core::ExternallyManagedSlice(method));
+  authority =
+      host ? grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
+                                     grpc_core::ExternallyManagedSlice(host))
+           : GRPC_MDNULL;
+}
+
+RegisteredCall::RegisteredCall(const RegisteredCall& other) {
+  path = other.path;
+  authority = other.authority;
+  GRPC_MDELEM_REF(path);
+  GRPC_MDELEM_REF(authority);
+}
+
+RegisteredCall::~RegisteredCall() {
+  GRPC_MDELEM_UNREF(path);
+  GRPC_MDELEM_UNREF(authority);
+}
+
+}  // namespace grpc_core
+
 void* grpc_channel_register_call(grpc_channel* channel, const char* method,
                                  const char* host, void* reserved) {
   GRPC_API_TRACE(
@@ -425,15 +451,8 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   if (rc_posn != channel->registration_table->map.end()) {
     return &rc_posn->second;
   }
-  grpc_core::RegisteredCall rc;
-  rc.path = grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
-                                     grpc_core::ExternallyManagedSlice(method));
-  rc.authority =
-      host ? grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                     grpc_core::ExternallyManagedSlice(host))
-           : GRPC_MDNULL;
-  auto insertion_result = channel->registration_table->map.insert({key, rc});
-  GPR_DEBUG_ASSERT(insertion_result.second);
+  auto insertion_result = channel->registration_table->map.insert(
+      {key, grpc_core::RegisteredCall(method, host)});
   return &insertion_result.first->second;
 }
 
@@ -483,11 +502,6 @@ static void destroy_channel(void* arg, grpc_error* /*error*/) {
     channel->channelz_node.reset();
   }
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
-  for (auto& registered_call_entry : channel->registration_table->map) {
-    grpc_core::RegisteredCall* rc = &registered_call_entry.second;
-    GRPC_MDELEM_UNREF(rc->path);
-    GRPC_MDELEM_UNREF(rc->authority);
-  }
   channel->registration_table.Destroy();
   if (channel->resource_user != nullptr) {
     grpc_resource_user_free(channel->resource_user,
