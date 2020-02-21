@@ -476,8 +476,8 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   }
   if (lb_policy_config != nullptr) {
     // Create or update LB policy, as needed.
-    CreateOrUpdateLbPolicyLocked(std::move(lb_policy_config),
-                                 std::move(result), &trace_strings);
+    CreateOrUpdateLbPolicyLocked(std::move(lb_policy_config), std::move(result),
+                                 &trace_strings);
   }
   // Add channel trace event.
   if (service_config_changed) {

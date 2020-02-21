@@ -1648,8 +1648,7 @@ void ChannelData::ProcessLbPolicy(
     }
   }
   if (found_balancer_address) {
-    if (policy_name != nullptr &&
-        strcmp(policy_name, "grpclb") != 0) {
+    if (policy_name != nullptr && strcmp(policy_name, "grpclb") != 0) {
       gpr_log(GPR_INFO,
               "resolver requested LB policy %s but provided at least one "
               "balancer address -- forcing use of grpclb LB policy",
