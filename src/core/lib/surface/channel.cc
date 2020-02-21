@@ -410,7 +410,6 @@ grpc_call* grpc_channel_create_pollset_set_call(
       deadline);
 }
 
-
 namespace grpc_core {
 
 RegisteredCall::RegisteredCall(const char* method, const char* host) {
@@ -422,11 +421,11 @@ RegisteredCall::RegisteredCall(const char* method, const char* host) {
            : GRPC_MDNULL;
 }
 
-RegisteredCall::RegisteredCall(const RegisteredCall& other) {
+RegisteredCall::RegisteredCall(RegisteredCall&& other) {
   path = other.path;
   authority = other.authority;
-  GRPC_MDELEM_REF(path);
-  GRPC_MDELEM_REF(authority);
+  other.path = GRPC_MDNULL;
+  other.authority = GRPC_MDNULL;
 }
 
 RegisteredCall::~RegisteredCall() {

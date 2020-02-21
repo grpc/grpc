@@ -73,7 +73,9 @@ struct RegisteredCall {
   grpc_mdelem authority;
 
   explicit RegisteredCall(const char* method, const char* host);
-  RegisteredCall(const RegisteredCall& other);
+  RegisteredCall(const RegisteredCall& other) = delete;
+  RegisteredCall(RegisteredCall&& other);
+
   ~RegisteredCall();
 };
 
