@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.27.0dev</release>
-  <api>1.27.0dev</api>
+  <release>1.28.0dev</release>
+  <api>1.28.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.27.0 update
+- gRPC Core 1.28.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -970,6 +970,19 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/ostringstream.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/resize_uninitialized.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/stl_type_traits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/arg.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/arg.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/bind.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/bind.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/checker.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/extension.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/extension.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/output.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/output.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/parser.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_format/parser.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_join_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/str_split_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/internal/utf8.cc" role="src" />
@@ -980,6 +993,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/numbers.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_cat.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_cat.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_format.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_join.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_replace.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/str_replace.h" role="src" />

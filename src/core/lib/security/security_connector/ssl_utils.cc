@@ -167,11 +167,13 @@ bool grpc_ssl_check_call_host(grpc_core::StringView host,
                               grpc_core::StringView target_name,
                               grpc_core::StringView overridden_target_name,
                               grpc_auth_context* auth_context,
-                              grpc_closure* /*on_call_host_checked*/,
                               grpc_error** error) {
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
+  /* If the target name was overridden, then the original target_name was
+   'checked' transitively during the previous peer check at the end of the
+   handshake. */
   if (!overridden_target_name.empty() && host == target_name) {
     status = GRPC_SECURITY_OK;
   }

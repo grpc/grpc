@@ -42,7 +42,7 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(grpc_error** error) {
   Json json = Json::Parse(StringViewFromSlice(contents), error);
   grpc_slice_unref_internal(contents);
   if (*error != GRPC_ERROR_NONE) return nullptr;
-  return grpc_core::MakeUnique<XdsBootstrap>(std::move(json), error);
+  return absl::make_unique<XdsBootstrap>(std::move(json), error);
 }
 
 XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
@@ -192,7 +192,7 @@ grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
 
 grpc_error* XdsBootstrap::ParseNode(Json* json) {
   InlinedVector<grpc_error*, 1> error_list;
-  node_ = grpc_core::MakeUnique<Node>();
+  node_ = absl::make_unique<Node>();
   auto it = json->mutable_object()->find("id");
   if (it != json->mutable_object()->end()) {
     if (it->second.type() != Json::Type::STRING) {

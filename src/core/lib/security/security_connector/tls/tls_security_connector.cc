@@ -268,7 +268,7 @@ bool TlsChannelSecurityConnector::check_call_host(
     grpc_closure* on_call_host_checked, grpc_error** error) {
   return grpc_ssl_check_call_host(host, target_name_.get(),
                                   overridden_target_name_.get(), auth_context,
-                                  on_call_host_checked, error);
+                                  error);
 }
 
 void TlsChannelSecurityConnector::cancel_check_call_host(

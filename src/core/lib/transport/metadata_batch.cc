@@ -205,6 +205,19 @@ grpc_error* grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
   return grpc_metadata_batch_link_tail(batch, storage);
 }
 
+grpc_error* grpc_metadata_batch_add_tail_when_key_not_exist(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_mdelem elem_to_add) {
+  auto cur = batch->list.head;
+  while (cur != nullptr) {
+    if (grpc_slice_cmp(GRPC_MDKEY(cur->md), GRPC_MDKEY(elem_to_add)) == 0) {
+      // We already have the same key, just returning.
+      return GRPC_ERROR_NONE;
+    }
+  }
+  return grpc_metadata_batch_add_tail(batch, storage, elem_to_add);
+}
+
 static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
   GPR_DEBUG_ASSERT(!GRPC_MDISNULL(storage->md));

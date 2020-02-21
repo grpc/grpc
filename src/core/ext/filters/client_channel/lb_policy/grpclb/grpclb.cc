@@ -714,9 +714,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
-      state, grpc_core::MakeUnique<Picker>(parent_.get(), parent_->serverlist_,
-                                           std::move(picker),
-                                           std::move(client_stats)));
+      state,
+      absl::make_unique<Picker>(parent_.get(), parent_->serverlist_,
+                                std::move(picker), std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -1946,7 +1946,7 @@ bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
 void grpc_lb_policy_grpclb_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::GrpcLbFactory>());
+          absl::make_unique<grpc_core::GrpcLbFactory>());
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_client_load_reporting_filter,
