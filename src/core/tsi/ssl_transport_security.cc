@@ -1122,7 +1122,8 @@ static void tsi_ssl_handshaker_factory_init(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property) {
   BIO* bio = BIO_new(BIO_s_mem());
-  for (int i = 0; i < sk_X509_num(peer_chain); i++) {
+  const auto peer_chain_len = sk_X509_num(peer_chain);
+  for (auto i = decltype(peer_chain_len){0}; i < peer_chain_len; i++) {
     if (!PEM_write_bio_X509(bio, sk_X509_value(peer_chain, i))) {
       BIO_free(bio);
       return TSI_INTERNAL_ERROR;
