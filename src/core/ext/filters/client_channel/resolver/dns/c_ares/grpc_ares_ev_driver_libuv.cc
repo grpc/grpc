@@ -74,7 +74,7 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     return false;
   }
 
-  void ShutdownInternalLocked(grpc_error* /*error*/) {
+  void ShutdownInternalLocked(grpc_error* error) {
     uv_poll_stop(handle_);
     uv_close(reinterpret_cast<uv_handle_t*>(handle_), ares_uv_poll_close_cb);
     if (read_closure_ != nullptr) {
@@ -168,7 +168,7 @@ class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    std::shared_ptr<WorkSerializer> /*work_serializer*/) {
+    std::shared_ptr<WorkSerializer> work_serializer) {
   return absl::make_unique<GrpcPolledFdFactoryLibuv>();
 }
 
