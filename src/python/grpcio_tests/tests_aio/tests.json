@@ -1,5 +1,6 @@
 [
   "_sanity._sanity_test.AioSanityTest",
+  "health_check.health_servicer_test.HealthServicerTest",
   "interop.local_interop_test.InsecureLocalInteropTest",
   "interop.local_interop_test.SecureLocalInteropTest",
   "unit.abort_test.TestAbort",

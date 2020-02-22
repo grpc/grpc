@@ -10,6 +10,7 @@ API Reference
    :caption: Contents:
 
    grpc
+   grpc_asyncio
    grpc_channelz
    grpc_health_checking
    grpc_reflection

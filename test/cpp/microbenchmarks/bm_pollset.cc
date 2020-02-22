@@ -157,14 +157,14 @@ static void BM_PollAddFd(benchmark::State& state) {
 }
 BENCHMARK(BM_PollAddFd);
 
-class Closure : public grpc_closure {
+class TestClosure : public grpc_closure {
  public:
-  virtual ~Closure() {}
+  virtual ~TestClosure() {}
 };
 
 template <class F>
-Closure* MakeClosure(F f) {
-  struct C : public Closure {
+TestClosure* MakeTestClosure(F f) {
+  struct C : public TestClosure {
     explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
     static void cbfn(void* arg, grpc_error* /*error*/) {
       C* p = static_cast<C*>(arg);
@@ -221,7 +221,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
   grpc_pollset_add_fd(ps, wakeup);
   bool done = false;
-  Closure* continue_closure = MakeClosure([&]() {
+  TestClosure* continue_closure = MakeTestClosure([&]() {
     GRPC_ERROR_UNREF(grpc_wakeup_fd_consume_wakeup(&wakeup_fd));
     if (!state.KeepRunning()) {
       done = true;
