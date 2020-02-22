@@ -387,12 +387,14 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   }
 
   void RegisterServer(const Server* server) {
+    (void)server;
 #ifndef NDEBUG
     grpc::internal::MutexLock l(&server_list_mutex_);
     server_list_.push_back(server);
 #endif
   }
   void UnregisterServer(const Server* server) {
+    (void)server;
 #ifndef NDEBUG
     grpc::internal::MutexLock l(&server_list_mutex_);
     server_list_.remove(server);

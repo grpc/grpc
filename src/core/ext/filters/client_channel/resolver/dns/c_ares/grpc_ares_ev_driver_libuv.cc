@@ -169,7 +169,7 @@ class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
     std::shared_ptr<WorkSerializer> /*work_serializer*/) {
-  return MakeUnique<GrpcPolledFdFactoryLibuv>();
+  return absl::make_unique<GrpcPolledFdFactoryLibuv>();
 }
 
 }  // namespace grpc_core

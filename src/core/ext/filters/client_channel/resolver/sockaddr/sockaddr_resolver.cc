@@ -176,12 +176,12 @@ class UnixResolverFactory : public ResolverFactory {
 
 void grpc_resolver_sockaddr_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::IPv4ResolverFactory>());
+      absl::make_unique<grpc_core::IPv4ResolverFactory>());
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::IPv6ResolverFactory>());
+      absl::make_unique<grpc_core::IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::UnixResolverFactory>());
+      absl::make_unique<grpc_core::UnixResolverFactory>());
 #endif
 }
 

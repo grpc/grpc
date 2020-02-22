@@ -637,7 +637,7 @@ static void handshaker_client_shutdown(alts_handshaker_client* c) {
   }
 }
 
-static void handshaker_call_unref(void* arg, grpc_error* error) {
+static void handshaker_call_unref(void* arg, grpc_error* /* error */) {
   grpc_call* call = static_cast<grpc_call*>(arg);
   grpc_call_unref(call);
 }

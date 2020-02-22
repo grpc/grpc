@@ -57,7 +57,6 @@ bool grpc_ssl_check_call_host(grpc_core::StringView host,
                               grpc_core::StringView target_name,
                               grpc_core::StringView overridden_target_name,
                               grpc_auth_context* auth_context,
-                              grpc_closure* on_call_host_checked,
                               grpc_error** error);
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);

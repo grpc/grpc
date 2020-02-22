@@ -17,28 +17,16 @@ import logging
 import unittest
 
 from grpc.experimental import aio
-from src.proto.grpc.testing import messages_pb2
+
 from src.proto.grpc.testing import benchmark_service_pb2_grpc
-
-
-class BenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
-
-    async def UnaryCall(self, request, context):
-        payload = messages_pb2.Payload(body=b'\0' * request.response_size)
-        return messages_pb2.SimpleResponse(payload=payload)
-
-    async def StreamingFromServer(self, request, context):
-        payload = messages_pb2.Payload(body=b'\0' * request.response_size)
-        # Sends response at full capacity!
-        while True:
-            yield messages_pb2.SimpleResponse(payload=payload)
+from tests_aio.benchmark import benchmark_servicer
 
 
 async def _start_async_server():
     server = aio.server()
 
     port = server.add_insecure_port('localhost:%s' % 50051)
-    servicer = BenchmarkServer()
+    servicer = benchmark_servicer.BenchmarkServicer()
     benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
         servicer, server)
 

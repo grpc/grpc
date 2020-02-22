@@ -887,7 +887,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
     std::shared_ptr<WorkSerializer> work_serializer) {
-  return MakeUnique<GrpcPolledFdFactoryWindows>(std::move(work_serializer));
+  return absl::make_unique<GrpcPolledFdFactoryWindows>(
+      std::move(work_serializer));
 }
 
 }  // namespace grpc_core

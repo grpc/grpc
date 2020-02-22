@@ -16,8 +16,8 @@
 
 import os
 import sys
-PYTHON_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                             '..', '..', '..', 'src', 'python')
+PYTHON_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
+                             '..', '..', 'src', 'python')
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_channelz'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_health_checking'))
@@ -53,6 +53,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.napoleon',
     'sphinx.ext.coverage',
+    'sphinx.ext.autodoc.typehints',
 ]
 
 napoleon_google_docstring = True
@@ -63,15 +64,9 @@ autodoc_default_options = {
     'members': None,
 }
 
-autodoc_mock_imports = [
-    'grpc._cython',
-    'grpc_channelz.v1.channelz_pb2',
-    'grpc_channelz.v1.channelz_pb2_grpc',
-    'grpc_health.v1.health_pb2',
-    'grpc_health.v1.health_pb2_grpc',
-    'grpc_reflection.v1alpha.reflection_pb2',
-    'grpc_reflection.v1alpha.reflection_pb2_grpc',
-]
+autodoc_mock_imports = []
+
+autodoc_typehints = 'description'
 
 # -- HTML Configuration -------------------------------------------------
 
@@ -84,6 +79,7 @@ html_theme_options = {
     'description': grpc_version.VERSION,
     'show_powered_by': False,
 }
+html_static_path = ["_static"]
 
 # -- Options for manual page output ------------------------------------------
 

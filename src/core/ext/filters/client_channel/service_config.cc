@@ -95,7 +95,7 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigVectorTable(
     const Json& json,
     InlinedVector<SliceHashTable<const ParsedConfigVector*>::Entry, 10>*
         entries) {
-  auto objs_vector = grpc_core::MakeUnique<ParsedConfigVector>();
+  auto objs_vector = absl::make_unique<ParsedConfigVector>();
   InlinedVector<grpc_error*, 4> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
     grpc_error* parser_error = GRPC_ERROR_NONE;

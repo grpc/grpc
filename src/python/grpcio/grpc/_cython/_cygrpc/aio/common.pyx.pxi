@@ -42,6 +42,8 @@ cdef bytes serialize(object serializer, object message):
 
     Failure to serialize is a fatal error.
     """
+    if isinstance(message, str):
+        message = message.encode('utf-8')
     if serializer:
         return serializer(message)
     else:

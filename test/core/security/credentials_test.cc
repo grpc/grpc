@@ -97,6 +97,13 @@ static const char test_refresh_token_str[] =
     "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\","
     "  \"type\": \"authorized_user\"}";
 
+static const char test_refresh_token_with_quota_project_id_str[] =
+    "{ \"client_id\": \"32555999999.apps.googleusercontent.com\","
+    "  \"client_secret\": \"EmssLNjJy1332hD4KFsecret\","
+    "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\","
+    "  \"quota_project_id\": \"my-quota-project-id\","
+    "  \"type\": \"authorized_user\"}";
+
 static const char valid_oauth2_json_response[] =
     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
     " \"expires_in\":3599, "
@@ -713,7 +720,37 @@ static void test_refresh_token_creds_success(void) {
   /* Check security level. */
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
-  /* First request: http put should be called. */
+  /* First request: http post should be called. */
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            refresh_token_httpcli_post_success);
+  run_request_metadata_test(creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  /* Second request: the cached token should be served directly. */
+  state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  run_request_metadata_test(creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  creds->Unref();
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
+static void test_refresh_token_with_quota_project_id_creds_success(void) {
+  grpc_core::ExecCtx exec_ctx;
+  expected_md emd[] = {
+      {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"},
+      {"x-goog-user-project", "my-quota-project-id"}};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
+      test_refresh_token_with_quota_project_id_str, nullptr);
+
+  /* First request: http post should be called. */
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
@@ -980,6 +1017,41 @@ static void test_sts_creds_success(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
   gpr_free(subject_token_path);
   gpr_free(actor_token_path);
+}
+
+static void test_sts_creds_token_file_not_found(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_sts_credentials_options valid_options = {
+      test_sts_endpoint_url,           // sts_endpoint_url
+      "resource",                      // resource
+      "audience",                      // audience
+      "scope",                         // scope
+      "requested_token_type",          // requested_token_type
+      "/some/completely/random/path",  // subject_token_path
+      test_signed_jwt_token_type,      // subject_token_type
+      "",                              // actor_token_path
+      ""                               // actor_token_type
+  };
+  grpc_call_credentials* creds =
+      grpc_sts_credentials_create(&valid_options, nullptr);
+
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+
+  request_metadata_state* state = make_request_metadata_state(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Error occurred when fetching oauth2 token."),
+      nullptr, 0);
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  run_request_metadata_test(creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  /* Cleanup. */
+  creds->Unref();
+  grpc_httpcli_set_override(nullptr, nullptr);
 }
 
 static void test_sts_creds_no_actor_token_success(void) {
@@ -1680,6 +1752,7 @@ int main(int argc, char** argv) {
   test_compute_engine_creds_success();
   test_compute_engine_creds_failure();
   test_refresh_token_creds_success();
+  test_refresh_token_with_quota_project_id_creds_success();
   test_refresh_token_creds_failure();
   test_valid_sts_creds_options();
   test_invalid_sts_creds_options();
@@ -1687,6 +1760,7 @@ int main(int argc, char** argv) {
   test_sts_creds_no_actor_token_success();
   test_sts_creds_load_token_failure();
   test_sts_creds_http_failure();
+  test_sts_creds_token_file_not_found();
   test_jwt_creds_lifetime();
   test_jwt_creds_success();
   test_jwt_creds_signing_failure();

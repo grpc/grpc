@@ -72,19 +72,14 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
-config_setting(
-    name = "grpc_disable_absl",
-    values = {"define": "GRPC_USE_ABSL=0"},
-)
-
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "guantao"
+g_stands_for = "galactic"
 
 core_version = "9.0.0"
 
-version = "1.27.0-dev"
+version = "1.28.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -561,7 +556,9 @@ grpc_cc_library(
         "src/core/lib/profiling/timers.h",
     ],
     external_deps = [
+        "absl/memory",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -746,6 +743,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_internal.cc",
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
+        "src/core/lib/iomgr/iomgr_uv.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
@@ -769,6 +767,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
         "src/core/lib/iomgr/socket_utils_linux.cc",
         "src/core/lib/iomgr/socket_utils_posix.cc",
+        "src/core/lib/iomgr/socket_utils_uv.cc",
         "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
@@ -988,6 +987,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     use_cfstream = True,
     deps = [
+        "eventmanager_libuv",
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
