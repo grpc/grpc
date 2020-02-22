@@ -216,7 +216,7 @@ cdef class _ServicerContext:
 
 
 async def _run_interceptor(object interceptors, object query_handler,
-                      object handler_call_details):
+                           object handler_call_details):
     interceptor = next(interceptors, None)
     if interceptor:
         continuation = functools.partial(_run_interceptor, interceptors,
