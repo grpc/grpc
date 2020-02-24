@@ -14,12 +14,14 @@
 
 syntax = "proto3";
 
-package proto;  // NTS: Improve package structure for prototype.
+package proto;
+
+option go_package = "github.com/grpc/grpc/testctrl/genproto/svc";
 
 import "google/protobuf/duration.proto";
+import "google/longrunning/operations.proto";
 
-import "control.proto";
-import "operations.proto";
+import "src/proto/grpc/testing/control.proto";
 
 service TestSessions {
   // Starts a set of test scenarios.
@@ -34,8 +36,8 @@ service TestSessions {
   // It can also be used to cancel while in progress, but cancellations operate
   // like killing a running process. If they occur while results are being
   // reported, the persistent storage may receive some but not all of them.
-  rpc StartTestSession(StartTestSessionRequest) returns (Operation) {
-    option (operation_info) = {
+  rpc StartTestSession(StartTestSessionRequest) returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
       response_type: "TestSessionResults"
       metadata_type: "TestSessionMetadata"
     };
@@ -44,7 +46,7 @@ service TestSessions {
 
 message StartTestSessionRequest {
   // The test scenarios to run as a part of the test session.
-  repeated Scenario scenarios = 1;  // [(google.api.field_behavior) = REQUIRED];
+  repeated grpc.testing.Scenario scenarios = 1;  // [(google.api.field_behavior) = REQUIRED];
 
   // The name and tag of the docker image which starts the driver.
   //
@@ -72,7 +74,7 @@ message StartTestSessionRequest {
 
 message TestSessionResults {
   // The results for each scenario.
-  repeated ScenarioResult scenario_results = 1;
+  repeated grpc.testing.ScenarioResult scenario_results = 1;
 
   // The amount of time that this session lived, including scheduling to
   // to reporting results.

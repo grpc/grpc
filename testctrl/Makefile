@@ -2,8 +2,8 @@ all: deps proto testctrl driver
 	go build -v ./...
 
 clean:
-	rm testctrl
-	rm proto/*.pb.go
+	rm -r bin
+	rm -r proto/*.pb.go
 
 deps:
 	go get -v -d ./...
@@ -18,8 +18,35 @@ lint:
 	golint ./...
 
 proto:
-	protoc -I ./proto proto/*.proto --go_out=plugins=grpc:./proto
-	go build -v ./proto
+	mkdir -p genproto/github.com/grpc/grpc
+
+	for protofile in $$(ls ../third_party/googleapis/google/rpc/*.proto); do \
+		echo $$protofile && \
+		protoc -I ../third_party/googleapis $$protofile --go_out=./genproto; \
+	done
+
+	for protofile in $$(ls ../third_party/googleapis/google/longrunning/*.proto); do \
+		echo $$protofile && \
+		protoc -I ../third_party/googleapis \
+					 $$protofile \
+					 --go_out=plugins=grpc:./genproto; \
+	done
+
+	for protofile in $$(ls ../src/proto/grpc/testing/*.proto); do \
+		echo $$protofile && \
+		protoc -I ../ \
+					 $$protofile \
+					 --go_out=plugins=grpc:./genproto/github.com/grpc/grpc; \
+	done
+
+	for protofile in $$(ls ./proto/*.proto); do \
+		echo $$protofile && \
+		protoc -I ../third_party/googleapis \
+					 -I ../ \
+					 -I ./proto \
+					 $$protofile \
+					 --go_out=plugins=grpc:./genproto; \
+	done
 
 rebuild: clean proto testctrl driver
 
