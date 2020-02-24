@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package svc
 
 import (
 	"context"
@@ -21,24 +21,24 @@ import (
 	pb "github.com/grpc/grpc/testctrl/proto"
 )
 
-type operationsServerImpl struct{}
+type OperationsServer struct{}
 
-func (o *operationsServerImpl) ListOperations(ctx context.Context, req *pb.ListOperationsRequest) (*pb.ListOperationsResponse, error) {
+func (o *OperationsServer) ListOperations(ctx context.Context, req *pb.ListOperationsRequest) (*pb.ListOperationsResponse, error) {
 	return nil, nil
 }
 
-func (o *operationsServerImpl) GetOperation(ctx context.Context, req *pb.GetOperationRequest) (*pb.Operation, error) {
+func (o *OperationsServer) GetOperation(ctx context.Context, req *pb.GetOperationRequest) (*pb.Operation, error) {
 	return nil, nil
 }
 
-func (o *operationsServerImpl) DeleteOperation(ctx context.Context, req *pb.DeleteOperationRequest) (*emptyPb.Empty, error) {
+func (o *OperationsServer) DeleteOperation(ctx context.Context, req *pb.DeleteOperationRequest) (*emptyPb.Empty, error) {
 	return nil, nil
 }
 
-func (o *operationsServerImpl) CancelOperation(ctx context.Context, req *pb.CancelOperationRequest) (*emptyPb.Empty, error) {
+func (o *OperationsServer) CancelOperation(ctx context.Context, req *pb.CancelOperationRequest) (*emptyPb.Empty, error) {
 	return nil, nil
 }
 
-func (o *operationsServerImpl) WaitOperation(ctx context.Context, req *pb.WaitOperationRequest) (*pb.Operation, error) {
+func (o *OperationsServer) WaitOperation(ctx context.Context, req *pb.WaitOperationRequest) (*pb.Operation, error) {
 	return nil, nil
 }

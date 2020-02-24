@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package svc
 
 import (
 	"context"
@@ -22,14 +22,13 @@ import (
 	"github.com/grpc/grpc/testctrl/kubernetes"
 	pb "github.com/grpc/grpc/testctrl/proto"
 	"github.com/google/uuid"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
-type testSessionsServerImpl struct{
-	adapter *kubernetes.Adapter
+type TestSessionsServer struct{
+	Adapter *kubernetes.Adapter
 }
 
-func (t *testSessionsServerImpl) StartTestSession(ctx context.Context, req *pb.StartTestSessionRequest) (*pb.Operation, error) {
+func (t *TestSessionsServer) StartTestSession(ctx context.Context, req *pb.StartTestSessionRequest) (*pb.Operation, error) {
 	sessionID := uuid.New().String()
 
 	containerImageMap := map[kubernetes.DeploymentRole]string{
@@ -41,7 +40,7 @@ func (t *testSessionsServerImpl) StartTestSession(ctx context.Context, req *pb.S
 	for role, image := range containerImageMap {
 		d := kubernetes.NewDeploymentBuilder(sessionID, role, image).Deployment()
 
-		d, err := t.adapter.CreateDeployment(context.Background(), d)
+		d, err := t.Adapter.CreateDeployment(context.Background(), d)
 		if err != nil {
 			log.Printf("Deployment of %s for session %s failed: %v", string(role), sessionID, err)
 			// TODO: ADD CLEAN UP LOGIC TO REMOVE OTHER SESSION DEPLOYMENTS
