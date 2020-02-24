@@ -19,7 +19,10 @@ Gem::Specification.new do |s|
   s.files += %w( etc/roots.pem )
   s.files += Dir.glob('src/ruby/bin/**/*')
   s.files += Dir.glob('src/ruby/ext/**/*')
-  s.files += Dir.glob('src/ruby/lib/**/*')
+  s.files += Dir.glob('src/ruby/lib/**/*').reject do |f|
+    # Binaries are included by rake-compiler and would lead to circular dependencies here
+    File.fnmatch("**/?.?/grpc_c.so", f)
+  end
   s.files += Dir.glob('src/ruby/pb/**/*').reject do |f|
     f.match(%r{^src/ruby/pb/test})
   end
@@ -36,9 +39,9 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
-  s.add_development_dependency 'rake',               '~> 12.0'
-  s.add_development_dependency 'rake-compiler',      '~> 1.0'
-  s.add_development_dependency 'rake-compiler-dock', '~> 0.5.1'
+  s.add_development_dependency 'rake',               '~> 13.0'
+  s.add_development_dependency 'rake-compiler',      '~> 1.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.0'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7'
