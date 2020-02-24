@@ -1029,13 +1029,13 @@ grpcsharp_ssl_credentials_create(const char* pem_root_certs,
     verify_options.verify_peer_destruct = grpcsharp_verify_peer_destroy_handler;
     verify_options.verify_peer_callback = grpcsharp_verify_peer_handler;
     if (skip_default_verification != 0) {
-      verify_options.skip_default_verification = true;
+      verify_options.skip_default_verification = 1;
     } else {
-      verify_options.skip_default_verification = false;
+      verify_options.skip_default_verification = 0;
     }
     verify_options_ptr = &verify_options;
   } else {
-    GPR_ASSERT(!skip_default_verification)
+    GPR_ASSERT(!skip_default_verification);
   }
 
   return grpc_ssl_credentials_create(pem_root_certs, key_cert_pair_ptr,

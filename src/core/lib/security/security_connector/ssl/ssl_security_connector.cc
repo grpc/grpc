@@ -98,7 +98,7 @@ class grpc_ssl_channel_security_connector final
     }
     options.cipher_suites = grpc_get_ssl_cipher_suites();
     options.session_cache = ssl_session_cache;
-    options.skip_server_certificate_verification = verify_options.skip_default_verification;
+    options.skip_server_certificate_verification = verify_options_->skip_default_verification;
     const tsi_result result =
         tsi_create_ssl_client_handshaker_factory_with_options(
             &options, &client_handshaker_factory_);
