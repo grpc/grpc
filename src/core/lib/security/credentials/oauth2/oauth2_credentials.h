@@ -32,13 +32,12 @@
   "s&subject_token_type=%s"
 
 // auth_refresh_token parsing.
-struct grpc_auth_refresh_token {
+typedef struct {
   const char* type;
   char* client_id;
   char* client_secret;
   char* refresh_token;
-  char* quota_project_id = nullptr;
-};
+} grpc_auth_refresh_token;
 
 /// Returns 1 if the object is valid, 0 otherwise.
 int grpc_auth_refresh_token_is_valid(
@@ -91,9 +90,6 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
                             grpc_httpcli_context* httpcli_context,
                             grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                             grpc_millis deadline) = 0;
-  // Sub class may override this for adding additional metadata other than
-  // credentials itself.
-  virtual void maybe_add_additional_metadata(grpc_credentials_mdelem_array*) {}
 
  private:
   gpr_mu mu_;
@@ -121,8 +117,6 @@ class grpc_google_refresh_token_credentials final
                     grpc_httpcli_context* httpcli_context,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                     grpc_millis deadline) override;
-  void maybe_add_additional_metadata(
-      grpc_credentials_mdelem_array* md_array) override;
 
  private:
   grpc_auth_refresh_token refresh_token_;
