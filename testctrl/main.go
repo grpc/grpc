@@ -20,8 +20,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"strings"
 
+	"github.com/grpc/grpc/testctrl/kubernetes"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc/grpc/testctrl/driver"
 	pb "github.com/grpc/grpc/testctrl/proto"
@@ -63,7 +65,22 @@ func runDriver(scenarioFilename string) {
 	fmt.Printf("Client results:\n%v\n\n\n\n", result.ClientStats)
 }
 
-func runService(port int, enableReflection bool) {
+func runService(port int, enableReflection bool, production bool) {
+	adapter := &kubernetes.Adapter{}
+	if production {
+		if err := adapter.ConnectWithinCluster(); err != nil {
+			log.Fatalf("Unable to connect to kubernetes API within cluster: %v", err)
+		}
+	} else {
+		c, set := os.LookupEnv("KUBE_CONFIG_FILE")
+		if !set {
+			log.Fatalf("Missing a kube config file, specify its absolute path in the KUBE_CONFIG_FILE env variable.")
+		}
+		if err := adapter.ConnectWithConfig(c); err != nil {
+			log.Fatalf("Invalid config file specified by the KUBE_CONFIG_FILE env variable, unable to connect: %v", err)
+		}
+	}
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("Failed to listen on port %d: %v", port, err)
@@ -71,7 +88,7 @@ func runService(port int, enableReflection bool) {
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterOperationsServer(grpcServer, &operationsServerImpl{})
-	pb.RegisterTestSessionsServer(grpcServer, &testSessionsServerImpl{})
+	pb.RegisterTestSessionsServer(grpcServer, &testSessionsServerImpl{adapter})
 
 	if enableReflection {
 		log.Println("Enabling reflection for grpc_cli; avoid this flag in production.")
@@ -89,12 +106,13 @@ func main() {
 	port := flag.Int("port", 50051, "Port to start the service.")
 	disableService := flag.Bool("disableService", false, "Disable gRPC service, running only a local driver.")
 	enableReflection := flag.Bool("enableReflection", false, "Enable reflection to interact with grpc_cli.")
+	production := flag.Bool("production", false, "Set mode to production, using in cluster kubernetes config.")
 	scenario := flag.String("scenario", "", "Delete me!")
 	flag.Parse()
 
 	if *disableService {
 		runDriver(*scenario)
 	} else {
-		runService(*port, *enableReflection)
+		runService(*port, *enableReflection, *production)
 	}
 }

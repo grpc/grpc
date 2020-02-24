@@ -1,6 +1,8 @@
 package kubernetes
 
 import (
+	"fmt"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,7 +109,7 @@ func (d *DeploymentBuilder) Deployment() *appsv1.Deployment {
 	var zero int32 = 0
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        d.sessionID,
+			Name:        d.Name(),
 			Labels:      d.Labels(),
 			Annotations: d.Annotations(),
 		},
@@ -132,7 +134,7 @@ func (d *DeploymentBuilder) Deployment() *appsv1.Deployment {
 func (d *DeploymentBuilder) PodTemplateSpec() apiv1.PodTemplateSpec {
 	return apiv1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        d.sessionID,
+			Name:        d.Name(),
 			Labels:      d.Labels(),
 			Annotations: d.Annotations(),
 		},
@@ -180,7 +182,7 @@ func (d *DeploymentBuilder) ContainerPorts() []apiv1.ContainerPort {
 // Labels constructs a map of labels that are shared by the deployment and pod.
 func (d *DeploymentBuilder) Labels() map[string]string {
 	return map[string]string{
-		"sessionID": d.sessionID,
+		"session-id": d.sessionID,
 		"role":      string(d.role),
 	}
 }
@@ -190,3 +192,6 @@ func (d *DeploymentBuilder) Annotations() map[string]string {
 	return map[string]string{}
 }
 
+func (d *DeploymentBuilder) Name() string {
+	return fmt.Sprintf("%s-%s", string(d.role), d.sessionID)
+}
