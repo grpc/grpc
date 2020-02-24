@@ -26,12 +26,12 @@ namespace grpc_core {
 namespace {
 
 template <typename EntryType>
-Map<StringView, double, StringLess> ParseMap(
+std::map<StringView, double, StringLess> ParseMap(
     udpa_data_orca_v1_OrcaLoadReport* msg,
     EntryType** (*entry_func)(udpa_data_orca_v1_OrcaLoadReport*, size_t*),
     upb_strview (*key_func)(const EntryType*),
     double (*value_func)(const EntryType*), Arena* arena) {
-  Map<StringView, double, StringLess> result;
+  std::map<StringView, double, StringLess> result;
   size_t size;
   const auto* const* entries = entry_func(msg, &size);
   for (size_t i = 0; i < size; ++i) {

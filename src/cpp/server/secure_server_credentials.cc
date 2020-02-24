@@ -149,9 +149,8 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
 
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
     const TlsCredentialsOptions& options) {
-  return std::shared_ptr<ServerCredentials>(
-      new SecureServerCredentials(grpc_tls_spiffe_server_credentials_create(
-          options.c_credentials_options())));
+  return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
+      grpc_tls_server_credentials_create(options.c_credentials_options())));
 }
 
 }  // namespace experimental

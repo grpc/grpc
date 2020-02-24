@@ -133,8 +133,9 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(arg);
   cancel_timer_if_needed(deadline_state);
   // Invoke the original callback.
-  GRPC_CLOSURE_RUN(deadline_state->original_recv_trailing_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          deadline_state->original_recv_trailing_metadata_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 // Inject our own recv_trailing_metadata_ready callback into op.
@@ -175,7 +176,7 @@ static void start_timer_after_init(void* arg, grpc_error* error) {
                              "scheduling deadline timer");
     return;
   }
-  grpc_core::Delete(state);
+  delete state;
   GRPC_CALL_COMBINER_STOP(deadline_state->call_combiner,
                           "done scheduling deadline timer");
 }
@@ -196,10 +197,10 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
     struct start_timer_after_init_state* state =
-        grpc_core::New<start_timer_after_init_state>(elem, deadline);
+        new start_timer_after_init_state(elem, deadline);
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(&state->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -290,8 +291,9 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   start_timer_if_needed(elem, calld->recv_initial_metadata->deadline);
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->next_recv_initial_metadata_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 // Method for starting a call op for server filter.

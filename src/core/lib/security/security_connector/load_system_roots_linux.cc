@@ -21,7 +21,7 @@
 #include <grpc/slice_buffer.h>
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 
-#ifdef GPR_LINUX
+#if defined(GPR_LINUX) || defined(GPR_ANDROID)
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 
@@ -144,7 +144,8 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // Prioritize user-specified custom directory if flag is set.
-  UniquePtr<char> custom_dir = GPR_GLOBAL_CONFIG_GET(grpc_system_ssl_roots_dir);
+  grpc_core::UniquePtr<char> custom_dir =
+      GPR_GLOBAL_CONFIG_GET(grpc_system_ssl_roots_dir);
   if (strlen(custom_dir.get()) > 0) {
     result = CreateRootCertsBundle(custom_dir.get());
   }
@@ -166,4 +167,4 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX */
+#endif /* GPR_LINUX || GPR_ANDROID */

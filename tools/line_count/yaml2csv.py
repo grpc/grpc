@@ -20,11 +20,10 @@ import csv
 
 argp = argparse.ArgumentParser(description='Convert cloc yaml to bigquery csv')
 argp.add_argument('-i', '--input', type=str)
-argp.add_argument(
-    '-d',
-    '--date',
-    type=str,
-    default=datetime.date.today().strftime('%Y-%m-%d'))
+argp.add_argument('-d',
+                  '--date',
+                  type=str,
+                  default=datetime.date.today().strftime('%Y-%m-%d'))
 argp.add_argument('-o', '--output', type=str, default='out.csv')
 args = argp.parse_args()
 

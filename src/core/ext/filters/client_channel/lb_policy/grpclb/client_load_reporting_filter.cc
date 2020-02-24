@@ -59,7 +59,8 @@ static void on_complete_for_send(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     calld->send_initial_metadata_succeeded = true;
   }
-  GRPC_CLOSURE_RUN(calld->original_on_complete_for_send, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_on_complete_for_send,
+                          GRPC_ERROR_REF(error));
 }
 
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
@@ -67,8 +68,9 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     calld->recv_initial_metadata_succeeded = true;
   }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_initial_metadata_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 static grpc_error* clr_init_call_elem(grpc_call_element* elem,

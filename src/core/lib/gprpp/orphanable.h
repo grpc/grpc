@@ -69,7 +69,7 @@ using OrphanablePtr = std::unique_ptr<T, Deleter>;
 
 template <typename T, typename... Args>
 inline OrphanablePtr<T> MakeOrphanable(Args&&... args) {
-  return OrphanablePtr<T>(New<T>(std::forward<Args>(args)...));
+  return OrphanablePtr<T>(new T(std::forward<Args>(args)...));
 }
 
 // A type of Orphanable with internal ref-counting.
@@ -106,12 +106,12 @@ class InternallyRefCounted : public Orphanable {
 
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      Delete(static_cast<Child*>(this));
+      delete this;
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      Delete(static_cast<Child*>(this));
+      delete this;
     }
   }
 

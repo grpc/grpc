@@ -118,11 +118,6 @@ grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
       gpr_cycle_counter_sub(cycles, g_start_cycle));
 }
 
-static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
-    exec_ctx_run, exec_ctx_sched, "exec_ctx"};
-static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
-grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
-
 namespace grpc_core {
 GPR_TLS_CLASS_DEF(ExecCtx::exec_ctx_);
 GPR_TLS_CLASS_DEF(ApplicationCallbackExecCtx::callback_exec_ctx_);
@@ -172,6 +167,58 @@ grpc_millis ExecCtx::Now() {
     now_is_valid_ = true;
   }
   return now_;
+}
+
+void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
+                  grpc_error* error) {
+  (void)location;
+  if (closure == nullptr) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+#ifndef NDEBUG
+  if (closure->scheduled) {
+    gpr_log(GPR_ERROR,
+            "Closure already scheduled. (closure: %p, created: [%s:%d], "
+            "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
+            closure, closure->file_created, closure->line_created,
+            closure->file_initiated, closure->line_initiated, location.file(),
+            location.line());
+    abort();
+  }
+  closure->scheduled = true;
+  closure->file_initiated = location.file();
+  closure->line_initiated = location.line();
+  closure->run = false;
+  GPR_ASSERT(closure->cb != nullptr);
+#endif
+  exec_ctx_sched(closure, error);
+}
+
+void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
+  (void)location;
+  grpc_closure* c = list->head;
+  while (c != nullptr) {
+    grpc_closure* next = c->next_data.next;
+#ifndef NDEBUG
+    if (c->scheduled) {
+      gpr_log(GPR_ERROR,
+              "Closure already scheduled. (closure: %p, created: [%s:%d], "
+              "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
+              c, c->file_created, c->line_created, c->file_initiated,
+              c->line_initiated, location.file(), location.line());
+      abort();
+    }
+    c->scheduled = true;
+    c->file_initiated = location.file();
+    c->line_initiated = location.line();
+    c->run = false;
+    GPR_ASSERT(c->cb != nullptr);
+#endif
+    exec_ctx_sched(c, c->error_data.error);
+    c = next;
+  }
+  list->head = list->tail = nullptr;
 }
 
 }  // namespace grpc_core

@@ -39,6 +39,7 @@ struct CallbackContext {
   explicit CallbackContext(void (*cb)(
       grpc_experimental_completion_queue_functor* functor, int success)) {
     functor.functor_run = cb;
+    functor.inlineable = false;
     gpr_event_init(&finished);
   }
 };

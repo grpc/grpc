@@ -65,7 +65,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
     grpc_core::Combiner* combiner,
     grpc_core::FakeResolverResponseGenerator* response_generator,
-    grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> result_handler) {
+    std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("fake");
   grpc_arg generator_arg =
@@ -120,13 +120,13 @@ static void test_fake_resolver() {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Combiner* combiner = grpc_combiner_create();
   // Create resolver.
-  ResultHandler* result_handler = grpc_core::New<ResultHandler>();
+  ResultHandler* result_handler = new ResultHandler();
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator =
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = build_fake_resolver(
       combiner, response_generator.get(),
-      grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(result_handler));
+      std::unique_ptr<grpc_core::Resolver::ResultHandler>(result_handler));
   GPR_ASSERT(resolver.get() != nullptr);
   resolver->StartLocked();
   // Test 1: normal resolution.

@@ -124,7 +124,7 @@ static void socket_notify_on_iocp(grpc_winsocket* socket, grpc_closure* closure,
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
   } else {
     info->closure = closure;
   }
@@ -145,7 +145,7 @@ void grpc_socket_become_ready(grpc_winsocket* socket,
   GPR_ASSERT(!info->has_pending_iocp);
   gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
-    GRPC_CLOSURE_SCHED(info->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, info->closure, GRPC_ERROR_NONE);
     info->closure = NULL;
   } else {
     info->has_pending_iocp = 1;

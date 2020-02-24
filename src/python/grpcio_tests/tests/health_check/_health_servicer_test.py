@@ -74,8 +74,8 @@ class BaseWatchTests(object):
             request = health_pb2.HealthCheckRequest(service='')
             response_queue = queue.Queue()
             rendezvous = self._stub.Watch(request)
-            thread = threading.Thread(
-                target=_consume_responses, args=(rendezvous, response_queue))
+            thread = threading.Thread(target=_consume_responses,
+                                      args=(rendezvous, response_queue))
             thread.start()
 
             response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
@@ -93,8 +93,8 @@ class BaseWatchTests(object):
             request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
             response_queue = queue.Queue()
             rendezvous = self._stub.Watch(request)
-            thread = threading.Thread(
-                target=_consume_responses, args=(rendezvous, response_queue))
+            thread = threading.Thread(target=_consume_responses,
+                                      args=(rendezvous, response_queue))
             thread.start()
 
             response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
@@ -121,8 +121,8 @@ class BaseWatchTests(object):
             request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
             response_queue = queue.Queue()
             rendezvous = self._stub.Watch(request)
-            thread = threading.Thread(
-                target=_consume_responses, args=(rendezvous, response_queue))
+            thread = threading.Thread(target=_consume_responses,
+                                      args=(rendezvous, response_queue))
             thread.start()
 
             response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
@@ -144,10 +144,10 @@ class BaseWatchTests(object):
             response_queue2 = queue.Queue()
             rendezvous1 = self._stub.Watch(request)
             rendezvous2 = self._stub.Watch(request)
-            thread1 = threading.Thread(
-                target=_consume_responses, args=(rendezvous1, response_queue1))
-            thread2 = threading.Thread(
-                target=_consume_responses, args=(rendezvous2, response_queue2))
+            thread1 = threading.Thread(target=_consume_responses,
+                                       args=(rendezvous1, response_queue1))
+            thread2 = threading.Thread(target=_consume_responses,
+                                       args=(rendezvous2, response_queue2))
             thread1.start()
             thread2.start()
 
@@ -183,8 +183,8 @@ class BaseWatchTests(object):
             request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
             response_queue = queue.Queue()
             rendezvous = self._stub.Watch(request)
-            thread = threading.Thread(
-                target=_consume_responses, args=(rendezvous, response_queue))
+            thread = threading.Thread(target=_consume_responses,
+                                      args=(rendezvous, response_queue))
             thread.start()
 
             response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
@@ -198,8 +198,8 @@ class BaseWatchTests(object):
 
             # Wait, if necessary, for serving thread to process client cancellation
             timeout = time.time() + test_constants.TIME_ALLOWANCE
-            while time.time(
-            ) < timeout and self._servicer._send_response_callbacks[_WATCH_SERVICE]:
+            while (time.time() < timeout and
+                   self._servicer._send_response_callbacks[_WATCH_SERVICE]):
                 time.sleep(1)
             self.assertFalse(
                 self._servicer._send_response_callbacks[_WATCH_SERVICE],
@@ -210,8 +210,8 @@ class BaseWatchTests(object):
             request = health_pb2.HealthCheckRequest(service='')
             response_queue = queue.Queue()
             rendezvous = self._stub.Watch(request)
-            thread = threading.Thread(
-                target=_consume_responses, args=(rendezvous, response_queue))
+            thread = threading.Thread(target=_consume_responses,
+                                      args=(rendezvous, response_queue))
             thread.start()
 
             response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
@@ -235,8 +235,9 @@ class HealthServicerTest(BaseWatchTests.WatchTests):
 
     def setUp(self):
         self._thread_pool = thread_pool.RecordingThreadPool(max_workers=None)
-        super(HealthServicerTest, self).start_server(
-            non_blocking=True, thread_pool=self._thread_pool)
+        super(HealthServicerTest,
+              self).start_server(non_blocking=True,
+                                 thread_pool=self._thread_pool)
 
     def test_check_empty_service(self):
         request = health_pb2.HealthCheckRequest()
@@ -273,8 +274,8 @@ class HealthServicerTest(BaseWatchTests.WatchTests):
 class HealthServicerBackwardsCompatibleWatchTest(BaseWatchTests.WatchTests):
 
     def setUp(self):
-        super(HealthServicerBackwardsCompatibleWatchTest, self).start_server(
-            non_blocking=False, thread_pool=None)
+        super(HealthServicerBackwardsCompatibleWatchTest,
+              self).start_server(non_blocking=False, thread_pool=None)
 
 
 if __name__ == '__main__':

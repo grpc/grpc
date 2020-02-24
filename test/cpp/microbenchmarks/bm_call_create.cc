@@ -414,7 +414,7 @@ void SetPollsetSet(grpc_transport* /*self*/, grpc_stream* /*stream*/,
 /* implementation of grpc_transport_perform_stream_op */
 void PerformStreamOp(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                      grpc_transport_stream_op_batch* op) {
-  GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, GRPC_ERROR_NONE);
 }
 
 /* implementation of grpc_transport_perform_op */
@@ -513,7 +513,8 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "channel_stack_init",
-      grpc_channel_stack_init(1, FilterDestroy, channel_stack, &filters[0],
+      grpc_channel_stack_init(1, FilterDestroy, channel_stack,
+                              filters.size() == 0 ? nullptr : &filters[0],
                               filters.size(), &channel_args,
                               fixture.flags & REQUIRES_TRANSPORT
                                   ? &dummy_transport::dummy_transport
@@ -636,7 +637,7 @@ static void StartTransportOp(grpc_channel_element* /*elem*/,
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
-  GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 }
 
 static grpc_error* InitCallElem(grpc_call_element* elem,
@@ -652,7 +653,7 @@ static void SetPollsetOrPollsetSet(grpc_call_element* /*elem*/,
 static void DestroyCallElem(grpc_call_element* /*elem*/,
                             const grpc_call_final_info* /*final_info*/,
                             grpc_closure* then_sched_closure) {
-  GRPC_CLOSURE_SCHED(then_sched_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_sched_closure, GRPC_ERROR_NONE);
 }
 
 grpc_error* InitChannelElem(grpc_channel_element* /*elem*/,

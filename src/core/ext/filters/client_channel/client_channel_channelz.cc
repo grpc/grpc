@@ -30,11 +30,10 @@
 namespace grpc_core {
 namespace channelz {
 
-SubchannelNode::SubchannelNode(const char* target_address,
+SubchannelNode::SubchannelNode(std::string target_address,
                                size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kSubchannel,
-               UniquePtr<char>(gpr_strdup(target_address))),
-      target_(UniquePtr<char>(gpr_strdup(target_address))),
+    : BaseNode(EntityType::kSubchannel, target_address),
+      target_(std::move(target_address)),
       trace_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}
@@ -48,63 +47,48 @@ void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
   child_socket_ = std::move(socket);
 }
 
-void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
+Json SubchannelNode::RenderJson() {
+  // Create and fill the data child.
   grpc_connectivity_state state =
       connectivity_state_.Load(MemoryOrder::RELAXED);
-  json = grpc_json_create_child(nullptr, json, "state", nullptr,
-                                GRPC_JSON_OBJECT, false);
-  grpc_json_create_child(nullptr, json, "state", ConnectivityStateName(state),
-                         GRPC_JSON_STRING, false);
-}
+  Json::Object data = {
+      {"state",
+       Json::Object{
+           {"state", ConnectivityStateName(state)},
+       }},
+      {"target", target_},
+  };
 
-grpc_json* SubchannelNode::RenderJson() {
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
-  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "subchannelId", uuid());
-  // reset json iterators to top level object
-  json = top_level_json;
-  json_iterator = nullptr;
-  // create and fill the data child.
-  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
-                                           GRPC_JSON_OBJECT, false);
-  json = data;
-  json_iterator = nullptr;
-  PopulateConnectivityState(json);
-  GPR_ASSERT(target_.get() != nullptr);
-  grpc_json_create_child(nullptr, json, "target", target_.get(),
-                         GRPC_JSON_STRING, false);
-  // fill in the channel trace if applicable
-  grpc_json* trace_json = trace_.RenderJson();
-  if (trace_json != nullptr) {
-    trace_json->key = "trace";  // this object is named trace in channelz.proto
-    grpc_json_link_child(json, trace_json, nullptr);
+  // Fill in the channel trace if applicable
+  Json trace_json = trace_.RenderJson();
+  if (trace_json.type() != Json::Type::JSON_NULL) {
+    data["trace"] = std::move(trace_json);
   }
-  // ask CallCountingHelper to populate trace and call count data.
-  call_counter_.PopulateCallCounts(json);
-  json = top_level_json;
-  // populate the child socket.
+  // Ask CallCountingHelper to populate call count data.
+  call_counter_.PopulateCallCounts(&data);
+  // Construct top-level object.
+  Json::Object object{
+      {"ref",
+       Json::Object{
+           {"subchannelId", std::to_string(uuid())},
+       }},
+      {"data", std::move(data)},
+  };
+  // Populate the child socket.
   RefCountedPtr<SocketNode> child_socket;
   {
     MutexLock lock(&socket_mu_);
     child_socket = child_socket_;
   }
   if (child_socket != nullptr && child_socket->uuid() != 0) {
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
-    json_iterator = grpc_json_create_child(json_iterator, array_parent, nullptr,
-                                           nullptr, GRPC_JSON_OBJECT, false);
-    grpc_json* sibling_iterator = grpc_json_add_number_string_child(
-        json_iterator, nullptr, "socketId", child_socket->uuid());
-    grpc_json_create_child(sibling_iterator, json_iterator, "name",
-                           child_socket->name(), GRPC_JSON_STRING, false);
+    object["socketRef"] = Json::Array{
+        Json::Object{
+            {"socketId", std::to_string(child_socket->uuid())},
+            {"name", child_socket->name()},
+        },
+    };
   }
-  return top_level_json;
+  return object;
 }
 
 }  // namespace channelz

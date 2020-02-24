@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_package", "grpc_proto_library")
 
 grpc_package(
     name = "test/core/tsi/alts/fake_handshaker",
@@ -56,6 +56,7 @@ grpc_cc_binary(
     language = "C++",
     deps = [
         "fake_handshaker_lib",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )

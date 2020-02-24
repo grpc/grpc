@@ -23,6 +23,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -37,6 +38,12 @@
 
 #include <gtest/gtest.h>
 
+extern "C" {
+#include <openssl/crypto.h>
+}
+
+static grpc::string test_server1_key_id;
+
 namespace grpc {
 namespace testing {
 
@@ -48,8 +55,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data* ffd =
-      grpc_core::New<fullstack_secure_fixture_data>();
+  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
 
   grpc_core::JoinHostPort(&ffd->localaddr, "localhost", port);
@@ -98,7 +104,7 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  grpc_core::Delete(ffd);
+  delete ffd;
 }
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {
@@ -119,8 +125,14 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 #define SERVER_INIT(REQUEST_TYPE)                                           \
   static void SERVER_INIT_NAME(REQUEST_TYPE)(                               \
       grpc_end2end_test_fixture * f, grpc_channel_args * server_args) {     \
-    grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,       \
-                                                    test_server1_cert};     \
+    grpc_ssl_pem_key_cert_pair pem_cert_key_pair;                           \
+    if (!test_server1_key_id.empty()) {                                     \
+      pem_cert_key_pair.private_key = test_server1_key_id.c_str();          \
+      pem_cert_key_pair.cert_chain = test_server1_cert;                     \
+    } else {                                                                \
+      pem_cert_key_pair.private_key = test_server1_key;                     \
+      pem_cert_key_pair.cert_chain = test_server1_cert;                     \
+    }                                                                       \
     grpc_server_credentials* ssl_creds =                                    \
         grpc_ssl_server_credentials_create_ex(                              \
             test_root_cert, &pem_cert_key_pair, 1, REQUEST_TYPE, NULL);     \
@@ -346,6 +358,17 @@ class H2SslCertTest
 TEST_P(H2SslCertTest, SimpleRequestBody) {
   simple_request_body(fixture_, GetParam().result);
 }
+
+#ifndef OPENSSL_IS_BORINGSSL
+#if GPR_LINUX
+TEST_P(H2SslCertTest, SimpleRequestBodyUseEngine) {
+  test_server1_key_id.clear();
+  test_server1_key_id.append("engine:libengine_passthrough:");
+  test_server1_key_id.append(test_server1_key);
+  simple_request_body(fixture_, GetParam().result);
+}
+#endif
+#endif
 
 INSTANTIATE_TEST_SUITE_P(H2SslCert, H2SslCertTest,
                          ::testing::ValuesIn(configs));

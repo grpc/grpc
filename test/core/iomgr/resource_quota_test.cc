@@ -62,7 +62,7 @@ static void reclaimer_cb(void* args, grpc_error* error) {
   reclaimer_args* a = static_cast<reclaimer_args*>(args);
   grpc_resource_user_free(a->resource_user, a->size);
   grpc_resource_user_finish_reclamation(a->resource_user);
-  GRPC_CLOSURE_RUN(a->then, GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, a->then, GRPC_ERROR_NONE);
   gpr_free(a);
 }
 
@@ -77,7 +77,8 @@ grpc_closure* make_reclaimer(grpc_resource_user* resource_user, size_t size,
 
 static void unused_reclaimer_cb(void* arg, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
-  GRPC_CLOSURE_RUN(static_cast<grpc_closure*>(arg), GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(arg),
+                          GRPC_ERROR_NONE);
 }
 grpc_closure* make_unused_reclaimer(grpc_closure* then) {
   return GRPC_CLOSURE_CREATE(unused_reclaimer_cb, then,

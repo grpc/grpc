@@ -333,7 +333,7 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
       int64_t aborted_allocations = resource_user->outstanding_allocations;
       resource_user->outstanding_allocations = 0;
       resource_user->free_pool += aborted_allocations;
-      GRPC_CLOSURE_LIST_SCHED(&resource_user->on_allocated);
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
       ru_unref_by(resource_user, static_cast<gpr_atm>(aborted_allocations));
       continue;
@@ -359,7 +359,7 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
     if (resource_user->free_pool >= 0) {
       resource_user->allocating = false;
       resource_user->outstanding_allocations = 0;
-      GRPC_CLOSURE_LIST_SCHED(&resource_user->on_allocated);
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
     } else {
       rulist_add_head(resource_user, GRPC_RULIST_AWAITING_ALLOCATION);
@@ -424,7 +424,7 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
   resource_quota->debug_only_last_reclaimer_resource_user = resource_user;
   resource_quota->debug_only_last_initiated_reclaimer = c;
   resource_user->reclaimers[destructive] = nullptr;
-  GRPC_CLOSURE_SCHED(c, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c, GRPC_ERROR_NONE);
   return true;
 }
 
@@ -506,7 +506,7 @@ static bool ru_post_reclaimer(grpc_resource_user* resource_user,
   resource_user->new_reclaimers[destructive] = nullptr;
   GPR_ASSERT(resource_user->reclaimers[destructive] == nullptr);
   if (gpr_atm_acq_load(&resource_user->shutdown) > 0) {
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_CANCELLED);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_CANCELLED);
     return false;
   }
   resource_user->reclaimers[destructive] = closure;
@@ -549,8 +549,10 @@ static void ru_shutdown(void* ru, grpc_error* /*error*/) {
   }
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   gpr_mu_lock(&resource_user->mu);
-  GRPC_CLOSURE_SCHED(resource_user->reclaimers[0], GRPC_ERROR_CANCELLED);
-  GRPC_CLOSURE_SCHED(resource_user->reclaimers[1], GRPC_ERROR_CANCELLED);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, resource_user->reclaimers[0],
+                          GRPC_ERROR_CANCELLED);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, resource_user->reclaimers[1],
+                          GRPC_ERROR_CANCELLED);
   resource_user->reclaimers[0] = nullptr;
   resource_user->reclaimers[1] = nullptr;
   rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_BENIGN);
@@ -572,8 +574,10 @@ static void ru_destroy(void* ru, grpc_error* /*error*/) {
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     rulist_remove(resource_user, static_cast<grpc_rulist>(i));
   }
-  GRPC_CLOSURE_SCHED(resource_user->reclaimers[0], GRPC_ERROR_CANCELLED);
-  GRPC_CLOSURE_SCHED(resource_user->reclaimers[1], GRPC_ERROR_CANCELLED);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, resource_user->reclaimers[0],
+                          GRPC_ERROR_CANCELLED);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, resource_user->reclaimers[1],
+                          GRPC_ERROR_CANCELLED);
   if (resource_user->free_pool != 0) {
     resource_user->resource_quota->free_pool += resource_user->free_pool;
     rq_step_sched(resource_user->resource_quota);
@@ -597,7 +601,8 @@ static void ru_allocated_slices(void* arg, grpc_error* error) {
   grpc_resource_user_slice_allocator* slice_allocator =
       static_cast<grpc_resource_user_slice_allocator*>(arg);
   if (error == GRPC_ERROR_NONE) ru_alloc_slices(slice_allocator);
-  GRPC_CLOSURE_RUN(&slice_allocator->on_done, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, &slice_allocator->on_done,
+                          GRPC_ERROR_REF(error));
 }
 
 /*******************************************************************************
@@ -719,7 +724,7 @@ void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
   gpr_atm_no_barrier_store(&resource_quota->last_size,
                            (gpr_atm)GPR_MIN((size_t)GPR_ATM_MAX, size));
   GRPC_CLOSURE_INIT(&a->closure, rq_resize, a, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_SCHED(&a->closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, &a->closure, GRPC_ERROR_NONE);
 }
 
 size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
@@ -994,8 +999,8 @@ bool grpc_resource_user_alloc_slices(
     size_t count, grpc_slice_buffer* dest) {
   if (GPR_UNLIKELY(
           gpr_atm_no_barrier_load(&slice_allocator->resource_user->shutdown))) {
-    GRPC_CLOSURE_SCHED(
-        &slice_allocator->on_allocated,
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, &slice_allocator->on_allocated,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource user shutdown"));
     return false;
   }

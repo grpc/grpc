@@ -1,31 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
 py_library(
-    name = "grpcio",
-    srcs = ["__init__.py"],
-    deps = [
-        ":utilities",
-        ":auth",
-        ":plugin_wrapping",
-        ":channel",
-        ":interceptor",
-        ":server",
-        ":compression",
-        "//src/python/grpcio/grpc/_cython:cygrpc",
-        "//src/python/grpcio/grpc/experimental",
-        "//src/python/grpcio/grpc/framework",
-        "@six_archive//:six",
-    ] + select({
-        "//conditions:default": ["@enum34//:enum34",],
-        "//:python3": [],
-    }),
-    data = [
-        "//:grpc",
-    ],
-    imports = ["../",],
-)
-
-py_library(
     name = "auth",
     srcs = ["_auth.py"],
 )
@@ -40,8 +15,8 @@ py_library(
     srcs = ["_channel.py"],
     deps = [
         ":common",
-        ":grpcio_metadata",
         ":compression",
+        ":grpcio_metadata",
     ],
 )
 
@@ -65,7 +40,7 @@ py_library(
     srcs = ["_plugin_wrapping.py"],
     deps = [
         ":common",
-    ]
+    ],
 )
 
 py_library(
@@ -86,3 +61,33 @@ py_library(
     ],
 )
 
+py_library(
+    name = "_simple_stubs",
+    srcs = ["_simple_stubs.py"],
+)
+
+py_library(
+    name = "grpcio",
+    srcs = ["__init__.py"],
+    data = [
+        "//:grpc",
+    ],
+    imports = ["../"],
+    deps = [
+        ":utilities",
+        ":auth",
+        ":plugin_wrapping",
+        ":channel",
+        ":interceptor",
+        ":server",
+        ":compression",
+        ":_simple_stubs",
+        "//src/python/grpcio/grpc/_cython:cygrpc",
+        "//src/python/grpcio/grpc/experimental",
+        "//src/python/grpcio/grpc/framework",
+        "@six//:six",
+    ] + select({
+        "//conditions:default": ["@enum34//:enum34"],
+        "//:python3": [],
+    }),
+)

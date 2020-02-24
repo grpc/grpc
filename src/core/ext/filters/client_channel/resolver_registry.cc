@@ -40,7 +40,7 @@ class RegistryState {
     default_prefix_.reset(gpr_strdup(default_resolver_prefix));
   }
 
-  void RegisterResolverFactory(UniquePtr<ResolverFactory> factory) {
+  void RegisterResolverFactory(std::unique_ptr<ResolverFactory> factory) {
     for (size_t i = 0; i < factories_.size(); ++i) {
       GPR_ASSERT(strcmp(factories_[i]->scheme(), factory->scheme()) != 0);
     }
@@ -90,8 +90,8 @@ class RegistryState {
   // more factories are needed and the additional allocations are
   // hurting performance (which is unlikely, since these allocations
   // only occur at gRPC initialization time).
-  InlinedVector<UniquePtr<ResolverFactory>, 10> factories_;
-  UniquePtr<char> default_prefix_;
+  InlinedVector<std::unique_ptr<ResolverFactory>, 10> factories_;
+  grpc_core::UniquePtr<char> default_prefix_;
 };
 
 static RegistryState* g_state = nullptr;
@@ -103,11 +103,11 @@ static RegistryState* g_state = nullptr;
 //
 
 void ResolverRegistry::Builder::InitRegistry() {
-  if (g_state == nullptr) g_state = New<RegistryState>();
+  if (g_state == nullptr) g_state = new RegistryState();
 }
 
 void ResolverRegistry::Builder::ShutdownRegistry() {
-  Delete(g_state);
+  delete g_state;
   g_state = nullptr;
 }
 
@@ -118,7 +118,7 @@ void ResolverRegistry::Builder::SetDefaultPrefix(
 }
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
-    UniquePtr<ResolverFactory> factory) {
+    std::unique_ptr<ResolverFactory> factory) {
   InitRegistry();
   g_state->RegisterResolverFactory(std::move(factory));
 }
@@ -146,7 +146,7 @@ bool ResolverRegistry::IsValidTarget(const char* target) {
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     const char* target, const grpc_channel_args* args,
     grpc_pollset_set* pollset_set, Combiner* combiner,
-    UniquePtr<Resolver::ResultHandler> result_handler) {
+    std::unique_ptr<Resolver::ResultHandler> result_handler) {
   GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
@@ -166,27 +166,29 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
   return resolver;
 }
 
-UniquePtr<char> ResolverRegistry::GetDefaultAuthority(const char* target) {
+grpc_core::UniquePtr<char> ResolverRegistry::GetDefaultAuthority(
+    const char* target) {
   GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
-  UniquePtr<char> authority =
+  grpc_core::UniquePtr<char> authority =
       factory == nullptr ? nullptr : factory->GetDefaultAuthority(uri);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return authority;
 }
 
-UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(const char* target) {
+grpc_core::UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
+    const char* target) {
   GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   g_state->FindResolverFactory(target, &uri, &canonical_target);
   grpc_uri_destroy(uri);
-  return UniquePtr<char>(canonical_target == nullptr ? gpr_strdup(target)
-                                                     : canonical_target);
+  return grpc_core::UniquePtr<char>(
+      canonical_target == nullptr ? gpr_strdup(target) : canonical_target);
 }
 
 }  // namespace grpc_core

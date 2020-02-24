@@ -43,11 +43,11 @@ grpc_slice BuildRefCountedKey(const char* key_str) {
 }
 
 TEST(SliceWeakHashTable, Basic) {
-  auto table = SliceWeakHashTable<UniquePtr<char>, 10>::Create();
+  auto table = SliceWeakHashTable<grpc_core::UniquePtr<char>, 10>::Create();
   // Single key-value insertion.
   grpc_slice key = BuildRefCountedKey("key");
   grpc_slice_ref(key);  // Get doesn't own.
-  table->Add(key, UniquePtr<char>(gpr_strdup("value")));
+  table->Add(key, grpc_core::UniquePtr<char>(gpr_strdup("value")));
   ASSERT_NE(table->Get(key), nullptr);
   ASSERT_STREQ(table->Get(key)->get(), "value");
   grpc_slice_unref(key);
@@ -70,7 +70,8 @@ TEST(SliceWeakHashTable, ValueTypeConstructor) {
 
 TEST(SliceWeakHashTable, ForceOverload) {
   constexpr int kTableSize = 10;
-  auto table = SliceWeakHashTable<UniquePtr<char>, kTableSize>::Create();
+  auto table =
+      SliceWeakHashTable<grpc_core::UniquePtr<char>, kTableSize>::Create();
   // Insert a multiple of the maximum size table.
   for (int i = 0; i < kTableSize * 2; ++i) {
     std::ostringstream oss;
@@ -78,7 +79,7 @@ TEST(SliceWeakHashTable, ForceOverload) {
     grpc_slice key = BuildRefCountedKey(oss.str().c_str());
     oss.clear();
     oss << "value-" << i;
-    table->Add(key, UniquePtr<char>(gpr_strdup(oss.str().c_str())));
+    table->Add(key, grpc_core::UniquePtr<char>(gpr_strdup(oss.str().c_str())));
   }
   // Verify that some will have been replaced.
   int num_missing = 0;

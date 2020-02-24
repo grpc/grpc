@@ -138,7 +138,7 @@ static void do_request_thread(void* rp, grpc_error* error) {
   } else {
     GRPC_ERROR_REF(error);
   }
-  GRPC_CLOSURE_SCHED(r->on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r);

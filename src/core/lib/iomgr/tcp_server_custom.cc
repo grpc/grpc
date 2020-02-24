@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
@@ -72,6 +73,7 @@ struct grpc_tcp_server {
   grpc_closure* shutdown_complete;
 
   bool shutdown;
+  bool so_reuseport;
 
   grpc_resource_quota* resource_quota;
 };
@@ -80,8 +82,13 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
+  // Let the implementation decide if so_reuseport can be enabled or not.
+  s->so_reuseport = true;
   s->resource_quota = grpc_resource_quota_create(nullptr);
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
+    if (!grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, true)) {
+      s->so_reuseport = false;
+    }
     if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
         grpc_resource_quota_unref_internal(s->resource_quota);
@@ -124,7 +131,8 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
 static void finish_shutdown(grpc_tcp_server* s) {
   GPR_ASSERT(s->shutdown);
   if (s->shutdown_complete != nullptr) {
-    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
+                            GRPC_ERROR_NONE);
   }
 
   while (s->head) {
@@ -195,7 +203,7 @@ static void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_core::ExecCtx exec_ctx;
-    GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     grpc_core::ExecCtx::Get()->Flush();
     tcp_server_destroy(s);
   }
@@ -279,9 +287,15 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
   grpc_error* error;
   grpc_resolved_address sockname_temp;
 
-  // The last argument to uv_tcp_bind is flags
+  // NOTE(lidiz) The last argument is "flags" which is unused by other
+  // implementations. Python IO managers uses it to specify SO_REUSEPORT.
+  int flags = 0;
+  if (s->so_reuseport) {
+    flags |= GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT;
+  }
+
   error = grpc_custom_socket_vtable->bind(socket, (grpc_sockaddr*)addr->addr,
-                                          addr->len, 0);
+                                          addr->len, flags);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }

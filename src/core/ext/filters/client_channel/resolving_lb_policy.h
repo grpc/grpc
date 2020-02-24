@@ -65,7 +65,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
-      Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
+      Args args, TraceFlag* tracer, grpc_core::UniquePtr<char> target_uri,
       ProcessResolverResultCallback process_resolver_result,
       void* process_resolver_result_user_data);
 
@@ -106,10 +106,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;
-  UniquePtr<char> target_uri_;
+  grpc_core::UniquePtr<char> target_uri_;
   ProcessResolverResultCallback process_resolver_result_ = nullptr;
   void* process_resolver_result_user_data_ = nullptr;
-  UniquePtr<char> child_policy_name_;
+  grpc_core::UniquePtr<char> child_policy_name_;
   RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config_;
 
   // Resolver and associated state.

@@ -51,13 +51,13 @@ class ChannelzRegistry {
 
   // Returns the allocated JSON string that represents the proto
   // GetTopChannelsResponse as per channelz.proto.
-  static char* GetTopChannels(intptr_t start_channel_id) {
+  static std::string GetTopChannels(intptr_t start_channel_id) {
     return Default()->InternalGetTopChannels(start_channel_id);
   }
 
   // Returns the allocated JSON string that represents the proto
   // GetServersResponse as per channelz.proto.
-  static char* GetServers(intptr_t start_server_id) {
+  static std::string GetServers(intptr_t start_server_id) {
     return Default()->InternalGetServers(start_server_id);
   }
 
@@ -80,14 +80,14 @@ class ChannelzRegistry {
   // returns the void* associated with that uuid. Else returns nullptr.
   RefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
 
-  char* InternalGetTopChannels(intptr_t start_channel_id);
-  char* InternalGetServers(intptr_t start_server_id);
+  std::string InternalGetTopChannels(intptr_t start_channel_id);
+  std::string InternalGetServers(intptr_t start_server_id);
 
   void InternalLogAllEntities();
 
   // protects members
   Mutex mu_;
-  Map<intptr_t, BaseNode*> node_map_;
+  std::map<intptr_t, BaseNode*> node_map_;
   intptr_t uuid_generator_ = 0;
 };
 

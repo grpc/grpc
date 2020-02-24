@@ -44,43 +44,41 @@ namespace {
 size_t g_message_size_parser_index;
 }  // namespace
 
-UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
-    const grpc_json* json, grpc_error** error) {
+std::unique_ptr<ServiceConfig::ParsedConfig>
+MessageSizeParser::ParsePerMethodParams(const Json& json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  std::vector<grpc_error*> error_list;
+  // Max request size.
   int max_request_message_bytes = -1;
-  int max_response_message_bytes = -1;
-  InlinedVector<grpc_error*, 4> error_list;
-  for (grpc_json* field = json->child; field != nullptr; field = field->next) {
-    if (field->key == nullptr) continue;
-    if (strcmp(field->key, "maxRequestMessageBytes") == 0) {
-      if (max_request_message_bytes >= 0) {
+  auto it = json.object_value().find("maxRequestMessageBytes");
+  if (it != json.object_value().end()) {
+    if (it->second.type() != Json::Type::STRING &&
+        it->second.type() != Json::Type::NUMBER) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:maxRequestMessageBytes error:should be of type number"));
+    } else {
+      max_request_message_bytes =
+          gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      if (max_request_message_bytes == -1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxRequestMessageBytes error:Duplicate entry"));
-      }  // Duplicate, continue parsing.
-      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxRequestMessageBytes error:should be of type number"));
-      } else {
-        max_request_message_bytes = gpr_parse_nonnegative_int(field->value);
-        if (max_request_message_bytes == -1) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:maxRequestMessageBytes error:should be non-negative"));
-        }
+            "field:maxRequestMessageBytes error:should be non-negative"));
       }
-    } else if (strcmp(field->key, "maxResponseMessageBytes") == 0) {
-      if (max_response_message_bytes >= 0) {
+    }
+  }
+  // Max response size.
+  int max_response_message_bytes = -1;
+  it = json.object_value().find("maxResponseMessageBytes");
+  if (it != json.object_value().end()) {
+    if (it->second.type() != Json::Type::STRING &&
+        it->second.type() != Json::Type::NUMBER) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:maxResponseMessageBytes error:should be of type number"));
+    } else {
+      max_response_message_bytes =
+          gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      if (max_response_message_bytes == -1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxResponseMessageBytes error:Duplicate entry"));
-      }  // Duplicate, continue parsing
-      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxResponseMessageBytes error:should be of type number"));
-      } else {
-        max_response_message_bytes = gpr_parse_nonnegative_int(field->value);
-        if (max_response_message_bytes == -1) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:maxResponseMessageBytes error:should be non-negative"));
-        }
+            "field:maxResponseMessageBytes error:should be non-negative"));
       }
     }
   }
@@ -88,13 +86,13 @@ UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     return nullptr;
   }
-  return MakeUnique<MessageSizeParsedConfig>(max_request_message_bytes,
-                                             max_response_message_bytes);
+  return absl::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
+                                                    max_response_message_bytes);
 }
 
 void MessageSizeParser::Register() {
   g_message_size_parser_index =
-      ServiceConfig::RegisterParser(MakeUnique<MessageSizeParser>());
+      ServiceConfig::RegisterParser(absl::make_unique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
@@ -215,7 +213,7 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
                              calld->recv_trailing_metadata_error,
                              "continue recv_trailing_metadata_ready");
   }
-  GRPC_CLOSURE_RUN(closure, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 // Callback invoked on completion of recv_trailing_metadata
@@ -234,7 +232,8 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   error =
       grpc_error_add_child(GRPC_ERROR_REF(error), GRPC_ERROR_REF(calld->error));
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready, error);
 }
 
 // Start transport stream op.

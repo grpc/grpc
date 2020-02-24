@@ -27,7 +27,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif
 
@@ -46,7 +46,7 @@ class TimerTest : public ::testing::Test {
     grpc_init();
     // Skip test if slowdown factor > 1, or we are
     // using event manager.
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
     if (grpc_test_slowdown_factor() != 1 ||
         grpc_event_engine_run_in_background()) {
 #else
@@ -61,6 +61,10 @@ class TimerTest : public ::testing::Test {
   bool do_not_test_{false};
 };
 
+#ifndef GPR_WINDOWS
+// the test fails with too many wakeups on windows opt build
+// the mechanism by which that happens is described in
+// https://github.com/grpc/grpc/issues/20436
 TEST_F(TimerTest, NoTimers) {
   MAYBE_SKIP_TEST;
   grpc_core::ExecCtx exec_ctx;
@@ -71,6 +75,7 @@ TEST_F(TimerTest, NoTimers) {
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   GPR_ASSERT(wakeups == 1 || wakeups == 2);
 }
+#endif
 
 TEST_F(TimerTest, OneTimerExpires) {
   MAYBE_SKIP_TEST;

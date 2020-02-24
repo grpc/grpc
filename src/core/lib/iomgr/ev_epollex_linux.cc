@@ -41,11 +41,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "absl/container/inlined_vector.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -190,7 +190,15 @@ struct grpc_fd {
     grpc_iomgr_unregister_object(&iomgr_object);
 
     POLLABLE_UNREF(pollable_obj, "fd_pollable");
-    pollset_fds.clear();
+
+    // To clear out the allocations of pollset_fds, we need to swap its
+    // contents with a newly-constructed (and soon to be destructed) local
+    // variable of its same type. This is because InlinedVector::clear is _not_
+    // guaranteed to actually free up allocations and this is important since
+    // this object doesn't have a conventional destructor.
+    absl::InlinedVector<int, 1> pollset_fds_tmp;
+    pollset_fds_tmp.swap(pollset_fds);
+
     gpr_mu_destroy(&pollable_mu);
     gpr_mu_destroy(&orphan_mu);
 
@@ -232,8 +240,8 @@ struct grpc_fd {
 
   // Protects pollable_obj and pollset_fds.
   gpr_mu pollable_mu;
-  grpc_core::InlinedVector<int, 1> pollset_fds;  // Used in PO_MULTI.
-  pollable* pollable_obj = nullptr;              // Used in PO_FD.
+  absl::InlinedVector<int, 1> pollset_fds;  // Used in PO_MULTI.
+  pollable* pollable_obj = nullptr;         // Used in PO_FD.
 
   grpc_core::LockfreeEvent read_closure;
   grpc_core::LockfreeEvent write_closure;
@@ -393,7 +401,8 @@ static void unref_by(grpc_fd* fd, int n) {
 #endif
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
-    GRPC_CLOSURE_SCHED(
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(fd_destroy, fd, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   } else {
@@ -487,7 +496,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
      to be alive (and not added to freelist) until the end of this function */
   REF_BY(fd, 1, reason);
 
-  GRPC_CLOSURE_SCHED(fd->on_done_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure, GRPC_ERROR_NONE);
 
   if (pollable_obj) {
     gpr_mu_unlock(&pollable_obj->owner_orphan_mu);
@@ -662,7 +671,8 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
   if (pollset->shutdown_closure != nullptr && pollset->root_worker == nullptr &&
       pollset->containing_pollset_set_count == 0) {
     GPR_TIMER_MARK("pollset_finish_shutdown", 0);
-    GRPC_CLOSURE_SCHED(pollset->shutdown_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_closure,
+                            GRPC_ERROR_NONE);
     pollset->shutdown_closure = nullptr;
     pollset->already_shutdown = true;
   }

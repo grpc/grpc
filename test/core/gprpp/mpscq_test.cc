@@ -38,7 +38,7 @@ typedef struct test_node {
 } test_node;
 
 static test_node* new_node(size_t i, size_t* ctr) {
-  test_node* n = grpc_core::New<test_node>();
+  test_node* n = new test_node();
   n->i = i;
   n->ctr = ctr;
   return n;
@@ -54,7 +54,7 @@ static void test_serial(void) {
     test_node* n = reinterpret_cast<test_node*>(q.Pop());
     GPR_ASSERT(n);
     GPR_ASSERT(n->i == i);
-    gpr_free(n);
+    delete n;
   }
 }
 
@@ -100,7 +100,7 @@ static void test_mt(void) {
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) num_done++;
-    gpr_free(tn);
+    delete tn;
   }
   gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, spins);
   for (auto& th : thds) {
@@ -136,7 +136,7 @@ static void pull_thread(void* arg) {
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) pa->num_done++;
-    gpr_free(tn);
+    delete tn;
     gpr_mu_unlock(&pa->mu);
   }
 }

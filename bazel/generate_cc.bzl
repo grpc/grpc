@@ -4,6 +4,7 @@ This is an internal rule used by cc_grpc_library, and shouldn't be used
 directly.
 """
 
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
     "get_include_directory",
@@ -111,6 +112,7 @@ def generate_cc_impl(ctx):
         "--proto_path={}".format(get_include_directory(i))
         for i in includes
     ]
+
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
     arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]

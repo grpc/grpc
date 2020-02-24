@@ -13,38 +13,53 @@
 # limitations under the License.
 """Server-side implementation of gRPC Asyncio Python."""
 
-from typing import Text, Optional
 import asyncio
+from concurrent.futures import Executor
+from typing import Any, Optional, Sequence
+
 import grpc
-from grpc import _common
+from grpc import _common, _compression
 from grpc._cython import cygrpc
 
+from . import _base_server
+from ._typing import ChannelArgumentType
 
-class Server:
+
+def _augment_channel_arguments(base_options: ChannelArgumentType,
+                               compression: Optional[grpc.Compression]):
+    compression_option = _compression.create_channel_option(compression)
+    return tuple(base_options) + compression_option
+
+
+class Server(_base_server.Server):
     """Serves RPCs."""
 
-    def __init__(self, thread_pool, generic_handlers, interceptors, options,
-                 maximum_concurrent_rpcs, compression):
-        self._server = cygrpc.AioServer(thread_pool, generic_handlers,
-                                        interceptors, options,
-                                        maximum_concurrent_rpcs, compression)
+    def __init__(self, thread_pool: Optional[Executor],
+                 generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]],
+                 interceptors: Optional[Sequence[Any]],
+                 options: ChannelArgumentType,
+                 maximum_concurrent_rpcs: Optional[int],
+                 compression: Optional[grpc.Compression]):
+        self._loop = asyncio.get_event_loop()
+        self._server = cygrpc.AioServer(
+            self._loop, thread_pool, generic_handlers, interceptors,
+            _augment_channel_arguments(options, compression),
+            maximum_concurrent_rpcs)
 
     def add_generic_rpc_handlers(
             self,
-            generic_rpc_handlers,
-            # generic_rpc_handlers: Iterable[grpc.GenericRpcHandlers]
-    ) -> None:
+            generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
 
         Args:
-          generic_rpc_handlers: An iterable of GenericRpcHandlers that will be
+          generic_rpc_handlers: A sequence of GenericRpcHandlers that will be
           used to service RPCs.
         """
         self._server.add_generic_rpc_handlers(generic_rpc_handlers)
 
-    def add_insecure_port(self, address: Text) -> int:
+    def add_insecure_port(self, address: str) -> int:
         """Opens an insecure port for accepting RPCs.
 
         This method may only be called before starting the server.
@@ -58,7 +73,7 @@ class Server:
         """
         return self._server.add_insecure_port(_common.encode(address))
 
-    def add_secure_port(self, address: Text,
+    def add_secure_port(self, address: str,
                         server_credentials: grpc.ServerCredentials) -> int:
         """Opens a secure port for accepting RPCs.
 
@@ -73,8 +88,8 @@ class Server:
         Returns:
           An integer port on which the server will accept RPC requests.
         """
-        return self._server.add_secure_port(
-            _common.encode(address), server_credentials)
+        return self._server.add_secure_port(_common.encode(address),
+                                            server_credentials)
 
     async def start(self) -> None:
         """Starts this Server.
@@ -83,35 +98,29 @@ class Server:
         """
         await self._server.start()
 
-    def stop(self, grace: Optional[float]) -> asyncio.Event:
+    async def stop(self, grace: Optional[float]) -> None:
         """Stops this Server.
 
-        "This method immediately stops the server from servicing new RPCs in
+        This method immediately stops the server from servicing new RPCs in
         all cases.
 
-        If a grace period is specified, this method returns immediately
-        and all RPCs active at the end of the grace period are aborted.
-        If a grace period is not specified (by passing None for `grace`),
-        all existing RPCs are aborted immediately and this method
-        blocks until the last RPC handler terminates.
+        If a grace period is specified, this method returns immediately and all
+        RPCs active at the end of the grace period are aborted. If a grace
+        period is not specified (by passing None for grace), all existing RPCs
+        are aborted immediately and this method blocks until the last RPC
+        handler terminates.
 
-        This method is idempotent and may be called at any time.
-        Passing a smaller grace value in a subsequent call will have
-        the effect of stopping the Server sooner (passing None will
-        have the effect of stopping the server immediately). Passing
-        a larger grace value in a subsequent call *will not* have the
-        effect of stopping the server later (i.e. the most restrictive
-        grace value is used).
+        This method is idempotent and may be called at any time. Passing a
+        smaller grace value in a subsequent call will have the effect of
+        stopping the Server sooner (passing None will have the effect of
+        stopping the server immediately). Passing a larger grace value in a
+        subsequent call will not have the effect of stopping the server later
+        (i.e. the most restrictive grace value is used).
 
         Args:
           grace: A duration of time in seconds or None.
-
-        Returns:
-          A threading.Event that will be set when this Server has completely
-          stopped, i.e. when running RPCs either complete or are aborted and
-          all handlers have terminated.
         """
-        raise NotImplementedError()
+        await self._server.shutdown(grace)
 
     async def wait_for_termination(self,
                                    timeout: Optional[float] = None) -> bool:
@@ -135,19 +144,23 @@ class Server:
         Returns:
           A bool indicates if the operation times out.
         """
-        if timeout:
-            raise NotImplementedError()
-        # TODO(lidiz) replace this wait forever logic
-        future = asyncio.get_event_loop().create_future()
-        await future
+        return await self._server.wait_for_termination(timeout)
+
+    def __del__(self):
+        """Schedules a graceful shutdown in current event loop.
+
+        The Cython AioServer doesn't hold a ref-count to this class. It should
+        be safe to slightly extend the underlying Cython object's life span.
+        """
+        self._loop.create_task(self._server.shutdown(None))
 
 
-def server(migration_thread_pool=None,
-           handlers=None,
-           interceptors=None,
-           options=None,
-           maximum_concurrent_rpcs=None,
-           compression=None):
+def server(migration_thread_pool: Optional[Executor] = None,
+           handlers: Optional[Sequence[grpc.GenericRpcHandler]] = None,
+           interceptors: Optional[Sequence[Any]] = None,
+           options: Optional[ChannelArgumentType] = None,
+           maximum_concurrent_rpcs: Optional[int] = None,
+           compression: Optional[grpc.Compression] = None):
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -167,13 +180,13 @@ def server(migration_thread_pool=None,
         indicate no limit.
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
-        lifetime of the server unless overridden. This is an EXPERIMENTAL option.
+        lifetime of the server unless overridden by set_compression. This is an
+        EXPERIMENTAL option.
 
     Returns:
       A Server object.
     """
-    return Server(migration_thread_pool, ()
-                  if handlers is None else handlers, ()
-                  if interceptors is None else interceptors, ()
-                  if options is None else options, maximum_concurrent_rpcs,
+    return Server(migration_thread_pool, () if handlers is None else handlers,
+                  () if interceptors is None else interceptors,
+                  () if options is None else options, maximum_concurrent_rpcs,
                   compression)

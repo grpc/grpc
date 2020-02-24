@@ -39,6 +39,8 @@ extern "C" {
 #include <openssl/pem.h>
 }
 
+using grpc_core::Json;
+
 /* --- Constants. --- */
 
 /* 1 hour max. */
@@ -65,7 +67,7 @@ int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
          strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID);
 }
 
-grpc_auth_json_key grpc_auth_json_key_create_from_json(const grpc_json* json) {
+grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   grpc_auth_json_key result;
   BIO* bio = nullptr;
   const char* prop_value;
@@ -74,7 +76,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const grpc_json* json) {
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
-  if (json == nullptr) {
+  if (json.type() == Json::Type::JSON_NULL) {
     gpr_log(GPR_ERROR, "Invalid json.");
     goto end;
   }
@@ -122,12 +124,10 @@ end:
 
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string) {
-  char* scratchpad = gpr_strdup(json_string);
-  grpc_json* json = grpc_json_parse_string(scratchpad);
-  grpc_auth_json_key result = grpc_auth_json_key_create_from_json(json);
-  grpc_json_destroy(json);
-  gpr_free(scratchpad);
-  return result;
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_string, &error);
+  GRPC_LOG_IF_ERROR("JSON key parsing", error);
+  return grpc_auth_json_key_create_from_json(std::move(json));
 }
 
 void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
@@ -153,72 +153,42 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
 
 /* --- jwt encoding and signature. --- */
 
-static grpc_json* create_child(grpc_json* brother, grpc_json* parent,
-                               const char* key, const char* value,
-                               grpc_json_type type) {
-  grpc_json* child = grpc_json_create(type);
-  if (brother) brother->next = child;
-  if (!parent->child) parent->child = child;
-  child->parent = parent;
-  child->value = value;
-  child->key = key;
-  return child;
-}
-
 static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
-  grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* child = nullptr;
-  char* json_str = nullptr;
-  char* result = nullptr;
-
-  child = create_child(nullptr, json, "alg", algorithm, GRPC_JSON_STRING);
-  child = create_child(child, json, "typ", GRPC_JWT_TYPE, GRPC_JSON_STRING);
-  create_child(child, json, "kid", key_id, GRPC_JSON_STRING);
-
-  json_str = grpc_json_dump_to_string(json, 0);
-  result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
-  gpr_free(json_str);
-  grpc_json_destroy(json);
-  return result;
+  Json json = Json::Object{
+      {"alg", algorithm},
+      {"typ", GRPC_JWT_TYPE},
+      {"kid", key_id},
+  };
+  std::string json_str = json.Dump();
+  return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
 static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
                                const char* audience,
                                gpr_timespec token_lifetime, const char* scope) {
-  grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* child = nullptr;
-  char* json_str = nullptr;
-  char* result = nullptr;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
-  char now_str[GPR_LTOA_MIN_BUFSIZE];
-  char expiration_str[GPR_LTOA_MIN_BUFSIZE];
   if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) > 0) {
     gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime());
   }
-  int64_ttoa(now.tv_sec, now_str);
-  int64_ttoa(expiration.tv_sec, expiration_str);
 
-  child = create_child(nullptr, json, "iss", json_key->client_email,
-                       GRPC_JSON_STRING);
+  Json::Object object = {
+      {"iss", json_key->client_email},
+      {"aud", audience},
+      {"iat", now.tv_sec},
+      {"exp", expiration.tv_sec},
+  };
   if (scope != nullptr) {
-    child = create_child(child, json, "scope", scope, GRPC_JSON_STRING);
+    object["scope"] = scope;
   } else {
     /* Unscoped JWTs need a sub field. */
-    child = create_child(child, json, "sub", json_key->client_email,
-                         GRPC_JSON_STRING);
+    object["sub"] = json_key->client_email;
   }
 
-  child = create_child(child, json, "aud", audience, GRPC_JSON_STRING);
-  child = create_child(child, json, "iat", now_str, GRPC_JSON_NUMBER);
-  create_child(child, json, "exp", expiration_str, GRPC_JSON_NUMBER);
-
-  json_str = grpc_json_dump_to_string(json, 0);
-  result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
-  gpr_free(json_str);
-  grpc_json_destroy(json);
-  return result;
+  Json json(object);
+  std::string json_str = json.Dump();
+  return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
 static char* dot_concat_and_free_strings(char* str1, char* str2) {

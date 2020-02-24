@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_UDP_SERVER
 
 #include "src/core/lib/iomgr/udp_server.h"
 
@@ -99,7 +99,7 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
                          void* /*user_data*/) override {
     gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
             grpc_fd_wrapped_fd(emfd()));
-    GRPC_CLOSURE_SCHED(orphan_fd_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, orphan_fd_closure, GRPC_ERROR_NONE);
     g_number_of_orphan_calls++;
   }
 
@@ -113,12 +113,12 @@ class TestGrpcUdpHandlerFactory : public GrpcUdpHandlerFactory {
  public:
   GrpcUdpHandler* CreateUdpHandler(grpc_fd* emfd, void* user_data) override {
     gpr_log(GPR_INFO, "create udp handler for fd %d", grpc_fd_wrapped_fd(emfd));
-    return grpc_core::New<TestGrpcUdpHandler>(emfd, user_data);
+    return new TestGrpcUdpHandler(emfd, user_data);
   }
 
   void DestroyUdpHandler(GrpcUdpHandler* handler) override {
     gpr_log(GPR_INFO, "Destroy handler");
-    grpc_core::Delete(reinterpret_cast<TestGrpcUdpHandler*>(handler));
+    delete reinterpret_cast<TestGrpcUdpHandler*>(handler);
   }
 };
 
@@ -383,8 +383,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_UDP_SERVER */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_UDP_SERVER */

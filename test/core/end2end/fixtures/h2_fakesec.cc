@@ -39,8 +39,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data* ffd =
-      grpc_core::New<fullstack_secure_fixture_data>();
+  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   grpc_core::JoinHostPort(&ffd->localaddr, "localhost", port);
 
@@ -90,7 +89,7 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  grpc_core::Delete(ffd);
+  delete ffd;
 }
 
 static void chttp2_init_client_fake_secure_fullstack(
@@ -131,7 +130,8 @@ static grpc_end2end_test_config configs[] = {
     {"chttp2/fake_secure_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
+         FEATURE_MASK_DOES_NOT_SUPPORT_SEND_CALL_CREDENTIALS,
      nullptr, chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_fake_secure_fullstack,
      chttp2_init_server_fake_secure_fullstack,

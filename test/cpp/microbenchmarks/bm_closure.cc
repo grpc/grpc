@@ -78,25 +78,25 @@ static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureInitAgainstCombiner);
 
-static void BM_ClosureRunOnExecCtx(benchmark::State& state) {
+static void BM_ClosureRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_RUN(&c, GRPC_ERROR_NONE);
-    grpc_core::ExecCtx::Get()->Flush();
+    grpc_core::Closure::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
   }
 
   track_counters.Finish(state);
 }
-BENCHMARK(BM_ClosureRunOnExecCtx);
+BENCHMARK(BM_ClosureRun);
 
 static void BM_ClosureCreateAndRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_RUN(
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(DoNothing, nullptr, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
@@ -110,7 +110,8 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_closure c;
   for (auto _ : state) {
-    GRPC_CLOSURE_RUN(
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
@@ -125,7 +126,7 @@ static void BM_ClosureSchedOnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_SCHED(&c, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -141,8 +142,8 @@ static void BM_ClosureSched2OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -160,9 +161,9 @@ static void BM_ClosureSched3OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c3, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c3, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -349,17 +350,18 @@ BENCHMARK(BM_ClosureSched4OnTwoCombiners);
 // the benchmark is complete
 class Rescheduler {
  public:
-  Rescheduler(benchmark::State& state, grpc_closure_scheduler* scheduler)
-      : state_(state) {
-    GRPC_CLOSURE_INIT(&closure_, Step, this, scheduler);
+  explicit Rescheduler(benchmark::State& state) : state_(state) {
+    GRPC_CLOSURE_INIT(&closure_, Step, this, nullptr);
   }
 
-  void ScheduleFirst() { GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE); }
+  void ScheduleFirst() {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+  }
 
-  void ScheduleFirstAgainstDifferentScheduler(
-      grpc_closure_scheduler* scheduler) {
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(Step, this, scheduler),
-                       GRPC_ERROR_NONE);
+  void ScheduleFirstAgainstDifferentScheduler() {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            GRPC_CLOSURE_CREATE(Step, this, nullptr),
+                            GRPC_ERROR_NONE);
   }
 
  private:
@@ -369,7 +371,7 @@ class Rescheduler {
   static void Step(void* arg, grpc_error* /*error*/) {
     Rescheduler* self = static_cast<Rescheduler*>(arg);
     if (self->state_.KeepRunning()) {
-      GRPC_CLOSURE_SCHED(&self->closure_, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_, GRPC_ERROR_NONE);
     }
   }
 };
@@ -377,7 +379,7 @@ class Rescheduler {
 static void BM_ClosureReschedOnExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  Rescheduler r(state, grpc_schedule_on_exec_ctx);
+  Rescheduler r(state);
   r.ScheduleFirst();
   grpc_core::ExecCtx::Get()->Flush();
   track_counters.Finish(state);

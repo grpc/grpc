@@ -29,10 +29,10 @@
 # SUCH DAMAGE.
 
 def address_sorting_cc_library(name, srcs, hdrs, copts, includes):
-  native.cc_library(
-      name = name,
-      srcs = srcs,
-      hdrs = hdrs,
-      copts = copts,
-      includes = includes,
-  )
+    native.cc_library(
+        name = name,
+        srcs = srcs,
+        hdrs = hdrs,
+        copts = copts,
+        includes = includes,
+    )

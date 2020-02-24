@@ -20,8 +20,8 @@ import argparse
 import multiprocessing
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', 'run_tests', 'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests',
+                 'python_utils'))
 import jobset
 
 extra_args = [
@@ -40,12 +40,11 @@ clang_tidy = os.environ.get('CLANG_TIDY', 'clang-tidy')
 argp = argparse.ArgumentParser(description='Run clang-tidy against core')
 argp.add_argument('files', nargs='+', help='Files to tidy')
 argp.add_argument('--fix', dest='fix', action='store_true')
-argp.add_argument(
-    '-j',
-    '--jobs',
-    type=int,
-    default=multiprocessing.cpu_count(),
-    help='Number of CPUs to use')
+argp.add_argument('-j',
+                  '--jobs',
+                  type=int,
+                  default=multiprocessing.cpu_count(),
+                  help='Number of CPUs to use')
 argp.set_defaults(fix=False)
 args = argp.parse_args()
 

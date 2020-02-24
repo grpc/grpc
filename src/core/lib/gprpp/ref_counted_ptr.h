@@ -179,7 +179,7 @@ class RefCountedPtr {
 
 template <typename T, typename... Args>
 inline RefCountedPtr<T> MakeRefCounted(Args&&... args) {
-  return RefCountedPtr<T>(New<T>(std::forward<Args>(args)...));
+  return RefCountedPtr<T>(new T(std::forward<Args>(args)...));
 }
 
 }  // namespace grpc_core

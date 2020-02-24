@@ -381,7 +381,8 @@ static void request_matcher_zombify_all_pending_calls(request_matcher* rm) {
         &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
         grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(&calld->kill_zombie_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &calld->kill_zombie_closure,
+                            GRPC_ERROR_NONE);
   }
 }
 
@@ -527,7 +528,8 @@ static void publish_new_rpc(void* arg, grpc_error* error) {
         &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
         grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(&calld->kill_zombie_closure, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &calld->kill_zombie_closure,
+                            GRPC_ERROR_REF(error));
     return;
   }
 
@@ -588,7 +590,8 @@ static void finish_start_new_rpc(
     gpr_atm_no_barrier_store(&calld->state, ZOMBIED);
     GRPC_CLOSURE_INIT(&calld->kill_zombie_closure, kill_zombie, elem,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(&calld->kill_zombie_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &calld->kill_zombie_closure,
+                            GRPC_ERROR_NONE);
     return;
   }
 
@@ -781,7 +784,7 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
                              calld->recv_trailing_metadata_error,
                              "continue server_recv_trailing_metadata_ready");
   }
-  GRPC_CLOSURE_RUN(closure, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 static void server_recv_trailing_metadata_ready(void* user_data,
@@ -802,7 +805,8 @@ static void server_recv_trailing_metadata_ready(void* user_data,
   error =
       grpc_error_add_child(GRPC_ERROR_REF(error),
                            GRPC_ERROR_REF(calld->recv_initial_metadata_error));
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready, error);
 }
 
 static void server_mutate_op(grpc_call_element* elem,
@@ -843,7 +847,8 @@ static void got_initial_metadata(void* ptr, grpc_error* error) {
     if (gpr_atm_full_cas(&calld->state, NOT_STARTED, ZOMBIED)) {
       GRPC_CLOSURE_INIT(&calld->kill_zombie_closure, kill_zombie, elem,
                         grpc_schedule_on_exec_ctx);
-      GRPC_CLOSURE_SCHED(&calld->kill_zombie_closure, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &calld->kill_zombie_closure,
+                              GRPC_ERROR_NONE);
     } else if (gpr_atm_full_cas(&calld->state, PENDING, ZOMBIED)) {
       /* zombied call will be destroyed when it's removed from the pending
          queue... later */
@@ -1245,8 +1250,7 @@ void grpc_server_setup_transport(
   op->set_accept_stream = true;
   op->set_accept_stream_fn = accept_stream;
   op->set_accept_stream_user_data = chand;
-  op->start_connectivity_watch.reset(
-      grpc_core::New<ConnectivityWatcher>(chand));
+  op->start_connectivity_watch.reset(new ConnectivityWatcher(chand));
   if (gpr_atm_acq_load(&s->shutdown_flag) != 0) {
     op->disconnect_with_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown");
@@ -1448,7 +1452,8 @@ static grpc_call_error queue_call_request(grpc_server* server, size_t cq_idx,
             &calld->kill_zombie_closure, kill_zombie,
             grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
             grpc_schedule_on_exec_ctx);
-        GRPC_CLOSURE_SCHED(&calld->kill_zombie_closure, GRPC_ERROR_NONE);
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, &calld->kill_zombie_closure,
+                                GRPC_ERROR_NONE);
       } else {
         publish_call(server, calld, cq_idx, rc);
       }

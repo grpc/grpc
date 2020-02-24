@@ -1371,7 +1371,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
 TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
   const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
-  // Return an unreachable balancer and one fallback backend.
+  // Return one balancer and one fallback backend.
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
   addresses.emplace_back(AddressData{backends_[0]->port_, false, ""});
@@ -1382,6 +1382,47 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
   // succeeds.
   CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
                  /* wait_for_ready */ false);
+}
+
+TEST_F(SingleBalancerTest, FallbackControlledByBalancer_BeforeFirstServerlist) {
+  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  // Return one balancer and one fallback backend.
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
+  addresses.emplace_back(AddressData{backends_[0]->port_, false, ""});
+  SetNextResolution(addresses);
+  // Balancer explicitly tells client to fallback.
+  LoadBalanceResponse resp;
+  resp.mutable_fallback_response();
+  ScheduleResponseForBalancer(0, resp, 0);
+  // Send RPC with deadline less than the fallback timeout and make sure it
+  // succeeds.
+  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+                 /* wait_for_ready */ false);
+}
+
+TEST_F(SingleBalancerTest, FallbackControlledByBalancer_AfterFirstServerlist) {
+  // Return one balancer and one fallback backend (backend 0).
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
+  addresses.emplace_back(AddressData{backends_[0]->port_, false, ""});
+  SetNextResolution(addresses);
+  // Balancer initially sends serverlist, then tells client to fall back,
+  // then sends the serverlist again.
+  // The serverlist points to backend 1.
+  LoadBalanceResponse serverlist_resp =
+      BalancerServiceImpl::BuildResponseForBackends({backends_[1]->port_}, {});
+  LoadBalanceResponse fallback_resp;
+  fallback_resp.mutable_fallback_response();
+  ScheduleResponseForBalancer(0, serverlist_resp, 0);
+  ScheduleResponseForBalancer(0, fallback_resp, 100);
+  ScheduleResponseForBalancer(0, serverlist_resp, 100);
+  // Requests initially go to backend 1, then go to backend 0 in
+  // fallback mode, then go back to backend 1 when we exit fallback.
+  WaitForBackend(1);
+  WaitForBackend(0);
+  WaitForBackend(1);
 }
 
 TEST_F(SingleBalancerTest, BackendsRestart) {

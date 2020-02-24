@@ -369,9 +369,10 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 
   if (!g_shared_mutables.initialized) {
     timer->pending = false;
-    GRPC_CLOSURE_SCHED(timer->closure,
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                           "Attempt to create timer before initialization"));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, timer->closure,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Attempt to create timer before initialization"));
     return;
   }
 
@@ -380,7 +381,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   if (deadline <= now) {
     timer->pending = false;
-    GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
     gpr_mu_unlock(&shard->mu);
     /* early out */
     return;
@@ -471,7 +472,8 @@ static void timer_cancel(grpc_timer* timer) {
   if (timer->pending) {
     REMOVE_FROM_HASH_TABLE(timer);
 
-    GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_CANCELLED);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
+                            GRPC_ERROR_CANCELLED);
     timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -546,9 +548,8 @@ static grpc_timer* pop_one(timer_shard* shard, grpc_millis now) {
     }
     if (timer->deadline > now) return nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
-      gpr_log(GPR_INFO, "TIMER %p: FIRE %" PRId64 "ms late via %s scheduler",
-              timer, now - timer->deadline,
-              timer->closure->scheduler->vtable->name);
+      gpr_log(GPR_INFO, "TIMER %p: FIRE %" PRId64 "ms late", timer,
+              now - timer->deadline);
     }
     timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
@@ -564,7 +565,8 @@ static size_t pop_timers(timer_shard* shard, grpc_millis now,
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
     REMOVE_FROM_HASH_TABLE(timer);
-    GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
+                            GRPC_ERROR_REF(error));
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);

@@ -47,9 +47,9 @@ class BoringSslCachedSession : public SslCachedSession {
 
 }  // namespace
 
-grpc_core::UniquePtr<SslCachedSession> SslCachedSession::Create(
+std::unique_ptr<SslCachedSession> SslCachedSession::Create(
     SslSessionPtr session) {
-  return grpc_core::MakeUnique<BoringSslCachedSession>(std::move(session));
+  return absl::make_unique<BoringSslCachedSession>(std::move(session));
 }
 
 }  // namespace tsi

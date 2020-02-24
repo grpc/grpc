@@ -41,7 +41,7 @@ class LoadBalancingPolicyRegistry {
     /// Registers an LB policy factory.  The factory will be used to create an
     /// LB policy whose name matches that of the factory.
     static void RegisterLoadBalancingPolicyFactory(
-        UniquePtr<LoadBalancingPolicyFactory> factory);
+        std::unique_ptr<LoadBalancingPolicyFactory> factory);
   };
 
   /// Creates an LB policy of the type specified by \a name.
@@ -57,7 +57,7 @@ class LoadBalancingPolicyRegistry {
   /// Returns a parsed object of the load balancing policy to be used from a
   /// LoadBalancingConfig array \a json.
   static RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error);
+      const Json& json, grpc_error** error);
 };
 
 }  // namespace grpc_core

@@ -59,6 +59,7 @@ COMMAND_CLASS = {
     'test_lite': commands.TestLite,
     'test_gevent': commands.TestGevent,
     'test_aio': commands.TestAio,
+    'test_py3_only': commands.TestPy3Only,
 }
 
 PACKAGE_DATA = {
@@ -67,9 +68,7 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests.protoc_plugin.protos.invocation_testing': [
-        'same.proto',
-    ],
+    'tests.protoc_plugin.protos.invocation_testing': ['same.proto',],
     'tests.protoc_plugin.protos.invocation_testing.split_messages': [
         'messages.proto',
     ],

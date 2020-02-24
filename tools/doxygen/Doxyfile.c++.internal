@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.26.0-dev
+PROJECT_NUMBER         = 1.28.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -798,6 +798,7 @@ doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
+doc/xds-test-descriptions.md \
 include/grpc++/alarm.h \
 include/grpc++/channel.h \
 include/grpc++/client_context.h \
@@ -824,7 +825,6 @@ include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
 include/grpc++/impl/codegen/config_protobuf.h \
-include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
@@ -901,6 +901,7 @@ include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
+include/grpc/impl/codegen/sync_abseil.h \
 include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
@@ -920,6 +921,7 @@ include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \
+include/grpc/support/sync_abseil.h \
 include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
@@ -972,7 +974,6 @@ include/grpcpp/impl/codegen/completion_queue_tag.h \
 include/grpcpp/impl/codegen/config.h \
 include/grpcpp/impl/codegen/config_protobuf.h \
 include/grpcpp/impl/codegen/core_codegen.h \
-include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/delegating_channel.h \
@@ -992,6 +993,7 @@ include/grpcpp/impl/codegen/rpc_service_method.h \
 include/grpcpp/impl/codegen/security/auth_context.h \
 include/grpcpp/impl/codegen/serialization_traits.h \
 include/grpcpp/impl/codegen/server_callback.h \
+include/grpcpp/impl/codegen/server_callback_handlers.h \
 include/grpcpp/impl/codegen/server_callback_impl.h \
 include/grpcpp/impl/codegen/server_context.h \
 include/grpcpp/impl/codegen/server_context_impl.h \
@@ -1121,7 +1123,6 @@ src/core/lib/gprpp/optional.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
-src/core/lib/gprpp/set.h \
 src/core/lib/gprpp/string_view.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
@@ -1161,6 +1162,7 @@ src/core/lib/iomgr/is_epollexclusive_available.h \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/nameser.h \
+src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.h \
 src/core/lib/iomgr/pollset_custom.h \
@@ -1199,10 +1201,8 @@ src/core/lib/iomgr/udp_server.h \
 src/core/lib/iomgr/unix_sockets_posix.h \
 src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.h \
+src/core/lib/iomgr/work_serializer.h \
 src/core/lib/json/json.h \
-src/core/lib/json/json_common.h \
-src/core/lib/json/json_reader.h \
-src/core/lib/json/json_writer.h \
 src/core/lib/profiling/timers.h \
 src/core/lib/slice/b64.h \
 src/core/lib/slice/percent_encoding.h \
@@ -1248,7 +1248,6 @@ src/cpp/client/create_channel_internal.cc \
 src/cpp/client/create_channel_internal.h \
 src/cpp/client/create_channel_posix.cc \
 src/cpp/client/credentials_cc.cc \
-src/cpp/client/generic_stub.cc \
 src/cpp/client/insecure_credentials.cc \
 src/cpp/client/secure_credentials.cc \
 src/cpp/client/secure_credentials.h \
@@ -1286,6 +1285,7 @@ src/cpp/server/insecure_server_credentials.cc \
 src/cpp/server/secure_server_credentials.cc \
 src/cpp/server/secure_server_credentials.h \
 src/cpp/server/server_builder.cc \
+src/cpp/server/server_callback.cc \
 src/cpp/server/server_cc.cc \
 src/cpp/server/server_context.cc \
 src/cpp/server/server_credentials.cc \
@@ -1296,21 +1296,7 @@ src/cpp/thread_manager/thread_manager.h \
 src/cpp/util/byte_buffer_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
-src/cpp/util/time_cc.cc \
-third_party/upb/upb/decode.c \
-third_party/upb/upb/decode.h \
-third_party/upb/upb/encode.c \
-third_party/upb/upb/encode.h \
-third_party/upb/upb/generated_util.h \
-third_party/upb/upb/msg.c \
-third_party/upb/upb/msg.h \
-third_party/upb/upb/port.c \
-third_party/upb/upb/port_def.inc \
-third_party/upb/upb/port_undef.inc \
-third_party/upb/upb/table.c \
-third_party/upb/upb/table.int.h \
-third_party/upb/upb/upb.c \
-third_party/upb/upb/upb.h
+src/cpp/util/time_cc.cc
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

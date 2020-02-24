@@ -57,22 +57,6 @@ static void ApplyCommonChannelArguments(ChannelArguments* c) {
   c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
 
-static class InitializeStuff {
- public:
-  InitializeStuff() {
-    init_lib_.init();
-    rq_ = grpc_resource_quota_create("bm");
-  }
-
-  ~InitializeStuff() { init_lib_.shutdown(); }
-
-  grpc_resource_quota* rq() { return rq_; }
-
- private:
-  internal::GrpcLibrary init_lib_;
-  grpc_resource_quota* rq_;
-} initialize_stuff;
-
 class EndpointPairFixture {
  public:
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints) {
@@ -160,9 +144,9 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   grpc_passthru_endpoint_stats* stats_;
 
   static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
+    static grpc_resource_quota* rq = grpc_resource_quota_create("bm");
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
-                                  stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server, rq, stats);
     return p;
   }
 };
@@ -255,7 +239,10 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

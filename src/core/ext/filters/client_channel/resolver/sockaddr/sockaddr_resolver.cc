@@ -97,7 +97,8 @@ bool ParseUri(const grpc_uri* uri,
   bool errors_found = false;
   for (size_t i = 0; i < path_parts.count; i++) {
     grpc_uri ith_uri = *uri;
-    UniquePtr<char> part_str(grpc_slice_to_c_string(path_parts.slices[i]));
+    grpc_core::UniquePtr<char> part_str(
+        grpc_slice_to_c_string(path_parts.slices[i]));
     ith_uri.path = part_str.get();
     grpc_resolved_address addr;
     if (!parse(&ith_uri, &addr)) {
@@ -160,8 +161,9 @@ class UnixResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
-  UniquePtr<char> GetDefaultAuthority(grpc_uri* /*uri*/) const override {
-    return UniquePtr<char>(gpr_strdup("localhost"));
+  grpc_core::UniquePtr<char> GetDefaultAuthority(
+      grpc_uri* /*uri*/) const override {
+    return grpc_core::UniquePtr<char>(gpr_strdup("localhost"));
   }
 
   const char* scheme() const override { return "unix"; }
@@ -174,12 +176,12 @@ class UnixResolverFactory : public ResolverFactory {
 
 void grpc_resolver_sockaddr_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::IPv4ResolverFactory>());
+      absl::make_unique<grpc_core::IPv4ResolverFactory>());
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::IPv6ResolverFactory>());
+      absl::make_unique<grpc_core::IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::UnixResolverFactory>());
+      absl::make_unique<grpc_core::UnixResolverFactory>());
 #endif
 }
 

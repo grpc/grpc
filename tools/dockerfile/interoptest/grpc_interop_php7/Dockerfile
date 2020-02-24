@@ -41,10 +41,10 @@ RUN apt-get update && apt-get install -y \
 
 # Install other dependencies
 RUN ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
-RUN wget http://ftp.gnu.org/gnu/bison/bison-2.6.4.tar.gz -O /var/local/bison-2.6.4.tar.gz
+RUN wget http://ftp.gnu.org/gnu/bison/bison-3.4.2.tar.gz -O /var/local/bison-3.4.2.tar.gz
 RUN cd /var/local \
-  && tar -zxvf bison-2.6.4.tar.gz \
-  && cd /var/local/bison-2.6.4 \
+  && tar -zxvf bison-3.4.2.tar.gz \
+  && cd /var/local/bison-3.4.2 \
   && ./configure \
   && make \
   && make install
@@ -52,7 +52,7 @@ RUN cd /var/local \
 # Compile PHP7 from source
 RUN git clone https://github.com/php/php-src /var/local/git/php-src
 RUN cd /var/local/git/php-src \
-  && git checkout PHP-7.0.9 \
+  && git checkout PHP-7.2.22 \
   && ./buildconf --force \
   && ./configure \
   --with-gmp \

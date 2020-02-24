@@ -66,27 +66,27 @@ void extract_opt_stats_from_tcp_info(ConnectionMetrics* metrics,
     return;
   }
   if (info->length > offsetof(grpc_core::tcp_info, tcpi_sndbuf_limited)) {
-    metrics->recurring_retrans.set(info->tcpi_retransmits);
-    metrics->is_delivery_rate_app_limited.set(
+    metrics->recurring_retrans.emplace(info->tcpi_retransmits);
+    metrics->is_delivery_rate_app_limited.emplace(
         info->tcpi_delivery_rate_app_limited);
-    metrics->congestion_window.set(info->tcpi_snd_cwnd);
-    metrics->reordering.set(info->tcpi_reordering);
-    metrics->packet_retx.set(info->tcpi_total_retrans);
-    metrics->pacing_rate.set(info->tcpi_pacing_rate);
-    metrics->data_notsent.set(info->tcpi_notsent_bytes);
+    metrics->congestion_window.emplace(info->tcpi_snd_cwnd);
+    metrics->reordering.emplace(info->tcpi_reordering);
+    metrics->packet_retx.emplace(info->tcpi_total_retrans);
+    metrics->pacing_rate.emplace(info->tcpi_pacing_rate);
+    metrics->data_notsent.emplace(info->tcpi_notsent_bytes);
     if (info->tcpi_min_rtt != UINT32_MAX) {
-      metrics->min_rtt.set(info->tcpi_min_rtt);
+      metrics->min_rtt.emplace(info->tcpi_min_rtt);
     }
-    metrics->packet_sent.set(info->tcpi_data_segs_out);
-    metrics->delivery_rate.set(info->tcpi_delivery_rate);
-    metrics->busy_usec.set(info->tcpi_busy_time);
-    metrics->rwnd_limited_usec.set(info->tcpi_rwnd_limited);
-    metrics->sndbuf_limited_usec.set(info->tcpi_sndbuf_limited);
+    metrics->packet_sent.emplace(info->tcpi_data_segs_out);
+    metrics->delivery_rate.emplace(info->tcpi_delivery_rate);
+    metrics->busy_usec.emplace(info->tcpi_busy_time);
+    metrics->rwnd_limited_usec.emplace(info->tcpi_rwnd_limited);
+    metrics->sndbuf_limited_usec.emplace(info->tcpi_sndbuf_limited);
   }
   if (info->length > offsetof(grpc_core::tcp_info, tcpi_dsack_dups)) {
-    metrics->data_sent.set(info->tcpi_bytes_sent);
-    metrics->data_retx.set(info->tcpi_bytes_retrans);
-    metrics->packet_spurious_retx.set(info->tcpi_dsack_dups);
+    metrics->data_sent.emplace(info->tcpi_bytes_sent);
+    metrics->data_retx.emplace(info->tcpi_bytes_retrans);
+    metrics->packet_spurious_retx.emplace(info->tcpi_dsack_dups);
   }
 }
 
@@ -107,79 +107,80 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
     const void* val = data + offset + NLA_HDRLEN;
     switch (attr->nla_type) {
       case TCP_NLA_BUSY: {
-        metrics->busy_usec.set(read_unaligned<uint64_t>(val));
+        metrics->busy_usec.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_RWND_LIMITED: {
-        metrics->rwnd_limited_usec.set(read_unaligned<uint64_t>(val));
+        metrics->rwnd_limited_usec.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_SNDBUF_LIMITED: {
-        metrics->sndbuf_limited_usec.set(read_unaligned<uint64_t>(val));
+        metrics->sndbuf_limited_usec.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_PACING_RATE: {
-        metrics->pacing_rate.set(read_unaligned<uint64_t>(val));
+        metrics->pacing_rate.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DELIVERY_RATE: {
-        metrics->delivery_rate.set(read_unaligned<uint64_t>(val));
+        metrics->delivery_rate.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DELIVERY_RATE_APP_LMT: {
-        metrics->is_delivery_rate_app_limited.set(read_unaligned<uint8_t>(val));
+        metrics->is_delivery_rate_app_limited.emplace(
+            read_unaligned<uint8_t>(val));
         break;
       }
       case TCP_NLA_SND_CWND: {
-        metrics->congestion_window.set(read_unaligned<uint32_t>(val));
+        metrics->congestion_window.emplace(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_MIN_RTT: {
-        metrics->min_rtt.set(read_unaligned<uint32_t>(val));
+        metrics->min_rtt.emplace(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_SRTT: {
-        metrics->srtt.set(read_unaligned<uint32_t>(val));
+        metrics->srtt.emplace(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_RECUR_RETRANS: {
-        metrics->recurring_retrans.set(read_unaligned<uint8_t>(val));
+        metrics->recurring_retrans.emplace(read_unaligned<uint8_t>(val));
         break;
       }
       case TCP_NLA_BYTES_SENT: {
-        metrics->data_sent.set(read_unaligned<uint64_t>(val));
+        metrics->data_sent.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DATA_SEGS_OUT: {
-        metrics->packet_sent.set(read_unaligned<uint64_t>(val));
+        metrics->packet_sent.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_TOTAL_RETRANS: {
-        metrics->packet_retx.set(read_unaligned<uint64_t>(val));
+        metrics->packet_retx.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DELIVERED: {
-        metrics->packet_delivered.set(read_unaligned<uint32_t>(val));
+        metrics->packet_delivered.emplace(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_DELIVERED_CE: {
-        metrics->packet_delivered_ce.set(read_unaligned<uint32_t>(val));
+        metrics->packet_delivered_ce.emplace(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_BYTES_RETRANS: {
-        metrics->data_retx.set(read_unaligned<uint64_t>(val));
+        metrics->data_retx.emplace(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DSACK_DUPS: {
-        metrics->packet_spurious_retx.set(read_unaligned<uint32_t>(val));
+        metrics->packet_spurious_retx.emplace(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_REORDERING: {
-        metrics->reordering.set(read_unaligned<uint32_t>(val));
+        metrics->reordering.emplace(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_SND_SSTHRESH: {
-        metrics->snd_ssthresh.set(read_unaligned<uint32_t>(val));
+        metrics->snd_ssthresh.emplace(read_unaligned<uint32_t>(val));
         break;
       }
     }
@@ -197,7 +198,7 @@ static int get_socket_tcp_info(grpc_core::tcp_info* info, int fd) {
 void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
                                void* arg) {
   GPR_DEBUG_ASSERT(head != nullptr);
-  TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
+  TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   /* Store the current time as the sendmsg time. */
   new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
   new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
@@ -254,7 +255,7 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
            * restriction on the lifetime. */
           timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
           next = elem->next_;
-          Delete<TracedBuffer>(elem);
+          delete static_cast<TracedBuffer*>(elem);
           *head = elem = next;
           break;
         default:
@@ -273,7 +274,7 @@ void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
   while (elem != nullptr) {
     timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
     auto* next = elem->next_;
-    Delete<TracedBuffer>(elem);
+    delete elem;
     elem = next;
   }
   *head = nullptr;
@@ -293,8 +294,13 @@ void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
 #else /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {
-void grpc_tcp_set_write_timestamps_callback(
-    void (*/*fn*/)(void*, grpc_core::Timestamps*, grpc_error* error)) {
+void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
+                                                       grpc_core::Timestamps*,
+                                                       grpc_error* error)) {
+  // Cast value of fn to void to avoid unused parameter warning.
+  // Can't comment out the name because some compilers and formatters don't
+  // like the sequence */* , which would arise from */*fn*/.
+  (void)fn;
   gpr_log(GPR_DEBUG, "Timestamps callback is not enabled for this platform");
 }
 } /* namespace grpc_core */

@@ -27,7 +27,6 @@ load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
-
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
 
@@ -56,6 +55,8 @@ def _get_external_deps(external_deps):
             })
         elif dep == "cronet_c_for_grpc":
             ret += ["//third_party/objective_c/Cronet:cronet_c_for_grpc"]
+        elif dep.startswith("absl/"):
+            ret += ["@com_google_absl//" + dep]
         else:
             ret += ["//external:" + dep]
     return ret
@@ -83,6 +84,7 @@ def grpc_cc_library(
     linkopts = if_not_windows(["-pthread"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
+
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -106,8 +108,8 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
-            "include", 
-            "src/core/ext/upb-generated", # Once upb code-gen issue is resolved, remove this.
+            "include",
+            "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,
@@ -138,11 +140,12 @@ def grpc_proto_library(
         use_external = use_external,
         generate_mocks = generate_mocks,
     )
+
 def ios_cc_test(
         name,
         tags = [],
         **kwargs):
-    ios_test_adapter = "//third_party/objective_c/google_toolbox_for_mac:GTM_GoogleTestRunner_GTM_USING_XCTEST";
+    ios_test_adapter = "//third_party/objective_c/google_toolbox_for_mac:GTM_GoogleTestRunner_GTM_USING_XCTEST"
 
     test_lib_ios = name + "_test_lib_ios"
     ios_tags = tags + ["manual", "ios_cc_test"]
@@ -165,10 +168,13 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None):
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
+
+    # NOTE: these attributes won't be used for the poller-specific versions of a test
+    # automatically, you need to set them explicitly (if applicable)
     args = {
         "srcs": srcs,
         "args": args,
@@ -179,9 +185,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "size": size,
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,
+        "exec_properties": exec_properties,
+        "shard_count": shard_count,
     }
     if uses_polling:
-        # the vanilla version of the test should run on platforms that only 
+        # the vanilla version of the test should run on platforms that only
         # support a single poller
         native.cc_test(
             name = name,
@@ -191,6 +199,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             ]),
             **args
         )
+
         # on linux we run the same test multiple times, once for each poller
         for poller in POLLERS:
             native.sh_test(
@@ -207,6 +216,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 ] + args["args"],
                 tags = (tags + ["no_windows", "no_mac"]),
                 exec_compatible_with = exec_compatible_with,
+                exec_properties = exec_properties,
+                shard_count = shard_count,
             )
     else:
         # the test behavior doesn't depend on polling, just generate the test
@@ -216,7 +227,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         tags = tags,
         **args
     )
-
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []
@@ -260,14 +270,15 @@ def grpc_sh_binary(name, srcs, data = []):
         data = data,
     )
 
-def grpc_py_binary(name,
-                   srcs,
-                   data = [],
-                   deps = [],
-                   external_deps = [],
-                   testonly = False,
-                   python_version = "PY2",
-                   **kwargs):
+def grpc_py_binary(
+        name,
+        srcs,
+        data = [],
+        deps = [],
+        external_deps = [],
+        testonly = False,
+        python_version = "PY2",
+        **kwargs):
     native.py_binary(
         name = name,
         srcs = srcs,
@@ -317,7 +328,7 @@ def grpc_objc_library(
         deps: dependencies
         visibility: visibility, default to public
     """
-    
+
     native.objc_library(
         name = name,
         hdrs = hdrs,
@@ -329,14 +340,12 @@ def grpc_objc_library(
         includes = includes,
         visibility = visibility,
     )
-    
+
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
-
 
 def python_config_settings():
     native.config_setting(
         name = "python3",
         flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
     )
-

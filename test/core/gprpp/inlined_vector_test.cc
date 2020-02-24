@@ -62,8 +62,8 @@ TEST(InlinedVectorTest, ValuesAreInlined) {
 }
 
 TEST(InlinedVectorTest, PushBackWithMove) {
-  InlinedVector<UniquePtr<int>, 1> v;
-  UniquePtr<int> i = MakeUnique<int>(3);
+  InlinedVector<std::unique_ptr<int>, 1> v;
+  std::unique_ptr<int> i = absl::make_unique<int>(3);
   v.push_back(std::move(i));
   EXPECT_EQ(nullptr, i.get());
   EXPECT_EQ(1UL, v.size());
@@ -71,8 +71,8 @@ TEST(InlinedVectorTest, PushBackWithMove) {
 }
 
 TEST(InlinedVectorTest, EmplaceBack) {
-  InlinedVector<UniquePtr<int>, 1> v;
-  v.emplace_back(New<int>(3));
+  InlinedVector<std::unique_ptr<int>, 1> v;
+  v.emplace_back(new int(3));
   EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
 }
@@ -304,15 +304,15 @@ TEST(InlinedVectorTest, MoveAssignmentAllocatedAllocated) {
 // and move methods are called correctly.
 class Value {
  public:
-  explicit Value(int v) : value_(MakeUnique<int>(v)) {}
+  explicit Value(int v) : value_(absl::make_unique<int>(v)) {}
 
   // copyable
   Value(const Value& v) {
-    value_ = MakeUnique<int>(*v.value_);
+    value_ = absl::make_unique<int>(*v.value_);
     copied_ = true;
   }
   Value& operator=(const Value& v) {
-    value_ = MakeUnique<int>(*v.value_);
+    value_ = absl::make_unique<int>(*v.value_);
     copied_ = true;
     return *this;
   }
@@ -328,12 +328,12 @@ class Value {
     return *this;
   }
 
-  const UniquePtr<int>& value() const { return value_; }
+  const std::unique_ptr<int>& value() const { return value_; }
   bool copied() const { return copied_; }
   bool moved() const { return moved_; }
 
  private:
-  UniquePtr<int> value_;
+  std::unique_ptr<int> value_;
   bool copied_ = false;
   bool moved_ = false;
 };
@@ -461,12 +461,12 @@ TEST(InlinedVectorTest, MoveAssignmentMovesElementsAllocated) {
 }
 
 TEST(InlinedVectorTest, PopBackInlined) {
-  InlinedVector<UniquePtr<int>, 2> v;
+  InlinedVector<std::unique_ptr<int>, 2> v;
   // Add two elements, pop one out
-  v.push_back(MakeUnique<int>(3));
+  v.push_back(absl::make_unique<int>(3));
   EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
-  v.push_back(MakeUnique<int>(5));
+  v.push_back(absl::make_unique<int>(5));
   EXPECT_EQ(2UL, v.size());
   EXPECT_EQ(5, *v[1]);
   v.pop_back();
@@ -475,10 +475,10 @@ TEST(InlinedVectorTest, PopBackInlined) {
 
 TEST(InlinedVectorTest, PopBackAllocated) {
   const int kInlinedSize = 2;
-  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  InlinedVector<std::unique_ptr<int>, kInlinedSize> v;
   // Add elements to ensure allocated backing.
   for (size_t i = 0; i < kInlinedSize + 1; ++i) {
-    v.push_back(MakeUnique<int>(3));
+    v.push_back(absl::make_unique<int>(3));
     EXPECT_EQ(i + 1, v.size());
   }
   size_t sz = v.size();
@@ -488,13 +488,13 @@ TEST(InlinedVectorTest, PopBackAllocated) {
 
 TEST(InlinedVectorTest, Resize) {
   const int kInlinedSize = 2;
-  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  InlinedVector<std::unique_ptr<int>, kInlinedSize> v;
   // Size up.
   v.resize(5);
   EXPECT_EQ(5UL, v.size());
   EXPECT_EQ(nullptr, v[4]);
   // Size down.
-  v[4] = MakeUnique<int>(5);
+  v[4] = absl::make_unique<int>(5);
   v.resize(1);
   EXPECT_EQ(1UL, v.size());
 }

@@ -197,12 +197,12 @@ class Subchannel {
   };
 
   // The ctor and dtor are not intended to use directly.
-  Subchannel(SubchannelKey* key, grpc_connector* connector,
+  Subchannel(SubchannelKey* key, OrphanablePtr<SubchannelConnector> connector,
              const grpc_channel_args* args);
   ~Subchannel();
 
   // Creates a subchannel given \a connector and \a args.
-  static Subchannel* Create(grpc_connector* connector,
+  static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
                             const grpc_channel_args* args);
 
   // Strong and weak refcounting.
@@ -242,7 +242,7 @@ class Subchannel {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      UniquePtr<char> health_check_service_name,
+      grpc_core::UniquePtr<char> health_check_service_name,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
@@ -293,8 +293,8 @@ class Subchannel {
    private:
     // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
     // be a set instead of a map.
-    Map<ConnectivityStateWatcherInterface*,
-        OrphanablePtr<ConnectivityStateWatcherInterface>>
+    std::map<ConnectivityStateWatcherInterface*,
+             OrphanablePtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 
@@ -311,7 +311,7 @@ class Subchannel {
    public:
     void AddWatcherLocked(
         Subchannel* subchannel, grpc_connectivity_state initial_state,
-        UniquePtr<char> health_check_service_name,
+        grpc_core::UniquePtr<char> health_check_service_name,
         OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const char* health_check_service_name,
                              ConnectivityStateWatcherInterface* watcher);
@@ -327,7 +327,7 @@ class Subchannel {
    private:
     class HealthWatcher;
 
-    Map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
+    std::map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
   };
 
   class ConnectedSubchannelStateWatcher;
@@ -365,9 +365,9 @@ class Subchannel {
   gpr_atm ref_pair_;
 
   // Connection states.
-  grpc_connector* connector_ = nullptr;
+  OrphanablePtr<SubchannelConnector> connector_;
   // Set during connection.
-  grpc_connect_out_args connecting_result_;
+  SubchannelConnector::Result connecting_result_;
   grpc_closure on_connecting_finished_;
   // Active connection, or null.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;

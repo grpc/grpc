@@ -48,31 +48,31 @@ TEST(RefCountedPtr, ExplicitConstructorEmpty) {
   RefCountedPtr<Foo> foo(nullptr);
 }
 
-TEST(RefCountedPtr, ExplicitConstructor) { RefCountedPtr<Foo> foo(New<Foo>()); }
+TEST(RefCountedPtr, ExplicitConstructor) { RefCountedPtr<Foo> foo(new Foo()); }
 
 TEST(RefCountedPtr, MoveConstructor) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   RefCountedPtr<Foo> foo2(std::move(foo));
   EXPECT_EQ(nullptr, foo.get());
   EXPECT_NE(nullptr, foo2.get());
 }
 
 TEST(RefCountedPtr, MoveAssignment) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   RefCountedPtr<Foo> foo2 = std::move(foo);
   EXPECT_EQ(nullptr, foo.get());
   EXPECT_NE(nullptr, foo2.get());
 }
 
 TEST(RefCountedPtr, CopyConstructor) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   const RefCountedPtr<Foo>& foo2(foo);
   EXPECT_NE(nullptr, foo.get());
   EXPECT_EQ(foo.get(), foo2.get());
 }
 
 TEST(RefCountedPtr, CopyAssignment) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   const RefCountedPtr<Foo>& foo2 = foo;
   EXPECT_NE(nullptr, foo.get());
   EXPECT_EQ(foo.get(), foo2.get());
@@ -87,12 +87,12 @@ TEST(RefCountedPtr, CopyAssignmentWhenEmpty) {
 }
 
 TEST(RefCountedPtr, CopyAssignmentToSelf) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   foo = *&foo;  // The "*&" avoids warnings from LLVM -Wself-assign.
 }
 
 TEST(RefCountedPtr, EnclosedScope) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   {
     RefCountedPtr<Foo> foo2(std::move(foo));
     EXPECT_EQ(nullptr, foo.get());
@@ -104,21 +104,21 @@ TEST(RefCountedPtr, EnclosedScope) {
 TEST(RefCountedPtr, ResetFromNullToNonNull) {
   RefCountedPtr<Foo> foo;
   EXPECT_EQ(nullptr, foo.get());
-  foo.reset(New<Foo>());
+  foo.reset(new Foo());
   EXPECT_NE(nullptr, foo.get());
 }
 
 TEST(RefCountedPtr, ResetFromNonNullToNonNull) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   EXPECT_NE(nullptr, foo.get());
   Foo* original = foo.get();
-  foo.reset(New<Foo>());
+  foo.reset(new Foo());
   EXPECT_NE(nullptr, foo.get());
   EXPECT_NE(original, foo.get());
 }
 
 TEST(RefCountedPtr, ResetFromNonNullToNull) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   EXPECT_NE(nullptr, foo.get());
   foo.reset();
   EXPECT_EQ(nullptr, foo.get());
@@ -132,14 +132,14 @@ TEST(RefCountedPtr, ResetFromNullToNull) {
 }
 
 TEST(RefCountedPtr, DerefernceOperators) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   foo->value();
   Foo& foo_ref = *foo;
   foo_ref.value();
 }
 
 TEST(RefCountedPtr, EqualityOperators) {
-  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo(new Foo());
   RefCountedPtr<Foo> bar = foo;
   RefCountedPtr<Foo> empty;
   // Test equality between RefCountedPtrs.
@@ -152,8 +152,8 @@ TEST(RefCountedPtr, EqualityOperators) {
 }
 
 TEST(RefCountedPtr, Swap) {
-  Foo* foo = New<Foo>();
-  Foo* bar = New<Foo>();
+  Foo* foo = new Foo();
+  Foo* bar = new Foo();
   RefCountedPtr<Foo> ptr1(foo);
   RefCountedPtr<Foo> ptr2(bar);
   ptr1.swap(ptr2);
@@ -183,7 +183,7 @@ class FooWithTracing : public RefCounted<FooWithTracing> {
 };
 
 TEST(RefCountedPtr, RefCountedWithTracing) {
-  RefCountedPtr<FooWithTracing> foo(New<FooWithTracing>());
+  RefCountedPtr<FooWithTracing> foo(new FooWithTracing());
   RefCountedPtr<FooWithTracing> foo2 = foo->Ref(DEBUG_LOCATION, "foo");
   foo2.release();
   foo->Unref(DEBUG_LOCATION, "foo");
@@ -200,7 +200,7 @@ class Subclass : public BaseClass {
 };
 
 TEST(RefCountedPtr, ConstructFromSubclass) {
-  RefCountedPtr<BaseClass> p(New<Subclass>());
+  RefCountedPtr<BaseClass> p(new Subclass());
 }
 
 TEST(RefCountedPtr, CopyAssignFromSubclass) {
@@ -222,12 +222,12 @@ TEST(RefCountedPtr, MoveAssignFromSubclass) {
 TEST(RefCountedPtr, ResetFromSubclass) {
   RefCountedPtr<BaseClass> b;
   EXPECT_EQ(nullptr, b.get());
-  b.reset(New<Subclass>());
+  b.reset(new Subclass());
   EXPECT_NE(nullptr, b.get());
 }
 
 TEST(RefCountedPtr, EqualityWithSubclass) {
-  Subclass* s = New<Subclass>();
+  Subclass* s = new Subclass();
   RefCountedPtr<BaseClass> b(s);
   EXPECT_EQ(b, s);
 }

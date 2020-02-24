@@ -39,6 +39,7 @@
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
 #include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/sync_abseil.h>
 #include <grpc/impl/codegen/sync_custom.h>
 #include <grpc/impl/codegen/sync_generic.h>
 #include <grpc/load_reporting.h>
@@ -52,6 +53,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/sync_abseil.h>
 #include <grpc/support/sync_custom.h>
 #include <grpc/support/sync_generic.h>
 #include <grpc/support/thd_id.h>
@@ -201,6 +203,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_local_server_credentials_create);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_verification_option);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_key_materials_config);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_credential_reload_config);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_authorization_check_config);
@@ -282,8 +285,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_realloc);
   printf("%lx", (unsigned long) gpr_malloc_aligned);
   printf("%lx", (unsigned long) gpr_free_aligned);
-  printf("%lx", (unsigned long) gpr_set_allocation_functions);
-  printf("%lx", (unsigned long) gpr_get_allocation_functions);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
   printf("%lx", (unsigned long) gpr_strdup);

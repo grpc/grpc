@@ -28,6 +28,7 @@
 
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/iomgr/closure.h"
 
@@ -53,8 +54,6 @@ typedef struct grpc_combiner grpc_combiner;
 /* This application callback exec ctx was initialized by an internal thread, and
    should not be counted by fork handlers */
 #define GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD 1
-
-extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
@@ -220,6 +219,11 @@ class ExecCtx {
   static void Set(ExecCtx* exec_ctx) {
     gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
   }
+
+  static void Run(const DebugLocation& location, grpc_closure* closure,
+                  grpc_error* error);
+
+  static void RunList(const DebugLocation& location, grpc_closure_list* list);
 
  protected:
   /** Check if ready to finish. */
