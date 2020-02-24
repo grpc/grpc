@@ -364,33 +364,53 @@ class Subchannel::ConnectedSubchannelStateWatcher
 
 // Asynchronously notifies the \a watcher of a change in the connectvity state
 // of \a subchannel to the current \a state. Deletes itself when done.
-class Subchannel::AsyncWatcherNotifier {
+class Subchannel::AsyncWatcherNotifierLocked {
  public:
-  AsyncWatcherNotifier(
+  AsyncWatcherNotifierLocked(
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher,
       Subchannel* subchannel, grpc_connectivity_state state)
-      : watcher_(std::move(watcher)), state_(state) {
-    if (state_ == GRPC_CHANNEL_READY) {
-      connected_subchannel_ = subchannel->connected_subchannel_;
+      : subchannel_(subchannel), watcher_(std::move(watcher)) {
+    gpr_log(GPR_ERROR, "pushing connectivity state change %d", state);
+    {
+      MutexLock(watcher_->mu());
+      watcher_->PushConnectivityStateChangeLocked(state);
     }
-    ExecCtx::Run(DEBUG_LOCATION,
-                 GRPC_CLOSURE_INIT(
-                     &closure_,
-                     [](void* arg, grpc_error* /*error*/) {
-                       auto* self = static_cast<AsyncWatcherNotifier*>(arg);
-                       self->watcher_->OnConnectivityStateChange(
-                           self->state_,
-                           std::move(self->connected_subchannel_));
-                       delete self;
-                     },
-                     this, nullptr),
-                 GRPC_ERROR_NONE);
+    ExecCtx::Run(
+        DEBUG_LOCATION,
+        GRPC_CLOSURE_INIT(
+            &closure_,
+            [](void* arg, grpc_error* /*error*/) {
+              auto* self = static_cast<AsyncWatcherNotifierLocked*>(arg);
+              while (true) {
+                grpc_connectivity_state state;
+                RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+                gpr_log(GPR_ERROR, "lock %p", self->watcher_->mu());
+                gpr_mu_lock(self->watcher_->mu()->get());
+                {
+                  if (!self->watcher_->PopConnectivityStateChangeLocked(
+                          &state)) {
+                    gpr_mu_unlock(self->watcher_->mu()->get());
+                    break;
+                  }
+                  gpr_log(GPR_ERROR, "popping connectivity state change %d",
+                          state);
+                  if (state == GRPC_CHANNEL_READY) {
+                    connected_subchannel =
+                        self->subchannel_->connected_subchannel_;
+                  }
+                }
+                self->watcher_->OnConnectivityStateChange(
+                    state, std::move(connected_subchannel));
+              }
+              delete self;
+            },
+            this, nullptr),
+        GRPC_ERROR_NONE);
   }
 
  private:
+  Subchannel* subchannel_;
   RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher_;
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  grpc_connectivity_state state_;
   grpc_closure closure_;
 };
 
@@ -411,7 +431,8 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     Subchannel* subchannel, grpc_connectivity_state state) {
   for (const auto& p : watchers_) {
-    new AsyncWatcherNotifier(p.second, subchannel, state);
+    gpr_log(GPR_ERROR, "AsyncWatcherNotifierLocked");
+    new AsyncWatcherNotifierLocked(p.second, subchannel, state);
   }
 }
 
@@ -450,7 +471,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       grpc_connectivity_state initial_state,
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
     if (state_ != initial_state) {
-      new AsyncWatcherNotifier(watcher, subchannel_, state_);
+      gpr_log(GPR_ERROR, "AsyncWatcherNotifierLocked");
+      new AsyncWatcherNotifierLocked(watcher, subchannel_, state_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
@@ -811,7 +833,8 @@ void Subchannel::WatchConnectivityState(
   }
   if (health_check_service_name == nullptr) {
     if (state_ != initial_state) {
-      new AsyncWatcherNotifier(watcher, this, state_);
+      gpr_log(GPR_ERROR, "AsyncWatcherNotifierLocked");
+      new AsyncWatcherNotifierLocked(watcher, this, state_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {

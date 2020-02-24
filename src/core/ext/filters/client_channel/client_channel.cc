@@ -1059,9 +1059,14 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           : parent_(std::move(parent)),
             state_(new_state),
             connected_subchannel_(std::move(connected_subchannel)) {
+        gpr_log(GPR_ERROR, "updater run %p", parent_->mu());
+        running_exec_ctx_ = ExecCtx::Get();
         parent_->parent_->chand_->work_serializer_->Run(
             [this]() { ApplyUpdateInControlPlaneWorkSerializer(); },
             DEBUG_LOCATION);
+        if (!run_inline_) {
+          gpr_mu_unlock(parent_->mu()->get());
+        }
       }
 
      private:
@@ -1074,6 +1079,11 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                   parent_->parent_->chand_, parent_->parent_.get(),
                   parent_->parent_->subchannel_, connected_subchannel_.get(),
                   ConnectivityStateName(state_), parent_->watcher_.get());
+        }
+        if (ExecCtx::Get() == running_exec_ctx_) {
+          // Running inline
+          gpr_mu_unlock(parent_->mu()->get());
+          run_inline_ = true;
         }
         // Ignore update if the parent WatcherWrapper has been replaced
         // since this callback was scheduled.
@@ -1088,6 +1098,9 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       RefCountedPtr<WatcherWrapper> parent_;
       grpc_connectivity_state state_;
       RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+      bool run_inline_ = false;
+      /* This can be replaced with something like getting the thread id */
+      ExecCtx* running_exec_ctx_ = nullptr;
     };
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
