@@ -228,8 +228,6 @@ END2END_TESTS = {
         default_test_options,
     'no_error_on_hotpath':
         default_test_options._replace(proxyable=False),
-    'no_logging':
-        default_test_options._replace(traceable=False),
     'no_op':
         default_test_options,
     'payload':

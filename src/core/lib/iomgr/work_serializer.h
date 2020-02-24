@@ -54,6 +54,9 @@ class WorkSerializer {
   void Run(std::function<void()> callback,
            const grpc_core::DebugLocation& location);
 
+  void Run(std::function<void()> callback, grpc_core::Mutex* lock,
+           const grpc_core::DebugLocation& location);
+
  private:
   class WorkSerializerImpl;
 

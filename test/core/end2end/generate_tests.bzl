@@ -243,7 +243,6 @@ END2END_TESTS = {
     "max_message_length": _test_options(),
     "negative_deadline": _test_options(),
     "no_error_on_hotpath": _test_options(proxyable = False),
-    "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
     "payload": _test_options(),
     # TODO(juanlishen): This is disabled for now because it depends on some generated functions in

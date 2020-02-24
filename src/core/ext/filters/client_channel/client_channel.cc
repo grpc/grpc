@@ -1059,9 +1059,10 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           : parent_(std::move(parent)),
             state_(new_state),
             connected_subchannel_(std::move(connected_subchannel)) {
+        gpr_log(GPR_ERROR, "updater run %p", parent_->mu());
         parent_->parent_->chand_->work_serializer_->Run(
             [this]() { ApplyUpdateInControlPlaneWorkSerializer(); },
-            DEBUG_LOCATION);
+            parent_->mu(), DEBUG_LOCATION);
       }
 
      private:

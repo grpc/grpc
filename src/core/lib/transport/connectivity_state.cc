@@ -31,7 +31,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_connectivity_state_trace(false, "connectivity_state");
+TraceFlag grpc_connectivity_state_trace(true, "connectivity_state");
 
 const char* ConnectivityStateName(grpc_connectivity_state state) {
   switch (state) {

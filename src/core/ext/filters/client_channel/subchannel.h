@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <deque>
+
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -194,6 +196,37 @@ class Subchannel {
         = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
+
+    // TODO(yashkt): This is currently needed to send the state updates in the
+    // right order when asynchronously notifying. This will no longer be
+    // necessary when we have access to EventManager. Enqueues connectivity
+    // state change notifications. Does NOT
+    void PushConnectivityStateChangeLocked(grpc_connectivity_state state) {
+      connectivity_state_queue_.push_back(state);
+    }
+
+    // Dequeues connectivity state change notifications. If the queue is empty,
+    // it returns false, otherwise returns true and sets \a state to the popped
+    // state change.
+    bool PopConnectivityStateChangeLocked(grpc_connectivity_state* state) {
+      if (connectivity_state_queue_.empty()) {
+        return false;
+      } else {
+        *state = connectivity_state_queue_.front();
+        connectivity_state_queue_.pop_front();
+        return true;
+      }
+    }
+
+    Mutex* mu() { return &mu_; }
+
+   private:
+    // Keeps track of the updates that the watcher instance must be notified of.
+    // TODO(yashkt): This is currently needed to send the state updates in the
+    // right order when asynchronously notifying. This will no longer be
+    // necessary when we have access to EventManager.
+    std::deque<grpc_connectivity_state> connectivity_state_queue_;
+    Mutex mu_;  // protects the queue
   };
 
   // The ctor and dtor are not intended to use directly.
@@ -332,7 +365,7 @@ class Subchannel {
 
   class ConnectedSubchannelStateWatcher;
 
-  class AsyncWatcherNotifier;
+  class AsyncWatcherNotifierLocked;
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state);

@@ -44,7 +44,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_round_robin_trace(false, "round_robin");
+TraceFlag grpc_lb_round_robin_trace(true, "round_robin");
 
 namespace {
 

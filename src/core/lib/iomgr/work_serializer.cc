@@ -35,7 +35,7 @@ struct CallbackWrapper {
 
 class WorkSerializer::WorkSerializerImpl : public Orphanable {
  public:
-  void Run(std::function<void()> callback,
+  void Run(std::function<void()> callback, grpc_core::Mutex* lock,
            const grpc_core::DebugLocation& location);
 
   void Orphan() override;
@@ -50,7 +50,8 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
 };
 
 void WorkSerializer::WorkSerializerImpl::Run(
-    std::function<void()> callback, const grpc_core::DebugLocation& location) {
+    std::function<void()> callback, grpc_core::Mutex* lock,
+    const grpc_core::DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
@@ -64,6 +65,10 @@ void WorkSerializer::WorkSerializerImpl::Run(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Executing immediately");
     }
+    if (lock != nullptr) {
+      gpr_log(GPR_ERROR, "unlock %p", lock);
+      gpr_mu_unlock(lock->get());
+    }
     callback();
     // Loan this thread to the work serializer thread and drain the queue.
     DrainQueue();
@@ -76,6 +81,10 @@ void WorkSerializer::WorkSerializerImpl::Run(
       gpr_log(GPR_INFO, "  Scheduling on queue : item %p", cb_wrapper);
     }
     queue_.Push(&cb_wrapper->mpscq_node);
+    if (lock != nullptr) {
+      gpr_log(GPR_ERROR, "unlock %p", lock);
+      gpr_mu_unlock(lock->get());
+    }
   }
 }
 
@@ -149,7 +158,12 @@ WorkSerializer::~WorkSerializer() {}
 
 void WorkSerializer::Run(std::function<void()> callback,
                          const grpc_core::DebugLocation& location) {
-  impl_->Run(std::move(callback), location);
+  impl_->Run(std::move(callback), nullptr, location);
+}
+
+void WorkSerializer::Run(std::function<void()> callback, grpc_core::Mutex* lock,
+                         const grpc_core::DebugLocation& location) {
+  impl_->Run(std::move(callback), lock, location);
 }
 
 }  // namespace grpc_core
