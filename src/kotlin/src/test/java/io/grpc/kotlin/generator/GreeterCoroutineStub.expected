@@ -1,0 +1,115 @@
+import io.grpc.CallOptions
+import io.grpc.CallOptions.DEFAULT
+import io.grpc.Channel
+import io.grpc.Metadata
+import io.grpc.examples.helloworld.GreeterGrpc
+import io.grpc.examples.helloworld.HelloReply
+import io.grpc.examples.helloworld.HelloRequest
+import io.grpc.examples.helloworld.MultiHelloRequest
+import io.grpc.kotlin.AbstractCoroutineStub
+import io.grpc.kotlin.ClientCalls.bidiStreamingRpc
+import io.grpc.kotlin.ClientCalls.clientStreamingRpc
+import io.grpc.kotlin.ClientCalls.serverStreamingRpc
+import io.grpc.kotlin.ClientCalls.unaryRpc
+import io.grpc.kotlin.StubFor
+import kotlin.jvm.JvmOverloads
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * A stub for issuing RPCs to a(n) helloworld.Greeter service as suspending coroutines.
+ */
+@StubFor(GreeterGrpc::class)
+class GreeterCoroutineStub @JvmOverloads constructor(
+  channel: Channel,
+  callOptions: CallOptions = DEFAULT
+) : AbstractCoroutineStub<GreeterCoroutineStub>(channel, callOptions) {
+  override fun build(channel: Channel, callOptions: CallOptions): GreeterCoroutineStub =
+      GreeterCoroutineStub(channel, callOptions)
+
+  /**
+   * Executes this RPC and returns the response message, suspending until the RPC completes
+   * with [`Status.OK`][io.grpc.Status].  If the RPC completes with another status, a corresponding
+   * [io.grpc.StatusException] is thrown.  If this coroutine is cancelled, the RPC is also cancelled
+   * with the corresponding exception as a cause.
+   *
+   * @param request The request message to send to the server.
+   *
+   * @return The single response from the server.
+   */
+  suspend fun sayHello(request: HelloRequest, headers: Metadata = Metadata()): HelloReply =
+      unaryRpc(
+    channel,
+    GreeterGrpc.getSayHelloMethod(),
+    request,
+    callOptions,
+    headers
+  )
+  /**
+   * Executes this RPC and returns the response message, suspending until the RPC completes
+   * with [`Status.OK`][io.grpc.Status].  If the RPC completes with another status, a corresponding
+   * [io.grpc.StatusException] is thrown.  If this coroutine is cancelled, the RPC is also cancelled
+   * with the corresponding exception as a cause.
+   *
+   * This function collects the [Flow] of requests.  If the server terminates the RPC
+   * for any reason before collection of requests is complete, the collection of requests
+   * will be cancelled.  If the collection of requests completes exceptionally for any other
+   * reason, the RPC will be cancelled for that reason and this method will throw that
+   * exception.
+   *
+   * @param requests A [Flow] of request messages.
+   *
+   * @return The single response from the server.
+   */
+  suspend fun clientStreamSayHello(requests: Flow<HelloRequest>, headers: Metadata = Metadata()):
+      HelloReply = clientStreamingRpc(
+    channel,
+    GreeterGrpc.getClientStreamSayHelloMethod(),
+    requests,
+    callOptions,
+    headers
+  )
+  /**
+   * Returns a [Flow] that, when collected, executes this RPC and emits responses from the
+   * server as they arrive.  That flow finishes normally if the server closes its response with
+   * [`Status.OK`][io.grpc.Status], and fails by throwing a [io.grpc.StatusException] otherwise.  If
+   * collecting the flow downstream fails exceptionally (including via cancellation), the RPC
+   * is cancelled with that exception as a cause.
+   *
+   * @param request The request message to send to the server.
+   *
+   * @return A flow that, when collected, emits the responses from the server.
+   */
+  fun serverStreamSayHello(request: MultiHelloRequest, headers: Metadata = Metadata()):
+      Flow<HelloReply> = serverStreamingRpc(
+    channel,
+    GreeterGrpc.getServerStreamSayHelloMethod(),
+    request,
+    callOptions,
+    headers
+  )
+  /**
+   * Returns a [Flow] that, when collected, executes this RPC and emits responses from the
+   * server as they arrive.  That flow finishes normally if the server closes its response with
+   * [`Status.OK`][io.grpc.Status], and fails by throwing a [io.grpc.StatusException] otherwise.  If
+   * collecting the flow downstream fails exceptionally (including via cancellation), the RPC
+   * is cancelled with that exception as a cause.
+   *
+   * The [Flow] of requests is collected once each time the [Flow] of responses is
+   * collected. If collection of the [Flow] of responses completes normally or
+   * exceptionally before collection of `requests` completes, the collection of
+   * `requests` is cancelled.  If the collection of `requests` completes
+   * exceptionally for any other reason, then the collection of the [Flow] of responses
+   * completes exceptionally for the same reason and the RPC is cancelled with that reason.
+   *
+   * @param requests A [Flow] of request messages.
+   *
+   * @return A flow that, when collected, emits the responses from the server.
+   */
+  fun bidiStreamSayHello(requests: Flow<HelloRequest>, headers: Metadata = Metadata()):
+      Flow<HelloReply> = bidiStreamingRpc(
+    channel,
+    GreeterGrpc.getBidiStreamSayHelloMethod(),
+    requests,
+    callOptions,
+    headers
+  )}

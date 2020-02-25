@@ -1,0 +1,109 @@
+import io.grpc.ServerServiceDefinition
+import io.grpc.ServerServiceDefinition.builder
+import io.grpc.Status
+import io.grpc.Status.UNIMPLEMENTED
+import io.grpc.StatusException
+import io.grpc.examples.helloworld.GreeterGrpc
+import io.grpc.examples.helloworld.GreeterGrpc.getServiceDescriptor
+import io.grpc.examples.helloworld.HelloReply
+import io.grpc.examples.helloworld.HelloRequest
+import io.grpc.examples.helloworld.MultiHelloRequest
+import io.grpc.kotlin.AbstractCoroutineServerImpl
+import io.grpc.kotlin.ServerCalls.bidiStreamingServerMethodDefinition
+import io.grpc.kotlin.ServerCalls.clientStreamingServerMethodDefinition
+import io.grpc.kotlin.ServerCalls.serverStreamingServerMethodDefinition
+import io.grpc.kotlin.ServerCalls.unaryServerMethodDefinition
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Skeletal implementation of the helloworld.Greeter service based on Kotlin coroutines.
+ */
+abstract class GreeterCoroutineImplBase(
+  coroutineContext: CoroutineContext = EmptyCoroutineContext
+) : AbstractCoroutineServerImpl(coroutineContext) {
+  /**
+   * Returns the response to an RPC for helloworld.Greeter.SayHello.
+   *
+   * If this method fails with a [StatusException], the RPC will fail with the corresponding
+   * [Status].  If this method fails with a [java.util.concurrent.CancellationException], the RPC
+   * will fail
+   * with status `Status.CANCELLED`.  If this method fails for any other reason, the RPC will
+   * fail with `Status.UNKNOWN` with the exception as a cause.
+   *
+   * @param request The request from the client.
+   */
+  open suspend fun sayHello(request: HelloRequest): HelloReply = throw
+      StatusException(UNIMPLEMENTED.withDescription("Method helloworld.Greeter.SayHello is unimplemented"))
+
+  /**
+   * Returns the response to an RPC for helloworld.Greeter.ClientStreamSayHello.
+   *
+   * If this method fails with a [StatusException], the RPC will fail with the corresponding
+   * [Status].  If this method fails with a [java.util.concurrent.CancellationException], the RPC
+   * will fail
+   * with status `Status.CANCELLED`.  If this method fails for any other reason, the RPC will
+   * fail with `Status.UNKNOWN` with the exception as a cause.
+   *
+   * @param requests A [Flow] of requests from the client.  This flow can be
+   *        collected only once and throws [java.lang.IllegalStateException] on attempts to collect
+   *        it more than once.
+   */
+  open suspend fun clientStreamSayHello(requests: Flow<HelloRequest>): HelloReply = throw
+      StatusException(UNIMPLEMENTED.withDescription("Method helloworld.Greeter.ClientStreamSayHello is unimplemented"))
+
+  /**
+   * Returns a [Flow] of responses to an RPC for helloworld.Greeter.ServerStreamSayHello.
+   *
+   * If creating or collecting the returned flow fails with a [StatusException], the RPC
+   * will fail with the corresponding [Status].  If it fails with a
+   * [java.util.concurrent.CancellationException], the RPC will fail with status `Status.CANCELLED`.
+   *  If creating
+   * or collecting the returned flow fails for any other reason, the RPC will fail with
+   * `Status.UNKNOWN` with the exception as a cause.
+   *
+   * @param request The request from the client.
+   */
+  open fun serverStreamSayHello(request: MultiHelloRequest): Flow<HelloReply> = throw
+      StatusException(UNIMPLEMENTED.withDescription("Method helloworld.Greeter.ServerStreamSayHello is unimplemented"))
+
+  /**
+   * Returns a [Flow] of responses to an RPC for helloworld.Greeter.BidiStreamSayHello.
+   *
+   * If creating or collecting the returned flow fails with a [StatusException], the RPC
+   * will fail with the corresponding [Status].  If it fails with a
+   * [java.util.concurrent.CancellationException], the RPC will fail with status `Status.CANCELLED`.
+   *  If creating
+   * or collecting the returned flow fails for any other reason, the RPC will fail with
+   * `Status.UNKNOWN` with the exception as a cause.
+   *
+   * @param requests A [Flow] of requests from the client.  This flow can be
+   *        collected only once and throws [java.lang.IllegalStateException] on attempts to collect
+   *        it more than once.
+   */
+  open fun bidiStreamSayHello(requests: Flow<HelloRequest>): Flow<HelloReply> = throw
+      StatusException(UNIMPLEMENTED.withDescription("Method helloworld.Greeter.BidiStreamSayHello is unimplemented"))
+
+  final override fun bindService(): ServerServiceDefinition = builder(getServiceDescriptor())
+    .addMethod(unaryServerMethodDefinition(
+    scope = this,
+    descriptor = GreeterGrpc.getSayHelloMethod(),
+    implementation = ::sayHello
+  ))
+    .addMethod(clientStreamingServerMethodDefinition(
+    scope = this,
+    descriptor = GreeterGrpc.getClientStreamSayHelloMethod(),
+    implementation = ::clientStreamSayHello
+  ))
+    .addMethod(serverStreamingServerMethodDefinition(
+    scope = this,
+    descriptor = GreeterGrpc.getServerStreamSayHelloMethod(),
+    implementation = ::serverStreamSayHello
+  ))
+    .addMethod(bidiStreamingServerMethodDefinition(
+    scope = this,
+    descriptor = GreeterGrpc.getBidiStreamSayHelloMethod(),
+    implementation = ::bidiStreamSayHello
+  )).build()
+}
