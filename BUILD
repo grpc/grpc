@@ -559,6 +559,7 @@ grpc_cc_library(
         "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time:time",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,

@@ -166,6 +166,7 @@ config("grpc_config") {
         ":absl/strings:str_format",
         ":absl/strings:strings",
         ":absl/types:optional",
+        ":absl/time:time",
     ]
     
     public_configs = [

@@ -20,8 +20,6 @@
 
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 
-#include <string.h>
-
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/api_trace.h"
 
@@ -29,6 +27,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+
+#include "absl/strings/str_format.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/surface/api_trace.h"
 
 grpc_google_iam_credentials::~grpc_google_iam_credentials() {
   grpc_credentials_mdelem_array_destroy(&md_array_);
@@ -60,6 +62,9 @@ grpc_google_iam_credentials::grpc_google_iam_credentials(
       grpc_slice_from_copied_string(authority_selector));
   grpc_credentials_mdelem_array_add(&md_array_, md);
   GRPC_MDELEM_UNREF(md);
+  debug_string_ = absl::StrFormat(
+      "GoogleIAMCredentials{Token:%s,AuthoritySelector:%s}",
+      token != nullptr ? "present" : "absent", authority_selector);
 }
 
 grpc_call_credentials* grpc_google_iam_credentials_create(

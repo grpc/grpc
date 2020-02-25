@@ -503,6 +503,21 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/str_split.cc \
     third_party/abseil-cpp/absl/strings/string_view.cc \
     third_party/abseil-cpp/absl/strings/substitute.cc \
+    third_party/abseil-cpp/absl/time/civil_time.cc \
+    third_party/abseil-cpp/absl/time/clock.cc \
+    third_party/abseil-cpp/absl/time/duration.cc \
+    third_party/abseil-cpp/absl/time/format.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/civil_time_detail.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_fixed.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_format.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_if.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_impl.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
+    third_party/abseil-cpp/absl/time/time.cc \
     third_party/abseil-cpp/absl/types/bad_optional_access.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
@@ -889,6 +904,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal/str_format)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time/internal/cctz/src)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/types)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel)
