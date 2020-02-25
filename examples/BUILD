@@ -244,3 +244,14 @@ proto_library(
     name = "route_guide_proto",
     srcs = ["protos/route_guide.proto"],
 )
+
+py_proto_library(
+    name = "route_guide_py_pb2",
+    deps = [":route_guide_proto"],
+)
+
+py_grpc_library(
+    name = "route_guide_py_pb2_grpc",
+    srcs = [":route_guide_proto"],
+    deps = [":route_guide_py_pb2"],
+)
