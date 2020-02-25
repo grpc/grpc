@@ -26,6 +26,8 @@ import sys
 import tempfile
 import time
 
+from oauth2client.client import GoogleCredentials
+
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 
@@ -64,6 +66,26 @@ argp.add_argument(
     'Leave GCP VMs and configuration running after test. Default behavior is '
     'to delete when tests complete.')
 argp.add_argument(
+    '--compute_discovery_document',
+    default=None,
+    type=str,
+    help=
+    'If provided, uses this file instead of retrieving via the GCP discovery API'
+)
+argp.add_argument('--network',
+                  default='global/networks/default',
+                  help='GCP network to use')
+argp.add_argument('--grpc_port',
+                  default=55551,
+                  type=int,
+                  help='Listening port for created gRPC backends')
+argp.add_argument('--xds_server',
+                  default='trafficdirector.googleapis.com:443',
+                  help='xDS server')
+argp.add_argument('--source_image',
+                  default='projects/debian-cloud/global/images/family/debian-9',
+                  help='Source image for VMs created during the test')
+argp.add_argument(
     '--tolerate_gcp_errors',
     default=False,
     action='store_true',
@@ -97,7 +119,7 @@ TARGET_PROXY_NAME = 'test-target-proxy' + args.gcp_suffix
 FORWARDING_RULE_NAME = 'test-forwarding-rule' + args.gcp_suffix
 KEEP_GCP_RESOURCES = args.keep_gcp_resources
 TOLERATE_GCP_ERRORS = args.tolerate_gcp_errors
-SERVICE_PORT = 55551
+SERVICE_PORT = args.grpc_port
 STATS_PORT = 55552
 INSTANCE_GROUP_SIZE = 2
 WAIT_FOR_OPERATION_SEC = 60
@@ -109,7 +131,7 @@ BOOTSTRAP_TEMPLATE = """
     "id": "{node_id}"
   }},
   "xds_servers": [{{
-    "server_uri": "trafficdirector.googleapis.com:443",
+    "server_uri": "%s",
     "channel_creds": [
       {{
         "type": "google_default",
@@ -117,7 +139,7 @@ BOOTSTRAP_TEMPLATE = """
       }}
     ]
   }}]
-}}"""
+}}""" % args.xds_server
 
 
 def get_client_stats(num_rpcs, timeout_sec):
@@ -203,13 +225,12 @@ def create_instance_template(compute, name, grpc_port, project):
                 'accessConfigs': [{
                     'type': 'ONE_TO_ONE_NAT'
                 }],
-                'network': 'global/networks/default'
+                'network': args.network
             }],
             'disks': [{
                 'boot': True,
                 'initializeParams': {
-                    'sourceImage':
-                        'projects/debian-cloud/global/images/family/debian-9'
+                    'sourceImage': args.source_image
                 }
             }],
             'metadata': {
@@ -227,7 +248,7 @@ git clone https://github.com/grpc/grpc-java.git
 pushd grpc-java
 pushd interop-testing
 ../gradlew installDist -x test -PskipCodegen=true -PskipAndroid=true
- 
+
 nohup build/install/grpc-interop-testing/bin/xds-test-server --port=%d 1>/dev/null &"""
                         % grpc_port
                 }]
@@ -345,6 +366,7 @@ def create_global_forwarding_rule(compute, name, grpc_port,
         'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
         'portRange': str(grpc_port),
         'IPAddress': '0.0.0.0',
+        'network': args.network,
         'target': target_http_proxy_url,
     }
     result = compute.globalForwardingRules().insert(project=project,
@@ -506,7 +528,12 @@ def start_xds_client():
     return client_process
 
 
-compute = googleapiclient.discovery.build('compute', 'v1')
+if args.compute_discovery_document:
+    with open(args.compute_discovery_document, 'r') as discovery_doc:
+        compute = googleapiclient.discovery.build_from_document(
+            discovery_doc.read())
+else:
+    compute = googleapiclient.discovery.build('compute', 'v1')
 client_process = None
 
 try:
