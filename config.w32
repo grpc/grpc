@@ -472,6 +472,21 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\strings\\str_split.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\string_view.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\substitute.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\civil_time.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\clock.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\duration.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\format.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\civil_time_detail.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_fixed.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_format.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_if.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_impl.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_info.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_libc.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_lookup.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_posix.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\zone_info_source.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\time.cc " +
     "third_party\\abseil-cpp\\absl\\types\\bad_optional_access.cc " +
     "third_party\\address_sorting\\address_sorting.c " +
     "third_party\\address_sorting\\address_sorting_posix.c " +
@@ -923,6 +938,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal\\str_format");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal\\cctz");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\types");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\address_sorting");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel");

@@ -116,6 +116,22 @@ void grpc_composite_call_credentials::cancel_get_request_metadata(
   GRPC_ERROR_UNREF(error);
 }
 
+std::string grpc_composite_call_credentials::debug_string() const {
+  std::string debug_str("CompositeCallCredentials");
+  if (inner_.empty()) {
+    return debug_str;
+  }
+  debug_str.append("{");
+  for (size_t i = 0; i < inner_.size(); ++i) {
+    debug_str.append(inner_[i]->debug_string());
+    if (i != inner_.size() - 1) {
+      debug_str.append(",");
+    }
+  }
+  debug_str.append("}");
+  return debug_str;
+}
+
 static size_t get_creds_array_size(const grpc_call_credentials* creds,
                                    bool is_composite) {
   return is_composite

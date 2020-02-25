@@ -446,6 +446,7 @@
         'absl/strings:str_format',
         'absl/strings:strings',
         'absl/types:optional',
+        'absl/time:time',
       ],
       'sources': [
         'src/core/lib/gpr/alloc.cc',
