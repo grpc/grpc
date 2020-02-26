@@ -15,7 +15,7 @@ settings:
   core_version: 9.0.0
   csharp_major_version: 2
   g_stands_for: guantao
-  version: 1.27.2
+  version: 1.27.3
 filegroups:
 - name: alts_tsi
   headers:
