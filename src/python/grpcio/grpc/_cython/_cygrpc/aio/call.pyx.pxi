@@ -125,7 +125,7 @@ cdef class _AioCall(GrpcCallWrapper):
         if credentials is not None:
             set_credentials_error = grpc_call_set_credentials(self.call, credentials.c())
             if set_credentials_error != GRPC_CALL_OK:
-                raise RuntimeError("Credentials couldn't have been set: {0}".format(set_credentials_error))
+                raise InternalError("Credentials couldn't have been set: {0}".format(set_credentials_error))
 
         grpc_slice_unref(method_slice)
 

@@ -125,7 +125,7 @@ cdef class AioChannel:
         cdef CallCredentials cython_call_credentials
         if python_call_credentials is not None:
             if not self._is_secure:
-                raise RuntimeError("Call credentials are only valid on secure channels")
+                raise UsageError("Call credentials are only valid on secure channels")
 
             cython_call_credentials = python_call_credentials._credentials
         else:
