@@ -336,26 +336,27 @@ void PriorityLb::HandleChildConnectivityStateChange(ChildPriority* child) {
   if (child_priority == UINT32_MAX) return;
   // Ignore lower-than-current priorities.
   if (child_priority > current_priority_) return;
-  // If a higher-than-current priority reports READY, switch to that priority.
-  // Note that this also catches the case of current_priority_ == UINT32_MAX.
-  if (child_priority < current_priority_ &&
-      child->connectivity_state() == GRPC_CHANNEL_READY) {
-    SwitchToHigherPriorityLocked(child_priority);
-  }
   // If a child reports TRANSIENT_FAILURE, start trying the next priority.
   // Note that even if this is for a higher-than-current priority, we
   // may still need to create some children between this priority and
   // the current one (e.g., if we got an update that inserted new
   // priorities ahead of the current one).
-  else if (child->connectivity_state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+  if (child->connectivity_state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     TryNextPriorityLocked(child_priority + 1);
+    return;
   }
-  // At this point, one of the following things has happened to the current
-  // priority.
-  // 1. It remained the same (but received picker update from its child).
-  // 2. It changed to a lower priority due to failover.
-  // 3. It became invalid because failover didn't yield a READY priority.
-  // In any case, update the picker.
+  // The update is for a higher-than-current priority (or for any
+  // priority if we don't have any current priority).
+  if (child_priority < current_priority_) {
+    // If the child reports READY, switch to that priority.
+    // Otherwise, ignore the update.
+    if (child->connectivity_state() == GRPC_CHANNEL_READY) {
+      SwitchToHigherPriorityLocked(child_priority);
+    }
+    return;
+  }
+  // The current priority has returned a new picker without changing
+  // state.  Update the picker.
   UpdatePickerLocked();
 }
 

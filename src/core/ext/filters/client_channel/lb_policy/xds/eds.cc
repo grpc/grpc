@@ -324,10 +324,18 @@ RefCountedPtr<SubchannelInterface> EdsLb::Helper::CreateSubchannel(
 void EdsLb::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
   if (eds_policy_->shutting_down_) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+    gpr_log(GPR_INFO, "[edslb %p] child policy updated state=%s picker=%p",
+            eds_policy_.get(), ConnectivityStateName(state), picker.get());
+  }
   // Save the state and picker.
   eds_policy_->child_state_ = state;
   eds_policy_->child_picker_ =
       MakeRefCounted<ChildPickerWrapper>(std::move(picker));
+  // If the new state is READY, cancel the fallback-at-startup checks.
+  if (state == GRPC_CHANNEL_READY) {
+    eds_policy_->MaybeCancelFallbackAtStartupChecks();
+  }
   // Wrap the picker in a DropPicker and pass it up.
   eds_policy_->MaybeUpdateDropPickerLocked();
 }
