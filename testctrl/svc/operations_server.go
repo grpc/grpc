@@ -18,27 +18,27 @@ import (
 	"context"
 
 	emptyPb "github.com/golang/protobuf/ptypes/empty"
-	pb "github.com/grpc/grpc/testctrl/proto"
+	lrPb "google.golang.org/genproto/googleapis/longrunning"
 )
 
 type OperationsServer struct{}
 
-func (o *OperationsServer) ListOperations(ctx context.Context, req *pb.ListOperationsRequest) (*pb.ListOperationsResponse, error) {
+func (o *OperationsServer) ListOperations(ctx context.Context, req *lrPb.ListOperationsRequest) (*lrPb.ListOperationsResponse, error) {
 	return nil, nil
 }
 
-func (o *OperationsServer) GetOperation(ctx context.Context, req *pb.GetOperationRequest) (*pb.Operation, error) {
+func (o *OperationsServer) GetOperation(ctx context.Context, req *lrPb.GetOperationRequest) (*lrPb.Operation, error) {
 	return nil, nil
 }
 
-func (o *OperationsServer) DeleteOperation(ctx context.Context, req *pb.DeleteOperationRequest) (*emptyPb.Empty, error) {
+func (o *OperationsServer) DeleteOperation(ctx context.Context, req *lrPb.DeleteOperationRequest) (*emptyPb.Empty, error) {
 	return nil, nil
 }
 
-func (o *OperationsServer) CancelOperation(ctx context.Context, req *pb.CancelOperationRequest) (*emptyPb.Empty, error) {
+func (o *OperationsServer) CancelOperation(ctx context.Context, req *lrPb.CancelOperationRequest) (*emptyPb.Empty, error) {
 	return nil, nil
 }
 
-func (o *OperationsServer) WaitOperation(ctx context.Context, req *pb.WaitOperationRequest) (*pb.Operation, error) {
+func (o *OperationsServer) WaitOperation(ctx context.Context, req *lrPb.WaitOperationRequest) (*lrPb.Operation, error) {
 	return nil, nil
 }
