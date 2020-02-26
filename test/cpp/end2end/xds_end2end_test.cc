@@ -36,7 +36,6 @@
 #include <grpcpp/server_builder.h>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_replace.h"
 #include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
@@ -117,8 +116,6 @@ constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
 constexpr char kDefaultResourceName[] = "application_target_name";
-constexpr char kDefaultVersionPrefix[] = "version_";
-constexpr char kDefaultNoncePrefix[] = "nonce_";
 constexpr int kDefaultLocalityWeight = 3;
 constexpr int kDefaultLocalityPriority = 0;
 
@@ -561,7 +558,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
               "ADS[%p]: Erasing resource type %s name %s from resource map "
               "since there are no more subscribers for this unset resource",
               this, resource_type.c_str(), name.c_str());
-      resources_map_[resource_type].erase(resource_it);
+      resource_by_type_map.erase(resource_it);
     }
     subscription_by_type_map.erase(subscription_it);
     if (subscription_by_type_map.empty()) {
@@ -581,11 +578,11 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
       DiscoveryResponse* response) {
     resource_type_response_state_[resource_type] = SENT;
     response->set_type_url(resource_type);
-    response->set_version_info(absl::StrCat(kDefaultVersionPrefix, version));
-    response->set_nonce(absl::StrCat(kDefaultNoncePrefix, version));
+    response->set_version_info(absl::StrCat(version));
+    response->set_nonce(absl::StrCat(version));
     if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
       // For LDS and CDS we must send back all subscribed resources
-      // (even the unchnaged ones)
+      // (even the unchanged ones)
       auto subscription_map_by_type_it = subscription_map.find(resource_type);
       GPR_ASSERT(subscription_map_by_type_it != subscription_map.end());
       for (const auto& subscription : subscription_map_by_type_it->second) {
@@ -632,8 +629,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
       // Main loop to look for requests and updates.
       while (true) {
         // Look for new requests and and decide what to handle.
-        DiscoveryRequest request;
-        DiscoveryResponse request_response;
+        DiscoveryResponse response;
         // Boolean to keep track if the loop received any work to do: a request
         // or an update; regardless whether a response was actually sent out.
         bool did_work = false;
@@ -641,21 +637,19 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
           grpc_core::MutexLock lock(&ads_mu_);
           if (stream_closed) break;
           if (!requests.empty()) {
-            request = std::move(requests.front());
+            DiscoveryRequest request = std::move(requests.front());
             requests.pop_front();
             did_work = true;
             gpr_log(GPR_INFO, "ADS[%p]: Handling request %s with content %s",
                     this, request.type_url().c_str(),
                     request.DebugString().c_str());
             // Identify ACK and NACK by looking for version information and
-            // comparing it to nouce (this server ensures they are always set to
+            // comparing it to nonce (this server ensures they are always set to
             // the same in a response.)
             if (!request.response_nonce().empty()) {
               resource_type_response_state_[request.type_url()] =
                   (!request.version_info().empty() &&
-                   absl::StrReplaceAll(request.version_info(),
-                                       {{"version", "nonce"}}) ==
-                       request.response_nonce())
+                   request.version_info() == request.response_nonce())
                       ? ACKED
                       : NACKED;
             }
@@ -668,32 +662,27 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
                 resource_types_to_ignore_.end()) {
               std::set<std::string> resources_in_current_request;
               std::set<std::string> resources_added_to_response;
-              for (const auto& resource_in_current_request :
+              for (const std::string& resource_name :
                    request.resource_names()) {
-                resources_in_current_request.emplace(
-                    resource_in_current_request);
-                auto subscriber_it = subscription_map[request.type_url()].find(
-                    resource_in_current_request);
+                resources_in_current_request.emplace(resource_name);
+                auto subscriber_it =
+                    subscription_map[request.type_url()].find(resource_name);
                 if (subscriber_it ==
                     subscription_map[request.type_url()].end()) {
-                  ResourceSubscribe(request.type_url(),
-                                    resource_in_current_request, &update_queue,
-                                    &subscription_map);
+                  ResourceSubscribe(request.type_url(), resource_name,
+                                    &update_queue, &subscription_map);
                 }
-                if (ClientNeedsResourceUpdate(request.type_url(),
-                                              resource_in_current_request,
+                if (ClientNeedsResourceUpdate(request.type_url(), resource_name,
                                               &subscription_map)) {
-                  resources_added_to_response.emplace(
-                      resource_in_current_request);
+                  resources_added_to_response.emplace(resource_name);
                   gpr_log(GPR_INFO,
                           "ADS[%p]: Handling resource type %s and name %s",
                           this, request.type_url().c_str(),
-                          resource_in_current_request.c_str());
-                  auto resource = resources_map_[request.type_url()]
-                                                [resource_in_current_request];
+                          resource_name.c_str());
+                  auto resource =
+                      resources_map_[request.type_url()][resource_name];
                   GPR_ASSERT(resource.resource.has_value());
-                  request_response.add_resources()->CopyFrom(
-                      resource.resource.value());
+                  response.add_resources()->CopyFrom(resource.resource.value());
                 }
               }
               // Remove subscriptions no longer requested: build a list of
@@ -712,53 +701,51 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
                 ResourceUnsubscribe(request.type_url(), name,
                                     &subscription_map);
               }
-              if (!request_response.resources().empty()) {
+              if (!response.resources().empty()) {
                 CompleteBuildingDiscoveryResponse(
                     request.type_url(),
                     ++resource_type_version[request.type_url()],
-                    subscription_map, resources_added_to_response,
-                    &request_response);
+                    subscription_map, resources_added_to_response, &response);
               }
             }
           }
         }
-        if (!request_response.resources().empty()) {
+        if (!response.resources().empty()) {
           gpr_log(GPR_INFO, "ADS[%p]: sending request response '%s'", this,
-                  request_response.DebugString().c_str());
-          stream->Write(request_response);
+                  response.DebugString().c_str());
+          stream->Write(response);
         }
-        DiscoveryResponse update_response;
+        response.Clear();
         // Look for updates and decide what to handle.
         {
           grpc_core::MutexLock lock(&ads_mu_);
-          std::pair<std::string, std::string> update;
           if (!update_queue.empty()) {
-            update = std::move(update_queue.front());
+            std::pair<std::string, std::string> update =
+                std::move(update_queue.front());
             update_queue.pop_front();
             did_work = true;
-          }
-          auto subscriber_it =
-              subscription_map[update.first].find(update.second);
-          if (subscriber_it != subscription_map[update.first].end()) {
-            if (ClientNeedsResourceUpdate(update.first, update.second,
-                                          &subscription_map)) {
-              gpr_log(GPR_INFO,
-                      "ADS[%p]: Updating resource type %s and name %s", this,
-                      update.first.c_str(), update.second.c_str());
-              auto resource = resources_map_[update.first][update.second];
-              GPR_ASSERT(resource.resource.has_value());
-              update_response.add_resources()->CopyFrom(
-                  resource.resource.value());
-              CompleteBuildingDiscoveryResponse(
-                  update.first, ++resource_type_version[update.first],
-                  subscription_map, {update.second}, &update_response);
+            auto subscriber_it =
+                subscription_map[update.first].find(update.second);
+            if (subscriber_it != subscription_map[update.first].end()) {
+              if (ClientNeedsResourceUpdate(update.first, update.second,
+                                            &subscription_map)) {
+                gpr_log(GPR_INFO,
+                        "ADS[%p]: Updating resource type %s and name %s", this,
+                        update.first.c_str(), update.second.c_str());
+                auto resource = resources_map_[update.first][update.second];
+                GPR_ASSERT(resource.resource.has_value());
+                response.add_resources()->CopyFrom(resource.resource.value());
+                CompleteBuildingDiscoveryResponse(
+                    update.first, ++resource_type_version[update.first],
+                    subscription_map, {update.second}, &response);
+              }
             }
           }
         }
-        if (!update_response.resources().empty()) {
+        if (!response.resources().empty()) {
           gpr_log(GPR_INFO, "ADS[%p]: sending update response '%s'", this,
-                  update_response.DebugString().c_str());
-          stream->Write(update_response);
+                  response.DebugString().c_str());
+          stream->Write(response);
         }
         // If we didn't find anything to do, delay before the next loop
         // iteration; otherwise, check whether we should exit and then
@@ -1356,6 +1343,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     EXPECT_FALSE(status.ok());
   }
 
+ public:
+  void SetEdsResourceWithDelay(size_t i,
+                               const ClusterLoadAssignment& assignment,
+                               int delay_ms, const std::string& name) {
+    GPR_ASSERT(delay_ms > 0);
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
+    balancers_[i]->ads_service()->SetEdsResource(assignment, name);
+  }
+
+ protected:
   class ServerThread {
    public:
     ServerThread() : port_(g_port_saver->GetPort()) {}
@@ -1503,14 +1500,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 class BasicTest : public XdsEnd2endTest {
  public:
   BasicTest() : XdsEnd2endTest(4, 1) {}
-
-  void SetEdsResourceWithDelay(size_t i,
-                               const ClusterLoadAssignment& assignment,
-                               int delay_ms, const std::string& name) {
-    GPR_ASSERT(delay_ms > 0);
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
-    balancers_[i]->ads_service()->SetEdsResource(assignment, name);
-  }
 };
 
 // Tests that the balancer sends the correct response to the client, and the
@@ -2904,9 +2893,11 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
-  // The ADS service of balancer 0 sent a single response.
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::SENT);
+  // The ADS service of balancer 0 sent at least 1 response.
+  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::SENT ||
+                      balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::ACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -2924,9 +2915,11 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // The current LB call is still working, so xds continued using it to the
   // first balancer, which doesn't assign the second backend.
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-  // The ADS service of balancer 0 sent got a ACK for the response sent.
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::ACKED);
+  // The ADS service of balancer 0 sent at least 1 response.
+  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::SENT ||
+                      balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::ACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -2959,9 +2952,11 @@ TEST_P(BalancerUpdateTest, Repeated) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
-  // The ADS service of balancer 0 sent a single response.
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::SENT);
+  // The ADS service of balancer 0 sent at least 1 response.
+  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::SENT ||
+                      balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::ACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3023,6 +3018,15 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
+  // The ADS service of balancer 0 sent at least 1 response.
+  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::SENT ||
+                      balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::ACKED);
+  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
   // Kill balancer 0
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
   balancers_[0]->Shutdown();
@@ -3034,7 +3038,13 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   // All 10 requests should again have gone to the first backend.
   EXPECT_EQ(20U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-  // TODO(donnadionne) should add checks back for SENT or ACK.
+  // The ADS service of no balancers sent anything
+  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -3050,7 +3060,15 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backends_[1]->backend_service()->request_count());
-  // TODO(donnadionne) should add checks back for SENT or ACK.
+  // The ADS service of balancer 1 sent at least 1 response.
+  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_EQ(true, balancers_[1]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::SENT ||
+                      balancers_[1]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::ACKED);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
 }
 
 // The re-resolution tests are deferred because they rely on the fallback mode,
