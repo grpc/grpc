@@ -145,34 +145,6 @@ class GrpcLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class StateWatcher : public AsyncConnectivityStateWatcherInterface {
-   public:
-    explicit StateWatcher(RefCountedPtr<GrpcLb> parent)
-        : AsyncConnectivityStateWatcherInterface(parent->combiner()),
-          parent_(std::move(parent)) {}
-
-   private:
-    void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
-      if (!parent_->shutting_down_ &&
-          parent_->fallback_at_startup_checks_pending_) {
-        if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
-          // fallback mode immediately.
-          gpr_log(GPR_INFO,
-                  "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
-                  "entering fallback mode",
-                  parent_.get());
-          parent_->fallback_at_startup_checks_pending_ = false;
-          grpc_timer_cancel(&parent_->lb_fallback_timer_);
-          parent_->fallback_mode_ = true;
-          parent_->CreateOrUpdateChildPolicyLocked();
-        }
-      }
-    }
-
-    RefCountedPtr<GrpcLb> parent_;
-  };
-
   /// Contains a call to the LB server and all the data related to the call.
   class BalancerCallState : public InternallyRefCounted<BalancerCallState> {
    public:
@@ -341,6 +313,10 @@ class GrpcLb : public LoadBalancingPolicy {
   // Helper functions used in UpdateLocked().
   void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
                                             const grpc_channel_args& args);
+  static void OnBalancerChannelConnectivityChanged(void* arg,
+                                                   grpc_error* error);
+  static void OnBalancerChannelConnectivityChangedLocked(void* arg,
+                                                         grpc_error* error);
   void CancelBalancerChannelConnectivityWatchLocked();
 
   // Methods for dealing with fallback state.
@@ -416,7 +392,6 @@ class GrpcLb : public LoadBalancingPolicy {
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config_;
   // Child policy in state READY.
   bool child_policy_ready_ = false;
-  StateWatcher* watcher_;
 };
 
 //
@@ -1497,10 +1472,15 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
         grpc_channel_get_channel_stack(lb_channel_));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
     // Ref held by callback.
-    watcher_ = new StateWatcher(Ref());
-    grpc_client_channel_start_connectivity_watch(
-        client_channel_elem, GRPC_CHANNEL_IDLE,
-        OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
+    Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
+    GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
+                      &GrpcLb::OnBalancerChannelConnectivityChanged, this,
+                      grpc_schedule_on_exec_ctx);
+    grpc_client_channel_watch_connectivity_state(
+        client_channel_elem,
+        grpc_polling_entity_create_from_pollset_set(interested_parties()),
+        &lb_channel_connectivity_, &lb_channel_on_connectivity_changed_,
+        nullptr);
     // Start balancer call.
     StartBalancerCallLocked();
   }
@@ -1559,11 +1539,60 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   response_generator_->SetResponse(std::move(result));
 }
 
+void GrpcLb::OnBalancerChannelConnectivityChanged(void* arg,
+                                                  grpc_error* error) {
+  GrpcLb* self = static_cast<GrpcLb*>(arg);
+  self->combiner()->Run(
+      GRPC_CLOSURE_INIT(&self->lb_channel_on_connectivity_changed_,
+                        &GrpcLb::OnBalancerChannelConnectivityChangedLocked,
+                        self, nullptr),
+      GRPC_ERROR_REF(error));
+}
+
+void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
+                                                        grpc_error* /*error*/) {
+  GrpcLb* self = static_cast<GrpcLb*>(arg);
+  if (!self->shutting_down_ && self->fallback_at_startup_checks_pending_) {
+    if (self->lb_channel_connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      // Not in TRANSIENT_FAILURE.  Renew connectivity watch.
+      grpc_channel_element* client_channel_elem =
+          grpc_channel_stack_last_element(
+              grpc_channel_get_channel_stack(self->lb_channel_));
+      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+      GRPC_CLOSURE_INIT(&self->lb_channel_on_connectivity_changed_,
+                        &GrpcLb::OnBalancerChannelConnectivityChanged, self,
+                        grpc_schedule_on_exec_ctx);
+      grpc_client_channel_watch_connectivity_state(
+          client_channel_elem,
+          grpc_polling_entity_create_from_pollset_set(
+              self->interested_parties()),
+          &self->lb_channel_connectivity_,
+          &self->lb_channel_on_connectivity_changed_, nullptr);
+      return;  // Early out so we don't drop the ref below.
+    }
+    // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
+    // fallback mode immediately.
+    gpr_log(GPR_INFO,
+            "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
+            "entering fallback mode",
+            self);
+    self->fallback_at_startup_checks_pending_ = false;
+    grpc_timer_cancel(&self->lb_fallback_timer_);
+    self->fallback_mode_ = true;
+    self->CreateOrUpdateChildPolicyLocked();
+  }
+  // Done watching connectivity state, so drop ref.
+  self->Unref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
+}
+
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
       grpc_channel_get_channel_stack(lb_channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  grpc_client_channel_stop_connectivity_watch(client_channel_elem, watcher_);
+  grpc_client_channel_watch_connectivity_state(
+      client_channel_elem,
+      grpc_polling_entity_create_from_pollset_set(interested_parties()),
+      nullptr, &lb_channel_on_connectivity_changed_, nullptr);
 }
 
 //
