@@ -8,12 +8,12 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
+	testing "github.com/grpc/grpc/testctrl/genproto/grpc/testing"
 	longrunning "google.golang.org/genproto/googleapis/longrunning"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	math "math"
-	testing "src/proto/grpc/testing"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

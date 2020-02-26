@@ -18,6 +18,7 @@ lint:
 	golint ./...
 
 proto:
+	rm -fr genproto/*
 	mkdir -p ../tmp/src/proto
 	cp -r ../src/proto/grpc ../tmp/src/proto
 
@@ -43,7 +44,7 @@ proto:
 	for protofile in $$(ls ./proto/*.proto); do \
 		echo $$protofile && \
 		protoc -I ../third_party/googleapis \
-					 -I ../ \
+					 -I ../tmp \
 					 -I ./proto \
 					 $$protofile \
 					 --go_out=plugins=grpc:./genproto; \
@@ -53,6 +54,15 @@ proto:
 	mv genproto/github.com/grpc/grpc/testctrl/genproto/grpc genproto/
 	mv genproto/github.com/grpc/grpc/testctrl/genproto/testctrl genproto/
 	rm -fr genproto/github.com
+
+	echo "Cherry-picking the generated go to conflicting/unnecessary files"
+	rm genproto/grpc/testing/compiler_test.pb.go
+	rm genproto/grpc/testing/echo.pb.go
+	rm genproto/grpc/testing/echo_messages.pb.go
+	rm genproto/grpc/testing/empty_service.pb.go
+	rm genproto/grpc/testing/metrics.pb.go
+	rm genproto/grpc/testing/proxy-service.pb.go
+	rm genproto/grpc/testing/simple_messages.pb.go
 
 rebuild: clean proto testctrl driver
 
