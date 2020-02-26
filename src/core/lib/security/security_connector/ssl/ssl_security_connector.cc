@@ -136,7 +136,7 @@ class grpc_ssl_channel_security_connector final
     const char* target_name = overridden_target_name_ != nullptr
                                   ? overridden_target_name_.get()
                                   : target_name_.get();
-    grpc_error* error;
+    grpc_error* error = GRPC_ERROR_NONE;
     if (!verify_options_->skip_default_verification) {
       /* Check the peer name if specified. */
       if (target_name != nullptr && !grpc_ssl_host_matches_name(&peer, target_name)) {
@@ -146,7 +146,7 @@ class grpc_ssl_channel_security_connector final
         gpr_free(msg);
       }
     }
-    if (verify_options_->verify_peer_callback != nullptr) {
+    if ( error == GRPC_ERROR_NONE && verify_options_->verify_peer_callback != nullptr) {
       const tsi_peer_property* p =
           tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
       if (p == nullptr) {
