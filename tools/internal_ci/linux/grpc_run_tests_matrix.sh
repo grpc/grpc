@@ -18,6 +18,11 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+# Try this before cloning submodules - this is technically a sanity check,
+# but the prepare_build_linux_rc script will initialize submodules, and
+# it can't run with submodules on.
+./tools/bazel query ...:* --output=package
+
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
