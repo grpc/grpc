@@ -111,6 +111,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_core_headers
   absl_dynamic_annotations
   absl_endian
+  absl_errno_saver
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128

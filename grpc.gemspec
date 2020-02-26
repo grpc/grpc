@@ -904,6 +904,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/base/internal/cycleclock.cc )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/cycleclock.h )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/endian.h )
+  s.files += %w( third_party/abseil-cpp/absl/base/internal/errno_saver.h )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/hide_ptr.h )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/identity.h )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/inline_variable.h )
