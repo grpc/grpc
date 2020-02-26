@@ -757,8 +757,6 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
     calld->path_set = true;
     calld->host_set = true;
     grpc_metadata_batch_remove(calld->recv_initial_metadata, GRPC_BATCH_PATH);
-    grpc_metadata_batch_remove(calld->recv_initial_metadata,
-                               GRPC_BATCH_AUTHORITY);
   } else {
     GRPC_ERROR_REF(error);
   }
