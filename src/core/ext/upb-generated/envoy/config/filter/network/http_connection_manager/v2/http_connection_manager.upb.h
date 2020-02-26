@@ -70,6 +70,7 @@ struct envoy_api_v2_core_Http2ProtocolOptions;
 struct envoy_api_v2_core_HttpProtocolOptions;
 struct envoy_config_filter_accesslog_v2_AccessLog;
 struct envoy_type_Percent;
+struct envoy_type_tracing_v2_CustomTag;
 struct google_protobuf_Any;
 struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
@@ -83,6 +84,7 @@ extern const upb_msglayout envoy_api_v2_core_Http2ProtocolOptions_msginit;
 extern const upb_msglayout envoy_api_v2_core_HttpProtocolOptions_msginit;
 extern const upb_msglayout envoy_config_filter_accesslog_v2_AccessLog_msginit;
 extern const upb_msglayout envoy_type_Percent_msginit;
+extern const upb_msglayout envoy_type_tracing_v2_CustomTag_msginit;
 extern const upb_msglayout google_protobuf_Any_msginit;
 extern const upb_msglayout google_protobuf_BoolValue_msginit;
 extern const upb_msglayout google_protobuf_Duration_msginit;
@@ -501,6 +503,7 @@ UPB_INLINE const struct envoy_type_Percent* envoy_config_filter_network_http_con
 UPB_INLINE const struct envoy_type_Percent* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_overall_sampling(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_Percent*, UPB_SIZE(20, 32)); }
 UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_verbose(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_max_path_tag_length(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(24, 40)); }
+UPB_INLINE const struct envoy_type_tracing_v2_CustomTag* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_custom_tags(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t *len) { return (const struct envoy_type_tracing_v2_CustomTag* const*)_upb_array_accessor(msg, UPB_SIZE(32, 56), len); }
 
 UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_set_operation_name(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, int32_t value) {
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
@@ -564,6 +567,19 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_filter_network_http_
     if (!sub) return NULL;
     envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_set_max_path_tag_length(msg, sub);
   }
+  return sub;
+}
+UPB_INLINE struct envoy_type_tracing_v2_CustomTag** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_mutable_custom_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t *len) {
+  return (struct envoy_type_tracing_v2_CustomTag**)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 56), len);
+}
+UPB_INLINE struct envoy_type_tracing_v2_CustomTag** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_resize_custom_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t len, upb_arena *arena) {
+  return (struct envoy_type_tracing_v2_CustomTag**)_upb_array_resize_accessor(msg, UPB_SIZE(32, 56), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+}
+UPB_INLINE struct envoy_type_tracing_v2_CustomTag* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_add_custom_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, upb_arena *arena) {
+  struct envoy_type_tracing_v2_CustomTag* sub = (struct envoy_type_tracing_v2_CustomTag*)upb_msg_new(&envoy_type_tracing_v2_CustomTag_msginit, arena);
+  bool ok = _upb_array_append_accessor(
+      msg, UPB_SIZE(32, 56), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  if (!ok) return NULL;
   return sub;
 }
 

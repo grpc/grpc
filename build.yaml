@@ -113,18 +113,26 @@ filegroups:
   headers:
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/lds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/listener.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/rds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/route.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/route/route.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/srds.upb.h
   - src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h
   - src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h
@@ -134,18 +142,26 @@ filegroups:
   src:
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/lds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/listener.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/rds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/route.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/srds.upb.c
   - src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   - src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
@@ -157,6 +173,17 @@ filegroups:
   - envoy_type_upb
   - google_api_upb
   - proto_gen_validate_upb
+  - envoy_annotations_upb
+  - udpa_annotations_upb
+- name: envoy_annotations_upb
+  headers:
+  - src/core/ext/upb-generated/envoy/annotations/deprecation.upb.h
+  - src/core/ext/upb-generated/envoy/annotations/resource.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
+  - src/core/ext/upb-generated/envoy/annotations/resource.upb.c
+  uses:
+  - google_api_upb
 - name: envoy_core_upb
   headers:
   - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h
@@ -178,29 +205,32 @@ filegroups:
   - envoy_type_upb
   - google_api_upb
   - proto_gen_validate_upb
-- name: envoy_orca_upb
-  headers:
-  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
-  src:
-  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  uses:
-  - proto_gen_validate_upb
+  - envoy_annotations_upb
+  - udpa_annotations_upb
 - name: envoy_type_upb
   headers:
   - src/core/ext/upb-generated/envoy/type/http.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/string.upb.h
+  - src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h
   - src/core/ext/upb-generated/envoy/type/percent.upb.h
   - src/core/ext/upb-generated/envoy/type/range.upb.h
+  - src/core/ext/upb-generated/envoy/type/semantic_version.upb.h
+  - src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.h
   src:
   - src/core/ext/upb-generated/envoy/type/http.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/string.upb.c
+  - src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c
   - src/core/ext/upb-generated/envoy/type/percent.upb.c
   - src/core/ext/upb-generated/envoy/type/range.upb.c
+  - src/core/ext/upb-generated/envoy/type/semantic_version.upb.c
+  - src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c
   uses:
   - google_api_upb
   - proto_gen_validate_upb
+  - envoy_annotations_upb
+  - udpa_annotations_upb
 - name: google_api_upb
   headers:
   - src/core/ext/upb-generated/google/api/annotations.upb.h
@@ -1050,7 +1080,7 @@ filegroups:
   - grpc_base
   - grpc_deadline_filter
   - grpc_health_upb
-  - envoy_orca_upb
+  - udpa_orca_upb
 - name: grpc_client_idle_filter
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -1686,6 +1716,22 @@ filegroups:
   - gpr
   uses:
   - grpc_trace
+- name: udpa_annotations_upb
+  headers:
+  - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
+  - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
+  src:
+  - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
+  - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
+  uses:
+  - google_api_upb
+- name: udpa_orca_upb
+  headers:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
+  src:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  uses:
+  - proto_gen_validate_upb
 libs:
 - name: address_sorting
   build: all
