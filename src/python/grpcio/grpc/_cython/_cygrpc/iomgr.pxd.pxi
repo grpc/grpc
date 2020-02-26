@@ -51,7 +51,7 @@ cdef extern from "src/core/lib/iomgr/resolve_address_custom.h":
 
   void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                     grpc_resolved_addresses* result,
-                                    grpc_error* error);
+                                    grpc_error* error) nogil;
 
 cdef extern from "src/core/lib/iomgr/tcp_custom.h":
   cdef int GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT
@@ -60,15 +60,15 @@ cdef extern from "src/core/lib/iomgr/tcp_custom.h":
     void* impl
     # We don't care about the rest of the fields
   ctypedef void (*grpc_custom_connect_callback)(grpc_custom_socket* socket,
-                                             grpc_error* error)
+                                             grpc_error* error) nogil
   ctypedef void (*grpc_custom_write_callback)(grpc_custom_socket* socket,
-                                           grpc_error* error)
+                                           grpc_error* error) nogil
   ctypedef void (*grpc_custom_read_callback)(grpc_custom_socket* socket,
-                                          size_t nread, grpc_error* error)
+                                          size_t nread, grpc_error* error) nogil
   ctypedef void (*grpc_custom_accept_callback)(grpc_custom_socket* socket,
                                             grpc_custom_socket* client,
-                                            grpc_error* error)
-  ctypedef void (*grpc_custom_close_callback)(grpc_custom_socket* socket)
+                                            grpc_error* error) nogil
+  ctypedef void (*grpc_custom_close_callback)(grpc_custom_socket* socket) nogil
 
   struct grpc_socket_vtable:
       grpc_error* (*init)(grpc_custom_socket* socket, int domain);
@@ -101,7 +101,7 @@ cdef extern from "src/core/lib/iomgr/timer_custom.h":
     void (*start)(grpc_custom_timer* t);
     void (*stop)(grpc_custom_timer* t);
 
-  void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error);
+  void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error) nogil;
 
 cdef extern from "src/core/lib/iomgr/pollset_custom.h":
   struct grpc_custom_poller_vtable:

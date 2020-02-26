@@ -36,11 +36,18 @@ cdef class _AsyncioTimer:
         return timer
 
     def _on_deadline(self):
+        cdef grpc_error* error
+        cdef grpc_custom_timer* timer = <grpc_custom_timer*> self._grpc_timer
+
         if self._active == 0:
             return
 
         self._active = 0
-        grpc_custom_timer_callback(self._grpc_timer, <grpc_error*>0)
+        
+        error = grpc_error_none()
+        with nogil:
+            grpc_custom_timer_callback(timer, error)
+
         _current_io_loop().io_mark()
 
     def __repr__(self):

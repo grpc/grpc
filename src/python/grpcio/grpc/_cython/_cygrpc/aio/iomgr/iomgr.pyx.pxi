@@ -57,7 +57,8 @@ cdef void asyncio_socket_close(
         grpc_custom_close_callback close_cb) with gil:
     socket = (<_AsyncioSocket>grpc_socket.impl)
     socket.close()
-    close_cb(grpc_socket)
+    with nogil:
+        close_cb(grpc_socket)
 
 
 cdef void asyncio_socket_shutdown(grpc_custom_socket* grpc_socket) with gil:
@@ -201,7 +202,7 @@ cdef void asyncio_destroy_loop():
 
 
 cdef void asyncio_kick_loop():
-    # GIL is not acquired in purpose, holding the GIL 
+    # GIL is not acquired in purpose, holding the GIL
     # would mean having a deadlock when the synchronous stack
     # is executed on top of the Aio module
     pass

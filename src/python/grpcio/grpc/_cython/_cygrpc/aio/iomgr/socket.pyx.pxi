@@ -68,48 +68,50 @@ cdef class _AsyncioSocket:
         return f"<{class_name} {id_} connected={connected}>"
 
     def _connect_cb(self, future):
+        cdef grpc_error* error
+        cdef grpc_custom_connect_callback connect_cb = self._grpc_connect_cb
+        cdef grpc_custom_socket* socket = <grpc_custom_socket*>self._grpc_socket
+
         self._task_connect = None
         try:
             self._reader, self._writer = future.result()
         except Exception as e:
-            self._grpc_connect_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                grpc_socket_error("Socket connect failed: {}".format(e).encode())
-            )
+            error = grpc_socket_error("Socket connect failed: {}".format(e).encode())
+            with nogil:
+                connect_cb(socket, error)
         else:
             # gRPC default posix implementation disables nagle
             # algorithm.
             sock = self._writer.transport.get_extra_info('socket')
             sock.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
-            self._grpc_connect_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                <grpc_error*>0
-            )
+            with nogil:
+                connect_cb(socket, <grpc_error*>0)
 
         self._io_loop.io_mark()
 
     async def _async_read(self, size_t length):
+        cdef int len_inbound_buffer
+        cdef grpc_error* error
+        cdef grpc_custom_read_callback read_cb = self._grpc_read_cb
+        cdef grpc_custom_socket* socket = <grpc_custom_socket*>self._grpc_socket
+
         self._task_read = None
         try:
             inbound_buffer = await self._reader.read(n=length)
         except ConnectionError as e:
-            self._grpc_read_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                -1,
-                grpc_socket_error("Read failed: {}".format(e).encode())
-            )
+            error = grpc_socket_error("Read failed: {}".format(e).encode())
+            with nogil:
+                read_cb(socket, -1, error)
         else:
             string.memcpy(
                 <void*>self._read_buffer,
                 <char*>inbound_buffer,
                 len(inbound_buffer)
             )
-            self._grpc_read_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                len(inbound_buffer),
-                <grpc_error*>0
-            )
+            len_inbound_buffer = len(inbound_buffer)
+            with nogil:
+                read_cb(socket, len_inbound_buffer, <grpc_error*>0)
 
         self._io_loop.io_mark()
 
@@ -142,19 +144,20 @@ cdef class _AsyncioSocket:
 
 
     async def _async_write(self, bytearray outbound_buffer):
+        cdef grpc_error* error
+        cdef grpc_custom_write_callback write_cb = self._grpc_write_cb
+        cdef grpc_custom_socket* socket = <grpc_custom_socket*>self._grpc_socket
+
         self._writer.write(outbound_buffer)
         self._task_write = None
         try:
             await self._writer.drain()
-            self._grpc_write_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                <grpc_error*>0
-            )
+            with nogil:
+                write_cb(socket, <grpc_error*>0)
         except ConnectionError as connection_error:
-            self._grpc_write_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                grpc_socket_error("Socket write failed: {}".format(connection_error).encode()),
-            )
+            error = grpc_socket_error("Socket write failed: {}".format(connection_error).encode())
+            with nogil:
+                write_cb(socket, error)
 
         self._io_loop.io_mark()
 
@@ -194,24 +197,31 @@ cdef class _AsyncioSocket:
             self._py_socket.close()
 
     def _new_connection_callback(self, object reader, object writer):
+        cdef grpc_error* error
+        cdef grpc_custom_accept_callback accept_cb = self._grpc_accept_cb
+        cdef grpc_custom_socket* socket = <grpc_custom_socket*>self._grpc_socket
+        cdef grpc_custom_socket* client_socket = <grpc_custom_socket*>self._grpc_client_socket
+
         # Close the connection if server is not started yet.
-        if self._grpc_accept_cb == NULL:
+        if accept_cb == NULL:
             writer.close()
             return
 
-        client_socket = _AsyncioSocket.create(
-            self._grpc_client_socket,
+        py_client_socket = _AsyncioSocket.create(
+            client_socket,
             reader,
             writer,
         )
 
-        self._grpc_client_socket.impl = <void*>client_socket
-        cpython.Py_INCREF(client_socket)  # Py_DECREF in asyncio_socket_destroy
+        client_socket.impl = <void*>py_client_socket
+        cpython.Py_INCREF(py_client_socket)  # Py_DECREF in asyncio_socket_destroy
         # Accept callback expects to be called with:
         # * grpc_custom_socket: A grpc custom socket for server
         # * grpc_custom_socket: A grpc custom socket for client (with new Socket instance)
         # * grpc_error: An error object
-        self._grpc_accept_cb(self._grpc_socket, self._grpc_client_socket, grpc_error_none())
+        error = grpc_error_none()
+        with nogil:
+            accept_cb(socket, client_socket, error)
 
         self._io_loop.io_mark()
 

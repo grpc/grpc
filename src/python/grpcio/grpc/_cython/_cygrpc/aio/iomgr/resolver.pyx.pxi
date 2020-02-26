@@ -32,6 +32,10 @@ cdef class _AsyncioResolver:
         return f"<{class_name} {id_}>"
 
     def _resolve_cb(self, future):
+        cdef grpc_resolved_addresses* addresses
+        cdef grpc_error* g_error
+        cdef grpc_custom_resolver* resolver = <grpc_custom_resolver*> self._grpc_resolver
+
         error = False
         try:
             res = future.result()
@@ -42,17 +46,22 @@ cdef class _AsyncioResolver:
             self._task_resolve = None
 
         if not error:
-            grpc_custom_resolve_callback(
-                <grpc_custom_resolver*>self._grpc_resolver,
-                tuples_to_resolvaddr(res),
-                <grpc_error*>0
-            )
+            g_error = grpc_error_none()
+            addresses = tuples_to_resolvaddr(res)
+            with nogil:
+                grpc_custom_resolve_callback(
+                    resolver,
+                    addresses,
+                    g_error
+                )
         else:
-            grpc_custom_resolve_callback(
-                <grpc_custom_resolver*>self._grpc_resolver,
-                NULL,
-                grpc_socket_error("getaddrinfo {}".format(error_msg).encode())
-            )
+            g_error = grpc_socket_error("getaddrinfo {}".format(error_msg).encode())
+            with nogil:
+                grpc_custom_resolve_callback(
+                    resolver,
+                    NULL,
+                    g_error
+                )
 
         _current_io_loop().io_mark()
 
