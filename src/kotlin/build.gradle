@@ -77,7 +77,7 @@ protobuf {
     plugins {
         // Specify protoc to generate using kotlin protobuf plugin
         kotlin {
-            artifact = 'io.grpc:proto-kotlin:0.1'
+            artifact = 'com.google.protobuf:protobuf-kotlin:0.1'
         }
         grpc {
             artifact = 'io.grpc:protoc-gen-grpc-java:1.27.0'

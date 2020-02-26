@@ -30,16 +30,11 @@ apply plugin: 'com.google.protobuf'
 apply plugin: 'idea'
 
 dependencies {
-  // "protoc-plugin-kotlin" (local only!)
-  implementation files('../../protoc-plugin-kotlin/build/libs/protoc-plugin-kotlin.jar')
+  implementation "com.google.protobuf:protobuf-kotlin-util:0.1"
+  implementation "com.google.protobuf:protobuf-kotlin:0.1"
 
-  // "grpc-kotlin" (local only!)
-  implementation files('../build/libs/grpc-kotlin.jar')
-
-  // "proto-kotlin" (local only!)
-  implementation files('../../proto-kotlin/build/libs/proto-kotlin.jar')
-
-
+  // This repo
+  implementation "io.grpc:grpc-kotlin:0.1"
 
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.61"
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:${coroutines_version}"
@@ -59,24 +54,45 @@ dependencies {
   implementation "com.google.guava:guava:28.2-jre"
 }
 
-task generateProtos(type: Exec) {
-    dependsOn build
-    group = "Execution"
-    description = "Run the main class with ExecTask"
-    commandLine "protoc", "--plugin", "protoc-gen-custom=../protoc-kotlin-grpc-plugin.sh", "--custom_out", "build/generated/source/proto/main/java", "src/main/proto/*.proto"
-    commandLine "protoc", "--plugin", "protoc-gen-custom=../../proto-kotlin/protoc-kotlin-plugin.sh", "--custom_out", "build/generated/source/proto/main/java", "src/main/proto/*.proto"
-}
-
 // The standard protobuf block, same as normal gRPC Java projects
+// protobuf {
+//   protoc {
+//     artifact = 'com.google.protobuf:protoc:3.5.1-1'
+//   }
+//   plugins {
+//     grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpc_version}" }
+//   }
+//   generateProtoTasks {
+//     all()*.plugins { grpc {} }
+//   }
+// }
+
+
 protobuf {
-  protoc {
-    // artifact = 'com.google.protobuf:protoc:3.5.1-1'
-    path = '/usr/local/bin/protoc'
-  }
-  plugins {
-    grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpc_version}" }
-  }
-  generateProtoTasks {
-    all()*.plugins { grpc {} }
-  }
+    protoc { artifact = 'com.google.protobuf:protoc:3.11.0' }
+    plugins {
+        // Specify protoc to generate using kotlin protobuf plugin
+        kotlin {
+            artifact = 'com.google.protobuf:protobuf-kotlin:0.1'
+        }
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.27.0'
+        }
+        // Specify protoc to generate using our grpc kotlin plugin
+        grpckt {
+            artifact = 'io.grpc:grpc-kotlin:0.1'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                // Generate Kotlin classes using proto-kotlin
+                kotlin { }
+                // Generate Java gRPC classes
+                grpc { }
+                // Generate Kotlin gRPC using the custom plugin from library
+                grpckt { }
+            }
+        }
+    }
 }
