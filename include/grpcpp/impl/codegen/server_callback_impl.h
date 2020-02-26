@@ -73,11 +73,33 @@ class ServerCallbackCall {
  public:
   virtual ~ServerCallbackCall() {}
 
-  // This object is responsible for tracking when it is safe to call
-  // OnCancel. This function should not be called until after the method handler
-  // is done and the RPC has completed with a cancellation. This is tracked by
-  // counting how many of these conditions have been met and calling OnCancel
-  // when none remain unmet.
+  // This object is responsible for tracking when it is safe to call OnDone and
+  // OnCancel. OnDone should not be called until the method handler is complete,
+  // Finish has been called, the ServerContext CompletionOp (which tracks
+  // cancellation or successful completion) has completed, and all outstanding
+  // Read/Write actions have seen their reactions. OnCancel should not be called
+  // until after the method handler is done and the RPC has completed with a
+  // cancellation. This is tracked by counting how many of these conditions have
+  // been met and calling OnCancel when none remain unmet.
+
+  // Public versions of MaybeDone: one where we don't know the reactor in
+  // advance (used for the ServerContext CompletionOp), and one for where we
+  // know the inlineability of the OnDone reaction. You should set the inline
+  // flag to true if either the Reactor is InternalInlineable() or if this
+  // callback is already being forced to run dispatched to an executor
+  // (typically because it contains additional work than just the MaybeDone).
+
+  void MaybeDone() {
+    if (GPR_UNLIKELY(Unref() == 1)) {
+      ScheduleOnDone(reactor()->InternalInlineable());
+    }
+  }
+
+  void MaybeDone(bool inline_ondone) {
+    if (GPR_UNLIKELY(Unref() == 1)) {
+      ScheduleOnDone(inline_ondone);
+    }
+  }
 
   // Fast version called with known reactor passed in, used from derived
   // classes, typically in non-cancel case
@@ -101,14 +123,17 @@ class ServerCallbackCall {
   /// Increases the reference count
   void Ref() { callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed); }
 
-  /// Decreases the reference count and returns the previous value
-  int Unref() {
-    return callbacks_outstanding_.fetch_sub(1, std::memory_order_acq_rel);
-  }
-
  private:
   virtual ServerReactor* reactor() = 0;
-  virtual void MaybeDone() = 0;
+
+  // CallOnDone performs the work required at completion of the RPC: invoking
+  // the OnDone function and doing all necessary cleanup. This function is only
+  // ever invoked on a fully-Unref'fed ServerCallbackCall.
+  virtual void CallOnDone() = 0;
+
+  // If the OnDone reaction is inlineable, execute it inline. Otherwise send it
+  // to an executor.
+  void ScheduleOnDone(bool inline_ondone);
 
   // If the OnCancel reaction is inlineable, execute it inline. Otherwise send
   // it to an executor.
@@ -119,6 +144,11 @@ class ServerCallbackCall {
   bool UnblockCancellation() {
     return on_cancel_conditions_remaining_.fetch_sub(
                1, std::memory_order_acq_rel) == 1;
+  }
+
+  /// Decreases the reference count and returns the previous value
+  int Unref() {
+    return callbacks_outstanding_.fetch_sub(1, std::memory_order_acq_rel);
   }
 
   std::atomic_int on_cancel_conditions_remaining_{2};

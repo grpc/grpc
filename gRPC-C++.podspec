@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.27.0-dev'
+  version = '1.28.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -215,6 +215,8 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
     abseil_version = '0.20190808.1'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
 
@@ -443,7 +445,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/is_epollexclusive_available.h',
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
-                      'src/core/lib/iomgr/logical_thread.h',
                       'src/core/lib/iomgr/nameser.h',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                       'src/core/lib/iomgr/polling_entity.h',
@@ -484,6 +485,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/unix_sockets_posix.h',
                       'src/core/lib/iomgr/wakeup_fd_pipe.h',
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
+                      'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/security/context/security_context.h',
@@ -591,7 +593,6 @@ Pod::Spec.new do |s|
                       'src/cpp/client/create_channel_internal.h',
                       'src/cpp/client/create_channel_posix.cc',
                       'src/cpp/client/credentials_cc.cc',
-                      'src/cpp/client/generic_stub.cc',
                       'src/cpp/client/insecure_credentials.cc',
                       'src/cpp/client/secure_credentials.cc',
                       'src/cpp/client/secure_credentials.h',
@@ -875,7 +876,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
-                              'src/core/lib/iomgr/logical_thread.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
@@ -916,6 +916,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/unix_sockets_posix.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
+                              'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/security/context/security_context.h',
@@ -1065,6 +1066,7 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
+    sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
     find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'

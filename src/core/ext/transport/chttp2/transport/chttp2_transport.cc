@@ -31,6 +31,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "absl/strings/str_format.h"
+
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -378,14 +380,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   if (channelz_enabled) {
     // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
     // it in here, so SocketNode knows its own address.
-    char* socket_name = nullptr;
-    gpr_asprintf(&socket_name, "%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            "", t->peer_string, socket_name);
-    // TODO(veblush): Remove this once gpr_asprintf is replaced by
-    // absl::StrFormat
-    gpr_free(socket_name);
+            "", t->peer_string,
+            absl::StrFormat("%s %s", get_vtable()->name, t->peer_string));
   }
   return enable_bdp;
 }

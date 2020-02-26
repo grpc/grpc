@@ -26,12 +26,9 @@ out = {}
 
 try:
     out['libs'] = [{
-        'name':
-            'upb',
-        'build':
-            'all',
-        'language':
-            'c',
+        'name': 'upb',
+        'build': 'all',
+        'language': 'c',
         'src': [
             "third_party/upb/upb/decode.c",
             "third_party/upb/upb/encode.c",
@@ -50,6 +47,7 @@ try:
             "third_party/upb/upb/table.int.h",
             "third_party/upb/upb/upb.h",
         ],
+        'secure': False,
     }]
 except:
     pass

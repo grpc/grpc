@@ -56,7 +56,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~ClusterWatcherInterface() = default;
 
-    virtual void OnClusterChanged(CdsUpdate cluster_data) = 0;
+    virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
   };
@@ -66,7 +66,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~EndpointWatcherInterface() = default;
 
-    virtual void OnEndpointChanged(EdsUpdate update) = 0;
+    virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
   };
@@ -101,11 +101,25 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   void CancelEndpointDataWatch(StringView eds_service_name,
                                EndpointWatcherInterface* watcher);
 
-  // Adds and removes client stats for \a cluster_name.
-  void AddClientStats(StringView /*lrs_server*/, StringView cluster_name,
-                      XdsClientStats* client_stats);
-  void RemoveClientStats(StringView /*lrs_server*/, StringView cluster_name,
-                         XdsClientStats* client_stats);
+  // Adds and removes drop stats for cluster_name and eds_service_name.
+  RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
+      StringView lrs_server, StringView cluster_name,
+      StringView eds_service_name);
+  void RemoveClusterDropStats(StringView /*lrs_server*/,
+                              StringView cluster_name,
+                              StringView eds_service_name,
+                              XdsClusterDropStats* cluster_drop_stats);
+
+  // Adds and removes locality stats for cluster_name and eds_service_name
+  // for the specified locality.
+  RefCountedPtr<XdsClusterLocalityStats> AddClusterLocalityStats(
+      StringView lrs_server, StringView cluster_name,
+      StringView eds_service_name, RefCountedPtr<XdsLocalityName> locality);
+  void RemoveClusterLocalityStats(
+      StringView /*lrs_server*/, StringView cluster_name,
+      StringView eds_service_name,
+      const RefCountedPtr<XdsLocalityName>& locality,
+      XdsClusterLocalityStats* cluster_locality_stats);
 
   // Resets connection backoff state.
   void ResetBackoff();
@@ -134,8 +148,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     class AdsCallState;
     class LrsCallState;
 
-    ChannelState(RefCountedPtr<XdsClient> xds_client,
-                 const grpc_channel_args& args);
+    ChannelState(RefCountedPtr<XdsClient> xds_client, grpc_channel* channel);
     ~ChannelState();
 
     void Orphan() override;
@@ -176,16 +189,23 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         watchers;
     // The latest data seen from CDS.
-    Optional<CdsUpdate> update;
+    Optional<XdsApi::CdsUpdate> update;
   };
 
   struct EndpointState {
     std::map<EndpointWatcherInterface*,
              std::unique_ptr<EndpointWatcherInterface>>
         watchers;
-    std::set<XdsClientStats*> client_stats;
     // The latest data seen from EDS.
-    EdsUpdate update;
+    XdsApi::EdsUpdate update;
+  };
+
+  struct LoadReportState {
+    std::set<XdsClusterDropStats*> drop_stats;
+    std::map<RefCountedPtr<XdsLocalityName>, std::set<XdsClusterLocalityStats*>,
+             XdsLocalityName::Less>
+        locality_stats;
+    grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
   // Sends an error notification to all watchers.
@@ -195,8 +215,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const std::string& cluster_name,
       RefCountedPtr<ServiceConfig>* service_config) const;
 
-  std::map<StringView, std::set<XdsClientStats*>, StringLess> ClientStatsMap()
-      const;
+  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot();
 
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);
@@ -213,6 +232,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   grpc_pollset_set* interested_parties_;
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
+  XdsApi api_;
 
   const std::string server_name_;
 
@@ -227,6 +247,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
   // Only the watched EDS service names are stored.
   std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
+  std::map<
+      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
+      LoadReportState>
+      load_report_map_;
 
   bool shutting_down_ = false;
 };

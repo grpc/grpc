@@ -72,19 +72,14 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
-config_setting(
-    name = "grpc_disable_absl",
-    values = {"define": "GRPC_USE_ABSL=0"},
-)
-
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "guantao"
+g_stands_for = "galactic"
 
 core_version = "9.0.0"
 
-version = "1.27.0-dev"
+version = "1.28.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -98,6 +93,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/port_platform.h",
     "include/grpc/support/string_util.h",
     "include/grpc/support/sync.h",
+    "include/grpc/support/sync_abseil.h",
     "include/grpc/support/sync_custom.h",
     "include/grpc/support/sync_generic.h",
     "include/grpc/support/sync_posix.h",
@@ -134,7 +130,6 @@ GRPCXX_SRCS = [
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
     "src/cpp/client/credentials_cc.cc",
-    "src/cpp/client/generic_stub.cc",
     "src/cpp/common/alarm.cc",
     "src/cpp/common/channel_arguments.cc",
     "src/cpp/common/channel_filter.cc",
@@ -200,8 +195,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/server_builder_plugin.h",
     "include/grpc++/impl/server_initializer.h",
     "include/grpc++/impl/service_type.h",
-    "include/grpc++/impl/sync_cxx11.h",
-    "include/grpc++/impl/sync_no_cxx11.h",
     "include/grpc++/security/auth_context.h",
     "include/grpc++/resource_quota.h",
     "include/grpc++/security/auth_metadata_processor.h",
@@ -256,8 +249,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/server_initializer.h",
     "include/grpcpp/impl/server_initializer_impl.h",
     "include/grpcpp/impl/service_type.h",
-    "include/grpcpp/impl/sync_cxx11.h",
-    "include/grpcpp/impl/sync_no_cxx11.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/resource_quota_impl.h",
     "include/grpcpp/security/auth_context.h",
@@ -510,6 +501,7 @@ grpc_cc_library(
         "src/core/lib/gpr/string_util_windows.cc",
         "src/core/lib/gpr/string_windows.cc",
         "src/core/lib/gpr/sync.cc",
+        "src/core/lib/gpr/sync_abseil.cc",
         "src/core/lib/gpr/sync_posix.cc",
         "src/core/lib/gpr/sync_windows.cc",
         "src/core/lib/gpr/time.cc",
@@ -564,7 +556,9 @@ grpc_cc_library(
         "src/core/lib/profiling/timers.h",
     ],
     external_deps = [
+        "absl/memory",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -588,6 +582,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/log.h",
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/impl/codegen/sync.h",
+        "include/grpc/impl/codegen/sync_abseil.h",
         "include/grpc/impl/codegen/sync_custom.h",
         "include/grpc/impl/codegen/sync_generic.h",
         "include/grpc/impl/codegen/sync_posix.h",
@@ -748,11 +743,11 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_internal.cc",
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
+        "src/core/lib/iomgr/iomgr_uv.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
-        "src/core/lib/iomgr/logical_thread.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -772,6 +767,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
         "src/core/lib/iomgr/socket_utils_linux.cc",
         "src/core/lib/iomgr/socket_utils_posix.cc",
+        "src/core/lib/iomgr/socket_utils_uv.cc",
         "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
@@ -804,11 +800,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
-        "src/core/lib/json/json.cc",
+        "src/core/lib/iomgr/work_serializer.cc",
         "src/core/lib/json/json_reader.cc",
-        "src/core/lib/json/json_reader_new.cc",
         "src/core/lib/json/json_writer.cc",
-        "src/core/lib/json/json_writer_new.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice.cc",
@@ -906,7 +900,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
-        "src/core/lib/iomgr/logical_thread.h",
         "src/core/lib/iomgr/nameser.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
@@ -949,6 +942,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
+        "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/json/json.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
@@ -993,6 +987,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     use_cfstream = True,
     deps = [
+        "eventmanager_libuv",
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",

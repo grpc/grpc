@@ -19,7 +19,10 @@ Gem::Specification.new do |s|
   s.files += %w( etc/roots.pem )
   s.files += Dir.glob('src/ruby/bin/**/*')
   s.files += Dir.glob('src/ruby/ext/**/*')
-  s.files += Dir.glob('src/ruby/lib/**/*')
+  s.files += Dir.glob('src/ruby/lib/**/*').reject do |f|
+    # Binaries are included by rake-compiler and would lead to circular dependencies here
+    File.fnmatch("**/?.?/grpc_c.so", f)
+  end
   s.files += Dir.glob('src/ruby/pb/**/*').reject do |f|
     f.match(%r{^src/ruby/pb/test})
   end
@@ -36,9 +39,9 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
-  s.add_development_dependency 'rake',               '~> 12.0'
-  s.add_development_dependency 'rake-compiler',      '~> 1.0'
-  s.add_development_dependency 'rake-compiler-dock', '~> 0.5.1'
+  s.add_development_dependency 'rake',               '~> 13.0'
+  s.add_development_dependency 'rake-compiler',      '~> 1.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.0'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -73,6 +76,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/slice.h )
   s.files += %w( include/grpc/impl/codegen/status.h )
   s.files += %w( include/grpc/impl/codegen/sync.h )
+  s.files += %w( include/grpc/impl/codegen/sync_abseil.h )
   s.files += %w( include/grpc/impl/codegen/sync_custom.h )
   s.files += %w( include/grpc/impl/codegen/sync_generic.h )
   s.files += %w( include/grpc/impl/codegen/sync_posix.h )
@@ -92,6 +96,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/port_platform.h )
   s.files += %w( include/grpc/support/string_util.h )
   s.files += %w( include/grpc/support/sync.h )
+  s.files += %w( include/grpc/support/sync_abseil.h )
   s.files += %w( include/grpc/support/sync_custom.h )
   s.files += %w( include/grpc/support/sync_generic.h )
   s.files += %w( include/grpc/support/sync_posix.h )
@@ -453,6 +458,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/string_windows.cc )
   s.files += %w( src/core/lib/gpr/string_windows.h )
   s.files += %w( src/core/lib/gpr/sync.cc )
+  s.files += %w( src/core/lib/gpr/sync_abseil.cc )
   s.files += %w( src/core/lib/gpr/sync_posix.cc )
   s.files += %w( src/core/lib/gpr/sync_windows.cc )
   s.files += %w( src/core/lib/gpr/time.cc )
@@ -577,8 +583,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/load_file.h )
   s.files += %w( src/core/lib/iomgr/lockfree_event.cc )
   s.files += %w( src/core/lib/iomgr/lockfree_event.h )
-  s.files += %w( src/core/lib/iomgr/logical_thread.cc )
-  s.files += %w( src/core/lib/iomgr/logical_thread.h )
   s.files += %w( src/core/lib/iomgr/nameser.h )
   s.files += %w( src/core/lib/iomgr/poller/eventmanager_libuv.cc )
   s.files += %w( src/core/lib/iomgr/poller/eventmanager_libuv.h )
@@ -672,12 +676,11 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.h )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.cc )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.h )
-  s.files += %w( src/core/lib/json/json.cc )
+  s.files += %w( src/core/lib/iomgr/work_serializer.cc )
+  s.files += %w( src/core/lib/iomgr/work_serializer.h )
   s.files += %w( src/core/lib/json/json.h )
   s.files += %w( src/core/lib/json/json_reader.cc )
-  s.files += %w( src/core/lib/json/json_reader_new.cc )
   s.files += %w( src/core/lib/json/json_writer.cc )
-  s.files += %w( src/core/lib/json/json_writer_new.cc )
   s.files += %w( src/core/lib/profiling/basic_timers.cc )
   s.files += %w( src/core/lib/profiling/stap_timers.cc )
   s.files += %w( src/core/lib/profiling/timers.h )
@@ -901,6 +904,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/base/internal/cycleclock.cc )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/cycleclock.h )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/endian.h )
+  s.files += %w( third_party/abseil-cpp/absl/base/internal/errno_saver.h )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/hide_ptr.h )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/identity.h )
   s.files += %w( third_party/abseil-cpp/absl/base/internal/inline_variable.h )
@@ -965,6 +969,19 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/ostringstream.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/resize_uninitialized.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/stl_type_traits.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/arg.cc )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/arg.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/bind.cc )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/bind.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/checker.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/extension.cc )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/extension.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.cc )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/output.cc )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/output.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/parser.cc )
+  s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_format/parser.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_join_internal.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/str_split_internal.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/internal/utf8.cc )
@@ -975,6 +992,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/strings/numbers.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/str_cat.cc )
   s.files += %w( third_party/abseil-cpp/absl/strings/str_cat.h )
+  s.files += %w( third_party/abseil-cpp/absl/strings/str_format.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/str_join.h )
   s.files += %w( third_party/abseil-cpp/absl/strings/str_replace.cc )
   s.files += %w( third_party/abseil-cpp/absl/strings/str_replace.h )

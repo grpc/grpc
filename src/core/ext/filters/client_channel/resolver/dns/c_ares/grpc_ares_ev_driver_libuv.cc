@@ -173,7 +173,7 @@ class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
     Combiner* combiner) {
-  return grpc_core::MakeUnique<GrpcPolledFdFactoryLibuv>();
+  return absl::make_unique<GrpcPolledFdFactoryLibuv>();
 }
 
 }  // namespace grpc_core

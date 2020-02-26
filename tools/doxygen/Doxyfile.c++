@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.27.0-dev
+PROJECT_NUMBER         = 1.28.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -798,6 +798,7 @@ doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
+doc/xds-test-descriptions.md \
 include/grpc++/alarm.h \
 include/grpc++/channel.h \
 include/grpc++/client_context.h \
@@ -900,6 +901,7 @@ include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
+include/grpc/impl/codegen/sync_abseil.h \
 include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
@@ -919,6 +921,7 @@ include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \
+include/grpc/support/sync_abseil.h \
 include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \

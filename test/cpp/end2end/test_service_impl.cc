@@ -839,7 +839,15 @@ CallbackTestServiceImpl::BidiStream(
       }
       setup_done_ = true;
     }
-    void OnDone() override { delete this; }
+    void OnDone() override {
+      {
+        // Use the same lock as finish to make sure that OnDone isn't inlined.
+        std::lock_guard<std::mutex> l(finish_mu_);
+        EXPECT_TRUE(finished_);
+        finish_thread_.join();
+      }
+      delete this;
+    }
     void OnCancel() override {
       EXPECT_TRUE(setup_done_);
       EXPECT_TRUE(ctx_->IsCancelled());
@@ -878,8 +886,12 @@ CallbackTestServiceImpl::BidiStream(
     void FinishOnce(const Status& s) {
       std::lock_guard<std::mutex> l(finish_mu_);
       if (!finished_) {
-        Finish(s);
         finished_ = true;
+        // Finish asynchronously to make sure that there are no deadlocks.
+        finish_thread_ = std::thread([this, s] {
+          std::lock_guard<std::mutex> l(finish_mu_);
+          Finish(s);
+        });
       }
     }
 
@@ -892,6 +904,7 @@ CallbackTestServiceImpl::BidiStream(
     std::mutex finish_mu_;
     bool finished_{false};
     bool setup_done_{false};
+    std::thread finish_thread_;
   };
 
   return new Reactor(context);

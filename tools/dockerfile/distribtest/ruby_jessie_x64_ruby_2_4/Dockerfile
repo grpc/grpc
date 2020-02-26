@@ -27,11 +27,11 @@ RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A170311380
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.4
-RUN /bin/bash -l -c "rvm install ruby-2.4.5"
-RUN /bin/bash -l -c "rvm use --default ruby-2.4.5"
+RUN /bin/bash -l -c "rvm install ruby-2.4.9"
+RUN /bin/bash -l -c "rvm use --default ruby-2.4.9"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.4.5' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.4.9' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
 
 RUN mkdir /var/local/jenkins

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.27.0-dev'
+  version = '1.28.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -139,6 +139,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/slice.h',
                       'include/grpc/impl/codegen/status.h',
                       'include/grpc/impl/codegen/sync.h',
+                      'include/grpc/impl/codegen/sync_abseil.h',
                       'include/grpc/impl/codegen/sync_custom.h',
                       'include/grpc/impl/codegen/sync_generic.h',
                       'include/grpc/impl/codegen/sync_posix.h',
@@ -158,6 +159,7 @@ Pod::Spec.new do |s|
                       'include/grpc/support/port_platform.h',
                       'include/grpc/support/string_util.h',
                       'include/grpc/support/sync.h',
+                      'include/grpc/support/sync_abseil.h',
                       'include/grpc/support/sync_custom.h',
                       'include/grpc/support/sync_generic.h',
                       'include/grpc/support/sync_posix.h',
@@ -173,6 +175,8 @@ Pod::Spec.new do |s|
     ss.dependency 'BoringSSL-GRPC', '0.0.7'
     abseil_version = '0.20190808.1'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
@@ -531,6 +535,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/string_windows.cc',
                       'src/core/lib/gpr/string_windows.h',
                       'src/core/lib/gpr/sync.cc',
+                      'src/core/lib/gpr/sync_abseil.cc',
                       'src/core/lib/gpr/sync_posix.cc',
                       'src/core/lib/gpr/sync_windows.cc',
                       'src/core/lib/gpr/time.cc',
@@ -655,8 +660,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.cc',
                       'src/core/lib/iomgr/lockfree_event.h',
-                      'src/core/lib/iomgr/logical_thread.cc',
-                      'src/core/lib/iomgr/logical_thread.h',
                       'src/core/lib/iomgr/nameser.h',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.cc',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.h',
@@ -750,12 +753,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/wakeup_fd_pipe.h',
                       'src/core/lib/iomgr/wakeup_fd_posix.cc',
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
-                      'src/core/lib/json/json.cc',
+                      'src/core/lib/iomgr/work_serializer.cc',
+                      'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_reader.cc',
-                      'src/core/lib/json/json_reader_new.cc',
                       'src/core/lib/json/json_writer.cc',
-                      'src/core/lib/json/json_writer_new.cc',
                       'src/core/lib/profiling/basic_timers.cc',
                       'src/core/lib/profiling/stap_timers.cc',
                       'src/core/lib/profiling/timers.h',
@@ -1204,7 +1206,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
-                              'src/core/lib/iomgr/logical_thread.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
@@ -1245,6 +1246,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/unix_sockets_posix.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
+                              'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/security/context/security_context.h',

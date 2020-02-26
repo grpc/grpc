@@ -16,10 +16,11 @@ licenses(["notice"])  # 3-clause BSD
 
 package(default_visibility = ["//visibility:public"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
-load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 grpc_proto_library(
     name = "auth_sample",

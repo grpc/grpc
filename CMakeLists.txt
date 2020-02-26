@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.27.0-dev")
+set(PACKAGE_VERSION       "1.28.0-dev")
 set(gRPC_CORE_VERSION     "9.0.0")
 set(gRPC_CORE_SOVERSION   "9")
-set(gRPC_CPP_VERSION      "1.27.0-dev")
+set(gRPC_CPP_VERSION      "1.28.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.27.0-dev")
+set(gRPC_CSHARP_VERSION   "2.28.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -110,6 +110,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_core_headers
   absl_dynamic_annotations
   absl_endian
+  absl_errno_saver
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
@@ -119,6 +120,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_raw_logging_internal
   absl_span
   absl_spinlock_wait
+  absl_str_format
+  absl_str_format_internal
   absl_strings
   absl_strings_internal
   absl_throw_delegate
@@ -526,7 +529,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c init_test)
   add_dependencies(buildtests_c inproc_callback_test)
   add_dependencies(buildtests_c invalid_call_argument_test)
-  add_dependencies(buildtests_c json_test)
   add_dependencies(buildtests_c lame_client_test)
   add_dependencies(buildtests_c load_file_test)
   add_dependencies(buildtests_c message_compress_test)
@@ -655,7 +657,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c h2_uds_nosec_test)
   endif()
   add_dependencies(buildtests_c alts_credentials_fuzzer_one_entry)
-  add_dependencies(buildtests_c api_fuzzer_one_entry)
   add_dependencies(buildtests_c client_fuzzer_one_entry)
   add_dependencies(buildtests_c hpack_parser_fuzzer_test_one_entry)
   add_dependencies(buildtests_c http_request_fuzzer_test_one_entry)
@@ -826,8 +827,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx json_run_localhost)
   endif()
-  add_dependencies(buildtests_cxx json_test_new)
-  add_dependencies(buildtests_cxx logical_thread_test)
+  add_dependencies(buildtests_cxx json_test)
   add_dependencies(buildtests_cxx message_allocator_end2end_test)
   add_dependencies(buildtests_cxx metrics_client)
   add_dependencies(buildtests_cxx mock_test)
@@ -894,11 +894,18 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx transport_connectivity_state_test)
   add_dependencies(buildtests_cxx transport_pid_controller_test)
   add_dependencies(buildtests_cxx transport_security_common_api_test)
+  add_dependencies(buildtests_cxx work_serializer_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx writes_per_rpc_test)
   endif()
   add_dependencies(buildtests_cxx xds_bootstrap_test)
   add_dependencies(buildtests_cxx xds_end2end_test)
+  if(_gRPC_PLATFORM_LINUX)
+    add_dependencies(buildtests_cxx xds_interop_client)
+  endif()
+  if(_gRPC_PLATFORM_LINUX)
+    add_dependencies(buildtests_cxx xds_interop_server)
+  endif()
   add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
   add_dependencies(buildtests_cxx badreq_bad_client_test)
   add_dependencies(buildtests_cxx connection_prefix_bad_client_test)
@@ -1070,7 +1077,6 @@ add_library(alts_test_util
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -1124,11 +1130,9 @@ add_library(alts_test_util
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -1285,6 +1289,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -1301,6 +1306,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -1383,6 +1389,7 @@ add_library(gpr
   src/core/lib/gpr/string_util_windows.cc
   src/core/lib/gpr/string_windows.cc
   src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_abseil.cc
   src/core/lib/gpr/sync_posix.cc
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
@@ -1435,6 +1442,8 @@ target_include_directories(gpr
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::inlined_vector
+  absl::memory
+  absl::str_format
   absl::strings
   absl::optional
 )
@@ -1457,6 +1466,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -1473,6 +1483,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -1560,7 +1571,6 @@ add_library(grpc
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -1614,11 +1624,9 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -1944,6 +1952,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -2046,7 +2055,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -2100,11 +2108,9 @@ add_library(grpc_cronet
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2357,6 +2363,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -2477,7 +2484,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -2531,11 +2537,9 @@ add_library(grpc_test_util
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2694,6 +2698,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -2710,6 +2715,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -2822,7 +2828,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -2876,11 +2881,9 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -3039,6 +3042,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -3055,6 +3059,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -3143,7 +3148,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/logical_thread.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -3197,11 +3201,9 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json.cc
+  src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_reader_new.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/json/json_writer_new.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -3450,6 +3452,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -3696,7 +3699,6 @@ add_library(grpc++
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
-  src/cpp/client/generic_stub.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
@@ -3901,6 +3903,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -3917,6 +3920,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -4600,6 +4604,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -4797,6 +4802,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -4830,7 +4836,6 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
-  src/cpp/client/generic_stub.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
@@ -5034,6 +5039,7 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
   include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
@@ -5050,6 +5056,7 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -8543,33 +8550,6 @@ target_include_directories(invalid_call_argument_test
 )
 
 target_link_libraries(invalid_call_argument_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(json_test
-  test/core/json/json_test.cc
-)
-
-target_include_directories(json_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(json_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -14018,13 +13998,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(json_test_new
-  test/core/json/json_test_new.cc
+add_executable(json_test
+  test/core/json/json_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(json_test_new
+target_include_directories(json_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14041,43 +14021,7 @@ target_include_directories(json_test_new
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(json_test_new
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(logical_thread_test
-  test/core/iomgr/logical_thread_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(logical_thread_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(logical_thread_test
+target_link_libraries(json_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -16064,6 +16008,42 @@ target_link_libraries(transport_security_common_api_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(work_serializer_test
+  test/core/iomgr/work_serializer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(work_serializer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(work_serializer_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(writes_per_rpc_test
@@ -16197,6 +16177,110 @@ target_link_libraries(xds_end2end_test
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+  add_executable(xds_interop_client
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+    test/cpp/interop/xds_interop_client.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+
+  target_include_directories(xds_interop_client
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(xds_interop_client
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc++_test_config
+    grpc_test_util
+    grpc++
+    grpc
+    gpr
+    ${_gRPC_GFLAGS_LIBRARIES}
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+  add_executable(xds_interop_server
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+    test/cpp/interop/xds_interop_server.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+
+  target_include_directories(xds_interop_server
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(xds_interop_server
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc++_test_config
+    grpc_test_util
+    grpc++
+    grpc
+    gpr
+    ${_gRPC_GFLAGS_LIBRARIES}
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -18100,34 +18184,6 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(api_fuzzer_one_entry
-  test/core/end2end/fuzzers/api_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.cc
-)
-
-target_include_directories(api_fuzzer_one_entry
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(api_fuzzer_one_entry
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(client_fuzzer_one_entry
   test/core/end2end/fuzzers/client_fuzzer.cc
   test/core/util/one_corpus_entry_fuzzer.cc
@@ -18520,7 +18576,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgpr -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "gpr.pc")
 
@@ -18530,7 +18586,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc.pc")
 
@@ -18540,7 +18596,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc_unsecure.pc")
 
@@ -18550,7 +18606,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${PACKAGE_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++.pc")
 
@@ -18560,6 +18616,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${PACKAGE_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++_unsecure.pc")

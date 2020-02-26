@@ -15,7 +15,6 @@
 
 import logging
 import os
-import threading
 import unittest
 
 import grpc
@@ -227,5 +226,5 @@ class TestChannel(AioTestBase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     unittest.main(verbosity=2)

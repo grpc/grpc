@@ -982,6 +982,41 @@ static void test_sts_creds_success(void) {
   gpr_free(actor_token_path);
 }
 
+static void test_sts_creds_token_file_not_found(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_sts_credentials_options valid_options = {
+      test_sts_endpoint_url,           // sts_endpoint_url
+      "resource",                      // resource
+      "audience",                      // audience
+      "scope",                         // scope
+      "requested_token_type",          // requested_token_type
+      "/some/completely/random/path",  // subject_token_path
+      test_signed_jwt_token_type,      // subject_token_type
+      "",                              // actor_token_path
+      ""                               // actor_token_type
+  };
+  grpc_call_credentials* creds =
+      grpc_sts_credentials_create(&valid_options, nullptr);
+
+  /* Check security level. */
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+
+  request_metadata_state* state = make_request_metadata_state(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Error occurred when fetching oauth2 token."),
+      nullptr, 0);
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  run_request_metadata_test(creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  /* Cleanup. */
+  creds->Unref();
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
 static void test_sts_creds_no_actor_token_success(void) {
   grpc_core::ExecCtx exec_ctx;
   expected_md emd[] = {
@@ -1687,6 +1722,7 @@ int main(int argc, char** argv) {
   test_sts_creds_no_actor_token_success();
   test_sts_creds_load_token_failure();
   test_sts_creds_http_failure();
+  test_sts_creds_token_file_not_found();
   test_jwt_creds_lifetime();
   test_jwt_creds_success();
   test_jwt_creds_signing_failure();

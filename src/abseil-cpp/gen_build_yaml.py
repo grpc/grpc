@@ -26,4 +26,5 @@ for build in builds:
     build['build'] = 'private'
     build['build_system'] = []
     build['language'] = 'c'
+    build['secure'] = False
 print(yaml.dump({'libs': builds}))

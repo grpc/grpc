@@ -217,7 +217,7 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// On Linux systems, using using dlopen and dlsym results in
+        /// On Linux systems, using dlopen and dlsym results in
         /// DllNotFoundException("libdl.so not found") if libc6-dev
         /// is not installed. As a workaround, we load symbols for
         /// dlopen and dlsym from the current process as on Linux
