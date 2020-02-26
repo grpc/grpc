@@ -19,7 +19,7 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 sudo apt-get install -y python3-pip
-sudo python3 -m pip install grpcio grpcio-tools google-api-python-client google-auth-httplib2
+sudo python3 -m pip install grpcio grpcio-tools google-api-python-client google-auth-httplib2 oauth2client
 
 # Prepare generated Python code.
 TOOLS_DIR=tools/run_tests
