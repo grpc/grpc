@@ -54,20 +54,6 @@ dependencies {
   implementation "com.google.guava:guava:28.2-jre"
 }
 
-// The standard protobuf block, same as normal gRPC Java projects
-// protobuf {
-//   protoc {
-//     artifact = 'com.google.protobuf:protoc:3.5.1-1'
-//   }
-//   plugins {
-//     grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpc_version}" }
-//   }
-//   generateProtoTasks {
-//     all()*.plugins { grpc {} }
-//   }
-// }
-
-
 protobuf {
     protoc { artifact = 'com.google.protobuf:protoc:3.11.0' }
     plugins {
