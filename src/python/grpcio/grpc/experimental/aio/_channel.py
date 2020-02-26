@@ -240,7 +240,7 @@ class Channel(_base_channel.Channel):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._close(None)
 
-    async def _close(self, grace):
+    async def _close(self, grace):  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
