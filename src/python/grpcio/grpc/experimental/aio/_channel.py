@@ -252,7 +252,25 @@ class Channel(_base_channel.Channel):
         calls = []
         call_tasks = []
         for task in tasks:
-            stack = task.get_stack(limit=1)
+            try:
+                stack = task.get_stack(limit=1)
+            except AttributeError as attribute_error:
+                # NOTE(lidiz) tl;dr: If the Task is created with a CPython
+                # object, it will trigger AttributeError.
+                #
+                # In the global finalizer, the event loop schedules
+                # a CPython PyAsyncGenAThrow object.
+                # https://github.com/python/cpython/blob/00e45877e33d32bb61aa13a2033e3bba370bda4d/Lib/asyncio/base_events.py#L484
+                #
+                # However, the PyAsyncGenAThrow object is written in C and
+                # failed to include the normal Python frame objects. Hence,
+                # this exception is a false negative, and it is safe to ignore
+                # the failure (someone should fix it in CPython!).
+                # https://github.com/python/cpython/blob/a025d4ca99fb4c652465368e0b4eb03cf4b316b9/Objects/genobject.c#L1989
+                if 'frame' in str(attribute_error):
+                    continue
+                else:
+                    raise
 
             # If the Task is created by a C-extension, the stack will be empty.
             if not stack:
