@@ -254,7 +254,7 @@ class MetadataCredentialsPlugin {
       const grpc::AuthContext& channel_auth_context,
       std::multimap<grpc::string, grpc::string>* metadata) = 0;
 
-  virtual grpc::string DebugString() const {
+  virtual grpc::string DebugString() {
     return "MetadataCredentialsPlugin did not provide a debug string";
   }
 };

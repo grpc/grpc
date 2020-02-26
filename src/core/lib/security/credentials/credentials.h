@@ -254,7 +254,7 @@ struct grpc_call_credentials
     return min_security_level_;
   }
 
-  virtual std::string debug_string() const {
+  virtual std::string debug_string() {
     return "grpc_call_credentials did not provide debug string";
   }
 

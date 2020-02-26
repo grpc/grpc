@@ -39,11 +39,11 @@ class grpc_google_iam_credentials : public grpc_call_credentials {
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) override;
-  std::string debug_string() const override { return debug_string_; }
+  std::string debug_string() override { return debug_string_; }
 
  private:
   grpc_credentials_mdelem_array md_array_;
-  std::string debug_string_;
+  const std::string debug_string_;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_IAM_IAM_CREDENTIALS_H */

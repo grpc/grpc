@@ -77,9 +77,7 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) override;
 
-  std::string debug_string() const override {
-    return "MD only Test Credentials";
-  };
+  std::string debug_string() override { return "MD only Test Credentials"; };
 
  private:
   grpc_mdelem md_;

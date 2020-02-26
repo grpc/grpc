@@ -59,7 +59,7 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   // cancelled before completion.
   void pending_request_complete(pending_request* r);
 
-  std::string debug_string() const override;
+  std::string debug_string() override;
 
  private:
   void pending_request_remove_locked(pending_request* pending_request);

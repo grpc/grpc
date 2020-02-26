@@ -42,7 +42,7 @@ grpc_plugin_credentials::~grpc_plugin_credentials() {
   }
 }
 
-std::string grpc_plugin_credentials::debug_string() const {
+std::string grpc_plugin_credentials::debug_string() {
   std::string debug_str;
   if (plugin_.debug_string != nullptr) {
     char* debug_c_str = plugin_.debug_string(plugin_.state);

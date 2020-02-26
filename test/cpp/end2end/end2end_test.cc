@@ -177,7 +177,7 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
     }
   }
 
-  grpc::string DebugString() const override {
+  grpc::string DebugString() override {
     return absl::StrFormat("TestMetadataCredentials{key:%s,value:%s}",
                            metadata_key_.c_str(), metadata_value_.c_str());
   }

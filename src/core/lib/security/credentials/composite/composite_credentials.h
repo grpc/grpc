@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <string>
 
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -93,7 +93,7 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   }
 
   const CallCredentialsList& inner() const { return inner_; }
-  std::string debug_string() const override;
+  std::string debug_string() override;
 
  private:
   void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,

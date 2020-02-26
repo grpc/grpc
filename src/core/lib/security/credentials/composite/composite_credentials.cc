@@ -119,7 +119,7 @@ void grpc_composite_call_credentials::cancel_get_request_metadata(
   GRPC_ERROR_UNREF(error);
 }
 
-std::string grpc_composite_call_credentials::debug_string() const {
+std::string grpc_composite_call_credentials::debug_string() {
   std::vector<std::string> outputs;
   for (auto& inner_cred : inner_) {
     outputs.emplace_back(inner_cred->debug_string());
