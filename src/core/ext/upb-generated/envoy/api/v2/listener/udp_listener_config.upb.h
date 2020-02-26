@@ -21,8 +21,11 @@ extern "C" {
 #endif
 
 struct envoy_api_v2_listener_UdpListenerConfig;
+struct envoy_api_v2_listener_ActiveRawUdpListenerConfig;
 typedef struct envoy_api_v2_listener_UdpListenerConfig envoy_api_v2_listener_UdpListenerConfig;
+typedef struct envoy_api_v2_listener_ActiveRawUdpListenerConfig envoy_api_v2_listener_ActiveRawUdpListenerConfig;
 extern const upb_msglayout envoy_api_v2_listener_UdpListenerConfig_msginit;
+extern const upb_msglayout envoy_api_v2_listener_ActiveRawUdpListenerConfig_msginit;
 struct google_protobuf_Any;
 struct google_protobuf_Struct;
 extern const upb_msglayout google_protobuf_Any_msginit;
@@ -83,6 +86,22 @@ UPB_INLINE struct google_protobuf_Any* envoy_api_v2_listener_UdpListenerConfig_m
   }
   return sub;
 }
+
+/* envoy.api.v2.listener.ActiveRawUdpListenerConfig */
+
+UPB_INLINE envoy_api_v2_listener_ActiveRawUdpListenerConfig *envoy_api_v2_listener_ActiveRawUdpListenerConfig_new(upb_arena *arena) {
+  return (envoy_api_v2_listener_ActiveRawUdpListenerConfig *)upb_msg_new(&envoy_api_v2_listener_ActiveRawUdpListenerConfig_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_listener_ActiveRawUdpListenerConfig *envoy_api_v2_listener_ActiveRawUdpListenerConfig_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_api_v2_listener_ActiveRawUdpListenerConfig *ret = envoy_api_v2_listener_ActiveRawUdpListenerConfig_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_listener_ActiveRawUdpListenerConfig_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_listener_ActiveRawUdpListenerConfig_serialize(const envoy_api_v2_listener_ActiveRawUdpListenerConfig *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_listener_ActiveRawUdpListenerConfig_msginit, arena, len);
+}
+
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

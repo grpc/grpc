@@ -233,6 +233,9 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
   }
   envoy_api_v2_core_Node_set_build_version(node_msg,
                                            upb_strview_makez(build_version));
+  envoy_api_v2_core_Node_add_client_features(
+      node_msg,
+      upb_strview_makez("envoy.lb.does_not_support_overprovisioning"), arena);
 }
 
 envoy_api_v2_DiscoveryRequest* CreateDiscoveryRequest(
