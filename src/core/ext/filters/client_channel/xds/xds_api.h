@@ -250,7 +250,8 @@ class XdsApi {
 
  private:
   const XdsBootstrap::Node* node_;
-  std::string user_agent_name_;
+  const std::string build_version_;
+  const std::string user_agent_name_;
 };
 
 }  // namespace grpc_core
