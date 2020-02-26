@@ -320,10 +320,9 @@ grpc_slice XdsApi::CreateLdsRequest(const std::string& server_name,
                                     const std::string& nonce, grpc_error* error,
                                     bool populate_node) {
   upb::Arena arena;
-  envoy_api_v2_DiscoveryRequest* request =
-      CreateDiscoveryRequest(arena.ptr(), kLdsTypeUrl, version, nonce, error,
-                             populate_node ? node_ : nullptr,
-                             populate_node ? user_agent_name_ : "");
+  envoy_api_v2_DiscoveryRequest* request = CreateDiscoveryRequest(
+      arena.ptr(), kLdsTypeUrl, version, nonce, error,
+      populate_node ? node_ : nullptr, populate_node ? user_agent_name_ : "");
   // Add resource_name.
   envoy_api_v2_DiscoveryRequest_add_resource_names(
       request, upb_strview_make(server_name.data(), server_name.size()),
@@ -336,10 +335,9 @@ grpc_slice XdsApi::CreateRdsRequest(const std::string& route_config_name,
                                     const std::string& nonce, grpc_error* error,
                                     bool populate_node) {
   upb::Arena arena;
-  envoy_api_v2_DiscoveryRequest* request =
-      CreateDiscoveryRequest(arena.ptr(), kRdsTypeUrl, version, nonce, error,
-                             populate_node ? node_ : nullptr,
-                             populate_node ? user_agent_name_ : "");
+  envoy_api_v2_DiscoveryRequest* request = CreateDiscoveryRequest(
+      arena.ptr(), kRdsTypeUrl, version, nonce, error,
+      populate_node ? node_ : nullptr, populate_node ? user_agent_name_ : "");
   // Add resource_name.
   envoy_api_v2_DiscoveryRequest_add_resource_names(
       request,
@@ -353,10 +351,9 @@ grpc_slice XdsApi::CreateCdsRequest(const std::set<StringView>& cluster_names,
                                     const std::string& nonce, grpc_error* error,
                                     bool populate_node) {
   upb::Arena arena;
-  envoy_api_v2_DiscoveryRequest* request =
-      CreateDiscoveryRequest(arena.ptr(), kCdsTypeUrl, version, nonce, error,
-                             populate_node ? node_ : nullptr,
-                             populate_node ? user_agent_name_ : "");
+  envoy_api_v2_DiscoveryRequest* request = CreateDiscoveryRequest(
+      arena.ptr(), kCdsTypeUrl, version, nonce, error,
+      populate_node ? node_ : nullptr, populate_node ? user_agent_name_ : "");
   // Add resource_names.
   for (const auto& cluster_name : cluster_names) {
     envoy_api_v2_DiscoveryRequest_add_resource_names(
@@ -370,10 +367,9 @@ grpc_slice XdsApi::CreateEdsRequest(
     const std::set<StringView>& eds_service_names, const std::string& version,
     const std::string& nonce, grpc_error* error, bool populate_node) {
   upb::Arena arena;
-  envoy_api_v2_DiscoveryRequest* request =
-      CreateDiscoveryRequest(arena.ptr(), kEdsTypeUrl, version, nonce, error,
-                             populate_node ? node_ : nullptr,
-                             populate_node ? user_agent_name_ : "");
+  envoy_api_v2_DiscoveryRequest* request = CreateDiscoveryRequest(
+      arena.ptr(), kEdsTypeUrl, version, nonce, error,
+      populate_node ? node_ : nullptr, populate_node ? user_agent_name_ : "");
   // Add resource_names.
   for (const auto& eds_service_name : eds_service_names) {
     envoy_api_v2_DiscoveryRequest_add_resource_names(
