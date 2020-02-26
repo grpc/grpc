@@ -60,11 +60,11 @@ grpc_cc_test(
     name = "destroy_grpclb_channel_with_active_connect_is_graceful_test",
     srcs = ["destroy_grpclb_channel_with_active_connect_is_graceful_test.cc"],
     deps = [
-        "//third_party/grpc",
-        "//third_party/grpc:gpr",
-        "//third_party/grpc:grpc++",
-        "//third_party/grpc:grpc_resolver_fake",
-        "//third_party/grpc/test/core/util:grpc_test_util",
-        "//third_party/grpc/test/cpp/util:test_util",
+        "//:grpc",
+        "//:gpr",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )

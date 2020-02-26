@@ -52,14 +52,20 @@ void TryConnectAndDestroy() {
   // (https://tools.ietf.org/html/rfc6666). This is important because
   // the behavior we want in this test is for a TCP connect attempt to "hang",
   // i.e. we want to send SYN, and then *not* receive SYN-ACK or RST.
-  // The port number is arbitrary.
-  grpc_uri* lb_uri = grpc_uri_parse("ipv6:[0100::1234]:443", true);
+  // The precise behavior is dependant on the test runtime environment though,
+  // since connect() attempts on this address may unfortunately result in
+  // "network unreachable" errors in some test runtime environments.
+  char* uri_str;
+  gpr_asprintf(&uri_str, "ipv6:[0100::1234]:%d",
+               grpc_pick_unused_port_or_die());
+  grpc_uri* lb_uri = grpc_uri_parse(uri_str, true);
+  gpr_free(uri_str);
   GPR_ASSERT(lb_uri != nullptr);
   grpc_resolved_address address;
   GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
   std::vector<grpc_arg> address_args_to_add = {
-    grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1),
   };
   grpc_core::ServerAddressList addresses;
   grpc_channel_args* address_args = grpc_channel_args_copy_and_add(
@@ -85,7 +91,8 @@ void TryConnectAndDestroy() {
   // unreachable balancer to *begin. The connection should never become ready
   // because the LB we're trying to connect to is unreachable.
   channel->GetState(true /* try_to_connect */);
-  GPR_ASSERT(!channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  GPR_ASSERT(
+      !channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   GPR_ASSERT("grpclb" == channel->GetLoadBalancingPolicyName());
   channel.reset();
 };
