@@ -197,9 +197,9 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "19391fb4882601a65cb648d638c11aa301ce5f525ef02da1a9eafd22f72d7c59",
-            strip_prefix = "abseil-cpp-37dd2562ec830d547a1524bb306be313ac3f2556",
-            url = "https://github.com/abseil/abseil-cpp/archive/37dd2562ec830d547a1524bb306be313ac3f2556.tar.gz",
+            sha256 = "c14b840dc57926b8b671805426a82249e5ea0d7fddf709fd4619eb38cbb36fb5",
+            strip_prefix = "abseil-cpp-b832dce8489ef7b6231384909fd9b68d5a5ff2b7",
+            url = "https://github.com/abseil/abseil-cpp/archive/b832dce8489ef7b6231384909fd9b68d5a5ff2b7.tar.gz",
         )
 
     if "bazel_toolchains" not in native.existing_rules():
