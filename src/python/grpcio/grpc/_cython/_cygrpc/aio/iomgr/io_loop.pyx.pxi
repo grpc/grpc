@@ -14,6 +14,7 @@
 import os
 import sys
 import threading
+from time import sleep
 
 _SECONDS_PER_MILLISECOND = 0.001
 cdef _IOLoop _io_loop = None
@@ -55,6 +56,12 @@ cdef class _IOLoop:
             # unresponsive, proactively we close the process.
             sys.exit(1)
 
+    cdef object asyncio_loop(self):
+        return self._asyncio_loop
+
+    # Following methods are exclusively used for allowing run the synchronous
+    # stack over an already initialized environment with the Aio package
+
     cpdef void io_mark(self):
         # Wake up all threads that were waiting
         # for an IO event.
@@ -73,9 +80,10 @@ cdef class _IOLoop:
 
         if timeout_ms > 0:
             self._io_ev.wait(timeout_ms * _SECONDS_PER_MILLISECOND)
-
-    cdef object asyncio_loop(self):
-        return self._asyncio_loop
+        else:
+            # Release the GIL momentarily for giving a chance the IO Loop
+            # for gathering any pending event
+            sleep(0.0001)
 
 cdef _IOLoop _current_io_loop():
     global _io_loop
