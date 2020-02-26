@@ -274,9 +274,8 @@ filegroups:
   - absl/memory:memory
   - absl/strings:str_format
   - absl/strings:strings
-  - absl/types:optional
   - absl/time:time
-  - absl/strings:str_format
+  - absl/types:optional
   uses:
   - gpr_base_headers
 - name: gpr_base_headers

@@ -445,8 +445,8 @@
         'absl/memory:memory',
         'absl/strings:str_format',
         'absl/strings:strings',
-        'absl/types:optional',
         'absl/time:time',
+        'absl/types:optional',
       ],
       'sources': [
         'src/core/lib/gpr/alloc.cc',

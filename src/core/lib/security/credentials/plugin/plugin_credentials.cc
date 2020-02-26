@@ -43,13 +43,17 @@ grpc_plugin_credentials::~grpc_plugin_credentials() {
 }
 
 std::string grpc_plugin_credentials::debug_string() const {
+  std::string debug_str;
   if (plugin_.debug_string != nullptr) {
     char* debug_c_str = plugin_.debug_string(plugin_.state);
-    std::string debug_str(debug_c_str);
+    if (strlen(debug_c_str) != 0) {
+      debug_str = debug_c_str;
+    }
     gpr_free(debug_c_str);
-    return debug_str;
   }
-  return "";
+  return debug_str.empty()
+             ? "grpc_plugin_credentials did not provide a debug string"
+             : debug_str;
 }
 
 void grpc_plugin_credentials::pending_request_remove_locked(

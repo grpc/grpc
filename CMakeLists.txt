@@ -1447,8 +1447,8 @@ target_link_libraries(gpr
   absl::memory
   absl::str_format
   absl::strings
-  absl::optional
   absl::time
+  absl::optional
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -18579,7 +18579,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr -labsl_time -labsl_time_zone -labsl_civil_time -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgpr -labsl_bad_optional_access -labsl_time -labsl_time_zone -labsl_civil_time -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "gpr.pc")
 
@@ -18589,7 +18589,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_time -labsl_time_zone -labsl_civil_time -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_time -labsl_time_zone -labsl_civil_time -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc.pc")
 
@@ -18599,7 +18599,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_time -labsl_time_zone -labsl_civil_time -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_time -labsl_time_zone -labsl_civil_time -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc_unsecure.pc")
 
@@ -18609,7 +18609,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${PACKAGE_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_time -labsl_time_zone -labsl_civil_time -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc++ -labsl_bad_optional_access -labsl_time -labsl_time_zone -labsl_civil_time -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++.pc")
 
@@ -18619,6 +18619,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${PACKAGE_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_time -labsl_time_zone -labsl_civil_time -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_time -labsl_time_zone -labsl_civil_time -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_base -labsl_spinlock_wait -labsl_dynamic_annotations -labsl_int128 -labsl_throw_delegate -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++_unsecure.pc")

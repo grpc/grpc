@@ -24,8 +24,6 @@
 #include <string.h>
 
 #include <grpc/grpc_security.h>
-#include "absl/strings/str_format.h"
-#include "absl/time/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"

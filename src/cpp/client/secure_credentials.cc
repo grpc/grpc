@@ -402,8 +402,7 @@ char* MetadataCredentialsPluginWrapper::DebugString(void* wrapper) {
   GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
       static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
-  char* debug_str = gpr_strdup(w->plugin_->DebugString().c_str());
-  return debug_str;
+  return gpr_strdup(w->plugin_->DebugString().c_str());
 }
 
 void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
