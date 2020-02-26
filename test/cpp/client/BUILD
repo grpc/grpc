@@ -57,8 +57,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "destroy_grpclb_channel_with_active_connect_is_graceful_test",
-    srcs = ["destroy_grpclb_channel_with_active_connect_is_graceful_test.cc"],
+    name = "destroy_grpclb_channel_with_active_connect_stress_test",
+    srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
     deps = [
         "//:grpc",
         "//:gpr",
