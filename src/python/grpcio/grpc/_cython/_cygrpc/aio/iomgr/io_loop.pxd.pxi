@@ -14,10 +14,10 @@
 
 cdef class _IOLoop:
     cdef:
-        cdef object _asyncio_loop
-        cdef object _thread
-        cdef object _io_ev
-        cdef object _loop_started_ev
+        object _asyncio_loop
+        object _thread
+        object _io_ev
+        object _loop_started_ev
 
     cpdef void io_mark(self)
     cdef void io_wait(self, size_t timeout_ms)
