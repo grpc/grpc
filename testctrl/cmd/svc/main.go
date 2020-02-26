@@ -23,10 +23,12 @@ import (
   "strings"
 
   "github.com/grpc/grpc/testctrl/kubernetes"
-  pb "github.com/grpc/grpc/testctrl/proto"
-    "github.com/grpc/grpc/testctrl/svc"
+  pb "github.com/grpc/grpc/testctrl/genproto/testctrl/svc"
+  "github.com/grpc/grpc/testctrl/svc"
+  lrPb "google.golang.org/genproto/googleapis/longrunning"
   "google.golang.org/grpc"
   "google.golang.org/grpc/reflection"
+
 )
 
 func setupProdEnv(adapter *kubernetes.Adapter) {
@@ -69,7 +71,7 @@ func main() {
     log.Fatalf("Failed to listen on port %d: %v", *port, err)
   }
 
-  pb.RegisterOperationsServer(grpcServer, &svc.OperationsServer{})
+  lrPb.RegisterOperationsServer(grpcServer, &svc.OperationsServer{})
   pb.RegisterTestSessionsServer(grpcServer, &svc.TestSessionsServer{adapter})
 
   log.Printf("Running gRPC server (insecure) on port %d", *port)

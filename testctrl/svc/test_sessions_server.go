@@ -20,7 +20,8 @@ import (
 	"log"
 
 	"github.com/grpc/grpc/testctrl/kubernetes"
-	pb "github.com/grpc/grpc/testctrl/proto"
+	svcPb "github.com/grpc/grpc/testctrl/genproto/testctrl/svc"
+	lrPb "google.golang.org/genproto/googleapis/longrunning"
 	"github.com/google/uuid"
 )
 
@@ -28,7 +29,7 @@ type TestSessionsServer struct{
 	Adapter *kubernetes.Adapter
 }
 
-func (t *TestSessionsServer) StartTestSession(ctx context.Context, req *pb.StartTestSessionRequest) (*pb.Operation, error) {
+func (t *TestSessionsServer) StartTestSession(ctx context.Context, req *svcPb.StartTestSessionRequest) (*lrPb.Operation, error) {
 	sessionID := uuid.New().String()
 
 	containerImageMap := map[kubernetes.DeploymentRole]string{
@@ -50,7 +51,7 @@ func (t *TestSessionsServer) StartTestSession(ctx context.Context, req *pb.Start
 		log.Printf("Deployment of %s for session %s succeeded", string(role), sessionID)
 	}
 
-	operation := new(pb.Operation)
+	operation := new(lrPb.Operation)
 	operation.Name = fmt.Sprintf("testSessions/%s", sessionID)
 	operation.Done = false
 	return operation, nil
