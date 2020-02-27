@@ -33,6 +33,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -128,8 +129,10 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     parent_->resolver_->RequestReresolutionLocked();
   }
 
-  void AddTraceEvent(TraceSeverity /*severity*/,
-                     StringView /*message*/) override {}
+  void AddTraceEvent(TraceSeverity severity, StringView message) override {
+    if (parent_->resolver_ == nullptr) return;  // Shutting down.
+    parent_->channel_control_helper()->AddTraceEvent(severity, message);
+  }
 
  private:
   RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;

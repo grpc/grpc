@@ -32,10 +32,10 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
@@ -1376,10 +1376,9 @@ XdsLb::LocalityMap::Locality::CreateChildPolicyLocked(
     return nullptr;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Locality %p %s: Created new child policy (%p)",
-            xds_policy(), this, name_->AsHumanReadableString(),
-            lb_policy.get());
+    gpr_log(
+        GPR_INFO, "[xdslb %p] Locality %p %s: Created new child policy (%p)",
+        xds_policy(), this, name_->AsHumanReadableString(), lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
@@ -1552,8 +1551,8 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     }
     grpc_error* parse_error = GRPC_ERROR_NONE;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            child_policy_json, &parse_error);
+        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(child_policy_json,
+                                                              &parse_error);
     if (child_policy == nullptr) {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
       std::vector<grpc_error*> child_errors;
@@ -1578,8 +1577,8 @@ class XdsFactory : public LoadBalancingPolicyFactory {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
       std::vector<grpc_error*> child_errors;
       child_errors.push_back(parse_error);
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-          "field:fallbackPolicy", &child_errors));
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_VECTOR("field:fallbackPolicy", &child_errors));
     }
     // EDS service name.
     const char* eds_service_name = nullptr;
