@@ -712,7 +712,7 @@ const grpc_arg_pointer_vtable locality_name_arg_vtable = {
 
 ServerAddressList EdsLb::CreateChildPolicyAddresses() {
   ServerAddressList addresses;
-  for (size_t priority = 0; priority < priority_list_update_.size();
+  for (uint32_t priority = 0; priority < priority_list_update_.size();
        ++priority) {
     const auto* locality_map = priority_list_update_.Find(priority);
     GPR_ASSERT(locality_map != nullptr);
@@ -735,7 +735,7 @@ ServerAddressList EdsLb::CreateChildPolicyAddresses() {
 RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
   Json::Object priority_children;
   Json::Array priority_priorities;
-  for (size_t priority = 0; priority < priority_list_update_.size();
+  for (uint32_t priority = 0; priority < priority_list_update_.size();
        ++priority) {
     const auto* locality_map = priority_list_update_.Find(priority);
     GPR_ASSERT(locality_map != nullptr);
