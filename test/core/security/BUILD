@@ -278,7 +278,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "grpc_tls_credentials_options_test",
-    srcs = ["gprc_tls_credentials_options_test.cc"],
+    srcs = ["grpc_tls_credentials_options_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [

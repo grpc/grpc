@@ -10949,7 +10949,7 @@ add_executable(grpc_tls_credentials_options_test
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
-  test/core/security/gprc_tls_credentials_options_test.cc
+  test/core/security/grpc_tls_credentials_options_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

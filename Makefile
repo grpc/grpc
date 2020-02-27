@@ -14625,7 +14625,7 @@ GRPC_TLS_CREDENTIALS_OPTIONS_TEST_SRC = \
     test/core/end2end/data/server1_cert.cc \
     test/core/end2end/data/server1_key.cc \
     test/core/end2end/data/test_root_cert.cc \
-    test/core/security/gprc_tls_credentials_options_test.cc \
+    test/core/security/grpc_tls_credentials_options_test.cc \
 
 GRPC_TLS_CREDENTIALS_OPTIONS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_TLS_CREDENTIALS_OPTIONS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -14664,7 +14664,7 @@ $(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/l
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
-$(OBJDIR)/$(CONFIG)/test/core/security/gprc_tls_credentials_options_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(OBJDIR)/$(CONFIG)/test/core/security/grpc_tls_credentials_options_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 deps_grpc_tls_credentials_options_test: $(GRPC_TLS_CREDENTIALS_OPTIONS_TEST_OBJS:.o=.dep)
 
