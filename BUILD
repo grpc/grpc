@@ -75,11 +75,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "galactic"
+g_stands_for = "gringotts"
 
 core_version = "9.0.0"
 
-version = "1.28.0-dev"
+version = "1.29.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
