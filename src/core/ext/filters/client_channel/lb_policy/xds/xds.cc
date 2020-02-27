@@ -842,8 +842,8 @@ void XdsLb::UpdateFallbackPolicyLocked() {
   update_args.config = config_->fallback_policy();
   update_args.args = grpc_channel_args_copy(args_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Updating fallback policy %p", this,
-            fallback_policy_.get());
+    gpr_log(GPR_INFO, "[xdslb %p] Updating fallback child policy handler %p",
+            this, fallback_policy_.get());
   }
   fallback_policy_->UpdateLocked(std::move(update_args));
 }
@@ -858,12 +858,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateFallbackPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_xds_trace);
-  if (GPR_UNLIKELY(lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating fallback policy", this);
-    return nullptr;
-  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Created new fallback policy (%p)", this,
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Created new fallback child policy handler (%p)", this,
             lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
@@ -1369,16 +1366,11 @@ XdsLb::LocalityMap::Locality::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_xds_trace);
-  if (GPR_UNLIKELY(lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR,
-            "[xdslb %p] Locality %p %s: failure creating child policy",
-            xds_policy(), this, name_->AsHumanReadableString());
-    return nullptr;
-  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(
-        GPR_INFO, "[xdslb %p] Locality %p %s: Created new child policy (%p)",
-        xds_policy(), this, name_->AsHumanReadableString(), lb_policy.get());
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Locality %p %s: Created new child policy handler (%p)",
+            xds_policy(), this, name_->AsHumanReadableString(),
+            lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
@@ -1411,7 +1403,8 @@ void XdsLb::LocalityMap::Locality::UpdateLocked(uint32_t locality_weight,
   }
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Locality %p %s: Updating child policy %p",
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Locality %p %s: Updating child policy handler %p",
             xds_policy(), this, name_->AsHumanReadableString(),
             child_policy_.get());
   }
@@ -1540,19 +1533,21 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     }
     std::vector<grpc_error*> error_list;
     // Child policy.
-    Json child_policy_json;
+    Json json_tmp;
+    const Json* child_policy_json;
     auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
-      child_policy_json = Json::Array{Json::Object{
+      json_tmp = Json::Array{Json::Object{
           {"round_robin", Json::Object()},
       }};
+      child_policy_json = &json_tmp;
     } else {
-      child_policy_json = it->second;
+      child_policy_json = &it->second;
     }
     grpc_error* parse_error = GRPC_ERROR_NONE;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(child_policy_json,
-                                                              &parse_error);
+        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            *child_policy_json, &parse_error);
     if (child_policy == nullptr) {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
       std::vector<grpc_error*> child_errors;
@@ -1561,18 +1556,19 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
     }
     // Fallback policy.
-    Json fallback_policy_json;
+    const Json* fallback_policy_json;
     it = json.object_value().find("fallbackPolicy");
     if (it == json.object_value().end()) {
-      fallback_policy_json = Json::Array{Json::Object{
+      json_tmp = Json::Array{Json::Object{
           {"round_robin", Json::Object()},
       }};
+      fallback_policy_json = &json_tmp;
     } else {
-      fallback_policy_json = it->second;
+      fallback_policy_json = &it->second;
     }
     RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy =
         LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            fallback_policy_json, &parse_error);
+            *fallback_policy_json, &parse_error);
     if (fallback_policy == nullptr) {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
       std::vector<grpc_error*> child_errors;
