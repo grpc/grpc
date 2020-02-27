@@ -1552,6 +1552,7 @@ void GrpcLb::OnBalancerChannelConnectivityChanged(void* arg,
 void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                         grpc_error* /*error*/) {
   GrpcLb* self = static_cast<GrpcLb*>(arg);
+  gpr_log(GPR_DEBUG, "OnBalancerChannelConnectivityChangedLocked grpclb:%p pollset set:%p", self, self->interested_parties());
   if (!self->shutting_down_ && self->fallback_at_startup_checks_pending_) {
     if (self->lb_channel_connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // Not in TRANSIENT_FAILURE.  Renew connectivity watch.

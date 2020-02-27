@@ -64,7 +64,11 @@ void gpr_mu_lock(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_lock(&mu->mutex) == 0);
 #else
-  GPR_ASSERT(pthread_mutex_lock(mu) == 0);
+  int ret = pthread_mutex_lock(mu);
+  if (ret != 0) {
+    gpr_log(GPR_ERROR, "ret:%d on mu lock for mu:%p", ret, mu);
+    abort();
+  }
 #endif
 }
 

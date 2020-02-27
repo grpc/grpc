@@ -38,6 +38,7 @@ LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
       channel_control_helper_(std::move(args.channel_control_helper)) {}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
+  gpr_log(GPR_DEBUG, "lb policy:%p destroy pollset set:%p", this, interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
