@@ -447,6 +447,20 @@ class CXXLanguage:
                 categories=inproc_categories + [SCALABLE])
 
             yield _ping_pong_scenario(
+                'cpp_protobuf_async_unary_qps_unconstrained_multiple_channels_%s'
+                % secstr,
+                rpc_type='UNARY',
+                client_type='ASYNC_CLIENT',
+                server_type='ASYNC_SERVER',
+                unconstrained_client='async',
+                secure=secure,
+                channels=8,
+                async_server_threads=8,
+                client_threads_per_cq=1,
+                server_threads_per_cq=1,
+                categories=[SCALABLE])
+
+            yield _ping_pong_scenario(
                 'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr,
                 rpc_type='STREAMING',
                 client_type='ASYNC_CLIENT',
