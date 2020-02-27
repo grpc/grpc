@@ -1088,11 +1088,6 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       }
 
       RefCountedPtr<WatcherWrapper> parent_;
-      grpc_connectivity_state state_;
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-      bool run_inline_ = false;
-      /* This can be replaced with something like getting the thread id */
-      ExecCtx* running_exec_ctx_ = nullptr;
     };
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
