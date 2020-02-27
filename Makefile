@@ -1238,6 +1238,7 @@ grpc_objective_c_plugin: $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin
 grpc_php_plugin: $(BINDIR)/$(CONFIG)/grpc_php_plugin
 grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
+grpc_tls_credentials_options_test: $(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test
 grpc_tls_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
@@ -1708,6 +1709,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 \
   $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test \
+  $(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
@@ -1886,6 +1888,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 \
   $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test \
+  $(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
@@ -2396,6 +2399,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test || ( echo test grpc_alts_credentials_options_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_linux_system_roots_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test || ( echo test grpc_linux_system_roots_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_tls_credentials_options_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test || ( echo test grpc_tls_credentials_options_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_tls_security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_tls_security_connector_test || ( echo test grpc_tls_security_connector_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_tool_test"
@@ -17597,6 +17602,49 @@ deps_grpc_ruby_plugin: $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
+endif
+
+
+GRPC_TLS_CREDENTIALS_OPTIONS_TEST_SRC = \
+    test/core/security/grpc_tls_credentials_options_test.cc \
+
+GRPC_TLS_CREDENTIALS_OPTIONS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_TLS_CREDENTIALS_OPTIONS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test: $(PROTOBUF_DEP) $(GRPC_TLS_CREDENTIALS_OPTIONS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_TLS_CREDENTIALS_OPTIONS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/grpc_tls_credentials_options_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_tls_credentials_options_test: $(GRPC_TLS_CREDENTIALS_OPTIONS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_TLS_CREDENTIALS_OPTIONS_TEST_OBJS:.o=.dep)
+endif
 endif
 
 

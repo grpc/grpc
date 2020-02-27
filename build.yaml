@@ -5136,6 +5136,18 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
+- name: grpc_tls_credentials_options_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/security/grpc_tls_credentials_options_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: grpc_tls_security_connector_test
   gtest: true
   build: test

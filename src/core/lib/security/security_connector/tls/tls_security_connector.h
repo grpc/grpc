@@ -145,6 +145,29 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 };
 
 // ---- Functions below are exposed for testing only -----------------------
+
+/** The |TlsFetchKeyMaterials| API ensures that |key_materials_config| has a
+ *  non-empty pem-key-cert pair list. This is done as follows:
+ *  - if |options| is equipped with a credential reload config, then this
+ *    methods uses credential reloading to populate |key_materials_config|, and
+ *    afterwards it populates |reload_status| with the status of this operation.
+ *    particular, any data stored in |key_materials_config| is overwritten.
+ *  - if |options| has no credential reload config, then:
+ *    - if |key_materials_config| already has a non-empty pem-key-cert pair
+ *      list or is called by a client, then the method returns |GRPC_STATUS_OK|.
+ *    - if |key_materials_config| has an empty pem-key-cert pair list and is
+ *      called by a server, then the method return an error code.
+ *
+ *  The arguments are detailed below:
+ *  - key_materials_config: a key material config that will be populated by the
+ *    method on success; the caller should not pass in nullptr.
+ *  - options: the TLS credentials options whose credential reloading config
+ *    will be used to populate |key_materials_config|.
+ *  - server_config: true denotes that this method is called by a server, and
+ *    false denotes that this method is called by a client.
+ *  - reload_status: the status of the credential reloading after the method
+ *    returns; the caller should not pass in nullptr. **/
+// TODO: is there a memory leak if key materials config is already populated?
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
