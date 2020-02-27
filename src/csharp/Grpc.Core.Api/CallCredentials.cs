@@ -30,7 +30,7 @@ namespace Grpc.Core
     public abstract class CallCredentials
     {
         /// <summary>
-        /// Composes multiple multiple <c>CallCredentials</c> objects into
+        /// Composes multiple <c>CallCredentials</c> objects into
         /// a single <c>CallCredentials</c> object.
         /// </summary>
         /// <param name="credentials">credentials to compose</param>

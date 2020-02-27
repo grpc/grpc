@@ -161,6 +161,14 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1000), 1);
   cq_verify(cqv);
+  /* Please refer https://github.com/grpc/grpc/issues/21221 for additional
+   * details.
+   * TODO(yashykt@) - The following line should be removeable after C-Core
+   * correctly handles GOAWAY frames. Internal Reference b/135458602. If this
+   * test remains flaky even after this, an alternative fix would be to send a
+   * request when the server is in the shut down state.
+   */
+  cq_verify_empty(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

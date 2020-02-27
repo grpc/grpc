@@ -29,7 +29,7 @@ cd -
 
 DOCKERHUB_ORGANIZATION=grpctesting
 
-for DOCKERFILE_DIR in tools/dockerfile/test/* tools/dockerfile/grpc_artifact_* tools/dockerfile/interoptest/* tools/dockerfile/distribtest/* third_party/rake-compiler-dock
+for DOCKERFILE_DIR in tools/dockerfile/test/* tools/dockerfile/grpc_artifact_* tools/dockerfile/interoptest/* tools/dockerfile/distribtest/*
 do
   # Generate image name based on Dockerfile checksum. That works well as long
   # as can count on dockerfiles being written in a way that changing the logical 

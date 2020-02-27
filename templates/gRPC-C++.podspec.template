@@ -60,42 +60,43 @@
         files.update(lib.get(field, []))
     return list(sorted(files))
 
-  def list_filegroup_files(expect_filegroups, groups):
-    out = []
-    for filegroup_name in expect_filegroups:
-      filegroup = filegroup_maps[filegroup_name]
-      for group in groups:
-        out += filegroup.get(group, [])
-    return list(sorted(set(out)))
-
   def filter_grpcpp(files):
     return sorted([file for file in files if not file.startswith("include/grpc++")])
 
-  grpc_private_files = list_lib_files("grpc", ("headers", "src"))
-  grpc_public_headers = list_lib_files("grpc", ("public_headers",))
-  grpc_private_headers = list_lib_files("grpc", ("headers",))
+  # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
+  address_sorting_unwanted_files = list_lib_files("address_sorting", ("public_headers", "headers", "src"))
 
-  grpcpp_proto_files = filter_grpcpp(
-    set(list_filegroup_files(("grpc++_codegen_proto", "grpc++_config_proto"), ("headers", "src", "public_headers")))
-    - set(list_filegroup_files(("grpc++_codegen_base",), ("headers", "src", "public_headers")))
-  )
+  grpc_private_files = list(sorted(set(list_lib_files("grpc", ("headers", "src"))) - set(address_sorting_unwanted_files)))
+  grpc_public_headers = list(sorted(set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)))
+  grpc_private_headers = list(sorted(set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)))
+
+  # TODO(jtattermusch): build.yaml no longer has filegroups, so the files here are just hand-listed
+  # This template shouldn't be touching the filegroups anyway, so this is only a bit more fragile.
+  grpcpp_proto_files = ['include/grpcpp/impl/codegen/config_protobuf.h',
+                        'include/grpcpp/impl/codegen/proto_buffer_reader.h',
+                        'include/grpcpp/impl/codegen/proto_buffer_writer.h',
+                        'include/grpcpp/impl/codegen/proto_utils.h']
+
   grpcpp_private_files = filter_grpcpp(
     set(list_lib_files("grpc++", ("headers", "src")))
     - set(grpc_private_files)
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
     - set(grpcpp_proto_files)
+    - set(address_sorting_unwanted_files)
   )
   grpcpp_private_headers = filter_grpcpp(
     set(list_lib_files("grpc++", ("headers",)))
     - set(grpc_private_headers)
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
     - set(grpcpp_proto_files)
+    - set(address_sorting_unwanted_files)
   )
   grpcpp_public_headers = filter_grpcpp(
     set(list_lib_files("grpc++", ("public_headers",)))
     - set(grpc_public_headers)
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
     - set(grpcpp_proto_files)
+    - set(address_sorting_unwanted_files)
   )
   grpcpp_abseil_specs = list_abseil_specs("grpc++")
   %>
@@ -163,7 +164,7 @@
       ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'gRPC-Core', version
-      abseil_version = '0.20190808.1'
+      abseil_version = '0.20200225.0'
       % for abseil_spec in grpcpp_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
@@ -199,6 +200,7 @@
     end
 
     s.prepare_command = <<-END_OF_COMMAND
+      sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
       find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
       find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
       find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
