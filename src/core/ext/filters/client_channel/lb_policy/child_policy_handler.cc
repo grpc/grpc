@@ -135,6 +135,8 @@ void ChildPolicyHandler::ShutdownLocked() {
 }
 
 void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
+  // The name of the policy that this update wants us to use.
+  const char* child_policy_name = args.config->name();
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -151,10 +153,9 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   //
   // As a result of this, there are several cases to consider here:
   //
-  // 1. We have no existing child policy (i.e., we have started up but
-  //    have not yet received a serverlist from the balancer or gone
-  //    into fallback mode; in this case, both child_policy_ and
-  //    pending_child_policy_ are null).  In this case, we create a
+  // 1. We have no existing child policy (i.e., this is the first update
+  //    we receive after being created; in this case, both child_policy_
+  //    and pending_child_policy_ are null).  In this case, we create a
   //    new child policy and store it in child_policy_.
   //
   // 2. We have an existing child policy and have no pending child policy
@@ -184,7 +185,6 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-  const char* child_policy_name = args.config->name();
   const bool create_policy =
       // case 1
       child_policy_ == nullptr ||
