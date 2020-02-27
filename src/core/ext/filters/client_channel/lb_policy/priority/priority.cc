@@ -278,7 +278,7 @@ void PriorityLb::ResetBackoffLocked() {
 }
 
 uint32_t PriorityLb::GetChildPriority(const std::string& child_name) const {
-  for (uint32_t priority = 0; priority <= config_->priorities().size();
+  for (uint32_t priority = 0; priority < config_->priorities().size();
        ++priority) {
     if (config_->priorities().at(priority) == child_name) return priority;
   }
