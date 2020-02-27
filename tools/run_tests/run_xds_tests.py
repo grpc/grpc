@@ -166,8 +166,11 @@ def get_client_stats(num_rpcs, timeout_sec):
         request = messages_pb2.LoadBalancerStatsRequest()
         request.num_rpcs = num_rpcs
         request.timeout_sec = timeout_sec
+        rpc_timeout = timeout_sec * 2  # Allow time for connection establishment
         try:
-            response = stub.GetClientStats(request, wait_for_ready=True)
+            response = stub.GetClientStats(request,
+                                           wait_for_ready=True,
+                                           timeout=rpc_timeout)
             logger.debug('Invoked GetClientStats RPC: %s', response)
             return response
         except grpc.RpcError as rpc_error:
