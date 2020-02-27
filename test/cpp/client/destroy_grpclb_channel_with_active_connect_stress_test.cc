@@ -104,8 +104,10 @@ int main(int argc, char** argv) {
   // 100 is picked for number of threads just
   // because it's enough to reproduce a certain crash almost 100%
   // at this time of writing.
-  for (int i = 0; i < 100; i++) {
-    thds.push_back(std::thread(TryConnectAndDestroy));
+  int num_threads = 100;
+  thds.reserve(num_threads);
+  for (int i = 0; i < num_threads; i++) {
+    thds[i] = std::thread(TryConnectAndDestroy);
   }
   for (int i = 0; i < thds.size(); i++) {
     thds[i].join();
