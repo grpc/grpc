@@ -217,7 +217,6 @@ class ChannelData {
     grpc_connectivity_state initial_state_;
     grpc_connectivity_state* state_;
     grpc_closure* on_complete_;
-    bool was_cancelled_ = false;
     grpc_closure* watcher_timer_init_;
     grpc_closure add_closure_;
     grpc_closure remove_closure_;
@@ -1155,11 +1154,6 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
 ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
   grpc_polling_entity_del_from_pollset_set(&pollent_,
                                            chand_->interested_parties_);
-  if (was_cancelled_) {
-    ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
-  } else {
-    ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_NONE);
-  }
   GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_,
                            "ExternalConnectivityWatcher");
 }
@@ -1175,6 +1169,7 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Report new state to the user.
   *state_ = state;
+  ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_NONE);
   // Hop back into the combiner to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
@@ -1191,7 +1186,7 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
                                    MemoryOrder::RELAXED)) {
     return;  // Already done.
   }
-  was_cancelled_ = true;
+  ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
   // Hop back into the combiner to clean up.
   chand_->combiner_->Run(
       GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this, nullptr),
