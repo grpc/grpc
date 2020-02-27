@@ -724,6 +724,8 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
                 std::move(update_queue.front());
             update_queue.pop_front();
             did_work = true;
+            gpr_log(GPR_INFO, "ADS[%p]: Handling update type %s name %s", this,
+                    update.first.c_str(), update.second.c_str());
             auto subscriber_it =
                 subscription_map[update.first].find(update.second);
             if (subscriber_it != subscription_map[update.first].end()) {
