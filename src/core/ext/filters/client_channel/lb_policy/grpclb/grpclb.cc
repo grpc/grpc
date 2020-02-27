@@ -316,8 +316,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
    private:
     void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
-      if (!parent_->shutting_down_ &&
-          parent_->fallback_at_startup_checks_pending_ &&
+      if (parent_->fallback_at_startup_checks_pending_ &&
           new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
         // fallback mode immediately.
