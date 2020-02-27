@@ -329,6 +329,8 @@ class GrpcLb : public LoadBalancingPolicy {
         grpc_timer_cancel(&parent_->lb_fallback_timer_);
         parent_->fallback_mode_ = true;
         parent_->CreateOrUpdateChildPolicyLocked();
+        // Cancel the watch, since we don't care about the channel state once we
+        // go into fallback mode.
         parent_->CancelBalancerChannelConnectivityWatchLocked();
       }
     }
