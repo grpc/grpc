@@ -1228,9 +1228,9 @@ static void test_jwt_creds_lifetime(void) {
                           grpc_max_auth_token_lifetime()) == 0);
   /* Check security level. */
   GPR_ASSERT(jwt_creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  GPR_ASSERT(gpr_strincmp(expected_creds_debug_string_prefix,
-                          jwt_creds->debug_string().c_str(),
-                          strlen(expected_creds_debug_string_prefix)) == 0);
+  GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
+                     jwt_creds->debug_string().c_str(),
+                     strlen(expected_creds_debug_string_prefix)) == 0);
   grpc_call_credentials_release(jwt_creds);
 
   // Shorter lifetime.
@@ -1240,9 +1240,9 @@ static void test_jwt_creds_lifetime(void) {
       json_key_string, token_lifetime, nullptr);
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           token_lifetime) == 0);
-  GPR_ASSERT(gpr_strincmp(expected_creds_debug_string_prefix,
-                          jwt_creds->debug_string().c_str(),
-                          strlen(expected_creds_debug_string_prefix)) == 0);
+  GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
+                     jwt_creds->debug_string().c_str(),
+                     strlen(expected_creds_debug_string_prefix)) == 0);
   grpc_call_credentials_release(jwt_creds);
 
   // Cropped lifetime.
@@ -1252,9 +1252,9 @@ static void test_jwt_creds_lifetime(void) {
       json_key_string, token_lifetime, nullptr);
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           grpc_max_auth_token_lifetime()) == 0);
-  GPR_ASSERT(gpr_strincmp(expected_creds_debug_string_prefix,
-                          jwt_creds->debug_string().c_str(),
-                          strlen(expected_creds_debug_string_prefix)) == 0);
+  GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
+                     jwt_creds->debug_string().c_str(),
+                     strlen(expected_creds_debug_string_prefix)) == 0);
   grpc_call_credentials_release(jwt_creds);
 
   gpr_free(json_key_string);
@@ -1298,9 +1298,9 @@ static void test_jwt_creds_success(void) {
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   run_request_metadata_test(creds, auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_strincmp(expected_creds_debug_string_prefix,
-                          creds->debug_string().c_str(),
-                          strlen(expected_creds_debug_string_prefix)) == 0);
+  GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
+                     creds->debug_string().c_str(),
+                     strlen(expected_creds_debug_string_prefix)) == 0);
 
   creds->Unref();
   gpr_free(json_key_string);
@@ -1326,9 +1326,9 @@ static void test_jwt_creds_signing_failure(void) {
   run_request_metadata_test(creds, auth_md_ctx, state);
 
   gpr_free(json_key_string);
-  GPR_ASSERT(gpr_strincmp(expected_creds_debug_string_prefix,
-                          creds->debug_string().c_str(),
-                          strlen(expected_creds_debug_string_prefix)) == 0);
+  GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
+                     creds->debug_string().c_str(),
+                     strlen(expected_creds_debug_string_prefix)) == 0);
 
   creds->Unref();
   grpc_jwt_encode_and_sign_set_override(nullptr);
