@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "absl/strings/str_format.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -358,6 +359,10 @@ grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()
   grpc_httpcli_context_init(&httpcli_context_);
 }
 
+std::string grpc_oauth2_token_fetcher_credentials::debug_string() {
+  return "OAuth2TokenFetcherCredentials";
+}
+
 //
 //  Google Compute Engine credentials.
 //
@@ -394,6 +399,12 @@ class grpc_compute_engine_token_fetcher_credentials
                                        metadata_req, grpc_schedule_on_exec_ctx),
                      &metadata_req->response);
     grpc_resource_quota_unref_internal(resource_quota);
+  }
+
+  std::string debug_string() override {
+    return absl::StrFormat(
+        "GoogleComputeEngineTokenFetcherCredentials{%s}",
+        grpc_oauth2_token_fetcher_credentials::debug_string());
   }
 
  private:
@@ -468,6 +479,12 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
       refresh_token);
 }
 
+std::string grpc_google_refresh_token_credentials::debug_string() {
+  return absl::StrFormat("GoogleRefreshToken{ClientID:%s,%s}",
+                         refresh_token_.client_id,
+                         grpc_oauth2_token_fetcher_credentials::debug_string());
+}
+
 static char* create_loggable_refresh_token(grpc_auth_refresh_token* token) {
   if (strcmp(token->type, GRPC_AUTH_JSON_TYPE_INVALID) == 0) {
     return gpr_strdup("<Invalid json token>");
@@ -539,6 +556,13 @@ class StsTokenFetcherCredentials
         actor_token_type_(gpr_strdup(options->actor_token_type)) {}
 
   ~StsTokenFetcherCredentials() override { grpc_uri_destroy(sts_url_); }
+
+  std::string debug_string() override {
+    return absl::StrFormat(
+        "StsTokenFetcherCredentials{Path:%s,Authority:%s,%s}", sts_url_->path,
+        sts_url_->authority,
+        grpc_oauth2_token_fetcher_credentials::debug_string());
+  }
 
  private:
   void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
@@ -729,6 +753,12 @@ grpc_access_token_credentials::grpc_access_token_credentials(
       grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
       grpc_core::UnmanagedMemorySlice(token_md_value));
   gpr_free(token_md_value);
+}
+
+std::string grpc_access_token_credentials::debug_string() {
+  bool access_token_present = !GRPC_MDISNULL(access_token_md_);
+  return absl::StrFormat("AccessTokenCredentials{Token:%s}",
+                         access_token_present ? "present" : "absent");
 }
 
 grpc_call_credentials* grpc_access_token_credentials_create(

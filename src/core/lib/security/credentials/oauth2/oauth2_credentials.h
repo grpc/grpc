@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include <grpc/grpc_security.h>
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -84,6 +86,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
 
   void on_http_response(grpc_credentials_metadata_request* r,
                         grpc_error* error);
+  std::string debug_string() override;
 
  protected:
   virtual void fetch_oauth2(grpc_credentials_metadata_request* req,
@@ -112,6 +115,8 @@ class grpc_google_refresh_token_credentials final
     return refresh_token_;
   }
 
+  std::string debug_string() override;
+
  protected:
   void fetch_oauth2(grpc_credentials_metadata_request* req,
                     grpc_httpcli_context* httpcli_context,
@@ -137,6 +142,8 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) override;
+
+  std::string debug_string() override;
 
  private:
   grpc_mdelem access_token_md_;

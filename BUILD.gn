@@ -170,6 +170,7 @@ config("grpc_config") {
         "src/core/lib/profiling/timers.h",
     ]
     deps = [
+        ":absl/time:time",
         ":absl/strings:strings",
         ":absl/strings:str_format",
         ":absl/memory:memory",

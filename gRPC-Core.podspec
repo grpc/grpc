@@ -178,6 +178,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
+    ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 

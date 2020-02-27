@@ -369,6 +369,7 @@
       'target_name': 'gpr',
       'type': 'static_library',
       'dependencies': [
+        'absl/time:time',
         'absl/strings:strings',
         'absl/strings:str_format',
         'absl/memory:memory',

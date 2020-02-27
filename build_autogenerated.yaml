@@ -347,6 +347,7 @@ libs:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   deps:
+  - absl/time:time
   - absl/strings:strings
   - absl/strings:str_format
   - absl/memory:memory

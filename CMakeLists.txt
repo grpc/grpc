@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.29.0-dev")
-set(gRPC_CORE_VERSION     "9.0.0")
-set(gRPC_CORE_SOVERSION   "9")
+set(gRPC_CORE_VERSION     "10.0.0")
+set(gRPC_CORE_SOVERSION   "10")
 set(gRPC_CPP_VERSION      "1.29.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
 set(gRPC_CSHARP_VERSION   "2.29.0-dev")
@@ -105,6 +105,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_base
   absl_base_internal
   absl_bits
+  absl_civil_time
   absl_compressed_tuple
   absl_config
   absl_core_headers
@@ -125,6 +126,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_strings
   absl_strings_internal
   absl_throw_delegate
+  absl_time
+  absl_time_zone
   absl_type_traits
   absl_utility
   absl_meta
@@ -1221,6 +1224,7 @@ target_include_directories(gpr
 )
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::time
   absl::strings
   absl::str_format
   absl::memory
@@ -14941,7 +14945,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgpr -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "gpr.pc")
 
@@ -14951,7 +14955,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -14961,7 +14965,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc_unsecure.pc")
 
@@ -14971,7 +14975,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${PACKAGE_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 
@@ -14981,6 +14985,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${PACKAGE_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++_unsecure.pc")
