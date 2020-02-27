@@ -49,7 +49,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "no_windows",
+    ],
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",

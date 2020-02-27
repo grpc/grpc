@@ -221,7 +221,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             )
     else:
         # the test behavior doesn't depend on polling, just generate the test
-        native.cc_test(name = name, tags = tags, **args)
+        native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
     ios_cc_test(
         name = name,
         tags = tags,
