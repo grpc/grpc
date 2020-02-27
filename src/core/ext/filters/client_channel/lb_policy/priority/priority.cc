@@ -319,14 +319,14 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
 
 void PriorityLb::DeactivateChildrenNotInConfig() {
   for (auto it = children_.begin(); it != children_.end();) {
-    if (config_->children().find(it->first) != config_->children().end()) {
+    if (config_->children().find(it->first) == config_->children().end()) {
       if (child_retention_interval_ms_ == 0) {
         it = children_.erase(it);
-      } else {
-        it->second->DeactivateLocked();
-        ++it;
+        continue;
       }
+      it->second->DeactivateLocked();
     }
+    ++it;
   }
 }
 
