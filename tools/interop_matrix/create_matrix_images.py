@@ -216,9 +216,9 @@ def build_all_images_for_release(lang, release):
     jobset.message('START', 'Building interop docker images.', do_newline=True)
     print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
 
-    num_failures, _ = jobset.run(build_jobs,
-                                 newline_on_success=True,
-                                 maxjobs=multiprocessing.cpu_count())
+    num_failures, _, _ = jobset.run(build_jobs,
+                                    newline_on_success=True,
+                                    maxjobs=multiprocessing.cpu_count())
     if num_failures:
         jobset.message('FAILED',
                        'Failed to build interop docker images.',

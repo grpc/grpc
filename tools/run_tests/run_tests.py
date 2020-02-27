@@ -1802,11 +1802,12 @@ def _build_and_run(check_cancelled,
                    build_only=False):
     """Do one pass of building & running tests."""
     # build latest sequentially
-    num_failures, resultset = jobset.run(build_steps,
-                                         maxjobs=1,
-                                         stop_on_failure=True,
-                                         newline_on_success=newline_on_success,
-                                         travis=args.travis)
+    num_failures, resultset, _ = jobset.run(
+        build_steps,
+        maxjobs=1,
+        stop_on_failure=True,
+        newline_on_success=newline_on_success,
+        travis=args.travis)
     if num_failures:
         return [BuildAndRunError.BUILD]
 
@@ -1859,25 +1860,33 @@ def _build_and_run(check_cancelled,
         if infinite_runs:
             assert len(massaged_one_run
                       ) > 0, 'Must have at least one test for a -n inf run'
-        runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
-                         else itertools.repeat(massaged_one_run, runs_per_test))
-        all_runs = itertools.chain.from_iterable(runs_sequence)
 
         if args.quiet_success:
             jobset.message(
                 'START',
                 'Running tests quietly, only failing tests will be reported',
                 do_newline=True)
-        num_test_failures, resultset = jobset.run(
-            all_runs,
+
+        num_test_failures, resultset, (failed_runs, total_runs) = jobset.run(
+            # all_runs,
+            massaged_one_run,
             check_cancelled,
             newline_on_success=newline_on_success,
             travis=args.travis,
+            num_runs=runs_per_test,
             maxjobs=args.jobs,
             maxjobs_cpu_agnostic=max_parallel_tests_for_current_platform(),
             stop_on_failure=args.stop_on_failure,
             quiet_success=args.quiet_success,
             max_time=args.max_time)
+
+        if failed_runs:
+            jobset.message('FAILED',
+                           'Failed %s out of %s runs (%.2f%%)' % (
+                               failed_runs,
+                               total_runs,
+                               failed_runs * 100.0/total_runs),
+                           do_newline=True)
         if resultset:
             for k, v in sorted(resultset.items()):
                 num_runs, num_failures = _calculate_num_runs_failures(v)
@@ -1915,11 +1924,11 @@ def _build_and_run(check_cancelled,
                 suite_name=args.report_suite_name,
                 multi_target=args.report_multi_target)
 
-    number_failures, _ = jobset.run(post_tests_steps,
-                                    maxjobs=1,
-                                    stop_on_failure=False,
-                                    newline_on_success=newline_on_success,
-                                    travis=args.travis)
+    number_failures, _, _ = jobset.run(post_tests_steps,
+                                       maxjobs=1,
+                                       stop_on_failure=False,
+                                       newline_on_success=newline_on_success,
+                                       travis=args.travis)
 
     out = []
     if number_failures:

@@ -225,9 +225,9 @@ def _pull_images_for_lang(lang, images):
         download_specs.append(spec)
     # too many image downloads at once tend to get stuck
     max_pull_jobs = min(args.jobs, _MAX_PARALLEL_DOWNLOADS)
-    num_failures, resultset = jobset.run(download_specs,
-                                         newline_on_success=True,
-                                         maxjobs=max_pull_jobs)
+    num_failures, resultset, _ = jobset.run(download_specs,
+                                            newline_on_success=True,
+                                            maxjobs=max_pull_jobs)
     if num_failures:
         jobset.message('FAILED',
                        'Failed to download some images',
@@ -266,20 +266,20 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
             total_num_failures += 1
             continue
 
-        num_failures, resultset = jobset.run(job_spec_list,
-                                             newline_on_success=True,
-                                             add_env={'docker_image': image},
-                                             maxjobs=args.jobs,
-                                             skip_jobs=skip_tests)
+        num_failed, resultset, _ = jobset.run(job_spec_list,
+                                              newline_on_success=True,
+                                              add_env={'docker_image': image},
+                                              maxjobs=args.jobs,
+                                              skip_jobs=skip_tests)
         if args.bq_result_table and resultset:
             upload_test_results.upload_interop_results_to_bq(
                 resultset, args.bq_result_table)
         if skip_tests:
             jobset.message('FAILED', 'Tests were skipped', do_newline=True)
             total_num_failures += 1
-        elif num_failures:
+        elif num_failed:
             jobset.message('FAILED', 'Some tests failed', do_newline=True)
-            total_num_failures += num_failures
+            total_num_failures += num_failed
         else:
             jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 

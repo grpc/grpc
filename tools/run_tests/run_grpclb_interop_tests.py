@@ -436,9 +436,9 @@ else:
 if build_jobs:
     jobset.message('START', 'Building interop docker images.', do_newline=True)
     print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
-    num_failures, _ = jobset.run(build_jobs,
-                                 newline_on_success=True,
-                                 maxjobs=args.jobs)
+    num_failures, _, _ = jobset.run(build_jobs,
+                                    newline_on_success=True,
+                                    maxjobs=args.jobs)
     if num_failures == 0:
         jobset.message('SUCCESS',
                        'All docker images built successfully.',
@@ -563,9 +563,9 @@ def run_one_scenario(scenario_config):
             jobs.append(test_job)
         jobset.message(
             'IDLE', 'Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
-        num_failures, resultset = jobset.run(jobs,
-                                             newline_on_success=True,
-                                             maxjobs=args.jobs)
+        num_failures, resultset, _ = jobset.run(jobs,
+                                                newline_on_success=True,
+                                                maxjobs=args.jobs)
         report_utils.render_junit_xml_report(resultset, 'sponge_log.xml')
         if num_failures:
             suppress_server_logs = False

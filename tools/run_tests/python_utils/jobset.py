@@ -416,11 +416,13 @@ class Jobset(object):
 
     def __init__(self, check_cancelled, maxjobs, maxjobs_cpu_agnostic,
                  newline_on_success, travis, stop_on_failure, add_env,
-                 quiet_success, max_time):
+                 quiet_success, max_time, num_runs=1):
         self._running = set()
         self._check_cancelled = check_cancelled
         self._cancelled = False
+        self.failed_runs = 0
         self._failures = 0
+        self._previous_run_failures = 0
         self._completed = 0
         self._maxjobs = maxjobs
         self._maxjobs_cpu_agnostic = maxjobs_cpu_agnostic
@@ -433,6 +435,8 @@ class Jobset(object):
         self.resultset = {}
         self._remaining = None
         self._start_time = time.time()
+        self._total_runs = num_runs
+        self.current_run = 1
 
     def set_remaining(self, remaining):
         self._remaining = remaining
@@ -493,7 +497,15 @@ class Jobset(object):
                 self._running.remove(job)
             if dead: return
             if not self._travis and platform_string() != 'windows':
-                rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
+                if self._total_runs == 1:
+                    rstr = ''
+                else:
+                    rstr = 'Run %s%s (%s failed): ' % (
+                        self.current_run,
+                        '/%s' % self._total_runs if self._total_runs else '',
+                        self.failed_runs)
+                if self._remaining is not None:
+                    rstr += '%d queued, ' % self._remaining
                 if self._remaining is not None and self._completed > 0:
                     now = time.time()
                     sofar = now - self._start_time
@@ -531,6 +543,12 @@ class Jobset(object):
             self.reap()
         if platform_string() != 'windows':
             signal.alarm(0)
+
+        if self._failures != self._previous_run_failures:
+            self._previous_run_failures = self._failures
+            self.failed_runs += 1
+        self.current_run += 1
+
         return not self.cancelled() and self._failures == 0
 
 
@@ -555,7 +573,7 @@ def run(cmdlines,
         maxjobs_cpu_agnostic=None,
         newline_on_success=False,
         travis=False,
-        infinite_runs=False,
+        num_runs=1,  # Pass 0 for infinite runs
         stop_on_failure=False,
         add_env={},
         skip_jobs=False,
@@ -572,12 +590,18 @@ def run(cmdlines,
     js = Jobset(
         check_cancelled, maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
         maxjobs_cpu_agnostic if maxjobs_cpu_agnostic is not None else
-        _DEFAULT_MAX_JOBS, newline_on_success, travis, stop_on_failure, add_env,
-        quiet_success, max_time)
-    for cmdline, remaining in tag_remaining(cmdlines):
-        if not js.start(cmdline):
-            break
-        if remaining is not None:
-            js.set_remaining(remaining)
-    js.finish()
-    return js.get_num_failures(), js.resultset
+        _DEFAULT_MAX_JOBS, newline_on_success, travis, stop_on_failure,
+        add_env, quiet_success, max_time, num_runs)
+    do_run = True
+    while do_run:
+        for cmdline, remaining in tag_remaining(cmdlines):
+            if not js.start(cmdline):
+                break
+            if remaining is not None:
+                js.set_remaining(remaining)
+        js.finish()
+        do_run = not js.cancelled() and (not num_runs or
+                                         js.current_run <= num_runs)
+
+    return js.get_num_failures(), js.resultset, (js.failed_runs,
+                                                 js.current_run - 1)

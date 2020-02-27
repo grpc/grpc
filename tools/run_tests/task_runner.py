@@ -90,9 +90,9 @@ prebuild_jobs = []
 for target in targets:
     prebuild_jobs += target.pre_build_jobspecs()
 if prebuild_jobs:
-    num_failures, _ = jobset.run(prebuild_jobs,
-                                 newline_on_success=True,
-                                 maxjobs=args.jobs)
+    num_failures, _, _ = jobset.run(prebuild_jobs,
+                                    newline_on_success=True,
+                                    maxjobs=args.jobs)
     if num_failures != 0:
         jobset.message('FAILED', 'Pre-build phase failed.', do_newline=True)
         sys.exit(1)
@@ -105,9 +105,9 @@ if not build_jobs:
     sys.exit(1)
 
 jobset.message('START', 'Building targets.', do_newline=True)
-num_failures, resultset = jobset.run(build_jobs,
-                                     newline_on_success=True,
-                                     maxjobs=args.jobs)
+num_failures, resultset, _ = jobset.run(build_jobs,
+                                        newline_on_success=True,
+                                        maxjobs=args.jobs)
 report_utils.render_junit_xml_report(resultset,
                                      'report_taskrunner_sponge_log.xml',
                                      suite_name='tasks')

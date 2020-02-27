@@ -585,13 +585,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     jobset.message('START', 'Running test matrix.', do_newline=True)
-    num_failures, resultset = jobset.run(jobs,
-                                         newline_on_success=True,
-                                         travis=True,
-                                         maxjobs=args.jobs)
+    num_failures, resultset, _ = jobset.run(jobs,
+                                            newline_on_success=True,
+                                            travis=True,
+                                            maxjobs=args.jobs)
     # Merge skipped tests into results to show skipped tests on report.xml
     if skipped_jobs:
-        ignored_num_skipped_failures, skipped_results = jobset.run(
+        ignored_num_skipped_failures, skipped_results, _ = jobset.run(
             skipped_jobs, skip_jobs=True)
         resultset.update(skipped_results)
     report_utils.render_junit_xml_report(resultset,

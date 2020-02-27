@@ -1430,9 +1430,9 @@ if args.use_docker:
         if args.verbose:
             print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
 
-        num_failures, build_resultset = jobset.run(build_jobs,
-                                                   newline_on_success=True,
-                                                   maxjobs=args.jobs)
+        num_failures, build_resultset, _ = jobset.run(build_jobs,
+                                                      newline_on_success=True,
+                                                      maxjobs=args.jobs)
 
         report_utils.render_junit_xml_report(build_resultset,
                                              _DOCKER_BUILD_XML_REPORT)
@@ -1676,10 +1676,10 @@ try:
     if args.verbose:
         print('Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
 
-    num_failures, resultset = jobset.run(jobs,
-                                         newline_on_success=True,
-                                         maxjobs=args.jobs,
-                                         skip_jobs=args.manual_run)
+    num_failures, resultset, _ = jobset.run(jobs,
+                                            newline_on_success=True,
+                                            maxjobs=args.jobs,
+                                            skip_jobs=args.manual_run)
     if args.bq_result_table and resultset:
         upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:

@@ -203,9 +203,9 @@ def archive_repo(languages):
                                  timeout_seconds=3 * 60)
 
     jobset.message('START', 'Archiving local repository.', do_newline=True)
-    num_failures, _ = jobset.run([archive_job],
-                                 newline_on_success=True,
-                                 maxjobs=1)
+    num_failures, _, _ = jobset.run([archive_job],
+                                    newline_on_success=True,
+                                    maxjobs=1)
     if num_failures == 0:
         jobset.message('SUCCESS',
                        'Archive with local repository created successfully.',
@@ -237,9 +237,9 @@ def prepare_remote_hosts(hosts, prepare_local=False):
                 shortname='local_prepare',
                 timeout_seconds=prepare_timeout))
     jobset.message('START', 'Preparing hosts.', do_newline=True)
-    num_failures, _ = jobset.run(prepare_jobs,
-                                 newline_on_success=True,
-                                 maxjobs=10)
+    num_failures, _, _ = jobset.run(prepare_jobs,
+                                    newline_on_success=True,
+                                    maxjobs=10)
     if num_failures == 0:
         jobset.message('SUCCESS',
                        'Prepare step completed successfully.',
@@ -287,9 +287,9 @@ def build_on_remote_hosts(hosts,
                 environ={'CONFIG': 'opt'},
                 timeout_seconds=local_build_timeout))
     jobset.message('START', 'Building.', do_newline=True)
-    num_failures, _ = jobset.run(build_jobs,
-                                 newline_on_success=True,
-                                 maxjobs=10)
+    num_failures, _, _ = jobset.run(build_jobs,
+                                    newline_on_success=True,
+                                    maxjobs=10)
     if num_failures == 0:
         jobset.message('SUCCESS', 'Built successfully.', do_newline=True)
     else:
@@ -480,9 +480,9 @@ def run_collect_perf_profile_jobs(hosts_and_base_names, scenario_name,
     jobset.message('START',
                    'Collecting perf reports from qps workers',
                    do_newline=True)
-    failures, _ = jobset.run(perf_report_jobs,
-                             newline_on_success=True,
-                             maxjobs=1)
+    failures, _, _ = jobset.run(perf_report_jobs,
+                                newline_on_success=True,
+                                maxjobs=1)
     jobset.message('SUCCESS',
                    'Collecting perf reports from qps workers',
                    do_newline=True)
@@ -669,7 +669,7 @@ def main():
                         create_quit_jobspec(
                             scenario.workers,
                             remote_host=args.remote_driver_host))
-                scenario_failures, resultset = jobset.run(
+                scenario_failures, resultset, _ = jobset.run(
                     jobs, newline_on_success=True, maxjobs=1)
                 total_scenario_failures += scenario_failures
                 merged_resultset = dict(
