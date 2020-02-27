@@ -3739,8 +3739,11 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
+    src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
@@ -3753,13 +3756,20 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
     src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
     src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
@@ -3769,8 +3779,11 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
+    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
+    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
@@ -3787,6 +3800,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/lib/avl/avl.cc \
@@ -4348,8 +4363,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
+    src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
@@ -4362,13 +4380,20 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
     src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
     src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
@@ -4378,8 +4403,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
+    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
+    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
@@ -4393,6 +4421,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/lib/avl/avl.cc \

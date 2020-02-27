@@ -94,6 +94,12 @@ struct google_protobuf_Timestamp;
 extern const upb_msglayout google_protobuf_Duration_msginit;
 extern const upb_msglayout google_protobuf_Timestamp_msginit;
 
+typedef enum {
+  validate_UNKNOWN = 0,
+  validate_HTTP_HEADER_NAME = 1,
+  validate_HTTP_HEADER_VALUE = 2
+} validate_KnownRegex;
+
 
 /* validate.FieldRules */
 
@@ -126,7 +132,6 @@ typedef enum {
   validate_FieldRules_type_string = 14,
   validate_FieldRules_type_bytes = 15,
   validate_FieldRules_type_enum = 16,
-  validate_FieldRules_type_message = 17,
   validate_FieldRules_type_repeated = 18,
   validate_FieldRules_type_map = 19,
   validate_FieldRules_type_any = 20,
@@ -134,55 +139,55 @@ typedef enum {
   validate_FieldRules_type_timestamp = 22,
   validate_FieldRules_type_NOT_SET = 0
 } validate_FieldRules_type_oneofcases;
-UPB_INLINE validate_FieldRules_type_oneofcases validate_FieldRules_type_case(const validate_FieldRules* msg) { return (validate_FieldRules_type_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 8)); }
+UPB_INLINE validate_FieldRules_type_oneofcases validate_FieldRules_type_case(const validate_FieldRules* msg) { return (validate_FieldRules_type_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(12, 24)); }
 
-UPB_INLINE bool validate_FieldRules_has_float(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
-UPB_INLINE const validate_FloatRules* validate_FieldRules_float(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_FloatRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
-UPB_INLINE bool validate_FieldRules_has_double(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 2); }
-UPB_INLINE const validate_DoubleRules* validate_FieldRules_double(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_DoubleRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 2, NULL); }
-UPB_INLINE bool validate_FieldRules_has_int32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 3); }
-UPB_INLINE const validate_Int32Rules* validate_FieldRules_int32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_Int32Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 3, NULL); }
-UPB_INLINE bool validate_FieldRules_has_int64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 4); }
-UPB_INLINE const validate_Int64Rules* validate_FieldRules_int64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_Int64Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 4, NULL); }
-UPB_INLINE bool validate_FieldRules_has_uint32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 5); }
-UPB_INLINE const validate_UInt32Rules* validate_FieldRules_uint32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_UInt32Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 5, NULL); }
-UPB_INLINE bool validate_FieldRules_has_uint64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 6); }
-UPB_INLINE const validate_UInt64Rules* validate_FieldRules_uint64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_UInt64Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 6, NULL); }
-UPB_INLINE bool validate_FieldRules_has_sint32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 7); }
-UPB_INLINE const validate_SInt32Rules* validate_FieldRules_sint32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_SInt32Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 7, NULL); }
-UPB_INLINE bool validate_FieldRules_has_sint64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 8); }
-UPB_INLINE const validate_SInt64Rules* validate_FieldRules_sint64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_SInt64Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 8, NULL); }
-UPB_INLINE bool validate_FieldRules_has_fixed32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 9); }
-UPB_INLINE const validate_Fixed32Rules* validate_FieldRules_fixed32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_Fixed32Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 9, NULL); }
-UPB_INLINE bool validate_FieldRules_has_fixed64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 10); }
-UPB_INLINE const validate_Fixed64Rules* validate_FieldRules_fixed64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_Fixed64Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 10, NULL); }
-UPB_INLINE bool validate_FieldRules_has_sfixed32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 11); }
-UPB_INLINE const validate_SFixed32Rules* validate_FieldRules_sfixed32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_SFixed32Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 11, NULL); }
-UPB_INLINE bool validate_FieldRules_has_sfixed64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 12); }
-UPB_INLINE const validate_SFixed64Rules* validate_FieldRules_sfixed64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_SFixed64Rules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 12, NULL); }
-UPB_INLINE bool validate_FieldRules_has_bool(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 13); }
-UPB_INLINE const validate_BoolRules* validate_FieldRules_bool(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_BoolRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 13, NULL); }
-UPB_INLINE bool validate_FieldRules_has_string(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 14); }
-UPB_INLINE const validate_StringRules* validate_FieldRules_string(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_StringRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 14, NULL); }
-UPB_INLINE bool validate_FieldRules_has_bytes(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 15); }
-UPB_INLINE const validate_BytesRules* validate_FieldRules_bytes(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_BytesRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 15, NULL); }
-UPB_INLINE bool validate_FieldRules_has_enum(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 16); }
-UPB_INLINE const validate_EnumRules* validate_FieldRules_enum(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_EnumRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 16, NULL); }
-UPB_INLINE bool validate_FieldRules_has_message(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 17); }
-UPB_INLINE const validate_MessageRules* validate_FieldRules_message(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_MessageRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 17, NULL); }
-UPB_INLINE bool validate_FieldRules_has_repeated(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 18); }
-UPB_INLINE const validate_RepeatedRules* validate_FieldRules_repeated(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_RepeatedRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 18, NULL); }
-UPB_INLINE bool validate_FieldRules_has_map(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 19); }
-UPB_INLINE const validate_MapRules* validate_FieldRules_map(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_MapRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 19, NULL); }
-UPB_INLINE bool validate_FieldRules_has_any(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 20); }
-UPB_INLINE const validate_AnyRules* validate_FieldRules_any(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_AnyRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 20, NULL); }
-UPB_INLINE bool validate_FieldRules_has_duration(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 21); }
-UPB_INLINE const validate_DurationRules* validate_FieldRules_duration(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_DurationRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 21, NULL); }
-UPB_INLINE bool validate_FieldRules_has_timestamp(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 22); }
-UPB_INLINE const validate_TimestampRules* validate_FieldRules_timestamp(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_TimestampRules*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 22, NULL); }
+UPB_INLINE bool validate_FieldRules_has_float(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 1); }
+UPB_INLINE const validate_FloatRules* validate_FieldRules_float(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_FloatRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 1, NULL); }
+UPB_INLINE bool validate_FieldRules_has_double(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
+UPB_INLINE const validate_DoubleRules* validate_FieldRules_double(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_DoubleRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 2, NULL); }
+UPB_INLINE bool validate_FieldRules_has_int32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 3); }
+UPB_INLINE const validate_Int32Rules* validate_FieldRules_int32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_Int32Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
+UPB_INLINE bool validate_FieldRules_has_int64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 4); }
+UPB_INLINE const validate_Int64Rules* validate_FieldRules_int64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_Int64Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 4, NULL); }
+UPB_INLINE bool validate_FieldRules_has_uint32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 5); }
+UPB_INLINE const validate_UInt32Rules* validate_FieldRules_uint32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_UInt32Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 5, NULL); }
+UPB_INLINE bool validate_FieldRules_has_uint64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 6); }
+UPB_INLINE const validate_UInt64Rules* validate_FieldRules_uint64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_UInt64Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 6, NULL); }
+UPB_INLINE bool validate_FieldRules_has_sint32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 7); }
+UPB_INLINE const validate_SInt32Rules* validate_FieldRules_sint32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_SInt32Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 7, NULL); }
+UPB_INLINE bool validate_FieldRules_has_sint64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 8); }
+UPB_INLINE const validate_SInt64Rules* validate_FieldRules_sint64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_SInt64Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 8, NULL); }
+UPB_INLINE bool validate_FieldRules_has_fixed32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 9); }
+UPB_INLINE const validate_Fixed32Rules* validate_FieldRules_fixed32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_Fixed32Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 9, NULL); }
+UPB_INLINE bool validate_FieldRules_has_fixed64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 10); }
+UPB_INLINE const validate_Fixed64Rules* validate_FieldRules_fixed64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_Fixed64Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 10, NULL); }
+UPB_INLINE bool validate_FieldRules_has_sfixed32(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 11); }
+UPB_INLINE const validate_SFixed32Rules* validate_FieldRules_sfixed32(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_SFixed32Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 11, NULL); }
+UPB_INLINE bool validate_FieldRules_has_sfixed64(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 12); }
+UPB_INLINE const validate_SFixed64Rules* validate_FieldRules_sfixed64(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_SFixed64Rules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 12, NULL); }
+UPB_INLINE bool validate_FieldRules_has_bool(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 13); }
+UPB_INLINE const validate_BoolRules* validate_FieldRules_bool(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_BoolRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 13, NULL); }
+UPB_INLINE bool validate_FieldRules_has_string(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 14); }
+UPB_INLINE const validate_StringRules* validate_FieldRules_string(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_StringRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 14, NULL); }
+UPB_INLINE bool validate_FieldRules_has_bytes(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 15); }
+UPB_INLINE const validate_BytesRules* validate_FieldRules_bytes(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_BytesRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 15, NULL); }
+UPB_INLINE bool validate_FieldRules_has_enum(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 16); }
+UPB_INLINE const validate_EnumRules* validate_FieldRules_enum(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_EnumRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 16, NULL); }
+UPB_INLINE bool validate_FieldRules_has_message(const validate_FieldRules *msg) { return _upb_has_field(msg, 1); }
+UPB_INLINE const validate_MessageRules* validate_FieldRules_message(const validate_FieldRules *msg) { return UPB_FIELD_AT(msg, const validate_MessageRules*, UPB_SIZE(4, 8)); }
+UPB_INLINE bool validate_FieldRules_has_repeated(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 18); }
+UPB_INLINE const validate_RepeatedRules* validate_FieldRules_repeated(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_RepeatedRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 18, NULL); }
+UPB_INLINE bool validate_FieldRules_has_map(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 19); }
+UPB_INLINE const validate_MapRules* validate_FieldRules_map(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_MapRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 19, NULL); }
+UPB_INLINE bool validate_FieldRules_has_any(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 20); }
+UPB_INLINE const validate_AnyRules* validate_FieldRules_any(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_AnyRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 20, NULL); }
+UPB_INLINE bool validate_FieldRules_has_duration(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 21); }
+UPB_INLINE const validate_DurationRules* validate_FieldRules_duration(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_DurationRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 21, NULL); }
+UPB_INLINE bool validate_FieldRules_has_timestamp(const validate_FieldRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 22); }
+UPB_INLINE const validate_TimestampRules* validate_FieldRules_timestamp(const validate_FieldRules *msg) { return UPB_READ_ONEOF(msg, const validate_TimestampRules*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 22, NULL); }
 
 UPB_INLINE void validate_FieldRules_set_float(validate_FieldRules *msg, validate_FloatRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_FloatRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 1);
+  UPB_WRITE_ONEOF(msg, validate_FloatRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 1);
 }
 UPB_INLINE struct validate_FloatRules* validate_FieldRules_mutable_float(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_FloatRules* sub = (struct validate_FloatRules*)validate_FieldRules_float(msg);
@@ -194,7 +199,7 @@ UPB_INLINE struct validate_FloatRules* validate_FieldRules_mutable_float(validat
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_double(validate_FieldRules *msg, validate_DoubleRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_DoubleRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 2);
+  UPB_WRITE_ONEOF(msg, validate_DoubleRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 2);
 }
 UPB_INLINE struct validate_DoubleRules* validate_FieldRules_mutable_double(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_DoubleRules* sub = (struct validate_DoubleRules*)validate_FieldRules_double(msg);
@@ -206,7 +211,7 @@ UPB_INLINE struct validate_DoubleRules* validate_FieldRules_mutable_double(valid
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_int32(validate_FieldRules *msg, validate_Int32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_Int32Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 3);
+  UPB_WRITE_ONEOF(msg, validate_Int32Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 3);
 }
 UPB_INLINE struct validate_Int32Rules* validate_FieldRules_mutable_int32(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_Int32Rules* sub = (struct validate_Int32Rules*)validate_FieldRules_int32(msg);
@@ -218,7 +223,7 @@ UPB_INLINE struct validate_Int32Rules* validate_FieldRules_mutable_int32(validat
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_int64(validate_FieldRules *msg, validate_Int64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_Int64Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 4);
+  UPB_WRITE_ONEOF(msg, validate_Int64Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 4);
 }
 UPB_INLINE struct validate_Int64Rules* validate_FieldRules_mutable_int64(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_Int64Rules* sub = (struct validate_Int64Rules*)validate_FieldRules_int64(msg);
@@ -230,7 +235,7 @@ UPB_INLINE struct validate_Int64Rules* validate_FieldRules_mutable_int64(validat
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_uint32(validate_FieldRules *msg, validate_UInt32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_UInt32Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 5);
+  UPB_WRITE_ONEOF(msg, validate_UInt32Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 5);
 }
 UPB_INLINE struct validate_UInt32Rules* validate_FieldRules_mutable_uint32(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_UInt32Rules* sub = (struct validate_UInt32Rules*)validate_FieldRules_uint32(msg);
@@ -242,7 +247,7 @@ UPB_INLINE struct validate_UInt32Rules* validate_FieldRules_mutable_uint32(valid
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_uint64(validate_FieldRules *msg, validate_UInt64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_UInt64Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 6);
+  UPB_WRITE_ONEOF(msg, validate_UInt64Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 6);
 }
 UPB_INLINE struct validate_UInt64Rules* validate_FieldRules_mutable_uint64(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_UInt64Rules* sub = (struct validate_UInt64Rules*)validate_FieldRules_uint64(msg);
@@ -254,7 +259,7 @@ UPB_INLINE struct validate_UInt64Rules* validate_FieldRules_mutable_uint64(valid
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_sint32(validate_FieldRules *msg, validate_SInt32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_SInt32Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 7);
+  UPB_WRITE_ONEOF(msg, validate_SInt32Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 7);
 }
 UPB_INLINE struct validate_SInt32Rules* validate_FieldRules_mutable_sint32(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_SInt32Rules* sub = (struct validate_SInt32Rules*)validate_FieldRules_sint32(msg);
@@ -266,7 +271,7 @@ UPB_INLINE struct validate_SInt32Rules* validate_FieldRules_mutable_sint32(valid
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_sint64(validate_FieldRules *msg, validate_SInt64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_SInt64Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 8);
+  UPB_WRITE_ONEOF(msg, validate_SInt64Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 8);
 }
 UPB_INLINE struct validate_SInt64Rules* validate_FieldRules_mutable_sint64(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_SInt64Rules* sub = (struct validate_SInt64Rules*)validate_FieldRules_sint64(msg);
@@ -278,7 +283,7 @@ UPB_INLINE struct validate_SInt64Rules* validate_FieldRules_mutable_sint64(valid
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_fixed32(validate_FieldRules *msg, validate_Fixed32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_Fixed32Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 9);
+  UPB_WRITE_ONEOF(msg, validate_Fixed32Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 9);
 }
 UPB_INLINE struct validate_Fixed32Rules* validate_FieldRules_mutable_fixed32(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_Fixed32Rules* sub = (struct validate_Fixed32Rules*)validate_FieldRules_fixed32(msg);
@@ -290,7 +295,7 @@ UPB_INLINE struct validate_Fixed32Rules* validate_FieldRules_mutable_fixed32(val
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_fixed64(validate_FieldRules *msg, validate_Fixed64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_Fixed64Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 10);
+  UPB_WRITE_ONEOF(msg, validate_Fixed64Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 10);
 }
 UPB_INLINE struct validate_Fixed64Rules* validate_FieldRules_mutable_fixed64(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_Fixed64Rules* sub = (struct validate_Fixed64Rules*)validate_FieldRules_fixed64(msg);
@@ -302,7 +307,7 @@ UPB_INLINE struct validate_Fixed64Rules* validate_FieldRules_mutable_fixed64(val
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_sfixed32(validate_FieldRules *msg, validate_SFixed32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_SFixed32Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 11);
+  UPB_WRITE_ONEOF(msg, validate_SFixed32Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 11);
 }
 UPB_INLINE struct validate_SFixed32Rules* validate_FieldRules_mutable_sfixed32(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_SFixed32Rules* sub = (struct validate_SFixed32Rules*)validate_FieldRules_sfixed32(msg);
@@ -314,7 +319,7 @@ UPB_INLINE struct validate_SFixed32Rules* validate_FieldRules_mutable_sfixed32(v
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_sfixed64(validate_FieldRules *msg, validate_SFixed64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_SFixed64Rules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 12);
+  UPB_WRITE_ONEOF(msg, validate_SFixed64Rules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 12);
 }
 UPB_INLINE struct validate_SFixed64Rules* validate_FieldRules_mutable_sfixed64(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_SFixed64Rules* sub = (struct validate_SFixed64Rules*)validate_FieldRules_sfixed64(msg);
@@ -326,7 +331,7 @@ UPB_INLINE struct validate_SFixed64Rules* validate_FieldRules_mutable_sfixed64(v
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_bool(validate_FieldRules *msg, validate_BoolRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_BoolRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 13);
+  UPB_WRITE_ONEOF(msg, validate_BoolRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 13);
 }
 UPB_INLINE struct validate_BoolRules* validate_FieldRules_mutable_bool(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_BoolRules* sub = (struct validate_BoolRules*)validate_FieldRules_bool(msg);
@@ -338,7 +343,7 @@ UPB_INLINE struct validate_BoolRules* validate_FieldRules_mutable_bool(validate_
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_string(validate_FieldRules *msg, validate_StringRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_StringRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 14);
+  UPB_WRITE_ONEOF(msg, validate_StringRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 14);
 }
 UPB_INLINE struct validate_StringRules* validate_FieldRules_mutable_string(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_StringRules* sub = (struct validate_StringRules*)validate_FieldRules_string(msg);
@@ -350,7 +355,7 @@ UPB_INLINE struct validate_StringRules* validate_FieldRules_mutable_string(valid
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_bytes(validate_FieldRules *msg, validate_BytesRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_BytesRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 15);
+  UPB_WRITE_ONEOF(msg, validate_BytesRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 15);
 }
 UPB_INLINE struct validate_BytesRules* validate_FieldRules_mutable_bytes(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_BytesRules* sub = (struct validate_BytesRules*)validate_FieldRules_bytes(msg);
@@ -362,7 +367,7 @@ UPB_INLINE struct validate_BytesRules* validate_FieldRules_mutable_bytes(validat
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_enum(validate_FieldRules *msg, validate_EnumRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_EnumRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 16);
+  UPB_WRITE_ONEOF(msg, validate_EnumRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 16);
 }
 UPB_INLINE struct validate_EnumRules* validate_FieldRules_mutable_enum(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_EnumRules* sub = (struct validate_EnumRules*)validate_FieldRules_enum(msg);
@@ -374,7 +379,8 @@ UPB_INLINE struct validate_EnumRules* validate_FieldRules_mutable_enum(validate_
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_message(validate_FieldRules *msg, validate_MessageRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_MessageRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 17);
+  _upb_sethas(msg, 1);
+  UPB_FIELD_AT(msg, validate_MessageRules*, UPB_SIZE(4, 8)) = value;
 }
 UPB_INLINE struct validate_MessageRules* validate_FieldRules_mutable_message(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_MessageRules* sub = (struct validate_MessageRules*)validate_FieldRules_message(msg);
@@ -386,7 +392,7 @@ UPB_INLINE struct validate_MessageRules* validate_FieldRules_mutable_message(val
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_repeated(validate_FieldRules *msg, validate_RepeatedRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_RepeatedRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 18);
+  UPB_WRITE_ONEOF(msg, validate_RepeatedRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 18);
 }
 UPB_INLINE struct validate_RepeatedRules* validate_FieldRules_mutable_repeated(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_RepeatedRules* sub = (struct validate_RepeatedRules*)validate_FieldRules_repeated(msg);
@@ -398,7 +404,7 @@ UPB_INLINE struct validate_RepeatedRules* validate_FieldRules_mutable_repeated(v
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_map(validate_FieldRules *msg, validate_MapRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_MapRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 19);
+  UPB_WRITE_ONEOF(msg, validate_MapRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 19);
 }
 UPB_INLINE struct validate_MapRules* validate_FieldRules_mutable_map(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_MapRules* sub = (struct validate_MapRules*)validate_FieldRules_map(msg);
@@ -410,7 +416,7 @@ UPB_INLINE struct validate_MapRules* validate_FieldRules_mutable_map(validate_Fi
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_any(validate_FieldRules *msg, validate_AnyRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_AnyRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 20);
+  UPB_WRITE_ONEOF(msg, validate_AnyRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 20);
 }
 UPB_INLINE struct validate_AnyRules* validate_FieldRules_mutable_any(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_AnyRules* sub = (struct validate_AnyRules*)validate_FieldRules_any(msg);
@@ -422,7 +428,7 @@ UPB_INLINE struct validate_AnyRules* validate_FieldRules_mutable_any(validate_Fi
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_duration(validate_FieldRules *msg, validate_DurationRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_DurationRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 21);
+  UPB_WRITE_ONEOF(msg, validate_DurationRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 21);
 }
 UPB_INLINE struct validate_DurationRules* validate_FieldRules_mutable_duration(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_DurationRules* sub = (struct validate_DurationRules*)validate_FieldRules_duration(msg);
@@ -434,7 +440,7 @@ UPB_INLINE struct validate_DurationRules* validate_FieldRules_mutable_duration(v
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_timestamp(validate_FieldRules *msg, validate_TimestampRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_TimestampRules*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 22);
+  UPB_WRITE_ONEOF(msg, validate_TimestampRules*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 22);
 }
 UPB_INLINE struct validate_TimestampRules* validate_FieldRules_mutable_timestamp(validate_FieldRules *msg, upb_arena *arena) {
   struct validate_TimestampRules* sub = (struct validate_TimestampRules*)validate_FieldRules_timestamp(msg);
@@ -1306,9 +1312,12 @@ typedef enum {
   validate_StringRules_well_known_ipv6 = 16,
   validate_StringRules_well_known_uri = 17,
   validate_StringRules_well_known_uri_ref = 18,
+  validate_StringRules_well_known_address = 21,
+  validate_StringRules_well_known_uuid = 22,
+  validate_StringRules_well_known_well_known_regex = 24,
   validate_StringRules_well_known_NOT_SET = 0
 } validate_StringRules_well_known_oneofcases;
-UPB_INLINE validate_StringRules_well_known_oneofcases validate_StringRules_well_known_case(const validate_StringRules* msg) { return (validate_StringRules_well_known_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(108, 156)); }
+UPB_INLINE validate_StringRules_well_known_oneofcases validate_StringRules_well_known_case(const validate_StringRules* msg) { return (validate_StringRules_well_known_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(120, 176)); }
 
 UPB_INLINE bool validate_StringRules_has_const(const validate_StringRules *msg) { return _upb_has_field(msg, 7); }
 UPB_INLINE upb_strview validate_StringRules_const(const validate_StringRules *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(56, 56)); }
@@ -1328,26 +1337,34 @@ UPB_INLINE bool validate_StringRules_has_suffix(const validate_StringRules *msg)
 UPB_INLINE upb_strview validate_StringRules_suffix(const validate_StringRules *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(80, 104)); }
 UPB_INLINE bool validate_StringRules_has_contains(const validate_StringRules *msg) { return _upb_has_field(msg, 11); }
 UPB_INLINE upb_strview validate_StringRules_contains(const validate_StringRules *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(88, 120)); }
-UPB_INLINE upb_strview const* validate_StringRules_in(const validate_StringRules *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(96, 136), len); }
-UPB_INLINE upb_strview const* validate_StringRules_not_in(const validate_StringRules *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(100, 144), len); }
-UPB_INLINE bool validate_StringRules_has_email(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 156), 12); }
-UPB_INLINE bool validate_StringRules_email(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(104, 152), UPB_SIZE(108, 156), 12, false); }
-UPB_INLINE bool validate_StringRules_has_hostname(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 156), 13); }
-UPB_INLINE bool validate_StringRules_hostname(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(104, 152), UPB_SIZE(108, 156), 13, false); }
-UPB_INLINE bool validate_StringRules_has_ip(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 156), 14); }
-UPB_INLINE bool validate_StringRules_ip(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(104, 152), UPB_SIZE(108, 156), 14, false); }
-UPB_INLINE bool validate_StringRules_has_ipv4(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 156), 15); }
-UPB_INLINE bool validate_StringRules_ipv4(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(104, 152), UPB_SIZE(108, 156), 15, false); }
-UPB_INLINE bool validate_StringRules_has_ipv6(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 156), 16); }
-UPB_INLINE bool validate_StringRules_ipv6(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(104, 152), UPB_SIZE(108, 156), 16, false); }
-UPB_INLINE bool validate_StringRules_has_uri(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 156), 17); }
-UPB_INLINE bool validate_StringRules_uri(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(104, 152), UPB_SIZE(108, 156), 17, false); }
-UPB_INLINE bool validate_StringRules_has_uri_ref(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 156), 18); }
-UPB_INLINE bool validate_StringRules_uri_ref(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(104, 152), UPB_SIZE(108, 156), 18, false); }
+UPB_INLINE upb_strview const* validate_StringRules_in(const validate_StringRules *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(104, 152), len); }
+UPB_INLINE upb_strview const* validate_StringRules_not_in(const validate_StringRules *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(108, 160), len); }
+UPB_INLINE bool validate_StringRules_has_email(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 12); }
+UPB_INLINE bool validate_StringRules_email(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 12, false); }
+UPB_INLINE bool validate_StringRules_has_hostname(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 13); }
+UPB_INLINE bool validate_StringRules_hostname(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 13, false); }
+UPB_INLINE bool validate_StringRules_has_ip(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 14); }
+UPB_INLINE bool validate_StringRules_ip(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 14, false); }
+UPB_INLINE bool validate_StringRules_has_ipv4(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 15); }
+UPB_INLINE bool validate_StringRules_ipv4(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 15, false); }
+UPB_INLINE bool validate_StringRules_has_ipv6(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 16); }
+UPB_INLINE bool validate_StringRules_ipv6(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 16, false); }
+UPB_INLINE bool validate_StringRules_has_uri(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 17); }
+UPB_INLINE bool validate_StringRules_uri(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 17, false); }
+UPB_INLINE bool validate_StringRules_has_uri_ref(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 18); }
+UPB_INLINE bool validate_StringRules_uri_ref(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 18, false); }
 UPB_INLINE bool validate_StringRules_has_len(const validate_StringRules *msg) { return _upb_has_field(msg, 5); }
 UPB_INLINE uint64_t validate_StringRules_len(const validate_StringRules *msg) { return UPB_FIELD_AT(msg, uint64_t, UPB_SIZE(40, 40)); }
 UPB_INLINE bool validate_StringRules_has_len_bytes(const validate_StringRules *msg) { return _upb_has_field(msg, 6); }
 UPB_INLINE uint64_t validate_StringRules_len_bytes(const validate_StringRules *msg) { return UPB_FIELD_AT(msg, uint64_t, UPB_SIZE(48, 48)); }
+UPB_INLINE bool validate_StringRules_has_address(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 21); }
+UPB_INLINE bool validate_StringRules_address(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 21, false); }
+UPB_INLINE bool validate_StringRules_has_uuid(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 22); }
+UPB_INLINE bool validate_StringRules_uuid(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 22, false); }
+UPB_INLINE bool validate_StringRules_has_not_contains(const validate_StringRules *msg) { return _upb_has_field(msg, 12); }
+UPB_INLINE upb_strview validate_StringRules_not_contains(const validate_StringRules *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(96, 136)); }
+UPB_INLINE bool validate_StringRules_has_well_known_regex(const validate_StringRules *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 176), 24); }
+UPB_INLINE int32_t validate_StringRules_well_known_regex(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, int32_t, UPB_SIZE(112, 168), UPB_SIZE(120, 176), 24, validate_UNKNOWN); }
 
 UPB_INLINE void validate_StringRules_set_const(validate_StringRules *msg, upb_strview value) {
   _upb_sethas(msg, 7);
@@ -1386,45 +1403,45 @@ UPB_INLINE void validate_StringRules_set_contains(validate_StringRules *msg, upb
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(88, 120)) = value;
 }
 UPB_INLINE upb_strview* validate_StringRules_mutable_in(validate_StringRules *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(96, 136), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(104, 152), len);
 }
 UPB_INLINE upb_strview* validate_StringRules_resize_in(validate_StringRules *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(96, 136), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(104, 152), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool validate_StringRules_add_in(validate_StringRules *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(96, 136), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(104, 152), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE upb_strview* validate_StringRules_mutable_not_in(validate_StringRules *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(100, 144), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(108, 160), len);
 }
 UPB_INLINE upb_strview* validate_StringRules_resize_not_in(validate_StringRules *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(100, 144), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(108, 160), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool validate_StringRules_add_not_in(validate_StringRules *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(100, 144), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(108, 160), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE void validate_StringRules_set_email(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(104, 152), value, UPB_SIZE(108, 156), 12);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 12);
 }
 UPB_INLINE void validate_StringRules_set_hostname(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(104, 152), value, UPB_SIZE(108, 156), 13);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 13);
 }
 UPB_INLINE void validate_StringRules_set_ip(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(104, 152), value, UPB_SIZE(108, 156), 14);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 14);
 }
 UPB_INLINE void validate_StringRules_set_ipv4(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(104, 152), value, UPB_SIZE(108, 156), 15);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 15);
 }
 UPB_INLINE void validate_StringRules_set_ipv6(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(104, 152), value, UPB_SIZE(108, 156), 16);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 16);
 }
 UPB_INLINE void validate_StringRules_set_uri(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(104, 152), value, UPB_SIZE(108, 156), 17);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 17);
 }
 UPB_INLINE void validate_StringRules_set_uri_ref(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(104, 152), value, UPB_SIZE(108, 156), 18);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 18);
 }
 UPB_INLINE void validate_StringRules_set_len(validate_StringRules *msg, uint64_t value) {
   _upb_sethas(msg, 5);
@@ -1433,6 +1450,19 @@ UPB_INLINE void validate_StringRules_set_len(validate_StringRules *msg, uint64_t
 UPB_INLINE void validate_StringRules_set_len_bytes(validate_StringRules *msg, uint64_t value) {
   _upb_sethas(msg, 6);
   UPB_FIELD_AT(msg, uint64_t, UPB_SIZE(48, 48)) = value;
+}
+UPB_INLINE void validate_StringRules_set_address(validate_StringRules *msg, bool value) {
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 21);
+}
+UPB_INLINE void validate_StringRules_set_uuid(validate_StringRules *msg, bool value) {
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 22);
+}
+UPB_INLINE void validate_StringRules_set_not_contains(validate_StringRules *msg, upb_strview value) {
+  _upb_sethas(msg, 12);
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(96, 136)) = value;
+}
+UPB_INLINE void validate_StringRules_set_well_known_regex(validate_StringRules *msg, int32_t value) {
+  UPB_WRITE_ONEOF(msg, int32_t, UPB_SIZE(112, 168), value, UPB_SIZE(120, 176), 24);
 }
 
 /* validate.BytesRules */
