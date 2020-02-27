@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.28.0-dev'
+  version = '1.29.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -173,7 +173,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.7'
-    abseil_version = '0.20190808.1'
+    abseil_version = '0.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -676,9 +676,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_set_windows.cc',
                       'src/core/lib/iomgr/pollset_set_windows.h',
                       'src/core/lib/iomgr/pollset_uv.cc',
+                      'src/core/lib/iomgr/pollset_uv.h',
                       'src/core/lib/iomgr/pollset_windows.cc',
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
+                      'src/core/lib/iomgr/python_util.h',
                       'src/core/lib/iomgr/resolve_address.cc',
                       'src/core/lib/iomgr/resolve_address.h',
                       'src/core/lib/iomgr/resolve_address_custom.cc',
@@ -737,6 +739,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/timer_custom.cc',
                       'src/core/lib/iomgr/timer_custom.h',
                       'src/core/lib/iomgr/timer_generic.cc',
+                      'src/core/lib/iomgr/timer_generic.h',
                       'src/core/lib/iomgr/timer_heap.cc',
                       'src/core/lib/iomgr/timer_heap.h',
                       'src/core/lib/iomgr/timer_manager.cc',
@@ -1214,8 +1217,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_set.h',
                               'src/core/lib/iomgr/pollset_set_custom.h',
                               'src/core/lib/iomgr/pollset_set_windows.h',
+                              'src/core/lib/iomgr/pollset_uv.h',
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
+                              'src/core/lib/iomgr/python_util.h',
                               'src/core/lib/iomgr/resolve_address.h',
                               'src/core/lib/iomgr/resolve_address_custom.h',
                               'src/core/lib/iomgr/resource_quota.h',
@@ -1240,6 +1245,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/time_averaged_stats.h',
                               'src/core/lib/iomgr/timer.h',
                               'src/core/lib/iomgr/timer_custom.h',
+                              'src/core/lib/iomgr/timer_generic.h',
                               'src/core/lib/iomgr/timer_heap.h',
                               'src/core/lib/iomgr/timer_manager.h',
                               'src/core/lib/iomgr/udp_server.h',
@@ -1481,10 +1487,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/workaround_cronet_compression.cc',
                       'test/core/end2end/tests/write_buffering.cc',
                       'test/core/end2end/tests/write_buffering_at_end.cc',
-                      'test/core/iomgr/endpoint_tests.cc',
-                      'test/core/iomgr/endpoint_tests.h',
-                      'test/core/security/oauth2_utils.cc',
-                      'test/core/security/oauth2_utils.h',
                       'test/core/util/cmdline.cc',
                       'test/core/util/cmdline.h',
                       'test/core/util/debugger_macros.cc',
@@ -1508,14 +1510,16 @@ Pod::Spec.new do |s|
                       'test/core/util/port_isolated_runtime_environment.cc',
                       'test/core/util/port_server_client.cc',
                       'test/core/util/port_server_client.h',
+                      'test/core/util/reconnect_server.cc',
+                      'test/core/util/reconnect_server.h',
                       'test/core/util/slice_splitter.cc',
                       'test/core/util/slice_splitter.h',
                       'test/core/util/subprocess.h',
                       'test/core/util/subprocess_windows.cc',
                       'test/core/util/test_config.cc',
                       'test/core/util/test_config.h',
-                      'test/core/util/test_lb_policies.cc',
-                      'test/core/util/test_lb_policies.h',
+                      'test/core/util/test_tcp_server.cc',
+                      'test/core/util/test_tcp_server.h',
                       'test/core/util/tracer_util.cc',
                       'test/core/util/tracer_util.h',
                       'test/core/util/trickle_endpoint.cc',

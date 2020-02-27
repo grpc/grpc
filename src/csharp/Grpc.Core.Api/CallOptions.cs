@@ -112,7 +112,7 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// If <c>true</c> and and channel is in <c>ChannelState.TransientFailure</c>, the call will attempt waiting for the channel to recover
+        /// If <c>true</c> and channel is in <c>ChannelState.TransientFailure</c>, the call will attempt waiting for the channel to recover
         /// instead of failing immediately (which is the default "FailFast" semantics).
         /// Note: experimental API that can change or be removed without any prior notice.
         /// </summary>
