@@ -100,17 +100,18 @@ void TryConnectAndDestroy() {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  std::vector<std::thread> thds;
+  std::vector<std::unique_ptr<std::thread>> thds;
   // 100 is picked for number of threads just
   // because it's enough to reproduce a certain crash almost 100%
   // at this time of writing.
   int num_threads = 100;
   thds.reserve(num_threads);
   for (int i = 0; i < num_threads; i++) {
-    thds[i] = std::thread(TryConnectAndDestroy);
+    thds.push_back(
+        std::unique_ptr<std::thread>(new std::thread(TryConnectAndDestroy)));
   }
   for (int i = 0; i < thds.size(); i++) {
-    thds[i].join();
+    thds[i]->join();
   }
   grpc_shutdown();
   return 0;
