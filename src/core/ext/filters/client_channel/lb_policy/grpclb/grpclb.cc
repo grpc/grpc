@@ -1675,13 +1675,9 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_glb_trace);
-  if (GPR_UNLIKELY(lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR, "[grpclb %p] Failure creating child policy", this);
-    return nullptr;
-  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Created new child policy (%p)", this,
-            lb_policy.get());
+    gpr_log(GPR_INFO, "[grpclb %p] Created new child policy handler (%p)",
+            this, lb_policy.get());
   }
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
   // created child policy. This will make the child policy progress upon
@@ -1718,7 +1714,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   }
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Updating child policy %p", this,
+    gpr_log(GPR_INFO, "[grpclb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
@@ -1744,19 +1740,21 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       return MakeRefCounted<GrpcLbConfig>(nullptr);
     }
     std::vector<grpc_error*> error_list;
-    Json child_policy_config_json;
+    Json child_policy_config_json_tmp;
+    const Json* child_policy_config_json;
     auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
-      child_policy_config_json = Json::Array{Json::Object{
+      child_policy_config_json_tmp = Json::Array{Json::Object{
           {"round_robin", Json::Object()},
       }};
+      child_policy_config_json = &child_policy_config_json_tmp;
     } else {
-      child_policy_config_json = it->second;
+      child_policy_config_json = &it->second;
     }
     grpc_error* parse_error = GRPC_ERROR_NONE;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config =
         LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            child_policy_config_json, &parse_error);
+            *child_policy_config_json, &parse_error);
     if (parse_error != GRPC_ERROR_NONE) {
       std::vector<grpc_error*> child_errors;
       child_errors.push_back(parse_error);

@@ -69,6 +69,9 @@ class ChildPolicyHandler::Helper
 
   void RequestReresolution() override {
     if (parent_->shutting_down_) return;
+    // Only forward re-resolution requests from the most recent child,
+    // since that's the one that will be receiving any update we receive
+    // from the resolver.
     const LoadBalancingPolicy* latest_child_policy =
         parent_->pending_child_policy_ != nullptr
             ? parent_->pending_child_policy_.get()
