@@ -306,6 +306,10 @@ struct grpc_chttp2_transport {
 
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
+  /** is this the first write in a series of writes?
+      set when we initiate writing from idle, cleared when we
+      initiate writing from writing+more */
+  bool is_first_write_in_batch = false;
 
   /** is the transport destroying itself? */
   uint8_t destroying = false;
@@ -314,6 +318,8 @@ struct grpc_chttp2_transport {
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading = 1;
+
+  grpc_chttp2_optimization_target opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
 
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT] = {};

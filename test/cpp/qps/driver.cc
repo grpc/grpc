@@ -493,17 +493,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Failed WritesDone for client %zu", i);
     }
   }
-  gpr_log(GPR_INFO, "Finishing servers");
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
-    }
-    if (!server->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
-    }
-  }
-
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     // Read the client final status
@@ -544,6 +533,16 @@ std::unique_ptr<ScenarioResult> RunScenario(
     rrc->set_count(it->second);
   }
 
+  gpr_log(GPR_INFO, "Finishing servers");
+  for (size_t i = 0; i < num_servers; i++) {
+    auto server = &servers[i];
+    if (!server->stream->Write(server_mark)) {
+      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+    }
+    if (!server->stream->WritesDone()) {
+      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+    }
+  }
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
