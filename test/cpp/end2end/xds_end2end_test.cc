@@ -1352,6 +1352,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
  public:
+  // This method could benefit test subclasses; to make it accessible
+  // via bind with a qualified name, it needs to be public.
   void SetEdsResourceWithDelay(size_t i,
                                const ClusterLoadAssignment& assignment,
                                int delay_ms, const std::string& name) {
@@ -2424,7 +2426,6 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   std::thread delayed_resource_setter(std::bind(
       &BasicTest::SetEdsResourceWithDelay, this, 0,
       AdsServiceImpl::BuildEdsResource(args), 1000, kDefaultResourceName));
-
   // When we get the first update, all backends in priority 0 are down,
   // so we will create priority 1.  Backends 1 and 2 should have traffic,
   // but backend 3 should not.
@@ -2433,10 +2434,10 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // When backend 3 gets traffic, we know the second update has been seen.
   WaitForBackend(3);
   // The ADS service of balancer 0 got at least 1 response.
-  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::SENT ||
-                      balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::ACKED);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NACKED);
   delayed_resource_setter.join();
 }
 
@@ -2944,10 +2945,10 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
   // The ADS service of balancer 0 sent at least 1 response.
-  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::SENT ||
-                      balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::ACKED);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -2966,10 +2967,10 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // first balancer, which doesn't assign the second backend.
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of balancer 0 sent at least 1 response.
-  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::SENT ||
-                      balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::ACKED);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3003,10 +3004,10 @@ TEST_P(BalancerUpdateTest, Repeated) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
   // The ADS service of balancer 0 sent at least 1 response.
-  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::SENT ||
-                      balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::ACKED);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3069,10 +3070,10 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
   // The ADS service of balancer 0 sent at least 1 response.
-  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::SENT ||
-                      balancers_[0]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::ACKED);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3113,10 +3114,10 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   // The ADS service of balancer 1 sent at least 1 response.
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(true, balancers_[1]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::SENT ||
-                      balancers_[1]->ads_service()->eds_response_state() ==
-                          AdsServiceImpl::ACKED);
+  EXPECT_GT(balancers_[1]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NOT_SENT);
+  EXPECT_LT(balancers_[1]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
 }
