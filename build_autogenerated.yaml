@@ -5639,6 +5639,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/cpp/client/channel_test_peer.cc
   - test/cpp/end2end/end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -6345,6 +6346,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/cpp/client/channel_test_peer.cc
   - test/cpp/end2end/mock_test.cc
   deps:
   - grpc++_test_util
@@ -6808,6 +6810,7 @@ targets:
   language: c++
   headers: []
   src:
+  - src/cpp/client/channel_test_peer.cc
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
   - grpc++_test_util
