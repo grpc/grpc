@@ -144,7 +144,6 @@ grpc_cc_test(
     language = "C++",
     tags = [
         "no_windows",  # LARGE_MACHINE is not configured for windows RBE
-        "notap",  # TODO(yashykt@): TSAN on TAP runs very slow. Fix it for TAP.
     ],
     deps = [
         "//:gpr",

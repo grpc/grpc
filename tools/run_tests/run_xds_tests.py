@@ -19,6 +19,7 @@ import googleapiclient.discovery
 import grpc
 import logging
 import os
+import random
 import shlex
 import socket
 import subprocess
@@ -26,12 +27,24 @@ import sys
 import tempfile
 import time
 
+from oauth2client.client import GoogleCredentials
+
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 console_handler = logging.StreamHandler()
 logger.addHandler(console_handler)
+
+
+def parse_port_range(port_arg):
+    try:
+        port = int(port_arg)
+        return range(port, port + 1)
+    except:
+        port_min, port_max = port_arg.split(':')
+        return range(int(port_min), int(port_max) + 1)
+
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
 argp.add_argument('--project_id', help='GCP project id')
@@ -63,6 +76,34 @@ argp.add_argument(
     help=
     'Leave GCP VMs and configuration running after test. Default behavior is '
     'to delete when tests complete.')
+argp.add_argument(
+    '--compute_discovery_document',
+    default=None,
+    type=str,
+    help=
+    'If provided, uses this file instead of retrieving via the GCP discovery API'
+)
+argp.add_argument('--network',
+                  default='global/networks/default',
+                  help='GCP network to use')
+argp.add_argument('--service_port_range',
+                  default='8080:8180',
+                  type=parse_port_range,
+                  help='Listening port for created gRPC backends. Specified as '
+                  'either a single int or as a range in the format min:max, in '
+                  'which case an available port p will be chosen s.t. min <= p '
+                  '<= max')
+argp.add_argument(
+    '--stats_port',
+    default=8079,
+    type=int,
+    help='Local port for the client process to expose the LB stats service')
+argp.add_argument('--xds_server',
+                  default='trafficdirector.googleapis.com:443',
+                  help='xDS server')
+argp.add_argument('--source_image',
+                  default='projects/debian-cloud/global/images/family/debian-9',
+                  help='Source image for VMs created during the test')
 argp.add_argument(
     '--tolerate_gcp_errors',
     default=False,
@@ -97,8 +138,7 @@ TARGET_PROXY_NAME = 'test-target-proxy' + args.gcp_suffix
 FORWARDING_RULE_NAME = 'test-forwarding-rule' + args.gcp_suffix
 KEEP_GCP_RESOURCES = args.keep_gcp_resources
 TOLERATE_GCP_ERRORS = args.tolerate_gcp_errors
-SERVICE_PORT = 55551
-STATS_PORT = 55552
+STATS_PORT = args.stats_port
 INSTANCE_GROUP_SIZE = 2
 WAIT_FOR_OPERATION_SEC = 60
 NUM_TEST_RPCS = 10 * QPS
@@ -109,7 +149,7 @@ BOOTSTRAP_TEMPLATE = """
     "id": "{node_id}"
   }},
   "xds_servers": [{{
-    "server_uri": "trafficdirector.googleapis.com:443",
+    "server_uri": "%s",
     "channel_creds": [
       {{
         "type": "google_default",
@@ -117,7 +157,7 @@ BOOTSTRAP_TEMPLATE = """
       }}
     ]
   }}]
-}}"""
+}}""" % args.xds_server
 
 
 def get_client_stats(num_rpcs, timeout_sec):
@@ -126,8 +166,11 @@ def get_client_stats(num_rpcs, timeout_sec):
         request = messages_pb2.LoadBalancerStatsRequest()
         request.num_rpcs = num_rpcs
         request.timeout_sec = timeout_sec
+        rpc_timeout = timeout_sec * 2  # Allow time for connection establishment
         try:
-            response = stub.GetClientStats(request, wait_for_ready=True)
+            response = stub.GetClientStats(request,
+                                           wait_for_ready=True,
+                                           timeout=rpc_timeout)
             logger.debug('Invoked GetClientStats RPC: %s', response)
             return response
         except grpc.RpcError as rpc_error:
@@ -187,7 +230,7 @@ def test_round_robin(backends, num_rpcs, stats_timeout_sec):
                 threshold, backend, stats)
 
 
-def create_instance_template(compute, name, grpc_port, project):
+def create_instance_template(compute, project, name, grpc_port):
     config = {
         'name': name,
         'properties': {
@@ -203,13 +246,12 @@ def create_instance_template(compute, name, grpc_port, project):
                 'accessConfigs': [{
                     'type': 'ONE_TO_ONE_NAT'
                 }],
-                'network': 'global/networks/default'
+                'network': args.network
             }],
             'disks': [{
                 'boot': True,
                 'initializeParams': {
-                    'sourceImage':
-                        'projects/debian-cloud/global/images/family/debian-9'
+                    'sourceImage': args.source_image
                 }
             }],
             'metadata': {
@@ -227,7 +269,7 @@ git clone https://github.com/grpc/grpc-java.git
 pushd grpc-java
 pushd interop-testing
 ../gradlew installDist -x test -PskipCodegen=true -PskipAndroid=true
- 
+
 nohup build/install/grpc-interop-testing/bin/xds-test-server --port=%d 1>/dev/null &"""
                         % grpc_port
                 }]
@@ -241,8 +283,8 @@ nohup build/install/grpc-interop-testing/bin/xds-test-server --port=%d 1>/dev/nu
     return result['targetLink']
 
 
-def create_instance_group(compute, name, size, grpc_port, template_url, project,
-                          zone):
+def create_instance_group(compute, project, zone, name, size, grpc_port,
+                          template_url):
     config = {
         'name': name,
         'instanceTemplate': template_url,
@@ -262,7 +304,7 @@ def create_instance_group(compute, name, size, grpc_port, template_url, project,
     return result['instanceGroup']
 
 
-def create_health_check(compute, name, project):
+def create_health_check(compute, project, name):
     config = {
         'name': name,
         'type': 'TCP',
@@ -276,7 +318,7 @@ def create_health_check(compute, name, project):
     return result['targetLink']
 
 
-def create_health_check_firewall_rule(compute, name, project):
+def create_health_check_firewall_rule(compute, project, name):
     config = {
         'name': name,
         'direction': 'INGRESS',
@@ -290,17 +332,13 @@ def create_health_check_firewall_rule(compute, name, project):
     wait_for_global_operation(compute, project, result['name'])
 
 
-def create_backend_service(compute, name, instance_group, health_check,
-                           project):
+def create_backend_service(compute, project, name, health_check):
     config = {
         'name': name,
         'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
         'healthChecks': [health_check],
         'portName': 'grpc',
-        'protocol': 'HTTP2',
-        'backends': [{
-            'group': instance_group,
-        }]
+        'protocol': 'HTTP2'
     }
     result = compute.backendServices().insert(project=project,
                                               body=config).execute()
@@ -308,7 +346,7 @@ def create_backend_service(compute, name, instance_group, health_check,
     return result['targetLink']
 
 
-def create_url_map(compute, name, backend_service_url, host_name, project):
+def create_url_map(compute, project, name, backend_service_url, host_name):
     path_matcher_name = 'path-matcher'
     config = {
         'name': name,
@@ -327,7 +365,7 @@ def create_url_map(compute, name, backend_service_url, host_name, project):
     return result['targetLink']
 
 
-def create_target_http_proxy(compute, name, url_map_url, project):
+def create_target_http_proxy(compute, project, name, url_map_url):
     config = {
         'name': name,
         'url_map': url_map_url,
@@ -338,13 +376,14 @@ def create_target_http_proxy(compute, name, url_map_url, project):
     return result['targetLink']
 
 
-def create_global_forwarding_rule(compute, name, grpc_port,
-                                  target_http_proxy_url, project):
+def create_global_forwarding_rule(compute, project, name, grpc_port,
+                                  target_http_proxy_url):
     config = {
         'name': name,
         'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
         'portRange': str(grpc_port),
         'IPAddress': '0.0.0.0',
+        'network': args.network,
         'target': target_http_proxy_url,
     }
     result = compute.globalForwardingRules().insert(project=project,
@@ -430,6 +469,18 @@ def delete_instance_template(compute, project, instance_template):
         logger.info('Delete failed: %s', http_error)
 
 
+def add_instances_to_backend(compute, project, backend_service, instance_group):
+    config = {
+        'backends': [{
+            'group': instance_group,
+        }],
+    }
+    result = compute.backendServices().patch(project=project,
+                                             backendService=backend_service,
+                                             body=config).execute()
+    wait_for_global_operation(compute, project, result['name'])
+
+
 def wait_for_global_operation(compute,
                               project,
                               operation,
@@ -487,9 +538,9 @@ def wait_for_healthy_backends(compute, project_id, backend_service,
                     (timeout_sec, result))
 
 
-def start_xds_client():
+def start_xds_client(service_port):
     cmd = CLIENT_CMD.format(service_host=SERVICE_HOST,
-                            service_port=SERVICE_PORT,
+                            service_port=service_port,
                             stats_port=STATS_PORT,
                             qps=QPS)
     bootstrap_path = None
@@ -506,34 +557,58 @@ def start_xds_client():
     return client_process
 
 
-compute = googleapiclient.discovery.build('compute', 'v1')
+if args.compute_discovery_document:
+    with open(args.compute_discovery_document, 'r') as discovery_doc:
+        compute = googleapiclient.discovery.build_from_document(
+            discovery_doc.read())
+else:
+    compute = googleapiclient.discovery.build('compute', 'v1')
+
+service_port = None
 client_process = None
 
 try:
     instance_group_url = None
     try:
-        template_url = create_instance_template(compute, TEMPLATE_NAME,
-                                                SERVICE_PORT, PROJECT_ID)
-        instance_group_url = create_instance_group(compute, INSTANCE_GROUP_NAME,
-                                                   INSTANCE_GROUP_SIZE,
-                                                   SERVICE_PORT, template_url,
-                                                   PROJECT_ID, ZONE)
-        health_check_url = create_health_check(compute, HEALTH_CHECK_NAME,
-                                               PROJECT_ID)
-        create_health_check_firewall_rule(compute, FIREWALL_RULE_NAME,
-                                          PROJECT_ID)
-        backend_service_url = create_backend_service(compute,
+        health_check_url = create_health_check(compute, PROJECT_ID,
+                                               HEALTH_CHECK_NAME)
+        create_health_check_firewall_rule(compute, PROJECT_ID,
+                                          FIREWALL_RULE_NAME)
+        backend_service_url = create_backend_service(compute, PROJECT_ID,
                                                      BACKEND_SERVICE_NAME,
-                                                     instance_group_url,
-                                                     health_check_url,
-                                                     PROJECT_ID)
-        url_map_url = create_url_map(compute, URL_MAP_NAME, backend_service_url,
-                                     SERVICE_HOST, PROJECT_ID)
+                                                     health_check_url)
+        url_map_url = create_url_map(compute, PROJECT_ID, URL_MAP_NAME,
+                                     backend_service_url, SERVICE_HOST)
         target_http_proxy_url = create_target_http_proxy(
-            compute, TARGET_PROXY_NAME, url_map_url, PROJECT_ID)
-        create_global_forwarding_rule(compute, FORWARDING_RULE_NAME,
-                                      SERVICE_PORT, target_http_proxy_url,
-                                      PROJECT_ID)
+            compute, PROJECT_ID, TARGET_PROXY_NAME, url_map_url)
+        potential_service_ports = list(args.service_port_range)
+        random.shuffle(potential_service_ports)
+        for port in potential_service_ports:
+            try:
+                create_global_forwarding_rule(
+                    compute,
+                    PROJECT_ID,
+                    FORWARDING_RULE_NAME,
+                    port,
+                    target_http_proxy_url,
+                )
+                service_port = port
+                break
+            except googleapiclient.errors.HttpError as http_error:
+                logger.warning(
+                    'Got error %s when attempting to create forwarding rule to port %d. Retrying with another port.'
+                    % (http_error, port))
+        if not service_port:
+            raise Exception('Failed to pick a service port in the range %s' %
+                            args.service_port_range)
+        template_url = create_instance_template(compute, PROJECT_ID,
+                                                TEMPLATE_NAME, service_port)
+        instance_group_url = create_instance_group(compute, PROJECT_ID, ZONE,
+                                                   INSTANCE_GROUP_NAME,
+                                                   INSTANCE_GROUP_SIZE,
+                                                   service_port, template_url)
+        add_instances_to_backend(compute, PROJECT_ID, BACKEND_SERVICE_NAME,
+                                 instance_group_url)
     except googleapiclient.errors.HttpError as http_error:
         if TOLERATE_GCP_ERRORS:
             logger.warning(
@@ -568,7 +643,7 @@ try:
         instance_name = item['instance'].split('/')[-1]
         backends.append(instance_name)
 
-    client_process = start_xds_client()
+    client_process = start_xds_client(service_port)
 
     if TEST_CASE == 'all':
         test_ping_pong(backends, NUM_TEST_RPCS, WAIT_FOR_STATS_SEC)

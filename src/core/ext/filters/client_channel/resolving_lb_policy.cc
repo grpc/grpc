@@ -188,15 +188,15 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
   GPR_ASSERT(process_resolver_result != nullptr);
   resolver_ = ResolverRegistry::CreateResolver(
       target_uri_.get(), args.args, interested_parties(), combiner(),
-      grpc_core::MakeUnique<ResolverResultHandler>(Ref()));
+      absl::make_unique<ResolverResultHandler>(Ref()));
   // Since the validity of args has been checked when create the channel,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
   }
-  channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_CONNECTING, grpc_core::MakeUnique<QueuePicker>(Ref()));
+  channel_control_helper()->UpdateState(GRPC_CHANNEL_CONNECTING,
+                                        absl::make_unique<QueuePicker>(Ref()));
   resolver_->StartLocked();
 }
 
@@ -262,13 +262,12 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
         "Resolver transient failure", &error, 1);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_core::MakeUnique<TransientFailurePicker>(state_error));
+        absl::make_unique<TransientFailurePicker>(state_error));
   }
   GRPC_ERROR_UNREF(error);
 }
 
 void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
-    const char* lb_policy_name,
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
     Resolver::Result result, TraceStringVector* trace_strings) {
   // If the child policy name changes, we need to create a new child
@@ -320,6 +319,7 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
+  const char* lb_policy_name = lb_policy_config->name();
   const bool create_policy =
       // case 1
       lb_policy_ == nullptr ||
@@ -451,34 +451,33 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   TraceStringVector trace_strings;
   const bool resolution_contains_addresses = result.addresses.size() > 0;
   // Process the resolver result.
-  const char* lb_policy_name = nullptr;
   RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config;
   bool service_config_changed = false;
   char* service_config_error_string = nullptr;
   if (process_resolver_result_ != nullptr) {
     grpc_error* service_config_error = GRPC_ERROR_NONE;
+    bool no_valid_service_config = false;
     service_config_changed = process_resolver_result_(
-        process_resolver_result_user_data_, result, &lb_policy_name,
-        &lb_policy_config, &service_config_error);
+        process_resolver_result_user_data_, result, &lb_policy_config,
+        &service_config_error, &no_valid_service_config);
     if (service_config_error != GRPC_ERROR_NONE) {
       service_config_error_string =
           gpr_strdup(grpc_error_string(service_config_error));
-      if (lb_policy_name == nullptr) {
-        // Use an empty lb_policy_name as an indicator that we received an
-        // invalid service config and we don't have a fallback service config.
+      if (no_valid_service_config) {
+        // We received an invalid service config and we don't have a
+        // fallback service config.
         OnResolverError(service_config_error);
       } else {
         GRPC_ERROR_UNREF(service_config_error);
       }
     }
   } else {
-    lb_policy_name = child_policy_name_.get();
     lb_policy_config = child_lb_config_;
   }
-  if (lb_policy_name != nullptr) {
+  if (lb_policy_config != nullptr) {
     // Create or update LB policy, as needed.
-    CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
-                                 std::move(result), &trace_strings);
+    CreateOrUpdateLbPolicyLocked(std::move(lb_policy_config), std::move(result),
+                                 &trace_strings);
   }
   // Add channel trace event.
   if (service_config_changed) {

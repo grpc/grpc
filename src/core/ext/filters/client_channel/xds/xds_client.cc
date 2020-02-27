@@ -1314,19 +1314,39 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimerLocked(
   self->SendReportLocked();
 }
 
+namespace {
+
+bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
+  for (const auto& p : snapshot) {
+    const XdsApi::ClusterLoadReport& cluster_snapshot = p.second;
+    for (const auto& q : cluster_snapshot.dropped_requests) {
+      if (q.second > 0) return false;
+    }
+    for (const auto& q : cluster_snapshot.locality_stats) {
+      const XdsClusterLocalityStats::Snapshot& locality_snapshot = q.second;
+      if (!locality_snapshot.IsZero()) return false;
+    }
+  }
+  return true;
+}
+
+}  // namespace
+
 void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
-  // Create a request that contains the load report.
-  grpc_slice request_payload_slice =
-      xds_client()->api_.CreateLrsRequest(xds_client()->ClientStatsMap());
+  // Construct snapshot from all reported stats.
+  XdsApi::ClusterLoadReportMap snapshot =
+      xds_client()->BuildLoadReportSnapshot();
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
-  last_report_counters_were_zero_ = static_cast<bool>(
-      grpc_slice_eq(request_payload_slice, grpc_empty_slice()));
+  last_report_counters_were_zero_ = LoadReportCountersAreZero(snapshot);
   if (old_val && last_report_counters_were_zero_) {
     ScheduleNextReportLocked();
     return;
   }
+  // Create a request that contains the snapshot.
+  grpc_slice request_payload_slice =
+      xds_client()->api_.CreateLrsRequest(std::move(snapshot));
   parent_->send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1507,11 +1527,6 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   AdsCallState* ads_calld = chand()->ads_calld_->calld();
   if (ads_calld == nullptr || !ads_calld->seen_response()) return;
   // Start reporting.
-  for (auto& p : chand()->xds_client_->endpoint_map_) {
-    for (auto* client_stats : p.second.client_stats) {
-      client_stats->MaybeInitLastReportTime();
-    }
-  }
   reporter_ = MakeOrphanable<Reporter>(
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
 }
@@ -1823,31 +1838,104 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
   }
 }
 
-void XdsClient::AddClientStats(StringView /*lrs_server*/,
-                               StringView cluster_name,
-                               XdsClientStats* client_stats) {
-  EndpointState& endpoint_state = endpoint_map_[std::string(cluster_name)];
+RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
+    StringView lrs_server, StringView cluster_name,
+    StringView eds_service_name) {
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  endpoint_state.client_stats.insert(client_stats);
+  auto key =
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+  // We jump through some hoops here to make sure that the StringViews
+  // stored in the XdsClusterDropStats object point to the strings
+  // in the load_report_map_ key, so that they have the same lifetime.
+  auto it = load_report_map_
+                .emplace(std::make_pair(std::move(key), LoadReportState()))
+                .first;
+  auto cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
+      Ref(DEBUG_LOCATION, "DropStats"), lrs_server,
+      it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/);
+  it->second.drop_stats.insert(cluster_drop_stats.get());
   chand_->MaybeStartLrsCall();
+  return cluster_drop_stats;
 }
 
-void XdsClient::RemoveClientStats(StringView /*lrs_server*/,
-                                  StringView cluster_name,
-                                  XdsClientStats* client_stats) {
-  EndpointState& endpoint_state = endpoint_map_[std::string(cluster_name)];
+void XdsClient::RemoveClusterDropStats(
+    StringView /*lrs_server*/, StringView cluster_name,
+    StringView eds_service_name, XdsClusterDropStats* cluster_drop_stats) {
+  auto load_report_it = load_report_map_.find(
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (load_report_it == load_report_map_.end()) return;
+  LoadReportState& load_report_state = load_report_it->second;
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
   // TODO(roth): In principle, we should try to send a final load report
   // containing whatever final stats have been accumulated since the
   // last load report.
-  auto it = endpoint_state.client_stats.find(client_stats);
-  if (it != endpoint_state.client_stats.end()) {
-    endpoint_state.client_stats.erase(it);
+  auto it = load_report_state.drop_stats.find(cluster_drop_stats);
+  if (it != load_report_state.drop_stats.end()) {
+    load_report_state.drop_stats.erase(it);
+    if (load_report_state.drop_stats.empty() &&
+        load_report_state.locality_stats.empty()) {
+      load_report_map_.erase(load_report_it);
+      if (chand_ != nullptr && load_report_map_.empty()) {
+        chand_->StopLrsCall();
+      }
+    }
   }
-  if (chand_ != nullptr && endpoint_state.client_stats.empty()) {
-    chand_->StopLrsCall();
+}
+
+RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
+    StringView lrs_server, StringView cluster_name, StringView eds_service_name,
+    RefCountedPtr<XdsLocalityName> locality) {
+  // TODO(roth): When we add support for direct federation, use the
+  // server name specified in lrs_server.
+  auto key =
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+  // We jump through some hoops here to make sure that the StringViews
+  // stored in the XdsClusterLocalityStats object point to the strings
+  // in the load_report_map_ key, so that they have the same lifetime.
+  auto it = load_report_map_
+                .emplace(std::make_pair(std::move(key), LoadReportState()))
+                .first;
+  auto cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
+      Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server,
+      it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/,
+      locality);
+  it->second.locality_stats[std::move(locality)].insert(
+      cluster_locality_stats.get());
+  chand_->MaybeStartLrsCall();
+  return cluster_locality_stats;
+}
+
+void XdsClient::RemoveClusterLocalityStats(
+    StringView /*lrs_server*/, StringView cluster_name,
+    StringView eds_service_name, const RefCountedPtr<XdsLocalityName>& locality,
+    XdsClusterLocalityStats* cluster_locality_stats) {
+  auto load_report_it = load_report_map_.find(
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (load_report_it == load_report_map_.end()) return;
+  LoadReportState& load_report_state = load_report_it->second;
+  // TODO(roth): When we add support for direct federation, use the
+  // server name specified in lrs_server.
+  // TODO(roth): In principle, we should try to send a final load report
+  // containing whatever final stats have been accumulated since the
+  // last load report.
+  auto locality_it = load_report_state.locality_stats.find(locality);
+  if (locality_it == load_report_state.locality_stats.end()) return;
+  auto& locality_set = locality_it->second;
+  auto it = locality_set.find(cluster_locality_stats);
+  if (it != locality_set.end()) {
+    locality_set.erase(it);
+    if (locality_set.empty()) {
+      load_report_state.locality_stats.erase(locality_it);
+      if (load_report_state.locality_stats.empty() &&
+          load_report_state.drop_stats.empty()) {
+        load_report_map_.erase(load_report_it);
+        if (chand_ != nullptr && load_report_map_.empty()) {
+          chand_->StopLrsCall();
+        }
+      }
+    }
   }
 }
 
@@ -1876,17 +1964,34 @@ grpc_error* XdsClient::CreateServiceConfig(
   return error;
 }
 
-std::map<StringView, std::set<XdsClientStats*>, StringLess>
-XdsClient::ClientStatsMap() const {
-  std::map<StringView, std::set<XdsClientStats*>, StringLess> client_stats_map;
-  for (const auto& p : endpoint_map_) {
-    const StringView cluster_name = p.first;
-    const auto& client_stats = p.second.client_stats;
-    if (chand_->lrs_calld()->ShouldSendLoadReports(cluster_name)) {
-      client_stats_map.emplace(cluster_name, client_stats);
+XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot() {
+  XdsApi::ClusterLoadReportMap snapshot_map;
+  for (auto& p : load_report_map_) {
+    const auto& cluster_key = p.first;  // cluster and EDS service name
+    LoadReportState& load_report = p.second;
+    XdsApi::ClusterLoadReport& snapshot = snapshot_map[cluster_key];
+    // Aggregate drop stats.
+    for (auto& drop_stats : load_report.drop_stats) {
+      for (const auto& p : drop_stats->GetSnapshotAndReset()) {
+        snapshot.dropped_requests[p.first] += p.second;
+      }
     }
+    // Aggregate locality stats.
+    for (auto& p : load_report.locality_stats) {
+      XdsLocalityName* locality_name = p.first.get();
+      auto& locality_stats_set = p.second;
+      XdsClusterLocalityStats::Snapshot& locality_snapshot =
+          snapshot.locality_stats[locality_name];
+      for (auto& locality_stats : locality_stats_set) {
+        locality_snapshot += locality_stats->GetSnapshotAndReset();
+      }
+    }
+    // Compute load report interval.
+    const grpc_millis now = ExecCtx::Get()->Now();
+    snapshot.load_report_interval = now - load_report.last_report_time;
+    load_report.last_report_time = now;
   }
-  return client_stats_map;
+  return snapshot_map;
 }
 
 void XdsClient::NotifyOnError(grpc_error* error) {

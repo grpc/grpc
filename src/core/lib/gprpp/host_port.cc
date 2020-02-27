@@ -48,7 +48,7 @@ namespace {
 bool DoSplitHostPort(StringView name, StringView* host, StringView* port,
                      bool* has_port) {
   *has_port = false;
-  if (name[0] == '[') {
+  if (!name.empty() && name[0] == '[') {
     /* Parse a bracketed host, typically an IPv6 literal. */
     const size_t rbracket = name.find(']', 1);
     if (rbracket == grpc_core::StringView::npos) {

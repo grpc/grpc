@@ -322,12 +322,12 @@ void RoundRobin::RoundRobinSubchannelList::
   if (num_ready_ > 0) {
     /* 1) READY */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, grpc_core::MakeUnique<Picker>(p, this));
+        GRPC_CHANNEL_READY, absl::make_unique<Picker>(p, this));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, grpc_core::MakeUnique<QueuePicker>(
-                                     p->Ref(DEBUG_LOCATION, "QueuePicker")));
+        GRPC_CHANNEL_CONNECTING,
+        absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
     grpc_error* error =
@@ -336,7 +336,7 @@ void RoundRobin::RoundRobinSubchannelList::
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_core::MakeUnique<TransientFailurePicker>(error));
+        absl::make_unique<TransientFailurePicker>(error));
   }
 }
 
@@ -453,7 +453,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_core::MakeUnique<TransientFailurePicker>(error));
+        absl::make_unique<TransientFailurePicker>(error));
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {
     // If there is no current list, immediately promote the new list to
@@ -498,7 +498,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_round_robin_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::RoundRobinFactory>());
+          absl::make_unique<grpc_core::RoundRobinFactory>());
 }
 
 void grpc_lb_policy_round_robin_shutdown() {}

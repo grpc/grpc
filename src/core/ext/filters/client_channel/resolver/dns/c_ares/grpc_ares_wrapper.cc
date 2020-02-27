@@ -185,7 +185,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         "request:%p on_hostbyname_done_locked host=%s ARES_SUCCESS", r,
         hr->host);
     if (*r->addresses_out == nullptr) {
-      *r->addresses_out = grpc_core::MakeUnique<ServerAddressList>();
+      *r->addresses_out = absl::make_unique<ServerAddressList>();
     }
     ServerAddressList& addresses = **r->addresses_out;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
@@ -480,7 +480,7 @@ static bool inner_resolve_as_ip_literal_locked(
       grpc_parse_ipv6_hostport(hostport->get(), &addr,
                                false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
-    *addrs = grpc_core::MakeUnique<ServerAddressList>();
+    *addrs = absl::make_unique<ServerAddressList>();
     (*addrs)->emplace_back(addr.addr, addr.len, nullptr /* args */);
     return true;
   }
@@ -543,7 +543,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
   }
   if (gpr_stricmp(host->get(), "localhost") == 0) {
     GPR_ASSERT(*addrs == nullptr);
-    *addrs = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
+    *addrs = absl::make_unique<grpc_core::ServerAddressList>();
     uint16_t numeric_port = grpc_strhtons(port->get());
     // Append the ipv6 loopback address.
     struct sockaddr_in6 ipv6_loopback_addr;
