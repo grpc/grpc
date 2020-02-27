@@ -59,6 +59,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "destroy_grpclb_channel_with_active_connect_stress_test",
     srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
+    external_deps = ["gtest"],
     deps = [
         "//:gpr",
         "//:grpc",

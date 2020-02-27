@@ -23,6 +23,8 @@
 #include <sstream>
 #include <thread>
 
+#include <gmock/gmock.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -44,6 +46,8 @@
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+namespace {
 
 void TryConnectAndDestroy() {
   auto response_generator =
@@ -82,13 +86,14 @@ void TryConnectAndDestroy() {
   // time as the WaitForConnected time. The goal is to get the
   // connect timeout code to run at about the same time as when
   // the channel gets destroyed, to try to reproduce a race.
-  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", 100);
+  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms",
+              grpc_test_slowdown_factor() * 100);
   std::ostringstream uri;
   uri << "fake:///servername_not_used";
   auto channel = ::grpc::CreateCustomChannel(
       uri.str(), grpc::InsecureChannelCredentials(), args);
   // Start connecting, and give some time for the TCP connection attempt to the
-  // unreachable balancer to *begin. The connection should never become ready
+  // unreachable balancer to begin. The connection should never become ready
   // because the LB we're trying to connect to is unreachable.
   channel->GetState(true /* try_to_connect */);
   GPR_ASSERT(
@@ -97,22 +102,29 @@ void TryConnectAndDestroy() {
   channel.reset();
 };
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+TEST(DestroyGrpclbChannelWithActiveConnectStressTest,
+     LoopTryConnectAndDestroy) {
   grpc_init();
-  std::vector<std::unique_ptr<std::thread>> thds;
+  std::vector<std::unique_ptr<std::thread>> threads;
   // 100 is picked for number of threads just
   // because it's enough to reproduce a certain crash almost 100%
   // at this time of writing.
-  int num_threads = 100;
-  thds.reserve(num_threads);
-  for (int i = 0; i < num_threads; i++) {
-    thds.push_back(
-        std::unique_ptr<std::thread>(new std::thread(TryConnectAndDestroy)));
+  const int kNumThreads = 100;
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    threads.emplace_back(new std::thread(TryConnectAndDestroy));
   }
-  for (int i = 0; i < thds.size(); i++) {
-    thds[i]->join();
+  for (int i = 0; i < threads.size(); i++) {
+    threads[i]->join();
   }
   grpc_shutdown();
-  return 0;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  auto result = RUN_ALL_TESTS();
+  return result;
 }

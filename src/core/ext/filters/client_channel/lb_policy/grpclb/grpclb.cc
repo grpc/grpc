@@ -312,22 +312,23 @@ class GrpcLb : public LoadBalancingPolicy {
         : AsyncConnectivityStateWatcherInterface(parent->combiner()),
           parent_(std::move(parent)) {}
 
+    ~StateWatcher() { parent_.reset(DEBUG_LOCATION, "StateWatcher"); }
+
    private:
     void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
       if (!parent_->shutting_down_ &&
-          parent_->fallback_at_startup_checks_pending_) {
-        if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
-          // fallback mode immediately.
-          gpr_log(GPR_INFO,
-                  "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
-                  "entering fallback mode",
-                  parent_.get());
-          parent_->fallback_at_startup_checks_pending_ = false;
-          grpc_timer_cancel(&parent_->lb_fallback_timer_);
-          parent_->fallback_mode_ = true;
-          parent_->CreateOrUpdateChildPolicyLocked();
-        }
+          parent_->fallback_at_startup_checks_pending_ &&
+          new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
+        // fallback mode immediately.
+        gpr_log(GPR_INFO,
+                "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
+                "entering fallback mode",
+                parent_.get());
+        parent_->fallback_at_startup_checks_pending_ = false;
+        grpc_timer_cancel(&parent_->lb_fallback_timer_);
+        parent_->fallback_mode_ = true;
+        parent_->CreateOrUpdateChildPolicyLocked();
       }
     }
 
@@ -372,6 +373,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // The channel for communicating with the LB server.
   grpc_channel* lb_channel_ = nullptr;
+  StateWatcher* watcher_ = nullptr;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
 
@@ -414,7 +416,6 @@ class GrpcLb : public LoadBalancingPolicy {
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config_;
   // Child policy in state READY.
   bool child_policy_ready_ = false;
-  StateWatcher* watcher_ = nullptr;
 };
 
 //
@@ -1495,7 +1496,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
         grpc_channel_get_channel_stack(lb_channel_));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
     // Ref held by callback.
-    watcher_ = new StateWatcher(Ref());
+    watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
     grpc_client_channel_start_connectivity_watch(
         client_channel_elem, GRPC_CHANNEL_IDLE,
         OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
