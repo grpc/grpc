@@ -371,40 +371,24 @@ class Subchannel::AsyncWatcherNotifierLocked {
       Subchannel* subchannel, grpc_connectivity_state state)
       : subchannel_(subchannel), watcher_(std::move(watcher)) {
     gpr_log(GPR_ERROR, "pushing connectivity state change %d", state);
-    {
-      MutexLock(watcher_->mu());
-      watcher_->PushConnectivityStateChangeLocked(state);
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    if (state == GRPC_CHANNEL_READY) {
+      connected_subchannel = subchannel_->connected_subchannel_;
     }
+    watcher_->PushConnectivityStateChange(state,
+                                          std::move(connected_subchannel));
+    gpr_log(GPR_ERROR, "done pushing");
     ExecCtx::Run(
         DEBUG_LOCATION,
-        GRPC_CLOSURE_INIT(
-            &closure_,
-            [](void* arg, grpc_error* /*error*/) {
-              auto* self = static_cast<AsyncWatcherNotifierLocked*>(arg);
-              while (true) {
-                grpc_connectivity_state state;
-                RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-                gpr_log(GPR_ERROR, "lock %p", self->watcher_->mu());
-                gpr_mu_lock(self->watcher_->mu()->get());
-                {
-                  if (!self->watcher_->PopConnectivityStateChangeLocked(
-                          &state)) {
-                    gpr_mu_unlock(self->watcher_->mu()->get());
-                    break;
-                  }
-                  gpr_log(GPR_ERROR, "popping connectivity state change %d",
-                          state);
-                  if (state == GRPC_CHANNEL_READY) {
-                    connected_subchannel =
-                        self->subchannel_->connected_subchannel_;
-                  }
-                }
-                self->watcher_->OnConnectivityStateChange(
-                    state, std::move(connected_subchannel));
-              }
-              delete self;
-            },
-            this, nullptr),
+        GRPC_CLOSURE_INIT(&closure_,
+                          [](void* arg, grpc_error* /*error*/) {
+                            gpr_log(GPR_ERROR, "done conn state change exec");
+                            auto* self =
+                                static_cast<AsyncWatcherNotifierLocked*>(arg);
+                            self->watcher_->OnConnectivityStateChange();
+                            delete self;
+                          },
+                          this, nullptr),
         GRPC_ERROR_NONE);
   }
 

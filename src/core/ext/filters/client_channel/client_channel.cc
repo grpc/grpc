@@ -1018,19 +1018,16 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           DEBUG_LOCATION);
     }
 
-    void OnConnectivityStateChange(
-        grpc_connectivity_state new_state,
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel) override {
+    void OnConnectivityStateChange() override {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
-                "subchannel %p (connected_subchannel=%p state=%s); "
+                "subchannel %p; "
                 "hopping into work_serializer",
-                parent_->chand_, parent_.get(), parent_->subchannel_,
-                connected_subchannel.get(), ConnectivityStateName(new_state));
+                parent_->chand_, parent_.get(), parent_->subchannel_);
       }
       // Will delete itself.
-      new Updater(Ref(), new_state, std::move(connected_subchannel));
+      new Updater(Ref());
     }
 
     grpc_pollset_set* interested_parties() override {
@@ -1052,20 +1049,11 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
    private:
     class Updater {
      public:
-      Updater(RefCountedPtr<WatcherWrapper> parent,
-              grpc_connectivity_state new_state,
-              RefCountedPtr<ConnectedSubchannel> connected_subchannel)
-          : parent_(std::move(parent)),
-            state_(new_state),
-            connected_subchannel_(std::move(connected_subchannel)) {
-        gpr_log(GPR_ERROR, "updater run %p", parent_->mu());
-        running_exec_ctx_ = ExecCtx::Get();
+      Updater(RefCountedPtr<WatcherWrapper> parent)
+          : parent_(std::move(parent)) {
         parent_->parent_->chand_->work_serializer_->Run(
             [this]() { ApplyUpdateInControlPlaneWorkSerializer(); },
             DEBUG_LOCATION);
-        if (!run_inline_) {
-          gpr_mu_unlock(parent_->mu()->get());
-        }
       }
 
      private:
@@ -1074,23 +1062,28 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           gpr_log(GPR_INFO,
                   "chand=%p: processing connectivity change in work serializer "
                   "for subchannel wrapper %p subchannel %p "
-                  "(connected_subchannel=%p state=%s): watcher=%p",
+                  "watcher=%p",
                   parent_->parent_->chand_, parent_->parent_.get(),
-                  parent_->parent_->subchannel_, connected_subchannel_.get(),
-                  ConnectivityStateName(state_), parent_->watcher_.get());
+                  parent_->parent_->subchannel_, parent_->watcher_.get());
         }
-        if (ExecCtx::Get() == running_exec_ctx_) {
-          // Running inline
-          gpr_mu_unlock(parent_->mu()->get());
-          run_inline_ = true;
+        while (true) {
+          grpc_connectivity_state state;
+          RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+          gpr_log(GPR_ERROR, "bout to popping connectivity state change %d",
+                  state);
+          if (!parent_->PopConnectivityStateChange(&state,
+                                                   &connected_subchannel)) {
+            break;
+          }
+          gpr_log(GPR_ERROR, "popping connectivity state change %d", state);
+          // Ignore update if the parent WatcherWrapper has been replaced
+          // since this callback was scheduled.
+          if (parent_->watcher_ == nullptr) continue;
+          parent_->last_seen_state_ = state;
+          parent_->parent_->MaybeUpdateConnectedSubchannel(
+              std::move(connected_subchannel));
+          parent_->watcher_->OnConnectivityStateChange(state);
         }
-        // Ignore update if the parent WatcherWrapper has been replaced
-        // since this callback was scheduled.
-        if (parent_->watcher_ == nullptr) return;
-        parent_->last_seen_state_ = state_;
-        parent_->parent_->MaybeUpdateConnectedSubchannel(
-            std::move(connected_subchannel_));
-        parent_->watcher_->OnConnectivityStateChange(state_);
         delete this;
       }
 
