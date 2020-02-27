@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.28.0-dev")
+set(PACKAGE_VERSION       "1.29.0-dev")
 set(gRPC_CORE_VERSION     "10.0.0")
 set(gRPC_CORE_SOVERSION   "10")
-set(gRPC_CPP_VERSION      "1.28.0-dev")
+set(gRPC_CPP_VERSION      "1.29.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.28.0-dev")
+set(gRPC_CSHARP_VERSION   "2.29.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -111,6 +111,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_core_headers
   absl_dynamic_annotations
   absl_endian
+  absl_errno_saver
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
