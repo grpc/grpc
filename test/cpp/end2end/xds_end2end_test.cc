@@ -2404,21 +2404,25 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // - Priority 0 is locality 0, containing backend 0, which is down.
   // - Priority 1 is locality 1, containing backends 1 and 2, which are up.
   ShutdownBackend(0);
-  AdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
       {"locality1", GetBackendPorts(1, 3), kDefaultLocalityWeight, 1},
   });
-  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   // Second update:
   // - Priority 0 contains both localities 0 and 1.
   // - Priority 1 is not present.
   // - We add backend 3 to locality 1, just so we have a way to know
   //   when the update has been seen by the client.
-  args = AdsServiceImpl::ResponseArgs({
+  args = AdsServiceImpl::EdsResourceArgs({
       {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
       {"locality1", GetBackendPorts(1, 4), kDefaultLocalityWeight, 0},
   });
-  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 1000);
+  std::thread delayed_resource_setter(std::bind(
+      &BasicTest::SetEdsResourceWithDelay, this, 0,
+      AdsServiceImpl::BuildEdsResource(args), 1000, kDefaultResourceName));
+
   // When we get the first update, all backends in priority 0 are down,
   // so we will create priority 1.  Backends 1 and 2 should have traffic,
   // but backend 3 should not.
@@ -2426,9 +2430,12 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   EXPECT_EQ(0UL, backends_[3]->backend_service()->request_count());
   // When backend 3 gets traffic, we know the second update has been seen.
   WaitForBackend(3);
-  // The ADS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
-  EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());
+  // The ADS service of balancer 0 got at least 1 response.
+  EXPECT_EQ(true, balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::SENT ||
+                      balancers_[0]->ads_service()->eds_response_state() ==
+                          AdsServiceImpl::ACKED);
+  delayed_resource_setter.join();
 }
 
 using DropTest = BasicTest;
