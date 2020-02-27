@@ -231,13 +231,15 @@ def grpc_deps():
             strip_prefix = "opencensus-cpp-c9a4da319bc669a772928ffc55af4a61be1a1176",
             url = "https://github.com/census-instrumentation/opencensus-cpp/archive/c9a4da319bc669a772928ffc55af4a61be1a1176.tar.gz",
         )
+
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "b2f7c03da0aef19baff9d10278443b560a96c8cbe3637685fe936e4a36925850",
-            strip_prefix = "upb-e70853d71f3db513f3d19a7842e0703bfa56d6a5",
-            url = "https://github.com/protocolbuffers/upb/archive/e70853d71f3db513f3d19a7842e0703bfa56d6a5.tar.gz",
+            sha256 = "60509df0f77ba6e28842316e3db89699f31ac96f0cd8bf35db36e319153e383e",
+            strip_prefix = "upb-97bcd5276cf4597f52fe5f5b3baad8dc2cad7878",
+            url = "https://github.com/protocolbuffers/upb/archive/97bcd5276cf4597f52fe5f5b3baad8dc2cad7878.tar.gz",
         )
+
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
