@@ -62,13 +62,13 @@ py_library(
     deps = [
         ":benchmark_client",
         ":benchmark_server",
-        ":histogram",
         ":client_runner",
+        ":histogram",
+        "//src/proto/grpc/core:stats_py_pb2",
         "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
         "//src/proto/grpc/testing:control_py_pb2",
         "//src/proto/grpc/testing:payloads_py_pb2",
         "//src/proto/grpc/testing:stats_py_pb2",
-        "//src/proto/grpc/core:stats_py_pb2",
         "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/unit:resources",
@@ -79,8 +79,8 @@ py_library(
 py_binary(
     name = "qps_worker",
     srcs = ["qps_worker.py"],
-    srcs_version = "PY2AND3",
     imports = ["../.."],
+    srcs_version = "PY2AND3",
     deps = [
         ":worker_server",
         "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
