@@ -218,6 +218,7 @@ grpc_cc_test(
     srcs = ["bm_fullstack_trickle.cc"],
     tags = [
         "manual",
+        "no_windows",
         "notap",
     ],
     deps = [":helpers"],
@@ -315,6 +316,7 @@ grpc_cc_test(
     srcs = ["bm_threadpool.cc"],
     tags = [
         "manual",
+        "no_windows",
         "notap",
     ],
     uses_polling = False,
