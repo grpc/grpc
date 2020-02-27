@@ -145,7 +145,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
       },
   };
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    std::string json_str = json.Dump();
+    std::string json_str = json.Dump(/*indent=*/1);
     gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
             parent_.get(), json_str.c_str());
   }

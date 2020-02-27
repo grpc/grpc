@@ -808,7 +808,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
       }},
   }};
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    std::string json_str = json.Dump();
+    std::string json_str = json.Dump(/*indent=*/1);
     gpr_log(GPR_INFO, "[edslb %p] generated config for child policy: %s",
             this, json_str.c_str());
   }
