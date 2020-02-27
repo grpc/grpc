@@ -325,11 +325,11 @@ class GrpcLb : public LoadBalancingPolicy {
                 "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
                 "entering fallback mode",
                 parent_.get());
-        parent_->CancelBalancerChannelConnectivityWatchLocked();
         parent_->fallback_at_startup_checks_pending_ = false;
         grpc_timer_cancel(&parent_->lb_fallback_timer_);
         parent_->fallback_mode_ = true;
         parent_->CreateOrUpdateChildPolicyLocked();
+        parent_->CancelBalancerChannelConnectivityWatchLocked();
       }
     }
 
