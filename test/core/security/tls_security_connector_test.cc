@@ -124,8 +124,6 @@ TEST_F(TlsSecurityConnectorTest, NoKeysAndConfig) {
   options_->Unref();
 }
 
-/** This is the current behavior. Why do we want this to be different for the
- *  client and server? **/
 TEST_F(TlsSecurityConnectorTest, NoKeysAndConfigAsAClient) {
   grpc_ssl_certificate_config_reload_status reload_status;
   grpc_status_code status =

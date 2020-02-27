@@ -167,7 +167,6 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
  *    false denotes that this method is called by a client.
  *  - reload_status: the status of the credential reloading after the method
  *    returns; the caller should not pass in nullptr. **/
-// TODO: is there a memory leak if key materials config is already populated?
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
