@@ -1430,6 +1430,7 @@ void GrpcLb::ShutdownLocked() {
     grpc_timer_cancel(&lb_call_retry_timer_);
   }
   if (fallback_at_startup_checks_pending_) {
+    fallback_at_startup_checks_pending_ = false;
     grpc_timer_cancel(&lb_fallback_timer_);
     CancelBalancerChannelConnectivityWatchLocked();
   }
