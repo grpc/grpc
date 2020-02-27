@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <string>
 
 #include "src/core/lib/security/credentials/credentials.h"
 

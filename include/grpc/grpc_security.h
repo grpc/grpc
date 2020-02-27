@@ -426,8 +426,7 @@ typedef struct {
       const char** error_details);
 
   /** Implements debug string of the given plugin. This method returns an
-   * allocated string that the caller needs to free using gpr_free()
-   * */
+   * allocated string that the caller needs to free using gpr_free() */
   char* (*debug_string)(void* state);
 
   /** Destroys the plugin state. */

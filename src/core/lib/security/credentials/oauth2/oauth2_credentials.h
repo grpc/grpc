@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <string>
 
 #include <grpc/grpc_security.h>
 #include "src/core/lib/json/json.h"

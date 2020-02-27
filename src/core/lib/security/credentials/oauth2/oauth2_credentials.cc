@@ -21,6 +21,8 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
+#include <string.h>
+
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>

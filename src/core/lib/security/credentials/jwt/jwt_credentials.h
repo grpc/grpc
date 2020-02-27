@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <string>
 
 #include <grpc/support/time.h>
 
