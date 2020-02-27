@@ -1153,7 +1153,6 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
 }
 
 ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
-  gpr_log(GPR_DEBUG, "external conn watcher:%p dtor. del pollent:%p from pollset set", this, grpc_polling_entity_pollset_set(&pollent_));
   grpc_polling_entity_del_from_pollset_set(&pollent_,
                                            chand_->interested_parties_);
   if (was_cancelled_) {
@@ -1176,7 +1175,6 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Report new state to the user.
   *state_ = state;
-  gpr_log(GPR_DEBUG, "external conn watcher:%p Notify schedule on_complete_", this);
   // Hop back into the combiner to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
@@ -1193,7 +1191,6 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
                                    MemoryOrder::RELAXED)) {
     return;  // Already done.
   }
-  gpr_log(GPR_DEBUG, "external conn watcher:%p Cancel schedule on_complete_", this);
   was_cancelled_ = true;
   // Hop back into the combiner to clean up.
   chand_->combiner_->Run(
@@ -1216,7 +1213,6 @@ void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked(
     void* arg, grpc_error* /*ignored*/) {
   ExternalConnectivityWatcher* self =
       static_cast<ExternalConnectivityWatcher*>(arg);
-  gpr_log(GPR_DEBUG, "external conn watcher:%p RemoveWatcherLocked", self);
   self->chand_->state_tracker_.RemoveWatcher(self);
 }
 

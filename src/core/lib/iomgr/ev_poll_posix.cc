@@ -1287,7 +1287,6 @@ static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
 }
 
 static void pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
-  gpr_log(GPR_DEBUG, "BEGIN pollest set add fd to pollset set:%p", pollset_set);
   size_t i;
   gpr_mu_lock(&pollset_set->mu);
   if (pollset_set->fd_count == pollset_set->fd_capacity) {
@@ -1305,12 +1304,10 @@ static void pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
     pollset_set_add_fd(pollset_set->pollset_sets[i], fd);
   }
   gpr_mu_unlock(&pollset_set->mu);
-  gpr_log(GPR_DEBUG, "DONE pollest set add fd to pollset set:%p", pollset_set);
 }
 
 static void pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   size_t i;
-  gpr_log(GPR_DEBUG, "BEGIN pollset_set_del_fd from pollset set:%p", pollset_set);
   gpr_mu_lock(&pollset_set->mu);
   for (i = 0; i < pollset_set->fd_count; i++) {
     if (pollset_set->fds[i] == fd) {
@@ -1325,7 +1322,6 @@ static void pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
     pollset_set_del_fd(pollset_set->pollset_sets[i], fd);
   }
   gpr_mu_unlock(&pollset_set->mu);
-  gpr_log(GPR_DEBUG, "DONE pollset_set_del_fd from pollset set:%p", pollset_set);
 }
 
 /*******************************************************************************
