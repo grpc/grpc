@@ -393,6 +393,7 @@ cdef _close(Channel channel, grpc_status_code code, object details,
     drain_calls):
   cdef _ChannelState state = channel._state
   cdef _CallState call_state
+
   encoded_details = _encode(details)
   with state.condition:
     if state.open:
@@ -421,7 +422,8 @@ cdef _close(Channel channel, grpc_status_code code, object details,
 
       _destroy_c_completion_queue(state.c_call_completion_queue)
       _destroy_c_completion_queue(state.c_connectivity_completion_queue)
-      grpc_channel_destroy(state.c_channel)
+      with nogil:
+          grpc_channel_destroy(state.c_channel)
       state.c_channel = NULL
       grpc_shutdown_blocking()
       state.condition.notify_all()

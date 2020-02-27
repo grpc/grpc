@@ -62,7 +62,8 @@ cdef class _AioCall(GrpcCallWrapper):
 
     def __dealloc__(self):
         if self.call:
-            grpc_call_unref(self.call)
+            with nogil:
+                grpc_call_unref(self.call)
 
     def _repr(self) -> str:
         """Assembles the RPC representation string."""
@@ -103,6 +104,8 @@ cdef class _AioCall(GrpcCallWrapper):
         as an instance variable than a stack variable, which reflects its
         nature in Core.
         """
+        cdef grpc_completion_queue* cq = self._channel.cq.c_ptr()
+        cdef int c_empty_mask = _EMPTY_MASK
         cdef grpc_slice method_slice
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
         cdef grpc_call_error set_credentials_error
@@ -111,16 +114,18 @@ cdef class _AioCall(GrpcCallWrapper):
             <const char *> method,
             <size_t> len(method)
         )
-        self.call = grpc_channel_create_call(
-            self._channel.channel,
-            NULL,
-            _EMPTY_MASK,
-            self._channel.cq.c_ptr(),
-            method_slice,
-            NULL,
-            c_deadline,
-            NULL
-        )
+
+        with nogil:
+            self.call = grpc_channel_create_call(
+                self._channel.channel,
+                NULL,
+                c_empty_mask,
+                cq,
+                method_slice,
+                NULL,
+                c_deadline,
+                NULL
+            )
 
         if credentials is not None:
             set_credentials_error = grpc_call_set_credentials(self.call, credentials.c())
@@ -187,6 +192,8 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef object details_bytes
         cdef char *c_details
         cdef grpc_call_error error
+        cdef grpc_call *call = self.call
+        cdef grpc_status_code status_cancelled = StatusCode.cancelled
 
         self._set_status(AioRpcStatus(
             StatusCode.cancelled,
@@ -199,12 +206,13 @@ cdef class _AioCall(GrpcCallWrapper):
         self._references.append(details_bytes)
         c_details = <char *>details_bytes
         # By implementation, grpc_call_cancel_with_status always return OK
-        error = grpc_call_cancel_with_status(
-            self.call,
-            StatusCode.cancelled,
-            c_details,
-            NULL,
-        )
+        with nogil:
+            error = grpc_call_cancel_with_status(
+                call,
+                status_cancelled,
+                c_details,
+                NULL,
+            )
         assert error == GRPC_CALL_OK
 
     def done(self):

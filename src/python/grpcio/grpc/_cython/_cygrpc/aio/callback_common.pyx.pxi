@@ -112,6 +112,8 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
                                tuple operations,
                                object loop):
     """The callback version of start batch operations."""
+    cdef grpc_experimental_completion_queue_functor* functor
+    cdef grpc_call_error error
     cdef _BatchOperationTag batch_operation_tag = _BatchOperationTag(None, operations, None)
     batch_operation_tag.prepare()
 
@@ -120,11 +122,15 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         future,
         loop,
         CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
-    cdef grpc_call_error error = grpc_call_start_batch(
-        grpc_call_wrapper.call,
-        batch_operation_tag.c_ops,
-        batch_operation_tag.c_nops,
-        wrapper.c_functor(), NULL)
+
+    functor = wrapper.c_functor()
+    with nogil:
+        error = grpc_call_start_batch(
+            grpc_call_wrapper.call,
+            batch_operation_tag.c_ops,
+            batch_operation_tag.c_nops,
+            functor,
+            NULL)
 
     if error != GRPC_CALL_OK:
         raise ExecuteBatchError("Failed grpc_call_start_batch: {}".format(error))

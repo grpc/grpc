@@ -27,6 +27,10 @@ cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailur
 
 cdef class AioChannel:
     def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials, object loop):
+        cdef grpc_channel_args* c_args
+        cdef grpc_channel_credentials* c_credentials
+        cdef char* c_target
+
         if options is None:
             options = ()
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
@@ -35,17 +39,22 @@ cdef class AioChannel:
         self.loop = loop
         self._status = AIO_CHANNEL_STATUS_READY
 
+        c_args = channel_args.c_args()
+        c_target = <char *>target
         if credentials is None:
-            self.channel = grpc_insecure_channel_create(
-                <char *>target,
-                channel_args.c_args(),
-                NULL)
+            with nogil:
+                self.channel = grpc_insecure_channel_create(
+                    c_target,
+                    c_args,
+                    NULL)
         else:
-            self.channel = grpc_secure_channel_create(
-                <grpc_channel_credentials *> credentials.c(),
-                <char *>target,
-                channel_args.c_args(),
-                NULL)
+            c_credentials = <grpc_channel_credentials*>credentials.c()
+            with nogil:
+                self.channel = grpc_secure_channel_create(
+                    c_credentials,
+                    c_target,
+                    c_args,
+                    NULL)
 
     def __repr__(self):
         class_name = self.__class__.__name__
@@ -54,13 +63,16 @@ cdef class AioChannel:
 
     def check_connectivity_state(self, bint try_to_connect):
         """A Cython wrapper for Core's check connectivity state API."""
+        cdef grpc_connectivity_state state
         if self._status == AIO_CHANNEL_STATUS_DESTROYED:
             return ConnectivityState.shutdown
         else:
-            return grpc_channel_check_connectivity_state(
-                self.channel,
-                try_to_connect,
-            )
+            with nogil:
+                state = grpc_channel_check_connectivity_state(
+                    self.channel,
+                    try_to_connect,
+                )
+        return state
 
     async def watch_connectivity_state(self,
                                        grpc_connectivity_state last_observed_state,
@@ -73,6 +85,9 @@ cdef class AioChannel:
         if self._status in (AIO_CHANNEL_STATUS_DESTROYED, AIO_CHANNEL_STATUS_CLOSING):
             raise UsageError('Channel is closed.')
 
+        cdef void* functor
+        cdef grpc_connectivity_state _last_observed_state = last_observed_state
+        cdef grpc_completion_queue* cq = self.cq.c_ptr()
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
 
         cdef object future = self.loop.create_future()
@@ -80,12 +95,15 @@ cdef class AioChannel:
             future,
             self.loop,
             _WATCH_CONNECTIVITY_FAILURE_HANDLER)
-        grpc_channel_watch_connectivity_state(
-            self.channel,
-            last_observed_state,
-            c_deadline,
-            self.cq.c_ptr(),
-            wrapper.c_functor())
+
+        functor = <void*> wrapper.c_functor()
+        with nogil:
+            grpc_channel_watch_connectivity_state(
+                self.channel,
+                _last_observed_state,
+                c_deadline,
+                cq,
+                functor)
 
         try:
             await future
@@ -99,7 +117,8 @@ cdef class AioChannel:
 
     def close(self):
         self._status = AIO_CHANNEL_STATUS_DESTROYED
-        grpc_channel_destroy(self.channel)
+        with nogil:
+            grpc_channel_destroy(self.channel)
 
     def closed(self):
         return self._status in (AIO_CHANNEL_STATUS_CLOSING, AIO_CHANNEL_STATUS_DESTROYED)

@@ -627,6 +627,8 @@ cdef class AioServer:
                                            server_credentials._credentials)
 
     async def _request_call(self):
+        cdef grpc_completion_queue* cq = self._cq.c_ptr()
+        cdef void* functor
         cdef grpc_call_error error
         cdef RPCState rpc_state = RPCState(self)
         cdef object future = self._loop.create_future()
@@ -634,12 +636,16 @@ cdef class AioServer:
             future,
             self._loop,
             REQUEST_CALL_FAILURE_HANDLER)
-        error = grpc_server_request_call(
-            self._server.c_server, &rpc_state.call, &rpc_state.details,
-            &rpc_state.request_metadata,
-            self._cq.c_ptr(), self._cq.c_ptr(),
-            wrapper.c_functor()
-        )
+
+        functor = <void*> wrapper.c_functor()
+        with nogil:
+            error = grpc_server_request_call(
+                self._server.c_server, &rpc_state.call, &rpc_state.details,
+                &rpc_state.request_metadata,
+                cq,
+                cq,
+                functor
+            )
         if error != GRPC_CALL_OK:
             raise InternalError("Error in grpc_server_request_call: %s" % error)
 
@@ -706,11 +712,13 @@ cdef class AioServer:
 
         This coroutine function is NOT coroutine-safe.
         """
+        cdef void* functor = <void*> self._shutdown_callback_wrapper.c_functor()
         # The shutdown callback won't be called until there is no live RPC.
-        grpc_server_shutdown_and_notify(
-            self._server.c_server,
-            self._cq._cq,
-            self._shutdown_callback_wrapper.c_functor())
+        with nogil:
+            grpc_server_shutdown_and_notify(
+                self._server.c_server,
+                self._cq._cq,
+                functor)
 
         # Ensures the serving task (coroutine) exits.
         try:
@@ -738,7 +746,8 @@ cdef class AioServer:
 
         if grace is None:
             # Directly cancels all calls
-            grpc_server_cancel_all_calls(self._server.c_server)
+            with nogil:
+                grpc_server_cancel_all_calls(self._server.c_server)
             await self._shutdown_completed
         else:
             try:
@@ -752,7 +761,8 @@ cdef class AioServer:
                 )
             except asyncio.TimeoutError:
                 # Cancels all ongoing calls by the end of grace period.
-                grpc_server_cancel_all_calls(self._server.c_server)
+                with nogil:
+                    grpc_server_cancel_all_calls(self._server.c_server)
                 await self._shutdown_completed
 
         async with self._shutdown_lock:
