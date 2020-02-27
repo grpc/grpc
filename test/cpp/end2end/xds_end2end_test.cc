@@ -753,7 +753,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
         // iteration; otherwise, check whether we should exit and then
         // immediately continue.
         gpr_timespec deadline =
-            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 1);
+            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 100);
         {
           grpc_core::MutexLock lock(&ads_mu_);
           if (!ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; },
