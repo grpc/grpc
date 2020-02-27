@@ -165,17 +165,9 @@ static void on_credentials_metadata(void* arg, grpc_error* input_error) {
     grpc_metadata_batch* mdb =
         batch->payload->send_initial_metadata.send_initial_metadata;
     for (size_t i = 0; i < calld->md_array.size; ++i) {
-      // Only add x-goog-user-project header if not present.
-      if (grpc_slice_str_cmp(GRPC_MDKEY(calld->md_array.md[i]),
-                             GRPC_AUTH_QUOTA_PROJECT_METADATA_KEY) == 0) {
-        add_error(&error, grpc_metadata_batch_add_tail_when_key_not_exist(
-                              mdb, &calld->md_links[i],
-                              GRPC_MDELEM_REF(calld->md_array.md[i])));
-      } else {
-        add_error(&error, grpc_metadata_batch_add_tail(
-                              mdb, &calld->md_links[i],
-                              GRPC_MDELEM_REF(calld->md_array.md[i])));
-      }
+      add_error(&error, grpc_metadata_batch_add_tail(
+                            mdb, &calld->md_links[i],
+                            GRPC_MDELEM_REF(calld->md_array.md[i])));
     }
   }
   if (error == GRPC_ERROR_NONE) {

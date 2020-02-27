@@ -29,8 +29,9 @@ sys.path.append(run_tests_root)
 import performance.scenario_config as scenario_config
 
 configs_from_yaml = yaml.load(
-    open(os.path.join(os.path.dirname(sys.argv[0]),
-                      '../../../build.yaml')))['configs'].keys()
+    open(
+        os.path.join(os.path.dirname(sys.argv[0]),
+                     '../../../build_handwritten.yaml')))['configs'].keys()
 
 
 def mutate_scenario(scenario_json, is_tsan):
@@ -87,6 +88,13 @@ def maybe_exclude_gcov(scenario_json):
     return []
 
 
+# Originally, this method was used to generate qps test cases for build.yaml,
+# but since the test cases are now extracted from bazel BUILD file,
+# this is not used for generating run_tests.py test cases anymore.
+# Nevertheless, the output is still used by json_run_localhost_scenario_gen.py
+# and qps_json_driver_scenario_gen.py to generate the scenario list for bazel.
+# TODO(jtattermusch): cleanup this file, so that it only generates data needed
+# by bazel.
 def generate_yaml():
     return {
         'tests':
@@ -187,6 +195,3 @@ def generate_yaml():
              for scenario_json in scenario_config.CXXLanguage().scenarios()
              if 'scalable' in scenario_json.get('CATEGORIES', [])]
     }
-
-
-print(yaml.dump(generate_yaml()))
