@@ -15,7 +15,6 @@
 
 import argparse
 import time
-import logging
 
 import grpc
 from src.proto.grpc.testing import worker_service_pb2_grpc
@@ -36,7 +35,6 @@ def run_worker_server(port):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
     parser = argparse.ArgumentParser(
         description='gRPC Python performance testing worker')
     parser.add_argument('--driver_port',
