@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.28.0-dev'
+  version = '1.29.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -193,6 +193,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/config.h',
                       'include/grpcpp/support/interceptor.h',
                       'include/grpcpp/support/message_allocator.h',
+                      'include/grpcpp/support/method_handler.h',
                       'include/grpcpp/support/proto_buffer_reader.h',
                       'include/grpcpp/support/proto_buffer_writer.h',
                       'include/grpcpp/support/server_callback.h',
@@ -213,15 +214,14 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '0.20190808.1'
+    abseil_version = '0.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
 
-    ss.source_files = 'include/grpcpp/impl/codegen/core_codegen.h',
-                      'src/core/ext/filters/client_channel/backend_metric.h',
+    ss.source_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -497,8 +497,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_set.h',
                       'src/core/lib/iomgr/pollset_set_custom.h',
                       'src/core/lib/iomgr/pollset_set_windows.h',
+                      'src/core/lib/iomgr/pollset_uv.h',
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
+                      'src/core/lib/iomgr/python_util.h',
                       'src/core/lib/iomgr/resolve_address.h',
                       'src/core/lib/iomgr/resolve_address_custom.h',
                       'src/core/lib/iomgr/resource_quota.h',
@@ -523,6 +525,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/time_averaged_stats.h',
                       'src/core/lib/iomgr/timer.h',
                       'src/core/lib/iomgr/timer_custom.h',
+                      'src/core/lib/iomgr/timer_generic.h',
                       'src/core/lib/iomgr/timer_heap.h',
                       'src/core/lib/iomgr/timer_manager.h',
                       'src/core/lib/iomgr/udp_server.h',
@@ -697,8 +700,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.h'
 
-    ss.private_header_files = 'include/grpcpp/impl/codegen/core_codegen.h',
-                              'src/core/ext/filters/client_channel/backend_metric.h',
+    ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -974,8 +976,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_set.h',
                               'src/core/lib/iomgr/pollset_set_custom.h',
                               'src/core/lib/iomgr/pollset_set_windows.h',
+                              'src/core/lib/iomgr/pollset_uv.h',
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
+                              'src/core/lib/iomgr/python_util.h',
                               'src/core/lib/iomgr/resolve_address.h',
                               'src/core/lib/iomgr/resolve_address_custom.h',
                               'src/core/lib/iomgr/resource_quota.h',
@@ -1000,6 +1004,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/time_averaged_stats.h',
                               'src/core/lib/iomgr/timer.h',
                               'src/core/lib/iomgr/timer_custom.h',
+                              'src/core/lib/iomgr/timer_generic.h',
                               'src/core/lib/iomgr/timer_heap.h',
                               'src/core/lib/iomgr/timer_manager.h',
                               'src/core/lib/iomgr/udp_server.h',
@@ -1158,6 +1163,7 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
+    sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
     find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'

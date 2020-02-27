@@ -1243,6 +1243,11 @@ class Sanity(object):
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
                 environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
+                # sanity tests run tools/bazel wrapper concurrently
+                # and that can result in a download/run race in the wrapper.
+                # under docker we already have the right version of bazel
+                # so we can just disable the wrapper.
+                environ['DISABLE_BAZEL_WRAPPER'] = 'true'
             return [
                 self.config.job_spec(cmd['script'].split(),
                                      timeout_seconds=30 * 60,

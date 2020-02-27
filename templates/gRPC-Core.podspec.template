@@ -59,27 +59,35 @@
         files.update(lib.get(field, []))
     return list(sorted(files))
 
-  grpc_private_files = list_lib_files("grpc", ("headers", "src"))
-  grpc_public_headers = list_lib_files("grpc", ("public_headers",))
-  grpc_private_headers = list_lib_files("grpc", ("headers",))
+  # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
+  address_sorting_unwanted_files = list_lib_files("address_sorting", ("public_headers", "headers", "src"))
+
+  grpc_private_files = list(sorted(set(list_lib_files("grpc", ("headers", "src"))) - set(address_sorting_unwanted_files)))
+  grpc_public_headers = list(sorted(set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)))
+  grpc_private_headers = list(sorted(set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)))
   grpc_abseil_specs = list_abseil_specs("grpc")
 
-  grpc_cronet_files = list(sorted(
-    set(list_lib_files("grpc_cronet", ("src", "headers")))
-    - set(grpc_private_files)
-    - set([
-      # We do not need cronet dedicated plugin registry
-      "src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc",
-      # We do not need dummy cronet API for ObjC
-      "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc",
-    ])))
-  grpc_cronet_public_headers = list(sorted(
-    set(list_lib_files("grpc_cronet", ("public_headers",)))
-    - set(grpc_public_headers)))
+
+  # TODO(jtattermusch): build.yaml is now generated from bazel build
+  # which doesn't have an explicit "grpc_cronet" target. Until it exists
+  # we construct the list of files by taking what's in the "grpc" target
+  # and adding a few files on top of that.
+  grpc_cronet_extra_public_headers = ['include/grpc/grpc_cronet.h']
+  grpc_cronet_extra_impl_files = [
+      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
+      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
+      'src/core/ext/transport/cronet/transport/cronet_transport.cc',
+      'src/core/ext/transport/cronet/transport/cronet_transport.h',
+      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
+  ]
+
+  grpc_cronet_files = list(sorted(grpc_cronet_extra_impl_files))
+  grpc_cronet_public_headers = list(sorted(grpc_cronet_extra_public_headers))
 
   grpc_test_util_files = list(sorted(
     set(list_lib_files("end2end_tests", ("src", "headers")))
     - set(grpc_private_files)
+    - set(address_sorting_unwanted_files)
     - set([
       # Subprocess is not supported in tvOS and not needed by our tests.
       "test/core/util/subprocess_posix.cc",
@@ -185,7 +193,7 @@
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'BoringSSL-GRPC', '0.0.7'
-      abseil_version = '0.20190808.1'
+      abseil_version = '0.20200225.0'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

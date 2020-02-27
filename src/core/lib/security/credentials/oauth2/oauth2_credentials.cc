@@ -74,9 +74,6 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
   }
   result.type = GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER;
 
-  // quota_project_id is optional, so we don't check the result of the copy.
-  grpc_copy_json_string_property(json, "quota_project_id",
-                                 &result.quota_project_id);
   if (!grpc_copy_json_string_property(json, "client_secret",
                                       &result.client_secret) ||
       !grpc_copy_json_string_property(json, "client_id", &result.client_id) ||
@@ -116,10 +113,6 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
   if (refresh_token->refresh_token != nullptr) {
     gpr_free(refresh_token->refresh_token);
     refresh_token->refresh_token = nullptr;
-  }
-  if (refresh_token->quota_project_id != nullptr) {
-    gpr_free(refresh_token->quota_project_id);
-    refresh_token->quota_project_id = nullptr;
   }
 }
 
@@ -283,7 +276,6 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
     grpc_polling_entity* pollent, grpc_auth_metadata_context /*context*/,
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
     grpc_error** /*error*/) {
-  maybe_add_additional_metadata(md_array);
   // Check if we can use the cached token.
   grpc_millis refresh_threshold =
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
@@ -459,17 +451,6 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
                     &metadata_req->response);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_free(body);
-}
-
-void grpc_google_refresh_token_credentials::maybe_add_additional_metadata(
-    grpc_credentials_mdelem_array* md_array) {
-  if (refresh_token_.quota_project_id != nullptr) {
-    grpc_mdelem quota_project_md = grpc_mdelem_from_slices(
-        grpc_core::ExternallyManagedSlice(GRPC_AUTH_QUOTA_PROJECT_METADATA_KEY),
-        grpc_core::ExternallyManagedSlice(refresh_token_.quota_project_id));
-    grpc_credentials_mdelem_array_add(md_array, quota_project_md);
-    GRPC_MDELEM_UNREF(quota_project_md);
-  }
 }
 
 grpc_google_refresh_token_credentials::grpc_google_refresh_token_credentials(
