@@ -1374,9 +1374,11 @@ src/core/lib/iomgr/pollset_set_custom.h \
 src/core/lib/iomgr/pollset_set_windows.cc \
 src/core/lib/iomgr/pollset_set_windows.h \
 src/core/lib/iomgr/pollset_uv.cc \
+src/core/lib/iomgr/pollset_uv.h \
 src/core/lib/iomgr/pollset_windows.cc \
 src/core/lib/iomgr/pollset_windows.h \
 src/core/lib/iomgr/port.h \
+src/core/lib/iomgr/python_util.h \
 src/core/lib/iomgr/resolve_address.cc \
 src/core/lib/iomgr/resolve_address.h \
 src/core/lib/iomgr/resolve_address_custom.cc \
@@ -1435,6 +1437,7 @@ src/core/lib/iomgr/timer.h \
 src/core/lib/iomgr/timer_custom.cc \
 src/core/lib/iomgr/timer_custom.h \
 src/core/lib/iomgr/timer_generic.cc \
+src/core/lib/iomgr/timer_generic.h \
 src/core/lib/iomgr/timer_heap.cc \
 src/core/lib/iomgr/timer_heap.h \
 src/core/lib/iomgr/timer_manager.cc \

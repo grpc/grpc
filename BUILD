@@ -77,7 +77,7 @@ python_config_settings()
 # This should be updated along with build.yaml
 g_stands_for = "gringotts"
 
-core_version = "9.0.0"
+core_version = "10.0.0"
 
 version = "1.29.0-dev"
 
