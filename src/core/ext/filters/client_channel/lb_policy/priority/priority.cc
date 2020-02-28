@@ -193,8 +193,6 @@ class PriorityLb : public LoadBalancingPolicy {
   void HandleChildConnectivityStateChange(ChildPriority* child);
   void DeleteChild(ChildPriority* child);
 
-  void DeactivateChildrenNotInConfig();
-
   void UpdatePickerLocked();
 
   void TryNextPriorityLocked(uint32_t priority);
@@ -276,35 +274,29 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   addresses_ = std::move(args.addresses);
   // Unset current_priority_, since it was an index into the old
   // config's priority list and may no longer be valid.  It will be
-  // reset later.
+  // reset later by TryNextPriorityLocked(), but we unset it here in
+  // case updating any of our children triggers a state update.
   current_priority_ = UINT32_MAX;
-  // Deactivate children that are not present in the new config.
-  DeactivateChildrenNotInConfig();
-  // Update all existing children.
-  for (const auto& p : config_->children()) {
-    auto it = children_.find(p.first);
-    if (it != children_.end()) {
-      it->second->UpdateLocked(p.second);
-    }
-  }
-  // Try to get connected, starting from the highest priority.
-// FIXME: do we want to stick with the old current priority if it is no
-// longer in the new config but we have not yet gotten another child
-// connected?
-  TryNextPriorityLocked(0);
-}
-
-void PriorityLb::DeactivateChildrenNotInConfig() {
+  // Check all existing children against the new config.
   for (auto it = children_.begin(); it != children_.end();) {
-    if (config_->children().find(it->first) == config_->children().end()) {
+    const std::string& child_name = it->first;
+    auto& child = it->second;
+    auto config_it = config_->children().find(child_name);
+    if (config_it == config_->children().end()) {
+      // Existing child not found in new config.  Deactivate it.
       if (child_retention_interval_ms_ == 0) {
         it = children_.erase(it);
         continue;
       }
-      it->second->DeactivateLocked();
+      child->DeactivateLocked();
+    } else {
+      // Existing child found in new config.  Update it.
+      child->UpdateLocked(config_it->second);
     }
     ++it;
   }
+  // Try to get connected, starting from the highest priority.
+  TryNextPriorityLocked(0);
 }
 
 void PriorityLb::HandleChildConnectivityStateChange(ChildPriority* child) {
@@ -365,8 +357,7 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
   // If the child for the priority does not exist yet, create it.
   const std::string& child_name = config_->priorities().at(priority);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO,
-            "[priority_lb %p] start trying priority %d, child %s",
+    gpr_log(GPR_INFO, "[priority_lb %p] start trying priority %d, child %s",
             this, priority, child_name.c_str());
   }
   auto& child = children_[child_name];
@@ -380,7 +371,6 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
     child = MakeOrphanable<ChildPriority>(
         Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
     child->UpdateLocked(config_->children().find(child_name)->second);
-// FIXME: report CONNECTING or TF here?
     return;
   }
   // The child already exists.
@@ -388,8 +378,7 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
   // If the child is in state READY, switch to it.
   if (child->connectivity_state() == GRPC_CHANNEL_READY) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-      gpr_log(GPR_INFO,
-              "[priority_lb %p] selected priority %d, child %s",
+      gpr_log(GPR_INFO, "[priority_lb %p] selected priority %d, child %s",
               this, priority, child_name.c_str());
     }
     current_priority_ = priority;
@@ -398,10 +387,7 @@ void PriorityLb::TryNextPriorityLocked(uint32_t priority) {
   }
   // Child is not READY.
   // If its failover timer is still pending, give it time to fire.
-  if (child->failover_timer_callback_pending()) {
-// FIXME: report CONNECTING or TF here?
-    return;
-  }
+  if (child->failover_timer_callback_pending()) return;
   // Child has been failing for a while.  Move on to the next priority.
   TryNextPriorityLocked(priority + 1);
 }
