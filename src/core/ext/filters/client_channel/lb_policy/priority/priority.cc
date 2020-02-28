@@ -1,70 +1,40 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-
 #include <inttypes.h>
 #include <limits.h>
-#include <string.h>
 
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
 
-// FIXME: audit includes
-// (not just here, but for all policies)
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/parse_address.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/map.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/slice/slice_hash_table.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/static_metadata.h"
 
-#define GRPC_XDS_DEFAULT_LOCALITY_RETENTION_INTERVAL_MS (15 * 60 * 1000)
-#define GRPC_XDS_DEFAULT_FAILOVER_TIMEOUT_MS 10000
+#define GRPC_PRIORITY_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
+#define GRPC_PRIORITY_CHILD_FAILOVER_TIMEOUT_MS 10000
 
 namespace grpc_core {
 
@@ -255,10 +225,10 @@ PriorityLb::PriorityLb(Args args)
 // FIXME: need new channel args here
       child_retention_interval_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS,
-          {GRPC_XDS_DEFAULT_LOCALITY_RETENTION_INTERVAL_MS, 0, INT_MAX})),
+          {GRPC_PRIORITY_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})),
       child_failover_timeout_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS,
-          {GRPC_XDS_DEFAULT_FAILOVER_TIMEOUT_MS, 0, INT_MAX})) {}
+          {GRPC_PRIORITY_CHILD_FAILOVER_TIMEOUT_MS, 0, INT_MAX})) {}
 
 PriorityLb::~PriorityLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {

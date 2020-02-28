@@ -1,66 +1,41 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
-
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
 
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include "absl/strings/str_cat.h"
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include <grpc/grpc.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/parse_address.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/map.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/slice/slice_hash_table.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/static_metadata.h"
 
-#define GRPC_NON_LEAF_WRR_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
+#define GRPC_WEIGHTED_TARGET_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
 
 namespace grpc_core {
 
@@ -263,9 +238,10 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
 
 WeightedTargetLb::WeightedTargetLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
+// FIXME: new channel arg
       child_retention_interval_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS,
-          {GRPC_NON_LEAF_WRR_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})) {}
+          {GRPC_WEIGHTED_TARGET_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})) {}
 
 WeightedTargetLb::~WeightedTargetLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
@@ -637,10 +613,8 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
         if (!child_errors.empty()) {
           // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
           // string is not static in this case.
-          char* msg;
-          gpr_asprintf(&msg, "field:targets key:%s", p.first.c_str());
-          grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-          gpr_free(msg);
+          grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("field:targets key:", p.first).c_str());
           for (grpc_error* child_error : child_errors) {
             error = grpc_error_add_child(error, child_error);
           }
