@@ -478,7 +478,7 @@ void PriorityLb::ChildPriority::UpdateLocked(
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
-            "[priority_lb %p] child %s (%p): updating child policy %p",
+            "[priority_lb %p] child %s (%p): updating child policy handler %p",
             priority_policy_.get(), name_.c_str(), this, child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
@@ -497,7 +497,8 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(
                                          &grpc_lb_priority_trace);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
-            "[priority_lb %p] child %s (%p): created new child policy %p",
+            "[priority_lb %p] child %s (%p): created new child policy "
+            "handler %p",
             priority_policy_.get(), name_.c_str(), this, lb_policy.get());
   }
   // Add the parent's interested_parties pollset_set to that of the newly

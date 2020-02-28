@@ -435,7 +435,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
             "[weighted_target_lb %p] WeightedChild %p %s: Created new child "
-            "policy %p",
+            "policy handler %p",
             weighted_target_policy_.get(), this, name_.c_str(),
             lb_policy.get());
   }
@@ -471,7 +471,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
             "[weighted_target_lb %p] WeightedChild %p %s: Updating child "
-            "policy %p",
+            "policy handler %p",
             weighted_target_policy_.get(), this, name_.c_str(),
             child_policy_.get());
   }

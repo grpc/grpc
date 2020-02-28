@@ -245,7 +245,7 @@ OrphanablePtr<LoadBalancingPolicy> LrsLb::CreateChildPolicyLocked(
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_lrs_trace);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-    gpr_log(GPR_INFO, "[lrs_lb %p] Created new child policy %p", this,
+    gpr_log(GPR_INFO, "[lrs_lb %p] Created new child policy handler %p", this,
             lb_policy.get());
   }
   // Add our interested_parties pollset_set to that of the newly created
@@ -269,7 +269,7 @@ void LrsLb::UpdateChildPolicyLocked(ServerAddressList addresses,
   update_args.args = args;
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-    gpr_log(GPR_INFO, "[lrs_lb %p] Updating child policy %p", this,
+    gpr_log(GPR_INFO, "[lrs_lb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));

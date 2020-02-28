@@ -233,6 +233,7 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
 CdsLb::CdsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       xds_client_(XdsClient::GetFromChannelArgs(*args.args)) {
+// FIXME: error if xds client not present in channel args
   if (xds_client_ != nullptr && GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] Using xds client %p from channel", this,
             xds_client_.get());

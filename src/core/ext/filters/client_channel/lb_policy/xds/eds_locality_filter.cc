@@ -193,7 +193,8 @@ void EdsLocalityFilterLb::UpdateLocked(UpdateArgs args) {
   args.args = nullptr;
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_locality_filter_trace)) {
-    gpr_log(GPR_INFO, "[eds_locality_filter_lb %p] Updating child policy %p",
+    gpr_log(GPR_INFO,
+            "[eds_locality_filter_lb %p] Updating child policy handler %p",
             this, child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
@@ -211,8 +212,8 @@ EdsLocalityFilterLb::CreateChildPolicyLocked(const grpc_channel_args* args) {
                                          &grpc_lb_eds_locality_filter_trace);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_locality_filter_trace)) {
     gpr_log(GPR_INFO,
-            "[eds_locality_filter_lb %p]: Created new child policy %p", this,
-            lb_policy.get());
+            "[eds_locality_filter_lb %p]: Created new child policy handler %p",
+            this, lb_policy.get());
   }
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on

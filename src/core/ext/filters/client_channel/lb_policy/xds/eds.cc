@@ -910,8 +910,8 @@ void EdsLb::UpdateFallbackPolicyLocked() {
   update_args.args = grpc_channel_args_copy(args_);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] Updating fallback policy %p", this,
-            fallback_policy_.get());
+    gpr_log(GPR_INFO, "[edslb %p] Updating fallback child policy handler %p",
+            this, fallback_policy_.get());
   }
   fallback_policy_->UpdateLocked(std::move(update_args));
 }
@@ -927,8 +927,8 @@ OrphanablePtr<LoadBalancingPolicy> EdsLb::CreateFallbackPolicyLocked(
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_eds_trace);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] Created new fallback policy %p", this,
-            lb_policy.get());
+    gpr_log(GPR_INFO, "[edslb %p] Created new fallback child policy handler %p",
+            this, lb_policy.get());
   }
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
