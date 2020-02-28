@@ -16,6 +16,17 @@ settings:
   csharp_major_version: 2
   g_stands_for: gringotts
   version: 1.29.0-dev
+filegroups:
+- name: grpc++_test
+  public_headers:
+  - include/grpc++/test/mock_stream.h
+  - include/grpc++/test/server_context_test_spouse.h
+  - include/grpcpp/test/default_reactor_test_peer.h
+  - include/grpcpp/test/mock_stream.h
+  - include/grpcpp/test/server_context_test_spouse.h
+  deps:
+  - grpc++
+  - grpc
 targets:
 - name: check_epollexclusive
   build: tool
