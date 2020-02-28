@@ -357,6 +357,9 @@ grpc_security_status TlsChannelSecurityConnector::InitializeHandshakerFactory(
   }
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+  /** If |creds->options()| has a credential reload config, then the call to
+   *  |TlsFetchKeyMaterials| will use it to update the root cert and
+   *  pem-key-cert-pair list stored in |key_materials_config_|. **/
   if (TlsFetchKeyMaterials(key_materials_config_, creds->options(), false,
                            &reload_status) != GRPC_STATUS_OK) {
     /* Raise an error if key materials are not populated. */
@@ -371,6 +374,9 @@ grpc_security_status TlsChannelSecurityConnector::RefreshHandshakerFactory() {
       static_cast<const TlsCredentials*>(channel_creds());
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+  /** If |creds->options()| has a credential reload config, then the call to
+   *  |TlsFetchKeyMaterials| will use it to update the root cert and
+   *  pem-key-cert-pair list stored in |key_materials_config_|. **/
   if (TlsFetchKeyMaterials(key_materials_config_, creds->options(), false,
                            &reload_status) != GRPC_STATUS_OK) {
     return GRPC_SECURITY_ERROR;
@@ -560,6 +566,11 @@ grpc_security_status TlsServerSecurityConnector::InitializeHandshakerFactory() {
   }
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+  /** If |creds->options()| has a credential reload config, then the call to
+   *  |TlsFetchKeyMaterials| will use it to update the root cert and
+   *  pem-key-cert-pair list stored in |key_materials_config_|. Otherwise, it
+   *  will return |GRPC_STATUS_OK| if |key_materials_config_| already has
+   *  credentials, and an error code if not. **/
   if (TlsFetchKeyMaterials(key_materials_config_, creds->options(), true,
                            &reload_status) != GRPC_STATUS_OK) {
     /* Raise an error if key materials are not populated. */
@@ -574,6 +585,11 @@ grpc_security_status TlsServerSecurityConnector::RefreshHandshakerFactory() {
       static_cast<const TlsServerCredentials*>(server_creds());
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+  /** If |creds->options()| has a credential reload config, then the call to
+   *  |TlsFetchKeyMaterials| will use it to update the root cert and
+   *  pem-key-cert-pair list stored in |key_materials_config_|. Otherwise, it
+   *  will return |GRPC_STATUS_OK| if |key_materials_config_| already has
+   *  credentials, and an error code if not. **/
   if (TlsFetchKeyMaterials(key_materials_config_, creds->options(), true,
                            &reload_status) != GRPC_STATUS_OK) {
     return GRPC_SECURITY_ERROR;
