@@ -1524,6 +1524,14 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   // Don't start if the ADS call hasn't received any valid response. Note that
   // this must be the first channel because it is the current channel but its
   // ADS call hasn't seen any response.
+  if (chand() == nullptr) {
+     gpr_log(GPR_INFO, "DEBUG: chand() is null don't touch");
+     return;
+  }
+  if (chand()->ads_calld_ == nullptr) {
+    gpr_log(GPR_INFO, "DEBUG: ads_alld_  is null don't touch");
+    return;
+  }
   AdsCallState* ads_calld = chand()->ads_calld_->calld();
   if (ads_calld == nullptr || !ads_calld->seen_response()) return;
   // Start reporting.
