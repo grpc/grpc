@@ -20,6 +20,7 @@
 
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/channel.h>
@@ -257,6 +258,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       new grpc::MetadataCredentialsPluginWrapper(std::move(plugin));
   grpc_metadata_credentials_plugin c_plugin = {
       grpc::MetadataCredentialsPluginWrapper::GetMetadata,
+      grpc::MetadataCredentialsPluginWrapper::DebugString,
       grpc::MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
   return WrapCallCredentials(grpc_metadata_credentials_create_from_plugin(
       c_plugin, min_security_level, nullptr));
@@ -379,6 +381,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       new grpc::MetadataCredentialsPluginWrapper(std::move(plugin));
   grpc_metadata_credentials_plugin c_plugin = {
       grpc::MetadataCredentialsPluginWrapper::GetMetadata,
+      grpc::MetadataCredentialsPluginWrapper::DebugString,
       grpc::MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
   return WrapCallCredentials(grpc_metadata_credentials_create_from_plugin(
       c_plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr));
@@ -394,6 +397,13 @@ void DeleteWrapper(void* wrapper, grpc_error* /*ignored*/) {
   delete w;
 }
 }  // namespace
+
+char* MetadataCredentialsPluginWrapper::DebugString(void* wrapper) {
+  GPR_ASSERT(wrapper);
+  MetadataCredentialsPluginWrapper* w =
+      static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+  return gpr_strdup(w->plugin_->DebugString().c_str());
+}
 
 void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   if (wrapper == nullptr) return;

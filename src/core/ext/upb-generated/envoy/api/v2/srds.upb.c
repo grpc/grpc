@@ -11,48 +11,16 @@
 #include "envoy/api/v2/srds.upb.h"
 #include "envoy/api/v2/discovery.upb.h"
 #include "google/api/annotations.upb.h"
-#include "validate/validate.upb.h"
+#include "envoy/annotations/resource.upb.h"
+#include "udpa/annotations/migrate.upb.h"
+#include "envoy/api/v2/scoped_route.upb.h"
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_api_v2_ScopedRouteConfiguration_submsgs[1] = {
-  &envoy_api_v2_ScopedRouteConfiguration_Key_msginit,
-};
-
-static const upb_msglayout_field envoy_api_v2_ScopedRouteConfiguration__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
-  {3, UPB_SIZE(16, 32), 0, 0, 11, 1},
-};
-
-const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_msginit = {
-  &envoy_api_v2_ScopedRouteConfiguration_submsgs[0],
-  &envoy_api_v2_ScopedRouteConfiguration__fields[0],
-  UPB_SIZE(24, 48), 3, false,
-};
-
-static const upb_msglayout *const envoy_api_v2_ScopedRouteConfiguration_Key_submsgs[1] = {
-  &envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit,
-};
-
-static const upb_msglayout_field envoy_api_v2_ScopedRouteConfiguration_Key__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
-};
-
-const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_Key_msginit = {
-  &envoy_api_v2_ScopedRouteConfiguration_Key_submsgs[0],
-  &envoy_api_v2_ScopedRouteConfiguration_Key__fields[0],
-  UPB_SIZE(4, 8), 1, false,
-};
-
-static const upb_msglayout_field envoy_api_v2_ScopedRouteConfiguration_Key_Fragment__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
-};
-
-const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit = {
+const upb_msglayout envoy_api_v2_SrdsDummy_msginit = {
   NULL,
-  &envoy_api_v2_ScopedRouteConfiguration_Key_Fragment__fields[0],
-  UPB_SIZE(16, 32), 1, false,
+  NULL,
+  UPB_SIZE(0, 0), 0, false,
 };
 
 #include "upb/port_undef.inc"
