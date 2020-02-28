@@ -457,6 +457,9 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
     while (stream->Read(&request)) {
       if (!seen_first_request) {
         EXPECT_TRUE(request.has_node());
+        ASSERT_FALSE(request.node().client_features().empty());
+        EXPECT_EQ(request.node().client_features(0),
+                  "envoy.lb.does_not_support_overprovisioning");
         seen_first_request = true;
       }
       {
@@ -620,8 +623,8 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
       std::map<std::string, int> resource_type_version;
       // Creating blocking thread to read from stream.
       std::deque<DiscoveryRequest> requests;
-      std::thread reader(std::bind(&AdsServiceImpl::BlockingRead, this, stream,
-                                   &requests));
+      std::thread reader(
+          std::bind(&AdsServiceImpl::BlockingRead, this, stream, &requests));
       // Main loop to look for requests and updates.
       while (true) {
         // Look for new requests and and decide what to handle.
@@ -2431,8 +2434,6 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // The ADS service of balancer 0 got at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   delayed_resource_setter.join();
 }
 
@@ -2942,8 +2943,6 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // The ADS service of balancer 0 sent at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -2964,8 +2963,6 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // The ADS service of balancer 0 sent at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3001,8 +2998,6 @@ TEST_P(BalancerUpdateTest, Repeated) {
   // The ADS service of balancer 0 sent at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3067,8 +3062,6 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   // The ADS service of balancer 0 sent at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3111,8 +3104,6 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
             AdsServiceImpl::NOT_SENT);
   EXPECT_GT(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[1]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
 }
