@@ -1204,6 +1204,7 @@ connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_cli
 connectivity_state_test: $(BINDIR)/$(CONFIG)/connectivity_state_test
 context_list_test: $(BINDIR)/$(CONFIG)/context_list_test
 delegating_channel_test: $(BINDIR)/$(CONFIG)/delegating_channel_test
+destroy_grpclb_channel_with_active_connect_stress_test: $(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test
 duplicate_header_bad_client_test: $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
@@ -1580,6 +1581,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/connectivity_state_test \
   $(BINDIR)/$(CONFIG)/context_list_test \
   $(BINDIR)/$(CONFIG)/delegating_channel_test \
+  $(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test \
   $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
@@ -1735,6 +1737,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/connectivity_state_test \
   $(BINDIR)/$(CONFIG)/context_list_test \
   $(BINDIR)/$(CONFIG)/delegating_channel_test \
+  $(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test \
   $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
@@ -2225,6 +2228,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/context_list_test || ( echo test context_list_test failed ; exit 1 )
 	$(E) "[RUN]     Testing delegating_channel_test"
 	$(Q) $(BINDIR)/$(CONFIG)/delegating_channel_test || ( echo test delegating_channel_test failed ; exit 1 )
+	$(E) "[RUN]     Testing destroy_grpclb_channel_with_active_connect_stress_test"
+	$(Q) $(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test || ( echo test destroy_grpclb_channel_with_active_connect_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing duplicate_header_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test || ( echo test duplicate_header_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing end2end_test"
@@ -13916,6 +13921,49 @@ endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/delegating_channel_test.o: $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+
+
+DESTROY_GRPCLB_CHANNEL_WITH_ACTIVE_CONNECT_STRESS_TEST_SRC = \
+    test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc \
+
+DESTROY_GRPCLB_CHANNEL_WITH_ACTIVE_CONNECT_STRESS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DESTROY_GRPCLB_CHANNEL_WITH_ACTIVE_CONNECT_STRESS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test: $(PROTOBUF_DEP) $(DESTROY_GRPCLB_CHANNEL_WITH_ACTIVE_CONNECT_STRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(DESTROY_GRPCLB_CHANNEL_WITH_ACTIVE_CONNECT_STRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_destroy_grpclb_channel_with_active_connect_stress_test: $(DESTROY_GRPCLB_CHANNEL_WITH_ACTIVE_CONNECT_STRESS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(DESTROY_GRPCLB_CHANNEL_WITH_ACTIVE_CONNECT_STRESS_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 DUPLICATE_HEADER_BAD_CLIENT_TEST_SRC = \
