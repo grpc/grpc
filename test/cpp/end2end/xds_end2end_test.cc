@@ -464,6 +464,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
       }
       {
         grpc_core::MutexLock lock(&ads_mu_);
+        if (ads_done_) return;
         requests->emplace_back(std::move(request));
       }
     }
