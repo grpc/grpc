@@ -750,18 +750,14 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
           stream->Write(response);
         }
         // If we didn't find anything to do, delay before the next loop
-        // iteration; otherwise, check whether we should exit and then
-        // immediately continue.
+        // iteration.
         gpr_timespec deadline =
-            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 100);
-        {
-          grpc_core::MutexLock lock(&ads_mu_);
-          if (!ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; },
-                                   deadline))
-            break;
-        }
+            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
+        gpr_sleep_until(deadline);
       }
       reader.join();
+      grpc_core::MutexLock lock(&ads_mu_);
+      ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; });
     }();
     gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
     return Status::OK;
