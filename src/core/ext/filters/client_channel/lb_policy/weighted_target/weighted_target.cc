@@ -138,7 +138,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   // Each WeightedChild holds a ref to its parent WeightedTargetLb.
   class WeightedChild : public InternallyRefCounted<WeightedChild> {
    public:
-    WeightedChild(RefCountedPtr<WeightedTargetLb> weighted_target_policy, std::string name);
+    WeightedChild(RefCountedPtr<WeightedTargetLb> weighted_target_policy,
+                  const std::string& name);
     ~WeightedChild();
 
     void Orphan() override;
@@ -185,7 +186,9 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     // The owning LB policy.
     RefCountedPtr<WeightedTargetLb> weighted_target_policy_;
-    const std::string name_;
+
+    // Points to the corresponding key in WeightedTargetLb::targets_.
+    const std::string& name_;
 
     uint32_t weight_;
 
@@ -216,7 +219,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // Children.
-// FIXME: maybe key this by StringView, with string stored in value obj?
   std::map<std::string, OrphanablePtr<WeightedChild>> targets_;
 };
 
@@ -287,30 +289,31 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the targets not in the new config.
-  for (auto iter = targets_.begin(); iter != targets_.end();) {
-    const std::string& name = iter->first;
-    WeightedChild* child = iter->second.get();
+  for (auto it = targets_.begin(); it != targets_.end();) {
+    const std::string& name = it->first;
+    WeightedChild* child = it->second.get();
     if (config_->target_map().find(name) != config_->target_map().end()) {
-      ++iter;
+      ++it;
       continue;
     }
     if (child_retention_interval_ms_ == 0) {
-      iter = targets_.erase(iter);
+      it = targets_.erase(it);
     } else {
       child->DeactivateLocked();
-      ++iter;
+      ++it;
     }
   }
   // Add or update the targets in the new config.
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     const WeightedTargetLbConfig::ChildConfig& config = p.second;
-    OrphanablePtr<WeightedChild>& child = targets_[name];
-    if (child == nullptr) {
-      child = MakeOrphanable<WeightedChild>(
-          Ref(DEBUG_LOCATION, "WeightedChild"), name);
+    auto it = targets_.find(name);
+    if (it == targets_.end()) {
+      it = targets_.emplace(std::make_pair(name, nullptr)).first;
+      it->second = MakeOrphanable<WeightedChild>(
+          Ref(DEBUG_LOCATION, "WeightedChild"), it->first);
     }
-    child->UpdateLocked(config, args.addresses, args.args);
+    it->second->UpdateLocked(config, args.addresses, args.args);
   }
 }
 
@@ -396,9 +399,9 @@ void WeightedTargetLb::UpdateStateLocked() {
 //
 
 WeightedTargetLb::WeightedChild::WeightedChild(
-    RefCountedPtr<WeightedTargetLb> weighted_target_policy, std::string name)
-    : weighted_target_policy_(std::move(weighted_target_policy)),
-      name_(std::move(name)) {
+    RefCountedPtr<WeightedTargetLb> weighted_target_policy,
+    const std::string& name)
+    : weighted_target_policy_(std::move(weighted_target_policy)), name_(name) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] created WeightedChild %p for %s",
             weighted_target_policy_.get(), this, name_.c_str());
