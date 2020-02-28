@@ -1676,8 +1676,8 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_glb_trace);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Created new child policy handler (%p)",
-            this, lb_policy.get());
+    gpr_log(GPR_INFO, "[grpclb %p] Created new child policy handler (%p)", this,
+            lb_policy.get());
   }
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
   // created child policy. This will make the child policy progress upon
