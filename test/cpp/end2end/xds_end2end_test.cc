@@ -546,6 +546,9 @@ class AdsServiceImpl : public AdsService {
         if (!stream->Read(&request)) return;
         if (!seen_first_request) {
           EXPECT_TRUE(request.has_node());
+          ASSERT_FALSE(request.node().client_features().empty());
+          EXPECT_EQ(request.node().client_features(0),
+                    "envoy.lb.does_not_support_overprovisioning");
           seen_first_request = true;
         }
         if (request.type_url() == kLdsTypeUrl) {
