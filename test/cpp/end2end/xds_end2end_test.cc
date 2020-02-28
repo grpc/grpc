@@ -958,7 +958,8 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   ResourcesMap resources_map_;
 };
 
-class LrsServiceImpl : public LrsService {
+class LrsServiceImpl : public LrsService, 
+                       public std::enable_shared_from_this<LrsServiceImpl> {
  public:
   using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
@@ -968,6 +969,7 @@ class LrsServiceImpl : public LrsService {
 
   Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
     gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
+    std::shared_ptr<LrsServiceImpl> lrs_service_impl = shared_from_this();
     // Read request.
     LoadStatsRequest request;
     if (stream->Read(&request)) {
@@ -1021,8 +1023,8 @@ class LrsServiceImpl : public LrsService {
     {
       grpc_core::MutexLock lock(&lrs_mu_);
       NotifyDoneWithLrsCallLocked();
+      gpr_log(GPR_INFO, "LRS[%p]: shut down", this);
     }
-    gpr_log(GPR_INFO, "LRS[%p]: shut down", this);
   }
 
   ClientStats* WaitForLoadReport() {
@@ -1464,31 +1466,31 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
    public:
     explicit BalancerServerThread(int client_load_reporting_interval = 0)
         : ads_service_(std::shared_ptr<AdsServiceImpl>(new AdsServiceImpl(client_load_reporting_interval > 0))),
-          lrs_service_(client_load_reporting_interval) {}
+          lrs_service_(std::shared_ptr<LrsServiceImpl>(new LrsServiceImpl(client_load_reporting_interval))) {}
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
-    LrsServiceImpl* lrs_service() { return &lrs_service_; }
+    LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
       builder->RegisterService(ads_service_.get());
-      builder->RegisterService(&lrs_service_);
+      builder->RegisterService(lrs_service_.get());
     }
 
     void StartAllServices() override {
       ads_service_->Start();
-      lrs_service_.Start();
+      lrs_service_->Start();
     }
 
     void ShutdownAllServices() override {
       ads_service_->Shutdown();
-      lrs_service_.Shutdown();
+      lrs_service_->Shutdown();
     }
 
     const char* Type() override { return "Balancer"; }
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
-    LrsServiceImpl lrs_service_;
+    std::shared_ptr<LrsServiceImpl> lrs_service_;
   };
 
   const grpc::string server_host_;
