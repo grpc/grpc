@@ -20,10 +20,10 @@ from typing import Any, Optional, Sequence
 import grpc
 from grpc import _common, _compression
 from grpc._cython import cygrpc
-from grpc.experimental.aio import ServerInterceptor
 
 from . import _base_server
 from ._typing import ChannelArgumentType
+from ._interceptor import ServerInterceptor
 
 
 def _augment_channel_arguments(base_options: ChannelArgumentType,
@@ -43,12 +43,14 @@ class Server(_base_server.Server):
                  compression: Optional[grpc.Compression]):
         self._loop = asyncio.get_event_loop()
         if interceptors:
-            invalid_interceptors = [interceptor for interceptor in interceptors
-                                    if not isinstance(interceptor,
-                                                      ServerInterceptor)]
+            invalid_interceptors = [
+                interceptor for interceptor in interceptors
+                if not isinstance(interceptor, ServerInterceptor)
+            ]
             if invalid_interceptors:
-                raise ValueError('Interceptor must be ServerInterceptor, the '
-                                 f'following are invalid: {invalid_interceptors}')
+                raise ValueError(
+                    'Interceptor must be ServerInterceptor, the '
+                    f'following are invalid: {invalid_interceptors}')
         self._server = cygrpc.AioServer(
             self._loop, thread_pool, generic_handlers, interceptors,
             _augment_channel_arguments(options, compression),

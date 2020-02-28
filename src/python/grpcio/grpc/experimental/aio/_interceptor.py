@@ -37,11 +37,11 @@ class ServerInterceptor(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    async def intercept_service(self,
-                                continuation: Callable[
-                                    [grpc.HandlerCallDetails], grpc.RpcMethodHandler],
-                                handler_call_details: grpc.HandlerCallDetails
-                                ) -> grpc.RpcMethodHandler:
+    async def intercept_service(
+            self, continuation: Callable[[grpc.HandlerCallDetails], grpc.
+                                         RpcMethodHandler],
+            handler_call_details: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
         """Intercepts incoming RPCs before handing them over to a handler.
 
         Args:
