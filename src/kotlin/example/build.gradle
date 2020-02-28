@@ -28,6 +28,7 @@ apply plugin: 'com.google.protobuf'
 // to IntelliJ as sources.
 // For best results, install the Protobuf and Kotlin plugins for IntelliJ.
 apply plugin: 'idea'
+apply plugin: 'application'
 
 dependencies {
   implementation "com.google.protobuf:protobuf-kotlin-util:0.1"
@@ -81,4 +82,26 @@ protobuf {
             }
         }
     }
+}
+
+startScripts.enabled = false
+
+task routeGuideServer(type: CreateStartScripts) {
+    mainClassName = 'io.grpc.examples.routeguide.RouteGuideServer'
+    applicationName = 'route-guide-server'
+    outputDir = new File(project.buildDir, 'tmp')
+    classpath = startScripts.classpath
+}
+
+task routeGuideClient(type: CreateStartScripts) {
+    mainClassName = 'io.grpc.examples.routeguide.RouteGuideClient'
+    applicationName = 'route-guide-client'
+    outputDir = new File(project.buildDir, 'tmp')
+    classpath = startScripts.classpath
+}
+
+applicationDistribution.into('bin') {
+    from(routeGuideServer)
+    from(routeGuideClient)
+    fileMode = 0755
 }

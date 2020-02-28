@@ -21,7 +21,10 @@ import com.google.common.io.Resources
 import com.google.protobuf.util.JsonFormat
 
 internal fun defaultFeatureSource(): ByteSource =
-  Resources.asByteSource(Resources.getResource("example/resources/io/grpc/examples/routeguide/route_guide_db.json"))
+  Resources.asByteSource(Resources.getResource(
+    RouteGuideServer::class.javaObjectType,
+    "route_guide_db.json"
+  ))
 
 internal fun ByteSource.parseJsonFeatures(): List<Feature> =
   asCharSource(Charsets.UTF_8)
