@@ -632,6 +632,10 @@ _BUILD_EXTRA_METADATA = {
         'language': 'c++',
         'build': 'all'
     },
+    'grpc++_test': {
+        'language': 'c++',
+        'build': 'private',
+    },
     'src/compiler:grpc_plugin_support': {
         'language': 'c++',
         'build': 'protoc',
