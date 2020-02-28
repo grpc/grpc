@@ -21,10 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata.h"
 
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* args,
@@ -62,7 +66,30 @@ grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
 size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
 void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 
-struct registered_call;
+namespace grpc_core {
+
+struct RegisteredCall {
+  grpc_mdelem path;
+  grpc_mdelem authority;
+
+  explicit RegisteredCall(const char* method, const char* host);
+  // TODO(vjpai): delete copy constructor once all supported compilers allow
+  //              std::map value_type to be MoveConstructible.
+  RegisteredCall(const RegisteredCall& other);
+  RegisteredCall(RegisteredCall&& other);
+
+  ~RegisteredCall();
+};
+
+struct CallRegistrationTable {
+  grpc_core::Mutex mu;
+  std::map<std::pair<const char*, const char*>, RegisteredCall>
+      map /* GUARDED_BY(mu) */;
+  int method_registration_attempts /* GUARDED_BY(mu) */ = 0;
+};
+
+}  // namespace grpc_core
+
 struct grpc_channel {
   int is_client;
   grpc_compression_options compression_options;
@@ -70,9 +97,13 @@ struct grpc_channel {
   gpr_atm call_size_estimate;
   grpc_resource_user* resource_user;
 
-  gpr_mu registered_call_mu;
-  registered_call* registered_calls;
-
+  // TODO(vjpai): Once the grpc_channel is allocated via new rather than malloc,
+  //              expand the members of the CallRegistrationTable directly into
+  //              the grpc_channel. For now it is kept separate so that all the
+  //              manual constructing can be done with a single call rather than
+  //              a separate manual construction for each field.
+  grpc_core::ManualConstructor<grpc_core::CallRegistrationTable>
+      registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
 
   char* target;

@@ -1746,13 +1746,6 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
       {15000, 0, INT_MAX});
 }
 
-UniquePtr<char> GenerateBuildVersionString() {
-  char* build_version_str;
-  gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
-               GPR_PLATFORM_STRING);
-  return UniquePtr<char>(build_version_str);
-}
-
 }  // namespace
 
 XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
@@ -1761,14 +1754,12 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
       request_timeout_(GetRequestTimeout(channel_args)),
-      build_version_(GenerateBuildVersionString()),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
       api_(this, &grpc_xds_client_trace,
-           bootstrap_ == nullptr ? nullptr : bootstrap_->node(),
-           build_version_.get()),
+           bootstrap_ == nullptr ? nullptr : bootstrap_->node()),
       server_name_(server_name),
       service_config_watcher_(std::move(watcher)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {

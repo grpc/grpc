@@ -138,10 +138,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
+    src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
@@ -166,20 +169,27 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
@@ -198,10 +208,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upbdefs.c \
+    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
+    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
@@ -229,6 +242,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/ext/upb-generated/validate/validate.upbdefs.c \
@@ -547,6 +562,21 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/str_split.cc \
     third_party/abseil-cpp/absl/strings/string_view.cc \
     third_party/abseil-cpp/absl/strings/substitute.cc \
+    third_party/abseil-cpp/absl/time/civil_time.cc \
+    third_party/abseil-cpp/absl/time/clock.cc \
+    third_party/abseil-cpp/absl/time/duration.cc \
+    third_party/abseil-cpp/absl/time/format.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/civil_time_detail.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_fixed.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_format.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_if.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_impl.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
+    third_party/abseil-cpp/absl/time/time.cc \
     third_party/abseil-cpp/absl/types/bad_optional_access.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
@@ -861,6 +891,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/auth)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/cluster)
@@ -875,6 +906,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/load_stats/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/matcher)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/metadata/v2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/tracing/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/gogoproto)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/protobuf)
@@ -882,6 +915,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/gcp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/health/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/lb/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/data/orca/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/avl)
@@ -936,6 +970,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal/str_format)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time/internal/cctz/src)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/types)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel)

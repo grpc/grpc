@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.29.0-dev")
-set(gRPC_CORE_VERSION     "9.0.0")
-set(gRPC_CORE_SOVERSION   "9")
+set(gRPC_CORE_VERSION     "10.0.0")
+set(gRPC_CORE_SOVERSION   "10")
 set(gRPC_CPP_VERSION      "1.29.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
 set(gRPC_CSHARP_VERSION   "2.29.0-dev")
@@ -105,6 +105,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_base
   absl_base_internal
   absl_bits
+  absl_civil_time
   absl_compressed_tuple
   absl_config
   absl_core_headers
@@ -125,6 +126,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_strings
   absl_strings_internal
   absl_throw_delegate
+  absl_time
+  absl_time_zone
   absl_type_traits
   absl_utility
   absl_meta
@@ -1221,6 +1224,7 @@ target_include_directories(gpr
 )
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::time
   absl::strings
   absl::str_format
   absl::memory
@@ -1394,10 +1398,13 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
+  src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
+  src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
@@ -1422,20 +1429,27 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/lds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/listener.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/rds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/srds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c
   src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
@@ -1454,10 +1468,13 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c
   src/core/ext/upb-generated/envoy/type/matcher/string.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c
+  src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upbdefs.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
   src/core/ext/upb-generated/envoy/type/range.upbdefs.c
+  src/core/ext/upb-generated/envoy/type/semantic_version.upb.c
+  src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c
   src/core/ext/upb-generated/google/api/annotations.upb.c
@@ -1485,6 +1502,8 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
+  src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/upb-generated/validate/validate.upbdefs.c
@@ -2072,10 +2091,13 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
+  src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
+  src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
@@ -2100,20 +2122,27 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/lds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/listener.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c
   src/core/ext/upb-generated/envoy/api/v2/rds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c
+  src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/srds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c
   src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
@@ -2132,10 +2161,13 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c
   src/core/ext/upb-generated/envoy/type/matcher/string.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c
+  src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upbdefs.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
   src/core/ext/upb-generated/envoy/type/range.upbdefs.c
+  src/core/ext/upb-generated/envoy/type/semantic_version.upb.c
+  src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c
   src/core/ext/upb-generated/google/api/annotations.upb.c
@@ -2160,6 +2192,8 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/rpc/status.upbdefs.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
+  src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/upb-generated/validate/validate.upbdefs.c
@@ -10308,6 +10342,7 @@ add_executable(end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  src/cpp/client/channel_test_peer.cc
   test/cpp/end2end/end2end_test.cc
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
@@ -11994,6 +12029,7 @@ add_executable(mock_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  src/cpp/client/channel_test_peer.cc
   test/cpp/end2end/mock_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -12970,6 +13006,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_context_test_spouse_test
+  src/cpp/client/channel_test_peer.cc
   test/cpp/test/server_context_test_spouse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15029,7 +15066,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgpr -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "gpr.pc")
 
@@ -15039,7 +15076,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -15049,7 +15086,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc_unsecure.pc")
 
@@ -15059,7 +15096,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${PACKAGE_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 
@@ -15069,6 +15106,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${PACKAGE_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++_unsecure.pc")
