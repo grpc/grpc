@@ -200,6 +200,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     RefCountedPtr<ChildPickerWrapper> picker_wrapper_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
+    bool seen_failure_since_ready_ = false;
 
     // States for delayed removal.
     grpc_timer delayed_removal_timer_;
@@ -367,7 +368,6 @@ void WeightedTargetLb::UpdateStateLocked() {
     }
   }
   // Determine aggregated connectivity state.
-// FIXME: change to new use semantics for TF
   grpc_connectivity_state connectivity_state;
   if (picker_list.size() > 0) {
     connectivity_state = GRPC_CHANNEL_READY;
@@ -561,9 +561,22 @@ WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
 void WeightedTargetLb::WeightedChild::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
-  // Cache the picker and its state in the WeightedChild.
+  // Cache the picker in the WeightedChild.
   weighted_child_->picker_wrapper_ =
       MakeRefCounted<ChildPickerWrapper>(std::move(picker));
+  // Decide what state to report for aggregation purposes.
+  // If we haven't seen a failure since the last time we were in state
+  // READY, then we report the state change as-is.  However, once we do see
+  // a failure, we report TRANSIENT_FAILURE and ignore any subsequent state
+  // changes until we go back into state READY.
+  if (!weighted_child_->seen_failure_since_ready_) {
+    if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      weighted_child_->seen_failure_since_ready_ = true;
+    }
+  } else {
+    if (state != GRPC_CHANNEL_READY) return;
+    weighted_child_->seen_failure_since_ready_ = false;
+  }
   weighted_child_->connectivity_state_ = state;
   // Notify the LB policy.
   weighted_child_->weighted_target_policy_->UpdateStateLocked();
