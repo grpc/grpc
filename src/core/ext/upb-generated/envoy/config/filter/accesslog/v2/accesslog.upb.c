@@ -10,10 +10,11 @@
 #include "upb/msg.h"
 #include "envoy/config/filter/accesslog/v2/accesslog.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
-#include "envoy/api/v2/route/route.upb.h"
+#include "envoy/api/v2/route/route_components.upb.h"
 #include "envoy/type/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"

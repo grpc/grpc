@@ -11,6 +11,7 @@
 #include "envoy/api/v2/cluster/outlier_detection.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
