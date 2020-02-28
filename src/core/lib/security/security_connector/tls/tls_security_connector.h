@@ -159,8 +159,9 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
  *      called by a server, then the method return an error code.
  *
  *  The arguments are detailed below:
- *  - key_materials_config: a key material config that will be populated by the
- *    method on success; the caller should not pass in nullptr.
+ *  - key_materials_config: a key materials config that will be populated by the
+ *    method on success; the caller should not pass in nullptr. Any data held by
+ *    the config will be overwritten.
  *  - options: the TLS credentials options whose credential reloading config
  *    will be used to populate |key_materials_config|.
  *  - is_server: true denotes that this method is called by a server, and
