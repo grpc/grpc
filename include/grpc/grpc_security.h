@@ -425,6 +425,10 @@ typedef struct {
       size_t* num_creds_md, grpc_status_code* status,
       const char** error_details);
 
+  /** Implements debug string of the given plugin. This method returns an
+   * allocated string that the caller needs to free using gpr_free() */
+  char* (*debug_string)(void* state);
+
   /** Destroys the plugin state. */
   void (*destroy)(void* state);
 

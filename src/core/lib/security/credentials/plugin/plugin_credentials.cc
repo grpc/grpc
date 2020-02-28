@@ -42,6 +42,19 @@ grpc_plugin_credentials::~grpc_plugin_credentials() {
   }
 }
 
+std::string grpc_plugin_credentials::debug_string() {
+  char* debug_c_str = nullptr;
+  if (plugin_.debug_string != nullptr) {
+    debug_c_str = plugin_.debug_string(plugin_.state);
+  }
+  std::string debug_str(
+      debug_c_str != nullptr
+          ? debug_c_str
+          : "grpc_plugin_credentials did not provide a debug string");
+  gpr_free(debug_c_str);
+  return debug_str;
+}
+
 void grpc_plugin_credentials::pending_request_remove_locked(
     pending_request* pending_request) {
   if (pending_request->prev == nullptr) {
