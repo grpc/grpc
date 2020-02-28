@@ -609,13 +609,16 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
     gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+    // Take a reference of the AdsServiceImpl object.
+    std::shared_ptr<AdsServiceImpl> ads_service_impl = shared_from_this();
+    gpr_log(GPR_INFO, "AdsServiceImpl use_count %ld", ads_service_impl.use_count());
     [&]() {
-      // Take a reference of the AdsServiceImpl object.
-      std::shared_ptr<AdsServiceImpl> ads_service_impl = shared_from_this();
-      gpr_log(GPR_INFO, "donna AdsServiceImpl uses count %d", ads_service_impl.use_count());
       {
         grpc_core::MutexLock lock(&ads_mu_);
-        if (ads_done_) return;
+        if (ads_done_) {
+          gpr_log(GPR_INFO, "AdsServiceImpl notified done early");
+          return;
+        }
       }
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
@@ -761,7 +764,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         // iteration; otherwise, check whether we should exit and then
         // immediately continue.
         gpr_timespec deadline =
-            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
+            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 1);
         {
           grpc_core::MutexLock lock(&ads_mu_);
           if (!ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; },
@@ -771,7 +774,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       }
       {
         grpc_core::MutexLock lock(&ads_mu_);
-        gpr_log(GPR_INFO, "donna check on stream_closed %d", stream_closed);
+        gpr_log(GPR_INFO, "check on stream_closed %d", stream_closed);
       }
       reader.join();
     }();
@@ -1370,8 +1373,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                const ClusterLoadAssignment& assignment,
                                int delay_ms, const std::string& name) {
     GPR_ASSERT(delay_ms > 0);
+    gpr_log(GPR_INFO, "Donna read for delay");
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
     balancers_[i]->ads_service()->SetEdsResource(assignment, name);
+    gpr_log(GPR_INFO, "Donna set delayed response");
   }
 
  protected:
@@ -2289,6 +2294,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   WaitForBackend(3, false);
+  gpr_log(GPR_INFO, "========= DONE WITH BACKEND 3 ==========");
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -2368,9 +2374,11 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                        gpr_time_from_millis(500, GPR_TIMESPAN));
   // Send 0.5 second worth of RPCs.
+  gpr_log(GPR_INFO, "befor sending .5 sec of RPC");
   do {
     CheckRpcSendFailure();
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
+  gpr_log(GPR_INFO, "after sending .5 sec of RPC");
   WaitForBackend(2, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 2) continue;
