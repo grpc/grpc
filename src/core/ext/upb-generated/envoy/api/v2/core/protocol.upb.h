@@ -21,18 +21,27 @@ extern "C" {
 #endif
 
 struct envoy_api_v2_core_TcpProtocolOptions;
+struct envoy_api_v2_core_UpstreamHttpProtocolOptions;
 struct envoy_api_v2_core_HttpProtocolOptions;
 struct envoy_api_v2_core_Http1ProtocolOptions;
+struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat;
+struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords;
 struct envoy_api_v2_core_Http2ProtocolOptions;
 struct envoy_api_v2_core_GrpcProtocolOptions;
 typedef struct envoy_api_v2_core_TcpProtocolOptions envoy_api_v2_core_TcpProtocolOptions;
+typedef struct envoy_api_v2_core_UpstreamHttpProtocolOptions envoy_api_v2_core_UpstreamHttpProtocolOptions;
 typedef struct envoy_api_v2_core_HttpProtocolOptions envoy_api_v2_core_HttpProtocolOptions;
 typedef struct envoy_api_v2_core_Http1ProtocolOptions envoy_api_v2_core_Http1ProtocolOptions;
+typedef struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat;
+typedef struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords;
 typedef struct envoy_api_v2_core_Http2ProtocolOptions envoy_api_v2_core_Http2ProtocolOptions;
 typedef struct envoy_api_v2_core_GrpcProtocolOptions envoy_api_v2_core_GrpcProtocolOptions;
 extern const upb_msglayout envoy_api_v2_core_TcpProtocolOptions_msginit;
+extern const upb_msglayout envoy_api_v2_core_UpstreamHttpProtocolOptions_msginit;
 extern const upb_msglayout envoy_api_v2_core_HttpProtocolOptions_msginit;
 extern const upb_msglayout envoy_api_v2_core_Http1ProtocolOptions_msginit;
+extern const upb_msglayout envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_msginit;
+extern const upb_msglayout envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit;
 extern const upb_msglayout envoy_api_v2_core_Http2ProtocolOptions_msginit;
 extern const upb_msglayout envoy_api_v2_core_GrpcProtocolOptions_msginit;
 struct google_protobuf_BoolValue;
@@ -59,6 +68,30 @@ UPB_INLINE char *envoy_api_v2_core_TcpProtocolOptions_serialize(const envoy_api_
 
 
 
+/* envoy.api.v2.core.UpstreamHttpProtocolOptions */
+
+UPB_INLINE envoy_api_v2_core_UpstreamHttpProtocolOptions *envoy_api_v2_core_UpstreamHttpProtocolOptions_new(upb_arena *arena) {
+  return (envoy_api_v2_core_UpstreamHttpProtocolOptions *)upb_msg_new(&envoy_api_v2_core_UpstreamHttpProtocolOptions_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_core_UpstreamHttpProtocolOptions *envoy_api_v2_core_UpstreamHttpProtocolOptions_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_api_v2_core_UpstreamHttpProtocolOptions *ret = envoy_api_v2_core_UpstreamHttpProtocolOptions_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_UpstreamHttpProtocolOptions_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_core_UpstreamHttpProtocolOptions_serialize(const envoy_api_v2_core_UpstreamHttpProtocolOptions *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_core_UpstreamHttpProtocolOptions_msginit, arena, len);
+}
+
+UPB_INLINE bool envoy_api_v2_core_UpstreamHttpProtocolOptions_auto_sni(const envoy_api_v2_core_UpstreamHttpProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
+UPB_INLINE bool envoy_api_v2_core_UpstreamHttpProtocolOptions_auto_san_validation(const envoy_api_v2_core_UpstreamHttpProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)); }
+
+UPB_INLINE void envoy_api_v2_core_UpstreamHttpProtocolOptions_set_auto_sni(envoy_api_v2_core_UpstreamHttpProtocolOptions *msg, bool value) {
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
+}
+UPB_INLINE void envoy_api_v2_core_UpstreamHttpProtocolOptions_set_auto_san_validation(envoy_api_v2_core_UpstreamHttpProtocolOptions *msg, bool value) {
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)) = value;
+}
+
 /* envoy.api.v2.core.HttpProtocolOptions */
 
 UPB_INLINE envoy_api_v2_core_HttpProtocolOptions *envoy_api_v2_core_HttpProtocolOptions_new(upb_arena *arena) {
@@ -75,6 +108,7 @@ UPB_INLINE char *envoy_api_v2_core_HttpProtocolOptions_serialize(const envoy_api
 
 UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_core_HttpProtocolOptions_idle_timeout(const envoy_api_v2_core_HttpProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(0, 0)); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_HttpProtocolOptions_max_headers_count(const envoy_api_v2_core_HttpProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_core_HttpProtocolOptions_max_connection_duration(const envoy_api_v2_core_HttpProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(8, 16)); }
 
 UPB_INLINE void envoy_api_v2_core_HttpProtocolOptions_set_idle_timeout(envoy_api_v2_core_HttpProtocolOptions *msg, struct google_protobuf_Duration* value) {
   UPB_FIELD_AT(msg, struct google_protobuf_Duration*, UPB_SIZE(0, 0)) = value;
@@ -100,6 +134,18 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_HttpProtocolOpt
   }
   return sub;
 }
+UPB_INLINE void envoy_api_v2_core_HttpProtocolOptions_set_max_connection_duration(envoy_api_v2_core_HttpProtocolOptions *msg, struct google_protobuf_Duration* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_Duration*, UPB_SIZE(8, 16)) = value;
+}
+UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HttpProtocolOptions_mutable_max_connection_duration(envoy_api_v2_core_HttpProtocolOptions *msg, upb_arena *arena) {
+  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_HttpProtocolOptions_max_connection_duration(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_HttpProtocolOptions_set_max_connection_duration(msg, sub);
+  }
+  return sub;
+}
 
 /* envoy.api.v2.core.Http1ProtocolOptions */
 
@@ -118,6 +164,8 @@ UPB_INLINE char *envoy_api_v2_core_Http1ProtocolOptions_serialize(const envoy_ap
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_core_Http1ProtocolOptions_allow_absolute_url(const envoy_api_v2_core_Http1ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(12, 24)); }
 UPB_INLINE bool envoy_api_v2_core_Http1ProtocolOptions_accept_http_10(const envoy_api_v2_core_Http1ProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
 UPB_INLINE upb_strview envoy_api_v2_core_Http1ProtocolOptions_default_host_for_http_10(const envoy_api_v2_core_Http1ProtocolOptions *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
+UPB_INLINE const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat* envoy_api_v2_core_Http1ProtocolOptions_header_key_format(const envoy_api_v2_core_Http1ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat*, UPB_SIZE(16, 32)); }
+UPB_INLINE bool envoy_api_v2_core_Http1ProtocolOptions_enable_trailers(const envoy_api_v2_core_Http1ProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)); }
 
 UPB_INLINE void envoy_api_v2_core_Http1ProtocolOptions_set_allow_absolute_url(envoy_api_v2_core_Http1ProtocolOptions *msg, struct google_protobuf_BoolValue* value) {
   UPB_FIELD_AT(msg, struct google_protobuf_BoolValue*, UPB_SIZE(12, 24)) = value;
@@ -137,6 +185,73 @@ UPB_INLINE void envoy_api_v2_core_Http1ProtocolOptions_set_accept_http_10(envoy_
 UPB_INLINE void envoy_api_v2_core_Http1ProtocolOptions_set_default_host_for_http_10(envoy_api_v2_core_Http1ProtocolOptions *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
 }
+UPB_INLINE void envoy_api_v2_core_Http1ProtocolOptions_set_header_key_format(envoy_api_v2_core_Http1ProtocolOptions *msg, envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat* value) {
+  UPB_FIELD_AT(msg, envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat*, UPB_SIZE(16, 32)) = value;
+}
+UPB_INLINE struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat* envoy_api_v2_core_Http1ProtocolOptions_mutable_header_key_format(envoy_api_v2_core_Http1ProtocolOptions *msg, upb_arena *arena) {
+  struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat* sub = (struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat*)envoy_api_v2_core_Http1ProtocolOptions_header_key_format(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat*)upb_msg_new(&envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_Http1ProtocolOptions_set_header_key_format(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_core_Http1ProtocolOptions_set_enable_trailers(envoy_api_v2_core_Http1ProtocolOptions *msg, bool value) {
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)) = value;
+}
+
+/* envoy.api.v2.core.Http1ProtocolOptions.HeaderKeyFormat */
+
+UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_new(upb_arena *arena) {
+  return (envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *)upb_msg_new(&envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *ret = envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_serialize(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_msginit, arena, len);
+}
+
+typedef enum {
+  envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_proper_case_words = 1,
+  envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_NOT_SET = 0
+} envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_oneofcases;
+UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_oneofcases envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_case(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat* msg) { return (envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 8)); }
+
+UPB_INLINE bool envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_has_proper_case_words(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
+UPB_INLINE const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords* envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_proper_case_words(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
+
+UPB_INLINE void envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_set_proper_case_words(envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg, envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords* value) {
+  UPB_WRITE_ONEOF(msg, envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 1);
+}
+UPB_INLINE struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords* envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_mutable_proper_case_words(envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg, upb_arena *arena) {
+  struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords* sub = (struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords*)envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_proper_case_words(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords*)upb_msg_new(&envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_set_proper_case_words(msg, sub);
+  }
+  return sub;
+}
+
+/* envoy.api.v2.core.Http1ProtocolOptions.HeaderKeyFormat.ProperCaseWords */
+
+UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords *envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_new(upb_arena *arena) {
+  return (envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords *)upb_msg_new(&envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords *envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords *ret = envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_serialize(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit, arena, len);
+}
+
+
 
 /* envoy.api.v2.core.Http2ProtocolOptions */
 

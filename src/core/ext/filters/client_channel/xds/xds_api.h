@@ -187,8 +187,7 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  XdsApi(const XdsBootstrap::Node* node, const char* build_version)
-      : node_(node), build_version_(build_version) {}
+  explicit XdsApi(const XdsBootstrap::Node* node);
 
   // Creates a request to nack an unsupported resource type.
   // Takes ownership of \a error.
@@ -251,7 +250,8 @@ class XdsApi {
 
  private:
   const XdsBootstrap::Node* node_;
-  const char* build_version_;
+  const std::string build_version_;
+  const std::string user_agent_name_;
 };
 
 }  // namespace grpc_core

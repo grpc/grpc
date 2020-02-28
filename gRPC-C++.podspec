@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.28.0-dev'
+  version = '1.29.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -193,6 +193,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/config.h',
                       'include/grpcpp/support/interceptor.h',
                       'include/grpcpp/support/message_allocator.h',
+                      'include/grpcpp/support/method_handler.h',
                       'include/grpcpp/support/proto_buffer_reader.h',
                       'include/grpcpp/support/proto_buffer_writer.h',
                       'include/grpcpp/support/server_callback.h',
@@ -213,15 +214,15 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '0.20190808.1'
+    abseil_version = '0.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
+    ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
 
-    ss.source_files = 'include/grpcpp/impl/codegen/core_codegen.h',
-                      'src/core/ext/filters/client_channel/backend_metric.h',
+    ss.source_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -301,8 +302,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/stream_map.h',
                       'src/core/ext/transport/chttp2/transport/varint.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
+                      'src/core/ext/upb-generated/envoy/annotations/deprecation.upb.h',
+                      'src/core/ext/upb-generated/envoy/annotations/resource.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/cds.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/cluster.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h',
@@ -315,13 +319,20 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/eds.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/lds.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/listener.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/rds.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/route.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/route/route.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/srds.upb.h',
                       'src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h',
                       'src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h',
@@ -331,8 +342,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/type/http.upb.h',
                       'src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h',
                       'src/core/ext/upb-generated/envoy/type/matcher/string.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h',
                       'src/core/ext/upb-generated/envoy/type/percent.upb.h',
                       'src/core/ext/upb-generated/envoy/type/range.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/semantic_version.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.h',
                       'src/core/ext/upb-generated/gogoproto/gogo.upb.h',
                       'src/core/ext/upb-generated/google/api/annotations.upb.h',
                       'src/core/ext/upb-generated/google/api/http.upb.h',
@@ -349,6 +363,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h',
                       'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                       'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                      'src/core/ext/upb-generated/udpa/annotations/migrate.upb.h',
+                      'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h',
                       'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h',
                       'src/core/ext/upb-generated/validate/validate.upb.h',
                       'src/core/lib/avl/avl.h',
@@ -453,8 +469,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_set.h',
                       'src/core/lib/iomgr/pollset_set_custom.h',
                       'src/core/lib/iomgr/pollset_set_windows.h',
+                      'src/core/lib/iomgr/pollset_uv.h',
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
+                      'src/core/lib/iomgr/python_util.h',
                       'src/core/lib/iomgr/resolve_address.h',
                       'src/core/lib/iomgr/resolve_address_custom.h',
                       'src/core/lib/iomgr/resource_quota.h',
@@ -479,6 +497,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/time_averaged_stats.h',
                       'src/core/lib/iomgr/timer.h',
                       'src/core/lib/iomgr/timer_custom.h',
+                      'src/core/lib/iomgr/timer_generic.h',
                       'src/core/lib/iomgr/timer_heap.h',
                       'src/core/lib/iomgr/timer_manager.h',
                       'src/core/lib/iomgr/udp_server.h',
@@ -651,8 +670,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/table.int.h',
                       'third_party/upb/upb/upb.h'
 
-    ss.private_header_files = 'include/grpcpp/impl/codegen/core_codegen.h',
-                              'src/core/ext/filters/client_channel/backend_metric.h',
+    ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -732,8 +750,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/stream_map.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
+                              'src/core/ext/upb-generated/envoy/annotations/deprecation.upb.h',
+                              'src/core/ext/upb-generated/envoy/annotations/resource.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/cds.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/cluster.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h',
@@ -746,13 +767,20 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/eds.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/lds.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/listener.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/rds.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/route.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/route/route.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/srds.upb.h',
                               'src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h',
                               'src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h',
@@ -762,8 +790,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/type/http.upb.h',
                               'src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h',
                               'src/core/ext/upb-generated/envoy/type/matcher/string.upb.h',
+                              'src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h',
                               'src/core/ext/upb-generated/envoy/type/percent.upb.h',
                               'src/core/ext/upb-generated/envoy/type/range.upb.h',
+                              'src/core/ext/upb-generated/envoy/type/semantic_version.upb.h',
+                              'src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.h',
                               'src/core/ext/upb-generated/gogoproto/gogo.upb.h',
                               'src/core/ext/upb-generated/google/api/annotations.upb.h',
                               'src/core/ext/upb-generated/google/api/http.upb.h',
@@ -780,6 +811,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h',
                               'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                               'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                              'src/core/ext/upb-generated/udpa/annotations/migrate.upb.h',
+                              'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h',
                               'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h',
                               'src/core/ext/upb-generated/validate/validate.upb.h',
                               'src/core/lib/avl/avl.h',
@@ -884,8 +917,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_set.h',
                               'src/core/lib/iomgr/pollset_set_custom.h',
                               'src/core/lib/iomgr/pollset_set_windows.h',
+                              'src/core/lib/iomgr/pollset_uv.h',
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
+                              'src/core/lib/iomgr/python_util.h',
                               'src/core/lib/iomgr/resolve_address.h',
                               'src/core/lib/iomgr/resolve_address_custom.h',
                               'src/core/lib/iomgr/resource_quota.h',
@@ -910,6 +945,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/time_averaged_stats.h',
                               'src/core/lib/iomgr/timer.h',
                               'src/core/lib/iomgr/timer_custom.h',
+                              'src/core/lib/iomgr/timer_generic.h',
                               'src/core/lib/iomgr/timer_heap.h',
                               'src/core/lib/iomgr/timer_manager.h',
                               'src/core/lib/iomgr/udp_server.h',

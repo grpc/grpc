@@ -238,12 +238,13 @@ def grpc_deps():
             strip_prefix = "upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc",
             url = "https://github.com/protocolbuffers/upb/archive/d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
         )
+
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "9e8cf42abce32c9b0e9e271b0cb62803084cbe5e5b49f5d5c2aef0766f9d69ca",
-            strip_prefix = "data-plane-api-c83ed7ea9eb5fb3b93d1ad52b59750f1958b8bde",
-            url = "https://github.com/envoyproxy/data-plane-api/archive/c83ed7ea9eb5fb3b93d1ad52b59750f1958b8bde.tar.gz",
+            sha256 = "4ba23e0370ec358d1050c020e00cd020f03644a733aaf8fd85cc43d17b92236a",
+            strip_prefix = "data-plane-api-0487bbb43c3e8b54c7332f74ba7344d8265774f7",
+            url = "https://github.com/envoyproxy/data-plane-api/archive/0487bbb43c3e8b54c7332f74ba7344d8265774f7.tar.gz",
         )
 
     if "io_bazel_rules_go" not in native.existing_rules():
