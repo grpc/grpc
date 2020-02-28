@@ -70,6 +70,7 @@ namespace {
 
 constexpr char kWeightedTarget[] = "weighted_target_experimental";
 
+// Config for weighted_target LB policy.
 class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
  public:
   struct ChildConfig {
@@ -90,6 +91,7 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
   TargetMap target_map_;
 };
 
+// weighted_target LB policy.
 class WeightedTargetLb : public LoadBalancingPolicy {
  public:
   explicit WeightedTargetLb(Args args);
@@ -97,6 +99,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   const char* name() const override { return kWeightedTarget; }
 
   void UpdateLocked(UpdateArgs args) override;
+  void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
  private:
@@ -147,6 +150,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
                       const ServerAddressList& addresses,
                       const grpc_channel_args* args);
+    void ExitIdleLocked();
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -277,6 +281,10 @@ void WeightedTargetLb::ShutdownLocked() {
   targets_.clear();
 }
 
+void WeightedTargetLb::ExitIdleLocked() {
+  for (auto& p : targets_) p.second->ExitIdleLocked();
+}
+
 void WeightedTargetLb::ResetBackoffLocked() {
   for (auto& p : targets_) p.second->ResetBackoffLocked();
 }
@@ -366,7 +374,6 @@ void WeightedTargetLb::UpdateStateLocked() {
   } else if (num_connecting > 0) {
     connectivity_state = GRPC_CHANNEL_CONNECTING;
   } else if (num_idle > 0) {
-// FIXME: implement ExitIdleLocked()
     connectivity_state = GRPC_CHANNEL_IDLE;
   } else {
     connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
@@ -493,6 +500,10 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
             child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
+}
+
+void WeightedTargetLb::WeightedChild::ExitIdleLocked() {
+  child_policy_->ExitIdleLocked();
 }
 
 void WeightedTargetLb::WeightedChild::ResetBackoffLocked() {

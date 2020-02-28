@@ -74,6 +74,7 @@ namespace {
 
 constexpr char kPriority[] = "priority_experimental";
 
+// Config for priority LB policy.
 class PriorityLbConfig : public LoadBalancingPolicy::Config {
  public:
   PriorityLbConfig(
@@ -97,6 +98,7 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
   const std::vector<std::string> priorities_;
 };
 
+// priority LB policy.
 class PriorityLb : public LoadBalancingPolicy {
  public:
   explicit PriorityLb(Args args);
@@ -104,6 +106,7 @@ class PriorityLb : public LoadBalancingPolicy {
   const char* name() const override { return kPriority; }
 
   void UpdateLocked(UpdateArgs args) override;
+  void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
  private:
@@ -119,6 +122,7 @@ class PriorityLb : public LoadBalancingPolicy {
     const std::string& name() const { return name_; }
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config);
+    void ExitIdleLocked();
     void ResetBackoffLocked();
     void DeactivateLocked();
     void MaybeReactivateLocked();
@@ -271,10 +275,13 @@ void PriorityLb::ShutdownLocked() {
   children_.clear();
 }
 
+void PriorityLb::ExitIdleLocked() {
+// FIXME: is this right? or should we do this only for current priority?
+  for (const auto& p : children_) p.second->ExitIdleLocked();
+}
+
 void PriorityLb::ResetBackoffLocked() {
-  for (const auto& p : children_) {
-    p.second->ResetBackoffLocked();
-  }
+  for (const auto& p : children_) p.second->ResetBackoffLocked();
 }
 
 uint32_t PriorityLb::GetChildPriority(const std::string& child_name) const {
@@ -543,6 +550,10 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    priority_policy_->interested_parties());
   return lb_policy;
+}
+
+void PriorityLb::ChildPriority::ExitIdleLocked() {
+  child_policy_->ExitIdleLocked();
 }
 
 void PriorityLb::ChildPriority::ResetBackoffLocked() {
