@@ -65,24 +65,27 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
-    const grpc_tls_credentials_options& options, bool server_config,
-    grpc_ssl_certificate_config_reload_status* reload_status) {
+    const grpc_tls_credentials_options& options, bool is_server,
+    grpc_ssl_certificate_config_reload_status* status) {
   /** Verify that either |key_materials_config| is populated or |options| has a
    *  credential reload config. **/
   GPR_ASSERT(key_materials_config != nullptr);
-  GPR_ASSERT(reload_status != nullptr);
+  GPR_ASSERT(status != nullptr);
   bool is_key_materials_empty =
       key_materials_config->pem_key_cert_pair_list().empty();
   grpc_tls_credential_reload_config* credential_reload_config =
       options.credential_reload_config();
+  /** If there are no key materials and no credential reload config and the
+   *  caller is a server, then return an error. We do not require that a client
+   *  always provision certificates. **/
   if (credential_reload_config == nullptr && is_key_materials_empty &&
-      server_config) {
+      is_server) {
     gpr_log(GPR_ERROR,
             "Either credential reload config or key materials should be "
             "provisioned.");
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
-  grpc_status_code status = GRPC_STATUS_OK;
+  grpc_status_code reload_status = GRPC_STATUS_OK;
   /** Use |credential_reload_config| to update |key_materials_config|. **/
   if (credential_reload_config != nullptr) {
     grpc_tls_credential_reload_arg* arg = new grpc_tls_credential_reload_arg();
@@ -92,13 +95,12 @@ grpc_status_code TlsFetchKeyMaterials(
       /** Credential reloading is performed async. This is not yet supported.
        * **/
       gpr_log(GPR_ERROR, "Async credential reload is unsupported now.");
-      *reload_status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-      status =
+      *status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+      reload_status =
           is_key_materials_empty ? GRPC_STATUS_UNIMPLEMENTED : GRPC_STATUS_OK;
     } else {
       /** Credential reloading is performed sync. **/
-      GPR_ASSERT(reload_status != nullptr);
-      *reload_status = arg->status;
+      *status = arg->status;
       if (arg->status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
         /* Key materials is not empty. */
         gpr_log(GPR_DEBUG, "Credential does not change after reload.");
@@ -107,7 +109,8 @@ grpc_status_code TlsFetchKeyMaterials(
         if (arg->error_details != nullptr) {
           gpr_log(GPR_ERROR, "%s", arg->error_details);
         }
-        status = is_key_materials_empty ? GRPC_STATUS_INTERNAL : GRPC_STATUS_OK;
+        reload_status =
+            is_key_materials_empty ? GRPC_STATUS_INTERNAL : GRPC_STATUS_OK;
       }
     }
     gpr_free((void*)arg->error_details);
@@ -120,7 +123,7 @@ grpc_status_code TlsFetchKeyMaterials(
     }
     delete arg;
   }
-  return status;
+  return reload_status;
 }
 
 grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer) {

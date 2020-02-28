@@ -151,7 +151,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
  *  - if |options| is equipped with a credential reload config, then this
  *    methods uses credential reloading to populate |key_materials_config|, and
  *    afterwards it populates |reload_status| with the status of this operation.
- *    particular, any data stored in |key_materials_config| is overwritten.
+ *    In particular, any data stored in |key_materials_config| is overwritten.
  *  - if |options| has no credential reload config, then:
  *    - if |key_materials_config| already has a non-empty pem-key-cert pair
  *      list or is called by a client, then the method returns |GRPC_STATUS_OK|.
@@ -163,14 +163,14 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
  *    method on success; the caller should not pass in nullptr.
  *  - options: the TLS credentials options whose credential reloading config
  *    will be used to populate |key_materials_config|.
- *  - server_config: true denotes that this method is called by a server, and
+ *  - is_server: true denotes that this method is called by a server, and
  *    false denotes that this method is called by a client.
- *  - reload_status: the status of the credential reloading after the method
+ *  - status: the status of the credential reloading after the method
  *    returns; the caller should not pass in nullptr. **/
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
-    const grpc_tls_credentials_options& options, bool server_config,
+    const grpc_tls_credentials_options& options, bool is_server,
     grpc_ssl_certificate_config_reload_status* status);
 
 // TlsCheckHostName checks if |peer_name| matches the identity information
