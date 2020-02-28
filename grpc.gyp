@@ -1365,6 +1365,20 @@
       ],
     },
     {
+      'target_name': 'grpc++_test',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'grpc',
+        'gpr',
+        'address_sorting',
+        'upb',
+      ],
+      'sources': [
+        'src/cpp/client/channel_test_peer.cc',
+      ],
+    },
+    {
       'target_name': 'grpc++_test_config',
       'type': 'static_library',
       'dependencies': [

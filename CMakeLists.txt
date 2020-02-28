@@ -2947,6 +2947,71 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_library(grpc++_test
+  src/cpp/client/channel_test_peer.cc
+)
+
+set_target_properties(grpc++_test PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_test PROPERTIES COMPILE_PDB_NAME "grpc++_test"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpc++_test
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(grpc++_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+foreach(_hdr
+  include/grpc++/test/mock_stream.h
+  include/grpc++/test/server_context_test_spouse.h
+  include/grpcpp/test/channel_test_peer.h
+  include/grpcpp/test/default_reactor_test_peer.h
+  include/grpcpp/test/mock_stream.h
+  include/grpcpp/test/server_context_test_spouse.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
@@ -10251,7 +10316,6 @@ add_executable(end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  src/cpp/client/channel_test_peer.cc
   test/cpp/end2end/end2end_test.cc
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
@@ -10280,6 +10344,7 @@ target_link_libraries(end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc++_test
   grpc_test_util
   grpc++
   grpc
@@ -11938,7 +12003,6 @@ add_executable(mock_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  src/cpp/client/channel_test_peer.cc
   test/cpp/end2end/mock_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -11965,6 +12029,7 @@ target_link_libraries(mock_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc++_test
   grpc_test_util
   grpc++
   grpc
@@ -12915,7 +12980,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_context_test_spouse_test
-  src/cpp/client/channel_test_peer.cc
   test/cpp/test/server_context_test_spouse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -12942,6 +13006,7 @@ target_link_libraries(server_context_test_spouse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc++_test
   grpc_test_util
   grpc++
   grpc

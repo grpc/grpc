@@ -2242,6 +2242,25 @@ libs:
   - gpr
   - address_sorting
   - upb
+- name: grpc++_test
+  build: private
+  language: c++
+  public_headers:
+  - include/grpc++/test/mock_stream.h
+  - include/grpc++/test/server_context_test_spouse.h
+  - include/grpcpp/test/channel_test_peer.h
+  - include/grpcpp/test/default_reactor_test_peer.h
+  - include/grpcpp/test/mock_stream.h
+  - include/grpcpp/test/server_context_test_spouse.h
+  headers: []
+  src:
+  - src/cpp/client/channel_test_peer.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: grpc++_test_config
   build: private
   language: c++
@@ -5699,12 +5718,12 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/cpp/client/channel_test_peer.cc
   - test/cpp/end2end/end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+  - grpc++_test
   - grpc_test_util
   - grpc++
   - grpc
@@ -6406,10 +6425,10 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/cpp/client/channel_test_peer.cc
   - test/cpp/end2end/mock_test.cc
   deps:
   - grpc++_test_util
+  - grpc++_test
   - grpc_test_util
   - grpc++
   - grpc
@@ -6870,10 +6889,10 @@ targets:
   language: c++
   headers: []
   src:
-  - src/cpp/client/channel_test_peer.cc
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
   - grpc++_test_util
+  - grpc++_test
   - grpc_test_util
   - grpc++
   - grpc
