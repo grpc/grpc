@@ -451,8 +451,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
   }
 
   // Starting a thread to do blocking read on the stream until cancel.
-  void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
-                    bool* stream_closed) {
+  void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests) {
     DiscoveryRequest request;
     bool seen_first_request = false;
     while (stream->Read(&request)) {
@@ -466,8 +465,6 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
       }
     }
     gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
-    grpc_core::MutexLock lock(&ads_mu_);
-    *stream_closed = true;
   }
 
   // Checks whether the client needs to receive a newer version of
@@ -623,9 +620,8 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
       std::map<std::string, int> resource_type_version;
       // Creating blocking thread to read from stream.
       std::deque<DiscoveryRequest> requests;
-      bool stream_closed = false;
       std::thread reader(std::bind(&AdsServiceImpl::BlockingRead, this, stream,
-                                   &requests, &stream_closed));
+                                   &requests));
       // Main loop to look for requests and updates.
       while (true) {
         // Look for new requests and and decide what to handle.
@@ -635,7 +631,6 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
         bool did_work = false;
         {
           grpc_core::MutexLock lock(&ads_mu_);
-          if (stream_closed) break;
           if (!requests.empty()) {
             DiscoveryRequest request = std::move(requests.front());
             requests.pop_front();
@@ -750,14 +745,18 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
           stream->Write(response);
         }
         // If we didn't find anything to do, delay before the next loop
-        // iteration.
+        // iteration; otherwise, check whether we should exit and then
+        // immediately continue.
         gpr_timespec deadline =
             grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
-        gpr_sleep_until(deadline);
+        {
+          grpc_core::MutexLock lock(&ads_mu_);
+          if (!ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; },
+                                   deadline))
+            break;
+        }
       }
       reader.join();
-      grpc_core::MutexLock lock(&ads_mu_);
-      ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; });
     }();
     gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
     return Status::OK;
