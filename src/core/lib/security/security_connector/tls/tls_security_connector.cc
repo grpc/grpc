@@ -67,8 +67,6 @@ grpc_status_code TlsFetchKeyMaterials(
         key_materials_config,
     const grpc_tls_credentials_options& options, bool is_server,
     grpc_ssl_certificate_config_reload_status* status) {
-  /** Verify that either |key_materials_config| is populated or |options| has a
-   *  credential reload config. **/
   GPR_ASSERT(key_materials_config != nullptr);
   GPR_ASSERT(status != nullptr);
   bool is_key_materials_empty =
