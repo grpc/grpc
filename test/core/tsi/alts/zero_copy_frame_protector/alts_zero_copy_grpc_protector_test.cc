@@ -106,7 +106,6 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       static_cast<alts_zero_copy_grpc_protector_test_fixture*>(
           gpr_zalloc(sizeof(alts_zero_copy_grpc_protector_test_fixture)));
-  grpc_core::ExecCtx exec_ctx;
   size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
   uint8_t* key;
   size_t max_protected_frame_size = 1024;
@@ -127,7 +126,6 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
                  fixture->server, &actual_max_protected_frame_size) == TSI_OK);
   GPR_ASSERT(actual_max_protected_frame_size == max_protected_frame_size);
   gpr_free(key);
-  grpc_core::ExecCtx::Get()->Flush();
   return fixture;
 }
 
@@ -136,10 +134,8 @@ static void alts_zero_copy_grpc_protector_test_fixture_destroy(
   if (fixture == nullptr) {
     return;
   }
-  grpc_core::ExecCtx exec_ctx;
   tsi_zero_copy_grpc_protector_destroy(fixture->client);
   tsi_zero_copy_grpc_protector_destroy(fixture->server);
-  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(fixture);
 }
 
@@ -173,7 +169,6 @@ static void alts_zero_copy_grpc_protector_test_var_destroy(
 
 static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
                                      tsi_zero_copy_grpc_protector* receiver) {
-  grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_zero_copy_grpc_protector_test_var* var =
         alts_zero_copy_grpc_protector_test_var_create();
@@ -201,12 +196,10 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
         are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_zero_copy_grpc_protector_test_var_destroy(var);
   }
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
                                      tsi_zero_copy_grpc_protector* receiver) {
-  grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_zero_copy_grpc_protector_test_var* var =
         alts_zero_copy_grpc_protector_test_var_create();
@@ -235,7 +228,6 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
         are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_zero_copy_grpc_protector_test_var_destroy(var);
   }
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
 /* --- Test cases. --- */
