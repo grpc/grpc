@@ -13,7 +13,7 @@
 # limitations under the License.
 import logging
 import unittest
-from typing import Callable
+from typing import Callable, Awaitable
 
 import grpc
 
@@ -26,21 +26,33 @@ from src.proto.grpc.testing import messages_pb2
 
 class _LoggingInterceptor(aio.ServerInterceptor):
 
-    def __init__(self, tag, record):
+    def __init__(self, tag: str, record: list) -> None:
         self.tag = tag
         self.record = record
 
-    async def intercept_service(self, continuation, handler_call_details):
+    async def intercept_service(
+            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
+                grpc.RpcMethodHandler]],
+            handler_call_details: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
         self.record.append(self.tag + ':intercept_service')
         return await continuation(handler_call_details)
 
 
 class _GenericInterceptor(aio.ServerInterceptor):
 
-    def __init__(self, fn):
+    def __init__(self, fn: Callable[[
+            Callable[[grpc.HandlerCallDetails], Awaitable[grpc.
+                                                          RpcMethodHandler]],
+            grpc.HandlerCallDetails
+    ], Awaitable[grpc.RpcMethodHandler]]) -> None:
         self._fn = fn
 
-    async def intercept_service(self, continuation, handler_call_details):
+    async def intercept_service(
+            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
+                grpc.RpcMethodHandler]],
+            handler_call_details: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
         return await self._fn(continuation, handler_call_details)
 
 
@@ -48,7 +60,11 @@ def _filter_server_interceptor(condition: Callable,
                                interceptor: aio.ServerInterceptor
                               ) -> aio.ServerInterceptor:
 
-    async def intercept_service(continuation, handler_call_details):
+    async def intercept_service(
+            continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
+                grpc.RpcMethodHandler]],
+            handler_call_details: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
         if condition(handler_call_details):
             return await interceptor.intercept_service(continuation,
                                                        handler_call_details)

@@ -16,7 +16,7 @@ import asyncio
 import collections
 import functools
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Optional, Iterator, Sequence, Union
+from typing import Callable, Optional, Iterator, Sequence, Union, Awaitable
 
 import grpc
 from grpc._cython import cygrpc
@@ -38,8 +38,8 @@ class ServerInterceptor(metaclass=ABCMeta):
 
     @abstractmethod
     async def intercept_service(
-            self, continuation: Callable[[grpc.HandlerCallDetails], grpc.
-                                         RpcMethodHandler],
+            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
+                grpc.RpcMethodHandler]],
             handler_call_details: grpc.HandlerCallDetails
     ) -> grpc.RpcMethodHandler:
         """Intercepts incoming RPCs before handing them over to a handler.
