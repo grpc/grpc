@@ -155,7 +155,7 @@ class InterceptorBatchMethods {
   /// Returns a modifiable multimap of the initial metadata to be sent. Valid
   /// for PRE_SEND_INITIAL_METADATA interceptions. A value of nullptr indicates
   /// that this field is not valid.
-  virtual std::multimap<grpc::string, grpc::string>*
+  virtual std::multimap<std::string, std::string>*
   GetSendInitialMetadata() = 0;
 
   /// Returns the status to be sent. Valid for PRE_SEND_STATUS interceptions.
@@ -168,7 +168,7 @@ class InterceptorBatchMethods {
   /// Returns a modifiable multimap of the trailing metadata to be sent. Valid
   /// for PRE_SEND_STATUS interceptions. A value of nullptr indicates
   /// that this field is not valid.
-  virtual std::multimap<grpc::string, grpc::string>*
+  virtual std::multimap<std::string, std::string>*
   GetSendTrailingMetadata() = 0;
 
   /// Returns a pointer to the modifiable received message. Note that the

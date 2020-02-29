@@ -103,7 +103,7 @@ using grpc::ClientContext;
     ClientContext context;
     if (with_binary_metadata) {
       char bytes[8] = {'\0', '\1', '\2', '\3', '\4', '\5', '\6', static_cast<char>(i)};
-      context.AddMetadata("custom-bin", grpc::string(bytes, 8));
+      context.AddMetadata("custom-bin", std::string(bytes, 8));
     }
     context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     Status s = stub->Echo(&context, request, &response);
@@ -257,7 +257,7 @@ using grpc::ClientContext;
   auto stream = stub->ResponseStream(&context, request);
   for (int i = 0; i < kServerDefaultResponseStreamsToSend; ++i) {
     XCTAssertTrue(stream->Read(&response));
-    XCTAssertEqual(response.message(), request.message() + grpc::to_string(i));
+    XCTAssertEqual(response.message(), request.message() + std::to_string(i));
   }
   XCTAssertFalse(stream->Read(&response));
 
@@ -270,12 +270,12 @@ using grpc::ClientContext;
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  grpc::string msg("hello");
+  std::string msg("hello");
 
   auto stream = stub->BidiStream(&context);
 
   for (int i = 0; i < kServerDefaultResponseStreamsToSend; ++i) {
-    request.set_message(msg + grpc::to_string(i));
+    request.set_message(msg + std::to_string(i));
     XCTAssertTrue(stream->Write(request));
     XCTAssertTrue(stream->Read(&response));
     XCTAssertEqual(response.message(), request.message());
@@ -296,7 +296,7 @@ using grpc::ClientContext;
   ClientContext context;
   context.AddMetadata(kServerFinishAfterNReads, "3");
   context.set_initial_metadata_corked(true);
-  grpc::string msg("hello");
+  std::string msg("hello");
 
   auto stream = stub->BidiStream(&context);
 
@@ -383,7 +383,7 @@ using grpc::ClientContext;
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  grpc::string msg("hello");
+  std::string msg("hello");
 
   auto stream = stub->BidiStream(&context);
 
@@ -436,7 +436,7 @@ using grpc::ClientContext;
   info->add_stack_entries("stack_entry_2");
   info->add_stack_entries("stack_entry_3");
   info->set_detail("detailed debug info");
-  grpc::string expected_string = info->SerializeAsString();
+  std::string expected_string = info->SerializeAsString();
   request.set_message("Hello");
 
   Status s = stub->Echo(&context, request, &response);

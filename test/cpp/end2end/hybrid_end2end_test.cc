@@ -354,7 +354,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
   void SendSimpleClientStreaming() {
     EchoRequest send_request;
     EchoResponse recv_response;
-    grpc::string expected_message;
+    std::string expected_message;
     ClientContext cli_ctx;
     cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
@@ -417,7 +417,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
     EchoResponse response;
     ClientContext context;
     context.set_wait_for_ready(true);
-    grpc::string msg("hello");
+    std::string msg("hello");
 
     auto stream = stub_->BidiStream(&context);
 
@@ -661,7 +661,7 @@ class SplitResponseStreamDupPkg
     gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
-      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      resp.set_message(req.message() + std::to_string(i) + "_dup");
       GPR_ASSERT(stream->Write(resp));
     }
     return Status::OK;
@@ -701,7 +701,7 @@ class FullySplitStreamedDupPkg
     gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
-      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      resp.set_message(req.message() + std::to_string(i) + "_dup");
       GPR_ASSERT(stream->Write(resp));
     }
     return Status::OK;
@@ -753,7 +753,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
-      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      resp.set_message(req.message() + std::to_string(i) + "_dup");
       GPR_ASSERT(stream->Write(resp));
     }
     return Status::OK;

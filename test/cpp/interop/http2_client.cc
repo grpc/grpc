@@ -72,7 +72,7 @@ Status Http2Client::SendUnaryCall(SimpleResponse* response) {
 SimpleRequest Http2Client::BuildDefaultRequest() {
   SimpleRequest request;
   request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
+  std::string payload(kLargeRequestSize, '\0');
   request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
   return request;
 }
@@ -115,7 +115,7 @@ bool Http2Client::DoGoaway() {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
-             grpc::string(kLargeResponseSize, '\0'));
+             std::string(kLargeResponseSize, '\0'));
 
   // Sleep for one second to give time for client to receive goaway frame.
   gpr_timespec sleep_time = gpr_time_add(
@@ -125,7 +125,7 @@ bool Http2Client::DoGoaway() {
   response.Clear();
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
-             grpc::string(kLargeResponseSize, '\0'));
+             std::string(kLargeResponseSize, '\0'));
   gpr_log(GPR_DEBUG, "Done testing goaway");
   return true;
 }
@@ -135,7 +135,7 @@ bool Http2Client::DoPing() {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
-             grpc::string(kLargeResponseSize, '\0'));
+             std::string(kLargeResponseSize, '\0'));
   gpr_log(GPR_DEBUG, "Done testing ping");
   return true;
 }
@@ -145,7 +145,7 @@ void Http2Client::MaxStreamsWorker(
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
-             grpc::string(kLargeResponseSize, '\0'));
+             std::string(kLargeResponseSize, '\0'));
 }
 
 bool Http2Client::DoMaxStreams() {
@@ -156,7 +156,7 @@ bool Http2Client::DoMaxStreams() {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
-             grpc::string(kLargeResponseSize, '\0'));
+             std::string(kLargeResponseSize, '\0'));
 
   std::vector<std::thread> test_threads;
 

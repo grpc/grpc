@@ -28,13 +28,13 @@
 
 namespace grpc_impl {
 std::shared_ptr<grpc::Channel> CreateChannelImpl(
-    const grpc::string& target,
+    const std::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds) {
   return CreateCustomChannelImpl(target, creds, grpc::ChannelArguments());
 }
 
 std::shared_ptr<grpc::Channel> CreateCustomChannelImpl(
-    const grpc::string& target,
+    const std::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args) {
   grpc::GrpcLibraryCodegen
@@ -63,7 +63,7 @@ namespace experimental {
 /// fail) is returned.
 /// \param args Options for channel creation.
 std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
-    const grpc::string& target,
+    const std::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args,
     std::vector<

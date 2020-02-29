@@ -59,7 +59,7 @@ class CustomHealthCheckService : public HealthCheckServiceInterface {
       : impl_(impl) {
     impl_->SetStatus("", HealthCheckResponse::SERVING);
   }
-  void SetServingStatus(const grpc::string& service_name,
+  void SetServingStatus(const std::string& service_name,
                         bool serving) override {
     impl_->SetStatus(service_name, serving ? HealthCheckResponse::SERVING
                                            : HealthCheckResponse::NOT_SERVING);
@@ -130,7 +130,7 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   }
 
   // When the expected_status is NOT OK, we do not care about the response.
-  void SendHealthCheckRpc(const grpc::string& service_name,
+  void SendHealthCheckRpc(const std::string& service_name,
                           const Status& expected_status) {
     EXPECT_FALSE(expected_status.ok());
     SendHealthCheckRpc(service_name, expected_status,
@@ -138,7 +138,7 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   }
 
   void SendHealthCheckRpc(
-      const grpc::string& service_name, const Status& expected_status,
+      const std::string& service_name, const Status& expected_status,
       HealthCheckResponse::ServingStatus expected_serving_status) {
     HealthCheckRequest request;
     request.set_service(service_name);
@@ -154,9 +154,9 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   void VerifyHealthCheckService() {
     HealthCheckServiceInterface* service = server_->GetHealthCheckService();
     EXPECT_TRUE(service != nullptr);
-    const grpc::string kHealthyService("healthy_service");
-    const grpc::string kUnhealthyService("unhealthy_service");
-    const grpc::string kNotRegisteredService("not_registered");
+    const std::string kHealthyService("healthy_service");
+    const std::string kUnhealthyService("unhealthy_service");
+    const std::string kNotRegisteredService("not_registered");
     service->SetServingStatus(kHealthyService, true);
     service->SetServingStatus(kUnhealthyService, false);
 
@@ -181,7 +181,7 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   }
 
   void VerifyHealthCheckServiceStreaming() {
-    const grpc::string kServiceName("service_name");
+    const std::string kServiceName("service_name");
     HealthCheckServiceInterface* service = server_->GetHealthCheckService();
     // Start Watch for service.
     ClientContext context;
@@ -217,10 +217,10 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   void VerifyHealthCheckServiceShutdown() {
     HealthCheckServiceInterface* service = server_->GetHealthCheckService();
     EXPECT_TRUE(service != nullptr);
-    const grpc::string kHealthyService("healthy_service");
-    const grpc::string kUnhealthyService("unhealthy_service");
-    const grpc::string kNotRegisteredService("not_registered");
-    const grpc::string kNewService("add_after_shutdown");
+    const std::string kHealthyService("healthy_service");
+    const std::string kUnhealthyService("unhealthy_service");
+    const std::string kNotRegisteredService("not_registered");
+    const std::string kNewService("add_after_shutdown");
     service->SetServingStatus(kHealthyService, true);
     service->SetServingStatus(kUnhealthyService, false);
 
@@ -305,7 +305,7 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
   VerifyHealthCheckServiceStreaming();
 
   // The default service has a size limit of the service name.
-  const grpc::string kTooLongServiceName(201, 'x');
+  const std::string kTooLongServiceName(201, 'x');
   SendHealthCheckRpc(kTooLongServiceName,
                      Status(StatusCode::INVALID_ARGUMENT, ""));
 }

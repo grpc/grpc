@@ -34,9 +34,9 @@ const char* const kServerResponseStreamsToSend = "server_responses_to_send";
 const int kServerDefaultResponseStreamsToSend = 3;
 const char* const kDebugInfoTrailerKey = "debug-info-bin";
 
-grpc::string ToString(const grpc::string_ref& r);
+std::string ToString(const grpc::string_ref& r);
 void configureCronet(void);
-bool CheckIsLocalhost(const grpc::string& addr);
+bool CheckIsLocalhost(const std::string& addr);
 
 class DummyInterceptor : public grpc::experimental::Interceptor {
  public:

@@ -54,7 +54,7 @@ class ServerCredentials {
   ///
   /// \return bound port number on success, 0 on failure.
   // TODO(dgq): the "port" part seems to be a misnomer.
-  virtual int AddPortToServer(const grpc::string& addr,
+  virtual int AddPortToServer(const std::string& addr,
                               grpc_server* server) = 0;
 };
 

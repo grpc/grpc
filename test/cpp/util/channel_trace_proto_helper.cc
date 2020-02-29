@@ -49,7 +49,7 @@ void VaidateProtoJsonTranslation(const std::string& json_str) {
   grpc::protobuf::util::Status s =
       grpc::protobuf::json::JsonStringToMessage(json_str, &msg, parse_options);
   EXPECT_TRUE(s.ok());
-  grpc::string proto_json_str;
+  std::string proto_json_str;
   grpc::protobuf::json::JsonPrintOptions print_options;
   // We usually do not want this to be true, however it can be helpful to
   // uncomment and see the output produced then all fields are printed.

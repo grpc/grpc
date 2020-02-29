@@ -53,21 +53,21 @@ class CredentialsProvider {
   // Add a secure type in addition to the defaults. The default provider has
   // (kInsecureCredentialsType, kTlsCredentialsType).
   virtual void AddSecureType(
-      const grpc::string& type,
+      const std::string& type,
       std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
 
   // Provide channel credentials according to the given type. Alter the channel
   // arguments if needed. Return nullptr if type is not registered.
   virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) = 0;
+      const std::string& type, ChannelArguments* args) = 0;
 
   // Provide server credentials according to the given type.
   // Return nullptr if type is not registered.
   virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) = 0;
+      const std::string& type) = 0;
 
   // Provide a list of secure credentials type.
-  virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
+  virtual std::vector<std::string> GetSecureCredentialsTypeList() = 0;
 };
 
 // Get the current provider. Create a default one if not set.

@@ -32,15 +32,15 @@ namespace {
 
 testing::EchoTestService::Service g_service;
 
-grpc::string MakePort() {
+std::string MakePort() {
   std::ostringstream s;
   int p = grpc_pick_unused_port_or_die();
   s << "localhost:" << p;
   return s.str();
 }
 
-const grpc::string& GetPort() {
-  static grpc::string g_port = MakePort();
+const std::string& GetPort() {
+  static std::string g_port = MakePort();
   return g_port;
 }
 

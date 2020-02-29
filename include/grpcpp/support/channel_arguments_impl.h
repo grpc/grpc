@@ -63,7 +63,7 @@ class ChannelArguments {
   // gRPC specific channel argument setters
   /// Set target name override for SSL host name checking. This option should
   /// be used with caution in production.
-  void SetSslTargetNameOverride(const grpc::string& name);
+  void SetSslTargetNameOverride(const std::string& name);
   // TODO(yangg) add flow control options
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
@@ -84,7 +84,7 @@ class ChannelArguments {
   void SetSocketMutator(grpc_socket_mutator* mutator);
 
   /// Set the string to prepend to the user agent.
-  void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
+  void SetUserAgentPrefix(const std::string& user_agent_prefix);
 
   /// Set the buffer pool to be attached to the constructed channel.
   void SetResourceQuota(const grpc::ResourceQuota& resource_quota);
@@ -96,25 +96,25 @@ class ChannelArguments {
   /// Set LB policy name.
   /// Note that if the name resolver returns only balancer addresses, the
   /// grpclb LB policy will be used, regardless of what is specified here.
-  void SetLoadBalancingPolicyName(const grpc::string& lb_policy_name);
+  void SetLoadBalancingPolicyName(const std::string& lb_policy_name);
 
   /// Set service config in JSON form.
   /// Primarily meant for use in unit tests.
-  void SetServiceConfigJSON(const grpc::string& service_config_json);
+  void SetServiceConfigJSON(const std::string& service_config_json);
 
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
-  void SetInt(const grpc::string& key, int value);
+  void SetInt(const std::string& key, int value);
 
   // Generic channel argument setter. Only for advanced use cases.
   /// Set a pointer argument \a value under \a key. Owership is not transferred.
-  void SetPointer(const grpc::string& key, void* value);
+  void SetPointer(const std::string& key, void* value);
 
-  void SetPointerWithVtable(const grpc::string& key, void* value,
+  void SetPointerWithVtable(const std::string& key, void* value,
                             const grpc_arg_pointer_vtable* vtable);
 
   /// Set a textual argument \a value under \a key.
-  void SetString(const grpc::string& key, const grpc::string& value);
+  void SetString(const std::string& key, const std::string& value);
 
   /// Return (by value) a C \a grpc_channel_args structure which points to
   /// arguments owned by this \a ChannelArguments instance
@@ -141,10 +141,10 @@ class ChannelArguments {
   };
 
   // Returns empty string when it is not set.
-  grpc::string GetSslTargetNameOverride() const;
+  std::string GetSslTargetNameOverride() const;
 
   std::vector<grpc_arg> args_;
-  std::list<grpc::string> strings_;
+  std::list<std::string> strings_;
 };
 
 }  // namespace grpc_impl

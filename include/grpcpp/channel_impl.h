@@ -38,7 +38,7 @@ class ChannelTestPeer;
 }  // namespace testing
 
 std::shared_ptr<::grpc_impl::Channel> CreateChannelInternal(
-    const grpc::string& host, grpc_channel* c_channel,
+    const std::string& host, grpc_channel* c_channel,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
@@ -65,11 +65,11 @@ class Channel final : public ::grpc::ChannelInterface,
   grpc_connectivity_state GetState(bool try_to_connect) override;
 
   /// Returns the LB policy name, or the empty string if not yet available.
-  grpc::string GetLoadBalancingPolicyName() const;
+  std::string GetLoadBalancingPolicyName() const;
 
   /// Returns the service config in JSON form, or the empty string if
   /// not available.
-  grpc::string GetServiceConfigJSON() const;
+  std::string GetServiceConfigJSON() const;
 
  private:
   template <class InputMessage, class OutputMessage>
@@ -77,12 +77,12 @@ class Channel final : public ::grpc::ChannelInterface,
   friend class ::grpc::testing::ChannelTestPeer;
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
   friend std::shared_ptr<Channel> grpc::CreateChannelInternal(
-      const grpc::string& host, grpc_channel* c_channel,
+      const std::string& host, grpc_channel* c_channel,
       std::vector<std::unique_ptr<
           ::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
   friend class ::grpc::internal::InterceptedChannel;
-  Channel(const grpc::string& host, grpc_channel* c_channel,
+  Channel(const std::string& host, grpc_channel* c_channel,
           std::vector<std::unique_ptr<
               ::grpc::experimental::ClientInterceptorFactoryInterface>>
               interceptor_creators);
@@ -108,7 +108,7 @@ class Channel final : public ::grpc::ChannelInterface,
       ::grpc_impl::ClientContext* context, ::grpc_impl::CompletionQueue* cq,
       size_t interceptor_pos) override;
 
-  const grpc::string host_;
+  const std::string host_;
   grpc_channel* const c_channel_;  // owned
 
   // mu_ protects callback_cq_ (the per-channel callbackable completion queue)

@@ -81,8 +81,8 @@ class FakeClient {
     EchoResponse response;
 
     ClientContext context;
-    grpc::string msg("hello");
-    grpc::string exp(msg);
+    std::string msg("hello");
+    std::string exp(msg);
 
     std::unique_ptr<ClientWriterInterface<EchoRequest>> cstream =
         stub_->RequestStream(&context, &response);
@@ -111,7 +111,7 @@ class FakeClient {
     std::unique_ptr<ClientReaderInterface<EchoResponse>> cstream =
         stub_->ResponseStream(&context, request);
 
-    grpc::string exp = "";
+    std::string exp = "";
     EXPECT_TRUE(cstream->Read(&response));
     exp.append(response.message() + " ");
 
@@ -129,7 +129,7 @@ class FakeClient {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
-    grpc::string msg("hello");
+    std::string msg("hello");
 
     std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
         stream = stub_->BidiStream(&context);
@@ -256,7 +256,7 @@ class TestServiceImpl : public EchoTestService::Service {
                        ServerReader<EchoRequest>* reader,
                        EchoResponse* response) override {
     EchoRequest request;
-    grpc::string resp("");
+    std::string resp("");
     while (reader->Read(&request)) {
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       resp.append(request.message());
@@ -268,8 +268,8 @@ class TestServiceImpl : public EchoTestService::Service {
   Status ResponseStream(ServerContext* /*context*/, const EchoRequest* request,
                         ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
-    vector<grpc::string> tokens = split(request->message());
-    for (const grpc::string& token : tokens) {
+    vector<std::string> tokens = split(request->message());
+    for (const std::string& token : tokens) {
       response.set_message(token);
       writer->Write(response);
     }
@@ -290,9 +290,9 @@ class TestServiceImpl : public EchoTestService::Service {
   }
 
  private:
-  const vector<grpc::string> split(const grpc::string& input) {
-    grpc::string buff("");
-    vector<grpc::string> result;
+  const vector<std::string> split(const std::string& input) {
+    std::string buff("");
+    vector<std::string> result;
 
     for (auto n : input) {
       if (n != ' ') {

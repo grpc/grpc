@@ -93,11 +93,11 @@ enum class Protocol { INPROC, TCP };
 
 class TestScenario {
  public:
-  TestScenario(Protocol protocol, const grpc::string& creds_type)
+  TestScenario(Protocol protocol, const std::string& creds_type)
       : protocol(protocol), credentials_type(creds_type) {}
   void Log() const;
   Protocol protocol;
-  const grpc::string credentials_type;
+  const std::string credentials_type;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -174,15 +174,15 @@ class MessageAllocatorEnd2endTestBase
   }
 
   void SendRpcs(int num_rpcs) {
-    grpc::string test_string("");
+    std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest request;
       EchoResponse response;
       ClientContext cli_ctx;
 
-      test_string += grpc::string(1024, 'x');
+      test_string += std::string(1024, 'x');
       request.set_message(test_string);
-      grpc::string val;
+      std::string val;
       cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 
       std::mutex mu;
@@ -376,7 +376,7 @@ TEST_P(ArenaAllocatorTest, SimpleRpc) {
 
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   std::vector<TestScenario> scenarios;
-  std::vector<grpc::string> credentials_types{
+  std::vector<std::string> credentials_types{
       GetCredentialsProvider()->GetSecureCredentialsTypeList()};
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the

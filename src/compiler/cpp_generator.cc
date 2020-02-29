@@ -26,7 +26,7 @@ namespace grpc_cpp_generator {
 namespace {
 
 template <class T>
-grpc::string as_string(T x) {
+std::string as_string(T x) {
   std::ostringstream out;
   out << x;
   return out.str();
@@ -40,8 +40,8 @@ inline bool ServerOnlyStreaming(const grpc_generator::Method* method) {
   return !method->ClientStreaming() && method->ServerStreaming();
 }
 
-grpc::string FilenameIdentifier(const grpc::string& filename) {
-  grpc::string result;
+std::string FilenameIdentifier(const std::string& filename) {
+  std::string result;
   for (unsigned i = 0; i < filename.size(); i++) {
     char c = filename[i];
     if (isalnum(c)) {
@@ -63,9 +63,9 @@ T* array_end(T (&array)[N]) {
 }
 
 void PrintIncludes(grpc_generator::Printer* printer,
-                   const std::vector<grpc::string>& headers,
-                   bool use_system_headers, const grpc::string& search_path) {
-  std::map<grpc::string, grpc::string> vars;
+                   const std::vector<std::string>& headers,
+                   bool use_system_headers, const std::string& search_path) {
+  std::map<std::string, std::string> vars;
 
   vars["l"] = use_system_headers ? '<' : '"';
   vars["r"] = use_system_headers ? '>' : '"';
@@ -83,13 +83,13 @@ void PrintIncludes(grpc_generator::Printer* printer,
   }
 }
 
-grpc::string GetHeaderPrologue(grpc_generator::File* file,
+std::string GetHeaderPrologue(grpc_generator::File* file,
                                const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
 
     vars["filename"] = file->filename();
     vars["filename_identifier"] = FilenameIdentifier(file->filename());
@@ -102,7 +102,7 @@ grpc::string GetHeaderPrologue(grpc_generator::File* file,
     printer->Print(vars,
                    "// If you make any local change, they will be lost.\n");
     printer->Print(vars, "// source: $filename$\n");
-    grpc::string leading_comments = file->GetLeadingComments("//");
+    std::string leading_comments = file->GetLeadingComments("//");
     if (!leading_comments.empty()) {
       printer->Print(vars, "// Original file comments:\n");
       printer->PrintRaw(leading_comments.c_str());
@@ -118,19 +118,19 @@ grpc::string GetHeaderPrologue(grpc_generator::File* file,
 }
 
 // Convert from "a/b/c.proto" to "#include \"a/b/c$message_header_ext$\"\n"
-grpc::string ImportInludeFromProtoName(const grpc::string& proto_name) {
-  return grpc::string("#include \"") +
+std::string ImportInludeFromProtoName(const std::string& proto_name) {
+  return std::string("#include \"") +
          proto_name.substr(0, proto_name.size() - 6) +
-         grpc::string("$message_header_ext$\"\n");
+         std::string("$message_header_ext$\"\n");
 }
 
-grpc::string GetHeaderIncludes(grpc_generator::File* file,
+std::string GetHeaderIncludes(grpc_generator::File* file,
                                const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
 
     if (!params.additional_header_includes.empty()) {
       PrintIncludes(printer.get(), params.additional_header_includes, false,
@@ -160,7 +160,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/stub_options.h",
         "grpcpp/impl/codegen/sync_stream.h",
     };
-    std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
+    std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
     printer->Print(vars, "\n");
@@ -170,9 +170,9 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
                                      : params.message_header_extension;
 
     if (params.include_import_headers) {
-      const std::vector<grpc::string> import_names = file->GetImportNames();
+      const std::vector<std::string> import_names = file->GetImportNames();
       for (const auto& import_name : import_names) {
-        const grpc::string include_name =
+        const std::string include_name =
             ImportInludeFromProtoName(import_name);
         printer->Print(vars, include_name.c_str());
       }
@@ -180,7 +180,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
     }
 
     if (!file->package().empty()) {
-      std::vector<grpc::string> parts = file->package_parts();
+      std::vector<std::string> parts = file->package_parts();
 
       for (auto part = parts.begin(); part != parts.end(); part++) {
         vars["part"] = *part;
@@ -194,15 +194,15 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
 
 void PrintHeaderClientMethodInterfaces(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars, bool is_public) {
+    std::map<std::string, std::string>* vars, bool is_public) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
 
   struct {
-    grpc::string prefix;
-    grpc::string method_params;  // extra arguments to method
-    grpc::string raw_args;       // extra arguments to raw version of method
+    std::string prefix;
+    std::string method_params;  // extra arguments to method
+    std::string raw_args;       // extra arguments to raw version of method
   } async_prefixes[] = {{"Async", ", void* tag", ", tag"},
                         {"PrepareAsync", "", ""}};
 
@@ -392,15 +392,15 @@ void PrintHeaderClientMethodInterfaces(
 
 void PrintHeaderClientMethod(grpc_generator::Printer* printer,
                              const grpc_generator::Method* method,
-                             std::map<grpc::string, grpc::string>* vars,
+                             std::map<std::string, std::string>* vars,
                              bool is_public) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
   struct {
-    grpc::string prefix;
-    grpc::string method_params;  // extra arguments to method
-    grpc::string raw_args;       // extra arguments to raw version of method
+    std::string prefix;
+    std::string method_params;  // extra arguments to method
+    std::string raw_args;       // extra arguments to raw version of method
   } async_prefixes[] = {{"Async", ", void* tag", ", tag"},
                         {"PrepareAsync", "", ""}};
 
@@ -579,7 +579,7 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
 
 void PrintHeaderClientMethodCallbackInterfacesStart(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* /*vars*/) {
+    std::map<std::string, std::string>* /*vars*/) {
   // This declares the interface for the callback-based API. The components
   // are pure; even though this is new (post-1.0) API, it can be pure because
   // it is an entirely new interface that happens to be scoped within
@@ -594,7 +594,7 @@ void PrintHeaderClientMethodCallbackInterfacesStart(
 
 void PrintHeaderClientMethodCallbackInterfaces(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -672,7 +672,7 @@ void PrintHeaderClientMethodCallbackInterfaces(
 
 void PrintHeaderClientMethodCallbackInterfacesEnd(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* /*vars*/) {
+    std::map<std::string, std::string>* /*vars*/) {
   printer->Outdent();
   printer->Print("};\n");
   printer->Print(
@@ -696,7 +696,7 @@ void PrintHeaderClientMethodCallbackInterfacesEnd(
 
 void PrintHeaderClientMethodCallbackStart(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* /*vars*/) {
+    std::map<std::string, std::string>* /*vars*/) {
   // This declares the stub entry for the callback-based API.
   printer->Print("class experimental_async final :\n");
   printer->Print("  public StubInterface::experimental_async_interface {\n");
@@ -706,7 +706,7 @@ void PrintHeaderClientMethodCallbackStart(
 
 void PrintHeaderClientMethodCallback(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -785,7 +785,7 @@ void PrintHeaderClientMethodCallback(
 
 void PrintHeaderClientMethodCallbackEnd(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* /*vars*/) {
+    std::map<std::string, std::string>* /*vars*/) {
   printer->Outdent();
   printer->Print(" private:\n");
   printer->Indent();
@@ -805,7 +805,7 @@ void PrintHeaderClientMethodCallbackEnd(
 
 void PrintHeaderClientMethodData(grpc_generator::Printer* printer,
                                  const grpc_generator::Method* method,
-                                 std::map<grpc::string, grpc::string>* vars) {
+                                 std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   printer->Print(*vars,
                  "const ::grpc::internal::RpcMethod rpcmethod_$Method$_;\n");
@@ -813,7 +813,7 @@ void PrintHeaderClientMethodData(grpc_generator::Printer* printer,
 
 void PrintHeaderServerMethodSync(grpc_generator::Printer* printer,
                                  const grpc_generator::Method* method,
-                                 std::map<grpc::string, grpc::string>* vars) {
+                                 std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -850,7 +850,7 @@ void PrintHeaderServerMethodSync(grpc_generator::Printer* printer,
 // to generate async and raw async APIs.
 void PrintHeaderServerAsyncMethodsHelper(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   if (method->NoStreaming()) {
     printer->Print(
         *vars,
@@ -945,7 +945,7 @@ void PrintHeaderServerAsyncMethodsHelper(
 
 void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
                                   const grpc_generator::Method* method,
-                                  std::map<grpc::string, grpc::string>* vars) {
+                                  std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   // These will be disabled
   (*vars)["Request"] = method->input_type_name();
@@ -980,7 +980,7 @@ void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
 // to generate callback and raw callback APIs.
 void PrintHeaderServerCallbackMethodsHelper(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   if (method->NoStreaming()) {
     printer->Print(
         *vars,
@@ -1082,7 +1082,7 @@ void PrintHeaderServerCallbackMethodsHelper(
 
 void PrintHeaderServerMethodCallback(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   // These will be disabled
   (*vars)["Request"] = method->input_type_name();
@@ -1211,7 +1211,7 @@ void PrintHeaderServerMethodCallback(
 
 void PrintHeaderServerMethodRawCallback(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   // These will be disabled
   (*vars)["Request"] = method->input_type_name();
@@ -1325,7 +1325,7 @@ void PrintHeaderServerMethodRawCallback(
 
 void PrintHeaderServerMethodStreamedUnary(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -1376,7 +1376,7 @@ void PrintHeaderServerMethodStreamedUnary(
 
 void PrintHeaderServerMethodSplitStreaming(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -1429,7 +1429,7 @@ void PrintHeaderServerMethodSplitStreaming(
 
 void PrintHeaderServerMethodGeneric(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -1500,7 +1500,7 @@ void PrintHeaderServerMethodGeneric(
 
 void PrintHeaderServerMethodRaw(grpc_generator::Printer* printer,
                                 const grpc_generator::Method* method,
-                                std::map<grpc::string, grpc::string>* vars) {
+                                std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   // These will be disabled
   (*vars)["Request"] = method->input_type_name();
@@ -1531,7 +1531,7 @@ void PrintHeaderServerMethodRaw(grpc_generator::Printer* printer,
 
 void PrintHeaderService(grpc_generator::Printer* printer,
                         const grpc_generator::Service* service,
-                        std::map<grpc::string, grpc::string>* vars) {
+                        std::map<std::string, std::string>* vars) {
   (*vars)["Service"] = service->name();
 
   printer->Print(service->GetLeadingComments("//").c_str());
@@ -1764,13 +1764,13 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   printer->Print(service->GetTrailingComments("//").c_str());
 }
 
-grpc::string GetHeaderServices(grpc_generator::File* file,
+std::string GetHeaderServices(grpc_generator::File* file,
                                const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
     // Package string is empty or ends with a dot. It is used to fully qualify
     // method names.
     vars["Package"] = file->package();
@@ -1795,19 +1795,19 @@ grpc::string GetHeaderServices(grpc_generator::File* file,
   return output;
 }
 
-grpc::string GetHeaderEpilogue(grpc_generator::File* file,
+std::string GetHeaderEpilogue(grpc_generator::File* file,
                                const Parameters& /*params*/) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
 
     vars["filename"] = file->filename();
     vars["filename_identifier"] = FilenameIdentifier(file->filename());
 
     if (!file->package().empty()) {
-      std::vector<grpc::string> parts = file->package_parts();
+      std::vector<std::string> parts = file->package_parts();
 
       for (auto part = parts.rbegin(); part != parts.rend(); part++) {
         vars["part"] = *part;
@@ -1824,13 +1824,13 @@ grpc::string GetHeaderEpilogue(grpc_generator::File* file,
   return output;
 }
 
-grpc::string GetSourcePrologue(grpc_generator::File* file,
+std::string GetSourcePrologue(grpc_generator::File* file,
                                const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
 
     vars["filename"] = file->filename();
     vars["filename_base"] = file->filename_without_ext();
@@ -1851,13 +1851,13 @@ grpc::string GetSourcePrologue(grpc_generator::File* file,
   return output;
 }
 
-grpc::string GetSourceIncludes(grpc_generator::File* file,
+std::string GetSourceIncludes(grpc_generator::File* file,
                                const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
     static const char* headers_strs[] = {
         "functional",
         "grpcpp/impl/codegen/async_stream.h",
@@ -1873,12 +1873,12 @@ grpc::string GetSourceIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/server_context.h",
         "grpcpp/impl/codegen/service_type.h",
         "grpcpp/impl/codegen/sync_stream.h"};
-    std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
+    std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
 
     if (!file->package().empty()) {
-      std::vector<grpc::string> parts = file->package_parts();
+      std::vector<std::string> parts = file->package_parts();
 
       for (auto part = parts.begin(); part != parts.end(); part++) {
         vars["part"] = *part;
@@ -1893,15 +1893,15 @@ grpc::string GetSourceIncludes(grpc_generator::File* file,
 
 void PrintSourceClientMethod(grpc_generator::Printer* printer,
                              const grpc_generator::Method* method,
-                             std::map<grpc::string, grpc::string>* vars) {
+                             std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
   struct {
-    grpc::string prefix;
-    grpc::string start;          // bool literal expressed as string
-    grpc::string method_params;  // extra arguments to method
-    grpc::string create_args;    // extra arguments to creator
+    std::string prefix;
+    std::string start;          // bool literal expressed as string
+    std::string method_params;  // extra arguments to method
+    std::string create_args;    // extra arguments to creator
   } async_prefixes[] = {{"Async", "true", ", void* tag", ", tag"},
                         {"PrepareAsync", "false", "", ", nullptr"}};
   if (method->NoStreaming()) {
@@ -2117,7 +2117,7 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
 
 void PrintSourceServerMethod(grpc_generator::Printer* printer,
                              const grpc_generator::Method* method,
-                             std::map<grpc::string, grpc::string>* vars) {
+                             std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -2176,7 +2176,7 @@ void PrintSourceServerMethod(grpc_generator::Printer* printer,
 
 void PrintSourceService(grpc_generator::Printer* printer,
                         const grpc_generator::Service* service,
-                        std::map<grpc::string, grpc::string>* vars) {
+                        std::map<std::string, std::string>* vars) {
   (*vars)["Service"] = service->name();
 
   if (service->method_count() > 0) {
@@ -2292,13 +2292,13 @@ void PrintSourceService(grpc_generator::Printer* printer,
   }
 }
 
-grpc::string GetSourceServices(grpc_generator::File* file,
+std::string GetSourceServices(grpc_generator::File* file,
                                const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
     // Package string is empty or ends with a dot. It is used to fully qualify
     // method names.
     vars["Package"] = file->package();
@@ -2321,12 +2321,12 @@ grpc::string GetSourceServices(grpc_generator::File* file,
   return output;
 }
 
-grpc::string GetSourceEpilogue(grpc_generator::File* file,
+std::string GetSourceEpilogue(grpc_generator::File* file,
                                const Parameters& /*params*/) {
-  grpc::string temp;
+  std::string temp;
 
   if (!file->package().empty()) {
-    std::vector<grpc::string> parts = file->package_parts();
+    std::vector<std::string> parts = file->package_parts();
 
     for (auto part = parts.begin(); part != parts.end(); part++) {
       temp.append("}  // namespace ");
@@ -2340,13 +2340,13 @@ grpc::string GetSourceEpilogue(grpc_generator::File* file,
 }
 
 // TODO(mmukhi): Make sure we need parameters or not.
-grpc::string GetMockPrologue(grpc_generator::File* file,
+std::string GetMockPrologue(grpc_generator::File* file,
                              const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
 
     vars["filename"] = file->filename();
     vars["filename_base"] = file->filename_without_ext();
@@ -2363,9 +2363,9 @@ grpc::string GetMockPrologue(grpc_generator::File* file,
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
     if (params.include_import_headers) {
-      const std::vector<grpc::string> import_names = file->GetImportNames();
+      const std::vector<std::string> import_names = file->GetImportNames();
       for (const auto& import_name : import_names) {
-        const grpc::string include_name =
+        const std::string include_name =
             ImportInludeFromProtoName(import_name);
         printer->Print(vars, include_name.c_str());
       }
@@ -2378,23 +2378,23 @@ grpc::string GetMockPrologue(grpc_generator::File* file,
 }
 
 // TODO(mmukhi): Add client-stream and completion-queue headers.
-grpc::string GetMockIncludes(grpc_generator::File* file,
+std::string GetMockIncludes(grpc_generator::File* file,
                              const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
 
     static const char* headers_strs[] = {
         "grpcpp/impl/codegen/async_stream.h",
         "grpcpp/impl/codegen/sync_stream.h",
     };
-    std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
+    std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
 
-    std::vector<grpc::string> gmock_header;
+    std::vector<std::string> gmock_header;
     if (params.gmock_search_path.empty()) {
       gmock_header.push_back("gmock/gmock.h");
       PrintIncludes(printer.get(), gmock_header, params.use_system_headers,
@@ -2407,7 +2407,7 @@ grpc::string GetMockIncludes(grpc_generator::File* file,
     }
 
     if (!file->package().empty()) {
-      std::vector<grpc::string> parts = file->package_parts();
+      std::vector<std::string> parts = file->package_parts();
 
       for (auto part = parts.begin(); part != parts.end(); part++) {
         vars["part"] = *part;
@@ -2422,14 +2422,14 @@ grpc::string GetMockIncludes(grpc_generator::File* file,
 
 void PrintMockClientMethods(grpc_generator::Printer* printer,
                             const grpc_generator::Method* method,
-                            std::map<grpc::string, grpc::string>* vars) {
+                            std::map<std::string, std::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
 
   struct {
-    grpc::string prefix;
-    grpc::string method_params;  // extra arguments to method
+    std::string prefix;
+    std::string method_params;  // extra arguments to method
     int extra_method_param_count;
   } async_prefixes[] = {{"Async", ", void* tag", 1}, {"PrepareAsync", "", 0}};
 
@@ -2506,7 +2506,7 @@ void PrintMockClientMethods(grpc_generator::Printer* printer,
 
 void PrintMockService(grpc_generator::Printer* printer,
                       const grpc_generator::Service* service,
-                      std::map<grpc::string, grpc::string>* vars) {
+                      std::map<std::string, std::string>* vars) {
   (*vars)["Service"] = service->name();
 
   printer->Print(*vars,
@@ -2520,13 +2520,13 @@ void PrintMockService(grpc_generator::Printer* printer,
   printer->Print("};\n");
 }
 
-grpc::string GetMockServices(grpc_generator::File* file,
+std::string GetMockServices(grpc_generator::File* file,
                              const Parameters& params) {
-  grpc::string output;
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
-    std::map<grpc::string, grpc::string> vars;
+    std::map<std::string, std::string> vars;
     // Package string is empty or ends with a dot. It is used to fully qualify
     // method names.
     vars["Package"] = file->package();
@@ -2551,12 +2551,12 @@ grpc::string GetMockServices(grpc_generator::File* file,
   return output;
 }
 
-grpc::string GetMockEpilogue(grpc_generator::File* file,
+std::string GetMockEpilogue(grpc_generator::File* file,
                              const Parameters& /*params*/) {
-  grpc::string temp;
+  std::string temp;
 
   if (!file->package().empty()) {
-    std::vector<grpc::string> parts = file->package_parts();
+    std::vector<std::string> parts = file->package_parts();
 
     for (auto part = parts.begin(); part != parts.end(); part++) {
       temp.append("} // namespace ");

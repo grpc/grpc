@@ -111,7 +111,7 @@ class GenericEnd2endTest : public ::testing::Test {
   }
 
   void SendRpc(int num_rpcs, bool check_deadline, gpr_timespec deadline) {
-    const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+    const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest send_request;
       EchoRequest recv_request;
@@ -133,7 +133,7 @@ class GenericEnd2endTest : public ::testing::Test {
       // Rather than using the original kMethodName, make a short-lived
       // copy to also confirm that we don't refer to this object beyond
       // the initial call preparation
-      const grpc::string* method_name = new grpc::string(kMethodName);
+      const std::string* method_name = new std::string(kMethodName);
 
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
           generic_stub_->PrepareCall(&cli_ctx, *method_name, &cli_cq_);
@@ -245,7 +245,7 @@ class GenericEnd2endTest : public ::testing::Test {
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
   AsyncGenericService generic_service_;
-  const grpc::string server_host_;
+  const std::string server_host_;
   std::ostringstream server_address_;
   bool shutting_down_;
   bool shut_down_;
@@ -265,7 +265,7 @@ TEST_F(GenericEnd2endTest, SequentialRpcs) {
 TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
   ResetStub();
   const int num_rpcs = 10;
-  const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
   for (int i = 0; i < num_rpcs; i++) {
     EchoRequest send_request;
     EchoRequest recv_request;
@@ -324,7 +324,7 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
 TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   ResetStub();
 
-  const grpc::string kMethodName(
+  const std::string kMethodName(
       "/grpc.cpp.test.util.EchoTestService/BidiStream");
   EchoRequest send_request;
   EchoRequest recv_request;

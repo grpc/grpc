@@ -127,7 +127,7 @@ class ServerInterface : public internal::CallHook {
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  virtual bool RegisterService(const grpc::string* host, Service* service) = 0;
+  virtual bool RegisterService(const std::string* host, Service* service) = 0;
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
@@ -172,7 +172,7 @@ class ServerInterface : public internal::CallHook {
   /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
-  virtual int AddListeningPort(const grpc::string& addr,
+  virtual int AddListeningPort(const std::string& addr,
                                grpc_impl::ServerCredentials* creds) = 0;
 
   /// Start the server.

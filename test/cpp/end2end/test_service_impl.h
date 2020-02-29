@@ -78,8 +78,8 @@ class TestServiceSignaller {
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() : signal_client_(false), host_() {}
-  explicit TestServiceImpl(const grpc::string& host)
-      : signal_client_(false), host_(new grpc::string(host)) {}
+  explicit TestServiceImpl(const std::string& host)
+      : signal_client_(false), host_(new std::string(host)) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override;
@@ -112,15 +112,15 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   bool signal_client_;
   std::mutex mu_;
   TestServiceSignaller signaller_;
-  std::unique_ptr<grpc::string> host_;
+  std::unique_ptr<std::string> host_;
 };
 
 class CallbackTestServiceImpl
     : public ::grpc::testing::EchoTestService::ExperimentalCallbackService {
  public:
   CallbackTestServiceImpl() : signal_client_(false), host_() {}
-  explicit CallbackTestServiceImpl(const grpc::string& host)
-      : signal_client_(false), host_(new grpc::string(host)) {}
+  explicit CallbackTestServiceImpl(const std::string& host)
+      : signal_client_(false), host_(new std::string(host)) {}
 
   experimental::ServerUnaryReactor* Echo(
       experimental::CallbackServerContext* context, const EchoRequest* request,
@@ -153,7 +153,7 @@ class CallbackTestServiceImpl
   bool signal_client_;
   std::mutex mu_;
   TestServiceSignaller signaller_;
-  std::unique_ptr<grpc::string> host_;
+  std::unique_ptr<std::string> host_;
 };
 
 }  // namespace testing

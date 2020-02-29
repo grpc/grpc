@@ -30,7 +30,7 @@ typedef ::grpc_impl::load_reporter::experimental::
         LoadReportingServiceServerBuilderOption;
 
 static inline void AddLoadReportingCost(grpc::ServerContext* ctx,
-                                        const grpc::string& cost_name,
+                                        const std::string& cost_name,
                                         double cost_value) {
   ::grpc_impl::load_reporter::experimental::AddLoadReportingCost(ctx, cost_name,
                                                                  cost_value);

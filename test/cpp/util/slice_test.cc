@@ -37,13 +37,13 @@ class SliceTest : public ::testing::Test {
 
   static void TearDownTestCase() { grpc_shutdown(); }
 
-  void CheckSliceSize(const Slice& s, const grpc::string& content) {
+  void CheckSliceSize(const Slice& s, const std::string& content) {
     EXPECT_EQ(content.size(), s.size());
   }
-  void CheckSlice(const Slice& s, const grpc::string& content) {
+  void CheckSlice(const Slice& s, const std::string& content) {
     EXPECT_EQ(content.size(), s.size());
     EXPECT_EQ(content,
-              grpc::string(reinterpret_cast<const char*>(s.begin()), s.size()));
+              std::string(reinterpret_cast<const char*>(s.begin()), s.size()));
   }
 };
 

@@ -39,7 +39,7 @@ DefaultHealthCheckService::DefaultHealthCheckService() {
 }
 
 void DefaultHealthCheckService::SetServingStatus(
-    const grpc::string& service_name, bool serving) {
+    const std::string& service_name, bool serving) {
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_) {
     // Set to NOT_SERVING in case service_name is not in the map.
@@ -74,7 +74,7 @@ void DefaultHealthCheckService::Shutdown() {
 
 DefaultHealthCheckService::ServingStatus
 DefaultHealthCheckService::GetServingStatus(
-    const grpc::string& service_name) const {
+    const std::string& service_name) const {
   grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) {
@@ -85,7 +85,7 @@ DefaultHealthCheckService::GetServingStatus(
 }
 
 void DefaultHealthCheckService::RegisterCallHandler(
-    const grpc::string& service_name,
+    const std::string& service_name,
     std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
   grpc_core::MutexLock lock(&mu_);
   ServiceData& service_data = services_map_[service_name];
@@ -95,7 +95,7 @@ void DefaultHealthCheckService::RegisterCallHandler(
 }
 
 void DefaultHealthCheckService::UnregisterCallHandler(
-    const grpc::string& service_name,
+    const std::string& service_name,
     const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler) {
   grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
@@ -197,7 +197,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
 }
 
 bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
-    const ByteBuffer& request, grpc::string* service_name) {
+    const ByteBuffer& request, std::string* service_name) {
   std::vector<Slice> slices;
   if (!request.Dump(&slices).ok()) return false;
   uint8_t* request_bytes = nullptr;
@@ -298,7 +298,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
   // Process request.
   gpr_log(GPR_DEBUG, "[HCS %p] Health check started for handler %p", service_,
           this);
-  grpc::string service_name;
+  std::string service_name;
   grpc::Status status = Status::OK;
   ByteBuffer response;
   if (!service_->DecodeRequest(request_, &service_name)) {

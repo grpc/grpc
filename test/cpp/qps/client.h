@@ -503,7 +503,7 @@ class ClientImpl : public Client {
   class ClientChannelInfo {
    public:
     ClientChannelInfo(
-        const grpc::string& target, const ClientConfig& config,
+        const std::string& target, const ClientConfig& config,
         std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
             create_stub,
         int shard) {
@@ -511,7 +511,7 @@ class ClientImpl : public Client {
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       set_channel_args(config, &args);
 
-      grpc::string type;
+      std::string type;
       if (config.has_security_params() &&
           config.security_params().cred_type().empty()) {
         type = kTlsCredentialsType;
@@ -519,7 +519,7 @@ class ClientImpl : public Client {
         type = config.security_params().cred_type();
       }
 
-      grpc::string inproc_pfx(INPROC_NAME_PREFIX);
+      std::string inproc_pfx(INPROC_NAME_PREFIX);
       if (target.find(inproc_pfx) != 0) {
         channel_ = CreateTestChannel(
             target, type, config.security_params().server_host_override(),
@@ -528,7 +528,7 @@ class ClientImpl : public Client {
         gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
         is_inproc_ = false;
       } else {
-        grpc::string tgt = target;
+        std::string tgt = target;
         tgt.erase(0, inproc_pfx.length());
         int srv_num = std::stoi(tgt);
         channel_ = (*g_inproc_servers)[srv_num]->InProcessChannel(args);

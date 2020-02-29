@@ -256,20 +256,20 @@ class BackendServiceImpl : public BackendService {
   void Start() {}
   void Shutdown() {}
 
-  std::set<grpc::string> clients() {
+  std::set<std::string> clients() {
     grpc_core::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
-  void AddClient(const grpc::string& client) {
+  void AddClient(const std::string& client) {
     grpc_core::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
   grpc_core::Mutex mu_;
   grpc_core::Mutex clients_mu_;
-  std::set<grpc::string> clients_;
+  std::set<std::string> clients_;
 };
 
 class ClientStats {
@@ -335,16 +335,16 @@ class ClientStats {
     return sum;
   }
   uint64_t total_dropped_requests() const { return total_dropped_requests_; }
-  uint64_t dropped_requests(const grpc::string& category) const {
+  uint64_t dropped_requests(const std::string& category) const {
     auto iter = dropped_requests_.find(category);
     GPR_ASSERT(iter != dropped_requests_.end());
     return iter->second;
   }
 
  private:
-  std::map<grpc::string, LocalityStats> locality_stats_;
+  std::map<std::string, LocalityStats> locality_stats_;
   uint64_t total_dropped_requests_;
-  std::map<grpc::string, uint64_t> dropped_requests_;
+  std::map<std::string, uint64_t> dropped_requests_;
 };
 
 // TODO(roth): Change this service to a real fake.
@@ -359,7 +359,7 @@ class AdsServiceImpl : public AdsService {
 
   struct ResponseArgs {
     struct Locality {
-      Locality(const grpc::string& sub_zone, std::vector<int> ports,
+      Locality(const std::string& sub_zone, std::vector<int> ports,
                int lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority,
                std::vector<envoy::api::v2::HealthStatus> health_statuses = {})
@@ -369,7 +369,7 @@ class AdsServiceImpl : public AdsService {
             priority(priority),
             health_statuses(std::move(health_statuses)) {}
 
-      const grpc::string sub_zone;
+      const std::string sub_zone;
       std::vector<int> ports;
       int lb_weight;
       int priority;
@@ -381,7 +381,7 @@ class AdsServiceImpl : public AdsService {
         : locality_list(std::move(locality_list)) {}
 
     std::vector<Locality> locality_list;
-    std::map<grpc::string, uint32_t> drop_categories;
+    std::map<std::string, uint32_t> drop_categories;
     FractionalPercent::DenominatorType drop_denominator =
         FractionalPercent::MILLION;
   };
@@ -684,7 +684,7 @@ class AdsServiceImpl : public AdsService {
     if (!args.drop_categories.empty()) {
       auto* policy = assignment.mutable_policy();
       for (const auto& p : args.drop_categories) {
-        const grpc::string& name = p.first;
+        const std::string& name = p.first;
         const uint32_t parts_per_million = p.second;
         auto* drop_overload = policy->add_drop_overloads();
         drop_overload->set_category(name);
@@ -848,8 +848,8 @@ class TestType {
   bool use_xds_resolver() const { return use_xds_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
 
-  grpc::string AsString() const {
-    grpc::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
+  std::string AsString() const {
+    std::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
     if (enable_load_reporting_) retval += "WithLoadReporting";
     return retval;
   }
@@ -923,7 +923,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0, int failover_timeout = 0,
-                 const grpc::string& expected_targets = "",
+                 const std::string& expected_targets = "",
                  int xds_resource_does_not_exist_timeout = 0) {
     ChannelArguments args;
     // TODO(juanlishen): Add setter to ChannelArguments.
@@ -952,7 +952,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (!expected_targets.empty()) {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
     }
-    grpc::string scheme =
+    std::string scheme =
         GetParam().use_xds_resolver() ? "xds-experimental" : "fake";
     std::ostringstream uri;
     uri << scheme << ":///" << kApplicationTargetName_;
@@ -1155,7 +1155,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ServerThread() : port_(g_port_saver->GetPort()) {}
     virtual ~ServerThread(){};
 
-    void Start(const grpc::string& server_host) {
+    void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting %s server on port %d", Type(), port_);
       GPR_ASSERT(!running_);
       running_ = true;
@@ -1171,7 +1171,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       gpr_log(GPR_INFO, "%s server startup complete", Type());
     }
 
-    void Serve(const grpc::string& server_host, grpc_core::Mutex* mu,
+    void Serve(const std::string& server_host, grpc_core::Mutex* mu,
                grpc_core::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
@@ -1261,7 +1261,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     LrsServiceImpl lrs_service_;
   };
 
-  const grpc::string server_host_;
+  const std::string server_host_;
   const size_t num_backends_;
   const size_t num_balancers_;
   const int client_load_reporting_interval_seconds_;
@@ -1273,8 +1273,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
-  const grpc::string kRequestMessage_ = "Live long and prosper.";
-  const grpc::string kApplicationTargetName_ = "application_target_name";
+  const std::string kRequestMessage_ = "Live long and prosper.";
+  const std::string kApplicationTargetName_ = "application_target_name";
   const char* kDefaultServiceConfig_ =
       "{\n"
       "  \"loadBalancingConfig\":[\n"
@@ -1948,7 +1948,7 @@ TEST_P(LocalityMapTest, StressTest) {
   // contains backend 0.
   AdsServiceImpl::ResponseArgs args;
   for (size_t i = 0; i < kNumLocalities; ++i) {
-    grpc::string name = "locality" + std::to_string(i);
+    std::string name = "locality" + std::to_string(i);
     AdsServiceImpl::ResponseArgs::Locality locality(name,
                                                     {backends_[0]->port()});
     args.locality_list.emplace_back(std::move(locality));
@@ -3104,7 +3104,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
-grpc::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
+std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
 

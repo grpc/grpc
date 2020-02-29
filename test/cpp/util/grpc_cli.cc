@@ -65,8 +65,8 @@
 
 DEFINE_string(outfile, "", "Output file (default is stdout)");
 
-static bool SimplePrint(const grpc::string& outfile,
-                        const grpc::string& output) {
+static bool SimplePrint(const std::string& outfile,
+                        const std::string& output) {
   if (outfile.empty()) {
     std::cout << output << std::endl;
   } else {

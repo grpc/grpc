@@ -44,7 +44,7 @@ const uint8_t kMessage[] =
       CreateChannel("localhost:50051", grpc::InsecureChannelCredentials());
   generic_stub_.reset(new grpc::GenericStub(channel));
 
-  const grpc::string kMethodName("/helloworld.Greeter/SayHello");
+  const std::string kMethodName("/helloworld.Greeter/SayHello");
   void* got_tag;
   bool ok;
 

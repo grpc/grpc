@@ -97,7 +97,7 @@ class Server {
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
       const ServerConfig& config) {
     if (config.has_security_params()) {
-      grpc::string type;
+      std::string type;
       if (config.security_params().cred_type().empty()) {
         type = kTlsCredentialsType;
       } else {

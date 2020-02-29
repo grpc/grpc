@@ -29,7 +29,7 @@ struct Parameters {
   int minimum_node_version;
 };
 
-grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
+std::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
                           const Parameters& params);
 
 }  // namespace grpc_node_generator
