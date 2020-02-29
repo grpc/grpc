@@ -90,8 +90,7 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
     server_thread_.join();
   }
 
-  void ClientMakeEchoCalls(const std::string& lb_id,
-                           const std::string& lb_tag,
+  void ClientMakeEchoCalls(const std::string& lb_id, const std::string& lb_tag,
                            const std::string& message, size_t num_requests) {
     auto stub = EchoTestService::NewStub(
         grpc::CreateChannel(server_address_, InsecureChannelCredentials()));

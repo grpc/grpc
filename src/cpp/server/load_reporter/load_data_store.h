@@ -176,8 +176,7 @@ class LoadRecordValue {
   uint64_t bytes_sent() const { return bytes_sent_; }
   uint64_t bytes_recv() const { return bytes_recv_; }
   uint64_t latency_ms() const { return latency_ms_; }
-  const std::unordered_map<std::string, CallMetricValue>& call_metrics()
-      const {
+  const std::unordered_map<std::string, CallMetricValue>& call_metrics() const {
     return call_metrics_;
   }
 
@@ -286,8 +285,7 @@ class PerHostStore {
   // Value: the set of raw pointers to the PerBalancerStores assigned to the LB
   // ID. Note that the sets in assigned_stores_ form a division of the value set
   // of per_balancer_stores_.
-  std::unordered_map<std::string, std::set<PerBalancerStore*>>
-      assigned_stores_;
+  std::unordered_map<std::string, std::set<PerBalancerStore*>> assigned_stores_;
 };
 
 // Thread-unsafe two-level bookkeeper of all the load data.

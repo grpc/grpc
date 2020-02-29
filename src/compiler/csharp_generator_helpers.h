@@ -34,8 +34,7 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in front of leading comments.
 template <typename DescriptorType>
-inline std::string GetCsharpComments(const DescriptorType* desc,
-                                      bool leading) {
+inline std::string GetCsharpComments(const DescriptorType* desc, bool leading) {
   return grpc_generator::GetPrefixedComments(desc, leading, "//");
 }
 

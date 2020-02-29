@@ -1133,7 +1133,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   std::pair<std::string, std::string> meta6(
       "key4-bin",
       std::string("\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
-                   14));
+                  14));
   std::pair<std::string, std::string> meta5("key5", "val5");
   std::pair<std::string, std::string> meta4(
       "key6-bin",

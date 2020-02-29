@@ -111,7 +111,7 @@ std::string LoadRecordKey::GetClientIpBytes() const {
     }
     ip_bytes = grpc_htonl(ip_bytes);
     return std::string(reinterpret_cast<const char*>(&ip_bytes),
-                        sizeof(ip_bytes));
+                       sizeof(ip_bytes));
   } else if (client_ip_hex_.size() == kIpv6AddressLength) {
     uint32_t ip_bytes[4];
     for (size_t i = 0; i < 4; ++i) {
@@ -126,7 +126,7 @@ std::string LoadRecordKey::GetClientIpBytes() const {
       ip_bytes[i] = grpc_htonl(ip_bytes[i]);
     }
     return std::string(reinterpret_cast<const char*>(ip_bytes),
-                        sizeof(ip_bytes));
+                       sizeof(ip_bytes));
   } else {
     GPR_UNREACHABLE_CODE(return "");
   }

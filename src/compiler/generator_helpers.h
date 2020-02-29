@@ -59,7 +59,7 @@ inline std::string StripProto(std::string filename) {
 }
 
 inline std::string StringReplace(std::string str, const std::string& from,
-                                  const std::string& to, bool replace_all) {
+                                 const std::string& to, bool replace_all) {
   size_t pos = 0;
 
   do {
@@ -75,12 +75,12 @@ inline std::string StringReplace(std::string str, const std::string& from,
 }
 
 inline std::string StringReplace(std::string str, const std::string& from,
-                                  const std::string& to) {
+                                 const std::string& to) {
   return StringReplace(str, from, to, true);
 }
 
 inline std::vector<std::string> tokenize(const std::string& input,
-                                          const std::string& delimiters) {
+                                         const std::string& delimiters) {
   std::vector<std::string> tokens;
   size_t pos, last_pos = 0;
 
@@ -191,8 +191,8 @@ inline void GetComment(const DescriptorType* desc, CommentType type,
   }
   if (type == COMMENTTYPE_LEADING || type == COMMENTTYPE_TRAILING) {
     const std::string& comments = type == COMMENTTYPE_LEADING
-                                       ? location.leading_comments
-                                       : location.trailing_comments;
+                                      ? location.leading_comments
+                                      : location.trailing_comments;
     Split(comments, '\n', out);
   } else if (type == COMMENTTYPE_LEADING_DETACHED) {
     for (unsigned int i = 0; i < location.leading_detached_comments.size();
@@ -254,9 +254,8 @@ inline std::string GenerateCommentsWithPrefix(
 }
 
 template <typename DescriptorType>
-inline std::string GetPrefixedComments(const DescriptorType* desc,
-                                        bool leading,
-                                        const std::string& prefix) {
+inline std::string GetPrefixedComments(const DescriptorType* desc, bool leading,
+                                       const std::string& prefix) {
   std::vector<std::string> out;
   if (leading) {
     grpc_generator::GetComment(

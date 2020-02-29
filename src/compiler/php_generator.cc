@@ -54,7 +54,7 @@ std::string PackageName(const FileDescriptor* file) {
 }
 
 std::string MessageIdentifierName(const std::string& name,
-                                   const FileDescriptor* file) {
+                                  const FileDescriptor* file) {
   std::vector<std::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   if (PackageName(file) != "") {
@@ -155,8 +155,8 @@ void PrintService(const ServiceDescriptor* service,
 }  // namespace
 
 std::string GenerateFile(const FileDescriptor* file,
-                          const ServiceDescriptor* service,
-                          const std::string& class_suffix) {
+                         const ServiceDescriptor* service,
+                         const std::string& class_suffix) {
   std::string output;
   {
     StringOutputStream output_stream(&output);

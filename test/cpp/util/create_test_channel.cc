@@ -154,8 +154,7 @@ std::shared_ptr<Channel> CreateTestChannel(
     }
     GPR_ASSERT(channel_creds != nullptr);
 
-    const std::string& connect_to =
-        server.empty() ? override_hostname : server;
+    const std::string& connect_to = server.empty() ? override_hostname : server;
     if (creds.get()) {
       channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
     }

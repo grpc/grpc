@@ -47,7 +47,7 @@ void ParseJson(const std::string& json, const std::string& type,
 }
 
 std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
-                           const std::string& type) {
+                          const std::string& type) {
   std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver(
       google::protobuf::util::NewTypeResolverForDescriptorPool(
           "type.googleapis.com",

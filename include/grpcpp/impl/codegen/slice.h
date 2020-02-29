@@ -125,7 +125,7 @@ inline grpc::string_ref StringRefFromSlice(const grpc_slice* slice) {
 
 inline std::string StringFromCopiedSlice(grpc_slice slice) {
   return std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
-                      GRPC_SLICE_LENGTH(slice));
+                     GRPC_SLICE_LENGTH(slice));
 }
 
 inline grpc_slice SliceReferencingString(const std::string& str) {

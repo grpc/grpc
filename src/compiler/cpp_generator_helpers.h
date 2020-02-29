@@ -35,7 +35,7 @@ inline std::string DotsToUnderscores(const std::string& name) {
 }
 
 inline std::string ClassName(const grpc::protobuf::Descriptor* descriptor,
-                              bool qualified) {
+                             bool qualified) {
   // Find "outer", the descriptor of the top-level message in which
   // "descriptor" is embedded.
   const grpc::protobuf::Descriptor* outer = descriptor;

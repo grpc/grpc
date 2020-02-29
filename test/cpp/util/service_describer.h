@@ -26,7 +26,7 @@ namespace grpc {
 namespace testing {
 
 std::string DescribeServiceList(std::vector<std::string> service_list,
-                                 grpc::protobuf::DescriptorPool& desc_pool);
+                                grpc::protobuf::DescriptorPool& desc_pool);
 
 std::string DescribeService(const grpc::protobuf::ServiceDescriptor* service);
 

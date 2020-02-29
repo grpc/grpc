@@ -72,8 +72,8 @@ inline grpc_slice SliceFromArray(const char* arr, size_t len) {
 }
 
 std::string GetChannelInfoField(grpc_channel* channel,
-                                 grpc_channel_info* channel_info,
-                                 char*** channel_info_field) {
+                                grpc_channel_info* channel_info,
+                                char*** channel_info_field) {
   char* value = nullptr;
   memset(channel_info, 0, sizeof(*channel_info));
   *channel_info_field = &value;

@@ -38,9 +38,9 @@ using ::std::set;
 namespace grpc_objective_c_generator {
 namespace {
 
-void PrintProtoRpcDeclarationAsPragma(
-    Printer* printer, const MethodDescriptor* method,
-    map< ::std::string, ::std::string> vars) {
+void PrintProtoRpcDeclarationAsPragma(Printer* printer,
+                                      const MethodDescriptor* method,
+                                      map< ::std::string, ::std::string> vars) {
   vars["client_stream"] = method->client_streaming() ? "stream " : "";
   vars["server_stream"] = method->server_streaming() ? "stream " : "";
 
@@ -279,7 +279,7 @@ void PrintMethodImplementations(Printer* printer,
 }
 
 ::std::string GetProtocol(const ServiceDescriptor* service,
-                           const Parameters& generator_params) {
+                          const Parameters& generator_params) {
   ::std::string output;
 
   if (generator_params.no_v1_compatibility) return output;
@@ -327,7 +327,7 @@ void PrintMethodImplementations(Printer* printer,
 }
 
 ::std::string GetInterface(const ServiceDescriptor* service,
-                            const Parameters& generator_params) {
+                           const Parameters& generator_params) {
   ::std::string output;
 
   // Scope the output stream so it closes and finalizes output to the string.
@@ -370,7 +370,7 @@ void PrintMethodImplementations(Printer* printer,
 }
 
 ::std::string GetSource(const ServiceDescriptor* service,
-                         const Parameters& generator_params) {
+                        const Parameters& generator_params) {
   ::std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.

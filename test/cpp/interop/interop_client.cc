@@ -129,9 +129,8 @@ bool InteropClient::AssertStatusOk(const Status& s,
   return AssertStatusCode(s, StatusCode::OK, optional_debug_string);
 }
 
-bool InteropClient::AssertStatusCode(
-    const Status& s, StatusCode expected_code,
-    const std::string& optional_debug_string) {
+bool InteropClient::AssertStatusCode(const Status& s, StatusCode expected_code,
+                                     const std::string& optional_debug_string) {
   if (s.error_code() == expected_code) {
     return true;
   }

@@ -41,8 +41,7 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
 
   void Finish(grpc::ServerInitializer* /*si*/) override {}
 
-  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {
-  }
+  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {}
 
   bool has_sync_methods() const override {
     if (channelz_service_) {

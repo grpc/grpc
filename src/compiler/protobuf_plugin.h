@@ -30,7 +30,7 @@
 // Get leading or trailing comments in a string.
 template <typename DescriptorType>
 inline std::string GetCommentsHelper(const DescriptorType* desc, bool leading,
-                                      const std::string& prefix) {
+                                     const std::string& prefix) {
   return grpc_generator::GetPrefixedComments(desc, leading, prefix);
 }
 

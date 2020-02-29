@@ -234,8 +234,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
   DefaultHealthCheckService();
 
-  void SetServingStatus(const std::string& service_name,
-                        bool serving) override;
+  void SetServingStatus(const std::string& service_name, bool serving) override;
   void SetServingStatus(bool serving) override;
 
   void Shutdown() override;
@@ -275,7 +274,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
 
   mutable grpc_core::Mutex mu_;
-  bool shutdown_ = false;                             // Guarded by mu_.
+  bool shutdown_ = false;                            // Guarded by mu_.
   std::map<std::string, ServiceData> services_map_;  // Guarded by mu_.
   std::unique_ptr<HealthCheckServiceImpl> impl_;
 };

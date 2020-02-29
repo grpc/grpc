@@ -203,8 +203,8 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
-    const std::string& addr_uri,
-    std::shared_ptr<grpc::ServerCredentials> creds, int* selected_port) {
+    const std::string& addr_uri, std::shared_ptr<grpc::ServerCredentials> creds,
+    int* selected_port) {
   const std::string uri_scheme = "dns:";
   std::string addr = addr_uri;
   if (addr_uri.compare(0, uri_scheme.size(), uri_scheme) == 0) {

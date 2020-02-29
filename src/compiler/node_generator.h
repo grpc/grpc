@@ -30,7 +30,7 @@ struct Parameters {
 };
 
 std::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
-                          const Parameters& params);
+                         const Parameters& params);
 
 }  // namespace grpc_node_generator
 

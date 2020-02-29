@@ -62,7 +62,7 @@ std::string GetJSMessageFilename(const std::string& filename) {
 // Given a filename like foo/bar/baz.proto, returns the root directory
 // path ../../
 std::string GetRootPath(const std::string& from_filename,
-                         const std::string& to_filename) {
+                        const std::string& to_filename) {
   if (to_filename.find("google/protobuf") == 0) {
     // Well-known types (.proto files in the google/protobuf directory) are
     // assumed to come from the 'google-protobuf' npm package.  We may want to
@@ -84,14 +84,13 @@ std::string GetRootPath(const std::string& from_filename,
 // Return the relative path to load to_file from the directory containing
 // from_file, assuming that both paths are relative to the same directory
 std::string GetRelativePath(const std::string& from_file,
-                             const std::string& to_file) {
+                            const std::string& to_file) {
   return GetRootPath(from_file, to_file) + to_file;
 }
 
 /* Finds all message types used in all services in the file, and returns them
  * as a map of fully qualified message type name to message descriptor */
-map<std::string, const Descriptor*> GetAllMessages(
-    const FileDescriptor* file) {
+map<std::string, const Descriptor*> GetAllMessages(const FileDescriptor* file) {
   map<std::string, const Descriptor*> message_types;
   for (int service_num = 0; service_num < file->service_count();
        service_num++) {
@@ -229,8 +228,7 @@ void PrintImports(const FileDescriptor* file, Printer* out) {
 void PrintTransformers(const FileDescriptor* file, Printer* out,
                        const Parameters& params) {
   map<std::string, const Descriptor*> messages = GetAllMessages(file);
-  for (std::map<std::string, const Descriptor*>::iterator it =
-           messages.begin();
+  for (std::map<std::string, const Descriptor*>::iterator it = messages.begin();
        it != messages.end(); it++) {
     PrintMessageTransformer(it->second, out, params);
   }
@@ -244,8 +242,7 @@ void PrintServices(const FileDescriptor* file, Printer* out) {
 }
 }  // namespace
 
-std::string GenerateFile(const FileDescriptor* file,
-                          const Parameters& params) {
+std::string GenerateFile(const FileDescriptor* file, const Parameters& params) {
   std::string output;
   {
     StringOutputStream output_stream(&output);

@@ -55,8 +55,8 @@ class MetadataMap {
                     kBinaryErrorDetailsKey,
                     GRPC_SLICE_LENGTH(arr_.metadata[i].key)) == 0) {
           return std::string(reinterpret_cast<const char*>(
-                                  GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
-                              GRPC_SLICE_LENGTH(arr_.metadata[i].value));
+                                 GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
+                             GRPC_SLICE_LENGTH(arr_.metadata[i].value));
         }
       }
     }

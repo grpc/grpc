@@ -220,8 +220,7 @@ class ClientContext {
   /// ASCII-Header -> Header-Name ASCII-Value
   /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
   /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  void AddMetadata(const std::string& meta_key,
-                   const std::string& meta_value);
+  void AddMetadata(const std::string& meta_key, const std::string& meta_value);
 
   /// Return a collection of initial metadata key-value pairs. Note that keys
   /// may happen more than once (ie, a \a std::multimap is returned).

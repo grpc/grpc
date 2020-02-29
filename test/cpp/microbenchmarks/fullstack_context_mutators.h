@@ -60,9 +60,7 @@ class RandomBinaryMetadata {
  public:
   static const std::string& Key() { return kKey; }
 
-  static const std::string& Value() {
-    return kValues[rand() % kValues.size()];
-  }
+  static const std::string& Value() { return kValues[rand() % kValues.size()]; }
 
  private:
   static const std::string kKey;
@@ -83,9 +81,7 @@ class RandomAsciiMetadata {
  public:
   static const std::string& Key() { return kKey; }
 
-  static const std::string& Value() {
-    return kValues[rand() % kValues.size()];
-  }
+  static const std::string& Value() { return kValues[rand() % kValues.size()]; }
 
  private:
   static const std::string kKey;

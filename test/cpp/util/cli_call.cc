@@ -144,8 +144,7 @@ void CliCall::WritesDoneAndWait() {
 }
 
 bool CliCall::ReadAndMaybeNotifyWrite(
-    std::string* response,
-    IncomingMetadataContainer* server_initial_metadata) {
+    std::string* response, IncomingMetadataContainer* server_initial_metadata) {
   void* got_tag;
   bool ok;
   grpc::ByteBuffer recv_buffer;

@@ -32,7 +32,7 @@ namespace grpc_ruby_generator {
 
 // Split splits a string using char into elems.
 inline std::vector<std::string>& Split(const std::string& s, char delim,
-                                        std::vector<std::string>* elems) {
+                                       std::vector<std::string>* elems) {
   std::stringstream ss(s);
   std::string item;
   while (getline(ss, item, delim)) {
@@ -50,7 +50,7 @@ inline std::vector<std::string> Split(const std::string& s, char delim) {
 
 // Replace replaces from with to in s.
 inline std::string Replace(std::string s, const std::string& from,
-                            const std::string& to) {
+                           const std::string& to) {
   size_t start_pos = s.find(from);
   if (start_pos == std::string::npos) {
     return s;
@@ -61,7 +61,7 @@ inline std::string Replace(std::string s, const std::string& from,
 
 // ReplaceAll replaces all instances of search with replace in s.
 inline std::string ReplaceAll(std::string s, const std::string& search,
-                               const std::string& replace) {
+                              const std::string& replace) {
   size_t pos = 0;
   while ((pos = s.find(search, pos)) != std::string::npos) {
     s.replace(pos, search.length(), replace);
@@ -117,7 +117,7 @@ inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
 inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor,
-                               const std::string& package) {
+                              const std::string& package) {
   std::string proto_type = descriptor->full_name();
   if (descriptor->file()->options().has_ruby_package()) {
     proto_type = RubyPackage(descriptor->file()) + "." + descriptor->name();

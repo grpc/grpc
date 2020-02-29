@@ -93,9 +93,9 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
               std::string("Format: generate_for_named_framework=<Framework>");
           return false;
         } else if (param[1].empty()) {
-          *error = std::string(
-                       "Name of framework cannot be empty for parameter: ") +
-                   param[0];
+          *error =
+              std::string("Name of framework cannot be empty for parameter: ") +
+              param[0];
           return false;
         }
         framework = param[1];

@@ -43,14 +43,12 @@ class SecureCallCredentials;
 class SecureChannelCredentials;
 
 std::shared_ptr<Channel> CreateCustomChannelImpl(
-    const std::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds,
+    const std::string& target, const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args);
 
 namespace experimental {
 std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
-    const std::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds,
+    const std::string& target, const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args,
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>

@@ -164,8 +164,7 @@ std::string ProtoFileParser::GetFullMethodName(const std::string& method) {
   return method_descriptor->full_name();
 }
 
-std::string ProtoFileParser::GetFormattedMethodName(
-    const std::string& method) {
+std::string ProtoFileParser::GetFormattedMethodName(const std::string& method) {
   has_error_ = false;
   std::string formatted_method_name = GetFullMethodName(method);
   if (has_error_) {
@@ -179,8 +178,8 @@ std::string ProtoFileParser::GetFormattedMethodName(
   return formatted_method_name;
 }
 
-std::string ProtoFileParser::GetMessageTypeFromMethod(
-    const std::string& method, bool is_request) {
+std::string ProtoFileParser::GetMessageTypeFromMethod(const std::string& method,
+                                                      bool is_request) {
   has_error_ = false;
   std::string full_method_name = GetFullMethodName(method);
   if (has_error_) {

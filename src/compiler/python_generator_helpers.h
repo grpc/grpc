@@ -65,8 +65,8 @@ static std::string StripModulePrefixes(
 // Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
 std::string ModuleName(const std::string& filename,
-                        const std::string& import_prefix,
-                        const std::vector<std::string>& prefixes_to_filter) {
+                       const std::string& import_prefix,
+                       const std::vector<std::string>& prefixes_to_filter) {
   std::string basename = StripProto(filename);
   basename = StringReplace(basename, "-", "_");
   basename = StringReplace(basename, "/", ".");
@@ -78,8 +78,8 @@ std::string ModuleName(const std::string& filename,
 // Export `ModuleAlias` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
 std::string ModuleAlias(const std::string& filename,
-                         const std::string& import_prefix,
-                         const std::vector<std::string>& prefixes_to_filter) {
+                        const std::string& import_prefix,
+                        const std::vector<std::string>& prefixes_to_filter) {
   std::string module_name =
       ModuleName(filename, import_prefix, prefixes_to_filter);
   // We can't have dots in the module name, so we replace each with _dot_.

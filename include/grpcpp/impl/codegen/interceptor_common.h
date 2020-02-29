@@ -115,8 +115,7 @@ class InterceptorBatchMethodsImpl
     *error_message_ = status.error_message();
   }
 
-  std::multimap<std::string, std::string>* GetSendTrailingMetadata()
-      override {
+  std::multimap<std::string, std::string>* GetSendTrailingMetadata() override {
     return send_trailing_metadata_;
   }
 
@@ -493,8 +492,7 @@ class CancelInterceptorBatchMethods
     return;
   }
 
-  std::multimap<std::string, std::string>* GetSendTrailingMetadata()
-      override {
+  std::multimap<std::string, std::string>* GetSendTrailingMetadata() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetSendTrailingMetadata on a "
                        "method which has a Cancel notification");

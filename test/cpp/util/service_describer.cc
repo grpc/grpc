@@ -27,7 +27,7 @@ namespace grpc {
 namespace testing {
 
 std::string DescribeServiceList(std::vector<std::string> service_list,
-                                 grpc::protobuf::DescriptorPool& desc_pool) {
+                                grpc::protobuf::DescriptorPool& desc_pool) {
   std::stringstream result;
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     auto const& service = *it;
@@ -74,8 +74,7 @@ std::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method) {
   return result.str();
 }
 
-std::string SummarizeService(
-    const grpc::protobuf::ServiceDescriptor* service) {
+std::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service) {
   std::string result;
   for (int i = 0; i < service->method_count(); ++i) {
     result.append(SummarizeMethod(service->method(i)));

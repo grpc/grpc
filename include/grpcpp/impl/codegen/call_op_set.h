@@ -775,7 +775,7 @@ class CallOpClientRecvStatus {
                  GRPC_SLICE_IS_EMPTY(error_message_)
                      ? std::string()
                      : std::string(GRPC_SLICE_START_PTR(error_message_),
-                                    GRPC_SLICE_END_PTR(error_message_)),
+                                   GRPC_SLICE_END_PTR(error_message_)),
                  metadata_map_->GetBinaryErrorDetails());
       if (debug_error_string_ != nullptr) {
         client_context_->set_debug_error_string(debug_error_string_);
