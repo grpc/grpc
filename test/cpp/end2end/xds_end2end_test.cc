@@ -352,13 +352,8 @@ class ClientStats {
 };
 
 // TODO(roth): Change this service to a real fake.
-class AdsServiceImpl : public AggregatedDiscoveryService::Service,
-                       public std::enable_shared_from_this<AdsServiceImpl> {
+class AdsServiceImpl : public AggregatedDiscoveryService::Service {
  public:
-  std::shared_ptr<AdsServiceImpl> getptr() {
-    return shared_from_this();
-  }
-
   enum ResponseState {
     NOT_SENT,
     SENT,
@@ -463,6 +458,9 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     while (stream->Read(&request)) {
       if (!seen_first_request) {
         EXPECT_TRUE(request.has_node());
+        ASSERT_FALSE(request.node().client_features().empty());
+        EXPECT_EQ(request.node().client_features(0),
+                  "envoy.lb.does_not_support_overprovisioning");
         seen_first_request = true;
       }
       {
@@ -609,16 +607,10 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
     gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
-    // Take a reference of the AdsServiceImpl object.
-    std::shared_ptr<AdsServiceImpl> ads_service_impl = shared_from_this();
-    gpr_log(GPR_INFO, "AdsServiceImpl use_count %ld", ads_service_impl.use_count());
     [&]() {
       {
         grpc_core::MutexLock lock(&ads_mu_);
-        if (ads_done_) {
-          gpr_log(GPR_INFO, "AdsServiceImpl notified done early");
-          return;
-        }
+        if (ads_done_) return;
       }
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
@@ -764,17 +756,13 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         // iteration; otherwise, check whether we should exit and then
         // immediately continue.
         gpr_timespec deadline =
-            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 1);
+            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
         {
           grpc_core::MutexLock lock(&ads_mu_);
           if (!ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; },
                                    deadline))
             break;
         }
-      }
-      {
-        grpc_core::MutexLock lock(&ads_mu_);
-        gpr_log(GPR_INFO, "check on stream_closed %d", stream_closed);
       }
       reader.join();
     }();
@@ -958,8 +946,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   ResourcesMap resources_map_;
 };
 
-class LrsServiceImpl : public LrsService, 
-                       public std::enable_shared_from_this<LrsServiceImpl> {
+class LrsServiceImpl : public LrsService {
  public:
   using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
@@ -969,7 +956,6 @@ class LrsServiceImpl : public LrsService,
 
   Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
     gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
-    std::shared_ptr<LrsServiceImpl> lrs_service_impl = shared_from_this();
     // Read request.
     LoadStatsRequest request;
     if (stream->Read(&request)) {
@@ -1023,8 +1009,8 @@ class LrsServiceImpl : public LrsService,
     {
       grpc_core::MutexLock lock(&lrs_mu_);
       NotifyDoneWithLrsCallLocked();
-      gpr_log(GPR_INFO, "LRS[%p]: shut down", this);
     }
+    gpr_log(GPR_INFO, "LRS[%p]: shut down", this);
   }
 
   ClientStats* WaitForLoadReport() {
@@ -1375,10 +1361,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                const ClusterLoadAssignment& assignment,
                                int delay_ms, const std::string& name) {
     GPR_ASSERT(delay_ms > 0);
-    gpr_log(GPR_INFO, "Donna read for delay");
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
     balancers_[i]->ads_service()->SetEdsResource(assignment, name);
-    gpr_log(GPR_INFO, "Donna set delayed response");
   }
 
  protected:
@@ -1465,32 +1449,32 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   class BalancerServerThread : public ServerThread {
    public:
     explicit BalancerServerThread(int client_load_reporting_interval = 0)
-        : ads_service_(std::shared_ptr<AdsServiceImpl>(new AdsServiceImpl(client_load_reporting_interval > 0))),
-          lrs_service_(std::shared_ptr<LrsServiceImpl>(new LrsServiceImpl(client_load_reporting_interval))) {}
+        : ads_service_(client_load_reporting_interval > 0),
+          lrs_service_(client_load_reporting_interval) {}
 
-    AdsServiceImpl* ads_service() { return ads_service_.get(); }
-    LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
+    AdsServiceImpl* ads_service() { return &ads_service_; }
+    LrsServiceImpl* lrs_service() { return &lrs_service_; }
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(ads_service_.get());
-      builder->RegisterService(lrs_service_.get());
+      builder->RegisterService(&ads_service_);
+      builder->RegisterService(&lrs_service_);
     }
 
     void StartAllServices() override {
-      ads_service_->Start();
-      lrs_service_->Start();
+      ads_service_.Start();
+      lrs_service_.Start();
     }
 
     void ShutdownAllServices() override {
-      ads_service_->Shutdown();
-      lrs_service_->Shutdown();
+      ads_service_.Shutdown();
+      lrs_service_.Shutdown();
     }
 
     const char* Type() override { return "Balancer"; }
 
-    std::shared_ptr<AdsServiceImpl> ads_service_;
-    std::shared_ptr<LrsServiceImpl> lrs_service_;
+    AdsServiceImpl ads_service_;
+    LrsServiceImpl lrs_service_;
   };
 
   const grpc::string server_host_;
@@ -2296,7 +2280,6 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   WaitForBackend(3, false);
-  gpr_log(GPR_INFO, "========= DONE WITH BACKEND 3 ==========");
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -2376,11 +2359,9 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                        gpr_time_from_millis(500, GPR_TIMESPAN));
   // Send 0.5 second worth of RPCs.
-  gpr_log(GPR_INFO, "befor sending .5 sec of RPC");
   do {
     CheckRpcSendFailure();
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
-  gpr_log(GPR_INFO, "after sending .5 sec of RPC");
   WaitForBackend(2, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 2) continue;
@@ -2458,8 +2439,6 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // The ADS service of balancer 0 got at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   delayed_resource_setter.join();
 }
 
@@ -2969,8 +2948,6 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // The ADS service of balancer 0 sent at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -2991,8 +2968,6 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // The ADS service of balancer 0 sent at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3028,8 +3003,6 @@ TEST_P(BalancerUpdateTest, Repeated) {
   // The ADS service of balancer 0 sent at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3094,8 +3067,6 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   // The ADS service of balancer 0 sent at least 1 response.
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
@@ -3138,8 +3109,6 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
             AdsServiceImpl::NOT_SENT);
   EXPECT_GT(balancers_[1]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
-  EXPECT_LT(balancers_[1]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
             AdsServiceImpl::NOT_SENT);
 }
