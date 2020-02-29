@@ -53,13 +53,20 @@ argp.add_argument(
     default='',
     help='Optional suffix for all generated GCP resource names. Useful to '
     'ensure distinct names across test runs.')
-argp.add_argument('--test_case',
-                  default=None,
-                  choices=[
-                      'all',
-                      'ping_pong',
-                      'round_robin',
-                  ])
+argp.add_argument(
+    '--test_case',
+    default=None,
+    choices=[
+        'all',
+        'backends_restart',
+        'change_backend_service',
+        'new_instance_group_receives_traffic',
+        'ping_pong',
+        'remove_instance_group',
+        'round_robin',
+        'secondary_locality_gets_requests_on_primary_failure',
+        'secondary_locality_gets_no_requests_on_partial_primary_failure',
+    ])
 argp.add_argument(
     '--client_cmd',
     default=None,
@@ -202,6 +209,78 @@ def wait_until_only_given_instances_receive_load(backends,
     raise Exception(error_msg)
 
 
+def test_backends_restart(gcp, backend_service, instance_group):
+    instance_names = get_instance_names(gcp, instance_group)
+    num_instances = len(instance_names)
+    start_time = time.time()
+    wait_until_only_given_instances_receive_load(instance_names,
+                                                 _WAIT_FOR_STATS_SEC)
+    stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
+    resize_instance_group(gcp, instance_group, 0)
+    wait_until_only_given_instances_receive_load([],
+                                                 _WAIT_FOR_BACKEND_SEC,
+                                                 allow_failures=True)
+    resize_instance_group(gcp, instance_group, num_instances)
+    wait_for_healthy_backends(gcp, backend_service, instance_group)
+    new_instance_names = get_instance_names(gcp, instance_group)
+    wait_until_only_given_instances_receive_load(new_instance_names,
+                                                 _WAIT_FOR_BACKEND_SEC)
+    new_stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
+    original_distribution = list(stats.rpcs_by_peer.values())
+    original_distribution.sort()
+    new_distribution = list(new_stats.rpcs_by_peer.values())
+    new_distribution.sort()
+    if original_distribution != new_distribution:
+        raise Exception('Distributions do not match: ', stats, new_stats)
+
+
+def test_change_backend_service(gcp, original_backend_service, instance_group,
+                                alternate_backend_service,
+                                same_zone_instance_group):
+    original_backend_instances = get_instance_names(gcp, instance_group)
+    alternate_backend_instances = get_instance_names(gcp,
+                                                     same_zone_instance_group)
+    patch_backend_instances(gcp, alternate_backend_service,
+                            [same_zone_instance_group])
+    wait_for_healthy_backends(gcp, original_backend_instances, instance_group)
+    wait_for_healthy_backends(gcp, alternate_backend_service,
+                              same_zone_instance_group)
+    wait_until_only_given_instances_receive_load(original_backend_instances,
+                                                 _WAIT_FOR_STATS_SEC)
+    try:
+        patch_url_map_backend_service(gcp, alternate_backend_service)
+        stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
+        if stats.num_failures > 0:
+            raise Exception('Unexpected failure: %s', stats)
+        wait_until_only_given_instances_receive_load(
+            alternate_backend_instances, _WAIT_FOR_STATS_SEC)
+    finally:
+        patch_url_map_backend_service(gcp, original_backend_service)
+        patch_backend_instances(gcp, alternate_backend_service, [])
+
+
+def test_new_instance_group_receives_traffic(gcp, backend_service,
+                                             instance_group,
+                                             same_zone_instance_group):
+    instance_names = get_instance_names(gcp, instance_group)
+    wait_until_only_given_instances_receive_load(instance_names,
+                                                 _WAIT_FOR_STATS_SEC)
+    try:
+        patch_backend_instances(gcp,
+                                backend_service,
+                                [instance_group, same_zone_instance_group],
+                                balancing_mode='RATE')
+        wait_for_healthy_backends(gcp, backend_service, instance_group)
+        wait_for_healthy_backends(gcp, backend_service,
+                                  same_zone_instance_group)
+        combined_instance_names = instance_names + get_instance_names(
+            gcp, same_zone_instance_group)
+        wait_until_only_given_instances_receive_load(combined_instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+    finally:
+        patch_backend_instances(gcp, backend_service, [instance_group])
+
+
 def test_ping_pong(gcp, backend_service, instance_group):
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     instance_names = get_instance_names(gcp, instance_group)
@@ -222,6 +301,32 @@ def test_ping_pong(gcp, backend_service, instance_group):
     raise Exception(error_msg)
 
 
+def test_remove_instance_group(gcp, backend_service, instance_group,
+                               same_zone_instance_group):
+    try:
+        patch_backend_instances(gcp,
+                                backend_service,
+                                [instance_group, same_zone_instance_group],
+                                balancing_mode='RATE')
+        wait_for_healthy_backends(gcp, backend_service, instance_group)
+        wait_for_healthy_backends(gcp, backend_service,
+                                  same_zone_instance_group)
+        instance_names = get_instance_names(gcp, instance_group)
+        same_zone_instance_names = get_instance_names(gcp,
+                                                      same_zone_instance_group)
+        wait_until_only_given_instances_receive_load(
+            instance_names + same_zone_instance_names, _WAIT_FOR_BACKEND_SEC)
+        patch_backend_instances(gcp,
+                                backend_service, [same_zone_instance_group],
+                                balancing_mode='RATE')
+        wait_until_only_given_instances_receive_load(same_zone_instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+    finally:
+        patch_backend_instances(gcp, backend_service, [instance_group])
+        wait_until_only_given_instances_receive_load(instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+
+
 def test_round_robin(gcp, backend_service, instance_group):
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     instance_names = get_instance_names(gcp, instance_group)
@@ -240,6 +345,61 @@ def test_round_robin(gcp, backend_service, instance_group):
             raise Exception(
                 'RPC peer distribution differs from expected by more than %d '
                 'for instance %s (%s)', threshold, instance, stats)
+
+
+def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
+    gcp, backend_service, primary_instance_group,
+    secondary_zone_instance_group):
+    try:
+        patch_backend_instances(
+            gcp, backend_service,
+            [primary_instance_group, secondary_zone_instance_group])
+        wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
+        wait_for_healthy_backends(gcp, backend_service,
+                                  secondary_zone_instance_group)
+        primary_instance_names = get_instance_names(gcp, instance_group)
+        secondary_instance_names = get_instance_names(
+            gcp, secondary_zone_instance_group)
+        wait_until_only_given_instances_receive_load(primary_instance_names,
+                                                     _WAIT_FOR_STATS_SEC)
+        original_size = len(primary_instance_names)
+        resize_instance_group(gcp, primary_instance_group, original_size - 1)
+        remaining_instance_names = get_instance_names(gcp,
+                                                      primary_instance_group)
+        wait_until_only_given_instances_receive_load(remaining_instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+    finally:
+        patch_backend_instances(gcp, backend_service, [primary_instance_group])
+        resize_instance_group(gcp, primary_instance_group, original_size)
+
+
+def test_secondary_locality_gets_requests_on_primary_failure(
+    gcp, backend_service, primary_instance_group,
+    secondary_zone_instance_group):
+    try:
+        patch_backend_instances(
+            gcp, backend_service,
+            [primary_instance_group, secondary_zone_instance_group])
+        wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
+        wait_for_healthy_backends(gcp, backend_service,
+                                  secondary_zone_instance_group)
+        primary_instance_names = get_instance_names(gcp, instance_group)
+        secondary_instance_names = get_instance_names(
+            gcp, secondary_zone_instance_group)
+        wait_until_only_given_instances_receive_load(primary_instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+        original_size = len(primary_instance_names)
+        resize_instance_group(gcp, primary_instance_group, 0)
+        wait_until_only_given_instances_receive_load(secondary_instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+
+        resize_instance_group(gcp, primary_instance_group, original_size)
+        new_instance_names = get_instance_names(gcp, primary_instance_group)
+        wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
+        wait_until_only_given_instances_receive_load(new_instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+    finally:
+        patch_backend_instances(gcp, backend_service, [primary_instance_group])
 
 
 def create_instance_template(gcp, name, network, source_image):
@@ -496,6 +656,58 @@ def delete_instance_template(gcp):
         logger.info('Delete failed: %s', http_error)
 
 
+def patch_backend_instances(gcp,
+                            backend_service,
+                            instance_groups,
+                            balancing_mode='UTILIZATION'):
+    config = {
+        'backends': [{
+            'group': instance_group.url,
+            'balancingMode': balancing_mode,
+            'maxRate': 1 if balancing_mode == 'RATE' else None
+        } for instance_group in instance_groups],
+    }
+    result = gcp.compute.backendServices().patch(
+        project=gcp.project, backendService=backend_service.name,
+        body=config).execute()
+    wait_for_global_operation(gcp, result['name'])
+
+
+def resize_instance_group(gcp, instance_group, new_size, timeout_sec=120):
+    result = gcp.compute.instanceGroupManagers().resize(
+        project=gcp.project,
+        zone=instance_group.zone,
+        instanceGroupManager=instance_group.name,
+        size=new_size).execute()
+    wait_for_zone_operation(gcp,
+                            instance_group.zone,
+                            result['name'],
+                            timeout_sec=360)
+    start_time = time.time()
+    while True:
+        current_size = len(get_instance_names(gcp, instance_group))
+        if current_size == new_size:
+            break
+        if time.time() - start_time > timeout_sec:
+            raise Exception('Failed to resize primary instance group')
+        time.sleep(1)
+
+
+def patch_url_map_backend_service(gcp, backend_service):
+    config = {
+        'defaultService':
+            backend_service.url,
+        'pathMatchers': [{
+            'name': _PATH_MATCHER_NAME,
+            'defaultService': backend_service.url,
+        }]
+    }
+    result = gcp.compute.urlMaps().patch(project=gcp.project,
+                                         urlMap=gcp.url_map.name,
+                                         body=config).execute()
+    wait_for_global_operation(gcp, result['name'])
+
+
 def wait_for_global_operation(gcp,
                               operation,
                               timeout_sec=_WAIT_FOR_OPERATION_SEC):
@@ -665,8 +877,7 @@ try:
         backend_service = add_backend_service(gcp, backend_service_name)
         alternate_backend_service = add_backend_service(
             gcp, alternate_backend_service_name)
-        create_url_map(gcp, url_map_name, gcp.backend_services[0],
-                       service_host_name)
+        create_url_map(gcp, url_map_name, backend_service, service_host_name)
         create_target_http_proxy(gcp, target_http_proxy_name)
         potential_service_ports = list(args.service_port_range)
         random.shuffle(potential_service_ports)
@@ -766,12 +977,44 @@ try:
     client_process = start_xds_client(cmd, gcp.service_port)
 
     if args.test_case == 'all':
+        test_backends_restart(gcp, backend_service, instance_group)
+        test_change_backend_service(gcp, backend_service, instance_group,
+                                    alternate_backend_service,
+                                    same_zone_instance_group)
+        test_new_instance_group_receives_traffic(gcp, backend_service,
+                                                 instance_group,
+                                                 same_zone_instance_group)
         test_ping_pong(gcp, backend_service, instance_group)
+        test_remove_instance_group(gcp, backend_service, instance_group,
+                                   same_zone_instance_group)
         test_round_robin(gcp, backend_service, instance_group)
+        test_secondary_locality_gets_no_requests_on_partial_primary_failure(
+            gcp, backend_service, instance_group, secondary_zone_instance_group)
+        test_secondary_locality_gets_requests_on_primary_failure(
+            gcp, backend_service, instance_group, secondary_zone_instance_group)
+    elif args.test_case == 'backends_restart':
+        test_backends_restart(gcp, backend_service, instance_group)
+    elif args.test_case == 'change_backend_service':
+        test_change_backend_service(gcp, backend_service, instance_group,
+                                    alternate_backend_service,
+                                    same_zone_instance_group)
+    elif args.test_case == 'new_instance_group_receives_traffic':
+        test_new_instance_group_receives_traffic(gcp, backend_service,
+                                                 instance_group,
+                                                 same_zone_instance_group)
     elif args.test_case == 'ping_pong':
         test_ping_pong(gcp, backend_service, instance_group)
+    elif args.test_case == 'remove_instance_group':
+        test_remove_instance_group(gcp, backend_service, instance_group,
+                                   same_zone_instance_group)
     elif args.test_case == 'round_robin':
         test_round_robin(gcp, backend_service, instance_group)
+    elif args.test_case == 'secondary_locality_gets_no_requests_on_partial_primary_failure':
+        test_secondary_locality_gets_no_requests_on_partial_primary_failure(
+            gcp, backend_service, instance_group, secondary_zone_instance_group)
+    elif args.test_case == 'secondary_locality_gets_requests_on_primary_failure':
+        test_secondary_locality_gets_requests_on_primary_failure(
+            gcp, backend_service, instance_group, secondary_zone_instance_group)
     else:
         logger.error('Unknown test case: %s', args.test_case)
         sys.exit(1)
