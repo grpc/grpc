@@ -242,7 +242,7 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
                                                      same_zone_instance_group)
     patch_backend_instances(gcp, alternate_backend_service,
                             [same_zone_instance_group])
-    wait_for_healthy_backends(gcp, original_backend_instances, instance_group)
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
     wait_for_healthy_backends(gcp, alternate_backend_service,
                               same_zone_instance_group)
     wait_until_only_given_instances_receive_load(original_backend_instances,
