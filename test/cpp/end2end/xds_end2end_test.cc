@@ -352,7 +352,8 @@ class ClientStats {
 };
 
 // TODO(roth): Change this service to a real fake.
-class AdsServiceImpl : public AggregatedDiscoveryService::Service {
+class AdsServiceImpl : public AggregatedDiscoveryService::Service,
+                       public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   enum ResponseState {
     NOT_SENT,
@@ -627,6 +628,9 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service {
       // Creating blocking thread to read from stream.
       std::deque<DiscoveryRequest> requests;
       bool stream_closed = false;
+      // Take a reference of the AdsServiceImpl object, reference will go
+      // out of scope after the reader thread is joined.
+      std::shared_ptr<AdsServiceImpl> ads_service_impl = shared_from_this();
       std::thread reader(std::bind(&AdsServiceImpl::BlockingRead, this, stream,
                                    &requests, &stream_closed));
       // Main loop to look for requests and updates.
@@ -1449,31 +1453,32 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   class BalancerServerThread : public ServerThread {
    public:
     explicit BalancerServerThread(int client_load_reporting_interval = 0)
-        : ads_service_(client_load_reporting_interval > 0),
+        : ads_service_(std::shared_ptr<AdsServiceImpl>(
+              new AdsServiceImpl(client_load_reporting_interval > 0))),
           lrs_service_(client_load_reporting_interval) {}
 
-    AdsServiceImpl* ads_service() { return &ads_service_; }
+    std::shared_ptr<AdsServiceImpl> ads_service() { return ads_service_; }
     LrsServiceImpl* lrs_service() { return &lrs_service_; }
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(&ads_service_);
+      builder->RegisterService(ads_service_.get());
       builder->RegisterService(&lrs_service_);
     }
 
     void StartAllServices() override {
-      ads_service_.Start();
+      ads_service_->Start();
       lrs_service_.Start();
     }
 
     void ShutdownAllServices() override {
-      ads_service_.Shutdown();
+      ads_service_->Shutdown();
       lrs_service_.Shutdown();
     }
 
     const char* Type() override { return "Balancer"; }
 
-    AdsServiceImpl ads_service_;
+    std::shared_ptr<AdsServiceImpl> ads_service_;
     LrsServiceImpl lrs_service_;
   };
 
