@@ -479,6 +479,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,  # TODO(b/150567713)
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",
