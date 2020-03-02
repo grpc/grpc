@@ -23,27 +23,27 @@ cd "$(dirname "$0")/../../.."
 # grpc_core::Thread, etc.
 #
 
-egrep -Irn \
+grep -EIrn \
     'std::(mutex|condition_variable|lock_guard|unique_lock|thread)' \
     include/grpc include/grpcpp src/core src/cpp | \
-    egrep -v include/grpcpp/impl/codegen/sync.h | \
+    grep -Ev include/grpcpp/impl/codegen/sync.h | \
     diff - /dev/null
 
 #
 # Prevent the include of disallowed C++ headers.
 #
 
-egrep -Irn \
+grep -EIrn \
     '^#include (<mutex>|<condition_variable>|<thread>|<ratio>|<filesystem>|<future>|<system_error>)' \
     include/grpc include/grpcpp src/core src/cpp | \
-    egrep -v include/grpcpp/impl/codegen/sync.h | \
+    grep -Ev include/grpcpp/impl/codegen/sync.h | \
     diff - /dev/null
 
 #
 # Prevent the include of headers that shouldn't be used in tests.
 #
 
-egrep -Irn \
+grep -EIrn \
     '^#include (<pthread.h>)' \
     test | \
     diff - /dev/null

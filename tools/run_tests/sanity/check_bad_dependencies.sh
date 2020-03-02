@@ -25,7 +25,7 @@ test "$(bazel query 'somepath("//test/cpp/microbenchmarks:helpers", "//external:
 
 # Make sure that core doesn't depend on anything in C++ library
 
-test "$(bazel query 'deps("//:grpc")' 2>/dev/null | egrep 'src/cpp|include/grpcpp' | wc -l)" -eq 0 || exit 1 
+test "$(bazel query 'deps("//:grpc")' 2>/dev/null | grep -Ec 'src/cpp|include/grpcpp')" -eq 0 || exit 1 
 
 exit 0
 
