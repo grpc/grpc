@@ -15,6 +15,7 @@
 from __future__ import absolute_import
 
 import collections
+import functools
 import os
 import select
 import signal
@@ -126,10 +127,14 @@ class Runner(object):
             in separate thread or not.
         """
         self._skipped_tests = []
+        self._flaky_tests = []
         self._dedicated_threads = dedicated_threads
 
     def skip_tests(self, tests):
         self._skipped_tests = tests
+
+    def flaky_tests(self, tests):
+        self._flaky_tests = tests
 
     def run(self, suite):
         """See setuptools' test_runner setup argument for information."""
@@ -182,6 +187,28 @@ class Runner(object):
             except AttributeError:
                 pass
 
+        def retry_once(f):
+            @functools.wraps(f)
+            def wrapper(*args, **kwargs):
+                try:
+                    return f(*args, **kwargs)
+                except:
+                    pass
+                # Retry out of the except to avoid "During handling of the
+                # above exception, another exception occurred" messages
+                return f(*args, **kwargs)
+            return wrapper
+
+        def wrap_flaky(augmented_test):
+            case = augmented_test.case
+            test_name = case.id()
+            if any(name in test_name for name in self._flaky_tests):
+                for name in dir(case):
+                    if name.startswith('test'):
+                        attr = getattr(case, name)
+                        if callable(attr):
+                            setattr(case, name, retry_once(attr))
+
         try_set_handler('SIGINT', sigint_handler)
         try_set_handler('SIGSEGV', fault_handler)
         try_set_handler('SIGBUS', fault_handler)
@@ -201,6 +228,7 @@ class Runner(object):
             else:
                 sys.stdout.write('Running       {}\n'.format(
                     augmented_case.case.id()))
+                wrap_flaky(augmented_case)
                 sys.stdout.flush()
                 if self._dedicated_threads:
                     # (Deprecated) Spawns dedicated thread for each test case.
