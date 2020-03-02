@@ -225,9 +225,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   const grpc_millis request_timeout_;
 
-  grpc_core::UniquePtr<char> build_version_;
-
   std::shared_ptr<WorkSerializer> work_serializer_;
+
   grpc_pollset_set* interested_parties_;
 
   std::unique_ptr<XdsBootstrap> bootstrap_;

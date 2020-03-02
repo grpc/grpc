@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.29.0-dev")
-set(gRPC_CORE_VERSION     "9.0.0")
-set(gRPC_CORE_SOVERSION   "9")
+set(gRPC_CORE_VERSION     "10.0.0")
+set(gRPC_CORE_SOVERSION   "10")
 set(gRPC_CPP_VERSION      "1.29.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
 set(gRPC_CSHARP_VERSION   "2.29.0-dev")
@@ -105,6 +105,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_base
   absl_base_internal
   absl_bits
+  absl_civil_time
   absl_compressed_tuple
   absl_config
   absl_core_headers
@@ -125,6 +126,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_strings
   absl_strings_internal
   absl_throw_delegate
+  absl_time
+  absl_time_zone
   absl_type_traits
   absl_utility
   absl_meta
@@ -708,6 +711,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx connectivity_state_test)
   add_dependencies(buildtests_cxx context_list_test)
   add_dependencies(buildtests_cxx delegating_channel_test)
+  add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
   add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
   add_dependencies(buildtests_cxx end2end_test)
   add_dependencies(buildtests_cxx error_details_test)
@@ -1221,6 +1225,7 @@ target_include_directories(gpr
 )
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::time
   absl::strings
   absl::str_format
   absl::memory
@@ -1306,6 +1311,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
+  src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
@@ -1394,8 +1400,11 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
+  src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
+  src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
@@ -1408,13 +1417,20 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
   src/core/ext/upb-generated/envoy/api/v2/lds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/listener.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/api/v2/rds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/srds.upb.c
   src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
@@ -1424,8 +1440,11 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/type/http.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/string.upb.c
+  src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
+  src/core/ext/upb-generated/envoy/type/semantic_version.upb.c
+  src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/google/api/annotations.upb.c
   src/core/ext/upb-generated/google/api/http.upb.c
@@ -1442,6 +1461,8 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
+  src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/lib/avl/avl.cc
@@ -1942,6 +1963,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
+  src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
@@ -2028,8 +2050,11 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
+  src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
+  src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
@@ -2042,13 +2067,20 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
   src/core/ext/upb-generated/envoy/api/v2/lds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/listener.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c
   src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/api/v2/rds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c
   src/core/ext/upb-generated/envoy/api/v2/srds.upb.c
   src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
@@ -2058,8 +2090,11 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/type/http.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/string.upb.c
+  src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
+  src/core/ext/upb-generated/envoy/type/semantic_version.upb.c
+  src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/google/api/annotations.upb.c
   src/core/ext/upb-generated/google/api/http.upb.c
@@ -2073,6 +2108,8 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
+  src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/lib/avl/avl.cc
@@ -2909,6 +2946,71 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_library(grpc++_test
+  src/cpp/client/channel_test_peer.cc
+)
+
+set_target_properties(grpc++_test PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_test PROPERTIES COMPILE_PDB_NAME "grpc++_test"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpc++_test
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(grpc++_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+foreach(_hdr
+  include/grpc++/test/mock_stream.h
+  include/grpc++/test/server_context_test_spouse.h
+  include/grpcpp/test/channel_test_peer.h
+  include/grpcpp/test/default_reactor_test_peer.h
+  include/grpcpp/test/mock_stream.h
+  include/grpcpp/test/server_context_test_spouse.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
 
 endif()
 if(gRPC_BUILD_TESTS)
@@ -10160,6 +10262,46 @@ target_link_libraries(delegating_channel_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(destroy_grpclb_channel_with_active_connect_stress_test
+  test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(destroy_grpclb_channel_with_active_connect_stress_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(duplicate_header_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/duplicate_header.cc
@@ -10217,7 +10359,6 @@ add_executable(end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  src/cpp/client/channel_test_peer.cc
   test/cpp/end2end/end2end_test.cc
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
@@ -10246,6 +10387,7 @@ target_link_libraries(end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc++_test
   grpc_test_util
   grpc++
   grpc
@@ -11904,7 +12046,6 @@ add_executable(mock_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  src/cpp/client/channel_test_peer.cc
   test/cpp/end2end/mock_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -11931,6 +12072,7 @@ target_link_libraries(mock_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc++_test
   grpc_test_util
   grpc++
   grpc
@@ -12881,7 +13023,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_context_test_spouse_test
-  src/cpp/client/channel_test_peer.cc
   test/cpp/test/server_context_test_spouse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -12908,6 +13049,7 @@ target_link_libraries(server_context_test_spouse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc++_test
   grpc_test_util
   grpc++
   grpc
@@ -14941,7 +15083,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgpr -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "gpr.pc")
 
@@ -14951,7 +15093,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -14961,7 +15103,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc_unsecure.pc")
 
@@ -14971,7 +15113,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${PACKAGE_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 
@@ -14981,6 +15123,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${PACKAGE_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++_unsecure.pc")

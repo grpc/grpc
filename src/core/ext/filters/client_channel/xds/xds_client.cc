@@ -1689,13 +1689,6 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
       {15000, 0, INT_MAX});
 }
 
-UniquePtr<char> GenerateBuildVersionString() {
-  char* build_version_str;
-  gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
-               GPR_PLATFORM_STRING);
-  return UniquePtr<char>(build_version_str);
-}
-
 }  // namespace
 
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
@@ -1705,12 +1698,10 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
       request_timeout_(GetRequestTimeout(channel_args)),
-      build_version_(GenerateBuildVersionString()),
       work_serializer_(std::move(work_serializer)),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
-      api_(bootstrap_ == nullptr ? nullptr : bootstrap_->node(),
-           build_version_.get()),
+      api_(bootstrap_ == nullptr ? nullptr : bootstrap_->node()),
       server_name_(server_name),
       service_config_watcher_(std::move(watcher)) {
   if (*error != GRPC_ERROR_NONE) {

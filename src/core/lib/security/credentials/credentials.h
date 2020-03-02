@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
@@ -250,6 +252,10 @@ struct grpc_call_credentials
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;
+  }
+
+  virtual std::string debug_string() {
+    return "grpc_call_credentials did not provide debug string";
   }
 
   const char* type() const { return type_; }

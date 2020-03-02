@@ -11,14 +11,17 @@
 #include "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h"
 #include "envoy/api/v2/core/config_source.upb.h"
 #include "envoy/api/v2/core/protocol.upb.h"
-#include "envoy/api/v2/rds.upb.h"
-#include "envoy/api/v2/srds.upb.h"
+#include "envoy/api/v2/route.upb.h"
+#include "envoy/api/v2/scoped_route.upb.h"
 #include "envoy/config/filter/accesslog/v2/accesslog.upb.h"
 #include "envoy/type/percent.upb.h"
+#include "envoy/type/tracing/v2/custom_tag.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
@@ -84,25 +87,27 @@ const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_HttpC
   UPB_SIZE(144, 256), 34, false,
 };
 
-static const upb_msglayout *const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_submsgs[4] = {
+static const upb_msglayout *const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_submsgs[5] = {
   &envoy_type_Percent_msginit,
+  &envoy_type_tracing_v2_CustomTag_msginit,
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing__fields[7] = {
+static const upb_msglayout_field envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing__fields[8] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
   {2, UPB_SIZE(28, 48), 0, 0, 9, 3},
   {3, UPB_SIZE(12, 16), 0, 0, 11, 1},
   {4, UPB_SIZE(16, 24), 0, 0, 11, 1},
   {5, UPB_SIZE(20, 32), 0, 0, 11, 1},
   {6, UPB_SIZE(8, 8), 0, 0, 8, 1},
-  {7, UPB_SIZE(24, 40), 0, 1, 11, 1},
+  {7, UPB_SIZE(24, 40), 0, 2, 11, 1},
+  {8, UPB_SIZE(32, 56), 0, 1, 11, 3},
 };
 
 const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_msginit = {
   &envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_submsgs[0],
   &envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing__fields[0],
-  UPB_SIZE(32, 56), 7, false,
+  UPB_SIZE(40, 64), 8, false,
 };
 
 static const upb_msglayout_field envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_InternalAddressConfig__fields[1] = {
