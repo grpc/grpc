@@ -218,10 +218,8 @@ class CountedService : public ServiceType {
     response_count_ = 0;
   }
 
- protected:
-  grpc_core::Mutex mu_;
-
  private:
+  grpc_core::Mutex mu_;
   size_t request_count_ = 0;
   size_t response_count_ = 0;
 };
@@ -267,7 +265,6 @@ class BackendServiceImpl : public BackendService {
     clients_.insert(client);
   }
 
-  grpc_core::Mutex mu_;
   grpc_core::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
