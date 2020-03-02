@@ -637,11 +637,10 @@ def delete_instance_groups(gcp):
                 project=gcp.project,
                 zone=instance_group.zone,
                 instanceGroupManager=instance_group.name).execute()
-            timeout_sec = 180  # Deleting an instance group can be slow
             wait_for_zone_operation(gcp,
                                     instance_group.zone,
                                     result['name'],
-                                    timeout_sec=timeout_sec)
+                                    timeout_sec=_WAIT_FOR_BACKEND_SEC)
         except googleapiclient.errors.HttpError as http_error:
             logger.info('Delete failed: %s', http_error)
 
