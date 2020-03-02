@@ -1,22 +1,29 @@
+.PHONY: all
 all: deps proto testctrl driver
 	go build -v ./...
 
+.PHONY: clean
 clean:
 	rm -fr bin
 	rm -fr genproto/*
 
+.PHONY: deps
 deps:
 	go get -v -d ./...
 
+.PHONY: driver
 driver:
 	go build -v -o bin/driver ./cmd/driver
 
+.PHONY: fmt
 fmt:
 	for file in $$(find **/*.go); do gofmt -w $$file; done
 
+.PHONY: lint
 lint:
 	golint ./...
 
+.PHONY: proto
 proto:
 	rm -fr genproto/*
 	mkdir -p ../tmp/src/proto
@@ -64,12 +71,13 @@ proto:
 	rm genproto/grpc/testing/proxy-service.pb.go
 	rm genproto/grpc/testing/simple_messages.pb.go
 
+.PHONY: rebuild
 rebuild: clean proto testctrl driver
 
+.PHONY: svc
 svc:
 	go build -v -o bin/svc ./cmd/svc
 
+.PHONY: test
 test:
 	go test ./...
-
-.PHONY: all clean deps driver fmt lint proto rebuild svc test
