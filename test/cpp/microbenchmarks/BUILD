@@ -207,8 +207,10 @@ grpc_cc_test(
     ],
     flaky = True,  # TODO(b/150422385)
     tags = [
+        "manual",  # TODO(b/150422385)
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
+        "notap",   # TODO(b/150422385)
     ],
     deps = [":fullstack_streaming_pump_h"],
 )
