@@ -1069,13 +1069,10 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         while (true) {
           grpc_connectivity_state state;
           RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-          gpr_log(GPR_ERROR, "bout to popping connectivity state change %d",
-                  state);
           if (!parent_->PopConnectivityStateChange(&state,
                                                    &connected_subchannel)) {
             break;
           }
-          gpr_log(GPR_ERROR, "popping connectivity state change %d", state);
           // Ignore update if the parent WatcherWrapper has been replaced
           // since this callback was scheduled.
           if (parent_->watcher_ == nullptr) continue;

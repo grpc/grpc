@@ -972,12 +972,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   bool SeenAllBackends(size_t start_index = 0, size_t stop_index = 0) {
     if (stop_index == 0) stop_index = backends_.size();
     for (size_t i = start_index; i < stop_index; ++i) {
-      if (backends_[i]->backend_service()->request_count() == 0)
-        return false;
-      else {
-        gpr_log(GPR_INFO, "backend %d with request count %lu", i,
-                backends_[i]->backend_service()->request_count());
-      }
+      if (backends_[i]->backend_service()->request_count() == 0) return false;
     }
     return true;
   }

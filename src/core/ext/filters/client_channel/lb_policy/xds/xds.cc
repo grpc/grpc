@@ -67,7 +67,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_xds_trace(true, "xds");
+TraceFlag grpc_lb_xds_trace(false, "xds");
 
 namespace {
 

@@ -101,6 +101,8 @@ extern void negative_deadline(grpc_end2end_test_config config);
 extern void negative_deadline_pre_init(void);
 extern void no_error_on_hotpath(grpc_end2end_test_config config);
 extern void no_error_on_hotpath_pre_init(void);
+extern void no_logging(grpc_end2end_test_config config);
+extern void no_logging_pre_init(void);
 extern void no_op(grpc_end2end_test_config config);
 extern void no_op_pre_init(void);
 extern void payload(grpc_end2end_test_config config);
@@ -221,6 +223,7 @@ void grpc_end2end_tests_pre_init(void) {
   max_message_length_pre_init();
   negative_deadline_pre_init();
   no_error_on_hotpath_pre_init();
+  no_logging_pre_init();
   no_op_pre_init();
   payload_pre_init();
   ping_pre_init();
@@ -306,6 +309,7 @@ void grpc_end2end_tests(int argc, char **argv,
     max_message_length(config);
     negative_deadline(config);
     no_error_on_hotpath(config);
+    no_logging(config);
     no_op(config);
     payload(config);
     ping(config);
@@ -492,6 +496,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("no_error_on_hotpath", argv[i])) {
       no_error_on_hotpath(config);
+      continue;
+    }
+    if (0 == strcmp("no_logging", argv[i])) {
+      no_logging(config);
       continue;
     }
     if (0 == strcmp("no_op", argv[i])) {

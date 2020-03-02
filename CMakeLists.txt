@@ -934,6 +934,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/max_message_length.cc
   test/core/end2end/tests/negative_deadline.cc
   test/core/end2end/tests/no_error_on_hotpath.cc
+  test/core/end2end/tests/no_logging.cc
   test/core/end2end/tests/no_op.cc
   test/core/end2end/tests/payload.cc
   test/core/end2end/tests/ping.cc
@@ -1064,6 +1065,7 @@ add_library(end2end_tests
   test/core/end2end/tests/max_message_length.cc
   test/core/end2end/tests/negative_deadline.cc
   test/core/end2end/tests/no_error_on_hotpath.cc
+  test/core/end2end/tests/no_logging.cc
   test/core/end2end/tests/no_op.cc
   test/core/end2end/tests/payload.cc
   test/core/end2end/tests/ping.cc
