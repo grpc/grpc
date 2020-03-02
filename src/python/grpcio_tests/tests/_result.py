@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import collections
 import itertools
+import os
 import traceback
 import unittest
 from xml.etree import ElementTree
@@ -233,7 +234,10 @@ class CoverageResult(AugmentedResult):
 
     Additionally initializes and begins code coverage tracking."""
         super(CoverageResult, self).startTest(test)
-        self.coverage_context = coverage.Coverage(data_suffix=True)
+        self.data_file = os.environ.get('COVERAGE_DATA_FILE',
+                                        '.coverage') or None
+        self.coverage_context = coverage.Coverage(data_file=self.data_file,
+                                                  data_suffix=True)
         self.coverage_context.start()
 
     def stopTest(self, test):
@@ -242,7 +246,8 @@ class CoverageResult(AugmentedResult):
     Additionally stops and deinitializes code coverage tracking."""
         super(CoverageResult, self).stopTest(test)
         self.coverage_context.stop()
-        self.coverage_context.save()
+        if self.data_file:
+            self.coverage_context.save()
         self.coverage_context = None
 
 

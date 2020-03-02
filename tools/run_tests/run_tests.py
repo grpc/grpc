@@ -716,6 +716,11 @@ class PythonLanguage(object):
         self.config = config
         self.args = args
         self.pythons = self._get_pythons(self.args)
+        data_file = args.data_out_dir
+        if data_file is not None:  # For non default value
+            if data_file:  # Empty means don't write so leave untouched
+                data_file = os.path.join(data_file, '.coverage')
+            os.environ.setdefault('COVERAGE_DATA_FILE', data_file)
 
     def test_specs(self):
         # load list of known test suites
@@ -1369,6 +1374,14 @@ def runs_per_test_type(arg_str):
         raise argparse.ArgumentTypeError(msg)
 
 
+def data_out_dir_type(arg_str):
+    if not arg_str:
+        return arg_str
+    if not os.path.isdir(arg_str):
+        raise argparse.ArgumentTypeError('%s is not a directory' % arg_str)
+    return os.path.abspath(arg_str)
+
+
 def percent_type(arg_str):
     pct = float(arg_str)
     if pct > 100 or pct < 0:
@@ -1395,6 +1408,15 @@ argp.add_argument(
     type=runs_per_test_type,
     help='A positive integer or "inf". If "inf", all tests will run in an '
     'infinite loop. Especially useful in combination with "-f"')
+argp.add_argument(
+    '--data_out_dir',
+    # This means where tests are running, ie: src/python/grpcio_tests/
+    default=None,
+    type=data_out_dir_type,
+    help='Location to write output files such as coverage and reports.  Set '
+         'to empty string to not save data, which is useful to avoid running '
+         'out of disk when doing thousands of runs in a container. (Only '
+         'works with Python)')
 argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('--regex_exclude', default='', type=str)
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
@@ -1938,6 +1960,9 @@ def _build_and_run(check_cancelled,
 
     return out
 
+
+if args.data_out_dir is not None:
+    os.environ.setdefault('DATA_OUT_DIR', args.data_out_dir)
 
 if forever:
     success = True

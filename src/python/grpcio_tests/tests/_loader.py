@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import importlib
 import pkgutil
+import os
 import re
 import unittest
 
@@ -46,7 +47,9 @@ class Loader(object):
     setuptools.setup argument `test_loader`."""
         # ensure that we capture decorators and definitions (else our coverage
         # measure unnecessarily suffers)
-        coverage_context = coverage.Coverage(data_suffix=True)
+        data_file = os.environ.get('COVERAGE_DATA_FILE', '.coverage') or None
+        coverage_context = coverage.Coverage(data_file=data_file,
+                                             data_suffix=True)
         coverage_context.start()
         imported_modules = tuple(
             importlib.import_module(name) for name in names)
@@ -59,7 +62,8 @@ class Loader(object):
                 continue
             self.walk_packages(package_paths)
         coverage_context.stop()
-        coverage_context.save()
+        if data_file:
+            coverage_context.save()
         return self.suite
 
     def walk_packages(self, package_paths):

@@ -235,6 +235,9 @@ class Runner(object):
         sys.stdout.write(result_out.getvalue())
         sys.stdout.flush()
         signal.signal(signal.SIGINT, signal.SIG_DFL)
-        with open('report.xml', 'wb') as report_xml_file:
-            _result.jenkins_junit_xml(result).write(report_xml_file)
+        data_dir = os.environ.get('DATA_OUT_DIR', './')
+        if data_dir != '':
+            filename = os.path.join(data_dir, 'report.xml')
+            with open(filename, 'wb') as report_xml_file:
+                _result.jenkins_junit_xml(result).write(report_xml_file)
         return result
