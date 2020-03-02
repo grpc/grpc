@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:10
 
-
-RUN apt-get update && apt-get -y install wget xz-utils
-RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
-ENV CLANG_FORMAT=clang-format
-RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
-ENV CLANG_TIDY=clang-tidy
+# Install clang-tidy 6.0
+# This is because clang-tidy 7.0 started treating compiler errors as tidy errors
+# and there are a couple of files which are not properly compiled via tidy so it
+# should be using 6.0 version until all compilation errors are addressed.
+RUN apt-get update && apt-get install -y clang-tidy-6.0
+ENV CLANG_TIDY=clang-tidy-6.0
 
 #====================
 # Python dependencies
