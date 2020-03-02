@@ -1411,7 +1411,8 @@ argp.add_argument(
 argp.add_argument(
     '--data_out_dir',
     # This means where tests are running, ie: src/python/grpcio_tests/
-    default=None,
+    default=os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                         '.coverage'),
     type=data_out_dir_type,
     help='Location to write output files such as coverage and reports.  Set '
          'to empty string to not save data, which is useful to avoid running '
