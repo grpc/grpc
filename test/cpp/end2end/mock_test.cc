@@ -42,6 +42,14 @@
 
 #include <iostream>
 
+using grpc::testing::DefaultReactorTestPeer;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
+using grpc::testing::EchoTestService;
+using grpc::testing::MockClientReaderWriter;
+using std::vector;
+using std::chrono::system_clock;
+using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::DoAll;
 using ::testing::Invoke;
@@ -49,14 +57,6 @@ using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::SetArgPointee;
 using ::testing::WithArg;
-using ::testing::_;
-using grpc::testing::DefaultReactorTestPeer;
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::EchoTestService;
-using grpc::testing::MockClientReaderWriter;
-using std::chrono::system_clock;
-using std::vector;
 
 namespace grpc {
 namespace testing {

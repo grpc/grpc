@@ -89,13 +89,12 @@ uint64_t GetAndResetCounter(Atomic<uint64_t>* from) {
 
 XdsClusterLocalityStats::Snapshot
 XdsClusterLocalityStats::GetSnapshotAndReset() {
-  Snapshot snapshot = {
-      GetAndResetCounter(&total_successful_requests_),
-      // Don't reset total_requests_in_progress because it's not
-      // related to a single reporting interval.
-      total_requests_in_progress_.Load(MemoryOrder::RELAXED),
-      GetAndResetCounter(&total_error_requests_),
-      GetAndResetCounter(&total_issued_requests_)};
+  Snapshot snapshot = {GetAndResetCounter(&total_successful_requests_),
+                       // Don't reset total_requests_in_progress because it's
+                       // not related to a single reporting interval.
+                       total_requests_in_progress_.Load(MemoryOrder::RELAXED),
+                       GetAndResetCounter(&total_error_requests_),
+                       GetAndResetCounter(&total_issued_requests_)};
   MutexLock lock(&backend_metrics_mu_);
   snapshot.backend_metrics = std::move(backend_metrics_);
   return snapshot;

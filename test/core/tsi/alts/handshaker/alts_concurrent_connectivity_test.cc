@@ -105,8 +105,8 @@ class FakeHandshakeServer {
     int port = grpc_pick_unused_port_or_die();
     grpc_core::JoinHostPort(&address_, "localhost", port);
     if (check_num_concurrent_rpcs) {
-      service_ = grpc::gcp::CreateFakeHandshakerService(
-          kFakeHandshakeServerMaxConcurrentStreams /* expected max concurrent rpcs */);
+      service_ = grpc::gcp::
+          CreateFakeHandshakerService(kFakeHandshakeServerMaxConcurrentStreams /* expected max concurrent rpcs */);
     } else {
       service_ = grpc::gcp::CreateFakeHandshakerService(
           0 /* expected max concurrent rpcs unset */);

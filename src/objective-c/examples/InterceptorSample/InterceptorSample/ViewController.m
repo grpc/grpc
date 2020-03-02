@@ -32,7 +32,7 @@
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
 
-@interface ViewController ()<GRPCResponseHandler>
+@interface ViewController () <GRPCResponseHandler>
 
 @end
 
@@ -51,8 +51,9 @@ static NSString *const kService = @"TestService";
 }
 
 - (IBAction)tapCall:(id)sender {
-  GRPCProtoMethod *kUnaryCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"UnaryCall"];
+  GRPCProtoMethod *kUnaryCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                                       service:kService
+                                                                        method:@"UnaryCall"];
 
   GRPCRequestOptions *requestOptions =
       [[GRPCRequestOptions alloc] initWithHost:@"grpc-test.sandbox.googleapis.com"

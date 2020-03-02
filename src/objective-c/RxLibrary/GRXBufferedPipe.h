@@ -38,7 +38,7 @@
  *
  * Thread-safety: the methods of this class are thread-safe.
  */
-@interface GRXBufferedPipe : GRXWriter<GRXWriteable>
+@interface GRXBufferedPipe : GRXWriter <GRXWriteable>
 
 /** Convenience constructor. */
 + (instancetype)pipe;
