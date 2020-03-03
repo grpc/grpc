@@ -79,7 +79,7 @@ g_stands_for = "galactic"
 
 core_version = "9.0.0"
 
-version = "1.28.0-pre1"
+version = "1.28.0-pre2"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
