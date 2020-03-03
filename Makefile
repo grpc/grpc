@@ -1272,6 +1272,7 @@ server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
 server_builder_test: $(BINDIR)/$(CONFIG)/server_builder_test
 server_builder_with_socket_mutator_test: $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test
 server_context_test_spouse_test: $(BINDIR)/$(CONFIG)/server_context_test_spouse_test
+server_credentials_test: $(BINDIR)/$(CONFIG)/server_credentials_test
 server_early_return_test: $(BINDIR)/$(CONFIG)/server_early_return_test
 server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
 server_interceptors_end2end_test: $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test
@@ -1634,6 +1635,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_builder_test \
   $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
+  $(BINDIR)/$(CONFIG)/server_credentials_test \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
@@ -1790,6 +1792,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_builder_test \
   $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
+  $(BINDIR)/$(CONFIG)/server_credentials_test \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
@@ -2320,6 +2323,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test || ( echo test server_builder_with_socket_mutator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_context_test_spouse_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_context_test_spouse_test || ( echo test server_context_test_spouse_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_credentials_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_credentials_test || ( echo test server_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_early_return_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_early_return_test || ( echo test server_early_return_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_interceptors_end2end_test"
@@ -17356,6 +17361,49 @@ deps_server_context_test_spouse_test: $(SERVER_CONTEXT_TEST_SPOUSE_TEST_OBJS:.o=
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SERVER_CONTEXT_TEST_SPOUSE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_CREDENTIALS_TEST_SRC = \
+    test/cpp/server/server_credentials_test.cc \
+
+SERVER_CREDENTIALS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_CREDENTIALS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_credentials_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/server_credentials_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_credentials_test: $(PROTOBUF_DEP) $(SERVER_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_credentials_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/server/server_credentials_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_server_credentials_test: $(SERVER_CREDENTIALS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_CREDENTIALS_TEST_OBJS:.o=.dep)
 endif
 endif
 

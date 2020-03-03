@@ -20,6 +20,7 @@
 #include <memory>
 
 #include <gmock/gmock.h>
+#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
 namespace {
@@ -27,7 +28,7 @@ namespace {
 /** The 3 tests below ensure that the C-core is properly initialized when a
  *  server credentials instance is created by itself. **/
 TEST(ServerCredentialsTest, AltsServerCredentials) {
-  AltsServerCredentialsOptions options;
+  ::grpc_impl::experimental::AltsServerCredentialsOptions options;
   std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
       grpc::experimental::AltsServerCredentials(options);
   EXPECT_NE(server_credentials.get(), nullptr);
@@ -40,7 +41,7 @@ TEST(ServerCredentialsTest, LocalServerCredentials) {
 }
 
 TEST(ServerCredentialsTest, SslServerCredentials) {
-  SslServerCredentialsOptions options;
+  grpc::SslServerCredentialsOptions options;
   std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
       grpc::SslServerCredentials(options);
   EXPECT_NE(server_credentials.get(), nullptr);

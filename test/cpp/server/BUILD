@@ -59,3 +59,14 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
+
+grpc_cc_test(
+    name = "server_credentials_test",
+    srcs = ["server_credentials_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+    ],
+)
