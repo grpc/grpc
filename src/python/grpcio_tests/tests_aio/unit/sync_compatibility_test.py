@@ -19,7 +19,7 @@ import unittest
 import threading
 import time
 import random
-from typing import Callable
+from typing import Callable, Sequence, Tuple
 
 import grpc
 from grpc.experimental import aio
@@ -36,29 +36,30 @@ _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
 
 
-def _unique_options():
+def _unique_options() -> Sequence[Tuple[str, float]]:
     return (('iv', random.random()),)
 
 
 class TestSyncCompatibility(AioTestBase):
 
     async def setUp(self):
-        logging.debug('Background event loop is up')
-
         address, self._async_server = await start_test_server()
+        # Create async stub
         self._async_channel = aio.insecure_channel(address,
                                                    options=_unique_options())
         self._async_stub = test_pb2_grpc.TestServiceStub(self._async_channel)
-        await self._async_channel.channel_ready()
+
+        # Create sync stub
         self._sync_channel = grpc.insecure_channel(address,
                                                    options=_unique_options())
         self._sync_stub = test_pb2_grpc.TestServiceStub(self._sync_channel)
 
     async def tearDown(self):
+        self._sync_channel.close()
         await self._async_channel.close()
         await self._async_server.stop(None)
 
-    async def _run_in_another_thread(self, func: Callable[[None], None]):
+    async def _run_in_another_thread(self, func: Callable[[], None]):
         work_done = asyncio.Event()
 
         def thread_work():
@@ -77,7 +78,7 @@ class TestSyncCompatibility(AioTestBase):
                                          timeout=test_constants.LONG_TIMEOUT)
 
         # Calling sync API in a different thread
-        def sync_work():
+        def sync_work() -> None:
             response, call = self._sync_stub.UnaryCall.with_call(
                 messages_pb2.SimpleRequest(),
                 timeout=test_constants.LONG_TIMEOUT)
@@ -100,7 +101,7 @@ class TestSyncCompatibility(AioTestBase):
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
         # Calling sync API in a different thread
-        def sync_work():
+        def sync_work() -> None:
             response_iterator = self._sync_stub.StreamingOutputCall(request)
             for response in response_iterator:
                 assert _RESPONSE_PAYLOAD_SIZE == len(response.payload.body)
@@ -122,7 +123,7 @@ class TestSyncCompatibility(AioTestBase):
                          response.aggregated_payload_size)
 
         # Calling sync API in a different thread
-        def sync_work():
+        def sync_work() -> None:
             response = self._sync_stub.StreamingInputCall(
                 iter([request] * _NUM_STREAM_RESPONSES))
             self.assertEqual(_NUM_STREAM_RESPONSES * _REQUEST_PAYLOAD_SIZE,
@@ -147,7 +148,7 @@ class TestSyncCompatibility(AioTestBase):
         assert await call.code() == grpc.StatusCode.OK
 
         # Calling sync API in a different thread
-        def sync_work():
+        def sync_work() -> None:
             response_iterator = self._sync_stub.FullDuplexCall(iter([request]))
             for response in response_iterator:
                 assert _RESPONSE_PAYLOAD_SIZE == len(response.payload.body)
