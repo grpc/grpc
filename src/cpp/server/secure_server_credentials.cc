@@ -21,6 +21,7 @@
 #include <memory>
 
 #include <grpcpp/impl/codegen/slice.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 
 #include "src/cpp/common/secure_auth_context.h"
@@ -149,6 +150,7 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
 
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
     const TlsCredentialsOptions& options) {
+  grpc::GrpcLibraryCodegen init;
   return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
       grpc_tls_server_credentials_create(options.c_credentials_options())));
 }
