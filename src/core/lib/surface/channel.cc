@@ -429,7 +429,7 @@ RegisteredCall::RegisteredCall(const RegisteredCall& other) {
   GRPC_MDELEM_REF(authority);
 }
 
-RegisteredCall::RegisteredCall(RegisteredCall&& other) {
+RegisteredCall::RegisteredCall(RegisteredCall&& other) noexcept {
   path = other.path;
   authority = other.authority;
   other.path = GRPC_MDNULL;
