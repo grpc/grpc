@@ -43,6 +43,6 @@ cdef class _AsyncioTimer:
         if not self._active:
             return
 
-        self._timer_future.cancel()
+        grpc_run_in_event_loop_thread(self._timer_future.cancel)
         self._active = False
         cpython.Py_DECREF(self)

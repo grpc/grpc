@@ -127,7 +127,6 @@ cdef class _AsyncioSocket:
         self._task_read = grpc_schedule_coroutine(self._async_read(length))
 
     async def _async_write(self, bytearray outbound_buffer):
-        _LOGGER.debug('_async_write end %d', len(outbound_buffer))
         self._task_write = None
         self._writer.write(outbound_buffer)
         try:
@@ -149,7 +148,7 @@ cdef class _AsyncioSocket:
         When the write is finished, we need to call grpc_write_cb to notify
         Core that the work is done.
         """
-        assert not self._task_write
+        # assert not self._task_write
         cdef char* start
         cdef bytearray outbound_buffer = bytearray()
         for i in range(g_slice_buffer.count):
@@ -158,34 +157,20 @@ cdef class _AsyncioSocket:
             outbound_buffer.extend(<bytes>start[:length])
 
         self._grpc_write_cb = grpc_write_cb
-        _LOGGER.debug('_async_write start %d', len(outbound_buffer))
         self._task_write = grpc_schedule_coroutine(self._async_write(outbound_buffer))
 
     cdef bint is_connected(self) except *:
         return self._reader and not self._reader._transport.is_closing()
 
-    async def _async_close(self):
-        """Close must happen within the event loop."""
-        try:
-            _LOGGER.debug('_async_close 1')
-            if self.is_connected():
-                self._writer.close()
-            _LOGGER.debug('_async_close 2')
-            if self._server and self._server.is_serving():
-                self._server.close()
-            _LOGGER.debug('_async_close 3')
-            # if self._task_listen and not self._task_listen.done():
-            #     self._task_listen.cancel()
-            _LOGGER.debug('_async_close 4')
-        except Exception as e:
-            _LOGGER.exception(e)
-            raise
+    def _close(self):
+        """Close must happen in the event loop thread."""
+        if self.is_connected():
+            self._writer.close()
+        if self._server and self._server.is_serving():
+            self._server.close()
 
     cdef void close(self) except *:
-        _LOGGER.debug('_async_close 0')
-        task = grpc_schedule_coroutine(self._async_close())
-        _LOGGER.debug('_async_close 0.5 %s %s', task, task.done())
-        task.result()
+        grpc_run_in_event_loop_thread(self._close)
         # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
         # the server.close() won't release the fd until the close() is called
         # for the Python socket.

@@ -147,12 +147,12 @@ class ChannelzServicerTest(unittest.TestCase):
         self._channel.close()
         _close_channel_server_pairs(self._pairs)
 
-    def test_get_top_channels_basic(self):
-        self._pairs = _generate_channel_server_pairs(1)
-        resp = self._channelz_stub.GetTopChannels(
-            channelz_pb2.GetTopChannelsRequest(start_channel_id=0))
-        self.assertEqual(len(resp.channel), 1)
-        self.assertEqual(resp.end, True)
+    # def test_get_top_channels_basic(self):
+    #     self._pairs = _generate_channel_server_pairs(1)
+    #     resp = self._channelz_stub.GetTopChannels(
+    #         channelz_pb2.GetTopChannelsRequest(start_channel_id=0))
+    #     self.assertEqual(len(resp.channel), 1)
+    #     self.assertEqual(resp.end, True)
 
     # def test_get_top_channels_high_start_id(self):
     #     self._pairs = _generate_channel_server_pairs(1)
@@ -170,14 +170,14 @@ class ChannelzServicerTest(unittest.TestCase):
     #     self.assertEqual(resp.channel.data.calls_succeeded, 1)
     #     self.assertEqual(resp.channel.data.calls_failed, 0)
 
-    def test_failed_request(self):
-        self._pairs = _generate_channel_server_pairs(1)
-        # self._send_failed_unary_unary(0)
-        # resp = self._channelz_stub.GetChannel(
-        #     channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0)))
-        # self.assertEqual(resp.channel.data.calls_started, 1)
-        # self.assertEqual(resp.channel.data.calls_succeeded, 0)
-        # self.assertEqual(resp.channel.data.calls_failed, 1)
+    # def test_failed_request(self):
+    #     self._pairs = _generate_channel_server_pairs(1)
+    #     self._send_failed_unary_unary(0)
+    #     resp = self._channelz_stub.GetChannel(
+    #         channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0)))
+    #     self.assertEqual(resp.channel.data.calls_started, 1)
+    #     self.assertEqual(resp.channel.data.calls_succeeded, 0)
+    #     self.assertEqual(resp.channel.data.calls_failed, 1)
 
     # def test_many_requests(self):
     #     self._pairs = _generate_channel_server_pairs(1)
@@ -240,39 +240,39 @@ class ChannelzServicerTest(unittest.TestCase):
     #     self.assertEqual(resp.channel.data.calls_succeeded, 0)
     #     self.assertEqual(resp.channel.data.calls_failed, 0)
 
-    # def test_many_subchannels(self):
-    #     k_channels = 4
-    #     self._pairs = _generate_channel_server_pairs(k_channels)
-    #     k_success = 17
-    #     k_failed = 19
-    #     for i in range(k_success):
-    #         self._send_successful_unary_unary(0)
-    #         self._send_successful_unary_unary(2)
-    #     for i in range(k_failed):
-    #         self._send_failed_unary_unary(1)
-    #         self._send_failed_unary_unary(2)
+    def test_many_subchannels(self):
+        k_channels = 4
+        self._pairs = _generate_channel_server_pairs(k_channels)
+        k_success = 17
+        k_failed = 19
+        for i in range(k_success):
+            self._send_successful_unary_unary(0)
+            self._send_successful_unary_unary(2)
+        for i in range(k_failed):
+            self._send_failed_unary_unary(1)
+            self._send_failed_unary_unary(2)
 
-    #     gtc_resp = self._channelz_stub.GetTopChannels(
-    #         channelz_pb2.GetTopChannelsRequest(start_channel_id=0))
-    #     self.assertEqual(len(gtc_resp.channel), k_channels)
-    #     for i in range(k_channels):
-    #         # If no call performed in the channel, there shouldn't be any subchannel
-    #         if gtc_resp.channel[i].data.calls_started == 0:
-    #             self.assertEqual(len(gtc_resp.channel[i].subchannel_ref), 0)
-    #             continue
+        gtc_resp = self._channelz_stub.GetTopChannels(
+            channelz_pb2.GetTopChannelsRequest(start_channel_id=0))
+        self.assertEqual(len(gtc_resp.channel), k_channels)
+        for i in range(k_channels):
+            # If no call performed in the channel, there shouldn't be any subchannel
+            if gtc_resp.channel[i].data.calls_started == 0:
+                self.assertEqual(len(gtc_resp.channel[i].subchannel_ref), 0)
+                continue
 
-    #         # Otherwise, the subchannel should exist
-    #         self.assertGreater(len(gtc_resp.channel[i].subchannel_ref), 0)
-    #         gsc_resp = self._channelz_stub.GetSubchannel(
-    #             channelz_pb2.GetSubchannelRequest(
-    #                 subchannel_id=gtc_resp.channel[i].subchannel_ref[0].
-    #                 subchannel_id))
-    #         self.assertEqual(gtc_resp.channel[i].data.calls_started,
-    #                          gsc_resp.subchannel.data.calls_started)
-    #         self.assertEqual(gtc_resp.channel[i].data.calls_succeeded,
-    #                          gsc_resp.subchannel.data.calls_succeeded)
-    #         self.assertEqual(gtc_resp.channel[i].data.calls_failed,
-    #                          gsc_resp.subchannel.data.calls_failed)
+            # Otherwise, the subchannel should exist
+            self.assertGreater(len(gtc_resp.channel[i].subchannel_ref), 0)
+            gsc_resp = self._channelz_stub.GetSubchannel(
+                channelz_pb2.GetSubchannelRequest(
+                    subchannel_id=gtc_resp.channel[i].subchannel_ref[0].
+                    subchannel_id))
+            self.assertEqual(gtc_resp.channel[i].data.calls_started,
+                             gsc_resp.subchannel.data.calls_started)
+            self.assertEqual(gtc_resp.channel[i].data.calls_succeeded,
+                             gsc_resp.subchannel.data.calls_succeeded)
+            self.assertEqual(gtc_resp.channel[i].data.calls_failed,
+                             gsc_resp.subchannel.data.calls_failed)
 
     # def test_server_basic(self):
     #     self._pairs = _generate_channel_server_pairs(1)

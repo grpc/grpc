@@ -24,6 +24,7 @@ def _spawn_background_event_loop():
     loop_ready = threading.Event()
     def async_event_loop():
         global _grpc_aio_loop
+        global _event_loop_thread_ident
         _LOGGER.debug('asyncio mode on')
         _grpc_aio_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(_grpc_aio_loop)
@@ -89,6 +90,15 @@ def grpc_schedule_coroutine(object coro):
         return _grpc_aio_loop.create_task(coro)
     else:
         return asyncio.run_coroutine_threadsafe(coro, _grpc_aio_loop)
+
+
+def grpc_run_in_event_loop_thread(object func):
+    if _event_loop_thread_ident == threading.current_thread().ident:
+        func()
+    else:
+        async def wrapper():
+            func()
+        asyncio.run_coroutine_threadsafe(wrapper(), _grpc_aio_loop).result()
 
 
 if _GRPC_ENABLE_ASYNCIO:
