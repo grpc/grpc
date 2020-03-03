@@ -1524,8 +1524,11 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   // Don't start if the ADS call hasn't received any valid response. Note that
   // this must be the first channel because it is the current channel but its
   // ADS call hasn't seen any response.
-  AdsCallState* ads_calld = chand()->ads_calld_->calld();
-  if (ads_calld == nullptr || !ads_calld->seen_response()) return;
+  if (chand()->ads_calld_ == nullptr ||
+      chand()->ads_calld_->calld() == nullptr ||
+      !chand()->ads_calld_->calld()->seen_response()) {
+    return;
+  }
   // Start reporting.
   reporter_ = MakeOrphanable<Reporter>(
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
