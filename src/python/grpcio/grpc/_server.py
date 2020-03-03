@@ -868,7 +868,9 @@ def _process_event_and_continue(state, event):
 def _serve(state):
     while True:
         timeout = time.time() + _DEALLOCATED_SERVER_CHECK_PERIOD_S
+        logging.debug('Server [%s] polling', state.server)
         event = state.completion_queue.poll(timeout)
+        logging.debug('Server [%s] get %s', state.server, event)
         if state.server_deallocated:
             _begin_shutdown_once(state)
         if event.completion_type != cygrpc.CompletionType.queue_timeout:

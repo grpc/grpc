@@ -34,6 +34,7 @@ cdef bint so_reuse_port
 cdef grpc_error* asyncio_socket_init(
         grpc_custom_socket* grpc_socket,
         int domain) with gil:
+    _LOGGER.debug('asyncio_socket_init')
     socket = _AsyncioSocket.create(grpc_socket, None, None)
     Py_INCREF(socket)
     grpc_socket.impl = <void*>socket
@@ -41,6 +42,7 @@ cdef grpc_error* asyncio_socket_init(
 
 
 cdef void asyncio_socket_destroy(grpc_custom_socket* grpc_socket) with gil:
+    _LOGGER.debug('asyncio_socket_destroy')
     Py_DECREF(<_AsyncioSocket>grpc_socket.impl)
 
 
@@ -49,6 +51,7 @@ cdef void asyncio_socket_connect(
         const grpc_sockaddr* addr,
         size_t addr_len,
         grpc_custom_connect_callback connect_cb) with gil:
+    _LOGGER.debug('asyncio_socket_connect')
     host, port = sockaddr_to_tuple(addr, addr_len)
     socket = <_AsyncioSocket>grpc_socket.impl
     socket.connect(host, port, connect_cb)
@@ -57,12 +60,14 @@ cdef void asyncio_socket_connect(
 cdef void asyncio_socket_close(
         grpc_custom_socket* grpc_socket,
         grpc_custom_close_callback close_cb) with gil:
+    _LOGGER.debug('asyncio_socket_close')
     socket = (<_AsyncioSocket>grpc_socket.impl)
     socket.close()
     close_cb(grpc_socket)
 
 
 cdef void asyncio_socket_shutdown(grpc_custom_socket* grpc_socket) with gil:
+    _LOGGER.debug('asyncio_socket_shutdown')
     socket = (<_AsyncioSocket>grpc_socket.impl)
     socket.close()
 
@@ -71,6 +76,7 @@ cdef void asyncio_socket_write(
         grpc_custom_socket* grpc_socket,
         grpc_slice_buffer* slice_buffer,
         grpc_custom_write_callback write_cb) with gil:
+    _LOGGER.debug('asyncio_socket_write')
     socket = (<_AsyncioSocket>grpc_socket.impl)
     socket.write(slice_buffer, write_cb)
 
@@ -80,6 +86,7 @@ cdef void asyncio_socket_read(
         char* buffer_,
         size_t length,
         grpc_custom_read_callback read_cb) with gil:
+    _LOGGER.debug('asyncio_socket_read')
     socket = (<_AsyncioSocket>grpc_socket.impl)
     socket.read(buffer_, length, read_cb)
 
@@ -88,6 +95,7 @@ cdef grpc_error* asyncio_socket_getpeername(
         grpc_custom_socket* grpc_socket,
         const grpc_sockaddr* addr,
         int* length) with gil:
+    _LOGGER.debug('asyncio_socket_getpeername')
     peer = (<_AsyncioSocket>grpc_socket.impl).peername()
 
     cdef grpc_resolved_address c_addr
@@ -104,6 +112,7 @@ cdef grpc_error* asyncio_socket_getsockname(
         const grpc_sockaddr* addr,
         int* length) with gil:
     """Supplies sock_addr in add_socket_to_server."""
+    _LOGGER.debug('asyncio_socket_getsockname')
     cdef grpc_resolved_address c_addr
     socket = (<_AsyncioSocket>grpc_socket.impl)
     if socket is None:
@@ -119,6 +128,7 @@ cdef grpc_error* asyncio_socket_getsockname(
 
 
 cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil:
+    _LOGGER.debug('asyncio_socket_listen')
     (<_AsyncioSocket>grpc_socket.impl).listen()
     return grpc_error_none()
 
@@ -138,6 +148,7 @@ cdef grpc_error* asyncio_socket_bind(
         grpc_custom_socket* grpc_socket,
         const grpc_sockaddr* addr,
         size_t len, int flags) with gil:
+    _LOGGER.debug('asyncio_socket_bind')
     host, port = sockaddr_to_tuple(addr, len)
     try:
         ip = ipaddress.ip_address(host)
@@ -163,6 +174,7 @@ cdef void asyncio_socket_accept(
         grpc_custom_socket* grpc_socket,
         grpc_custom_socket* grpc_socket_client,
         grpc_custom_accept_callback accept_cb) with gil:
+    _LOGGER.debug('asyncio_socket_accept')
     (<_AsyncioSocket>grpc_socket.impl).accept(grpc_socket_client, accept_cb)
 
 
@@ -170,6 +182,7 @@ cdef grpc_error* asyncio_resolve(
         char* host,
         char* port,
         grpc_resolved_addresses** res) with gil:
+    _LOGGER.debug('asyncio_resolve')
     result = native_socket.getaddrinfo(host, port)
     res[0] = tuples_to_resolvaddr(result)
 
@@ -178,21 +191,21 @@ cdef void asyncio_resolve_async(
         grpc_custom_resolver* grpc_resolver,
         char* host,
         char* port) with gil:
+    _LOGGER.debug('asyncio_resolve_async')
     resolver = _AsyncioResolver.create(grpc_resolver)
     resolver.resolve(host, port)
 
 
 cdef void asyncio_timer_start(grpc_custom_timer* grpc_timer) with gil:
+    _LOGGER.debug('asyncio_timer_start')
     timer = _AsyncioTimer.create(grpc_timer, grpc_timer.timeout_ms / 1000.0)
     grpc_timer.timer = <void*>timer
 
 
 cdef void asyncio_timer_stop(grpc_custom_timer* grpc_timer) with gil:
-    if grpc_timer.timer == NULL:
-        return
-    else:
-        timer = <_AsyncioTimer>grpc_timer.timer
-        timer.stop()
+    _LOGGER.debug('asyncio_timer_stop')
+    timer = <_AsyncioTimer>grpc_timer.timer
+    timer.stop()
 
 
 cdef void asyncio_init_loop() with gil:

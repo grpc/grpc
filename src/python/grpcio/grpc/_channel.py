@@ -1128,7 +1128,9 @@ def _run_channel_spin_thread(state):
     def channel_spin():
         while True:
             cygrpc.block_if_fork_in_progress(state)
+            logging.debug('Channel [%s] polling', state.channel)
             event = state.channel.next_call_event()
+            logging.debug('Channel [%s] get', state.channel, event)
             if event.completion_type == cygrpc.CompletionType.queue_timeout:
                 continue
             call_completed = event.tag(event)

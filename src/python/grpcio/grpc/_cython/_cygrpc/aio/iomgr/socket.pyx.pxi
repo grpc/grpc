@@ -62,9 +62,9 @@ cdef class _AsyncioSocket:
         connected = self.is_connected()
         return f"<{class_name} {id_} connected={connected}>"
 
-    def _connect_cb(self, future):
+    async def _async_connect(self, object host, object port):
         try:
-            self._reader, self._writer = future.result()
+            self._reader, self._writer = await asyncio.open_connection(host, port)
         except Exception as e:
             self._grpc_connect_cb(
                 <grpc_custom_socket*>self._grpc_socket,
@@ -84,28 +84,6 @@ cdef class _AsyncioSocket:
             <grpc_error*>0
         )
 
-    async def _async_read(self, size_t length):
-        self._task_read = None
-        try:
-            inbound_buffer = await self._reader.read(n=length)
-        except ConnectionError as e:
-            self._grpc_read_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                -1,
-                grpc_socket_error("Read failed: {}".format(e).encode())
-            )
-        else:
-            string.memcpy(
-                <void*>self._read_buffer,
-                <char*>inbound_buffer,
-                len(inbound_buffer)
-            )
-            self._grpc_read_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                len(inbound_buffer),
-                <grpc_error*>0
-            )
-
     cdef void connect(self,
                       object host,
                       object port,
@@ -113,33 +91,38 @@ cdef class _AsyncioSocket:
         assert not self._reader
         assert not self._task_connect
 
-        self._task_connect = grpc_schedule_coroutine(
-            asyncio.open_connection(host, port)
-        )
         self._grpc_connect_cb = grpc_connect_cb
-        self._task_connect.add_done_callback(self._connect_cb)
+        self._task_connect = grpc_schedule_coroutine(self._async_connect(host, port))
 
     cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb) except *:
-        assert not self._task_read
+        _LOGGER.debug('socket read')
+        async def _async_read(size_t length):
+            self._task_read = None
+            _LOGGER.debug('socket _async_read')
+            try:
+                inbound_buffer = await self._reader.read(n=length)
+            except ConnectionError as e:
+                grpc_read_cb(
+                    <grpc_custom_socket*>self._grpc_socket,
+                    -1,
+                    grpc_socket_error("Read failed: {}".format(e).encode())
+                )
+            else:
+                string.memcpy(
+                    <void*>buffer_,
+                    <char*>inbound_buffer,
+                    len(inbound_buffer)
+                )
+                grpc_read_cb(
+                    <grpc_custom_socket*>self._grpc_socket,
+                    len(inbound_buffer),
+                    <grpc_error*>0
+                )
 
-        self._grpc_read_cb = grpc_read_cb
-        self._read_buffer = buffer_
-        self._task_read = grpc_schedule_coroutine(self._async_read(length))
-
-    async def _async_write(self, bytearray outbound_buffer):
-        self._task_write = None
-        self._writer.write(outbound_buffer)
-        try:
-            await self._writer.drain()
-            self._grpc_write_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                <grpc_error*>0
-            )
-        except ConnectionError as connection_error:
-            self._grpc_write_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                grpc_socket_error("Socket write failed: {}".format(connection_error).encode()),
-            )
+        # self._grpc_read_cb = grpc_read_cb
+        # self._read_buffer = buffer_
+        assert self._task_read is None
+        self._task_read = grpc_schedule_coroutine(_async_read(length))
 
     cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb) except *:
         """Performs write to network socket in AsyncIO.
@@ -148,6 +131,23 @@ cdef class _AsyncioSocket:
         When the write is finished, we need to call grpc_write_cb to notify
         Core that the work is done.
         """
+        _LOGGER.debug('socket write')
+        async def _async_write(bytearray outbound_buffer):
+            self._task_write = None
+            _LOGGER.debug('socket _async_write')
+            self._writer.write(outbound_buffer)
+            try:
+                await self._writer.drain()
+                grpc_write_cb(
+                    <grpc_custom_socket*>self._grpc_socket,
+                    <grpc_error*>0
+                )
+            except ConnectionError as connection_error:
+                grpc_write_cb(
+                    <grpc_custom_socket*>self._grpc_socket,
+                    grpc_socket_error("Socket write failed: {}".format(connection_error).encode()),
+                )
+
         # assert not self._task_write
         cdef char* start
         cdef bytearray outbound_buffer = bytearray()
@@ -156,8 +156,8 @@ cdef class _AsyncioSocket:
             length = grpc_slice_buffer_length(g_slice_buffer, i)
             outbound_buffer.extend(<bytes>start[:length])
 
-        self._grpc_write_cb = grpc_write_cb
-        self._task_write = grpc_schedule_coroutine(self._async_write(outbound_buffer))
+        # assert self._task_write is None
+        self._task_write = grpc_schedule_coroutine(_async_write(outbound_buffer))
 
     cdef bint is_connected(self) except *:
         return self._reader and not self._reader._transport.is_closing()
