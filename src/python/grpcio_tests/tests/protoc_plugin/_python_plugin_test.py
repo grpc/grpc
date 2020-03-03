@@ -502,27 +502,34 @@ class PythonPluginTest(unittest.TestCase):
                       grpc.StatusCode.DEADLINE_EXCEEDED)
         service.server.stop(None)
 
-    @unittest.skipIf(sys.version_info[0] < 3, "Unsupported on Python 2.")
+
+@unittest.skipIf(sys.version_info[0] < 3, "Unsupported on Python 2.")
+class SimpleStubsPluginTest(unittest.TestCase):
+    servicer_methods = _ServicerMethods()
+
+    class Servicer(service_pb2_grpc.TestServiceServicer):
+
+        def UnaryCall(self, request, context):
+            return SimpleStubsPluginTest.servicer_methods.UnaryCall(request, context)
+
+    def setUp(self):
+        super(SimpleStubsPluginTest, self).setUp()
+        self._server = test_common.test_server()
+        service_pb2_grpc.add_TestServiceServicer_to_server(self.Servicer(), self._server)
+        self._port = self._server.add_insecure_port('[::]:0')
+        self._server.start()
+        self._target = 'localhost:{}'.format(self._port)
+
+    def tearDown(self):
+        self._server.stop(None)
+        super(SimpleStubsPluginTest, self).tearDown()
+
     def testUnaryCallSimple(self):
-        # TODO: Use getattr?
-        servicer_methods = _ServicerMethods()
-
-        class Servicer(service_pb2_grpc.TestServiceServicer):
-
-            def UnaryCall(self, request, context):
-                return servicer_methods.UnaryCall(request, context)
-
-        server = test_common.test_server()
-        service_pb2_grpc.add_TestServiceServicer_to_server(Servicer(), server)
-        port = server.add_insecure_port('[::]:0')
-        server.start()
-        target = 'localhost:{}'.format(port)
         request = request_pb2.SimpleRequest(response_size=13)
-        response = service_pb2_grpc.TestService.UnaryCall(request, target)
-        expected_response = servicer_methods.UnaryCall(
+        response = service_pb2_grpc.TestService.UnaryCall(request, self._target)
+        expected_response = self.servicer_methods.UnaryCall(
             request, 'not a real context!')
         self.assertEqual(expected_response, response)
-        server.stop(None)
 
 
 if __name__ == '__main__':
