@@ -575,10 +575,9 @@ bool PrivateGenerator::PrintAddServicerToServer(
  * file, with no suffixes. Since this class merely acts as a namespace, it
  * should never be instantiated.
  */
-bool PrivateGenerator::PrintServiceClass(const grpc::string& package_qualified_service_name,
-                                         const grpc_generator::Service* service,
-                                         grpc_generator::Printer* out)
-{
+bool PrivateGenerator::PrintServiceClass(
+    const grpc::string& package_qualified_service_name,
+    const grpc_generator::Service* service, grpc_generator::Printer* out) {
   StringMap dict;
   dict["Service"] = service->name();
   out->Print("\n\n");
@@ -609,16 +608,15 @@ bool PrivateGenerator::PrintServiceClass(const grpc::string& package_qualified_s
       method_dict["Method"] = method->name();
       out->Print("@staticmethod\n");
       out->Print(method_dict, "def $Method$(");
+      grpc::string request_parameter(
+          method->ClientStreaming() ? "request_iterator" : "request");
+      StringMap args_dict;
+      args_dict["RequestParameter"] = request_parameter;
       {
         IndentScope args_indent(out);
         IndentScope args_double_indent(out);
-        grpc::string request_parameter(method->ClientStreaming() ? "request_iterator" : "request");
-        StringMap args_dict;
-        args_dict["RequestParameter"] = request_parameter;
         out->Print(args_dict, "$RequestParameter$,\n");
         out->Print("target,\n");
-        out->Print("request_serializer=None,\n");
-        out->Print("request_deserializer=None,\n");
         out->Print("options=(),\n");
         out->Print("channel_credentials=None,\n");
         out->Print("call_credentials=None,\n");
@@ -632,20 +630,25 @@ bool PrivateGenerator::PrintServiceClass(const grpc::string& package_qualified_s
         grpc::string arity_method_name =
             grpc::string(method->ClientStreaming() ? "stream" : "unary") + "_" +
             grpc::string(method->ServerStreaming() ? "stream" : "unary");
-        StringMap invocation_dict;
-        invocation_dict["ArityMethodName"] = arity_method_name;
-        invocation_dict["PackageQualifiedService"] = package_qualified_service_name;
-        invocation_dict["Method"] = method->name();
-        out->Print(invocation_dict, "return grpc.experimental.$ArityMethodName$(request, target, '/$PackageQualifiedService$/$Method$',\n");
+        args_dict["ArityMethodName"] = arity_method_name;
+        args_dict["PackageQualifiedService"] = package_qualified_service_name;
+        args_dict["Method"] = method->name();
+        out->Print(args_dict,
+                   "return "
+                   "grpc.experimental.$ArityMethodName$($RequestParameter$, "
+                   "target, '/$PackageQualifiedService$/$Method$',\n");
         {
           IndentScope continuation_indent(out);
           StringMap serializer_dict;
           serializer_dict["RequestModuleAndClass"] = request_module_and_class;
           serializer_dict["ResponseModuleAndClass"] = response_module_and_class;
-          out->Print(serializer_dict, "$RequestModuleAndClass$.SerializeToString,\n");
+          out->Print(serializer_dict,
+                     "$RequestModuleAndClass$.SerializeToString,\n");
           out->Print(serializer_dict, "$ResponseModuleAndClass$.FromString,\n");
           out->Print("options, channel_credentials,\n");
-          out->Print("call_credentials, compression, wait_for_ready, timeout, metadata)\n");
+          out->Print(
+              "call_credentials, compression, wait_for_ready, timeout, "
+              "metadata)\n");
         }
       }
     }
@@ -730,7 +733,8 @@ bool PrivateGenerator::PrintGAServices(grpc_generator::Printer* out) {
           PrintServicer(service.get(), out) &&
           PrintAddServicerToServer(package_qualified_service_name,
                                    service.get(), out) &&
-          PrintServiceClass(package_qualified_service_name, service.get(), out))) {
+          PrintServiceClass(package_qualified_service_name, service.get(),
+                            out))) {
       return false;
     }
   }
