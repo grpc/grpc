@@ -409,6 +409,9 @@ static const NSTimeInterval kInvertedTimeout = 2;
                        XCTAssertNotNil(error,
                                        @"Failure: no error received; Expect: receive "
                                        @"deadline exceeded.");
+                       if (error.code != GRPCErrorCodeDeadlineExceeded) {
+                         NSLog(@"Unexpected error: %@", error);
+                       }
                        XCTAssertEqual(error.code, GRPCErrorCodeDeadlineExceeded);
                        [completion fulfill];
                      }]
