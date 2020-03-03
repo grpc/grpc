@@ -27,10 +27,9 @@
 
 + (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host;
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;
-+ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE(
-    "The API for this feature is experimental, "
-    "and might be removed or modified at any "
-    "time.");
++ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
+                                                      "and might be removed or modified at any "
+                                                      "time.");
 + (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm forhost:(nonnull NSString *)host;
 + (void)setKeepaliveWithInterval:(int)interval
                          timeout:(int)timeout

@@ -76,7 +76,7 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 
 }  // namespace grpc_core
 
-int main(int /*argc*/, char* /*argv*/ []) {
+int main(int /*argc*/, char* /*argv*/[]) {
   using namespace grpc_core;
   grpc_init();
   HandshakerRegistry::RegisterHandshakerFactory(

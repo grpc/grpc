@@ -127,7 +127,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
   grpc_error* error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_string, &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
-  return grpc_auth_json_key_create_from_json(std::move(json));
+  return grpc_auth_json_key_create_from_json(json);
 }
 
 void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {

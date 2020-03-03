@@ -20,19 +20,18 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 #include "absl/strings/str_format.h"
-
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -1097,8 +1096,10 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
             "data equal to \"too_many_pings\"");
     double current_keepalive_time_ms = static_cast<double>(t->keepalive_time);
+    constexpr int max_keepalive_time_ms =
+        INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     t->keepalive_time =
-        current_keepalive_time_ms > INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER
+        current_keepalive_time_ms > static_cast<double>(max_keepalive_time_ms)
             ? GRPC_MILLIS_INF_FUTURE
             : static_cast<grpc_millis>(current_keepalive_time_ms *
                                        KEEPALIVE_TIME_BACKOFF_MULTIPLIER);

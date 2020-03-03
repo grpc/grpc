@@ -112,7 +112,7 @@
 
 /** This protocol is kept for backwards compatibility with existing code. */
 DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
-@protocol GRPCRequestHeaders<NSObject>
+@protocol GRPCRequestHeaders <NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
 - (id)objectForKeyedSubscript:(id)key;
@@ -125,7 +125,7 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
 /** This is only needed for backwards-compatibility. */
-@interface NSMutableDictionary (GRPCRequestHeaders)<GRPCRequestHeaders>
+@interface NSMutableDictionary (GRPCRequestHeaders) <GRPCRequestHeaders>
 @end
 #pragma clang diagnostic pop
 #pragma clang diagnostic pop
