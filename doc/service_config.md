@@ -33,6 +33,50 @@ For details of how the DNS resolver plugin supports service configs, see
 [gRFC A2: Service Config via
 DNS](https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md).
 
+# Example
+
+Here is an example service config in protobuf form:
+
+```
+{
+  // Use round_robin LB policy.
+  load_balancing_config: { round_robin: {} }
+  // This method config applies to method "foo/bar" and to all methods
+  // of service "baz".
+  method_config: {
+    name: {
+      service: "foo"
+      method: "bar"
+    }
+    name: {
+      service: "baz"
+    }
+    // Default timeout for matching methods.
+    timeout: {
+      seconds: 1
+      nanos: 1
+    }
+  }
+}
+```
+
+Here is the same example service config in JSON form:
+
+```
+{
+  "loadBalancingConfig": [ { "round_robin": {} } ],
+  "methodConfig": [
+    {
+      "name": [
+        { "service": "foo", "method": "bar" },
+        { "service": "baz" }
+      ],
+      "timeout": "1.0000000001s"
+    }
+  ]
+}
+```
+
 # APIs
 
 The service config is used in the following APIs:
