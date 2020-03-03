@@ -124,6 +124,14 @@ TEST_F(TlsSecurityConnectorTest, NoKeysAndConfig) {
   options_->Unref();
 }
 
+TEST_F(TlsSecurityConnectorTest, NoKeysAndConfigAsAClient) {
+  grpc_ssl_certificate_config_reload_status reload_status;
+  grpc_status_code status =
+      TlsFetchKeyMaterials(config_, *options_, false, &reload_status);
+  EXPECT_EQ(status, GRPC_STATUS_OK);
+  options_->Unref();
+}
+
 TEST_F(TlsSecurityConnectorTest, NoKeySuccessReload) {
   grpc_ssl_certificate_config_reload_status reload_status;
   SetOptions(SUCCESS);
