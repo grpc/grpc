@@ -14,6 +14,7 @@
 """Tests of grpc_channelz.v1.channelz."""
 
 import unittest
+import logging
 
 from concurrent import futures
 
@@ -466,4 +467,5 @@ class ChannelzServicerTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

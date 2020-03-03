@@ -167,7 +167,7 @@ cdef class _AsyncioSocket:
             self._writer.close()
         if self._server:
             self._server.close()
-        if not self._task_listen.done():
+        if self._task_listen and not self._task_listen.done():
             self._task_listen.cancel()
         # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
         # the server.close() won't release the fd until the close() is called

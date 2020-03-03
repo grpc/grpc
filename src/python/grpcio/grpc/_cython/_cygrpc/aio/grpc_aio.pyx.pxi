@@ -16,6 +16,27 @@ cdef bint _grpc_aio_initialized = False
 cdef object _grpc_aio_loop
 cdef object _event_loop_thread_ident
 
+_GRPC_ENABLE_ASYNCIO = (
+    os.environ.get('GRPC_ENABLE_ASYNCIO', '0').lower() in _TRUE_VALUES)
+
+
+def _spawn_background_event_loop():
+    loop_ready = threading.Event()
+    def async_event_loop():
+        global _grpc_aio_loop
+        _LOGGER.debug('asyncio mode on')
+        _grpc_aio_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_grpc_aio_loop)
+        loop_ready.set()
+        _event_loop_thread_ident = threading.current_thread().ident
+        _grpc_aio_loop.run_forever()
+
+    thread = threading.Thread(target=async_event_loop)
+    thread.daemon = True
+    thread.start()
+    loop_ready.wait()
+
+
 def init_grpc_aio(background=False):
     global _grpc_aio_initialized
     global _grpc_aio_loop
@@ -27,8 +48,11 @@ def init_grpc_aio(background=False):
         _grpc_aio_initialized = True
 
     # Anchors the event loop that the gRPC library going to use.
-    _grpc_aio_loop = asyncio.get_event_loop()
-    _event_loop_thread_ident = threading.current_thread().ident
+    if background:
+        _spawn_background_event_loop()
+    else:
+        _grpc_aio_loop = asyncio.get_event_loop()
+        _event_loop_thread_ident = threading.current_thread().ident
 
     # Activates asyncio IO manager
     install_asyncio_iomgr()
@@ -64,3 +88,7 @@ def grpc_schedule_coroutine(object coro):
         return _grpc_aio_loop.create_task(coro)
     else:
         return asyncio.run_coroutine_threadsafe(coro, _grpc_aio_loop)
+
+
+if _GRPC_ENABLE_ASYNCIO:
+    init_grpc_aio(background=True)
