@@ -730,15 +730,16 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
       // Wrap it in the LRS policy if load reporting is enabled.
       Json endpoint_picking_policy;
       if (config_->lrs_load_reporting_server_name().has_value()) {
+        const auto key = GetLrsClusterKey();
         Json::Object lrs_config = {
-            {"clusterName", config_->cluster_name()},
+            {"clusterName", std::string(key.first)},
             {"locality", locality_name_json},
             {"lrsLoadReportingServerName",
              config_->lrs_load_reporting_server_name().value()},
             {"childPolicy", config_->endpoint_picking_policy()},
         };
-        if (!config_->eds_service_name().empty()) {
-          lrs_config["edsServiceName"] = config_->eds_service_name();
+        if (!key.second.empty()) {
+          lrs_config["edsServiceName"] = std::string(key.second);
         }
         endpoint_picking_policy = Json::Array{Json::Object{
             {"lrs_experimental", std::move(lrs_config)},
@@ -812,8 +813,8 @@ void EdsLb::UpdateChildPolicyLocked() {
 }
 
 grpc_channel_args* EdsLb::CreateChildPolicyArgsLocked(
-    const grpc_channel_args* args_in) {
-  const grpc_arg args_to_add[] = {
+    const grpc_channel_args* args) {
+  absl::InlinedVector<grpc_arg, 3> args_to_add = {
       // A channel arg indicating if the target is a backend inferred from an
       // xds load balancer.
       grpc_channel_arg_integer_create(
@@ -824,8 +825,11 @@ grpc_channel_args* EdsLb::CreateChildPolicyArgsLocked(
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1),
   };
-  return grpc_channel_args_copy_and_add(args_in, args_to_add,
-                                        GPR_ARRAY_SIZE(args_to_add));
+  if (xds_client_from_channel_ == nullptr) {
+    args_to_add.emplace_back(xds_client_->MakeChannelArg());
+  }
+  return grpc_channel_args_copy_and_add(args, args_to_add.data(),
+                                        args_to_add.size());
 }
 
 OrphanablePtr<LoadBalancingPolicy>
@@ -972,10 +976,10 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
     // Cluster name.
     std::string cluster_name;
     auto it = json.object_value().find("clusterName");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:clusterName error:required field missing"));
-    } else {
+// FIXME: this should be required... maybe make this behavior
+// conditional based on whether this policy is invoked as
+// xds_experimental or eds_experimental?
+    if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:clusterName error:type should be string"));

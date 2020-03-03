@@ -1058,7 +1058,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             : kDefaultServiceConfigWithoutLoadReporting_;
     result.service_config =
         grpc_core::ServiceConfig::Create(service_config_json, &error);
-    GRPC_ERROR_UNREF(error);
+    ASSERT_NE(result.service_config.get(), nullptr);
+    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
         lb_channel_response_generator == nullptr
             ? lb_channel_response_generator_.get()
@@ -1090,7 +1091,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
           grpc_core::ServiceConfig::Create(service_config_json, &error);
-      GRPC_ERROR_UNREF(error);
+      ASSERT_NE(result.service_config.get(), nullptr);
+      ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     }
     if (lb_channel_response_generator == nullptr) {
       lb_channel_response_generator = lb_channel_response_generator_.get();
@@ -1279,7 +1281,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{\n"
+      "    { \"eds_experimental\":{\n"
       "      \"lrsLoadReportingServerName\": \"\"\n"
       "    } }\n"
       "  ]\n"
@@ -1288,7 +1290,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{\n"
+      "    { \"eds_experimental\":{\n"
       "    } }\n"
       "  ]\n"
       "}";
@@ -1325,7 +1327,7 @@ TEST_P(BasicTest, Vanilla) {
   EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ(
-      (GetParam().use_xds_resolver() ? "cds_experimental" : "xds_experimental"),
+      (GetParam().use_xds_resolver() ? "cds_experimental" : "eds_experimental"),
       channel_->GetLoadBalancingPolicyName());
 }
 

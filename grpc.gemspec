@@ -149,7 +149,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/eds.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc )
-  s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy_factory.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy_registry.cc )

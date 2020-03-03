@@ -1324,7 +1324,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
@@ -1982,7 +1981,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
