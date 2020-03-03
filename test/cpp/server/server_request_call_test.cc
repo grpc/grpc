@@ -28,6 +28,7 @@
 
 #include <grpc/support/log.h>
 
+// TODO(veblush): DON'T SUBMIT. THIS IS TEST ONLY
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
