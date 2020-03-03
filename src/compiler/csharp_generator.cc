@@ -347,6 +347,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service,
           "{\n");
     out->Indent();
     out->Print(
+            "context.SetPayloadLength(bufferMessage.CalculateSize());"
             "var writer = new global::Google.Protobuf.CodedOutputWriter("
             "context.GetBufferWriter());\n"
             "bufferMessage.WriteTo(ref writer);\n"

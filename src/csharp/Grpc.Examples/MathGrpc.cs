@@ -33,7 +33,7 @@ namespace Math {
       var bufferMessage = message as global::Google.Protobuf.IBufferMessage;
       if (bufferMessage != null)
       {
-        var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
+        context.SetPayloadLength(bufferMessage.CalculateSize());var writer = new global::Google.Protobuf.CodedOutputWriter(context.GetBufferWriter());
         bufferMessage.WriteTo(ref writer);
         writer.Flush();
         context.Complete();
