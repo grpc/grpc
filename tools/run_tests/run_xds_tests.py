@@ -350,8 +350,8 @@ def test_round_robin(gcp, backend_service, instance_group):
 
 
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
-    gcp, backend_service, primary_instance_group,
-    secondary_zone_instance_group):
+        gcp, backend_service, primary_instance_group,
+        secondary_zone_instance_group):
     try:
         patch_backend_instances(
             gcp, backend_service,
@@ -376,8 +376,8 @@ def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
 
 
 def test_secondary_locality_gets_requests_on_primary_failure(
-    gcp, backend_service, primary_instance_group,
-    secondary_zone_instance_group):
+        gcp, backend_service, primary_instance_group,
+        secondary_zone_instance_group):
     try:
         patch_backend_instances(
             gcp, backend_service,
