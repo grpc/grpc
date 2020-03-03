@@ -502,6 +502,7 @@ class PythonPluginTest(unittest.TestCase):
                       grpc.StatusCode.DEADLINE_EXCEEDED)
         service.server.stop(None)
 
+    @unittest.skipIf(sys.version_info[0] < 3, "Unsupported on Python 2.")
     def testUnaryCallSimple(self):
         # TODO: Use getattr?
         servicer_methods = _ServicerMethods()
