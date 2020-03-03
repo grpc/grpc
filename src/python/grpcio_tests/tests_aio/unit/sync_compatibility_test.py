@@ -1,0 +1,161 @@
+# Copyright 2020 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Testing the compatibility between AsyncIO stack and the old stack."""
+
+import asyncio
+import logging
+import unittest
+import threading
+import time
+import random
+from typing import Callable
+
+import grpc
+from grpc.experimental import aio
+
+from tests_aio.unit._test_base import AioTestBase
+from tests.unit.framework.common import test_constants
+from tests.unit.framework.common import get_socket
+from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+from tests_aio.unit._test_server import start_test_server
+from tests_aio.unit import _common
+
+_NUM_STREAM_RESPONSES = 5
+_REQUEST_PAYLOAD_SIZE = 7
+_RESPONSE_PAYLOAD_SIZE = 42
+
+
+def _unique_options():
+    return (('iv', random.random()),)
+
+
+class TestSyncCompatibility(AioTestBase):
+
+    async def setUp(self):
+        logging.debug('Background event loop is up')
+
+        address, self._async_server = await start_test_server()
+        self._async_channel = aio.insecure_channel(address,
+                                                   options=_unique_options())
+        self._async_stub = test_pb2_grpc.TestServiceStub(self._async_channel)
+        await self._async_channel.channel_ready()
+        self._sync_channel = grpc.insecure_channel(address,
+                                                   options=_unique_options())
+        self._sync_stub = test_pb2_grpc.TestServiceStub(self._sync_channel)
+
+    async def tearDown(self):
+        await self._async_channel.close()
+        await self._async_server.stop(None)
+
+    async def _run_in_another_thread(self, func: Callable[[None], None]):
+        work_done = asyncio.Event()
+
+        def thread_work():
+            func()
+            self.loop.call_soon_threadsafe(work_done.set)
+
+        thread = threading.Thread(target=thread_work)
+        thread.daemon = True
+        thread.start()
+        await work_done.wait()
+        thread.join()
+
+    async def test_unary_unary(self):
+        # Calling async API in this thread
+        await self._async_stub.UnaryCall(messages_pb2.SimpleRequest(),
+                                         timeout=test_constants.LONG_TIMEOUT)
+
+        # Calling sync API in a different thread
+        def sync_work():
+            response, call = self._sync_stub.UnaryCall.with_call(
+                messages_pb2.SimpleRequest(),
+                timeout=test_constants.LONG_TIMEOUT)
+            self.assertIsInstance(response, messages_pb2.SimpleResponse)
+            self.assertEqual(grpc.StatusCode.OK, call.code())
+
+        await self._run_in_another_thread(sync_work)
+
+    async def test_unary_stream(self):
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+
+        # Calling async API in this thread
+        call = self._async_stub.StreamingOutputCall(request)
+
+        for _ in range(_NUM_STREAM_RESPONSES):
+            await call.read()
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+        # Calling sync API in a different thread
+        def sync_work():
+            response_iterator = self._sync_stub.StreamingOutputCall(request)
+            for response in response_iterator:
+                assert _RESPONSE_PAYLOAD_SIZE == len(response.payload.body)
+            self.assertEqual(grpc.StatusCode.OK, response_iterator.code())
+
+        await self._run_in_another_thread(sync_work)
+
+    async def test_stream_unary(self):
+        payload = messages_pb2.Payload(body=b'\0' * _REQUEST_PAYLOAD_SIZE)
+        request = messages_pb2.StreamingInputCallRequest(payload=payload)
+
+        # Calling async API in this thread
+        async def gen():
+            for _ in range(_NUM_STREAM_RESPONSES):
+                yield request
+
+        response = await self._async_stub.StreamingInputCall(gen())
+        self.assertEqual(_NUM_STREAM_RESPONSES * _REQUEST_PAYLOAD_SIZE,
+                         response.aggregated_payload_size)
+
+        # Calling sync API in a different thread
+        def sync_work():
+            response = self._sync_stub.StreamingInputCall(
+                iter([request] * _NUM_STREAM_RESPONSES))
+            self.assertEqual(_NUM_STREAM_RESPONSES * _REQUEST_PAYLOAD_SIZE,
+                             response.aggregated_payload_size)
+
+        await self._run_in_another_thread(sync_work)
+
+    async def test_stream_stream(self):
+        request = messages_pb2.StreamingOutputCallRequest()
+        request.response_parameters.append(
+            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+
+        # Calling async API in this thread
+        call = self._async_stub.FullDuplexCall()
+
+        for _ in range(_NUM_STREAM_RESPONSES):
+            await call.write(request)
+            response = await call.read()
+            assert _RESPONSE_PAYLOAD_SIZE == len(response.payload.body)
+
+        await call.done_writing()
+        assert await call.code() == grpc.StatusCode.OK
+
+        # Calling sync API in a different thread
+        def sync_work():
+            response_iterator = self._sync_stub.FullDuplexCall(iter([request]))
+            for response in response_iterator:
+                assert _RESPONSE_PAYLOAD_SIZE == len(response.payload.body)
+            self.assertEqual(grpc.StatusCode.OK, response_iterator.code())
+
+        await self._run_in_another_thread(sync_work)
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    unittest.main(verbosity=2)

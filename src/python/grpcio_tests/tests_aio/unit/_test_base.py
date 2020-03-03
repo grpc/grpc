@@ -18,10 +18,15 @@ import asyncio
 from typing import Callable
 import unittest
 from grpc.experimental import aio
+from grpc._cython import cygrpc
 
 __all__ = 'AioTestBase'
 
 _COROUTINE_FUNCTION_ALLOWLIST = ['setUp', 'tearDown']
+
+# We should try to run tests in a single event loop, instead of multiple event
+# loops scattered in different threads.
+_testing_event_loop = None
 
 
 def _async_to_sync_decorator(f: Callable, loop: asyncio.AbstractEventLoop):
@@ -34,14 +39,18 @@ def _async_to_sync_decorator(f: Callable, loop: asyncio.AbstractEventLoop):
 
 
 def _get_default_loop(debug=True):
-    try:
-        loop = asyncio.get_event_loop()
-    except:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    finally:
-        loop.set_debug(debug)
-        return loop
+    global _testing_event_loop
+    if _testing_event_loop:
+        return _testing_event_loop
+    else:
+        try:
+            _testing_event_loop = asyncio.get_event_loop()
+        except:
+            _testing_event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(_testing_event_loop)
+        finally:
+            _testing_event_loop.set_debug(debug)
+            return _testing_event_loop
 
 
 # NOTE(gnossen) this test class can also be implemented with metaclass.
