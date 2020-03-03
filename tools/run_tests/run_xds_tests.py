@@ -216,11 +216,13 @@ def test_backends_restart(gcp, backend_service, instance_group):
     wait_until_only_given_instances_receive_load(instance_names,
                                                  _WAIT_FOR_STATS_SEC)
     stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
-    resize_instance_group(gcp, instance_group, 0)
-    wait_until_only_given_instances_receive_load([],
-                                                 _WAIT_FOR_BACKEND_SEC,
-                                                 allow_failures=True)
-    resize_instance_group(gcp, instance_group, num_instances)
+    try:
+        resize_instance_group(gcp, instance_group, 0)
+        wait_until_only_given_instances_receive_load([],
+                                                     _WAIT_FOR_BACKEND_SEC,
+                                                     allow_failures=True)
+    finally:
+        resize_instance_group(gcp, instance_group, num_instances)
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     new_instance_names = get_instance_names(gcp, instance_group)
     wait_until_only_given_instances_receive_load(new_instance_names,
