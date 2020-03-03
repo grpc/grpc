@@ -156,26 +156,13 @@ class ChannelCache:
             return len(self._mapping)
 
 
-# TODO(rbellevi): Consider a credential type that has the
-#   following functionality matrix:
-#
-#   +----------+-------+--------+
-#   |          | local | remote |
-#   |----------+-------+--------+
-#   | secure   | o     | o      |
-#   | insecure | o     | x      |
-#   +----------+-------+--------+
-#
-#  Make this the default option.
-
-
 @experimental_api
 def unary_unary(
         request: RequestType,
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
-        request_deserializer: Optional[Callable[[bytes], Any]] = None,
+        response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
         call_credentials: Optional[grpc.CallCredentials] = None,
@@ -232,7 +219,7 @@ def unary_unary(
     channel = ChannelCache.get().get_channel(target, options,
                                              channel_credentials, compression)
     multicallable = channel.unary_unary(method, request_serializer,
-                                        request_deserializer)
+                                        response_deserializer)
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -246,7 +233,7 @@ def unary_stream(
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
-        request_deserializer: Optional[Callable[[bytes], Any]] = None,
+        response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
         call_credentials: Optional[grpc.CallCredentials] = None,
@@ -302,7 +289,7 @@ def unary_stream(
     channel = ChannelCache.get().get_channel(target, options,
                                              channel_credentials, compression)
     multicallable = channel.unary_stream(method, request_serializer,
-                                         request_deserializer)
+                                         response_deserializer)
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -316,7 +303,7 @@ def stream_unary(
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
-        request_deserializer: Optional[Callable[[bytes], Any]] = None,
+        response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
         call_credentials: Optional[grpc.CallCredentials] = None,
@@ -372,7 +359,7 @@ def stream_unary(
     channel = ChannelCache.get().get_channel(target, options,
                                              channel_credentials, compression)
     multicallable = channel.stream_unary(method, request_serializer,
-                                         request_deserializer)
+                                         response_deserializer)
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -386,7 +373,7 @@ def stream_stream(
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
-        request_deserializer: Optional[Callable[[bytes], Any]] = None,
+        response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
         call_credentials: Optional[grpc.CallCredentials] = None,
@@ -442,7 +429,7 @@ def stream_stream(
     channel = ChannelCache.get().get_channel(target, options,
                                              channel_credentials, compression)
     multicallable = channel.stream_stream(method, request_serializer,
-                                          request_deserializer)
+                                          response_deserializer)
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,

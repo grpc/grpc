@@ -502,6 +502,27 @@ class PythonPluginTest(unittest.TestCase):
                       grpc.StatusCode.DEADLINE_EXCEEDED)
         service.server.stop(None)
 
+    def testUnaryCallSimple(self):
+        # TODO: Use getattr?
+        servicer_methods = _ServicerMethods()
+
+        class Servicer(service_pb2_grpc.TestServiceServicer):
+
+            def UnaryCall(self, request, context):
+                return servicer_methods.UnaryCall(request, context)
+
+        server = test_common.test_server()
+        service_pb2_grpc.add_TestServiceServicer_to_server(Servicer(), server)
+        port = server.add_insecure_port('[::]:0')
+        server.start()
+        target = 'localhost:{}'.format(port)
+        request = request_pb2.SimpleRequest(response_size=13)
+        response = service_pb2_grpc.TestService.UnaryCall(request, target)
+        expected_response = servicer_methods.UnaryCall(
+            request, 'not a real context!')
+        self.assertEqual(expected_response, response)
+        server.stop(None)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
