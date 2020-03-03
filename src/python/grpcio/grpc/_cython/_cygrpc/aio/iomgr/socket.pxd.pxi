@@ -48,11 +48,11 @@ cdef class _AsyncioSocket:
     @staticmethod
     cdef _AsyncioSocket create_with_py_socket(grpc_custom_socket * grpc_socket, object py_socket)
 
-    cdef void connect(self, object host, object port, grpc_custom_connect_callback grpc_connect_cb)
-    cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb)
-    cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb)
-    cdef bint is_connected(self)
-    cdef void close(self)
+    cdef void connect(self, object host, object port, grpc_custom_connect_callback grpc_connect_cb) except *
+    cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb) except *
+    cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb) except *
+    cdef bint is_connected(self) except *
+    cdef void close(self) except *
 
     cdef accept(self, grpc_custom_socket* grpc_socket_client, grpc_custom_accept_callback grpc_accept_cb)
     cdef listen(self)

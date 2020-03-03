@@ -84,7 +84,8 @@ def _transform(message, transformer, exception_message):
             return transformer(message)
         except Exception:  # pylint: disable=broad-except
             _LOGGER.exception(exception_message)
-            return None
+            raise
+            # return None
 
 
 def serialize(message, serializer):

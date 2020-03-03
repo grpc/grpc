@@ -109,7 +109,7 @@ cdef class _AsyncioSocket:
     cdef void connect(self,
                       object host,
                       object port,
-                      grpc_custom_connect_callback grpc_connect_cb):
+                      grpc_custom_connect_callback grpc_connect_cb) except *:
         assert not self._reader
         assert not self._task_connect
 
@@ -119,7 +119,7 @@ cdef class _AsyncioSocket:
         self._grpc_connect_cb = grpc_connect_cb
         self._task_connect.add_done_callback(self._connect_cb)
 
-    cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb):
+    cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb) except *:
         assert not self._task_read
 
         self._grpc_read_cb = grpc_read_cb
@@ -127,8 +127,9 @@ cdef class _AsyncioSocket:
         self._task_read = grpc_schedule_coroutine(self._async_read(length))
 
     async def _async_write(self, bytearray outbound_buffer):
-        self._writer.write(outbound_buffer)
+        _LOGGER.debug('_async_write end %d', len(outbound_buffer))
         self._task_write = None
+        self._writer.write(outbound_buffer)
         try:
             await self._writer.drain()
             self._grpc_write_cb(
@@ -141,7 +142,7 @@ cdef class _AsyncioSocket:
                 grpc_socket_error("Socket write failed: {}".format(connection_error).encode()),
             )
 
-    cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb):
+    cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb) except *:
         """Performs write to network socket in AsyncIO.
         
         For each socket, Core guarantees there'll be only one ongoing write.
@@ -157,18 +158,34 @@ cdef class _AsyncioSocket:
             outbound_buffer.extend(<bytes>start[:length])
 
         self._grpc_write_cb = grpc_write_cb
+        _LOGGER.debug('_async_write start %d', len(outbound_buffer))
         self._task_write = grpc_schedule_coroutine(self._async_write(outbound_buffer))
 
-    cdef bint is_connected(self):
+    cdef bint is_connected(self) except *:
         return self._reader and not self._reader._transport.is_closing()
 
-    cdef void close(self):
-        if self.is_connected():
-            self._writer.close()
-        if self._server:
-            self._server.close()
-        if self._task_listen and not self._task_listen.done():
-            self._task_listen.cancel()
+    async def _async_close(self):
+        """Close must happen within the event loop."""
+        try:
+            _LOGGER.debug('_async_close 1')
+            if self.is_connected():
+                self._writer.close()
+            _LOGGER.debug('_async_close 2')
+            if self._server and self._server.is_serving():
+                self._server.close()
+            _LOGGER.debug('_async_close 3')
+            # if self._task_listen and not self._task_listen.done():
+            #     self._task_listen.cancel()
+            _LOGGER.debug('_async_close 4')
+        except Exception as e:
+            _LOGGER.exception(e)
+            raise
+
+    cdef void close(self) except *:
+        _LOGGER.debug('_async_close 0')
+        task = grpc_schedule_coroutine(self._async_close())
+        _LOGGER.debug('_async_close 0.5 %s %s', task, task.done())
+        task.result()
         # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
         # the server.close() won't release the fd until the close() is called
         # for the Python socket.

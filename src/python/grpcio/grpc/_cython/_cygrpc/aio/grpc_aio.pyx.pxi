@@ -27,6 +27,7 @@ def _spawn_background_event_loop():
         _LOGGER.debug('asyncio mode on')
         _grpc_aio_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(_grpc_aio_loop)
+        _grpc_aio_loop.set_debug(True)
         loop_ready.set()
         _event_loop_thread_ident = threading.current_thread().ident
         _grpc_aio_loop.run_forever()
