@@ -111,6 +111,7 @@ void SecureServerCredentials::SetAuthMetadataProcessor(
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(
     const grpc::SslServerCredentialsOptions& options) {
+  grpc::GrpcLibraryCodegen init;
   std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
   for (const auto& key_cert_pair : options.pem_key_cert_pairs) {
     grpc_ssl_pem_key_cert_pair p = {key_cert_pair.private_key.c_str(),
@@ -133,6 +134,7 @@ namespace experimental {
 
 std::shared_ptr<ServerCredentials> AltsServerCredentials(
     const AltsServerCredentialsOptions& /* options */) {
+  grpc::GrpcLibraryCodegen init;
   grpc_alts_credentials_options* c_options =
       grpc_alts_credentials_server_options_create();
   grpc_server_credentials* c_creds =
@@ -144,6 +146,7 @@ std::shared_ptr<ServerCredentials> AltsServerCredentials(
 
 std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type) {
+  grpc::GrpcLibraryCodegen init;
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(grpc_local_server_credentials_create(type)));
 }
