@@ -21,6 +21,7 @@
 #include <string>
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -50,6 +51,7 @@ void RunServer() {
   std::string server_address("0.0.0.0:50051");
   GreeterServiceImpl service;
 
+  grpc::EnableDefaultHealthCheckService(true);
   ServerBuilder builder;
   // Listen on the given address without any authentication mechanism.
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
