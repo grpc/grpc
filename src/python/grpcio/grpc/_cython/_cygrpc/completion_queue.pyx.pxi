@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-cdef int _INTERRUPT_CHECK_PERIOD_MS = 2000
+cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 
 
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *:
