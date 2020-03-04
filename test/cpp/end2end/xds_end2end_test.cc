@@ -2266,13 +2266,11 @@ TEST_P(LocalityMapTest, UpdateMap) {
   delayed_resource_setter.join();
 }
 
-class FailoverTest : public BasicTest {
- public:
-  FailoverTest() { ResetStub(0, 100, ""); }
-};
+using FailoverTest = BasicTest;
 
 // Localities with the highest priority are used when multiple priority exist.
 TEST_P(FailoverTest, ChooseHighestPriority) {
+  ResetStub(0, 100, "");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
@@ -2292,6 +2290,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
 // If the higher priority localities are not reachable, failover to the highest
 // priority among the rest.
 TEST_P(FailoverTest, Failover) {
+  ResetStub(0, 100, "");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
@@ -2314,6 +2313,7 @@ TEST_P(FailoverTest, Failover) {
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
+  ResetStub(0, 100, "");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
@@ -2341,6 +2341,7 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
 // The first update only contains unavailable priorities. The second update
 // contains available priorities.
 TEST_P(FailoverTest, UpdateInitialUnavailable) {
+  ResetStub(0, 100, "");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
@@ -2377,6 +2378,7 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
 // Tests that after the localities' priorities are updated, we still choose the
 // highest READY priority with the updated localities.
 TEST_P(FailoverTest, UpdatePriority) {
+  ResetStub(0, 100, "");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
@@ -2409,6 +2411,7 @@ TEST_P(FailoverTest, UpdatePriority) {
 
 // Moves all localities in the current priority to a higher priority.
 TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
+  ResetStub(0, 100, "");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // First update:
