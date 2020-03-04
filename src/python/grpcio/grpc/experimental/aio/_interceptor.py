@@ -160,7 +160,7 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
                  loop: asyncio.AbstractEventLoop) -> None:
         self._channel = channel
         self._loop = loop
-        self._interceptors_task = asyncio.create_task(
+        self._interceptors_task = loop.create_task(
             self._invoke(interceptors, method, timeout, metadata, credentials,
                          wait_for_ready, request, request_serializer,
                          response_deserializer))
