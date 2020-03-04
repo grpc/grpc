@@ -305,7 +305,6 @@ def test_ping_pong(gcp, backend_service, instance_group):
     instance_names = get_instance_names(gcp, instance_group)
     wait_until_all_rpcs_go_to_given_backends(instance_names,
                                              _WAIT_FOR_STATS_SEC)
-    raise Exception(error_msg)
 
 
 def test_remove_instance_group(gcp, backend_service, instance_group,
