@@ -216,15 +216,17 @@ cdef void asyncio_timer_stop(grpc_custom_timer* grpc_timer) with gil:
 
 
 cdef void asyncio_init_loop() with gil:
-    _LOGGER.debug('asyncio_init_loop')
+    # _LOGGER.debug('asyncio_init_loop')
+    pass
 
 
 cdef void asyncio_destroy_loop() with gil:
-    _LOGGER.debug('asyncio_destroy_loop')
+    # _LOGGER.debug('asyncio_destroy_loop')
+    pass
 
 
 cdef void asyncio_kick_loop() with gil:
-    _LOGGER.debug('asyncio_kick_loop')
+    # _LOGGER.debug('asyncio_kick_loop')
     # pass
     event_polled.set()
 
@@ -235,7 +237,7 @@ cdef void asyncio_kick_loop() with gil:
 
 
 cdef void asyncio_run_loop(size_t timeout_ms) with gil:
-    _LOGGER.debug('asyncio_run_loop')
+    # _LOGGER.debug('asyncio_run_loop')
     event_polled.wait(timeout=timeout_ms/1000.0)
     event_polled.clear()
     # grpc_schedule_coroutine(event_loop_run(timeout_ms/1000.0))
