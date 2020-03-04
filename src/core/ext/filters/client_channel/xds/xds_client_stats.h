@@ -61,6 +61,10 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
            sub_zone_ == other.sub_zone_;
   }
 
+  bool operator!=(const XdsLocalityName& other) const {
+    return !(*this == other);
+  }
+
   int Compare(const XdsLocalityName& other) const {
     int cmp_result = region_.compare(other.region_);
     if (cmp_result != 0) return cmp_result;

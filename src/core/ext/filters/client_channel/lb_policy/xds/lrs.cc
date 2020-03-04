@@ -82,19 +82,28 @@ class LrsLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
+  // A simple wrapper for ref-counting a picker from the child policy.
+  class RefCountedPicker : public RefCounted<RefCountedPicker> {
+   public:
+    explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
+        : picker_(std::move(picker)) {}
+    PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+   private:
+    std::unique_ptr<SubchannelPicker> picker_;
+  };
+
   // A picker that wraps the picker from the child to perform load reporting.
   class LoadReportingPicker : public SubchannelPicker {
    public:
-    LoadReportingPicker(
-        std::unique_ptr<SubchannelPicker> picker,
-        RefCountedPtr<XdsClusterLocalityStats> locality_stats)
+    LoadReportingPicker(RefCountedPtr<RefCountedPicker> picker,
+                        RefCountedPtr<XdsClusterLocalityStats> locality_stats)
         : picker_(std::move(picker)),
           locality_stats_(std::move(locality_stats)) {}
 
     PickResult Pick(PickArgs args);
 
    private:
-    std::unique_ptr<SubchannelPicker> picker_;
+    RefCountedPtr<RefCountedPicker> picker_;
     RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
   };
 
@@ -138,6 +147,10 @@ class LrsLb : public LoadBalancingPolicy {
   RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
+
+  // Latest state and picker reported by the child policy.
+  grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  RefCountedPtr<RefCountedPicker> picker_;
 };
 
 //
@@ -201,6 +214,9 @@ void LrsLb::ShutdownLocked() {
                                      interested_parties());
     child_policy_.reset();
   }
+  // Drop our ref to the child's picker, in case it's holding a ref to
+  // the child.
+  picker_.reset();
   locality_stats_.reset();
   xds_client_.reset();
 }
@@ -216,18 +232,25 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[lrs_lb %p] Received update", this);
   }
   // Update config.
-// FIXME: do we need to support changing cluster name or EDS service name?
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
-  // Update load reporting.
+  // Update load reporting if needed.
   if (old_config == nullptr ||
       config_->lrs_load_reporting_server_name() !=
-           old_config->lrs_load_reporting_server_name()) {
+           old_config->lrs_load_reporting_server_name() ||
+      config_->cluster_name() != old_config->cluster_name() ||
+      config_->eds_service_name() != old_config->eds_service_name() ||
+      *config_->locality_name() != *old_config->locality_name()) {
     locality_stats_ = xds_client_->AddClusterLocalityStats(
         config_->lrs_load_reporting_server_name(),
         config_->cluster_name(), config_->eds_service_name(),
         config_->locality_name());
-// FIXME: update load reporting picker
+    // Update load reporting picker if needed.
+    if (picker_ != nullptr) {
+      channel_control_helper()->UpdateState(
+          state_,
+          absl::make_unique<LoadReportingPicker>(picker_, locality_stats_));
+    }
   }
   // Update child policy.
   UpdateChildPolicyLocked(std::move(args.addresses), args.args);
@@ -288,13 +311,16 @@ RefCountedPtr<SubchannelInterface> LrsLb::Helper::CreateSubchannel(
 void LrsLb::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
   if (lrs_policy_->shutting_down_) return;
+  // Save the state and picker.
+  lrs_policy_->state_ = state;
+  lrs_policy_->picker_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
   // Wrap the picker and return it to the channel.
 // FIXME: maybe wrap picker only in state READY?  but then what do we do
 // in RLS, where we might return TF but still be able to route some calls?
   lrs_policy_->channel_control_helper()->UpdateState(
       state,
       absl::make_unique<LoadReportingPicker>(
-          std::move(picker), lrs_policy_->locality_stats_));
+          lrs_policy_->picker_, lrs_policy_->locality_stats_));
 }
 
 void LrsLb::Helper::RequestReresolution() {
