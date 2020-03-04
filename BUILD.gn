@@ -582,6 +582,7 @@ config("grpc_config") {
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/combiner.h",
+        "src/core/lib/iomgr/dualstack_socket_posix.cc",
         "src/core/lib/iomgr/dynamic_annotations.h",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint.h",
