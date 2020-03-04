@@ -13,7 +13,7 @@
 # limitations under the License.
 import logging
 import unittest
-from typing import Callable, Awaitable
+from typing import Callable, Awaitable, Any
 
 import grpc
 
@@ -45,7 +45,7 @@ class _GenericInterceptor(aio.ServerInterceptor):
             Callable[[grpc.HandlerCallDetails], Awaitable[grpc.
                                                           RpcMethodHandler]],
             grpc.HandlerCallDetails
-    ], Awaitable[grpc.RpcMethodHandler]]) -> None:
+    ], Any]) -> None:
         self._fn = fn
 
     async def intercept_service(
