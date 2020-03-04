@@ -805,8 +805,8 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     resource_types_to_ignore_.emplace(type_url);
   }
 
-  void SetResource(const google::protobuf::Any resource,
-                   const std::string& type_url, const std::string& name) {
+  void SetResource(google::protobuf::Any resource, const std::string& type_url,
+                   const std::string& name) {
     grpc_core::MutexLock lock(&ads_mu_);
     ResourceState& state = resources_map_[type_url][name];
     ++state.version;
@@ -851,7 +851,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         kDefaultResourceName);
     listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
         http_connection_manager);
-    SetLdsResource(std::move(listener), kDefaultResourceName);
+    SetLdsResource(listener, kDefaultResourceName);
   }
 
   static Listener BuildListener(const RouteConfiguration& route_config) {
@@ -1898,7 +1898,7 @@ TEST_P(RdsTest, NoMatchedDomain) {
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
-  balancers_[0]->ads_service()->SetRdsResource(std::move(route_config),
+  balancers_[0]->ads_service()->SetRdsResource(route_config,
                                                kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -1920,7 +1920,7 @@ TEST_P(RdsTest, ChooseMatchedDomain) {
       ->mutable_routes(0)
       ->mutable_route()
       ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetRdsResource(std::move(route_config),
+  balancers_[0]->ads_service()->SetRdsResource(route_config,
                                                kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -1941,7 +1941,7 @@ TEST_P(RdsTest, ChooseLastRoute) {
       ->mutable_routes(0)
       ->mutable_route()
       ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetRdsResource(std::move(route_config),
+  balancers_[0]->ads_service()->SetRdsResource(route_config,
                                                kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -1960,7 +1960,7 @@ TEST_P(RdsTest, RouteMatchHasNonemptyPrefix) {
       ->mutable_routes(0)
       ->mutable_match()
       ->set_prefix("nonempty_prefix");
-  balancers_[0]->ads_service()->SetRdsResource(std::move(route_config),
+  balancers_[0]->ads_service()->SetRdsResource(route_config,
                                                kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -1976,7 +1976,7 @@ TEST_P(RdsTest, RouteHasNoRouteAction) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_redirect();
-  balancers_[0]->ads_service()->SetRdsResource(std::move(route_config),
+  balancers_[0]->ads_service()->SetRdsResource(route_config,
                                                kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -1995,7 +1995,7 @@ TEST_P(RdsTest, RouteActionHasNoCluster) {
       ->mutable_routes(0)
       ->mutable_route()
       ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetRdsResource(std::move(route_config),
+  balancers_[0]->ads_service()->SetRdsResource(route_config,
                                                kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2030,8 +2030,7 @@ TEST_P(CdsTest, Vanilla) {
 TEST_P(CdsTest, WrongClusterType) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
   cluster.set_type(envoy::api::v2::Cluster::STATIC);
-  balancers_[0]->ads_service()->SetCdsResource(std::move(cluster),
-                                               kDefaultResourceName);
+  balancers_[0]->ads_service()->SetCdsResource(cluster, kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
@@ -2044,8 +2043,7 @@ TEST_P(CdsTest, WrongClusterType) {
 TEST_P(CdsTest, WrongEdsConfig) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  balancers_[0]->ads_service()->SetCdsResource(std::move(cluster),
-                                               kDefaultResourceName);
+  balancers_[0]->ads_service()->SetCdsResource(cluster, kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
@@ -2058,8 +2056,7 @@ TEST_P(CdsTest, WrongEdsConfig) {
 TEST_P(CdsTest, WrongLbPolicy) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
   cluster.set_lb_policy(envoy::api::v2::Cluster::LEAST_REQUEST);
-  balancers_[0]->ads_service()->SetCdsResource(std::move(cluster),
-                                               kDefaultResourceName);
+  balancers_[0]->ads_service()->SetCdsResource(cluster, kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
@@ -2072,8 +2069,7 @@ TEST_P(CdsTest, WrongLbPolicy) {
 TEST_P(CdsTest, WrongLrsServer) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
   cluster.mutable_lrs_server()->mutable_ads();
-  balancers_[0]->ads_service()->SetCdsResource(std::move(cluster),
-                                               kDefaultResourceName);
+  balancers_[0]->ads_service()->SetCdsResource(cluster, kDefaultResourceName);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
