@@ -22,8 +22,8 @@
  * A fully-qualified proto service method name. Full qualification is needed because a gRPC endpoint
  * can implement multiple services.
  */
-__attribute__((deprecated("Please use GRPCProtoMethod."))) @interface ProtoMethod
-    : NSObject @property(nonatomic, readonly) NSString *package;
+__attribute__((deprecated("Please use GRPCProtoMethod."))) @interface ProtoMethod : NSObject
+@property(nonatomic, readonly) NSString *package;
 @property(nonatomic, readonly) NSString *service;
 @property(nonatomic, readonly) NSString *method;
 
@@ -40,7 +40,7 @@ __attribute__((deprecated("Please use GRPCProtoMethod."))) @interface ProtoMetho
  */
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    @interface GRPCProtoMethod : ProtoMethod
+@interface GRPCProtoMethod : ProtoMethod
 #pragma clang diagnostic pop
 
-                                 @end
+@end

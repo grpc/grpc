@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include "src/core/lib/security/credentials/credentials.h"
 
 #define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
@@ -74,6 +76,8 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) override;
+
+  std::string debug_string() override { return "MD only Test Credentials"; };
 
  private:
   grpc_mdelem md_;

@@ -33,6 +33,9 @@
 struct grpc_channel;
 
 namespace grpc {
+namespace testing {
+class ChannelTestPeer;
+}  // namespace testing
 
 std::shared_ptr<::grpc_impl::Channel> CreateChannelInternal(
     const grpc::string& host, grpc_channel* c_channel,
@@ -71,6 +74,7 @@ class Channel final : public ::grpc::ChannelInterface,
  private:
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
+  friend class ::grpc::testing::ChannelTestPeer;
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
   friend std::shared_ptr<Channel> grpc::CreateChannelInternal(
       const grpc::string& host, grpc_channel* c_channel,

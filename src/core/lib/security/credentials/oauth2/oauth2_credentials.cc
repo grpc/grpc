@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "absl/strings/str_format.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -74,9 +75,6 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
   }
   result.type = GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER;
 
-  // quota_project_id is optional, so we don't check the result of the copy.
-  grpc_copy_json_string_property(json, "quota_project_id",
-                                 &result.quota_project_id);
   if (!grpc_copy_json_string_property(json, "client_secret",
                                       &result.client_secret) ||
       !grpc_copy_json_string_property(json, "client_id", &result.client_id) ||
@@ -99,7 +97,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
     gpr_log(GPR_ERROR, "JSON parsing failed: %s", grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
   }
-  return grpc_auth_refresh_token_create_from_json(std::move(json));
+  return grpc_auth_refresh_token_create_from_json(json);
 }
 
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
@@ -116,10 +114,6 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
   if (refresh_token->refresh_token != nullptr) {
     gpr_free(refresh_token->refresh_token);
     refresh_token->refresh_token = nullptr;
-  }
-  if (refresh_token->quota_project_id != nullptr) {
-    gpr_free(refresh_token->quota_project_id);
-    refresh_token->quota_project_id = nullptr;
   }
 }
 
@@ -283,7 +277,6 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
     grpc_polling_entity* pollent, grpc_auth_metadata_context /*context*/,
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
     grpc_error** /*error*/) {
-  maybe_add_additional_metadata(md_array);
   // Check if we can use the cached token.
   grpc_millis refresh_threshold =
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
@@ -366,6 +359,10 @@ grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()
   grpc_httpcli_context_init(&httpcli_context_);
 }
 
+std::string grpc_oauth2_token_fetcher_credentials::debug_string() {
+  return "OAuth2TokenFetcherCredentials";
+}
+
 //
 //  Google Compute Engine credentials.
 //
@@ -402,6 +399,12 @@ class grpc_compute_engine_token_fetcher_credentials
                                        metadata_req, grpc_schedule_on_exec_ctx),
                      &metadata_req->response);
     grpc_resource_quota_unref_internal(resource_quota);
+  }
+
+  std::string debug_string() override {
+    return absl::StrFormat(
+        "GoogleComputeEngineTokenFetcherCredentials{%s}",
+        grpc_oauth2_token_fetcher_credentials::debug_string());
   }
 
  private:
@@ -461,17 +464,6 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   gpr_free(body);
 }
 
-void grpc_google_refresh_token_credentials::maybe_add_additional_metadata(
-    grpc_credentials_mdelem_array* md_array) {
-  if (refresh_token_.quota_project_id != nullptr) {
-    grpc_mdelem quota_project_md = grpc_mdelem_from_slices(
-        grpc_core::ExternallyManagedSlice(GRPC_AUTH_QUOTA_PROJECT_METADATA_KEY),
-        grpc_core::ExternallyManagedSlice(refresh_token_.quota_project_id));
-    grpc_credentials_mdelem_array_add(md_array, quota_project_md);
-    GRPC_MDELEM_UNREF(quota_project_md);
-  }
-}
-
 grpc_google_refresh_token_credentials::grpc_google_refresh_token_credentials(
     grpc_auth_refresh_token refresh_token)
     : refresh_token_(refresh_token) {}
@@ -485,6 +477,12 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
   }
   return grpc_core::MakeRefCounted<grpc_google_refresh_token_credentials>(
       refresh_token);
+}
+
+std::string grpc_google_refresh_token_credentials::debug_string() {
+  return absl::StrFormat("GoogleRefreshToken{ClientID:%s,%s}",
+                         refresh_token_.client_id,
+                         grpc_oauth2_token_fetcher_credentials::debug_string());
 }
 
 static char* create_loggable_refresh_token(grpc_auth_refresh_token* token) {
@@ -558,6 +556,13 @@ class StsTokenFetcherCredentials
         actor_token_type_(gpr_strdup(options->actor_token_type)) {}
 
   ~StsTokenFetcherCredentials() override { grpc_uri_destroy(sts_url_); }
+
+  std::string debug_string() override {
+    return absl::StrFormat(
+        "StsTokenFetcherCredentials{Path:%s,Authority:%s,%s}", sts_url_->path,
+        sts_url_->authority,
+        grpc_oauth2_token_fetcher_credentials::debug_string());
+  }
 
  private:
   void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
@@ -748,6 +753,12 @@ grpc_access_token_credentials::grpc_access_token_credentials(
       grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
       grpc_core::UnmanagedMemorySlice(token_md_value));
   gpr_free(token_md_value);
+}
+
+std::string grpc_access_token_credentials::debug_string() {
+  bool access_token_present = !GRPC_MDISNULL(access_token_md_);
+  return absl::StrFormat("AccessTokenCredentials{Token:%s}",
+                         access_token_present ? "present" : "absent");
 }
 
 grpc_call_credentials* grpc_access_token_credentials_create(

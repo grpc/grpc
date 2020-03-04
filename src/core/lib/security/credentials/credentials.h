@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
@@ -56,7 +58,6 @@ typedef enum {
 #define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
 
 #define GRPC_AUTHORIZATION_METADATA_KEY "authorization"
-#define GRPC_AUTH_QUOTA_PROJECT_METADATA_KEY "x-goog-user-project"
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
   "x-goog-iam-authorization-token"
 #define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
@@ -251,6 +252,10 @@ struct grpc_call_credentials
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;
+  }
+
+  virtual std::string debug_string() {
+    return "grpc_call_credentials did not provide debug string";
   }
 
   const char* type() const { return type_; }
