@@ -247,7 +247,7 @@ def test_backends_restart(gcp, backend_service, instance_group):
     original_distribution.sort()
     new_distribution = list(new_stats.rpcs_by_peer.values())
     new_distribution.sort()
-    error_threshold = 3
+    threshold = 3
     for i in range(len(original_distribution)):
         if abs(original_distribution[i] - new_distribution[i]) > threshold:
             raise Exception('Distributions do not match: ', stats, new_stats)
@@ -611,7 +611,7 @@ def delete_backend_services(gcp):
         try:
             result = gcp.compute.backendServices().delete(
                 project=gcp.project,
-                backendService=gcp.backend_service.name).execute()
+                backendService=backend_service.name).execute()
             wait_for_global_operation(gcp, result['name'])
         except googleapiclient.errors.HttpError as http_error:
             logger.info('Delete failed: %s', http_error)
