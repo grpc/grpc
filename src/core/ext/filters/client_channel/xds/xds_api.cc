@@ -451,9 +451,6 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
 grpc_error* RouteConfigParse(
     const envoy_api_v2_RouteConfiguration* route_config,
     const std::string& expected_server_name, XdsApi::RdsUpdate* rds_update) {
-  // Strip off port from server name, if any.
-  size_t pos = expected_server_name.find(':');
-  std::string expected_host_name = expected_server_name.substr(0, pos);
   // Get the virtual hosts.
   size_t size;
   const envoy_api_v2_route_VirtualHost* const* virtual_hosts =
@@ -490,7 +487,7 @@ grpc_error* RouteConfigParse(
         continue;
       }
       // Skip if match fails.
-      if (!DomainMatch(match_type, domain_pattern, expected_host_name)) {
+      if (!DomainMatch(match_type, domain_pattern, expected_server_name)) {
         continue;
       }
       // Choose this match.
