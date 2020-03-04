@@ -101,6 +101,7 @@ cdef class _AsyncioSocket:
             _LOGGER.debug('socket _async_read')
             try:
                 inbound_buffer = await self._reader.read(n=length)
+                _LOGGER.debug('socket _async_read done %d', len(inbound_buffer))
             except ConnectionError as e:
                 grpc_read_cb(
                     <grpc_custom_socket*>self._grpc_socket,
@@ -142,12 +143,16 @@ cdef class _AsyncioSocket:
                     <grpc_custom_socket*>self._grpc_socket,
                     <grpc_error*>0
                 )
+                _LOGGER.debug('socket _async_write done %d', len(outbound_buffer))
             except ConnectionError as connection_error:
                 grpc_write_cb(
                     <grpc_custom_socket*>self._grpc_socket,
                     grpc_socket_error("Socket write failed: {}".format(connection_error).encode()),
                 )
 
+        # if self._task_write:
+        #     import pdb;pdb.set_trace()
+            # raise RuntimeError('Multiple write to a same channel')
         # assert not self._task_write
         cdef char* start
         cdef bytearray outbound_buffer = bytearray()
@@ -164,13 +169,22 @@ cdef class _AsyncioSocket:
 
     def _close(self):
         """Close must happen in the event loop thread."""
+        _LOGGER.debug('_close 1')
         if self.is_connected():
             self._writer.close()
+        _LOGGER.debug('_close 2')
         if self._server and self._server.is_serving():
             self._server.close()
+        _LOGGER.debug('_close 3')
+        if self._task_read:
+            self._task_read.cancel()
+        if self._task_write:
+            self._task_write.cancel()
 
     cdef void close(self) except *:
+        _LOGGER.debug('_close 0')
         grpc_run_in_event_loop_thread(self._close)
+        _LOGGER.debug('_close 4')
         # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
         # the server.close() won't release the fd until the close() is called
         # for the Python socket.

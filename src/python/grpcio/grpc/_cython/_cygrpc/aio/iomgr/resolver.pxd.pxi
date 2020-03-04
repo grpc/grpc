@@ -20,4 +20,4 @@ cdef class _AsyncioResolver:
     @staticmethod
     cdef _AsyncioResolver create(grpc_custom_resolver* grpc_resolver)
 
-    cdef void resolve(self, char* host, char* port)
+    cdef void resolve(self, char* host, char* port) except *

@@ -46,6 +46,6 @@ cdef class _AsyncioResolver:
                 <grpc_error*>0
             )
 
-    cdef void resolve(self, char* host, char* port):
+    cdef void resolve(self, char* host, char* port) except *:
         assert not self._task_resolve
         self._task_resolve = grpc_schedule_coroutine(self._async_resolve(host, port))

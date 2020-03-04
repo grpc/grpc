@@ -867,9 +867,9 @@ def _process_event_and_continue(state, event):
 
 def _serve(state):
     while True:
-        timeout = time.time() + _DEALLOCATED_SERVER_CHECK_PERIOD_S
-        logging.debug('Server [%s] polling', state.server)
-        event = state.completion_queue.poll(timeout)
+        # timeout = time.time() + _DEALLOCATED_SERVER_CHECK_PERIOD_S
+        logging.debug('Server [%s] polling [%s]', state.server, state.due)
+        event = state.completion_queue.poll()
         logging.debug('Server [%s] get %s', state.server, event)
         if state.server_deallocated:
             _begin_shutdown_once(state)

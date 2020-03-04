@@ -241,6 +241,12 @@ class ChannelzServicerTest(unittest.TestCase):
     #     self.assertEqual(resp.channel.data.calls_failed, 0)
 
     def test_many_subchannels(self):
+        self._pairs = _generate_channel_server_pairs(4)
+        for i in range(17):
+            self._send_successful_unary_unary(0)
+            self._send_successful_unary_unary(2)
+        return
+
         k_channels = 4
         self._pairs = _generate_channel_server_pairs(k_channels)
         k_success = 17

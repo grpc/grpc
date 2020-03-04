@@ -15,6 +15,7 @@
 cdef bint _grpc_aio_initialized = False
 cdef object _grpc_aio_loop
 cdef object _event_loop_thread_ident
+cdef object _event_loop_polled
 
 _GRPC_ENABLE_ASYNCIO = (
     os.environ.get('GRPC_ENABLE_ASYNCIO', '0').lower() in _TRUE_VALUES)
@@ -98,6 +99,7 @@ def grpc_run_in_event_loop_thread(object func):
     else:
         async def wrapper():
             func()
+
         asyncio.run_coroutine_threadsafe(wrapper(), _grpc_aio_loop).result()
 
 
