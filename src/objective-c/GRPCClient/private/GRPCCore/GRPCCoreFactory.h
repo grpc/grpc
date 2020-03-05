@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol GRPCCallOptions;
 
 /** The interface for transport implementations that are based on Core. */
-@protocol GRPCCoreTransportFactory<GRPCTransportFactory>
+@protocol GRPCCoreTransportFactory <GRPCTransportFactory>
 
 /** Get the channel factory for GRPCChannel from call options. */
 - (nullable id<GRPCChannelFactory>)createCoreChannelFactoryWithCallOptions:
@@ -33,12 +33,12 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /** The factory for gRPC Core + CFStream + TLS secure channel transport implementation. */
-@interface GRPCCoreSecureFactory : NSObject<GRPCCoreTransportFactory>
+@interface GRPCCoreSecureFactory : NSObject <GRPCCoreTransportFactory>
 
 @end
 
 /** The factory for gRPC Core + CFStream + insecure channel transport implementation. */
-@interface GRPCCoreInsecureFactory : NSObject<GRPCCoreTransportFactory>
+@interface GRPCCoreInsecureFactory : NSObject <GRPCCoreTransportFactory>
 
 @end
 

@@ -401,140 +401,16 @@ def without(l, e):
     return l
 
 
+# Originally, this method was used to generate end2end test cases for build.yaml,
+# but since the test cases are now extracted from bazel BUILD file,
+# this is not used for generating run_tests.py test cases anymore.
+# Nevertheless, subset of the output is still used by end2end_tests.cc.template
+# and end2end_nosec_tests.cc.template
+# TODO(jtattermusch): cleanup this file, so that it only generates the data we need.
+# Right now there's some duplication between generate_tests.bzl and this file.
 def main():
-    sec_deps = ['grpc_test_util', 'grpc', 'gpr']
-    unsec_deps = ['grpc_test_util_unsecure', 'grpc_unsecure', 'gpr']
     json = {
-        '#':
-            'generated with test/end2end/gen_build_json.py',
-        'libs': [{
-            'name':
-                'end2end_tests',
-            'build':
-                'private',
-            'language':
-                'c',
-            'secure':
-                True,
-            'src': [
-                'test/core/end2end/end2end_tests.cc',
-                'test/core/end2end/end2end_test_utils.cc'
-            ] + [
-                'test/core/end2end/tests/%s.cc' % t
-                for t in sorted(END2END_TESTS.keys())
-            ],
-            'headers': [
-                'test/core/end2end/tests/cancel_test_helpers.h',
-                'test/core/end2end/end2end_tests.h'
-            ],
-            'deps':
-                sec_deps,
-            'vs_proj_dir':
-                'test/end2end/tests',
-        }] + [{
-            'name':
-                'end2end_nosec_tests',
-            'build':
-                'private',
-            'language':
-                'c',
-            'secure':
-                False,
-            'src': [
-                'test/core/end2end/end2end_nosec_tests.cc',
-                'test/core/end2end/end2end_test_utils.cc'
-            ] + [
-                'test/core/end2end/tests/%s.cc' % t
-                for t in sorted(END2END_TESTS.keys())
-                if not END2END_TESTS[t].secure
-            ],
-            'headers': [
-                'test/core/end2end/tests/cancel_test_helpers.h',
-                'test/core/end2end/end2end_tests.h'
-            ],
-            'deps':
-                unsec_deps,
-            'vs_proj_dir':
-                'test/end2end/tests',
-        }],
-        'targets': [{
-            'name': '%s_test' % f,
-            'build': 'test',
-            'language': 'c',
-            'run': False,
-            'src': ['test/core/end2end/fixtures/%s.cc' % f],
-            'platforms': END2END_FIXTURES[f].platforms,
-            'ci_platforms':
-                (END2END_FIXTURES[f].platforms if END2END_FIXTURES[f].ci_mac
-                 else without(END2END_FIXTURES[f].platforms, 'mac')),
-            'deps': ['end2end_tests'] + sec_deps,
-            'vs_proj_dir': 'test/end2end/fixtures',
-        } for f in sorted(END2END_FIXTURES.keys())] + [{
-            'name': '%s_nosec_test' % f,
-            'build': 'test',
-            'language': 'c',
-            'secure': False,
-            'src': ['test/core/end2end/fixtures/%s.cc' % f],
-            'run': False,
-            'platforms': END2END_FIXTURES[f].platforms,
-            'ci_platforms':
-                (END2END_FIXTURES[f].platforms if END2END_FIXTURES[f].ci_mac
-                 else without(END2END_FIXTURES[f].platforms, 'mac')),
-            'deps': ['end2end_nosec_tests'] + unsec_deps,
-            'vs_proj_dir': 'test/end2end/fixtures',
-        } for f in sorted(
-            END2END_FIXTURES.keys()) if not END2END_FIXTURES[f].secure],
-        'tests': [{
-            'name':
-                '%s_test' % f,
-            'args': [t],
-            'exclude_configs':
-                END2END_FIXTURES[f].exclude_configs,
-            'exclude_iomgrs':
-                list(
-                    set(END2END_FIXTURES[f].exclude_iomgrs) |
-                    set(END2END_TESTS[t].exclude_iomgrs)),
-            'platforms':
-                END2END_FIXTURES[f].platforms,
-            'ci_platforms':
-                (END2END_FIXTURES[f].platforms if END2END_FIXTURES[f].ci_mac
-                 else without(END2END_FIXTURES[f].platforms, 'mac')),
-            'flaky':
-                END2END_TESTS[t].flaky,
-            'language':
-                'c',
-            'cpu_cost':
-                END2END_TESTS[t].cpu_cost,
-        }
-                  for f in sorted(END2END_FIXTURES.keys())
-                  for t in sorted(END2END_TESTS.keys())
-                  if compatible(f, t)] +
-                 [{
-                     'name':
-                         '%s_nosec_test' % f,
-                     'args': [t],
-                     'exclude_configs':
-                         END2END_FIXTURES[f].exclude_configs,
-                     'exclude_iomgrs':
-                         list(
-                             set(END2END_FIXTURES[f].exclude_iomgrs) |
-                             set(END2END_TESTS[t].exclude_iomgrs)),
-                     'platforms':
-                         END2END_FIXTURES[f].platforms,
-                     'ci_platforms':
-                         (END2END_FIXTURES[f].platforms
-                          if END2END_FIXTURES[f].ci_mac else without(
-                              END2END_FIXTURES[f].platforms, 'mac')),
-                     'flaky':
-                         END2END_TESTS[t].flaky,
-                     'language':
-                         'c',
-                     'cpu_cost':
-                         END2END_TESTS[t].cpu_cost,
-                 } for f in sorted(END2END_FIXTURES.keys())
-                  if not END2END_FIXTURES[f].secure
-                  for t in sorted(END2END_TESTS.keys())
-                  if compatible(f, t) and not END2END_TESTS[t].secure],
+        # needed by end2end_tests.cc.template and end2end_nosec_tests.cc.template
         'core_end2end_tests':
             dict((t, END2END_TESTS[t].secure) for t in END2END_TESTS.keys())
     }

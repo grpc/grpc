@@ -155,7 +155,7 @@ class FakeResolverResponseGeneratorWrapper {
                             grpc_core::FakeResolverResponseGenerator>()) {}
 
   FakeResolverResponseGeneratorWrapper(
-      FakeResolverResponseGeneratorWrapper&& other) {
+      FakeResolverResponseGeneratorWrapper&& other) noexcept {
     response_generator_ = std::move(other.response_generator_);
   }
 

@@ -145,10 +145,33 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 };
 
 // ---- Functions below are exposed for testing only -----------------------
+
+/** The |TlsFetchKeyMaterials| API ensures that |key_materials_config| has a
+ *  non-empty pem-key-cert pair list. This is done as follows:
+ *  - if |options| is equipped with a credential reload config, then this
+ *    methods uses credential reloading to populate |key_materials_config|, and
+ *    afterwards it populates |reload_status| with the status of this operation.
+ *    In particular, any data stored in |key_materials_config| is overwritten.
+ *  - if |options| has no credential reload config, then:
+ *    - if |key_materials_config| already has a non-empty pem-key-cert pair
+ *      list or is called by a client, then the method returns |GRPC_STATUS_OK|.
+ *    - if |key_materials_config| has an empty pem-key-cert pair list and is
+ *      called by a server, then the method return an error code.
+ *
+ *  The arguments are detailed below:
+ *  - key_materials_config: a key materials config that will be populated by the
+ *    method on success; the caller should not pass in nullptr. Any data held by
+ *    the config will be overwritten.
+ *  - options: the TLS credentials options whose credential reloading config
+ *    will be used to populate |key_materials_config|.
+ *  - is_server: true denotes that this method is called by a server, and
+ *    false denotes that this method is called by a client.
+ *  - status: the status of the credential reloading after the method
+ *    returns; the caller should not pass in nullptr. **/
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
-    const grpc_tls_credentials_options& options, bool server_config,
+    const grpc_tls_credentials_options& options, bool is_server,
     grpc_ssl_certificate_config_reload_status* status);
 
 // TlsCheckHostName checks if |peer_name| matches the identity information

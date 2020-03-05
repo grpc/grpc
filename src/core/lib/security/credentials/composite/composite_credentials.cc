@@ -22,7 +22,10 @@
 
 #include <cstring>
 #include <new>
+#include <vector>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -114,6 +117,15 @@ void grpc_composite_call_credentials::cancel_get_request_metadata(
     inner_[i]->cancel_get_request_metadata(md_array, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
+}
+
+std::string grpc_composite_call_credentials::debug_string() {
+  std::vector<std::string> outputs;
+  for (auto& inner_cred : inner_) {
+    outputs.emplace_back(inner_cred->debug_string());
+  }
+  return absl::StrCat("CompositeCallCredentials{", absl::StrJoin(outputs, ","),
+                      "}");
 }
 
 static size_t get_creds_array_size(const grpc_call_credentials* creds,

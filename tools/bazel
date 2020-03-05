@@ -24,12 +24,20 @@
 
 set -e
 
-# First of all, if DISABLE_BAZEL_WRAPPER is set, just use BAZEL_REAL as set by
-# https://github.com/bazelbuild/bazel/blob/master/scripts/packages/bazel.sh
-# that originally invoked this script.
-if [ "${BAZEL_REAL}" != "" ] && [ "${DISABLE_BAZEL_WRAPPER}" != "" ]
+# DISABLE_BAZEL_WRAPPER can be set to eliminate the wrapper logic
+if [ "${DISABLE_BAZEL_WRAPPER}" != "" ]
 then
-  exec -a "$0" "${BAZEL_REAL}" "$@"
+  if [ "${BAZEL_REAL}" != "" ]
+  then
+    # use BAZEL_REAL as set by
+    # https://github.com/bazelbuild/bazel/blob/master/scripts/packages/bazel.sh
+    # that originally invoked this script (this is what happens when you
+    # run "bazel" in our workspace)
+    exec -a "$0" "${BAZEL_REAL}" "$@"
+  else
+    # if BAZEL_REAL is not set, just invoke the default system bazel
+    exec bazel "$@"
+  fi
 fi
 
 VERSION=1.0.0

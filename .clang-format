@@ -1,6 +1,6 @@
 ---
-Language:        Cpp
-BasedOnStyle:  Google
+Language: Cpp
+BasedOnStyle: Google
 DerivePointerAlignment: false
 PointerAlignment: Left
 ---
@@ -9,4 +9,3 @@ BasedOnStyle: Google
 ColumnLimit: 100
 ObjCBlockIndentWidth: 2
 ...
-

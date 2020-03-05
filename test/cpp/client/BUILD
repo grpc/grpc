@@ -55,3 +55,17 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "destroy_grpclb_channel_with_active_connect_stress_test",
+    srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)

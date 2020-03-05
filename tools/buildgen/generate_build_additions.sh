@@ -23,12 +23,11 @@ gen_build_yaml_dirs="  \
   src/upb              \
   src/zlib             \
   src/c-ares           \
-  test/core/bad_client \
-  test/core/bad_ssl    \
-  test/core/end2end    \
+  test/core/end2end     \
   test/cpp/naming      \
-  test/cpp/qps         \
   tools/run_tests/lb_interop_tests"
+
+
 gen_build_files=""
 for gen_build_yaml in $gen_build_yaml_dirs
 do

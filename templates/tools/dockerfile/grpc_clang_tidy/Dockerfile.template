@@ -14,9 +14,15 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../debian_jessie_header.include"/>
+  FROM debian:10
   
-  <%include file="../clang5.include"/>
+  # Install clang-tidy 6.0
+  # This is because clang-tidy 7.0 started treating compiler errors as tidy errors
+  # and there are a couple of files which are not properly compiled via tidy so it
+  # should be using 6.0 version until all compilation errors are addressed.
+  RUN apt-get update && apt-get install -y clang-tidy-6.0
+  ENV CLANG_TIDY=clang-tidy-6.0
+
   <%include file="../python_deps.include"/>
   ADD clang_tidy_all_the_things.sh /
   

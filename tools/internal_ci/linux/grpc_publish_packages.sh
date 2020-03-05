@@ -19,7 +19,7 @@ shopt -s nullglob
 
 cd "$(dirname "$0")/../../.."
 
-GRPC_VERSION=$(grep -e "^ *version: " build.yaml | head -n 1 | sed 's/.*: //')
+GRPC_VERSION=$(grep -e "^ *version: " build_handwritten.yaml | head -n 1 | sed 's/.*: //')
 
 INPUT_ARTIFACTS=$KOKORO_GFILE_DIR/github/grpc/artifacts
 INDEX_FILENAME=index.xml

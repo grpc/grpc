@@ -77,7 +77,7 @@
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 - (instancetype)initWithUnmanagedCall:(grpc_call *)unmanagedCall
                         pooledChannel:(GRPCPooledChannel *)pooledChannel NS_DESIGNATED_INITIALIZER;
