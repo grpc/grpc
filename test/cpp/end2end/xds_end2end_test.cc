@@ -2268,7 +2268,10 @@ TEST_P(LocalityMapTest, UpdateMap) {
 
 class FailoverTest : public BasicTest {
  public:
-  FailoverTest() { ResetStub(0, 100, ""); }
+  void SetUp() override {
+    BasicTest::SetUp();
+    ResetStub(0, 100, "");
+  }
 };
 
 // Localities with the highest priority are used when multiple priority exist.
