@@ -346,14 +346,12 @@ grpc_security_status TlsChannelSecurityConnector::InitializeHandshakerFactory(
       static_cast<const TlsCredentials*>(channel_creds());
   grpc_tls_key_materials_config* key_materials_config =
       creds->options().key_materials_config();
-  /* Copy key materials config from credential options. */
+  // key_materials_config_->set_key_materials will handle the copying of the key
+  // materials users provided
   if (key_materials_config != nullptr) {
-    grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list =
-        key_materials_config->pem_key_cert_pair_list();
-    auto pem_root_certs = grpc_core::UniquePtr<char>(
-        gpr_strdup(key_materials_config->pem_root_certs()));
-    key_materials_config_->set_key_materials(std::move(pem_root_certs),
-                                             std::move(cert_pair_list));
+    key_materials_config_->set_key_materials(
+        key_materials_config->pem_root_certs(),
+        key_materials_config->pem_key_cert_pair_list());
   }
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
@@ -557,12 +555,9 @@ grpc_security_status TlsServerSecurityConnector::InitializeHandshakerFactory() {
   grpc_tls_key_materials_config* key_materials_config =
       creds->options().key_materials_config();
   if (key_materials_config != nullptr) {
-    grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list =
-        key_materials_config->pem_key_cert_pair_list();
-    auto pem_root_certs = grpc_core::UniquePtr<char>(
-        gpr_strdup(key_materials_config->pem_root_certs()));
-    key_materials_config_->set_key_materials(std::move(pem_root_certs),
-                                             std::move(cert_pair_list));
+    key_materials_config_->set_key_materials(
+        key_materials_config->pem_root_certs(),
+        key_materials_config->pem_key_cert_pair_list());
   }
   grpc_ssl_certificate_config_reload_status reload_status =
       GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;

@@ -402,9 +402,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
       pem_key_cert_pair_list;
   pem_key_cert_pair_list.push_back(pem_key_cert_pair);
   grpc::string test_pem_root_certs = "pem_root_certs";
-  c_key_materials.set_key_materials(
-      ::grpc_core::UniquePtr<char>(gpr_strdup(test_pem_root_certs.c_str())),
-      pem_key_cert_pair_list);
+  c_key_materials.set_key_materials(test_pem_root_certs.c_str(),
+                                    pem_key_cert_pair_list);
   c_arg.key_materials_config = &c_key_materials;
   c_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   grpc::string test_error_details = "error_details";
