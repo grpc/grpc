@@ -554,6 +554,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/closure.h )
   s.files += %w( src/core/lib/iomgr/combiner.cc )
   s.files += %w( src/core/lib/iomgr/combiner.h )
+  s.files += %w( src/core/lib/iomgr/dualstack_socket_posix.cc )
   s.files += %w( src/core/lib/iomgr/dynamic_annotations.h )
   s.files += %w( src/core/lib/iomgr/endpoint.cc )
   s.files += %w( src/core/lib/iomgr/endpoint.h )
