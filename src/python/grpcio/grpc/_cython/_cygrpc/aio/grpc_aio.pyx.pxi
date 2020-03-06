@@ -20,38 +20,57 @@ cdef bint _grpc_aio_initialized = False
 # a single event loop picked by "init_grpc_aio".
 cdef object _grpc_aio_loop
 cdef object _event_loop_thread_ident
+cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'default').lower()
+grpc_aio_engine = None
+
+
+class AsyncIOEngine(enum.Enum):
+    DEFAULT = 'default'
+    CUSTOM_IO_MANAGER = 'custom'
+    CQ_POLLER = 'poller'
 
 
 def init_grpc_aio():
     global _grpc_aio_initialized
     global _grpc_aio_loop
     global _event_loop_thread_ident
+    global grpc_aio_engine
 
+    # Marks this function as called
     if _grpc_aio_initialized:
         return
     else:
         _grpc_aio_initialized = True
-        _event_loop_thread_ident = threading.current_thread().ident
+
+    # Picks the engine for gRPC AsyncIO Stack
+    for engine_type in AsyncIOEngine:
+        if engine_type.value == _GRPC_ASYNCIO_ENGINE:
+            grpc_aio_engine = engine_type
+            break
+    if grpc_aio_engine is None or grpc_aio_engine is AsyncIOEngine.DEFAULT:
+        grpc_aio_engine = AsyncIOEngine.CUSTOM_IO_MANAGER
 
     # Anchors the event loop that the gRPC library going to use.
     _grpc_aio_loop = asyncio.get_event_loop()
-
-    # Activates asyncio IO manager
-    # install_asyncio_iomgr()
+    _event_loop_thread_ident = threading.current_thread().ident
 
     # TODO(https://github.com/grpc/grpc/issues/22244) we need a the
     # grpc_shutdown_blocking() counterpart for this call. Otherwise, the gRPC
     # library won't shutdown cleanly.
     grpc_init()
 
-    # Timers are triggered by the Asyncio loop. We disable
-    # the background thread that is being used by the native
-    # gRPC iomgr.
-    # grpc_timer_manager_set_threading(False)
+    if grpc_aio_engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
+        # Activates asyncio IO manager
+        install_asyncio_iomgr()
 
-    # gRPC callbaks are executed within the same thread used by the Asyncio
-    # event loop, as it is being done by the other Asyncio callbacks.
-    # Executor.SetThreadingAll(False)
+        # Timers are triggered by the Asyncio loop. We disable
+        # the background thread that is being used by the native
+        # gRPC iomgr.
+        grpc_timer_manager_set_threading(False)
+
+        # gRPC callbaks are executed within the same thread used by the Asyncio
+        # event loop, as it is being done by the other Asyncio callbacks.
+        Executor.SetThreadingAll(False)
 
     _grpc_aio_initialized = False
 

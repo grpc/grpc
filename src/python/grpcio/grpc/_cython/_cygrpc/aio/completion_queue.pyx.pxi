@@ -19,7 +19,16 @@ def _handle_callback_wrapper(CallbackWrapper callback_wrapper, int success):
     CallbackWrapper.functor_run(callback_wrapper.c_functor(), success)
 
 
-cdef class BackgroundCompletionQueue:
+cdef class BaseCompletionQueue:
+
+    async def shutdown(self):
+        raise NotImplementedError()
+
+    cdef grpc_completion_queue* c_ptr(self):
+        raise NotImplementedError()
+
+
+cdef class PollerCompletionQueue(BaseCompletionQueue):
 
     def __cinit__(self):
         self._cq = grpc_completion_queue_create_for_next(NULL)
@@ -65,3 +74,33 @@ cdef class BackgroundCompletionQueue:
 
     cdef grpc_completion_queue* c_ptr(self):
         return self._cq
+
+
+cdef class CallbackCompletionQueue(BaseCompletionQueue):
+
+    def __cinit__(self):
+        self._shutdown_completed = grpc_aio_loop().create_future()
+        self._wrapper = CallbackWrapper(
+            self._shutdown_completed,
+            CQ_SHUTDOWN_FAILURE_HANDLER)
+        self._cq = grpc_completion_queue_create_for_callback(
+            self._wrapper.c_functor(),
+            NULL
+        )
+
+    cdef grpc_completion_queue* c_ptr(self):
+        return self._cq
+
+    async def shutdown(self):
+        grpc_completion_queue_shutdown(self._cq)
+        await self._shutdown_completed
+        grpc_completion_queue_destroy(self._cq)
+
+
+cdef BaseCompletionQueue create_completion_queue():
+    if grpc_aio_engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
+        return CallbackCompletionQueue()
+    elif grpc_aio_engine is AsyncIOEngine.POLLER:
+        return PollerCompletionQueue()
+    else:
+        raise ValueError('Unexpected engine type [%s]' % grpc_aio_engine)
