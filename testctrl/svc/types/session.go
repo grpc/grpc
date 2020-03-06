@@ -49,6 +49,16 @@ func (t *Session) Workers() []*Component {
 	return t.workers
 }
 
+// ClientWorkers returns the slice of all the workers with a kind of ClientComponent.
+func (t *Session) ClientWorkers() []*Component {
+	return t.filterWorkers(ClientComponent)
+}
+
+// ServerWorkers returns the slice of all the workers with a kind of ServerComponent.
+func (t *Session) ServerWorkers() []*Component {
+	return t.filterWorkers(ServerComponent)
+}
+
 // Scenario returns the raw test scenario protobuf. The scenario is not parsed into
 // implementation-specific types, because the service is designed to know nothing about the tests.
 func (t *Session) Scenario() *pb.Scenario {
@@ -58,4 +68,17 @@ func (t *Session) Scenario() *pb.Scenario {
 // CreateTime returns the time that the Session was instantiated.
 func (t *Session) CreateTime() time.Time {
 	return t.createTime
+}
+
+// filterWorkers returns a slice with only a specific ComponentKind.
+func (t *Session) filterWorkers(k ComponentKind) []*Component {
+	var cs []*Component
+
+	for _, w := range t.workers {
+		if w.Kind() == k {
+			cs = append(cs, w)
+		}
+	}
+
+	return cs
 }
