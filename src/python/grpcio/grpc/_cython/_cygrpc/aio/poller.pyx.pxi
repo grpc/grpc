@@ -31,15 +31,6 @@ cdef class BackgroundCompletionQueue:
         self._poller.daemon = True
         self._poller.start()
 
-    # async def _start_poller(self):
-    #     if self._poller:
-    #         raise UsageError('Poller can only be started once.')
-
-    #     self._poller = threading.Thread(target=self._polling_wrapper)
-    #     self._poller.daemon = True
-    #     self._poller.start()
-    #     await self._poller_running
-
     cdef _polling(self):
         cdef grpc_event event
         cdef CallbackContext *context
@@ -47,28 +38,22 @@ cdef class BackgroundCompletionQueue:
         grpc_call_soon_threadsafe(self._poller_running.set_result, None)
 
         while not self._shutdown:
-            _LOGGER.debug('BackgroundCompletionQueue polling')
             with nogil:
                 event = grpc_completion_queue_next(self._cq,
                                                 _GPR_INF_FUTURE,
                                                 NULL)
-            _LOGGER.debug('BackgroundCompletionQueue polling 1')
 
             if event.type == GRPC_QUEUE_TIMEOUT:
-                _LOGGER.debug('BackgroundCompletionQueue timeout???')
                 raise NotImplementedError()
             elif event.type == GRPC_QUEUE_SHUTDOWN:
-                _LOGGER.debug('BackgroundCompletionQueue shutdown!')
                 self._shutdown = True
                 grpc_call_soon_threadsafe(self._shutdown_completed.set_result, None)
             else:
-                _LOGGER.debug('BackgroundCompletionQueue event! %d', event.success)
                 context = <CallbackContext *>event.tag
                 grpc_call_soon_threadsafe(
                     _handle_callback_wrapper,
                     <CallbackWrapper>context.callback_wrapper,
                     event.success)
-            _LOGGER.debug('BackgroundCompletionQueue polling 2')
 
     def _polling_wrapper(self):
         self._polling()
