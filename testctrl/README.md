@@ -8,8 +8,10 @@ provides an interface for scheduling and running benchmarks on Kubernetes.
 The TestCtrl project is composed of three major components:
 
 The **server** which implements two gRPC services: **`TestSessions`** and
-**`google.longrunning.Operations`**. This services process incoming user
+**[google.longrunning.Operations]**. This services process incoming user
 requests and status updates for the tests.
+
+[google.longrunning.Operations]: https://github.com/googleapis/googleapis/blob/91e1fb5ef9829c0c7a64bfa5bde330e6ed594378/google/longrunning/operations.proto#L54
 
 A **store** is created with information about test sessions. It contains the
 configuration for the tests components, which TestCtrl knows nothing about. In
@@ -27,7 +29,9 @@ they would like to run and the container images that these tests require. This
 service saves information about the tests in a [store], which assigns the test
 session a globally unique name. This name is stored in the work queue, awaiting
 an available worker. The server replies with the name in a
-**`[google.longrunning.Operation]`** protobuf.
+**[google.longrunning.Operation]** protobuf.
+
+[google.longrunning.Operation]: https://github.com/googleapis/googleapis/blob/91e1fb5ef9829c0c7a64bfa5bde330e6ed594378/google/longrunning/operations.proto#L128
 
 When a worker becomes available, it fetches the next job name off of the work
 queue. Then, it uses this name to find the appropriate configuration in the
@@ -36,7 +40,7 @@ the pods that the test requires. It updates the store with significant events
 and timestamps.
 
 If a user desires to see progress of a test, they make a request with the name
-to TestCtrl's implementation of the **`google.longrunning.Operations`** service.
+to TestCtrl's implementation of the **[google.longrunning.Operations]** service.
 This service queries the store to learn about the status of the test and where
 to locate test results or error logs upon completion.
 
