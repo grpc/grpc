@@ -76,4 +76,7 @@ def grpc_schedule_coroutine(object coro):
 
 
 def grpc_call_soon_threadsafe(object func, *args):
+    # TODO(lidiz) After we are confident, we can drop this assert. Otherwsie,
+    # we should limit this function to non-grpc-event-loop thread.
+    assert _event_loop_thread_ident != threading.current_thread().ident
     return _grpc_aio_loop.call_soon_threadsafe(func, *args)
