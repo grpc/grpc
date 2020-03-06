@@ -265,8 +265,9 @@ class Channel(_base_channel.Channel):
                 # However, the PyAsyncGenAThrow object is written in C and
                 # failed to include the normal Python frame objects. Hence,
                 # this exception is a false negative, and it is safe to ignore
-                # the failure (someone should fix it in CPython!).
-                # https://github.com/python/cpython/blob/a025d4ca99fb4c652465368e0b4eb03cf4b316b9/Objects/genobject.c#L1989
+                # the failure. It is fixed by https://github.com/python/cpython/pull/18669,
+                # but not available until 3.9 or 3.8.3. So, we have to keep it
+                # for a while.
                 if 'frame' in str(attribute_error):
                     continue
                 else:
