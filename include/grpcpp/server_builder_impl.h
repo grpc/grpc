@@ -41,7 +41,6 @@ struct grpc_resource_quota;
 namespace grpc_impl {
 
 class CompletionQueue;
-class ResourceQuota;
 class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
@@ -227,7 +226,7 @@ class ServerBuilder {
 
   /// Set the attached buffer pool for this server
   ServerBuilder& SetResourceQuota(
-      const grpc_impl::ResourceQuota& resource_quota);
+      const ResourceQuota& resource_quota);
 
   ServerBuilder& SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
 
