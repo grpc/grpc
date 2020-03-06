@@ -240,7 +240,7 @@ class Channel(_base_channel.Channel):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._close(None)
 
-    async def _close(self, grace):
+    async def _close(self, grace):  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
@@ -268,6 +268,7 @@ class Channel(_base_channel.Channel):
                 # the failure. It is fixed by https://github.com/python/cpython/pull/18669,
                 # but not available until 3.9 or 3.8.3. So, we have to keep it
                 # for a while.
+                # TODO(lidiz) drop this hack after 3.8 deprecation
                 if 'frame' in str(attribute_error):
                     continue
                 else:
