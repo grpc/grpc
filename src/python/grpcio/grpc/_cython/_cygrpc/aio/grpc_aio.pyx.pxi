@@ -27,7 +27,7 @@ grpc_aio_engine = None
 class AsyncIOEngine(enum.Enum):
     DEFAULT = 'default'
     CUSTOM_IO_MANAGER = 'custom'
-    CQ_POLLER = 'poller'
+    POLLER = 'poller'
 
 
 def init_grpc_aio():
