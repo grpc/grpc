@@ -20,7 +20,7 @@ type Session struct {
 // NewSession creates a Session, assigning it a unique name.
 func NewSession(driver *Component, workers []*Component, scenario *pb.Scenario) *Session {
 	return &Session{
-		name:       fmt.Sprintf("testSessions/%s", uuid.New().String()),
+		name:       uuid.New().String(),
 		driver:     driver,
 		workers:    workers,
 		scenario:   scenario,
@@ -31,6 +31,12 @@ func NewSession(driver *Component, workers []*Component, scenario *pb.Scenario) 
 // Name returns the globally unique name that identifies this Session instance.
 func (t *Session) Name() string {
 	return t.name
+}
+
+// ResourceName returns the name the session prefixed with `sessions/`. This value should be the
+// name that is shared with a consumer of the API.
+func (t *Session) ResourceName() string {
+	return fmt.Sprintf("sessions/%s", t.name)
 }
 
 // Driver returns the Session's driver component.

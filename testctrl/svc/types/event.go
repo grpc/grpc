@@ -13,8 +13,8 @@ import (
 //
 // Event instances can be created through the constructor or through a literal. The constructor,
 // NewEvent, provides several conveniences.  First, it sets the Time to time.Now. Second, it accepts
-// a Namer for the subject. This allows events to be created using the syntactic sugar of subject
-// objects themselves.
+// a ResourceNamer for the subject. This allows events to be created using the syntactic sugar of
+// subject objects themselves.
 type Event struct {
 	// SubjectName is the string representation of the object this event describes. For example, a
 	// specific session "xyz" may have the subject name of "testSessions/xyz". The format of the
@@ -33,11 +33,11 @@ type Event struct {
 }
 
 // NewEvent instantiates an Event struct, setting its Timestamp to now and its SubjectName to the
-// result of Name method on the Namer. It expects a message, since supplying one can provide more
-// context in an unstructured format.
-func NewEvent(subject Namer, k EventKind, messageFmt string, args ...interface{}) Event {
+// result of Name method on the ResourceNamer. It expects a message, since supplying one can provide
+// more context in an unstructured format.
+func NewEvent(subject ResourceNamer, k EventKind, messageFmt string, args ...interface{}) Event {
 	return Event{
-		SubjectName: subject.Name(),
+		SubjectName: subject.ResourceName(),
 		Kind:        k,
 		Time:        time.Now(),
 		Message:     fmt.Sprintf(messageFmt, args...),

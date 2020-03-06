@@ -35,7 +35,7 @@ type Component struct {
 //     c := NewComponent("gcr.io/grpc-testing/driver@sha256:e4ff8efd7eb62d3a3bb0990f6ff1e9df20da24ebf908d08f49cb83422a232862", DriverComponent, 1)
 func NewComponent(container string, kind ComponentKind, replicas int32) *Component {
 	return &Component{
-		name:      fmt.Sprintf("components/%s", uuid.New().String()),
+		name:      uuid.New().String(),
 		container: container,
 		kind:      kind,
 		replicas:  replicas,
@@ -47,6 +47,12 @@ func NewComponent(container string, kind ComponentKind, replicas int32) *Compone
 // another session.
 func (c *Component) Name() string {
 	return c.name
+}
+
+// ResourceName returns the name the component prefixed with `components/`. This value should be
+// displayed to a consumer of the API.
+func (c *Component) ResourceName() string {
+	return fmt.Sprintf("components/%s", c.Name())
 }
 
 // Container returns the name of a docker image and tag which contains the required component.
