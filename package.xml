@@ -534,6 +534,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/dualstack_socket_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/dynamic_annotations.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
