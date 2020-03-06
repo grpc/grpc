@@ -47,338 +47,338 @@ class _MulticallableTestMixin():
         await self._server.stop(None)
 
 
-# class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
+class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
-#     async def test_call_to_string(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+    async def test_call_to_string(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
-#         self.assertTrue(str(call) is not None)
-#         self.assertTrue(repr(call) is not None)
+        self.assertTrue(str(call) is not None)
+        self.assertTrue(repr(call) is not None)
 
-#         response = await call
+        response = await call
 
-#         self.assertTrue(str(call) is not None)
-#         self.assertTrue(repr(call) is not None)
+        self.assertTrue(str(call) is not None)
+        self.assertTrue(repr(call) is not None)
 
-#     async def test_call_ok(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+    async def test_call_ok(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
-#         self.assertFalse(call.done())
+        self.assertFalse(call.done())
 
-#         response = await call
+        response = await call
 
-#         self.assertTrue(call.done())
-#         self.assertIsInstance(response, messages_pb2.SimpleResponse)
-#         self.assertEqual(await call.code(), grpc.StatusCode.OK)
+        self.assertTrue(call.done())
+        self.assertIsInstance(response, messages_pb2.SimpleResponse)
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
-#         # Response is cached at call object level, reentrance
-#         # returns again the same response
-#         response_retry = await call
-#         self.assertIs(response, response_retry)
+        # Response is cached at call object level, reentrance
+        # returns again the same response
+        response_retry = await call
+        self.assertIs(response, response_retry)
 
-#     async def test_call_rpc_error(self):
-#         async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
-#             stub = test_pb2_grpc.TestServiceStub(channel)
+    async def test_call_rpc_error(self):
+        async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
 
-#             call = stub.UnaryCall(messages_pb2.SimpleRequest())
+            call = stub.UnaryCall(messages_pb2.SimpleRequest())
 
-#             with self.assertRaises(aio.AioRpcError) as exception_context:
-#                 await call
+            with self.assertRaises(aio.AioRpcError) as exception_context:
+                await call
 
-#             self.assertEqual(grpc.StatusCode.UNAVAILABLE,
-#                              exception_context.exception.code())
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE,
+                             exception_context.exception.code())
 
-#             self.assertTrue(call.done())
-#             self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
+            self.assertTrue(call.done())
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
 
-#     async def test_call_code_awaitable(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-#         self.assertEqual(await call.code(), grpc.StatusCode.OK)
+    async def test_call_code_awaitable(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
-#     async def test_call_details_awaitable(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-#         self.assertEqual('', await call.details())
+    async def test_call_details_awaitable(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        self.assertEqual('', await call.details())
 
-#     async def test_call_initial_metadata_awaitable(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-#         self.assertEqual((), await call.initial_metadata())
+    async def test_call_initial_metadata_awaitable(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        self.assertEqual((), await call.initial_metadata())
 
-#     async def test_call_trailing_metadata_awaitable(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-#         self.assertEqual((), await call.trailing_metadata())
+    async def test_call_trailing_metadata_awaitable(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        self.assertEqual((), await call.trailing_metadata())
 
-#     async def test_call_initial_metadata_cancelable(self):
-#         coro_started = asyncio.Event()
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+    async def test_call_initial_metadata_cancelable(self):
+        coro_started = asyncio.Event()
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
-#         async def coro():
-#             coro_started.set()
-#             await call.initial_metadata()
+        async def coro():
+            coro_started.set()
+            await call.initial_metadata()
 
-#         task = self.loop.create_task(coro())
-#         await coro_started.wait()
-#         task.cancel()
+        task = self.loop.create_task(coro())
+        await coro_started.wait()
+        task.cancel()
 
-#         # Test that initial metadata can still be asked thought
-#         # a cancellation happened with the previous task
-#         self.assertEqual((), await call.initial_metadata())
+        # Test that initial metadata can still be asked thought
+        # a cancellation happened with the previous task
+        self.assertEqual((), await call.initial_metadata())
 
-#     async def test_call_initial_metadata_multiple_waiters(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+    async def test_call_initial_metadata_multiple_waiters(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
-#         async def coro():
-#             return await call.initial_metadata()
+        async def coro():
+            return await call.initial_metadata()
 
-#         task1 = self.loop.create_task(coro())
-#         task2 = self.loop.create_task(coro())
+        task1 = self.loop.create_task(coro())
+        task2 = self.loop.create_task(coro())
 
-#         await call
+        await call
 
-#         self.assertEqual([(), ()], await asyncio.gather(*[task1, task2]))
+        self.assertEqual([(), ()], await asyncio.gather(*[task1, task2]))
 
-#     async def test_call_code_cancelable(self):
-#         coro_started = asyncio.Event()
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+    async def test_call_code_cancelable(self):
+        coro_started = asyncio.Event()
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
-#         async def coro():
-#             coro_started.set()
-#             await call.code()
+        async def coro():
+            coro_started.set()
+            await call.code()
 
-#         task = self.loop.create_task(coro())
-#         await coro_started.wait()
-#         task.cancel()
+        task = self.loop.create_task(coro())
+        await coro_started.wait()
+        task.cancel()
 
-#         # Test that code can still be asked thought
-#         # a cancellation happened with the previous task
-#         self.assertEqual(grpc.StatusCode.OK, await call.code())
+        # Test that code can still be asked thought
+        # a cancellation happened with the previous task
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
 
-#     async def test_call_code_multiple_waiters(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+    async def test_call_code_multiple_waiters(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
-#         async def coro():
-#             return await call.code()
+        async def coro():
+            return await call.code()
 
-#         task1 = self.loop.create_task(coro())
-#         task2 = self.loop.create_task(coro())
+        task1 = self.loop.create_task(coro())
+        task2 = self.loop.create_task(coro())
 
-#         await call
+        await call
 
-#         self.assertEqual([grpc.StatusCode.OK, grpc.StatusCode.OK], await
-#                          asyncio.gather(task1, task2))
+        self.assertEqual([grpc.StatusCode.OK, grpc.StatusCode.OK], await
+                         asyncio.gather(task1, task2))
 
-#     async def test_cancel_unary_unary(self):
-#         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+    async def test_cancel_unary_unary(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
-#         self.assertFalse(call.cancelled())
+        self.assertFalse(call.cancelled())
 
-#         self.assertTrue(call.cancel())
-#         self.assertFalse(call.cancel())
+        self.assertTrue(call.cancel())
+        self.assertFalse(call.cancel())
 
-#         with self.assertRaises(asyncio.CancelledError):
-#             await call
+        with self.assertRaises(asyncio.CancelledError):
+            await call
 
-#         # The info in the RpcError should match the info in Call object.
-#         self.assertTrue(call.cancelled())
-#         self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
-#         self.assertEqual(await call.details(),
-#                          'Locally cancelled by application!')
+        # The info in the RpcError should match the info in Call object.
+        self.assertTrue(call.cancelled())
+        self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
+        self.assertEqual(await call.details(),
+                         'Locally cancelled by application!')
 
-#     async def test_cancel_unary_unary_in_task(self):
-#         coro_started = asyncio.Event()
-#         call = self._stub.EmptyCall(messages_pb2.SimpleRequest())
+    async def test_cancel_unary_unary_in_task(self):
+        coro_started = asyncio.Event()
+        call = self._stub.EmptyCall(messages_pb2.SimpleRequest())
 
-#         async def another_coro():
-#             coro_started.set()
-#             await call
+        async def another_coro():
+            coro_started.set()
+            await call
 
-#         task = self.loop.create_task(another_coro())
-#         await coro_started.wait()
+        task = self.loop.create_task(another_coro())
+        await coro_started.wait()
 
-#         self.assertFalse(task.done())
-#         task.cancel()
+        self.assertFalse(task.done())
+        task.cancel()
 
-#         self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+        self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
 
-#         with self.assertRaises(asyncio.CancelledError):
-#             await task
+        with self.assertRaises(asyncio.CancelledError):
+            await task
 
 
 class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
-    # async def test_cancel_unary_stream(self):
-    #     # Prepares the request
-    #     request = messages_pb2.StreamingOutputCallRequest()
-    #     for _ in range(_NUM_STREAM_RESPONSES):
-    #         request.response_parameters.append(
-    #             messages_pb2.ResponseParameters(
-    #                 size=_RESPONSE_PAYLOAD_SIZE,
-    #                 interval_us=_RESPONSE_INTERVAL_US,
-    #             ))
+    async def test_cancel_unary_stream(self):
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(
+                    size=_RESPONSE_PAYLOAD_SIZE,
+                    interval_us=_RESPONSE_INTERVAL_US,
+                ))
 
-    #     # Invokes the actual RPC
-    #     call = self._stub.StreamingOutputCall(request)
-    #     self.assertFalse(call.cancelled())
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
+        self.assertFalse(call.cancelled())
 
-    #     response = await call.read()
-    #     self.assertIs(type(response), messages_pb2.StreamingOutputCallResponse)
-    #     self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+        response = await call.read()
+        self.assertIs(type(response), messages_pb2.StreamingOutputCallResponse)
+        self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
-    #     self.assertTrue(call.cancel())
-    #     self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
-    #     self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION, await
-    #                      call.details())
-    #     self.assertFalse(call.cancel())
+        self.assertTrue(call.cancel())
+        self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+        self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION, await
+                         call.details())
+        self.assertFalse(call.cancel())
 
-    #     with self.assertRaises(asyncio.CancelledError):
-    #         await call.read()
-    #     self.assertTrue(call.cancelled())
+        with self.assertRaises(asyncio.CancelledError):
+            await call.read()
+        self.assertTrue(call.cancelled())
 
-    # async def test_multiple_cancel_unary_stream(self):
-    #     # Prepares the request
-    #     request = messages_pb2.StreamingOutputCallRequest()
-    #     for _ in range(_NUM_STREAM_RESPONSES):
-    #         request.response_parameters.append(
-    #             messages_pb2.ResponseParameters(
-    #                 size=_RESPONSE_PAYLOAD_SIZE,
-    #                 interval_us=_RESPONSE_INTERVAL_US,
-    #             ))
+    async def test_multiple_cancel_unary_stream(self):
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(
+                    size=_RESPONSE_PAYLOAD_SIZE,
+                    interval_us=_RESPONSE_INTERVAL_US,
+                ))
 
-    #     # Invokes the actual RPC
-    #     call = self._stub.StreamingOutputCall(request)
-    #     self.assertFalse(call.cancelled())
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
+        self.assertFalse(call.cancelled())
 
-    #     response = await call.read()
-    #     self.assertIs(type(response), messages_pb2.StreamingOutputCallResponse)
-    #     self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+        response = await call.read()
+        self.assertIs(type(response), messages_pb2.StreamingOutputCallResponse)
+        self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
-    #     self.assertTrue(call.cancel())
-    #     self.assertFalse(call.cancel())
-    #     self.assertFalse(call.cancel())
-    #     self.assertFalse(call.cancel())
+        self.assertTrue(call.cancel())
+        self.assertFalse(call.cancel())
+        self.assertFalse(call.cancel())
+        self.assertFalse(call.cancel())
 
-    #     with self.assertRaises(asyncio.CancelledError):
-    #         await call.read()
+        with self.assertRaises(asyncio.CancelledError):
+            await call.read()
 
-    # async def test_early_cancel_unary_stream(self):
-    #     """Test cancellation before receiving messages."""
-    #     # Prepares the request
-    #     request = messages_pb2.StreamingOutputCallRequest()
-    #     for _ in range(_NUM_STREAM_RESPONSES):
-    #         request.response_parameters.append(
-    #             messages_pb2.ResponseParameters(
-    #                 size=_RESPONSE_PAYLOAD_SIZE,
-    #                 interval_us=_RESPONSE_INTERVAL_US,
-    #             ))
+    async def test_early_cancel_unary_stream(self):
+        """Test cancellation before receiving messages."""
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(
+                    size=_RESPONSE_PAYLOAD_SIZE,
+                    interval_us=_RESPONSE_INTERVAL_US,
+                ))
 
-    #     # Invokes the actual RPC
-    #     call = self._stub.StreamingOutputCall(request)
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
 
-    #     self.assertFalse(call.cancelled())
-    #     self.assertTrue(call.cancel())
-    #     self.assertFalse(call.cancel())
+        self.assertFalse(call.cancelled())
+        self.assertTrue(call.cancel())
+        self.assertFalse(call.cancel())
 
-    #     with self.assertRaises(asyncio.CancelledError):
-    #         await call.read()
+        with self.assertRaises(asyncio.CancelledError):
+            await call.read()
 
-    #     self.assertTrue(call.cancelled())
+        self.assertTrue(call.cancelled())
 
-    #     self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
-    #     self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION, await
-    #                      call.details())
+        self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+        self.assertEqual(_LOCAL_CANCEL_DETAILS_EXPECTATION, await
+                         call.details())
 
-    # async def test_late_cancel_unary_stream(self):
-    #     """Test cancellation after received all messages."""
-    #     # Prepares the request
-    #     request = messages_pb2.StreamingOutputCallRequest()
-    #     for _ in range(_NUM_STREAM_RESPONSES):
-    #         request.response_parameters.append(
-    #             messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
+    async def test_late_cancel_unary_stream(self):
+        """Test cancellation after received all messages."""
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
 
-    #     # Invokes the actual RPC
-    #     call = self._stub.StreamingOutputCall(request)
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
 
-    #     for _ in range(_NUM_STREAM_RESPONSES):
-    #         response = await call.read()
-    #         self.assertIs(type(response),
-    #                       messages_pb2.StreamingOutputCallResponse)
-    #         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+        for _ in range(_NUM_STREAM_RESPONSES):
+            response = await call.read()
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
-    #     # After all messages received, it is possible that the final state
-    #     # is received or on its way. It's basically a data race, so our
-    #     # expectation here is do not crash :)
-    #     call.cancel()
-    #     self.assertIn(await call.code(),
-    #                   [grpc.StatusCode.OK, grpc.StatusCode.CANCELLED])
+        # After all messages received, it is possible that the final state
+        # is received or on its way. It's basically a data race, so our
+        # expectation here is do not crash :)
+        call.cancel()
+        self.assertIn(await call.code(),
+                      [grpc.StatusCode.OK, grpc.StatusCode.CANCELLED])
 
-    # async def test_too_many_reads_unary_stream(self):
-    #     """Test calling read after received all messages fails."""
-    #     # Prepares the request
-    #     request = messages_pb2.StreamingOutputCallRequest()
-    #     for _ in range(_NUM_STREAM_RESPONSES):
-    #         request.response_parameters.append(
-    #             messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
+    async def test_too_many_reads_unary_stream(self):
+        """Test calling read after received all messages fails."""
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
 
-    #     # Invokes the actual RPC
-    #     call = self._stub.StreamingOutputCall(request)
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
 
-    #     for _ in range(_NUM_STREAM_RESPONSES):
-    #         response = await call.read()
-    #         self.assertIs(type(response),
-    #                       messages_pb2.StreamingOutputCallResponse)
-    #         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
-    #     self.assertIs(await call.read(), aio.EOF)
+        for _ in range(_NUM_STREAM_RESPONSES):
+            response = await call.read()
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+        self.assertIs(await call.read(), aio.EOF)
 
-    #     # After the RPC is finished, further reads will lead to exception.
-    #     self.assertEqual(await call.code(), grpc.StatusCode.OK)
-    #     self.assertIs(await call.read(), aio.EOF)
+        # After the RPC is finished, further reads will lead to exception.
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+        self.assertIs(await call.read(), aio.EOF)
 
-    # async def test_unary_stream_async_generator(self):
-    #     """Sunny day test case for unary_stream."""
-    #     # Prepares the request
-    #     request = messages_pb2.StreamingOutputCallRequest()
-    #     for _ in range(_NUM_STREAM_RESPONSES):
-    #         request.response_parameters.append(
-    #             messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
+    async def test_unary_stream_async_generator(self):
+        """Sunny day test case for unary_stream."""
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,))
 
-    #     # Invokes the actual RPC
-    #     call = self._stub.StreamingOutputCall(request)
-    #     self.assertFalse(call.cancelled())
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
+        self.assertFalse(call.cancelled())
 
-    #     async for response in call:
-    #         self.assertIs(type(response),
-    #                       messages_pb2.StreamingOutputCallResponse)
-    #         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+        async for response in call:
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
-    #     self.assertEqual(await call.code(), grpc.StatusCode.OK)
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
-    # async def test_cancel_unary_stream_in_task_using_read(self):
-    #     coro_started = asyncio.Event()
+    async def test_cancel_unary_stream_in_task_using_read(self):
+        coro_started = asyncio.Event()
 
-    #     # Configs the server method to block forever
-    #     request = messages_pb2.StreamingOutputCallRequest()
-    #     request.response_parameters.append(
-    #         messages_pb2.ResponseParameters(
-    #             size=_RESPONSE_PAYLOAD_SIZE,
-    #             interval_us=_INFINITE_INTERVAL_US,
-    #         ))
+        # Configs the server method to block forever
+        request = messages_pb2.StreamingOutputCallRequest()
+        request.response_parameters.append(
+            messages_pb2.ResponseParameters(
+                size=_RESPONSE_PAYLOAD_SIZE,
+                interval_us=_INFINITE_INTERVAL_US,
+            ))
 
-    #     # Invokes the actual RPC
-    #     call = self._stub.StreamingOutputCall(request)
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
 
-    #     async def another_coro():
-    #         coro_started.set()
-    #         await call.read()
+        async def another_coro():
+            coro_started.set()
+            await call.read()
 
-    #     task = self.loop.create_task(another_coro())
-    #     await coro_started.wait()
+        task = self.loop.create_task(another_coro())
+        await coro_started.wait()
 
-    #     self.assertFalse(task.done())
-    #     task.cancel()
+        self.assertFalse(task.done())
+        task.cancel()
 
-    #     self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+        self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
 
-    #     with self.assertRaises(asyncio.CancelledError):
-    #         await task
+        with self.assertRaises(asyncio.CancelledError):
+            await task
 
     async def test_cancel_unary_stream_in_task_using_async_for(self):
         coro_started = asyncio.Event()

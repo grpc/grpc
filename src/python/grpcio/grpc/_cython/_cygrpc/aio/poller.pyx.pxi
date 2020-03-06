@@ -16,13 +16,7 @@ cdef gpr_timespec _GPR_INF_FUTURE = gpr_inf_future(GPR_CLOCK_REALTIME)
 
 
 def _handle_callback_wrapper(CallbackWrapper callback_wrapper, int success):
-    try:
-        CallbackWrapper.functor_run(callback_wrapper.c_functor(), success)
-        _LOGGER.debug('_handle_callback_wrapper Done')
-    except Exception as e:
-        _LOGGER.debug('_handle_callback_wrapper EXP')
-        _LOGGER.exception(e)
-        raise
+    CallbackWrapper.functor_run(callback_wrapper.c_functor(), success)
 
 
 cdef class BackgroundCompletionQueue:
@@ -33,7 +27,6 @@ cdef class BackgroundCompletionQueue:
         self._shutdown_completed = asyncio.get_event_loop().create_future()
         self._poller = None
         self._poller_running = asyncio.get_event_loop().create_future()
-        # asyncio.get_event_loop().create_task(self._start_poller())
         self._poller = threading.Thread(target=self._polling_wrapper)
         self._poller.daemon = True
         self._poller.start()

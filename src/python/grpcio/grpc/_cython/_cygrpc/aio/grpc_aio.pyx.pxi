@@ -61,7 +61,7 @@ def grpc_aio_loop():
     return _grpc_aio_loop
 
 
-cdef grpc_schedule_coroutine(object coro):
+def grpc_schedule_coroutine(object coro):
     """Thread-safely schedules coroutine to gRPC Aio event loop.
 
     If invoked within the same thread as the event loop, return an
@@ -69,8 +69,10 @@ cdef grpc_schedule_coroutine(object coro):
     Future). For non-asyncio threads, sync Future objects are probably easier
     to handle (without worrying other thread-safety stuff).
     """
-    assert _event_loop_thread_ident != threading.current_thread().ident
-    return asyncio.run_coroutine_threadsafe(coro, _grpc_aio_loop)
+    if _event_loop_thread_ident != threading.current_thread().ident:
+        return asyncio.run_coroutine_threadsafe(coro, _grpc_aio_loop)
+    else:
+        return _grpc_aio_loop.create_task(coro)
 
 
 def grpc_call_soon_threadsafe(object func, *args):

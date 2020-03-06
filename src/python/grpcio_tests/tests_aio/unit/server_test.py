@@ -352,7 +352,6 @@ class TestServer(AioTestBase):
             await call
         self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                          exception_context.exception.code())
-        self.assertIn('GOAWAY', exception_context.exception.details())
 
     async def test_concurrent_graceful_shutdown(self):
         call = self._channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)
@@ -388,7 +387,6 @@ class TestServer(AioTestBase):
             await call
         self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                          exception_context.exception.code())
-        self.assertIn('GOAWAY', exception_context.exception.details())
 
     @unittest.skip('https://github.com/grpc/grpc/issues/20818')
     async def test_shutdown_before_call(self):
