@@ -613,7 +613,8 @@ cdef class AioServer:
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
-        self._cq = CallbackCompletionQueue()
+        # self._cq = CallbackCompletionQueue()
+        self._cq = BackgroundCompletionQueue()
         grpc_server_register_completion_queue(
             self._server.c_server,
             self._cq.c_ptr(),

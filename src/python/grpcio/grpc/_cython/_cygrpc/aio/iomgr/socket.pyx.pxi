@@ -159,6 +159,7 @@ cdef class _AsyncioSocket:
         return self._reader and not self._reader._transport.is_closing()
 
     cdef void close(self):
+        _LOGGER.debug('closed!')
         if self.is_connected():
             self._writer.close()
         if self._server:
@@ -196,7 +197,9 @@ cdef class _AsyncioSocket:
                 self._new_connection_callback,
                 sock=self._py_socket,
             )
+            _LOGGER.debug('start listen')
 
+        _LOGGER.debug('want to listen')
         grpc_aio_loop().create_task(create_asyncio_server())
 
     cdef accept(self,

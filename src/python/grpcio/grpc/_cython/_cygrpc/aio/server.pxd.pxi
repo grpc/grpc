@@ -51,7 +51,8 @@ cdef enum AioServerStatus:
 
 cdef class AioServer:
     cdef Server _server
-    cdef CallbackCompletionQueue _cq
+    # cdef CallbackCompletionQueue _cq
+    cdef BackgroundCompletionQueue _cq
     cdef list _generic_handlers
     cdef AioServerStatus _status
     cdef object _loop  # asyncio.EventLoop
