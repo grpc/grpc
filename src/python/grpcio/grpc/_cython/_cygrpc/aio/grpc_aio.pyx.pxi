@@ -36,8 +36,9 @@ def init_grpc_aio():
     # Activates asyncio IO manager
     install_asyncio_iomgr()
 
-    # TODO(lidiz) we need a the grpc_shutdown_blocking() counterpart for this
-    # call. Otherwise, the gRPC library won't shutdown cleanly.
+    # TODO(https://github.com/grpc/grpc/issues/22244) we need a the
+    # grpc_shutdown_blocking() counterpart for this call. Otherwise, the gRPC
+    # library won't shutdown cleanly.
     grpc_init()
 
     # Timers are triggered by the Asyncio loop. We disable

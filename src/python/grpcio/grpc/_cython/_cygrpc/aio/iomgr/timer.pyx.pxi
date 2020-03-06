@@ -24,12 +24,11 @@ cdef class _AsyncioTimer:
     cdef _AsyncioTimer create(grpc_custom_timer * grpc_timer, float timeout):
         timer = _AsyncioTimer()
         timer._grpc_timer = grpc_timer
-        timer._timer_future = grpc_aio_loop().create_task(timer._async_time_up(timeout))
+        timer._timer_future = grpc_aio_loop().call_later(timeout, timer.on_time_up)
         timer._active = True
         return timer
 
-    async def _async_time_up(self, float timeout):
-        await asyncio.sleep(timeout)
+    def on_time_up(self):
         self._active = False
         grpc_custom_timer_callback(self._grpc_timer, <grpc_error*>0)
         cpython.Py_DECREF(self)
