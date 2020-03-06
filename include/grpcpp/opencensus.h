@@ -47,19 +47,4 @@ void RegisterOpenCensusViewsForExport();
 
 }  // namespace grpc
 
-namespace grpc {
-
-static inline void RegisterOpenCensusPlugin() {
-  ::grpc_impl::RegisterOpenCensusPlugin();
-}
-static inline void RegisterOpenCensusViewsForExport() {
-  ::grpc_impl::RegisterOpenCensusViewsForExport();
-}
-static inline ::opencensus::trace::Span GetSpanFromServerContext(
-    ::grpc_impl::ServerContext* context) {
-  return ::grpc_impl::GetSpanFromServerContext(context);
-}
-
-}  // namespace grpc
-
 #endif  // GRPCPP_OPENCENSUS_H
