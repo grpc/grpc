@@ -8,14 +8,15 @@ provides an interface for scheduling and running benchmarks on Kubernetes.
 The TestCtrl project is composed of three major components:
 
 The **server** which implements two gRPC services: **`TestSessions`** and
-**[google.longrunning.Operations]**. This services process incoming user
-requests and status updates for the tests.
+**[google.longrunning.Operations]**. These services process incoming user
+requests and status updates for the tests, respectively.
 
 [google.longrunning.Operations]: https://github.com/googleapis/googleapis/blob/91e1fb5ef9829c0c7a64bfa5bde330e6ed594378/google/longrunning/operations.proto#L54
 
 A **store** is created with information about test sessions. It contains the
-configuration for the tests components, which TestCtrl knows nothing about. In
-addition, it stores metadata and the current status of the test sessions.
+configuration for the tests components. By design, TestCtrl knows nothing about
+the tests themselves. TestCtrl stores their raw config, some metadata and the
+current status of the test sessions.
 
 One **controller** is created which operates a work queue to limit the number of
 test sessions in progress. It spawns workers that process one test session at a
@@ -26,18 +27,18 @@ updates the store with the status of the test.
 
 To run benchmarks, a user calls the **`TestSessions`** service with the tests
 they would like to run and the container images that these tests require. This
-service saves information about the tests in a [store], which assigns the test
+service saves information about the tests in a store, which assigns the test
 session a globally unique name. This name is stored in the work queue, awaiting
-an available worker. The server replies with the name in a
+an available executor. The server replies with the name in a
 **[google.longrunning.Operation]** protobuf.
 
 [google.longrunning.Operation]: https://github.com/googleapis/googleapis/blob/91e1fb5ef9829c0c7a64bfa5bde330e6ed594378/google/longrunning/operations.proto#L128
 
-When a worker becomes available, it fetches the next job name off of the work
+When a executor becomes available, it fetches the next job name off of the work
 queue. Then, it uses this name to find the appropriate configuration in the
-store. The worker communicates with the Kubernetes API, monitoring the status of
-the pods that the test requires. It updates the store with significant events
-and timestamps.
+store. The executor receives updates from the Kubernetes API, monitoring the
+status of the pods that the test requires. It updates the store with significant
+events and timestamps.
 
 If a user desires to see progress of a test, they make a request with the name
 to TestCtrl's implementation of the **[google.longrunning.Operations]** service.
@@ -107,4 +108,3 @@ errors.  You can do this by running:
 
 [golint]: https://github.com/golang/lint
 [grpc\_cli]: https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md
-
