@@ -27,6 +27,7 @@ import unittest
 from six import moves
 
 import grpc
+import grpc.experimental
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
@@ -544,9 +545,12 @@ class SimpleStubsPluginTest(unittest.TestCase):
 
     def testUnaryCall(self):
         request = request_pb2.SimpleRequest(response_size=13)
-        response = service_pb2_grpc.TestService.UnaryCall(request,
-                                                          self._target,
-                                                          wait_for_ready=True)
+        response = service_pb2_grpc.TestService.UnaryCall(
+            request,
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
         expected_response = self.servicer_methods.UnaryCall(
             request, 'not a real context!')
         self.assertEqual(expected_response, response)
@@ -556,7 +560,11 @@ class SimpleStubsPluginTest(unittest.TestCase):
         expected_responses = self.servicer_methods.StreamingOutputCall(
             request, 'not a real RpcContext!')
         responses = service_pb2_grpc.TestService.StreamingOutputCall(
-            request, self._target, wait_for_ready=True)
+            request,
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
         for expected_response, response in moves.zip_longest(
                 expected_responses, responses):
             self.assertEqual(expected_response, response)
@@ -565,6 +573,8 @@ class SimpleStubsPluginTest(unittest.TestCase):
         response = service_pb2_grpc.TestService.StreamingInputCall(
             _streaming_input_request_iterator(),
             self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
             wait_for_ready=True)
         expected_response = self.servicer_methods.StreamingInputCall(
             _streaming_input_request_iterator(), 'not a real RpcContext!')
@@ -572,7 +582,11 @@ class SimpleStubsPluginTest(unittest.TestCase):
 
     def testFullDuplexCall(self):
         responses = service_pb2_grpc.TestService.FullDuplexCall(
-            _full_duplex_request_iterator(), self._target, wait_for_ready=True)
+            _full_duplex_request_iterator(),
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
         expected_responses = self.servicer_methods.FullDuplexCall(
             _full_duplex_request_iterator(), 'not a real RpcContext!')
         for expected_response, response in moves.zip_longest(
@@ -591,7 +605,11 @@ class SimpleStubsPluginTest(unittest.TestCase):
             yield request
 
         responses = service_pb2_grpc.TestService.HalfDuplexCall(
-            half_duplex_request_iterator(), self._target, wait_for_ready=True)
+            half_duplex_request_iterator(),
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
         expected_responses = self.servicer_methods.HalfDuplexCall(
             half_duplex_request_iterator(), 'not a real RpcContext!')
         for expected_response, response in moves.zip_longest(
