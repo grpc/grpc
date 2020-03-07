@@ -32,9 +32,7 @@ cdef class _AsyncioResolver:
     async def _async_resolve(self, bytes host, bytes port):
         self._task_resolve = None
         try:
-            _LOGGER.debug('_AsyncioResolver before')
             resolved = await grpc_aio_loop().getaddrinfo(host, port)
-            _LOGGER.debug('_AsyncioResolver after')
         except Exception as e:
             grpc_custom_resolve_callback(
                 <grpc_custom_resolver*>self._grpc_resolver,
@@ -52,7 +50,6 @@ cdef class _AsyncioResolver:
     cdef void resolve(self, char* host, char* port):
         assert not self._task_resolve
 
-        _LOGGER.debug('_AsyncioResolver resolve')
         self._task_resolve = grpc_aio_loop().create_task(
             self._async_resolve(host, port)
         )

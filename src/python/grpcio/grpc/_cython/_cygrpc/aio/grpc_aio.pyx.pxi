@@ -54,14 +54,17 @@ def init_grpc_aio():
     _grpc_aio_loop = asyncio.get_event_loop()
     _event_loop_thread_ident = threading.current_thread().ident
 
-    # TODO(https://github.com/grpc/grpc/issues/22244) we need a the
-    # grpc_shutdown_blocking() counterpart for this call. Otherwise, the gRPC
-    # library won't shutdown cleanly.
-    grpc_init()
-
     if grpc_aio_engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
-        # Activates asyncio IO manager
+        # Activates asyncio IO manager.
+        # NOTE(lidiz) Custom IO manager must be activated before the first
+        # `grpc_init()`. Otherwise, some special configurations in Core won't
+        # pick up the change, and resulted in SEGFAULT or ABORT.
         install_asyncio_iomgr()
+
+        # TODO(https://github.com/grpc/grpc/issues/22244) we need a the
+        # grpc_shutdown_blocking() counterpart for this call. Otherwise, the gRPC
+        # library won't shutdown cleanly.
+        grpc_init()
 
         # Timers are triggered by the Asyncio loop. We disable
         # the background thread that is being used by the native
@@ -71,6 +74,11 @@ def init_grpc_aio():
         # gRPC callbaks are executed within the same thread used by the Asyncio
         # event loop, as it is being done by the other Asyncio callbacks.
         Executor.SetThreadingAll(False)
+    else:
+        # TODO(https://github.com/grpc/grpc/issues/22244) we need a the
+        # grpc_shutdown_blocking() counterpart for this call. Otherwise, the gRPC
+        # library won't shutdown cleanly.
+        grpc_init()
 
     _grpc_aio_initialized = False
 
