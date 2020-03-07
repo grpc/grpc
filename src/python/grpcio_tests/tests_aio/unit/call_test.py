@@ -755,5 +755,5 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig()
     unittest.main(verbosity=2)
