@@ -92,7 +92,6 @@ cdef class CallbackCompletionQueue(BaseCompletionQueue):
         return self._cq
 
     async def shutdown(self):
-        _LOGGER.debug('CallbackCompletionQueue shutdown')
         grpc_completion_queue_shutdown(self._cq)
         await self._shutdown_completed
         grpc_completion_queue_destroy(self._cq)

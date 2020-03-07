@@ -170,7 +170,6 @@ cdef grpc_error* asyncio_resolve(
         char* host,
         char* port,
         grpc_resolved_addresses** res) with gil:
-    _LOGGER.debug('asyncio_resolve')
     result = native_socket.getaddrinfo(host, port)
     res[0] = tuples_to_resolvaddr(result)
 
@@ -179,7 +178,6 @@ cdef void asyncio_resolve_async(
         grpc_custom_resolver* grpc_resolver,
         char* host,
         char* port) with gil:
-    _LOGGER.debug('asyncio_resolve_async')
     resolver = _AsyncioResolver.create(grpc_resolver)
     resolver.resolve(host, port)
 

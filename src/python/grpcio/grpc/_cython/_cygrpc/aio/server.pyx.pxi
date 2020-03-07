@@ -754,7 +754,6 @@ cdef class AioServer:
           grace: An optional float indicating the length of grace period in
             seconds.
         """
-        _LOGGER.debug('server shutdown')
         if self._status == AIO_SERVER_STATUS_READY or self._status == AIO_SERVER_STATUS_STOPPED:
             return
 
