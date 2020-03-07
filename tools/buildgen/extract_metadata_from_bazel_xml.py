@@ -753,6 +753,20 @@ _BUILD_EXTRA_METADATA = {
         '_TYPE': 'target',
         '_RENAME': 'interop_server'
     },
+    'test/cpp/interop:xds_interop_client': {
+        'language': 'c++',
+        'build': 'test',
+        'run': False,
+        '_TYPE': 'target',
+        '_RENAME': 'xds_interop_client'
+    },
+    'test/cpp/interop:xds_interop_server': {
+        'language': 'c++',
+        'build': 'test',
+        'run': False,
+        '_TYPE': 'target',
+        '_RENAME': 'xds_interop_server'
+    },
     'test/cpp/interop:http2_client': {
         'language': 'c++',
         'build': 'test',
