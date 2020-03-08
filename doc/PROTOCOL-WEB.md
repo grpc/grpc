@@ -17,7 +17,7 @@ with the protocol details specified in the
 For the gRPC-Web protocol, we have decided on the following design goals:
 
 * adopt the same framing as “application/grpc” whenever possible
-* decouple from HTTP/2 framing which is not, and will never, be directly
+* decouple from HTTP/2 framing which is not, and will never be, directly
 exposed by browsers
 * support text streams (e.g. base64) in order to provide cross-browser
 support (e.g. IE-10)
