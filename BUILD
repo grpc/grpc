@@ -320,6 +320,7 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_cds",
         "grpc_lb_policy_grpclb",
+        "grpc_lb_policy_rds",
         "grpc_lb_policy_xds",
         "grpc_resolver_xds",
     ],
@@ -338,6 +339,7 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_cds_secure",
         "grpc_lb_policy_grpclb_secure",
+        "grpc_lb_policy_rds_secure",
         "grpc_lb_policy_xds_secure",
         "grpc_resolver_xds_secure",
         "grpc_secure",
@@ -1394,6 +1396,30 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_rds",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/rds.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_rds_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/rds.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
     ],
 )
 

@@ -1546,9 +1546,9 @@ TEST_P(BasicTest, Vanilla) {
               backends_[i]->backend_service()->request_count());
   }
   // Check LB policy name for the channel.
-  EXPECT_EQ(
-      (GetParam().use_xds_resolver() ? "cds_experimental" : "xds_experimental"),
-      channel_->GetLoadBalancingPolicyName());
+  EXPECT_EQ((GetParam().use_xds_resolver() ? "xds_routing_experimental"
+                                           : "xds_experimental"),
+            channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {

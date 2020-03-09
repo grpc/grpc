@@ -1946,8 +1946,15 @@ grpc_error* XdsClient::CreateServiceConfig(
   gpr_asprintf(&json,
                "{\n"
                "  \"loadBalancingConfig\":[\n"
-               "    { \"cds_experimental\":{\n"
-               "      \"cluster\": \"%s\"\n"
+               "    { \"xds_routing_experimental\":{\n"
+               "      \"actions\":[\n"
+               "      { \"name\": \"default\",\n"
+               "        \"child_policy\":[\n"
+               "          { \"cds_experimental\":{\n"
+               "            \"cluster\": \"%s\"\n"
+               "          } }\n"
+               "        ]\n"
+               "      } ]\n"
                "    } }\n"
                "  ]\n"
                "}",
