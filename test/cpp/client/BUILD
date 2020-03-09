@@ -68,4 +68,5 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    rbe_linux_only_uses_blackhole_ipv6_address = True,
 )

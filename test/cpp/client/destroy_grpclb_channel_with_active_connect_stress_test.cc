@@ -44,6 +44,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
+#include "test/core/util/blackhole_addresses.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -52,17 +53,15 @@ namespace {
 void TryConnectAndDestroy() {
   auto response_generator =
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  // Return a grpclb address with an IP address on the IPv6 discard prefix
-  // (https://tools.ietf.org/html/rfc6666). This is important because
-  // the behavior we want in this test is for a TCP connect attempt to "hang",
-  // i.e. we want to send SYN, and then *not* receive SYN-ACK or RST.
-  // The precise behavior is dependant on the test runtime environment though,
-  // since connect() attempts on this address may unfortunately result in
-  // "network unreachable" errors in some test runtime environments.
-  char* uri_str;
-  gpr_asprintf(&uri_str, "ipv6:[0100::1234]:443");
-  grpc_uri* lb_uri = grpc_uri_parse(uri_str, true);
-  gpr_free(uri_str);
+  // Return a grpclb address with an IP address that is black holed.
+  // This is important because the behavior we want in this test is for
+  // a TCP connect attempt to "hang", i.e. we want to send SYN, and then
+  // *not* receive SYN-ACK or RST. The precise behavior is dependant on
+  // the test runtime environment though, since connect() attempts on this
+  // address may unfortunately result in "network unreachable" errors in
+  // some test runtime environments.
+  grpc_uri* lb_uri = grpc_uri_parse(
+      grpc_core::testing::GetBlackHoledIPv6Address().c_str(), true);
   GPR_ASSERT(lb_uri != nullptr);
   grpc_resolved_address address;
   GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
@@ -85,8 +84,9 @@ void TryConnectAndDestroy() {
   // time as the WaitForConnected time. The goal is to get the
   // connect timeout code to run at about the same time as when
   // the channel gets destroyed, to try to reproduce a race.
+  int connect_timeout_ms = 100;
   args.SetInt("grpc.testing.fixed_reconnect_backoff_ms",
-              grpc_test_slowdown_factor() * 100);
+              grpc_test_slowdown_factor() * connect_timeout_ms);
   std::ostringstream uri;
   uri << "fake:///servername_not_used";
   auto channel = ::grpc::CreateCustomChannel(
@@ -95,8 +95,8 @@ void TryConnectAndDestroy() {
   // unreachable balancer to begin. The connection should never become ready
   // because the LB we're trying to connect to is unreachable.
   channel->GetState(true /* try_to_connect */);
-  GPR_ASSERT(
-      !channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  GPR_ASSERT(!channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(connect_timeout_ms)));
   GPR_ASSERT("grpclb" == channel->GetLoadBalancingPolicyName());
   channel.reset();
 };

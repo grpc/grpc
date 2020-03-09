@@ -168,7 +168,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, rbe_linux_only_uses_blackhole_ipv6_address = False):
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
@@ -190,6 +190,10 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "flaky": flaky,
     }
     if uses_polling:
+        if rbe_linux_only_uses_blackhole_ipv6_address:
+            blackhole_address_setting = "can_create"
+        else:
+            blackhole_address_setting = "disallowed"
         # the vanilla version of the test should run on platforms that only
         # support a single poller
         native.cc_test(
@@ -213,6 +217,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 timeout = timeout,
                 args = [
                     poller,
+                    blackhole_address_setting,
                     "$(location %s)" % name,
                 ] + args["args"],
                 tags = (tags + ["no_windows", "no_mac"]),
@@ -222,13 +227,16 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 flaky = flaky,
             )
     else:
+        if rbe_linux_only_uses_blackhole_ipv6_address:
+            fail('rbe_linux_only_uses_blackhole_ipv6_address=True is only allowed on tests with uses_polling=True')
         # the test behavior doesn't depend on polling, just generate the test
         native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
-    ios_cc_test(
-        name = name,
-        tags = tags,
-        **args
-    )
+    if not rbe_linux_only_uses_blackhole_ipv6_address:
+        ios_cc_test(
+            name = name,
+            tags = tags,
+            **args
+        )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []

@@ -33,8 +33,9 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 rbe_autoconfig(
     name = "rbe_default",
     exec_properties = create_exec_properties_dict(
-        docker_add_capabilities = "SYS_PTRACE",
+        docker_add_capabilities = "SYS_PTRACE,NET_ADMIN",
         docker_privileged = True,
+        docker_run_as_root = True,
         # n1-highmem-2 is the default (small machine) machine type. Targets
         # that want to use other machines (such as LARGE_MACHINE) will override
         # this value.

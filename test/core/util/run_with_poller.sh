@@ -16,4 +16,17 @@
 set -ex
 export GRPC_POLL_STRATEGY=$1
 shift
+blackhole_address_setting="$1"
+if [ "$blackhole_address_setting" = "can_create" ]; then
+  if [ "$GRPC_TEST_RUNNING_UNDER_RBE" = "1" ]; then
+    # Tests on RBE run as root within individual docker containers,
+    # and have the NET_ADMIN capability, so it's safe to modify the network
+    # stack.
+    export GRPC_TEST_LINUX_ONLY_BLACKHOLE_ADDRESS=can_create
+  else
+    echo "bug in build system: attempting to run a grpc_cc_test with rbe_linux_only_uses_blackholed_ipv6_address=True outside of bazel RBE"
+    exit 1
+  fi
+fi
+shift
 "$@"

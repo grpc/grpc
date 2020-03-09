@@ -37,6 +37,8 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
+        "blackhole_addresses_linux.cc",
+        "blackhole_addresses_non_linux.cc",
         "cmdline.cc",
         "fuzzer_util.cc",
         "grpc_profiler.cc",
@@ -58,6 +60,7 @@ grpc_cc_library(
         "trickle_endpoint.cc",
     ],
     hdrs = [
+        "blackhole_addresses.h",
         "cmdline.h",
         "fuzzer_util.h",
         "grpc_profiler.h",

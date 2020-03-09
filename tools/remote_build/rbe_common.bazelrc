@@ -43,6 +43,7 @@ build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 build --define GRPC_PORT_ISOLATED_RUNTIME=1
 # without verbose gRPC logs the test outputs are not very useful
 test --test_env=GRPC_VERBOSITY=debug
+test --test_env=GRPC_TEST_RUNNING_UNDER_RBE=1
 
 # we assume the default bazel RBE build is on linux,
 # so filter out stuff that should not be built or run there.
