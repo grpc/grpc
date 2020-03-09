@@ -790,7 +790,7 @@ def get_instance_names(gcp, instance_group):
     return instance_names
 
 
-def start_xds_client(cmd, service_port):
+def start_xds_client(cmd):
     bootstrap_path = None
     with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
         bootstrap_file.write(
@@ -979,7 +979,7 @@ try:
                                  service_port=gcp.service_port,
                                  stats_port=args.stats_port,
                                  qps=args.qps)
-    client_process = start_xds_client(cmd, gcp.service_port)
+    client_process = start_xds_client(cmd)
 
     if args.test_case == 'all':
         test_backends_restart(gcp, backend_service, instance_group)
