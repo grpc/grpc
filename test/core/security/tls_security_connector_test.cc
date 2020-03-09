@@ -35,16 +35,13 @@ namespace {
 enum CredReloadResult { FAIL, SUCCESS, UNCHANGED, ASYNC };
 
 void SetKeyMaterials(grpc_tls_key_materials_config* config) {
-  grpc_ssl_pem_key_cert_pair** key_cert_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair**>(
-          gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair*)));
-  key_cert_pair[0] = static_cast<grpc_ssl_pem_key_cert_pair*>(
-      gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  key_cert_pair[0]->private_key = gpr_strdup(test_server1_key);
-  key_cert_pair[0]->cert_chain = gpr_strdup(test_server1_cert);
-  grpc_tls_key_materials_config_set_key_materials(
-      config, gpr_strdup(test_root_cert),
-      (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
+  const grpc_ssl_pem_key_cert_pair pem_key_pair = {
+      test_server1_key,
+      test_server1_cert,
+  };
+  const auto* pem_key_pair_ptr = &pem_key_pair;
+  grpc_tls_key_materials_config_set_key_materials(config, test_root_cert,
+                                                  &pem_key_pair_ptr, 1);
 }
 
 int CredReloadSuccess(void* /*config_user_data*/,
@@ -121,6 +118,14 @@ TEST_F(TlsSecurityConnectorTest, NoKeysAndConfig) {
   grpc_status_code status =
       TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
   EXPECT_EQ(status, GRPC_STATUS_FAILED_PRECONDITION);
+  options_->Unref();
+}
+
+TEST_F(TlsSecurityConnectorTest, NoKeysAndConfigAsAClient) {
+  grpc_ssl_certificate_config_reload_status reload_status;
+  grpc_status_code status =
+      TlsFetchKeyMaterials(config_, *options_, false, &reload_status);
+  EXPECT_EQ(status, GRPC_STATUS_OK);
   options_->Unref();
 }
 

@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Immutable user configurable options for a gRPC call.
  */
-@interface GRPCCallOptions : NSObject<NSCopying, NSMutableCopying>
+@interface GRPCCallOptions : NSObject <NSCopying, NSMutableCopying>
 
 // Call parameters
 /**
@@ -200,7 +200,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Mutable user configurable options for a gRPC call.
  */
-@interface GRPCMutableCallOptions : GRPCCallOptions<NSCopying, NSMutableCopying>
+@interface GRPCMutableCallOptions : GRPCCallOptions <NSCopying, NSMutableCopying>
 
 // Call parameters
 /**

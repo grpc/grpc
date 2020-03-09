@@ -27,15 +27,11 @@ else
   UPB_OUTPUT_DIR=$1
 fi
 
-pushd third_party/protobuf
-$bazel build :protoc
-PROTOC=$PWD/bazel-bin/protoc
-popd
+$bazel build @com_google_protobuf//:protoc
+PROTOC=$PWD/bazel-bin/external/com_google_protobuf/protoc
 
-pushd third_party/upb
-$bazel build :protoc-gen-upb
-UPB_PLUGIN=$PWD/bazel-bin/protoc-gen-upb
-popd
+$bazel build @upb//:protoc-gen-upb
+UPB_PLUGIN=$PWD/bazel-bin/external/upb/protoc-gen-upb
 
 proto_files=( \
   "envoy/annotations/deprecation.proto" \

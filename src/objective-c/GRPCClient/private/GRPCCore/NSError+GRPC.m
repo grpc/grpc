@@ -30,12 +30,12 @@
   }
   NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
   if (details) {
-    userInfo[NSLocalizedDescriptionKey] =
-        [NSString stringWithCString:details encoding:NSUTF8StringEncoding];
+    userInfo[NSLocalizedDescriptionKey] = [NSString stringWithCString:details
+                                                             encoding:NSUTF8StringEncoding];
   }
   if (errorString) {
-    userInfo[NSDebugDescriptionErrorKey] =
-        [NSString stringWithCString:errorString encoding:NSUTF8StringEncoding];
+    userInfo[NSDebugDescriptionErrorKey] = [NSString stringWithCString:errorString
+                                                              encoding:NSUTF8StringEncoding];
   }
   return [NSError errorWithDomain:kGRPCErrorDomain code:statusCode userInfo:userInfo];
 }

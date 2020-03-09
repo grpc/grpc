@@ -38,8 +38,9 @@
   NSError *error3 = [NSError grpc_errorFromStatusCode:GRPC_STATUS_UNAUTHENTICATED
                                               details:kDetails
                                           errorString:nil];
-  NSError *error4 =
-      [NSError grpc_errorFromStatusCode:GRPC_STATUS_UNAVAILABLE details:nil errorString:nil];
+  NSError *error4 = [NSError grpc_errorFromStatusCode:GRPC_STATUS_UNAVAILABLE
+                                              details:nil
+                                          errorString:nil];
 
   XCTAssertNil(error1);
   XCTAssertEqual(error2.code, 1);

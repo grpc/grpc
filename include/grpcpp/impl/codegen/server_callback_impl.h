@@ -695,7 +695,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
   ServerUnaryReactor() : call_(nullptr) {}
   ~ServerUnaryReactor() = default;
 
-  /// The following operation initiations are exactly like ServerBidiReactor.
+  /// StartSendInitialMetadata is exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
     ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
@@ -708,6 +708,9 @@ class ServerUnaryReactor : public internal::ServerReactor {
     }
     call->SendInitialMetadata();
   }
+  /// Finish is similar to ServerBidiReactor except for one detail.
+  /// If the status is non-OK, any message will not be sent. Instead,
+  /// the client will only receive the status and any trailing metadata.
   void Finish(::grpc::Status s) {
     ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {

@@ -382,6 +382,7 @@ libs:
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
+  - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
@@ -738,6 +739,7 @@ libs:
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
+  - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
@@ -921,6 +923,7 @@ libs:
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/dualstack_socket_posix.cc
   - src/core/lib/iomgr/endpoint.cc
   - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -1273,6 +1276,7 @@ libs:
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
+  - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
@@ -1564,6 +1568,7 @@ libs:
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
+  - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
@@ -1741,6 +1746,7 @@ libs:
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/dualstack_socket_posix.cc
   - src/core/lib/iomgr/endpoint.cc
   - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -2236,6 +2242,25 @@ libs:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/cpp/ext/proto_server_reflection.cc
   - src/cpp/ext/proto_server_reflection_plugin.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: grpc++_test
+  build: private
+  language: c++
+  public_headers:
+  - include/grpc++/test/mock_stream.h
+  - include/grpc++/test/server_context_test_spouse.h
+  - include/grpcpp/test/channel_test_peer.h
+  - include/grpcpp/test/default_reactor_test_peer.h
+  - include/grpcpp/test/mock_stream.h
+  - include/grpcpp/test/server_context_test_spouse.h
+  headers: []
+  src:
+  - src/cpp/client/channel_test_peer.cc
   deps:
   - grpc++
   - grpc
@@ -5670,6 +5695,21 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: destroy_grpclb_channel_with_active_connect_stress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -5699,12 +5739,12 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/cpp/client/channel_test_peer.cc
   - test/cpp/end2end/end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+  - grpc++_test
   - grpc_test_util
   - grpc++
   - grpc
@@ -5941,6 +5981,24 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
+- name: grpc_tls_credentials_options_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/security/grpc_tls_credentials_options_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: grpc_tool_test
   gtest: true
   build: test
@@ -6200,19 +6258,6 @@ targets:
   - gpr
   - address_sorting
   - upb
-- name: inlined_vector_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/inlined_vector_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
 - name: interop_client
   build: test
   run: false
@@ -6406,10 +6451,10 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/cpp/client/channel_test_peer.cc
   - test/cpp/end2end/mock_test.cc
   deps:
   - grpc++_test_util
+  - grpc++_test
   - grpc_test_util
   - grpc++
   - grpc
@@ -6870,10 +6915,10 @@ targets:
   language: c++
   headers: []
   src:
-  - src/cpp/client/channel_test_peer.cc
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
   - grpc++_test_util
+  - grpc++_test
   - grpc_test_util
   - grpc++
   - grpc
@@ -7520,4 +7565,40 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_interop_client
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_client.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: xds_interop_server
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_server.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 tests: []

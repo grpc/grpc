@@ -43,8 +43,8 @@ static int32_t kLocalInteropServerOverhead = 10;
 
 + (NSString *)PEMRootCertificates {
   NSBundle *bundle = [NSBundle bundleForClass:[self class]];
-  NSString *certsPath =
-      [bundle pathForResource:@"TestCertificates.bundle/test-certificates" ofType:@"pem"];
+  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
+                                         ofType:@"pem"];
   NSError *error;
   return [NSString stringWithContentsOfFile:certsPath encoding:NSUTF8StringEncoding error:&error];
 }
@@ -66,8 +66,8 @@ static int32_t kLocalInteropServerOverhead = 10;
 
   // Register test server certificates and name.
   NSBundle *bundle = [NSBundle bundleForClass:[self class]];
-  NSString *certsPath =
-      [bundle pathForResource:@"TestCertificates.bundle/test-certificates" ofType:@"pem"];
+  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
+                                         ofType:@"pem"];
   [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
 }
 
