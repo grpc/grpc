@@ -88,7 +88,7 @@ def grpc_aio_loop():
     return _grpc_aio_loop
 
 
-def grpc_schedule_coroutine(object coro):
+def aio_loop_schedule_coroutine(object coro):
     """Thread-safely schedules coroutine to gRPC Aio event loop.
 
     If invoked within the same thread as the event loop, return an
@@ -102,7 +102,7 @@ def grpc_schedule_coroutine(object coro):
         return _grpc_aio_loop.create_task(coro)
 
 
-def grpc_call_soon_threadsafe(object func, *args):
+def aio_loop_call_soon_threadsafe(object func, *args):
     # TODO(lidiz) After we are confident, we can drop this assert. Otherwsie,
     # we should limit this function to non-grpc-event-loop thread.
     assert _event_loop_thread_ident != threading.current_thread().ident

@@ -13,20 +13,18 @@
 # limitations under the License.
 
 cdef class BaseCompletionQueue:
+    cdef grpc_completion_queue *_cq
 
     cdef grpc_completion_queue* c_ptr(self)
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
-    cdef grpc_completion_queue *_cq
     cdef bint _shutdown
     cdef object _shutdown_completed
-    cdef object _poller
-    cdef object _poller_running
+    cdef object _poller_thread
 
     cdef void _poll(self) except *
 
 
 cdef class CallbackCompletionQueue(BaseCompletionQueue):
-    cdef grpc_completion_queue *_cq
     cdef object _shutdown_completed  # asyncio.Future
     cdef CallbackWrapper _wrapper

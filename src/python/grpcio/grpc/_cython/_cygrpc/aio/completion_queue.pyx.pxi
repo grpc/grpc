@@ -25,7 +25,7 @@ cdef class BaseCompletionQueue:
         raise NotImplementedError()
 
     cdef grpc_completion_queue* c_ptr(self):
-        raise NotImplementedError()
+        return self._cq
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
@@ -34,17 +34,13 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         self._cq = grpc_completion_queue_create_for_next(NULL)
         self._shutdown = False
         self._shutdown_completed = asyncio.get_event_loop().create_future()
-        self._poller = None
-        self._poller_running = asyncio.get_event_loop().create_future()
-        self._poller = threading.Thread(target=self._poll_wrapper)
-        self._poller.daemon = True
-        self._poller.start()
+        self._poller_thread = threading.Thread(target=self._poll_wrapper, daemon=True)
+        self._poller_thread.start()
 
     cdef void _poll(self) except *:
         cdef grpc_event event
         cdef CallbackContext *context
         cdef object waiter
-        grpc_call_soon_threadsafe(self._poller_running.set_result, None)
 
         while not self._shutdown:
             with nogil:
@@ -56,10 +52,10 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                 raise AssertionError("Core should not return timeout error!")
             elif event.type == GRPC_QUEUE_SHUTDOWN:
                 self._shutdown = True
-                grpc_call_soon_threadsafe(self._shutdown_completed.set_result, None)
+                aio_loop_call_soon_threadsafe(self._shutdown_completed.set_result, None)
             else:
                 context = <CallbackContext *>event.tag
-                grpc_call_soon_threadsafe(
+                aio_loop_call_soon_threadsafe(
                     _handle_callback_wrapper,
                     <CallbackWrapper>context.callback_wrapper,
                     event.success)
@@ -71,9 +67,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         grpc_completion_queue_shutdown(self._cq)
         await self._shutdown_completed
         grpc_completion_queue_destroy(self._cq)
-
-    cdef grpc_completion_queue* c_ptr(self):
-        return self._cq
+        self._poller_thread.join()
 
 
 cdef class CallbackCompletionQueue(BaseCompletionQueue):
@@ -87,9 +81,6 @@ cdef class CallbackCompletionQueue(BaseCompletionQueue):
             self._wrapper.c_functor(),
             NULL
         )
-
-    cdef grpc_completion_queue* c_ptr(self):
-        return self._cq
 
     async def shutdown(self):
         grpc_completion_queue_shutdown(self._cq)
