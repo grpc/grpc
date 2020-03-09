@@ -114,6 +114,7 @@ cc_binary(
     deps = [
         ":helloworld_cc_grpc",
         "//:grpc++",
+        "//:grpc++_reflection",
     ],
 )
 

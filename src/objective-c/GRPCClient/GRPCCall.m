@@ -35,7 +35,7 @@ NSString *const kGRPCErrorDomain = @"io.grpc";
  * dispatch queue of a user provided response handler. It removes the requirement of having to use
  * serial dispatch queue in the user provided response handler.
  */
-@interface GRPCResponseDispatcher : NSObject<GRPCResponseHandler>
+@interface GRPCResponseDispatcher : NSObject <GRPCResponseHandler>
 
 - (nullable instancetype)initWithResponseHandler:(id<GRPCResponseHandler>)responseHandler;
 
@@ -117,8 +117,9 @@ NSString *const kGRPCErrorDomain = @"io.grpc";
 }
 
 - (id)copyWithZone:(NSZone *)zone {
-  GRPCRequestOptions *request =
-      [[GRPCRequestOptions alloc] initWithHost:_host path:_path safety:_safety];
+  GRPCRequestOptions *request = [[GRPCRequestOptions alloc] initWithHost:_host
+                                                                    path:_path
+                                                                  safety:_safety];
 
   return request;
 }
@@ -221,8 +222,9 @@ NSString *const kGRPCErrorDomain = @"io.grpc";
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCResponseHandler>)responseHandler {
-  return
-      [self initWithRequestOptions:requestOptions responseHandler:responseHandler callOptions:nil];
+  return [self initWithRequestOptions:requestOptions
+                      responseHandler:responseHandler
+                          callOptions:nil];
 }
 
 - (void)start {

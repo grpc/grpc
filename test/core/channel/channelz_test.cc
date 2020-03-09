@@ -481,8 +481,8 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
     // these will delete and unregister themselves after this block.
     std::vector<std::unique_ptr<ChannelFixture>> odd_channels;
     for (int i = 0; i < kLoopIterations; i++) {
-      odd_channels.push_back(grpc_core::MakeUnique<ChannelFixture>());
-      even_channels.push_back(grpc_core::MakeUnique<ChannelFixture>());
+      odd_channels.push_back(absl::make_unique<ChannelFixture>());
+      even_channels.push_back(absl::make_unique<ChannelFixture>());
     }
   }
   std::string json_str = ChannelzRegistry::GetTopChannels(0);

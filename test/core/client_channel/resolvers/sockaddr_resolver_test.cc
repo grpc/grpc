@@ -47,7 +47,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  args.result_handler = grpc_core::MakeUnique<ResultHandler>();
+  args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
@@ -68,7 +68,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  args.result_handler = grpc_core::MakeUnique<ResultHandler>();
+  args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);

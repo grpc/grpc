@@ -33,11 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
  * Signature for the channel. If two channel's signatures are the same and connect to the same
  * remote, they share the same underlying \a GRPCChannel object.
  */
-@interface GRPCChannelConfiguration : NSObject<NSCopying>
+@interface GRPCChannelConfiguration : NSObject <NSCopying>
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /** The host that this channel is connected to. */
 @property(copy, readonly) NSString *host;
@@ -66,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 
-+ (nullable instancetype) new NS_UNAVAILABLE;
++ (nullable instancetype)new NS_UNAVAILABLE;
 
 /**
  * Create a channel with remote \a host and signature \a channelConfigurations.

@@ -396,23 +396,6 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
-/* This should be 0 in production, but it may be enabled for testing or
-   debugging purposes, to simulate an environment where IPv6 sockets can't
-   also speak IPv4. */
-int grpc_forbid_dualstack_sockets_for_testing = 0;
-
-static int set_socket_dualstack(int fd) {
-  if (!grpc_forbid_dualstack_sockets_for_testing) {
-    const int off = 0;
-    return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
-  } else {
-    /* Force an IPv6-only socket, for testing purposes. */
-    const int on = 1;
-    setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on));
-    return 0;
-  }
-}
-
 static grpc_error* error_for_fd(int fd, const grpc_resolved_address* addr) {
   if (fd >= 0) return GRPC_ERROR_NONE;
   char* addr_str;
@@ -452,7 +435,7 @@ grpc_error* grpc_create_dualstack_socket_using_factory(
       errno = EAFNOSUPPORT;
     }
     /* Check if we've got a valid dualstack socket. */
-    if (*newfd >= 0 && set_socket_dualstack(*newfd)) {
+    if (*newfd >= 0 && grpc_set_socket_dualstack(*newfd)) {
       *dsmode = GRPC_DSMODE_DUALSTACK;
       return GRPC_ERROR_NONE;
     }

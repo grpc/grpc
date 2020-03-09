@@ -126,6 +126,9 @@ typedef enum grpc_dualstack_mode {
 /* Only tests should use this flag. */
 extern int grpc_forbid_dualstack_sockets_for_testing;
 
+/* Tries to set the socket to dualstack. Returns 1 on success. */
+int grpc_set_socket_dualstack(int fd);
+
 /* Creates a new socket for connecting to (or listening on) an address.
 
    If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,

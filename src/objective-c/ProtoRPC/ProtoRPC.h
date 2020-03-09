@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class GPBMessage;
 
 /** An object can implement this protocol to receive responses from server from a call. */
-@protocol GRPCProtoResponseHandler<NSObject>
+@protocol GRPCProtoResponseHandler <NSObject>
 
 @required
 
@@ -77,7 +77,7 @@ NS_ASSUME_NONNULL_BEGIN
  * The object is stateful and should not be reused for multiple calls. If multiple calls share the
  * same response handling logic, create separate GRPCUnaryResponseHandler objects for each call.
  */
-@interface GRPCUnaryResponseHandler<ResponseType> : NSObject<GRPCProtoResponseHandler>
+@interface GRPCUnaryResponseHandler<ResponseType> : NSObject <GRPCProtoResponseHandler>
 
 /**
  * Creates a responsehandler object with a unary call handler.
@@ -102,7 +102,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and
@@ -133,7 +133,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and

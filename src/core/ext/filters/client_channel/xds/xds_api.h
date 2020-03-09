@@ -176,8 +176,18 @@ class XdsApi {
 
   using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 
-  XdsApi(const XdsBootstrap::Node* node, const char* build_version)
-      : node_(node), build_version_(build_version) {}
+  struct ClusterLoadReport {
+    XdsClusterDropStats::DroppedRequestsMap dropped_requests;
+    std::map<XdsLocalityName*, XdsClusterLocalityStats::Snapshot,
+             XdsLocalityName::Less>
+        locality_stats;
+    grpc_millis load_report_interval;
+  };
+  using ClusterLoadReportMap = std::map<
+      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
+      ClusterLoadReport>;
+
+  explicit XdsApi(const XdsBootstrap::Node* node);
 
   // Creates a request to nack an unsupported resource type.
   // Takes ownership of \a error.
@@ -228,11 +238,8 @@ class XdsApi {
   // Creates an LRS request querying \a server_name.
   grpc_slice CreateLrsInitialRequest(const std::string& server_name);
 
-  // Creates an LRS request sending client-side load reports. If all the
-  // counters are zero, returns empty slice.
-  grpc_slice CreateLrsRequest(std::map<StringView /*cluster_name*/,
-                                       std::set<XdsClientStats*>, StringLess>
-                                  client_stats_map);
+  // Creates an LRS request sending a client-side load report.
+  grpc_slice CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
 
   // Parses the LRS response and returns \a
   // load_reporting_interval for client-side load reporting. If there is any
@@ -243,7 +250,8 @@ class XdsApi {
 
  private:
   const XdsBootstrap::Node* node_;
-  const char* build_version_;
+  const std::string build_version_;
+  const std::string user_agent_name_;
 };
 
 }  // namespace grpc_core

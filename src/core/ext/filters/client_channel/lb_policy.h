@@ -302,9 +302,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     UpdateArgs() = default;
     ~UpdateArgs() { grpc_channel_args_destroy(args); }
     UpdateArgs(const UpdateArgs& other);
-    UpdateArgs(UpdateArgs&& other);
+    UpdateArgs(UpdateArgs&& other) noexcept;
     UpdateArgs& operator=(const UpdateArgs& other);
-    UpdateArgs& operator=(UpdateArgs&& other);
+    UpdateArgs& operator=(UpdateArgs&& other) noexcept;
   };
 
   /// Args used to instantiate an LB policy.

@@ -23,6 +23,7 @@ from grpc._cython import cygrpc
 
 from . import _base_server
 from ._typing import ChannelArgumentType
+from ._interceptor import ServerInterceptor
 
 
 def _augment_channel_arguments(base_options: ChannelArgumentType,
@@ -41,6 +42,15 @@ class Server(_base_server.Server):
                  maximum_concurrent_rpcs: Optional[int],
                  compression: Optional[grpc.Compression]):
         self._loop = asyncio.get_event_loop()
+        if interceptors:
+            invalid_interceptors = [
+                interceptor for interceptor in interceptors
+                if not isinstance(interceptor, ServerInterceptor)
+            ]
+            if invalid_interceptors:
+                raise ValueError(
+                    'Interceptor must be ServerInterceptor, the '
+                    f'following are invalid: {invalid_interceptors}')
         self._server = cygrpc.AioServer(
             self._loop, thread_pool, generic_handlers, interceptors,
             _augment_channel_arguments(options, compression),
@@ -152,7 +162,8 @@ class Server(_base_server.Server):
         The Cython AioServer doesn't hold a ref-count to this class. It should
         be safe to slightly extend the underlying Cython object's life span.
         """
-        self._loop.create_task(self._server.shutdown(None))
+        if hasattr(self, '_server'):
+            self._loop.create_task(self._server.shutdown(None))
 
 
 def server(migration_thread_pool: Optional[Executor] = None,

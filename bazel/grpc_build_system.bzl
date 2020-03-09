@@ -100,10 +100,6 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
-                  }) +
-                  select({
-                      "//:grpc_disable_absl": ["GRPC_USE_ABSL=0"],
-                      "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
@@ -172,7 +168,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None):
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
@@ -191,6 +187,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
         "shard_count": shard_count,
+        "flaky": flaky,
     }
     if uses_polling:
         # the vanilla version of the test should run on platforms that only
@@ -222,10 +219,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 exec_compatible_with = exec_compatible_with,
                 exec_properties = exec_properties,
                 shard_count = shard_count,
+                flaky = flaky,
             )
     else:
         # the test behavior doesn't depend on polling, just generate the test
-        native.cc_test(name = name, tags = tags, **args)
+        native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
     ios_cc_test(
         name = name,
         tags = tags,
