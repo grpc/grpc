@@ -72,7 +72,7 @@ cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler
 cdef class CallbackCompletionQueue:
 
     def __cinit__(self):
-        self._shutdown_completed = asyncio.get_event_loop().create_future()
+        self._shutdown_completed = grpc_aio_loop().create_future()
         self._wrapper = CallbackWrapper(
             self._shutdown_completed,
             CQ_SHUTDOWN_FAILURE_HANDLER)

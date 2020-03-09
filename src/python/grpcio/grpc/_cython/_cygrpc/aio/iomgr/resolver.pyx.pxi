@@ -29,34 +29,27 @@ cdef class _AsyncioResolver:
         id_ = id(self)
         return f"<{class_name} {id_}>"
 
-    def _resolve_cb(self, future):
-        error = False
+    async def _async_resolve(self, bytes host, bytes port):
+        self._task_resolve = None
         try:
-            res = future.result()
+            resolved = await grpc_aio_loop().getaddrinfo(host, port)
         except Exception as e:
-            error = True
-            error_msg = str(e)
-        finally:
-            self._task_resolve = None
-
-        if not error:
             grpc_custom_resolve_callback(
                 <grpc_custom_resolver*>self._grpc_resolver,
-                tuples_to_resolvaddr(res),
-                <grpc_error*>0
+                NULL,
+                grpc_socket_error("Resolve address [{}:{}] failed: {}: {}".format(
+                    host, port, type(e), str(e)).encode())
             )
         else:
             grpc_custom_resolve_callback(
                 <grpc_custom_resolver*>self._grpc_resolver,
-                NULL,
-                grpc_socket_error("getaddrinfo {}".format(error_msg).encode())
+                tuples_to_resolvaddr(resolved),
+                <grpc_error*>0
             )
 
     cdef void resolve(self, char* host, char* port):
         assert not self._task_resolve
 
-        loop = asyncio.get_event_loop()
-        self._task_resolve = asyncio.ensure_future(
-            loop.getaddrinfo(host, port)
+        self._task_resolve = grpc_aio_loop().create_task(
+            self._async_resolve(host, port)
         )
-        self._task_resolve.add_done_callback(self._resolve_cb)
