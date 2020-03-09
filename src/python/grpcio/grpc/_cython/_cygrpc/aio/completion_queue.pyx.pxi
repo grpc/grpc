@@ -36,11 +36,11 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         self._shutdown_completed = asyncio.get_event_loop().create_future()
         self._poller = None
         self._poller_running = asyncio.get_event_loop().create_future()
-        self._poller = threading.Thread(target=self._polling_wrapper)
+        self._poller = threading.Thread(target=self._poll_wrapper)
         self._poller.daemon = True
         self._poller.start()
 
-    cdef _polling(self):
+    cdef void _poll(self) except *:
         cdef grpc_event event
         cdef CallbackContext *context
         cdef object waiter
@@ -53,7 +53,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                                                 NULL)
 
             if event.type == GRPC_QUEUE_TIMEOUT:
-                raise NotImplementedError()
+                raise AssertionError("Core should not return timeout error!")
             elif event.type == GRPC_QUEUE_SHUTDOWN:
                 self._shutdown = True
                 grpc_call_soon_threadsafe(self._shutdown_completed.set_result, None)
@@ -64,8 +64,8 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                     <CallbackWrapper>context.callback_wrapper,
                     event.success)
 
-    def _polling_wrapper(self):
-        self._polling()
+    def _poll_wrapper(self):
+        self._poll()
 
     async def shutdown(self):
         grpc_completion_queue_shutdown(self._cq)
@@ -103,4 +103,4 @@ cdef BaseCompletionQueue create_completion_queue():
     elif grpc_aio_engine is AsyncIOEngine.POLLER:
         return PollerCompletionQueue()
     else:
-        raise ValueError('Unexpected engine type [%s]' % grpc_aio_engine)
+        raise ValueError('Unsupported engine type [%s]' % grpc_aio_engine)

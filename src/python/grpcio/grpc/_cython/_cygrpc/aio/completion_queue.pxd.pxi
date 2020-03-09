@@ -23,7 +23,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef object _poller
     cdef object _poller_running
 
-    cdef _polling(self)
+    cdef void _poll(self) except *
 
 
 cdef class CallbackCompletionQueue(BaseCompletionQueue):
