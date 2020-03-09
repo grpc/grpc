@@ -49,8 +49,8 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
                 "ProtoBufferWriter must be a subclass of "
                 "::protobuf::io::ZeroCopyOutputStream");
   *own_buffer = true;
-  int byte_size = msg.ByteSizeLong();
-  if ((size_t)byte_size <= GRPC_SLICE_INLINED_SIZE) {
+  size_t byte_size = msg.ByteSizeLong();
+  if (byte_size <= GRPC_SLICE_INLINED_SIZE) {
     Slice slice(byte_size);
     // We serialize directly into the allocated slices memory
     GPR_CODEGEN_ASSERT(slice.end() == msg.SerializeWithCachedSizesToArray(
@@ -60,7 +60,8 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
 
     return g_core_codegen_interface->ok();
   }
-  ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
+  ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength,
+                           (int)byte_size);
   return msg.SerializeToZeroCopyStream(&writer)
              ? g_core_codegen_interface->ok()
              : Status(StatusCode::INTERNAL, "Failed to serialize message");
