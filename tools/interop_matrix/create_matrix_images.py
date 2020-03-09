@@ -327,7 +327,8 @@ def checkout_grpc_stack(lang, release):
 
     # git submodule update
     jobset.message('START',
-                   'git submodule update --init at %s from %s' % (release, stack_base),
+                   'git submodule update --init at %s from %s' %
+                   (release, stack_base),
                    do_newline=True)
     subprocess.check_call(['git', 'submodule', 'update', '--init'],
                           cwd=stack_base,
