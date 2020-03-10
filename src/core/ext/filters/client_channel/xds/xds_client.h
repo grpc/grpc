@@ -189,7 +189,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         watchers;
     // The latest data seen from CDS.
-    Optional<XdsApi::CdsUpdate> update;
+    absl::optional<XdsApi::CdsUpdate> update;
   };
 
   struct EndpointState {
@@ -197,7 +197,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
              std::unique_ptr<EndpointWatcherInterface>>
         watchers;
     // The latest data seen from EDS.
-    XdsApi::EdsUpdate update;
+    absl::optional<XdsApi::EdsUpdate> update;
   };
 
   struct LoadReportState {
@@ -241,9 +241,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   std::string route_config_name_;
   std::string cluster_name_;
-  // All the received clusters are cached, no matter they are watched or not.
+  // One entry for each watched CDS resource.
   std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
-  // Only the watched EDS service names are stored.
+  // One entry for each watched EDS resource.
   std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
   std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,

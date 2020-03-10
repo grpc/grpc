@@ -238,8 +238,8 @@ class XdsClient::ChannelState::AdsCallState
 
   void SendMessageLocked(const std::string& type_url);
 
-  void AcceptLdsUpdate(XdsApi::LdsUpdate lds_update);
-  void AcceptRdsUpdate(XdsApi::RdsUpdate rds_update);
+  void AcceptLdsUpdate(absl::optional<XdsApi::LdsUpdate> lds_update);
+  void AcceptRdsUpdate(absl::optional<XdsApi::RdsUpdate> rds_update);
   void AcceptCdsUpdate(XdsApi::CdsUpdateMap cds_update_map);
   void AcceptEdsUpdate(XdsApi::EdsUpdateMap eds_update_map);
 
@@ -860,24 +860,32 @@ bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
-    XdsApi::LdsUpdate lds_update) {
+    absl::optional<XdsApi::LdsUpdate> lds_update) {
+  if (!lds_update.has_value()) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] LDS update does not include requested resource",
+            xds_client());
+    xds_client()->service_config_watcher_->OnError(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "LDS update does not include requested resource"));
+    return;
+  }
   const std::string& cluster_name =
-      lds_update.rds_update.has_value()
-          ? lds_update.rds_update.value().cluster_name
+      lds_update->rds_update.has_value()
+          ? lds_update->rds_update.value().cluster_name
           : "";
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_client %p] LDS update received: "
-            "route_config_name=%s, "
+            "[xds_client %p] LDS update received: route_config_name=%s, "
             "cluster_name=%s (empty if RDS is needed to obtain it)",
-            xds_client(), lds_update.route_config_name.c_str(),
+            xds_client(), lds_update->route_config_name.c_str(),
             cluster_name.c_str());
   }
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
   auto& state = lds_state.subscribed_resources[xds_client()->server_name_];
   if (state != nullptr) state->Finish();
   // Ignore identical update.
-  if (xds_client()->route_config_name_ == lds_update.route_config_name &&
+  if (xds_client()->route_config_name_ == lds_update->route_config_name &&
       xds_client()->cluster_name_ == cluster_name) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
@@ -886,12 +894,15 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     }
     return;
   }
-  xds_client()->route_config_name_ = std::move(lds_update.route_config_name);
-  if (lds_update.rds_update.has_value()) {
+  if (!xds_client()->route_config_name_.empty()) {
+    Unsubscribe(XdsApi::kRdsTypeUrl, xds_client()->route_config_name_);
+  }
+  xds_client()->route_config_name_ = std::move(lds_update->route_config_name);
+  if (lds_update->rds_update.has_value()) {
     // If cluster_name was found inlined in LDS response, notify the watcher
     // immediately.
     xds_client()->cluster_name_ =
-        std::move(lds_update.rds_update.value().cluster_name);
+        std::move(lds_update->rds_update.value().cluster_name);
     RefCountedPtr<ServiceConfig> service_config;
     grpc_error* error = xds_client()->CreateServiceConfig(
         xds_client()->cluster_name_, &service_config);
@@ -908,19 +919,27 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
-    XdsApi::RdsUpdate rds_update) {
+    absl::optional<XdsApi::RdsUpdate> rds_update) {
+  if (!rds_update.has_value()) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] RDS update does not include requested resource",
+            xds_client());
+    xds_client()->service_config_watcher_->OnError(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RDS update does not include requested resource"));
+    return;
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_client %p] RDS update received: "
-            "cluster_name=%s",
-            xds_client(), rds_update.cluster_name.c_str());
+            "[xds_client %p] RDS update received: cluster_name=%s",
+            xds_client(), rds_update->cluster_name.c_str());
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   auto& state =
       rds_state.subscribed_resources[xds_client()->route_config_name_];
   if (state != nullptr) state->Finish();
   // Ignore identical update.
-  if (xds_client()->cluster_name_ == rds_update.cluster_name) {
+  if (xds_client()->cluster_name_ == rds_update->cluster_name) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] RDS update identical to current, ignoring.",
@@ -928,7 +947,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     }
     return;
   }
-  xds_client()->cluster_name_ = std::move(rds_update.cluster_name);
+  xds_client()->cluster_name_ = std::move(rds_update->cluster_name);
   // Notify the watcher.
   RefCountedPtr<ServiceConfig> service_config;
   grpc_error* error = xds_client()->CreateServiceConfig(
@@ -944,6 +963,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     XdsApi::CdsUpdateMap cds_update_map) {
   auto& cds_state = state_map_[XdsApi::kCdsTypeUrl];
+  std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
     const char* cluster_name = p.first.c_str();
     XdsApi::CdsUpdate& cds_update = p.second;
@@ -952,21 +972,22 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] CDS update (cluster=%s) received: "
-              "eds_service_name=%s, "
-              "lrs_load_reporting_server_name=%s",
+              "eds_service_name=%s, lrs_load_reporting_server_name=%s",
               xds_client(), cluster_name, cds_update.eds_service_name.c_str(),
               cds_update.lrs_load_reporting_server_name.has_value()
                   ? cds_update.lrs_load_reporting_server_name.value().c_str()
                   : "(N/A)");
     }
-    ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
+    // Record the EDS resource names seen.
+    eds_resource_names_seen.insert(cds_update.eds_service_name.empty()
+                                       ? cluster_name
+                                       : cds_update.eds_service_name);
     // Ignore identical update.
+    ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
     if (cluster_state.update.has_value() &&
-        cds_update.eds_service_name ==
-            cluster_state.update.value().eds_service_name &&
-        cds_update.lrs_load_reporting_server_name.value() ==
-            cluster_state.update.value()
-                .lrs_load_reporting_server_name.value()) {
+        cds_update.eds_service_name == cluster_state.update->eds_service_name &&
+        cds_update.lrs_load_reporting_server_name ==
+            cluster_state.update->lrs_load_reporting_server_name) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
         gpr_log(GPR_INFO,
                 "[xds_client %p] CDS update identical to current, ignoring.",
@@ -975,10 +996,39 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
       continue;
     }
     // Update the cluster state.
-    cluster_state.update.emplace(std::move(cds_update));
+    cluster_state.update = std::move(cds_update);
     // Notify all watchers.
     for (const auto& p : cluster_state.watchers) {
       p.first->OnClusterChanged(cluster_state.update.value());
+    }
+  }
+  // For any subscribed resource that is not present in the update,
+  // remove it from the cache and notify watchers of the error.
+  for (const auto& p : cds_state.subscribed_resources) {
+    const std::string& cluster_name = p.first;
+    if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
+      ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
+      cluster_state.update.reset();
+      for (const auto& p : cluster_state.watchers) {
+        p.first->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Cluster not present in CDS update"));
+      }
+    }
+  }
+  // Also remove any EDS resources that are no longer referred to by any CDS
+  // resources.
+  auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
+  for (const auto& p : eds_state.subscribed_resources) {
+    const std::string& eds_resource_name = p.first;
+    if (eds_resource_names_seen.find(eds_resource_name) ==
+        eds_resource_names_seen.end()) {
+      EndpointState& endpoint_state =
+          xds_client()->endpoint_map_[eds_resource_name];
+      endpoint_state.update.reset();
+      for (const auto& p : endpoint_state.watchers) {
+        p.first->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "ClusterLoadAssignment resource removed due to CDS update"));
+      }
     }
   }
 }
@@ -1043,25 +1093,27 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     EndpointState& endpoint_state =
         xds_client()->endpoint_map_[eds_service_name];
     // Ignore identical update.
-    const XdsApi::EdsUpdate& prev_update = endpoint_state.update;
-    const bool priority_list_changed =
-        prev_update.priority_list_update != eds_update.priority_list_update;
-    const bool drop_config_changed =
-        prev_update.drop_config == nullptr ||
-        *prev_update.drop_config != *eds_update.drop_config;
-    if (!priority_list_changed && !drop_config_changed) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] EDS update identical to current, ignoring.",
-                xds_client());
+    if (endpoint_state.update.has_value()) {
+      const XdsApi::EdsUpdate& prev_update = endpoint_state.update.value();
+      const bool priority_list_changed =
+          prev_update.priority_list_update != eds_update.priority_list_update;
+      const bool drop_config_changed =
+          prev_update.drop_config == nullptr ||
+          *prev_update.drop_config != *eds_update.drop_config;
+      if (!priority_list_changed && !drop_config_changed) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+          gpr_log(GPR_INFO,
+                  "[xds_client %p] EDS update identical to current, ignoring.",
+                  xds_client());
+        }
+        continue;
       }
-      continue;
     }
     // Update the cluster state.
     endpoint_state.update = std::move(eds_update);
     // Notify all watchers.
     for (const auto& p : endpoint_state.watchers) {
-      p.first->OnEndpointChanged(endpoint_state.update);
+      p.first->OnEndpointChanged(endpoint_state.update.value());
     }
   }
 }
@@ -1135,8 +1187,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   // mode. We will also need to cancel the timer when we receive a serverlist
   // from the balancer.
   // Parse the response.
-  XdsApi::LdsUpdate lds_update;
-  XdsApi::RdsUpdate rds_update;
+  absl::optional<XdsApi::LdsUpdate> lds_update;
+  absl::optional<XdsApi::RdsUpdate> rds_update;
   XdsApi::CdsUpdateMap cds_update_map;
   XdsApi::EdsUpdateMap eds_update_map;
   std::string version;
@@ -1145,6 +1197,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   // Note that ParseAdsResponse() also validates the response.
   grpc_error* parse_error = xds_client->api_.ParseAdsResponse(
       response_slice, xds_client->server_name_, xds_client->route_config_name_,
+      ads_calld->ClusterNamesForRequest(),
       ads_calld->EdsServiceNamesForRequest(), &lds_update, &rds_update,
       &cds_update_map, &eds_update_map, &version, &nonce, &type_url);
   grpc_slice_unref_internal(response_slice);
@@ -1811,8 +1864,8 @@ void XdsClient::WatchEndpointData(
   endpoint_state.watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher
   // immediately.
-  if (!endpoint_state.update.priority_list_update.empty()) {
-    w->OnEndpointChanged(endpoint_state.update);
+  if (endpoint_state.update.has_value()) {
+    w->OnEndpointChanged(endpoint_state.update.value());
   }
   chand_->Subscribe(XdsApi::kEdsTypeUrl, eds_service_name_str);
 }
