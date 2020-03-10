@@ -351,7 +351,6 @@ class ClientStats {
   std::map<grpc::string, uint64_t> dropped_requests_;
 };
 
-// TODO(roth): Change this service to a real fake.
 class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                        public std::enable_shared_from_this<AdsServiceImpl> {
  public:
@@ -594,7 +593,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       // Main loop to look for requests and updates.
       while (true) {
         // Look for new requests and and decide what to handle.
-        DiscoveryResponse response;
+        absl::optional<DiscoveryResponse> response;
         // Boolean to keep track if the loop received any work to do: a request
         // or an update; regardless whether a response was actually sent out.
         bool did_work = false;
@@ -647,8 +646,9 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                       this, request.type_url().c_str(), resource_name.c_str(),
                       resource_state.version);
                   resources_added_to_response.emplace(resource_name);
+                  if (!response.has_value()) response.emplace();
                   if (resource_state.resource.has_value()) {
-                    response.add_resources()->CopyFrom(
+                    response->add_resources()->CopyFrom(
                         resource_state.resource.value());
                   }
                 }
@@ -664,17 +664,17 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                     request.type_url(),
                     ++resource_type_version[request.type_url()],
                     subscription_name_map, resources_added_to_response,
-                    &response);
+                    &response.value());
               }
             }
           }
         }
-        if (!response.resources().empty()) {
+        if (response.has_value()) {
           gpr_log(GPR_INFO, "ADS[%p]: Sending response: %s", this,
-                  response.DebugString().c_str());
-          stream->Write(response);
+                  response->DebugString().c_str());
+          stream->Write(response.value());
         }
-        response.Clear();
+        response.reset();
         // Look for updates and decide what to handle.
         {
           grpc_core::MutexLock lock(&ads_mu_);
@@ -700,21 +700,22 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                     "ADS[%p]: Sending update for type=%s name=%s version=%d",
                     this, resource_type.c_str(), resource_name.c_str(),
                     resource_state.version);
+                response.emplace();
                 if (resource_state.resource.has_value()) {
-                  response.add_resources()->CopyFrom(
+                  response->add_resources()->CopyFrom(
                       resource_state.resource.value());
-                  CompleteBuildingDiscoveryResponse(
-                      resource_type, ++resource_type_version[resource_type],
-                      subscription_name_map, {resource_name}, &response);
                 }
+                CompleteBuildingDiscoveryResponse(
+                    resource_type, ++resource_type_version[resource_type],
+                    subscription_name_map, {resource_name}, &response.value());
               }
             }
           }
         }
-        if (!response.resources().empty()) {
+        if (response.has_value()) {
           gpr_log(GPR_INFO, "ADS[%p]: Sending update response: %s", this,
-                  response.DebugString().c_str());
-          stream->Write(response);
+                  response->DebugString().c_str());
+          stream->Write(response.value());
         }
         // If we didn't find anything to do, delay before the next loop
         // iteration; otherwise, check whether we should exit and then
