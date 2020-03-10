@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package proto;
+package grpc.testing.benchmarking;
 
 option go_package = "github.com/grpc/grpc/testctrl/genproto/testctrl/svc";
 
