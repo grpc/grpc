@@ -592,10 +592,6 @@ grpc_error* LdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
       if (error != GRPC_ERROR_NONE) return error;
       lds_update->emplace();
       (*lds_update)->rds_update.emplace(std::move(rds_update));
-      const upb_strview route_config_name =
-          envoy_api_v2_RouteConfiguration_name(route_config);
-      (*lds_update)->route_config_name =
-          std::string(route_config_name.data, route_config_name.size);
       return GRPC_ERROR_NONE;
     }
     // Validate that RDS must be used to get the route_config dynamically.
