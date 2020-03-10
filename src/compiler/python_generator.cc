@@ -98,7 +98,9 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
     // smarter and more sophisticated, but at the moment, if there is
     // no docstring to print, we simply emit "pass" to ensure validity
     // of the generated code.
-    out->Print("\"\"\"Missing associated documentation comment in .proto file\"\"\"\n");
+    out->Print(
+        "\"\"\"Missing associated documentation comment in .proto "
+        "file\"\"\"\n");
     return;
   }
   out->Print("\"\"\"");
