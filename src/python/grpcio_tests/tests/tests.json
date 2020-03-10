@@ -7,6 +7,7 @@
   "interop._insecure_intraop_test.InsecureIntraopTest",
   "interop._secure_intraop_test.SecureIntraopTest",
   "protoc_plugin._python_plugin_test.PythonPluginTest",
+  "protoc_plugin._python_plugin_test.SimpleStubsPluginTest",
   "protoc_plugin._split_definitions_test.SameProtoGrpcBeforeProtoProtocStyleTest",
   "protoc_plugin._split_definitions_test.SameProtoMid2016ProtocStyleTest",
   "protoc_plugin._split_definitions_test.SameProtoProtoBeforeGrpcProtocStyleTest",
