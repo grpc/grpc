@@ -1692,6 +1692,27 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   EXPECT_EQ(0, std::get<1>(counts));
 }
 
+// Tests that things keep workng if the cluster resource disappears.
+TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Unset CDS resource.
+  balancers_[0]->ads_service()->UnsetResource(kCdsTypeUrl,
+                                              kDefaultResourceName);
+  // Make sure RPCs are still succeeding.
+  CheckRpcSendOk(100 * num_backends_);
+  // Make sure we ACK'ed the update.
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
+            AdsServiceImpl::ACKED);
+}
+
 using SecureNamingTest = BasicTest;
 
 // Tests that secure naming check passes if target name is expected.
