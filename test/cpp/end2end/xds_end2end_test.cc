@@ -495,6 +495,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                       SubscriptionState* subscription_state,
                       ResourceState* resource_state,
                       UpdateQueue* update_queue) {
+    // The update_queue will be null if we were not previously subscribed.
     if (subscription_state->update_queue != nullptr) return;
     subscription_state->update_queue = update_queue;
     resource_state->subscriptions.emplace(subscription_state);
