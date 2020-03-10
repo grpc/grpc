@@ -930,8 +930,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] RDS update received: cluster_name=%s",
+    gpr_log(GPR_INFO, "[xds_client %p] RDS update received: cluster_name=%s",
             xds_client(), rds_update->cluster_name.c_str());
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];

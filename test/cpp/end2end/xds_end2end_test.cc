@@ -1681,8 +1681,10 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   // Change RDS resource to point to new cluster.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
-  new_route_config.mutable_virtual_hosts(0)->mutable_routes(0)
-      ->mutable_route()->set_cluster(kNewClusterName);
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);

@@ -655,10 +655,10 @@ grpc_error* RdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* CdsResponseParse(
-    const envoy_api_v2_DiscoveryResponse* response,
-    const std::set<StringView>& expected_cluster_names,
-    XdsApi::CdsUpdateMap* cds_update_map, upb_arena* arena) {
+grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
+                             const std::set<StringView>& expected_cluster_names,
+                             XdsApi::CdsUpdateMap* cds_update_map,
+                             upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
