@@ -61,3 +61,4 @@ cdef class AioServer:
     cdef CallbackWrapper _shutdown_callback_wrapper
     cdef object _crash_exception  # Exception
     cdef set _ongoing_rpc_tasks
+    cdef tuple _interceptors

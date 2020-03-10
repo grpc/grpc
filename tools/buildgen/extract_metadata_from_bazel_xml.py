@@ -632,6 +632,10 @@ _BUILD_EXTRA_METADATA = {
         'language': 'c++',
         'build': 'all'
     },
+    'grpc++_test': {
+        'language': 'c++',
+        'build': 'private',
+    },
     'src/compiler:grpc_plugin_support': {
         'language': 'c++',
         'build': 'protoc',
@@ -748,6 +752,20 @@ _BUILD_EXTRA_METADATA = {
         'run': False,
         '_TYPE': 'target',
         '_RENAME': 'interop_server'
+    },
+    'test/cpp/interop:xds_interop_client': {
+        'language': 'c++',
+        'build': 'test',
+        'run': False,
+        '_TYPE': 'target',
+        '_RENAME': 'xds_interop_client'
+    },
+    'test/cpp/interop:xds_interop_server': {
+        'language': 'c++',
+        'build': 'test',
+        'run': False,
+        '_TYPE': 'target',
+        '_RENAME': 'xds_interop_server'
     },
     'test/cpp/interop:http2_client': {
         'language': 'c++',

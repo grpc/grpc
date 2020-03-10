@@ -49,7 +49,7 @@ NSUInteger TransportIDHash(GRPCTransportID);
 @class GRPCTransport;
 
 /** The factory to create a transport. */
-@protocol GRPCTransportFactory<NSObject>
+@protocol GRPCTransportFactory <NSObject>
 
 /** Create a transport implementation instance. */
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager;
@@ -79,7 +79,7 @@ NSUInteger TransportIDHash(GRPCTransportID);
  * Base class for transport implementations. All transport implementation should inherit from this
  * class.
  */
-@interface GRPCTransport : NSObject<GRPCInterceptorInterface>
+@interface GRPCTransport : NSObject <GRPCInterceptorInterface>
 
 @end
 

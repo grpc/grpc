@@ -92,10 +92,9 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void OnResolverError(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-      Resolver::Result result, TraceStringVector* trace_strings);
+      Resolver::Result result);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
-      const char* lb_policy_name, const grpc_channel_args& args,
-      TraceStringVector* trace_strings);
+      const grpc_channel_args& args);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       bool resolution_contains_addresses, TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
@@ -116,7 +115,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  OrphanablePtr<LoadBalancingPolicy> pending_lb_policy_;
 };
 
 }  // namespace grpc_core

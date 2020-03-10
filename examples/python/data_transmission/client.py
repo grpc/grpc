@@ -22,6 +22,10 @@ import demo_pb2
 SERVER_ADDRESS = "localhost:23333"
 CLIENT_ID = 1
 
+# 中文注释和英文翻译
+# Note that this example was contributed by an external user using Chinese comments.
+# In all cases, the Chinese comment text is translated to English just below it.
+
 
 # 一元模式(在一次调用中, 客户端只能向服务器传输一次请求数据, 服务器也只能返回一次响应)
 # unary-unary(In a single call, the client can only send request once, and the server can

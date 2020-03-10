@@ -24,6 +24,6 @@
 /**
  * Extend GIDSignIn class to comply GRPCAuthorizationProtocol
  */
-@interface GIDSignIn (GRPC)<GRPCAuthorizationProtocol>
+@interface GIDSignIn (GRPC) <GRPCAuthorizationProtocol>
 - (void)getTokenWithHandler:(void (^)(NSString *token))hander;
 @end

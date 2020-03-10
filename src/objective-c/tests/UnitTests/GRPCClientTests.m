@@ -114,14 +114,18 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   [GRPCCall useInsecureConnectionsForHost:kHostAddress];
 
   // This method isn't implemented by the remote server.
-  kInexistentMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"Inexistent"];
-  kEmptyCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"EmptyCall"];
-  kUnaryCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"UnaryCall"];
-  kFullDuplexCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"FullDuplexCall"];
+  kInexistentMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                       service:kService
+                                                        method:@"Inexistent"];
+  kEmptyCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                      service:kService
+                                                       method:@"EmptyCall"];
+  kUnaryCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                      service:kService
+                                                       method:@"UnaryCall"];
+  kFullDuplexCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                           service:kService
+                                                            method:@"FullDuplexCall"];
 }
 
 - (void)testConnectionToRemoteServer {
@@ -131,15 +135,15 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                              path:kInexistentMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTFail(@"Received unexpected response: %@", value);
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNotNil(errorOrNil, @"Finished without error!");
-            XCTAssertEqual(errorOrNil.code, 12, @"Finished with unexpected error: %@", errorOrNil);
-            [expectation fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNotNil(errorOrNil, @"Finished without error!");
+        XCTAssertEqual(errorOrNil.code, 12, @"Finished with unexpected error: %@", errorOrNil);
+        [expectation fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 
@@ -155,16 +159,16 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTAssertNotNil(value, @"nil value received as response.");
         XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
         [response fulfill];
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
-            [completion fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+        [completion fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 
@@ -185,8 +189,8 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTAssertNotNil(value, @"nil value received as response.");
         XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
         RMTSimpleResponse *responseProto = [RMTSimpleResponse parseFromData:value error:NULL];
@@ -195,10 +199,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
         XCTAssertNotNil(responseProto.oauthScope, @"Response's OAuth scope is nil.");
         [response fulfill];
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
-            [completion fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+        [completion fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 
@@ -219,22 +223,22 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   call.oauth2AccessToken = @"bogusToken";
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTFail(@"Received unexpected response: %@", value);
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNotNil(errorOrNil, @"Finished without error!");
-            XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
-            XCTAssertEqualObjects(call.responseHeaders, errorOrNil.userInfo[kGRPCHeadersKey],
-                                  @"Headers in the NSError object and call object differ.");
-            XCTAssertEqualObjects(call.responseTrailers, errorOrNil.userInfo[kGRPCTrailersKey],
-                                  @"Trailers in the NSError object and call object differ.");
-            NSString *challengeHeader = call.oauth2ChallengeHeader;
-            XCTAssertGreaterThan(challengeHeader.length, 0, @"No challenge in response headers %@",
-                                 call.responseHeaders);
-            [expectation fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNotNil(errorOrNil, @"Finished without error!");
+        XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
+        XCTAssertEqualObjects(call.responseHeaders, errorOrNil.userInfo[kGRPCHeadersKey],
+                              @"Headers in the NSError object and call object differ.");
+        XCTAssertEqualObjects(call.responseTrailers, errorOrNil.userInfo[kGRPCTrailersKey],
+                              @"Trailers in the NSError object and call object differ.");
+        NSString *challengeHeader = call.oauth2ChallengeHeader;
+        XCTAssertGreaterThan(challengeHeader.length, 0, @"No challenge in response headers %@",
+                             call.responseHeaders);
+        [expectation fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 
@@ -260,16 +264,16 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   [call addObserver:observer forKeyPath:@"responseHeaders" options:0 context:NULL];
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTAssertNotNil(value, @"nil value received as response.");
         XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
         [response fulfill];
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
-            [completion fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+        [completion fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 
@@ -288,8 +292,8 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   // user-agent value, which we confirm.
   call.requestHeaders[@"x-grpc-test-echo-useragent"] = @"";
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTAssertNotNil(value, @"nil value received as response.");
         XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
 
@@ -325,10 +329,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
         [response fulfill];
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
-            [completion fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+        [completion fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 
@@ -349,18 +353,18 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   NSData *trailer_data = [NSData dataWithBytes:raw_bytes length:sizeof(raw_bytes)];
   call.requestHeaders[@"x-grpc-test-echo-trailing-bin"] = trailer_data;
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTAssertNotNil(value, @"nil value received as response.");
         XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
         [response fulfill];
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
-            XCTAssertEqualObjects((NSData *)call.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
-                                  trailer_data, @"Did not receive expected trailer");
-            [completion fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+        XCTAssertEqualObjects((NSData *)call.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
+                              trailer_data, @"Did not receive expected trailer");
+        [completion fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
@@ -407,8 +411,8 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                      host:kHostAddress
                      path:kUnaryCallMethod.HTTPPath];
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTAssertNotNil(value, @"nil value received as response.");
         XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
         RMTSimpleResponse *responseProto = [RMTSimpleResponse parseFromData:value error:NULL];
@@ -417,10 +421,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
         XCTAssertNotNil(responseProto.oauthScope, @"Response's OAuth scope is nil.");
         [response fulfill];
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
-            [completion fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+        [completion fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 
@@ -445,16 +449,16 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                               path:kUnaryCallMethod.HTTPPath
                                     requestsWriter:requestsWriter1];
 
-  id<GRXWriteable> responsesWriteable1 =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable1 = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         NSString *label =
             [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
         XCTAssert([label isEqualToString:main_queue_label]);
 
         [expectation1 fulfill];
       }
-                               completionHandler:^(NSError *errorOrNil){
-                               }];
+         completionHandler:^(NSError *errorOrNil){
+         }];
 
   [call1 startWithWriteable:responsesWriteable1];
 
@@ -475,16 +479,16 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   [call2 setResponseDispatchQueue:queue];
 
-  id<GRXWriteable> responsesWriteable2 =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable2 = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         NSString *label =
             [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
         XCTAssert([label isEqualToString:queue_label]);
 
         [expectation2 fulfill];
       }
-                               completionHandler:^(NSError *errorOrNil){
-                               }];
+         completionHandler:^(NSError *errorOrNil){
+         }];
 
   [call2 startWithWriteable:responsesWriteable2];
 
@@ -499,16 +503,16 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                              path:kFullDuplexCallMethod.HTTPPath
                                    requestsWriter:pipe];
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTAssert(0, @"Failure: response received; Expect: no response received.");
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNotNil(errorOrNil,
-                            @"Failure: no error received; Expect: receive deadline exceeded.");
-            XCTAssertEqual(errorOrNil.code, GRPCErrorCodeDeadlineExceeded);
-            [completion fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNotNil(errorOrNil,
+                        @"Failure: no error received; Expect: receive deadline exceeded.");
+        XCTAssertEqual(errorOrNil.code, GRPCErrorCodeDeadlineExceeded);
+        [completion fulfill];
+      }];
 
   call.timeout = 0.001;
   [call startWithWriteable:responsesWriteable];
@@ -539,16 +543,16 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         // Should not reach here
         XCTAssert(NO);
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNotNil(errorOrNil, @"Finished with no error");
-            XCTAssertEqual(errorOrNil.code, GRPC_STATUS_UNAVAILABLE);
-            [completion fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNotNil(errorOrNil, @"Finished with no error");
+        XCTAssertEqual(errorOrNil.code, GRPC_STATUS_UNAVAILABLE);
+        [completion fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 
@@ -570,9 +574,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                              path:@"/dummyPath"
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   NSDate *startTime = [NSDate date];
-  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(id value) {
-    XCTAssert(NO, @"Received message. Should not reach here");
-  }
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(id value) {
+        XCTAssert(NO, @"Received message. Should not reach here");
+      }
       completionHandler:^(NSError *errorOrNil) {
         XCTAssertNotNil(errorOrNil, @"Finished with no error");
         // The call must fail before maxConnectTime. However there is no lower bound on the time
@@ -613,21 +618,21 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   call.oauth2AccessToken = @"bogusToken";
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         XCTFail(@"Received unexpected response: %@", value);
       }
-          completionHandler:^(NSError *errorOrNil) {
-            XCTAssertNotNil(errorOrNil, @"Finished without error!");
-            NSDictionary *userInfo = errorOrNil.userInfo;
-            NSString *debugInformation = userInfo[NSDebugDescriptionErrorKey];
-            XCTAssertNotNil(debugInformation);
-            XCTAssertNotEqual([debugInformation length], 0);
-            NSString *challengeHeader = call.oauth2ChallengeHeader;
-            XCTAssertGreaterThan(challengeHeader.length, 0, @"No challenge in response headers %@",
-                                 call.responseHeaders);
-            [expectation fulfill];
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNotNil(errorOrNil, @"Finished without error!");
+        NSDictionary *userInfo = errorOrNil.userInfo;
+        NSString *debugInformation = userInfo[NSDebugDescriptionErrorKey];
+        XCTAssertNotNil(debugInformation);
+        XCTAssertNotEqual([debugInformation length], 0);
+        NSString *challengeHeader = call.oauth2ChallengeHeader;
+        XCTAssertGreaterThan(challengeHeader.length, 0, @"No challenge in response headers %@",
+                             call.responseHeaders);
+        [expectation fulfill];
+      }];
 
   [call startWithWriteable:responsesWriteable];
 

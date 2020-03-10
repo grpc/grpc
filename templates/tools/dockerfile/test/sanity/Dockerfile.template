@@ -14,12 +14,14 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../../python_stretch.include"/>
+  <%include file="../../python_debian10.include"/>
   <%include file="../../cxx_deps.include"/>
+
   #========================
   # Sanity test dependencies
   RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
   RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
+
   # Make Python 3.7 the default Python 3 version
   RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
   RUN apt-get update && apt-get install -y ${"\\"}
@@ -31,7 +33,17 @@
   RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
   RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
 
-  <%include file="../../clang5.include"/>
+  # Install clang & clang-format
+  RUN apt-get install -y clang clang-format
+
+  # Install clang-tidy 6.0
+  # This is because clang-tidy 7.0 started treating compiler errors as tidy errors
+  # and there are a couple of files which are not properly compiled via tidy so it
+  # should be using 6.0 version until all compilation errors are addressed.
+  RUN apt-get install -y clang-tidy-6.0
+  ENV CLANG_TIDY=clang-tidy-6.0
+
+
   <%include file="../../bazel.include"/>
   <%include file="../../buildifier.include"/>
 

@@ -33,6 +33,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -109,67 +110,31 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
       const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
-    if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateSubchannel(args);
   }
 
   void UpdateState(grpc_connectivity_state state,
                    std::unique_ptr<SubchannelPicker> picker) override {
     if (parent_->resolver_ == nullptr) return;  // Shutting down.
-    // If this request is from the pending child policy, ignore it until
-    // it reports READY, at which point we swap it into place.
-    if (CalledByPendingChild()) {
-      if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
-        gpr_log(GPR_INFO,
-                "resolving_lb=%p helper=%p: pending child policy %p reports "
-                "state=%s",
-                parent_.get(), this, child_, ConnectivityStateName(state));
-      }
-      if (state != GRPC_CHANNEL_READY) return;
-      grpc_pollset_set_del_pollset_set(
-          parent_->lb_policy_->interested_parties(),
-          parent_->interested_parties());
-      parent_->lb_policy_ = std::move(parent_->pending_lb_policy_);
-    } else if (!CalledByCurrentChild()) {
-      // This request is from an outdated child, so ignore it.
-      return;
-    }
     parent_->channel_control_helper()->UpdateState(state, std::move(picker));
   }
 
   void RequestReresolution() override {
-    // If there is a pending child policy, ignore re-resolution requests
-    // from the current child policy (or any outdated child).
-    if (parent_->pending_lb_policy_ != nullptr && !CalledByPendingChild()) {
-      return;
-    }
+    if (parent_->resolver_ == nullptr) return;  // Shutting down.
     if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
       gpr_log(GPR_INFO, "resolving_lb=%p: started name re-resolving",
               parent_.get());
     }
-    if (parent_->resolver_ != nullptr) {
-      parent_->resolver_->RequestReresolutionLocked();
-    }
+    parent_->resolver_->RequestReresolutionLocked();
   }
 
-  void AddTraceEvent(TraceSeverity /*severity*/,
-                     StringView /*message*/) override {}
-
-  void set_child(LoadBalancingPolicy* child) { child_ = child; }
+  void AddTraceEvent(TraceSeverity severity, StringView message) override {
+    if (parent_->resolver_ == nullptr) return;  // Shutting down.
+    parent_->channel_control_helper()->AddTraceEvent(severity, message);
+  }
 
  private:
-  bool CalledByPendingChild() const {
-    GPR_ASSERT(child_ != nullptr);
-    return child_ == parent_->pending_lb_policy_.get();
-  }
-
-  bool CalledByCurrentChild() const {
-    GPR_ASSERT(child_ != nullptr);
-    return child_ == parent_->lb_policy_.get();
-  };
-
   RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
-  LoadBalancingPolicy* child_ = nullptr;
 };
 
 //
@@ -217,23 +182,11 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
                                        interested_parties());
       lb_policy_.reset();
     }
-    if (pending_lb_policy_ != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-        gpr_log(GPR_INFO, "resolving_lb=%p: shutting down pending lb_policy=%p",
-                this, pending_lb_policy_.get());
-      }
-      grpc_pollset_set_del_pollset_set(pending_lb_policy_->interested_parties(),
-                                       interested_parties());
-      pending_lb_policy_.reset();
-    }
   }
 }
 
 void ResolvingLoadBalancingPolicy::ExitIdleLocked() {
-  if (lb_policy_ != nullptr) {
-    lb_policy_->ExitIdleLocked();
-    if (pending_lb_policy_ != nullptr) pending_lb_policy_->ExitIdleLocked();
-  }
+  if (lb_policy_ != nullptr) lb_policy_->ExitIdleLocked();
 }
 
 void ResolvingLoadBalancingPolicy::ResetBackoffLocked() {
@@ -242,7 +195,6 @@ void ResolvingLoadBalancingPolicy::ResetBackoffLocked() {
     resolver_->RequestReresolutionLocked();
   }
   if (lb_policy_ != nullptr) lb_policy_->ResetBackoffLocked();
-  if (pending_lb_policy_ != nullptr) pending_lb_policy_->ResetBackoffLocked();
 }
 
 void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
@@ -269,132 +221,42 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
 
 void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-    Resolver::Result result, TraceStringVector* trace_strings) {
-  // If the child policy name changes, we need to create a new child
-  // policy.  When this happens, we leave child_policy_ as-is and store
-  // the new child policy in pending_child_policy_.  Once the new child
-  // policy transitions into state READY, we swap it into child_policy_,
-  // replacing the original child policy.  So pending_child_policy_ is
-  // non-null only between when we apply an update that changes the child
-  // policy name and when the new child reports state READY.
-  //
-  // Updates can arrive at any point during this transition.  We always
-  // apply updates relative to the most recently created child policy,
-  // even if the most recent one is still in pending_child_policy_.  This
-  // is true both when applying the updates to an existing child policy
-  // and when determining whether we need to create a new policy.
-  //
-  // As a result of this, there are several cases to consider here:
-  //
-  // 1. We have no existing child policy (i.e., we have started up but
-  //    have not yet received a serverlist from the balancer or gone
-  //    into fallback mode; in this case, both child_policy_ and
-  //    pending_child_policy_ are null).  In this case, we create a
-  //    new child policy and store it in child_policy_.
-  //
-  // 2. We have an existing child policy and have no pending child policy
-  //    from a previous update (i.e., either there has not been a
-  //    previous update that changed the policy name, or we have already
-  //    finished swapping in the new policy; in this case, child_policy_
-  //    is non-null but pending_child_policy_ is null).  In this case:
-  //    a. If child_policy_->name() equals child_policy_name, then we
-  //       update the existing child policy.
-  //    b. If child_policy_->name() does not equal child_policy_name,
-  //       we create a new policy.  The policy will be stored in
-  //       pending_child_policy_ and will later be swapped into
-  //       child_policy_ by the helper when the new child transitions
-  //       into state READY.
-  //
-  // 3. We have an existing child policy and have a pending child policy
-  //    from a previous update (i.e., a previous update set
-  //    pending_child_policy_ as per case 2b above and that policy has
-  //    not yet transitioned into state READY and been swapped into
-  //    child_policy_; in this case, both child_policy_ and
-  //    pending_child_policy_ are non-null).  In this case:
-  //    a. If pending_child_policy_->name() equals child_policy_name,
-  //       then we update the existing pending child policy.
-  //    b. If pending_child_policy->name() does not equal
-  //       child_policy_name, then we create a new policy.  The new
-  //       policy is stored in pending_child_policy_ (replacing the one
-  //       that was there before, which will be immediately shut down)
-  //       and will later be swapped into child_policy_ by the helper
-  //       when the new child transitions into state READY.
-  const char* lb_policy_name = lb_policy_config->name();
-  const bool create_policy =
-      // case 1
-      lb_policy_ == nullptr ||
-      // case 2b
-      (pending_lb_policy_ == nullptr &&
-       strcmp(lb_policy_->name(), lb_policy_name) != 0) ||
-      // case 3b
-      (pending_lb_policy_ != nullptr &&
-       strcmp(pending_lb_policy_->name(), lb_policy_name) != 0);
-  LoadBalancingPolicy* policy_to_update = nullptr;
-  if (create_policy) {
-    // Cases 1, 2b, and 3b: create a new child policy.
-    // If lb_policy_ is null, we set it (case 1), else we set
-    // pending_lb_policy_ (cases 2b and 3b).
-    if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-      gpr_log(GPR_INFO, "resolving_lb=%p: Creating new %schild policy %s", this,
-              lb_policy_ == nullptr ? "" : "pending ", lb_policy_name);
-    }
-    auto& lb_policy = lb_policy_ == nullptr ? lb_policy_ : pending_lb_policy_;
-    lb_policy =
-        CreateLbPolicyLocked(lb_policy_name, *result.args, trace_strings);
-    policy_to_update = lb_policy.get();
-  } else {
-    // Cases 2a and 3a: update an existing policy.
-    // If we have a pending child policy, send the update to the pending
-    // policy (case 3a), else send it to the current policy (case 2a).
-    policy_to_update = pending_lb_policy_ != nullptr ? pending_lb_policy_.get()
-                                                     : lb_policy_.get();
-  }
-  GPR_ASSERT(policy_to_update != nullptr);
-  // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-    gpr_log(GPR_INFO, "resolving_lb=%p: Updating %schild policy %p", this,
-            policy_to_update == pending_lb_policy_.get() ? "pending " : "",
-            policy_to_update);
-  }
+    Resolver::Result result) {
+  // Construct update.
   UpdateArgs update_args;
   update_args.addresses = std::move(result.addresses);
   update_args.config = std::move(lb_policy_config);
   // TODO(roth): Once channel args is converted to C++, use std::move() here.
   update_args.args = result.args;
   result.args = nullptr;
-  policy_to_update->UpdateLocked(std::move(update_args));
+  // Create policy if needed.
+  if (lb_policy_ == nullptr) {
+    lb_policy_ = CreateLbPolicyLocked(*update_args.args);
+  }
+  // Update the policy.
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
+    gpr_log(GPR_INFO, "resolving_lb=%p: Updating child policy %p", this,
+            lb_policy_.get());
+  }
+  lb_policy_->UpdateLocked(std::move(update_args));
 }
 
 // Creates a new LB policy.
 // Updates trace_strings to indicate what was done.
 OrphanablePtr<LoadBalancingPolicy>
 ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
-    const char* lb_policy_name, const grpc_channel_args& args,
-    TraceStringVector* trace_strings) {
-  ResolvingControlHelper* helper = new ResolvingControlHelper(Ref());
+    const grpc_channel_args& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.channel_control_helper =
-      std::unique_ptr<ChannelControlHelper>(helper);
+      absl::make_unique<ResolvingControlHelper>(Ref());
   lb_policy_args.args = &args;
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
-      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-          lb_policy_name, std::move(lb_policy_args));
-  if (GPR_UNLIKELY(lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
-    char* str;
-    gpr_asprintf(&str, "Could not create LB policy \"%s\"", lb_policy_name);
-    trace_strings->push_back(str);
-    return nullptr;
-  }
-  helper->set_child(lb_policy.get());
+      MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args), tracer_);
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-    gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
-            this, lb_policy_name, lb_policy.get());
+    gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy %p", this,
+            lb_policy.get());
   }
-  char* str;
-  gpr_asprintf(&str, "Created new LB policy \"%s\"", lb_policy_name);
-  trace_strings->push_back(str);
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
@@ -476,8 +338,8 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   }
   if (lb_policy_config != nullptr) {
     // Create or update LB policy, as needed.
-    CreateOrUpdateLbPolicyLocked(std::move(lb_policy_config), std::move(result),
-                                 &trace_strings);
+    CreateOrUpdateLbPolicyLocked(std::move(lb_policy_config),
+                                 std::move(result));
   }
   // Add channel trace event.
   if (service_config_changed) {

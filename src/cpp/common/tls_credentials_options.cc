@@ -119,9 +119,7 @@ void TlsCredentialReloadArg::set_key_materials(
         ConvertToCorePemKeyCertPair(key_cert_pair));
   }
   /** Populate the key materials config field of |c_arg_|. **/
-  ::grpc_core::UniquePtr<char> c_pem_root_certs(
-      gpr_strdup(pem_root_certs.c_str()));
-  c_arg_->key_materials_config->set_key_materials(std::move(c_pem_root_certs),
+  c_arg_->key_materials_config->set_key_materials(pem_root_certs.c_str(),
                                                   c_pem_key_cert_pair_list);
 }
 
@@ -150,7 +148,7 @@ void TlsCredentialReloadArg::set_key_materials_config(
     c_arg_->key_materials_config = grpc_tls_key_materials_config_create();
   }
   c_arg_->key_materials_config->set_key_materials(
-      std::move(c_pem_root_certs), std::move(c_pem_key_cert_pair_list));
+      key_materials_config->pem_root_certs().c_str(), c_pem_key_cert_pair_list);
   c_arg_->key_materials_config->set_version(key_materials_config->version());
 }
 
