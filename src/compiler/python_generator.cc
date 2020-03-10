@@ -70,10 +70,16 @@ typedef set<StringPair> StringPairSet;
 class IndentScope {
  public:
   explicit IndentScope(grpc_generator::Printer* printer) : printer_(printer) {
+    // NOTE(rbellevi): Two-space tabs are hard-coded in the protocol compiler.
+    // Doubling our indents and outdents guarantees compliance with PEP8.
+    printer_->Indent();
     printer_->Indent();
   }
 
-  ~IndentScope() { printer_->Outdent(); }
+  ~IndentScope() {
+    printer_->Outdent();
+    printer_->Outdent();
+  }
 
  private:
   grpc_generator::Printer* printer_;
@@ -92,8 +98,7 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
     // smarter and more sophisticated, but at the moment, if there is
     // no docstring to print, we simply emit "pass" to ensure validity
     // of the generated code.
-    out->Print("# missing associated documentation comment in .proto file\n");
-    out->Print("pass\n");
+    out->Print("\"\"\"Missing associated documentation comment in .proto file\"\"\"\n");
     return;
   }
   out->Print("\"\"\"");
@@ -653,6 +658,7 @@ bool PrivateGenerator::PrintServiceClass(
       }
     }
   }
+  // TODO(rbellevi): Add methods pertinent to the server side as well.
   return true;
 }
 
