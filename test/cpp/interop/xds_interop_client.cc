@@ -124,8 +124,6 @@ class TestClient {
 
   void AsyncUnaryCall() {
     SimpleResponse response;
-    ClientContext context;
-
     int saved_request_id;
     {
       std::lock_guard<std::mutex> lk(mu);
@@ -134,9 +132,8 @@ class TestClient {
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
         std::chrono::seconds(FLAGS_rpc_timeout_sec);
-    context.set_deadline(deadline);
-
     AsyncClientCall* call = new AsyncClientCall;
+    call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
     call->response_reader = stub_->PrepareAsyncUnaryCall(
         &call->context, SimpleRequest::default_instance(), &cq_);
