@@ -40,7 +40,6 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef void _poll(self) except *:
         cdef grpc_event event
         cdef CallbackContext *context
-        cdef object waiter
 
         while not self._shutdown:
             with nogil:
