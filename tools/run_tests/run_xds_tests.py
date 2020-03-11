@@ -34,6 +34,8 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
+formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
+console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
@@ -231,6 +233,7 @@ def wait_until_all_rpcs_go_to_given_backends(backends,
 
 
 def test_backends_restart(gcp, backend_service, instance_group):
+    logger.info('Running test_backends_restart')
     instance_names = get_instance_names(gcp, instance_group)
     num_instances = len(instance_names)
     start_time = time.time()
@@ -261,6 +264,7 @@ def test_backends_restart(gcp, backend_service, instance_group):
 def test_change_backend_service(gcp, original_backend_service, instance_group,
                                 alternate_backend_service,
                                 same_zone_instance_group):
+    logger.info('Running test_change_backend_service')
     original_backend_instances = get_instance_names(gcp, instance_group)
     alternate_backend_instances = get_instance_names(gcp,
                                                      same_zone_instance_group)
@@ -286,6 +290,7 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
 def test_new_instance_group_receives_traffic(gcp, backend_service,
                                              instance_group,
                                              same_zone_instance_group):
+    logger.info('Running test_new_instance_group_receives_traffic')
     instance_names = get_instance_names(gcp, instance_group)
     wait_until_all_rpcs_go_to_given_backends(instance_names,
                                              _WAIT_FOR_STATS_SEC)
@@ -306,6 +311,7 @@ def test_new_instance_group_receives_traffic(gcp, backend_service,
 
 
 def test_ping_pong(gcp, backend_service, instance_group):
+    logger.info('Running test_ping_pong')
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     instance_names = get_instance_names(gcp, instance_group)
     wait_until_all_rpcs_go_to_given_backends(instance_names,
@@ -314,6 +320,7 @@ def test_ping_pong(gcp, backend_service, instance_group):
 
 def test_remove_instance_group(gcp, backend_service, instance_group,
                                same_zone_instance_group):
+    logger.info('Running test_remove_instance_group')
     try:
         patch_backend_instances(gcp,
                                 backend_service,
@@ -339,6 +346,7 @@ def test_remove_instance_group(gcp, backend_service, instance_group,
 
 
 def test_round_robin(gcp, backend_service, instance_group):
+    logger.info('Running test_round_robin')
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     instance_names = get_instance_names(gcp, instance_group)
     threshold = 1
@@ -360,6 +368,9 @@ def test_round_robin(gcp, backend_service, instance_group):
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
         gcp, backend_service, primary_instance_group,
         secondary_zone_instance_group):
+    logger.info(
+        'Running test_secondary_locality_gets_no_requests_on_partial_primary_failure'
+    )
     try:
         patch_backend_instances(
             gcp, backend_service,
@@ -386,6 +397,8 @@ def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
 def test_secondary_locality_gets_requests_on_primary_failure(
         gcp, backend_service, primary_instance_group,
         secondary_zone_instance_group):
+    logger.info(
+        'Running test_secondary_locality_gets_requests_on_primary_failure')
     try:
         patch_backend_instances(
             gcp, backend_service,
@@ -458,6 +471,7 @@ nohup build/install/grpc-interop-testing/bin/xds-test-server --port=%d 1>/dev/nu
         }
     }
 
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.instanceTemplates().insert(project=gcp.project,
                                                     body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -475,6 +489,7 @@ def add_instance_group(gcp, zone, name, size):
         }]
     }
 
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.instanceGroupManagers().insert(project=gcp.project,
                                                         zone=zone,
                                                         body=config).execute()
@@ -496,6 +511,7 @@ def create_health_check(gcp, name):
             'portName': 'grpc'
         }
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.healthChecks().insert(project=gcp.project,
                                                body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -512,6 +528,7 @@ def create_health_check_firewall_rule(gcp, name):
         'sourceRanges': ['35.191.0.0/16', '130.211.0.0/22'],
         'targetTags': ['allow-health-checks'],
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.firewalls().insert(project=gcp.project,
                                             body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -527,6 +544,7 @@ def add_backend_service(gcp, name):
         'portName': 'grpc',
         'protocol': 'HTTP2'
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.backendServices().insert(project=gcp.project,
                                                   body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -548,6 +566,7 @@ def create_url_map(gcp, name, backend_service, host_name):
             'pathMatcher': _PATH_MATCHER_NAME
         }]
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.urlMaps().insert(project=gcp.project,
                                           body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -559,6 +578,7 @@ def create_target_http_proxy(gcp, name):
         'name': name,
         'url_map': gcp.url_map.url,
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.targetHttpProxies().insert(project=gcp.project,
                                                     body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -574,6 +594,7 @@ def create_global_forwarding_rule(gcp, name, ip, port):
         'network': args.network,
         'target': gcp.target_http_proxy.url,
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.globalForwardingRules().insert(project=gcp.project,
                                                         body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -676,6 +697,7 @@ def patch_backend_instances(gcp,
             'maxRate': 1 if balancing_mode == 'RATE' else None
         } for instance_group in instance_groups],
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
         body=config).execute()
@@ -711,6 +733,7 @@ def patch_url_map_backend_service(gcp, backend_service):
             'defaultService': backend_service.url,
         }]
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.urlMaps().patch(project=gcp.project,
                                          urlMap=gcp.url_map.name,
                                          body=config).execute()
