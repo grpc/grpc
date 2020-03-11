@@ -10,17 +10,17 @@ import (
 // Component represents a dependency for a session. Benchmarks tend to have three components: a
 // driver, server and client. Each component can have many identical replicas.
 type Component struct {
-	name      string
-	container string
-	kind      ComponentKind
-	replicas  int32
-	env       map[string]string
+	name           string
+	containerImage string
+	kind           ComponentKind
+	replicas       int32
+	env            map[string]string
 }
 
-// NewComponent creates a Component instance, given a container, kind and replicas.
+// NewComponent creates a Component instance, given a container image, kind and replicas.
 //
-// The container string should contain the path to a docker image in a registry, versioned by an
-// explicit tag or hash. Replicas should be 1 for drivers and servers. For clients, they may be
+// The container image string should contain the path to a docker image in a registry, versioned by
+// an explicit tag or hash. Replicas should be 1 for drivers and servers. For clients, they may be
 // any positive integer.
 //
 // For example:
@@ -33,12 +33,12 @@ type Component struct {
 //
 //     // Container uses "driver" image with hash from GCR
 //     c := NewComponent("gcr.io/grpc-testing/driver@sha256:e4ff8efd7eb62d3a3bb0990f6ff1e9df20da24ebf908d08f49cb83422a232862", DriverComponent, 1)
-func NewComponent(container string, kind ComponentKind, replicas int32) *Component {
+func NewComponent(containerImage string, kind ComponentKind, replicas int32) *Component {
 	return &Component{
-		name:      uuid.New().String(),
-		container: container,
-		kind:      kind,
-		replicas:  replicas,
+		name:           uuid.New().String(),
+		containerImage: containerImage,
+		kind:           kind,
+		replicas:       replicas,
 	}
 }
 
@@ -55,9 +55,9 @@ func (c *Component) ResourceName() string {
 	return fmt.Sprintf("components/%s", c.Name())
 }
 
-// Container returns the name of a docker image and tag which contains the required component.
-func (c *Component) Container() string {
-	return c.container
+// ContainerImage returns the name of a docker image and tag which contains the required component.
+func (c *Component) ContainerImage() string {
+	return c.containerImage
 }
 
 // Kind returns the type of component.

@@ -49,9 +49,11 @@ func NewEvent(subject ResourceNamer, k EventKind, messageFmt string, args ...int
 type EventKind int32
 
 const (
-	// InternalEvent represents a problem in the infrastructure, service or controller itself. It does
-	// not pertain to a session or component. If encountered, file a bug with its particular message.
-	InternalEvent EventKind = iota
+	_ EventKind = iota
+
+	// InternalErrorEvent represents a problem in the infrastructure, service or controller itself. It
+	// does not pertain to a session or component. If encountered, file a bug with its particular message.
+	InternalErrorEvent
 
 	// QueueEvent signals that a session is waiting for resources to run.
 	QueueEvent
@@ -94,17 +96,17 @@ func (k EventKind) Proto() pb.Event_Kind {
 }
 
 var eventKindStringToConstMap = map[string]EventKind{
-	"INTERNAL":  InternalEvent,
-	"QUEUE":     QueueEvent,
-	"ACCEPT":    AcceptEvent,
-	"PROVISION": ProvisionEvent,
-	"RUN":       RunEvent,
-	"DONE":      DoneEvent,
-	"ERROR":     ErrorEvent,
+	"INTERNAL_ERROR": InternalErrorEvent,
+	"QUEUE":          QueueEvent,
+	"ACCEPT":         AcceptEvent,
+	"PROVISION":      ProvisionEvent,
+	"RUN":            RunEvent,
+	"DONE":           DoneEvent,
+	"ERROR":          ErrorEvent,
 }
 
 var eventKindConstToStringMap = map[EventKind]string{
-	InternalEvent:  "INTERNAL",
+	InternalErrorEvent:  "INTERNAL_ERROR",
 	QueueEvent:     "QUEUE",
 	AcceptEvent:    "ACCEPT",
 	ProvisionEvent: "PROVISION",
