@@ -52,4 +52,4 @@ bazel build test/cpp/interop:xds_interop_client
     --project_id=grpc-testing \
     --gcp_suffix=$(date '+%s') \
     --verbose \
-    --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds-experimental:///{service_host}:{service_port} --stats_port={stats_port} --qps={qps}'
+    --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps}'
