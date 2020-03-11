@@ -37,4 +37,3 @@ Make sure you include information that can help us debug (full error message, ex
 See [TROUBLESHOOTING.md](https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md) for how to diagnose problems better.
 
 ### Anything else we should know about your project / environment?
-
