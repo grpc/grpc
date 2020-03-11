@@ -175,19 +175,9 @@ message TestSessionMetadata {
   // terminated.
   Event latest_event = 1;
 
-  // The component error event that caused the session to error, if applicable.
-  Event component_error_event = 2;
-
-  // A URL with a file that contains all events for all components in the
-  // session.
-  string event_log_url = 3;
-
-  // The name of the kubernetes cluster where tests were run.
-  string gke_cluster = 4;
-
   // The version of the service that is processing this request.
-  string service_version = 5;
+  string service_version = 2;
 
   // The time that the server acknowledged the request to create a test session.
-  google.protobuf.Timestamp create_time = 6;
+  google.protobuf.Timestamp create_time = 3;
 }
