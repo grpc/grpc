@@ -67,10 +67,10 @@ message Component {
     CLIENT = 3;
   }
 
-  // The container image and a version as it appears in a docker registry.
+  // The name and version of the container image as it appears in a registry.
   //
-  // When using GCR, this will likely be a fully-qualified URL and either an
-  // explicit tag or sha256 hash. For example, a Java worker image may be
+  // When using GCR, this will likely be a fully-qualified domain name and path
+  // plus a tag or sha256 hash. For example, a Java worker image may be
   // similar to one of the following:
   //
   //   - gcr.io/grpc-testing/java_worker:v3.2.19
@@ -79,7 +79,7 @@ message Component {
   // The "latest" tag is automatically set by the registry, and there
   // are no guarantees that it will point to a specific image. It should be
   // avoided.
-  string container = 1;  // [(google.api.field_behavior) = REQUIRED];
+  string container_image = 1;  // [(google.api.field_behavior) = REQUIRED];
 
   // The kind which assigns the responsibilities of this container.
   Kind kind = 2;  // [(google.api.field_behavior) = OPTIONAL];
