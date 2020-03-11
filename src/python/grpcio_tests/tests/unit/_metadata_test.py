@@ -19,6 +19,7 @@ import logging
 
 import grpc
 from grpc import _channel
+from grpc.experimental.aio._metadata import Metadata
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
@@ -235,6 +236,72 @@ class MetadataTest(unittest.TestCase):
         self.assertTrue(
             test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
                                              call.trailing_metadata()))
+
+
+class MetadataTypeTest(unittest.TestCase):
+    """Tests for the metadata type"""
+
+    _DEFAULT_DATA = (("key1", "value1"), ("key2", "value2"))
+    _MULTI_ENTRY_DATA = (("key1", "value1"), ("key1", "other value 1"),
+                         ("key2", "value2"))
+
+    def test_init_metadata(self):
+        test_cases = {
+            "emtpy": (),
+            "with-data": self._DEFAULT_DATA,
+        }
+        for case, args in test_cases.items():
+            with self.subTest(case=case):
+                metadata = Metadata(*args)
+                self.assertEqual(len(metadata), len(args))
+
+    def test_get_item(self):
+        metadata = Metadata(("key", "value1"), ("key", "value2"),
+                            ("key2", "other value"))
+        self.assertEqual(metadata["key"], "value1")
+        self.assertEqual(metadata["key2"], "other value")
+        self.assertEqual(metadata.get("key"), "value1")
+        self.assertEqual(metadata.get("key2"), "other value")
+
+        with self.assertRaises(KeyError):
+            metadata["key not found"]
+        self.assertIsNone(metadata.get("key not found"))
+
+    def test_view(self):
+        self.assertEqual(
+            Metadata(*self._DEFAULT_DATA).view(), self._DEFAULT_DATA)
+
+    def test_add_value(self):
+        metadata = Metadata()
+        metadata.add("key", "value")
+        metadata.add("key", "second value")
+        metadata.add("key2", "value2")
+
+        self.assertEqual(metadata["key"], "value")
+        self.assertEqual(metadata["key2"], "value2")
+        self.assertEqual(metadata["KEY2"], "value2")
+
+    def test_get_all_items(self):
+        metadata = Metadata(*self._MULTI_ENTRY_DATA)
+        self.assertEqual(metadata.get_all("key1"), ["value1", "other value 1"])
+        self.assertEqual(metadata.get_all("KEY1"), ["value1", "other value 1"])
+        self.assertEqual(metadata.get_all("key2"), ["value2"])
+        self.assertEqual(metadata.get_all("non existing key"), [])
+
+    def test_container(self):
+        metadata = Metadata(*self._MULTI_ENTRY_DATA)
+        for key in ("key1", "Key1", "KEY1"):
+            with self.subTest(case=key):
+                self.assertIn(key, metadata, "{0!r} not found".format(key))
+
+    def test_equals(self):
+        metadata = Metadata()
+        for key, value in self._DEFAULT_DATA:
+            metadata.add(key, value)
+        metadata2 = Metadata(*self._DEFAULT_DATA)
+
+        self.assertEqual(metadata, metadata2)
+        self.assertNotEqual(metadata, "foo")
 
 
 if __name__ == '__main__':
