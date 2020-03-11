@@ -24,17 +24,23 @@ import "src/proto/grpc/testing/control.proto";
 option go_package = "github.com/grpc/grpc/testctrl/genproto/testctrl/svc";
 
 service TestSessions {
-  // Starts a set of test scenarios.
+  // Starts a test session, which encapsulates a test's scenario, required
+  // components and output settings.
+  //
+  // The scenario contains the configuration for the test itself. The components
+  // represent physical or virtual resources that must be reserved and monitored
+  // when running a test. The output settings specify where the result will be
+  // saved.
   //
   // This is a long-running operation that is managed by the Operations service
   // on the same server.  The long-running operation will assign a unique
   // identifier to the session.
   //
   // The unique identifier can be used to poll for the session's status and
-  // results.  Streaming is not supported at present.
+  // result. Streaming is not supported at present.
   //
   // It can also be used to cancel while in progress, but cancellations operate
-  // like killing a running process. If they occur while results are being
+  // like killing a running process. If they occur while result are being
   // reported, the persistent storage may receive some but not all of them.
   //
   // For the specification of a google.longrunning.Operation message, see the
@@ -42,7 +48,7 @@ service TestSessions {
   rpc StartTestSession(StartTestSessionRequest)
       returns (google.longrunning.Operation) {
     option (google.longrunning.operation_info) = {
-      response_type: "TestSessionResults"
+      response_type: "TestSessionResult"
       metadata_type: "TestSessionMetadata"
     };
   }
@@ -58,7 +64,7 @@ message Component {
     //   2. Otherwise, this field is inferred to be a client worker.
     UNSPECIFIED = 0;
 
-    // Orchestrates the test amongst workers and reports results.
+    // Orchestrates the test amongst workers and reports the result.
     DRIVER = 1;
 
     // Processes incoming requests from client containers.
@@ -87,7 +93,7 @@ message Component {
 
   // The number of identical components that should be created with these
   // settings. For example, a "client" component can be configured once and
-  // specify "2" replicas. Two identical versions will be available for tests.
+  // specify "2" replicas. Two identical versions will be available to the test.
   //
   // This field is ignored for driver components. It may eventually be supported
   // on server components, but this is not yet available.
@@ -95,8 +101,8 @@ message Component {
 }
 
 message StartTestSessionRequest {
-  // The test scenarios to run as a part of the test session.
-  repeated grpc.testing.Scenario scenarios = 1;
+  // The test scenario to run as a part of the test session.
+  grpc.testing.Scenario scenario = 1;
 
   // The component which orchestrates running the test scenarios amongst
   // workers.
@@ -106,19 +112,19 @@ message StartTestSessionRequest {
   // involve at least one server and a number of clients.
   repeated Component workers = 3;
 
-  // An optional location where the results should be written.
+  // An optional location where the result should be written.
   oneof result_destination {
-    // The name of the BigQuery table where results should be written.
+    // The name of the BigQuery table where result should be written.
     string bq_results_table = 4;
 
-    // The fully qualified GCS URI where a results file should be written.
+    // The fully qualified GCS URI where a result file should be written.
     string gcs_results_file_uri = 5;
   }
 }
 
-message TestSessionResults {
-  // The results for each scenario.
-  repeated grpc.testing.ScenarioResult scenario_results = 1;
+message TestSessionResult {
+  // The result for the scenario.
+  grpc.testing.ScenarioResult scenario_result = 1;
 
   // The amount of time that this session lived, including all actions from
   // scheduling to termination.
@@ -142,11 +148,11 @@ message Event {
     PROVISION = 3;
 
     // Resources are responding with a healthy signal. However, this is not
-    // indicative of tests running.
+    // indicative of a running test.
     RUN = 4;
 
     // Resources terminated or released as expected. It does not indicate that
-    // the tests were successful or results were recorded.
+    // the test was successful or the result was recorded.
     DONE = 5;
 
     // An irrecoverable error has caused the subject of the event to terminate.
