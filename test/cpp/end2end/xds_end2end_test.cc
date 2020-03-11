@@ -2207,14 +2207,6 @@ TEST_P(LocalityMapTest, UpdateMap) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  args = AdsServiceImpl::EdsResourceArgs({
-      {"locality1", GetBackendPorts(1, 2), 3},
-      {"locality2", GetBackendPorts(2, 3), 2},
-      {"locality3", GetBackendPorts(3, 4), 6},
-  });
-  std::thread delayed_resource_setter(std::bind(
-      &BasicTest::SetEdsResourceWithDelay, this, 0,
-      AdsServiceImpl::BuildEdsResource(args), 5000, kDefaultResourceName));
   // Wait for the first 3 backends to be ready.
   WaitForAllBackends(0, 3);
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -2237,6 +2229,13 @@ TEST_P(LocalityMapTest, UpdateMap) {
             ::testing::Ge(locality_weight_rate_0[i] * (1 - kErrorTolerance)),
             ::testing::Le(locality_weight_rate_0[i] * (1 + kErrorTolerance))));
   }
+  args = AdsServiceImpl::EdsResourceArgs({
+      {"locality1", GetBackendPorts(1, 2), 3},
+      {"locality2", GetBackendPorts(2, 3), 2},
+      {"locality3", GetBackendPorts(3, 4), 6},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   // Backend 3 hasn't received any request.
   EXPECT_EQ(0U, backends_[3]->backend_service()->request_count());
   // Wait until the locality update has been processed, as signaled by backend 3
@@ -2263,7 +2262,6 @@ TEST_P(LocalityMapTest, UpdateMap) {
             ::testing::Ge(locality_weight_rate_1[i] * (1 - kErrorTolerance)),
             ::testing::Le(locality_weight_rate_1[i] * (1 + kErrorTolerance))));
   }
-  delayed_resource_setter.join();
 }
 
 class FailoverTest : public BasicTest {
