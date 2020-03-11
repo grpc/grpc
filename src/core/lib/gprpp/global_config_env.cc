@@ -68,7 +68,7 @@ void GlobalConfigEnv::Unset() { gpr_unsetenv(GetName()); }
 
 char* GlobalConfigEnv::GetName() {
   // This makes sure that name_ is in a canonical form having uppercase
-  // letters. This is okay to be called serveral times.
+  // letters. This is okay to be called several times.
   for (char* c = name_; *c != 0; ++c) {
     *c = toupper(*c);
   }
