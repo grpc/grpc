@@ -13,16 +13,32 @@
 # limitations under the License.
 
 
-cdef bint _grpc_aio_initialized = 0
+cdef bint _grpc_aio_initialized = False
+# NOTE(lidiz) Theoretically, applications can run in multiple event loops as
+# long as they are in the same thread with same magic. However, I don't think
+# we should support this use case. So, the gRPC Python Async Stack should use
+# a single event loop picked by "init_grpc_aio".
+cdef object _grpc_aio_loop
 
 
 def init_grpc_aio():
     global _grpc_aio_initialized
+    global _grpc_aio_loop
 
     if _grpc_aio_initialized:
         return
+    else:
+        _grpc_aio_initialized = True
 
+    # Anchors the event loop that the gRPC library going to use.
+    _grpc_aio_loop = asyncio.get_event_loop()
+
+    # Activates asyncio IO manager
     install_asyncio_iomgr()
+
+    # TODO(https://github.com/grpc/grpc/issues/22244) we need a the
+    # grpc_shutdown_blocking() counterpart for this call. Otherwise, the gRPC
+    # library won't shutdown cleanly.
     grpc_init()
 
     # Timers are triggered by the Asyncio loop. We disable
@@ -34,4 +50,9 @@ def init_grpc_aio():
     # event loop, as it is being done by the other Asyncio callbacks.
     Executor.SetThreadingAll(False)
 
-    _grpc_aio_initialized = 1
+    _grpc_aio_initialized = False
+
+
+def grpc_aio_loop():
+    """Returns the one-and-only gRPC Aio event loop."""
+    return _grpc_aio_loop
