@@ -19,7 +19,7 @@ the tests themselves. TestCtrl stores their raw config, some metadata and the
 current status of the test sessions.
 
 One **controller** is created which operates a work queue to limit the number of
-test sessions in progress. It spawns workers that process one test session at a
+test sessions in progress. It spawns executors that process one test session at a
 time, provisioning and monitoring resources with Kubernetes. It continually
 updates the store with the status of the test.
 
@@ -34,11 +34,10 @@ an available executor. The server replies with the name in a
 
 [google.longrunning.Operation]: https://github.com/googleapis/googleapis/blob/91e1fb5ef9829c0c7a64bfa5bde330e6ed594378/google/longrunning/operations.proto#L128
 
-When a executor becomes available, it fetches the next job name off of the work
-queue. Then, it uses this name to find the appropriate configuration in the
-store. The executor receives updates from the Kubernetes API, monitoring the
-status of the pods that the test requires. It updates the store with significant
-events and timestamps.
+When a executor becomes available, it fetches the next session off of the work
+queue. It provisions the resources and receives updates from the Kubernetes API
+to monitor the status of the pods that the test requires. It updates the store
+with significant events and timestamps.
 
 If a user desires to see progress of a test, they make a request with the name
 to TestCtrl's implementation of the **[google.longrunning.Operations]** service.
