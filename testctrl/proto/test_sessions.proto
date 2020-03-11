@@ -16,12 +16,12 @@ syntax = "proto3";
 
 package grpc.testing.benchmarking;
 
-option go_package = "github.com/grpc/grpc/testctrl/genproto/testctrl/svc";
-
+import "google/longrunning/operations.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "google/longrunning/operations.proto";
 import "src/proto/grpc/testing/control.proto";
+
+option go_package = "github.com/grpc/grpc/testctrl/genproto/testctrl/svc";
 
 service TestSessions {
   // Starts a set of test scenarios.
@@ -39,7 +39,8 @@ service TestSessions {
   //
   // For the specification of a google.longrunning.Operation message, see the
   // Long-running AIP at https://aip.dev/151.
-  rpc StartTestSession(StartTestSessionRequest) returns (google.longrunning.Operation) {
+  rpc StartTestSession(StartTestSessionRequest)
+      returns (google.longrunning.Operation) {
     option (google.longrunning.operation_info) = {
       response_type: "TestSessionResults"
       metadata_type: "TestSessionMetadata"
@@ -79,10 +80,10 @@ message Component {
   // The "latest" tag is automatically set by the registry, and there
   // are no guarantees that it will point to a specific image. It should be
   // avoided.
-  string container_image = 1;  // [(google.api.field_behavior) = REQUIRED];
+  string container_image = 1;
 
   // The kind which assigns the responsibilities of this container.
-  Kind kind = 2;  // [(google.api.field_behavior) = OPTIONAL];
+  Kind kind = 2;
 
   // The number of identical components that should be created with these
   // settings. For example, a "client" component can be configured once and
@@ -95,24 +96,25 @@ message Component {
 
 message StartTestSessionRequest {
   // The test scenarios to run as a part of the test session.
-  repeated grpc.testing.Scenario scenarios = 1;  // [(google.api.field_behavior) = REQUIRED];
+  repeated grpc.testing.Scenario scenarios = 1;
 
-  // The component which orchestrates running the test scenarios amongst workers.
-  Component driver = 2;  // [(google.api.field_behavior) = OPTIONAL];
+  // The component which orchestrates running the test scenarios amongst
+  // workers.
+  Component driver = 2;
 
   // The components that are required as part of the test. Normally, this will
   // involve at least one server and a number of clients.
-  repeated Component workers = 3;  // [(google.api.field_behavior) = REQUIRED];
+  repeated Component workers = 3;
 
   // An optional location where the results should be written.
   oneof result_destination {
     // The name of the BigQuery table where results should be written.
-    string bq_results_table = 4;  // [(google.api.field_behavior) = OPTIONAL];
+    string bq_results_table = 4;
 
     // The fully qualified GCS URI where a results file should be written.
-    string gcs_results_file_uri = 5;  // [(google.api.field_behavior) = OPTIONAL];
+    string gcs_results_file_uri = 5;
   }
- }
+}
 
 message TestSessionResults {
   // The results for each scenario.
