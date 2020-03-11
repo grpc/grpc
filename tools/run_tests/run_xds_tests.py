@@ -460,7 +460,6 @@ nohup build/install/grpc-interop-testing/bin/xds-test-server --port=%d 1>/dev/nu
         }
     }
 
-
     logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.instanceTemplates().insert(project=gcp.project,
                                                     body=config).execute()
