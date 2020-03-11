@@ -27,6 +27,7 @@ import unittest
 from six import moves
 
 import grpc
+import grpc.experimental
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
@@ -501,6 +502,119 @@ class PythonPluginTest(unittest.TestCase):
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.DEADLINE_EXCEEDED)
         service.server.stop(None)
+
+
+@unittest.skipIf(sys.version_info[0] < 3, "Unsupported on Python 2.")
+class SimpleStubsPluginTest(unittest.TestCase):
+    servicer_methods = _ServicerMethods()
+
+    class Servicer(service_pb2_grpc.TestServiceServicer):
+
+        def UnaryCall(self, request, context):
+            return SimpleStubsPluginTest.servicer_methods.UnaryCall(
+                request, context)
+
+        def StreamingOutputCall(self, request, context):
+            return SimpleStubsPluginTest.servicer_methods.StreamingOutputCall(
+                request, context)
+
+        def StreamingInputCall(self, request_iterator, context):
+            return SimpleStubsPluginTest.servicer_methods.StreamingInputCall(
+                request_iterator, context)
+
+        def FullDuplexCall(self, request_iterator, context):
+            return SimpleStubsPluginTest.servicer_methods.FullDuplexCall(
+                request_iterator, context)
+
+        def HalfDuplexCall(self, request_iterator, context):
+            return SimpleStubsPluginTest.servicer_methods.HalfDuplexCall(
+                request_iterator, context)
+
+    def setUp(self):
+        super(SimpleStubsPluginTest, self).setUp()
+        self._server = test_common.test_server()
+        service_pb2_grpc.add_TestServiceServicer_to_server(
+            self.Servicer(), self._server)
+        self._port = self._server.add_insecure_port('[::]:0')
+        self._server.start()
+        self._target = 'localhost:{}'.format(self._port)
+
+    def tearDown(self):
+        self._server.stop(None)
+        super(SimpleStubsPluginTest, self).tearDown()
+
+    def testUnaryCall(self):
+        request = request_pb2.SimpleRequest(response_size=13)
+        response = service_pb2_grpc.TestService.UnaryCall(
+            request,
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
+        expected_response = self.servicer_methods.UnaryCall(
+            request, 'not a real context!')
+        self.assertEqual(expected_response, response)
+
+    def testStreamingOutputCall(self):
+        request = _streaming_output_request()
+        expected_responses = self.servicer_methods.StreamingOutputCall(
+            request, 'not a real RpcContext!')
+        responses = service_pb2_grpc.TestService.StreamingOutputCall(
+            request,
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
+        for expected_response, response in moves.zip_longest(
+                expected_responses, responses):
+            self.assertEqual(expected_response, response)
+
+    def testStreamingInputCall(self):
+        response = service_pb2_grpc.TestService.StreamingInputCall(
+            _streaming_input_request_iterator(),
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
+        expected_response = self.servicer_methods.StreamingInputCall(
+            _streaming_input_request_iterator(), 'not a real RpcContext!')
+        self.assertEqual(expected_response, response)
+
+    def testFullDuplexCall(self):
+        responses = service_pb2_grpc.TestService.FullDuplexCall(
+            _full_duplex_request_iterator(),
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
+        expected_responses = self.servicer_methods.FullDuplexCall(
+            _full_duplex_request_iterator(), 'not a real RpcContext!')
+        for expected_response, response in moves.zip_longest(
+                expected_responses, responses):
+            self.assertEqual(expected_response, response)
+
+    def testHalfDuplexCall(self):
+
+        def half_duplex_request_iterator():
+            request = request_pb2.StreamingOutputCallRequest()
+            request.response_parameters.add(size=1, interval_us=0)
+            yield request
+            request = request_pb2.StreamingOutputCallRequest()
+            request.response_parameters.add(size=2, interval_us=0)
+            request.response_parameters.add(size=3, interval_us=0)
+            yield request
+
+        responses = service_pb2_grpc.TestService.HalfDuplexCall(
+            half_duplex_request_iterator(),
+            self._target,
+            channel_credentials=grpc.experimental.insecure_channel_credentials(
+            ),
+            wait_for_ready=True)
+        expected_responses = self.servicer_methods.HalfDuplexCall(
+            half_duplex_request_iterator(), 'not a real RpcContext!')
+        for expected_response, response in moves.zip_longest(
+                expected_responses, responses):
+            self.assertEqual(expected_response, response)
 
 
 if __name__ == '__main__':

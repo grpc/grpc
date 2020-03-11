@@ -160,10 +160,10 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
                  loop: asyncio.AbstractEventLoop) -> None:
         self._channel = channel
         self._loop = loop
-        self._interceptors_task = asyncio.ensure_future(self._invoke(
-            interceptors, method, timeout, metadata, credentials,
-            wait_for_ready, request, request_serializer, response_deserializer),
-                                                        loop=loop)
+        self._interceptors_task = loop.create_task(
+            self._invoke(interceptors, method, timeout, metadata, credentials,
+                         wait_for_ready, request, request_serializer,
+                         response_deserializer))
         self._pending_add_done_callbacks = []
         self._interceptors_task.add_done_callback(
             self._fire_pending_add_done_callbacks)

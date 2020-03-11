@@ -16,21 +16,22 @@
 cdef class _AsyncioTimer:
     def __cinit__(self):
         self._grpc_timer = NULL
-        self._timer_handler = None
-        self._active = 0
+        self._timer_future = None
+        self._active = False
+        cpython.Py_INCREF(self)
 
     @staticmethod
-    cdef _AsyncioTimer create(grpc_custom_timer * grpc_timer, deadline):
+    cdef _AsyncioTimer create(grpc_custom_timer * grpc_timer, float timeout):
         timer = _AsyncioTimer()
         timer._grpc_timer = grpc_timer
-        timer._deadline = deadline
-        timer._timer_handler = asyncio.get_event_loop().call_later(deadline, timer._on_deadline)
-        timer._active = 1
+        timer._timer_future = grpc_aio_loop().call_later(timeout, timer.on_time_up)
+        timer._active = True
         return timer
 
-    def _on_deadline(self):
-        self._active = 0
+    def on_time_up(self):
+        self._active = False
         grpc_custom_timer_callback(self._grpc_timer, <grpc_error*>0)
+        cpython.Py_DECREF(self)
 
     def __repr__(self):
         class_name = self.__class__.__name__ 
@@ -38,8 +39,9 @@ cdef class _AsyncioTimer:
         return f"<{class_name} {id_} deadline={self._deadline} active={self._active}>"
 
     cdef stop(self):
-        if self._active == 0:
+        if not self._active:
             return
 
-        self._timer_handler.cancel()
-        self._active = 0
+        self._timer_future.cancel()
+        self._active = False
+        cpython.Py_DECREF(self)
