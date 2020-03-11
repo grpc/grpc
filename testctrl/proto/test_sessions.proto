@@ -1,0 +1,183 @@
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.testing.benchmarking.scheduling.v1;
+
+option go_package = "github.com/grpc/grpc/testctrl/genproto/testctrl/svc";
+
+import "google/longrunning/operations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "src/proto/grpc/testing/control.proto";
+
+service SchedulingService {
+  // Starts a test session, which encapsulates a test's scenario, required
+  // components and output settings.
+  //
+  // The scenario contains the configuration for the test itself. The components
+  // represent physical or virtual resources that must be reserved and monitored
+  // when running a test. The output settings specify where the result will be
+  // saved.
+  //
+  // This is a long-running operation that is managed by the Operations service
+  // on the same server.  The long-running operation will assign a unique
+  // identifier to the session.
+  //
+  // The unique identifier can be used to poll for the session's status and
+  // result. Streaming is not supported at present.
+  //
+  // It can also be used to cancel while in progress, but cancellations operate
+  // like killing a running process. If they occur while result are being
+  // reported, the persistent storage may receive some but not all of them.
+  //
+  // For the specification of a google.longrunning.Operation message, see the
+  // Long-running AIP at https://aip.dev/151.
+  rpc StartTestSession(StartTestSessionRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      response_type: "TestSessionResult"
+      metadata_type: "TestSessionMetadata"
+    };
+  }
+}
+
+message Component {
+  enum Kind {
+    // No kind was specified, so the service will attempt to infer one.
+    //
+    // This inference works as follows:
+    //   1. If this field belongs to the driver_container of the
+    //      StartTestSessionRequest, this kind is inferred to be a driver.
+    //   2. Otherwise, this field is inferred to be a client worker.
+    UNSPECIFIED = 0;
+
+    // Orchestrates the test amongst workers and reports the result.
+    DRIVER = 1;
+
+    // Processes incoming requests from client containers.
+    SERVER = 2;
+
+    // Sends outgoing requests to a server container.
+    CLIENT = 3;
+  }
+
+  // The name and version of the container image as it appears in a registry.
+  //
+  // When using GCR, this will likely be a fully-qualified domain name and path
+  // plus a tag or sha256 hash. For example, a Java worker image may be
+  // similar to one of the following:
+  //
+  //   - gcr.io/grpc-testing/java_worker:v3.2.19
+  //   - gcr.io/grpc-testing/java_worker@sha256:82b6360a84c19f23ed7ee9...
+  //
+  // The "latest" tag is automatically set by the registry, and there
+  // are no guarantees that it will point to a specific image. It should be
+  // avoided.
+  string container_image = 1;
+
+  // The kind which assigns the responsibilities of this container.
+  Kind kind = 2;
+
+  // The number of identical components that should be created with these
+  // settings. For example, a "client" component can be configured once and
+  // specify "2" replicas. Two identical versions will be available to the test.
+  //
+  // This field is ignored for driver components. It may eventually be supported
+  // on server components, but this is not yet available.
+  int32 replicas = 3;
+}
+
+message StartTestSessionRequest {
+  // The test scenario to run as a part of the test session.
+  grpc.testing.Scenario scenario = 1;
+
+  // The component which orchestrates running the test scenarios amongst
+  // workers.
+  Component driver = 2;
+
+  // The components that are required as part of the test. Normally, this will
+  // involve at least one server and a number of clients.
+  repeated Component workers = 3;
+
+  // An optional location where the result should be written.
+  oneof result_destination {
+    // The name of the BigQuery table where result should be written.
+    string bq_results_table = 4;
+
+    // The fully qualified GCS URI where a result file should be written.
+    string gcs_results_file_uri = 5;
+  }
+}
+
+message TestSessionResult {
+  // The result for the scenario.
+  grpc.testing.ScenarioResult scenario_result = 1;
+
+  // The amount of time that this session lived, including all actions from
+  // scheduling to termination.
+  google.protobuf.Duration time_elapsed = 2;
+}
+
+message Event {
+  enum Kind {
+    // An infrastructure problem. This is outside of the test runner's control,
+    // and a bug should be filed if it is encountered.
+    INTERNAL_ERROR = 0;
+
+    // Waiting for an executor to process the test session.
+    QUEUE = 1;
+
+    // An executor has been assigned to provision and monitor the session;
+    // however, work has not yet begun on this event's subject.
+    ACCEPT = 2;
+
+    // Reserving and configuring resources for the event's subject.
+    PROVISION = 3;
+
+    // Resources are responding with a healthy signal. However, this is not
+    // indicative of a running test.
+    RUN = 4;
+
+    // Resources terminated or released as expected. It does not indicate that
+    // the test was successful or the result was recorded.
+    DONE = 5;
+
+    // An irrecoverable error has caused the subject of the event to terminate.
+    ERROR = 6;
+  }
+
+  // The name of the subject of the event. This may be the name of a test
+  // session or the name of one of its components.
+  string subject = 1;
+
+  // The kind of event.
+  Kind kind = 2;
+
+  // The point in time when the event was noticed.
+  google.protobuf.Timestamp time = 3;
+}
+
+message TestSessionMetadata {
+  // The latest event for the test session as a whole, assuming it has not been
+  // terminated.
+  Event latest_event = 1;
+
+  // The version of the service that is processing this request.
+  string service_version = 2;
+
+  // The time that the server acknowledged the request to create a test session.
+  google.protobuf.Timestamp create_time = 3;
+}
