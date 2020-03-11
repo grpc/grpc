@@ -80,8 +80,10 @@ func (c *Component) SetEnv(key, value string) {
 type ComponentKind int32
 
 const (
+	_ ComponentKind = iota
+
 	// DriverComponent is a test component that orchestrates workers, such as clients and servers.
-	DriverComponent ComponentKind = iota
+	DriverComponent
 
 	// ClientComponent feeds traffic to a server component.
 	ClientComponent
