@@ -23,7 +23,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "src/proto/grpc/testing/control.proto";
 
-service TestSessions {
+service SchedulingService {
   // Starts a test session, which encapsulates a test's scenario, required
   // components and output settings.
   //
