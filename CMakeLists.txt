@@ -2684,7 +2684,6 @@ foreach(_hdr
   include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
-  include/grpcpp/resource_quota_impl.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/auth_metadata_processor_impl.h
@@ -3378,7 +3377,6 @@ foreach(_hdr
   include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
-  include/grpcpp/resource_quota_impl.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/auth_metadata_processor_impl.h
