@@ -34,6 +34,8 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
+formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
+console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
@@ -458,6 +460,8 @@ nohup build/install/grpc-interop-testing/bin/xds-test-server --port=%d 1>/dev/nu
         }
     }
 
+
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.instanceTemplates().insert(project=gcp.project,
                                                     body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -475,6 +479,7 @@ def add_instance_group(gcp, zone, name, size):
         }]
     }
 
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.instanceGroupManagers().insert(project=gcp.project,
                                                         zone=zone,
                                                         body=config).execute()
@@ -496,6 +501,7 @@ def create_health_check(gcp, name):
             'portName': 'grpc'
         }
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.healthChecks().insert(project=gcp.project,
                                                body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -512,6 +518,7 @@ def create_health_check_firewall_rule(gcp, name):
         'sourceRanges': ['35.191.0.0/16', '130.211.0.0/22'],
         'targetTags': ['allow-health-checks'],
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.firewalls().insert(project=gcp.project,
                                             body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -527,6 +534,7 @@ def add_backend_service(gcp, name):
         'portName': 'grpc',
         'protocol': 'HTTP2'
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.backendServices().insert(project=gcp.project,
                                                   body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -548,6 +556,7 @@ def create_url_map(gcp, name, backend_service, host_name):
             'pathMatcher': _PATH_MATCHER_NAME
         }]
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.urlMaps().insert(project=gcp.project,
                                           body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -559,6 +568,7 @@ def create_target_http_proxy(gcp, name):
         'name': name,
         'url_map': gcp.url_map.url,
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.targetHttpProxies().insert(project=gcp.project,
                                                     body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -574,6 +584,7 @@ def create_global_forwarding_rule(gcp, name, ip, port):
         'network': args.network,
         'target': gcp.target_http_proxy.url,
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.globalForwardingRules().insert(project=gcp.project,
                                                         body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -676,6 +687,7 @@ def patch_backend_instances(gcp,
             'maxRate': 1 if balancing_mode == 'RATE' else None
         } for instance_group in instance_groups],
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
         body=config).execute()
@@ -711,6 +723,7 @@ def patch_url_map_backend_service(gcp, backend_service):
             'defaultService': backend_service.url,
         }]
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.urlMaps().patch(project=gcp.project,
                                          urlMap=gcp.url_map.name,
                                          body=config).execute()
