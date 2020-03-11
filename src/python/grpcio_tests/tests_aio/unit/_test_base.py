@@ -61,6 +61,3 @@ class AioTestBase(unittest.TestCase):
                 return _async_to_sync_decorator(attr, _get_default_loop())
         # For other attributes, let them pass.
         return attr
-
-
-aio.init_grpc_aio()

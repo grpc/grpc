@@ -27,11 +27,11 @@ cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailur
 
 cdef class AioChannel:
     def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials, object loop):
+        init_grpc_aio()
         if options is None:
             options = ()
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
         self._target = target
-        self.cq = create_completion_queue()
         self.loop = loop
         self._status = AIO_CHANNEL_STATUS_READY
 
@@ -46,6 +46,9 @@ cdef class AioChannel:
                 <char *>target,
                 channel_args.c_args(),
                 NULL)
+
+    def __dealloc__(self):
+        shutdown_grpc_aio()
 
     def __repr__(self):
         class_name = self.__class__.__name__
@@ -83,7 +86,7 @@ cdef class AioChannel:
             self.channel,
             last_observed_state,
             c_deadline,
-            self.cq.c_ptr(),
+            global_completion_queue(),
             wrapper.c_functor())
 
         try:
@@ -111,7 +114,7 @@ cdef class AioChannel:
         """Assembles a Cython Call object.
 
         Returns:
-          The _AioCall object.
+          An _AioCall object.
         """
         if self.closed():
             raise UsageError('Channel is closed.')

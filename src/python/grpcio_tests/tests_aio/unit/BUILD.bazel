@@ -50,6 +50,11 @@ py_library(
     srcs_version = "PY3",
 )
 
+_FLAKY_TESTS = [
+    # NOTE(lidiz) this tests use many tcp ports; flaky under parallel runs.
+    "channel_argument_test.py",
+]
+
 [
     py_test(
         name = test_file_name[:-3],
@@ -59,6 +64,7 @@ py_library(
             "//src/python/grpcio_tests/tests/unit/credentials",
         ],
         imports = ["../../"],
+        flaky = test_file_name in _FLAKY_TESTS,
         main = test_file_name,
         python_version = "PY3",
         deps = [

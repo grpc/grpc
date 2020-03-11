@@ -35,6 +35,7 @@ cdef struct CallbackContext:
     #       management.
     grpc_experimental_completion_queue_functor functor
     cpython.PyObject *waiter
+    cpython.PyObject *loop
     cpython.PyObject *failure_handler
     cpython.PyObject *callback_wrapper
 

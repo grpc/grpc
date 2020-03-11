@@ -23,7 +23,6 @@ from tests_aio.benchmark import worker_servicer
 
 
 async def run_worker_server(port: int) -> None:
-    aio.init_grpc_aio()
     server = aio.server()
 
     servicer = worker_servicer.WorkerServicer()

@@ -35,6 +35,8 @@ cdef class CallbackWrapper:
     def __cinit__(self, object future, CallbackFailureHandler failure_handler):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
+        # TODO(lidiz) switch to future.get_loop() which is available 3.7+.
+        self.context.loop = <cpython.PyObject*>future._loop
         self.context.failure_handler = <cpython.PyObject*>failure_handler
         self.context.callback_wrapper = <cpython.PyObject*>self
         # NOTE(lidiz) Not using a list here, because this class is critical in
