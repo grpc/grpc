@@ -14,14 +14,14 @@
 
 syntax = "proto3";
 
-package grpc.testing.benchmarking;
+package grpc.testing.benchmarking.scheduling.v1;
+
+option go_package = "github.com/grpc/grpc/testctrl/genproto/testctrl/svc";
 
 import "google/longrunning/operations.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "src/proto/grpc/testing/control.proto";
-
-option go_package = "github.com/grpc/grpc/testctrl/genproto/testctrl/svc";
 
 service TestSessions {
   // Starts a test session, which encapsulates a test's scenario, required
