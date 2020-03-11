@@ -17,7 +17,7 @@ FROM gcr.io/cloud-marketplace/google/rbe-debian8@sha256:1ede2a929b44d629ec5abe86
 RUN sed -i '/deb http:\/\/httpredir.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -49,10 +49,10 @@ RUN apt-get update && apt-get install -y \
 
 #================
 # Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y time && apt-get clean
 
 # Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
@@ -60,7 +60,7 @@ RUN pip install --upgrade google-api-python-client oauth2client
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     python-all-dev \
     python3-all-dev \
     python-pip
@@ -72,7 +72,7 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 
 #=================
 # C++ dependencies (purposely excluding Clang because it's part of the base image)
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y libgflags-dev libgtest-dev libc++-dev && apt-get clean
 
 # Link llvm-symbolizer to where our test scripts expect to find it
 RUN ln -s /usr/local/bin/llvm-symbolizer /usr/bin/llvm-symbolizer

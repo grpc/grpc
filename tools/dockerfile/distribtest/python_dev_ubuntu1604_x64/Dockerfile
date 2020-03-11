@@ -14,9 +14,9 @@
 
 FROM ubuntu:16.04
 
-RUN apt-get update -y && apt-get install -y python python-pip
+RUN apt-get update -y && apt-get --no-install-recommends install -y python python-pip
 
-RUN apt-get install -y build-essential
-RUN apt-get install -y python-dev
+RUN apt-get --no-install-recommends install -y build-essential
+RUN apt-get --no-install-recommends install -y python-dev
 
 RUN pip install virtualenv

@@ -262,7 +262,7 @@ def create_instance_template(compute, project, name, grpc_port):
                         """#!/bin/bash
 
 sudo apt update
-sudo apt install -y git default-jdk
+sudo apt-get --no-install-recommends install -y git default-jdk
 mkdir java_server
 pushd java_server
 git clone https://github.com/grpc/grpc-java.git

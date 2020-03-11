@@ -14,6 +14,6 @@
 
 FROM ubuntu:16.04
 
-RUN apt-get update -y && apt-get install -y ruby-full
+RUN apt-get update -y && apt-get --no-install-recommends install -y ruby-full
 
 RUN gem install bundler

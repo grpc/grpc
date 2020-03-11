@@ -15,12 +15,12 @@
 FROM debian:stretch
 
 # gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-config && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y build-essential autoconf libtool pkg-config && apt-get clean
 
 # debian stretch has cmake 3.7: https://packages.debian.org/stretch/cmake
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y cmake && apt-get clean
 
 # C++ distribtests are setup in a way that requires git
-RUN apt-get update && apt-get install -y git && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y git && apt-get clean
 
 CMD ["bash"]

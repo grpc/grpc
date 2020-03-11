@@ -18,7 +18,7 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 # Install openssl (to use instead of boringssl)
-apt-get update && apt-get install -y libssl-dev
+apt-get update && apt-get --no-install-recommends install -y libssl-dev
 
 # To increase the confidence that gRPC installation works without depending on
 # too many submodules unnecessarily, just wipe out contents of most submodules

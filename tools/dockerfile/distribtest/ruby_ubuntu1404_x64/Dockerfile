@@ -14,7 +14,7 @@
 
 FROM ubuntu:14.04
 
-RUN apt-get update -y && apt-get install -y curl
+RUN apt-get update -y && apt-get --no-install-recommends install -y curl
 
 # Install rvm
 RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3

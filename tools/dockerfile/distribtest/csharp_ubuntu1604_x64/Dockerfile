@@ -14,17 +14,17 @@
 
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y apt-transport-https && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y apt-transport-https && apt-get clean
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 RUN echo "deb https://download.mono-project.com/repo/ubuntu stable-xenial main" | tee /etc/apt/sources.list.d/mono-official-stable.list
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     mono-devel \
     nuget \
     && apt-get clean
 
-RUN apt-get update && apt-get install -y curl && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y curl && apt-get clean
 
 # Install dotnet SDK
 ENV DOTNET_SDK_VERSION 2.1.500
@@ -34,8 +34,8 @@ RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sd
     && rm dotnet.tar.gz \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
-RUN apt-get update && apt-get install -y unzip && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y unzip && apt-get clean
 
 # Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
-RUN apt-get update && apt-get install -y curl && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y curl && apt-get clean
 RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem

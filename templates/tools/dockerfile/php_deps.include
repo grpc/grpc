@@ -3,7 +3,7 @@
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y ${'\\'}
+RUN apt-get update && apt-get --no-install-recommends install -y ${'\\'}
     git php5 php5-dev unzip
 
 RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && ${'\\'}

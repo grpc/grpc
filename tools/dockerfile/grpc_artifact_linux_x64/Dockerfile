@@ -18,7 +18,7 @@ FROM debian:jessie
 RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -50,7 +50,7 @@ RUN apt-get update && apt-get install -y \
 # Ruby dependencies
 
 # Install rvm
-RUN apt-get update && apt-get install -y gnupg2
+RUN apt-get update && apt-get --no-install-recommends install -y gnupg2
 RUN gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
@@ -66,7 +66,7 @@ RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
 ##################
 # PHP dependencies
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     php5 php5-dev php-pear && apt-get clean
 
 RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
@@ -80,13 +80,13 @@ RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
 RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
 RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -t jessie-backports -y cmake && apt-get clean
 
 
 ##################
 # Python AuditWheel dependencies (needed to check manylinux1 compatibility)
 
-RUN apt-get install -y python3 python3-pip
+RUN apt-get --no-install-recommends install -y python3 python3-pip
 RUN pip3 install auditwheel==2.1.1
 
 

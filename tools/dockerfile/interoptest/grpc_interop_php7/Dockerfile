@@ -19,7 +19,7 @@ FROM debian:jessie
 # PHP7 dependencies
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   automake \
   build-essential \

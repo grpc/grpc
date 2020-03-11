@@ -14,7 +14,7 @@
 
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get --no-install-recommends install -y curl
 
 # Install nvm
 RUN touch .profile

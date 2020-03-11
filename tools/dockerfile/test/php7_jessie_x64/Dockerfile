@@ -19,7 +19,7 @@ FROM debian:jessie
 # PHP7 dependencies
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   automake \
   build-essential \
@@ -62,7 +62,7 @@ RUN cd /var/local/git/php-src \
   && make install
 
 # Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
@@ -70,7 +70,7 @@ RUN pip install --upgrade google-api-python-client oauth2client
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     python-all-dev \
     python3-all-dev \
     python-pip
@@ -83,7 +83,7 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 #=================	
 # PHP Test dependencies	
 
- RUN apt-get update && apt-get install -y \	
+ RUN apt-get update && apt-get --no-install-recommends install -y \	
     valgrind
 
 

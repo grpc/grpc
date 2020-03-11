@@ -16,7 +16,7 @@ FROM debian:jessie
 
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -48,7 +48,7 @@ RUN apt-get update && apt-get install -y \
 
 #================
 # Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y time && apt-get clean
 
 #==================
 # Node dependencies

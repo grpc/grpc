@@ -16,7 +16,7 @@ FROM debian:jessie
 
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -48,10 +48,10 @@ RUN apt-get update && apt-get install -y \
 
 #================
 # Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y time && apt-get clean
 
 # Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
@@ -59,7 +59,7 @@ RUN pip install --upgrade google-api-python-client oauth2client
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     python-all-dev \
     python3-all-dev \
     python-pip
@@ -71,7 +71,7 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 #=================
 # Use cmake 3.6 from jessie-backports
@@ -80,7 +80,7 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
 RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y -t jessie-backports -y cmake && apt-get clean
 
 
 RUN mkdir /var/local/jenkins
@@ -90,7 +90,7 @@ RUN mkdir /var/local/jenkins
 RUN cd /tmp     && wget http://dist.libuv.org/dist/v1.9.1/libuv-v1.9.1.tar.gz     && tar -xf libuv-v1.9.1.tar.gz     && cd libuv-v1.9.1     && sh autogen.sh && ./configure --prefix=/usr && make && make install
 
 # Install gcc-4.9 and other relevant items
-RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends -y install gcc gcc-multilib g++ g++-multilib && apt-get clean
 
 # Define the default command.
 CMD ["bash"]

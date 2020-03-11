@@ -23,7 +23,7 @@
   <%include file="../../python_deps.include"/>
   #=================
   # C++ dependencies (purposely excluding Clang because it's part of the base image)
-  RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev && apt-get clean
+  RUN apt-get update && apt-get --no-install-recommends install -y libgflags-dev libgtest-dev libc++-dev && apt-get clean
 
   # Link llvm-symbolizer to where our test scripts expect to find it
   RUN ln -s /usr/local/bin/llvm-symbolizer /usr/bin/llvm-symbolizer

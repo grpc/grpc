@@ -2,7 +2,7 @@ diff --git a/tools/dockerfile/interoptest/grpc_interop_ruby/Dockerfile b/tools/d
 index 88b5130..7ae9f7d 100644
 --- a/tools/dockerfile/interoptest/grpc_interop_ruby/Dockerfile
 +++ b/tools/dockerfile/interoptest/grpc_interop_ruby/Dockerfile
-@@ -70,12 +70,12 @@ RUN apt-get update && apt-get install -y time && apt-get clean
+@@ -70,12 +70,12 @@ RUN apt-get update && apt-get --no-install-recommends install -y time && apt-get clean
  RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
  RUN \curl -sSL https://get.rvm.io | bash -s stable
  

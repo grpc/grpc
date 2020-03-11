@@ -35,7 +35,7 @@ void grpc_profiler_start(const char* filename) {
             "[for %s]",
             filename);
     gpr_log(GPR_DEBUG,
-            "To install on ubuntu: sudo apt-get install google-perftools "
+            "To install on ubuntu: sudo apt-get --no-install-recommends install -y google-perftools "
             "libgoogle-perftools-dev");
     printed_warning = 1;
   }

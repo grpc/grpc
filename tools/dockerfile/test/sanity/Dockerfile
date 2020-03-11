@@ -15,7 +15,7 @@
 FROM debian:10
   
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -47,14 +47,14 @@ RUN apt-get update && apt-get install -y \
 
 #================
 # Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y time && apt-get clean
 
 # Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client oauth2client
 
 # Install Python 2.7
-RUN apt-get update && apt-get install -y python2.7 python-all-dev
+RUN apt-get update && apt-get --no-install-recommends install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
 
@@ -63,17 +63,17 @@ RUN mkdir /var/local/jenkins
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 
 #========================
 # Sanity test dependencies
-RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
+RUN apt-get update && apt-get --no-install-recommends -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
 # Make Python 3.7 the default Python 3 version
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
       autoconf \
       automake \
       libtool \
@@ -83,13 +83,13 @@ RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
 RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
 
 # Install clang & clang-format
-RUN apt-get install -y clang clang-format
+RUN apt-get --no-install-recommends install -y clang clang-format
 
 # Install clang-tidy 6.0
 # This is because clang-tidy 7.0 started treating compiler errors as tidy errors
 # and there are a couple of files which are not properly compiled via tidy so it
 # should be using 6.0 version until all compilation errors are addressed.
-RUN apt-get install -y clang-tidy-6.0
+RUN apt-get --no-install-recommends install -y clang-tidy-6.0
 ENV CLANG_TIDY=clang-tidy-6.0
 
 
@@ -102,7 +102,7 @@ ENV BAZEL_VERSION 1.0.0
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
 
-RUN apt-get update && apt-get install -y wget && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y wget && apt-get clean
 RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh" && \
   bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
   rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh

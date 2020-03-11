@@ -23,7 +23,7 @@ mkdir -p artifacts/
 # and we only collect them here to deliver them to the distribtest phase.
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/python_*/* artifacts/ || true
 
-apt-get install -y python-pip
+apt-get --no-install-recommends install -y python-pip
 python -m pip install -U pip
 python -m pip install -U wheel
 

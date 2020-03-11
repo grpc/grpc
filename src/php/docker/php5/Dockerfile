@@ -14,7 +14,7 @@
 
 FROM php:5.6-zts-stretch
 
-RUN apt-get -qq update && apt-get -qq install -y \
+RUN apt-get -qq update && apt-get --no-install-recommends -qq install -y \
   autoconf automake git libtool pkg-config \
   valgrind wget zlib1g-dev
 

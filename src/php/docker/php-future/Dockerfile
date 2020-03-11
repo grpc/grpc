@@ -14,7 +14,7 @@
 
 FROM php:7.4.0RC1-buster
 
-RUN apt-get -qq update && apt-get -qq install -y \
+RUN apt-get -qq update && apt-get --no-install-recommends -qq install -y \
   autoconf automake git libtool pkg-config \
   wget zlib1g-dev
 

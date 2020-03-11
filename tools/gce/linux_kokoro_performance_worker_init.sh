@@ -22,10 +22,10 @@ set -ex
 sudo apt-get update
 
 # Install Java 8 JDK (to build gRPC Java)
-sudo apt-get install -y openjdk-8-jdk
-sudo apt-get install -y unzip lsof
+sudo apt-get --no-install-recommends install -y openjdk-8-jdk
+sudo apt-get --no-install-recommends install -y unzip lsof
 
-sudo apt-get install -y \
+sudo apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -62,19 +62,19 @@ sudo apt-get install -y \
   zlib1g-dev
 
 # perftools
-sudo apt-get install -y google-perftools libgoogle-perftools-dev
+sudo apt-get --no-install-recommends install -y google-perftools libgoogle-perftools-dev
 
 # netperf
-sudo apt-get install -y netperf
+sudo apt-get --no-install-recommends install -y netperf
 
 # required to run kokoro_log_reader.py
-sudo apt-get install -y python-psutil python3-psutil
+sudo apt-get --no-install-recommends install -y python-psutil python3-psutil
 
 # gcloud tools, including gsutil
-sudo apt-get install -y google-cloud-sdk
+sudo apt-get --no-install-recommends install -y google-cloud-sdk
 
 # C++ dependencies
-sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
+sudo apt-get --no-install-recommends install -y libgflags-dev libgtest-dev libc++-dev clang
 
 # Python dependencies
 sudo pip install --upgrade pip==19.3.1
@@ -86,7 +86,7 @@ sudo pip install virtualenv
 # because some reports are huge and pypy is much faster.
 # TODO(jtattermusch): get rid of pypy once possible, it's hard to
 # keep track of all the installed variants of python.
-sudo apt-get install -y pypy pypy-dev
+sudo apt-get --no-install-recommends install -y pypy pypy-dev
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
@@ -108,21 +108,21 @@ nvm install 5 && npm config set cache /tmp/npm-cache
 nvm alias default 4
 
 # C# dependencies
-sudo apt-get install -y cmake
+sudo apt-get --no-install-recommends install -y cmake
 
 # C# mono dependencies (http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives)
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
 sudo apt-get update
-sudo apt-get install -y mono-devel
+sudo apt-get --no-install-recommends install -y mono-devel
 
 # C# .NET Core dependencies (https://www.microsoft.com/net/download)
 wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
 sudo dpkg -i packages-microsoft-prod.deb
 
-sudo apt-get install -y apt-transport-https
+sudo apt-get --no-install-recommends install -y apt-transport-https
 sudo apt-get update
-sudo apt-get install -y dotnet-sdk-2.1
+sudo apt-get --no-install-recommends install -y dotnet-sdk-2.1
 
 # Install .NET Core 1.0.5 Runtime (required to run netcoreapp1.0)
 wget -q https://download.microsoft.com/download/2/4/A/24A06858-E8AC-469B-8AE6-D0CEC9BA982A/dotnet-ubuntu.16.04-x64.1.0.5.tar.gz
@@ -161,7 +161,7 @@ ruby -v
 gem install bundler
 
 # PHP dependencies
-sudo apt-get install -y php php-dev php-pear unzip zlib1g-dev
+sudo apt-get --no-install-recommends install -y php php-dev php-pear unzip zlib1g-dev
 sudo wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
     sudo mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
     sudo chmod +x /usr/local/bin/phpunit
@@ -185,7 +185,7 @@ sudo ln -s /usr/local/go/bin/go /usr/bin/go
 rm go$GO_VERSION.$OS-$ARCH.tar.gz
 
 # Install perf, to profile benchmarks. (need to get the right linux-tools-<> for kernel version)
-sudo apt-get install -y linux-tools-common linux-tools-generic "linux-tools-$(uname -r)"
+sudo apt-get --no-install-recommends install -y linux-tools-common linux-tools-generic "linux-tools-$(uname -r)"
 # see http://unix.stackexchange.com/questions/14227/do-i-need-root-admin-permissions-to-run-userspace-perf-tool-perf-events-ar
 echo 0 | sudo tee /proc/sys/kernel/perf_event_paranoid
 # see http://stackoverflow.com/questions/21284906/perf-couldnt-record-kernel-reference-relocation-symbol
@@ -200,7 +200,7 @@ echo 4096 | sudo tee /proc/sys/kernel/perf_event_mlock_kb
 git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 
 # Install scipy and numpy for benchmarking scripts
-sudo apt-get install -y python-scipy python-numpy
+sudo apt-get --no-install-recommends install -y python-scipy python-numpy
 
 # Install docker
 curl -sSL https://get.docker.com/ | sh
@@ -218,7 +218,7 @@ sudo mkdir /tmpfs
 sudo chown kbuilder /tmpfs
 touch /tmpfs/READY
 
-# Disable automatic updates to prevent spurious apt-get install failures
+# Disable automatic updates to prevent spurious apt-get --no-install-recommends install -y failures
 # See https://github.com/grpc/grpc/issues/17794
 sudo sed -i 's/APT::Periodic::Update-Package-Lists "1"/APT::Periodic::Update-Package-Lists "0"/' /etc/apt/apt.conf.d/10periodic
 sudo sed -i 's/APT::Periodic::AutocleanInterval "1"/APT::Periodic::AutocleanInterval "0"/' /etc/apt/apt.conf.d/10periodic

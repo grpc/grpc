@@ -16,7 +16,7 @@ FROM debian:jessie
 
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -48,14 +48,14 @@ RUN apt-get update && apt-get install -y \
 
 #================
 # Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y time && apt-get clean
 
 #====================
 # Python dependencies
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     python-all-dev \
     python3-all-dev \
     python-pip
@@ -67,7 +67,7 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 
 RUN mkdir /var/local/jenkins

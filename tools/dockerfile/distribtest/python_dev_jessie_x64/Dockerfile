@@ -14,8 +14,8 @@
 
 FROM debian:jessie
 
-RUN apt-get update && apt-get install -y python python-pip
+RUN apt-get update && apt-get --no-install-recommends install -y python python-pip
 RUN pip install virtualenv
 
-RUN apt-get install -y build-essential
-RUN apt-get install -y python-dev
+RUN apt-get --no-install-recommends install -y build-essential
+RUN apt-get --no-install-recommends install -y python-dev

@@ -13,7 +13,7 @@ RUN curl -sSL -o dotnet_old.tar.gz https://dotnetcli.blob.core.windows.net/dotne
     && tar zxf dotnet_old.tar.gz -C dotnet_old ${'\\'}
     && cp -r dotnet_old/shared/Microsoft.NETCore.App/1.1.10/ /usr/share/dotnet/shared/Microsoft.NETCore.App/ ${'\\'}
     && rm -rf dotnet_old/ dotnet_old.tar.gz
-RUN apt-get update && apt-get install -y libunwind8 && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y libunwind8 && apt-get clean
 
 
 # Trigger the population of the local package cache

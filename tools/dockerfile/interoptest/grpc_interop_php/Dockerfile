@@ -16,7 +16,7 @@ FROM debian:jessie
 
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -48,14 +48,14 @@ RUN apt-get update && apt-get install -y \
 
 #================
 # Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y time && apt-get clean
 
 #=================
 # PHP dependencies
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     git php5 php5-dev unzip
 
 RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \

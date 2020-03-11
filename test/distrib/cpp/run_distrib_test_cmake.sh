@@ -18,7 +18,7 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 # Install openssl (to use instead of boringssl)
-apt-get update && apt-get install -y libssl-dev
+apt-get update && apt-get --no-install-recommends install -y libssl-dev
 
 # Install absl
 mkdir -p "third_party/abseil-cpp/cmake/build"
@@ -30,7 +30,7 @@ popd
 # Install c-ares
 # If the distribution provides a new-enough version of c-ares,
 # this section can be replaced with:
-# apt-get install -y libc-ares-dev
+# apt-get --no-install-recommends install -y libc-ares-dev
 mkdir -p "third_party/cares/cares/cmake/build"
 pushd "third_party/cares/cares/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release ../..

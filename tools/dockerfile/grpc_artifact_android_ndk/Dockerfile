@@ -16,10 +16,10 @@
 
 FROM debian:sid
 
-RUN apt-get update && apt-get install -y debian-keyring && apt-key update
+RUN apt-get update && apt-get --no-install-recommends install -y debian-keyring && apt-key update
 
 # Install Git and basic packages.
-RUN apt-get update && apt-key update && apt-get install -y \
+RUN apt-get update && apt-key update && apt-get --no-install-recommends install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -47,10 +47,10 @@ RUN apt-get update && apt-key update && apt-get install -y \
   zip && apt-get clean
 
 # golang needed to build BoringSSL with cmake
-RUN apt-get update && apt-get install -y golang && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y golang && apt-get clean
 
 # Java required by Android SDK
-RUN apt-get update && apt-get -y install openjdk-8-jdk && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y openjdk-8-jdk && apt-get clean
 
 # Install Android SDK
 ENV ANDROID_SDK_VERSION 4333796

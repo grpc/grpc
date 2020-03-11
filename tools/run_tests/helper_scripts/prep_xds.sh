@@ -18,7 +18,7 @@ set -ex
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
 
-sudo apt-get install -y python3-pip
+sudo apt-get --no-install-recommends install -y python3-pip
 sudo python3 -m pip install grpcio grpcio-tools google-api-python-client google-auth-httplib2 oauth2client
 
 # Prepare generated Python code.

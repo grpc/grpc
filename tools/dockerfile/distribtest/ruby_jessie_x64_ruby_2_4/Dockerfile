@@ -15,7 +15,7 @@
 FROM debian:jessie
 
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
   curl \
   gcc && apt-get clean
 

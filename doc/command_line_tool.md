@@ -45,7 +45,7 @@ You also need to have the gflags library installed on your system. gflags can be
 installed with the following command:
 Linux:
 ```
-sudo apt-get install libgflags-dev
+sudo apt-get --no-install-recommends install -y libgflags-dev
 ```
 Mac systems with Homebrew:
 ```

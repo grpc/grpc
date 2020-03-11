@@ -115,5 +115,5 @@ Help, I ...
 
   ::
 
-    sudo apt-get install python-dev
+    sudo apt-get --no-install-recommends install -y python-dev
 

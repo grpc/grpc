@@ -14,7 +14,7 @@
 
 FROM debian:10
 
-RUN apt-get update && apt-get install -y clang-format
+RUN apt-get update && apt-get --no-install-recommends install -y clang-format
 ADD clang_format_all_the_things.sh /
 
 # When running locally, we'll be impersonating the current user, so we need

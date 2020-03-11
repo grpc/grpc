@@ -23,9 +23,9 @@
   # -------------------------------------------------------------------------
 
   # Install basic packages and Bazel dependencies.
-  RUN apt-get update && apt-get install -y software-properties-common python-software-properties
+  RUN apt-get update && apt-get --no-install-recommends install -y software-properties-common python-software-properties
   RUN add-apt-repository ppa:webupd8team/java
-  RUN apt-get update && apt-get -y install ${'\\'}
+  RUN apt-get update && apt-get --no-install-recommends install -y ${'\\'}
     autoconf ${'\\'}
     build-essential ${'\\'}
     curl ${'\\'}

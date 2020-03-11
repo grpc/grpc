@@ -28,7 +28,7 @@ int main(int argc, char **argv) { return 0; }
 """
 C_PYTHON_DEV_ERROR_MESSAGE = """
 Could not find <Python.h>. This could mean the following:
-  * You're on Ubuntu and haven't run `apt-get install python-dev`.
+  * You're on Ubuntu and haven't run `apt-get --no-install-recommends install -y python-dev`.
   * You're on RHEL/Fedora and haven't run `yum install python-devel` or
     `dnf install python-devel` (make sure you also have redhat-rpm-config
     installed)

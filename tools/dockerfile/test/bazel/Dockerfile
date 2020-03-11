@@ -21,9 +21,9 @@ FROM gcr.io/oss-fuzz-base/base-builder
 # -------------------------------------------------------------------------
 
 # Install basic packages and Bazel dependencies.
-RUN apt-get update && apt-get install -y software-properties-common python-software-properties
+RUN apt-get update && apt-get --no-install-recommends install -y software-properties-common python-software-properties
 RUN add-apt-repository ppa:webupd8team/java
-RUN apt-get update && apt-get -y install \
+RUN apt-get update && apt-get --no-install-recommends -y install \
   autoconf \
   build-essential \
   curl \
@@ -38,7 +38,7 @@ RUN apt-get update && apt-get -y install \
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     python-all-dev \
     python3-all-dev \
     python-pip
@@ -52,8 +52,8 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 #=================
 # Compile CPython 3.6.9 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev
+RUN apt-get update && apt-get --no-install-recommends install -y zlib1g-dev libssl-dev
+RUN apt-get update && apt-get --no-install-recommends install -y jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
@@ -79,7 +79,7 @@ ENV BAZEL_VERSION 1.0.0
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
 
-RUN apt-get update && apt-get install -y wget && apt-get clean
+RUN apt-get update && apt-get --no-install-recommends install -y wget && apt-get clean
 RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh" && \
   bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
   rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh

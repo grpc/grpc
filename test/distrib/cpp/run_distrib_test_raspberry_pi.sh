@@ -18,10 +18,10 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 # Install openssl (to use instead of boringssl)
-apt-get update && apt-get install -y libssl-dev
+apt-get update && apt-get --no-install-recommends install -y libssl-dev
 
 # Install CMake 3.16
-apt-get update && apt-get install -y wget
+apt-get update && apt-get --no-install-recommends install -y wget
 wget -q -O cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh
 sh cmake-linux.sh -- --skip-license --prefix=/usr
 rm cmake-linux.sh

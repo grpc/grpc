@@ -14,12 +14,12 @@
 
 FROM i386/debian:jessie
 
-RUN apt-get update && apt-get install -y python python-pip
+RUN apt-get update && apt-get --no-install-recommends install -y python python-pip
 
 RUN pip install virtualenv
 
-RUN apt-get install -y build-essential
-RUN apt-get install -y python-dev
+RUN apt-get --no-install-recommends install -y build-essential
+RUN apt-get --no-install-recommends install -y python-dev
 
 # docker is running on a 64-bit machine, so we need to
 # override "uname -m" to report i686 instead of x86_64, otherwise

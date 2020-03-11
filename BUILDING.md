@@ -9,20 +9,20 @@ Other should follow the user instructions. See the [How to use](https://github.c
 ## Linux
 
 ```sh
- $ [sudo] apt-get install build-essential autoconf libtool pkg-config
+ $ [sudo] apt-get --no-install-recommends install -y build-essential autoconf libtool pkg-config
 ```
 
 If you plan to build using CMake
 ```sh
- $ [sudo] apt-get install cmake
+ $ [sudo] apt-get --no-install-recommends install -y cmake
 ```
 
 If you are a contributor and plan to build and run tests, install the following as well:
 ```sh
  $ # libgflags-dev is only required if building with make (deprecated)
- $ [sudo] apt-get install libgflags-dev
+ $ [sudo] apt-get --no-install-recommends install -y libgflags-dev
  $ # clang and LLVM C++ lib is only required for sanitizer builds
- $ [sudo] apt-get install clang-5.0 libc++-dev
+ $ [sudo] apt-get --no-install-recommends install -y clang-5.0 libc++-dev
 ```
 
 ## MacOS
@@ -245,7 +245,7 @@ From the grpc repository root
 NOTE: if you get an error on linux such as 'aclocal-1.15: command not found', which can happen if you ran 'make' before installing the pre-reqs, try the following:
 ```sh
 $ git clean -f -d -x && git submodule foreach --recursive git clean -f -d -x
-$ [sudo] apt-get install build-essential autoconf libtool pkg-config
+$ [sudo] apt-get --no-install-recommends install -y build-essential autoconf libtool pkg-config
 $ make
 ```
 
