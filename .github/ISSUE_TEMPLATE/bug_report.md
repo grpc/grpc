@@ -7,7 +7,6 @@ assignees: karthikravis
 ---
 
 <!--
-
 This form is for bug reports and feature requests ONLY!
 For general questions and troubleshooting, please ask/look for answers here:
 - grpc.io mailing list: https://groups.google.com/forum/#!forum/grpc-io
@@ -26,7 +25,7 @@ Issues specific to *grpc-java*, *grpc-go*, *grpc-node*, *grpc-dart*, *grpc-web* 
 
 
 ### What did you do?
-If possible, provide a recipe for reproducing the error. Try being specific and include code snippets if helpful.
+Please provide either 1) A unit test for reproducing the bug or 2) Specific steps for us to follow to reproduce the bug. If there’s not enough information to debug the problem, gRPC team may close the issue at their discretion. You’re welcome to re-open the issue once you have a reproduction.
 
 ### What did you expect to see?
 
@@ -38,3 +37,4 @@ Make sure you include information that can help us debug (full error message, ex
 See [TROUBLESHOOTING.md](https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md) for how to diagnose problems better.
 
 ### Anything else we should know about your project / environment?
+
