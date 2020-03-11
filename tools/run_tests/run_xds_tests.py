@@ -71,8 +71,8 @@ argp.add_argument(
     '--client_cmd',
     default=None,
     help='Command to launch xDS test client. This script will fill in '
-    '{service_host}, {service_port},{stats_port} and {qps} parameters using '
-    'str.format(), and generate the GRPC_XDS_BOOTSTRAP file.')
+    '{server_uri}, {stats_port} and {qps} parameters using str.format(), and '
+    'generate the GRPC_XDS_BOOTSTRAP file.')
 argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
@@ -101,12 +101,16 @@ argp.add_argument('--network',
                   default='global/networks/default',
                   help='GCP network to use')
 argp.add_argument('--service_port_range',
-                  default='8080:8100',
+                  default='80',
                   type=parse_port_range,
                   help='Listening port for created gRPC backends. Specified as '
                   'either a single int or as a range in the format min:max, in '
                   'which case an available port p will be chosen s.t. min <= p '
                   '<= max')
+argp.add_argument('--forwarding_rule_ip_prefix',
+                  default='172.16.0.',
+                  help='If set, an available IP with this prefix followed by '
+                  '0-255 will be used for the generated forwarding rule.')
 argp.add_argument(
     '--stats_port',
     default=8079,
@@ -135,6 +139,7 @@ args = argp.parse_args()
 if args.verbose:
     logger.setLevel(logging.DEBUG)
 
+_DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
 _WAIT_FOR_OPERATION_SEC = 60
 _INSTANCE_GROUP_SIZE = 2
@@ -560,12 +565,12 @@ def create_target_http_proxy(gcp, name):
     gcp.target_http_proxy = GcpResource(config['name'], result['targetLink'])
 
 
-def create_global_forwarding_rule(gcp, name, port):
+def create_global_forwarding_rule(gcp, name, ip, port):
     config = {
         'name': name,
         'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
         'portRange': str(port),
-        'IPAddress': '0.0.0.0',
+        'IPAddress': ip,
         'network': args.network,
         'target': gcp.target_http_proxy.url,
     }
@@ -886,18 +891,28 @@ try:
         create_target_http_proxy(gcp, target_http_proxy_name)
         potential_service_ports = list(args.service_port_range)
         random.shuffle(potential_service_ports)
+        if args.forwarding_rule_ip_prefix == '':
+            potential_ips = ['0.0.0.0']
+        else:
+            potential_ips = [
+                args.forwarding_rule_ip_prefix + str(x) for x in range(256)
+            ]
+        random.shuffle(potential_ips)
         for port in potential_service_ports:
-            try:
-                create_global_forwarding_rule(gcp, forwarding_rule_name, port)
-                gcp.service_port = port
-                break
-            except googleapiclient.errors.HttpError as http_error:
-                logger.warning(
-                    'Got error %s when attempting to create forwarding rule to '
-                    'port %d. Retrying with another port.' % (http_error, port))
+            for ip in potential_ips:
+                try:
+                    create_global_forwarding_rule(gcp, forwarding_rule_name, ip,
+                                                  port)
+                    gcp.service_port = port
+                    break
+                except googleapiclient.errors.HttpError as http_error:
+                    logger.warning(
+                        'Got error %s when attempting to create forwarding rule to '
+                        '%s:%d. Retrying with another ip:port.' %
+                        (http_error, ip, port))
         if not gcp.service_port:
-            raise Exception('Failed to pick a service port in the range %s' %
-                            args.service_port_range)
+            raise Exception(
+                'Failed to find a valid ip:port for the forwarding rule')
         create_instance_template(gcp, template_name, args.network,
                                  args.source_image)
         instance_group = add_instance_group(gcp, args.zone, instance_group_name,
@@ -975,8 +990,11 @@ try:
 
     wait_for_healthy_backends(gcp, backend_service, instance_group)
 
-    cmd = args.client_cmd.format(service_host=service_host_name,
-                                 service_port=gcp.service_port,
+    if gcp.service_port == _DEFAULT_SERVICE_PORT:
+        server_uri = service_host_name
+    else:
+        server_uri = service_host_name + ':' + str(gcp.service_port)
+    cmd = args.client_cmd.format(server_uri=server_uri,
                                  stats_port=args.stats_port,
                                  qps=args.qps)
     client_process = start_xds_client(cmd)
