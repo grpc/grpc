@@ -129,7 +129,7 @@ message Event {
   enum Kind {
     // An infrastructure problem. This is outside of the test runner's control,
     // and a bug should be filed if it is encountered.
-    INTERNAL = 0;
+    INTERNAL_ERROR = 0;
 
     // Waiting for an executor to process the test session.
     QUEUE = 1;
