@@ -233,6 +233,7 @@ def wait_until_all_rpcs_go_to_given_backends(backends,
 
 
 def test_backends_restart(gcp, backend_service, instance_group):
+    logger.info('Running test_backends_restart')
     instance_names = get_instance_names(gcp, instance_group)
     num_instances = len(instance_names)
     start_time = time.time()
@@ -263,6 +264,7 @@ def test_backends_restart(gcp, backend_service, instance_group):
 def test_change_backend_service(gcp, original_backend_service, instance_group,
                                 alternate_backend_service,
                                 same_zone_instance_group):
+    logger.info('Running test_change_backend_service')
     original_backend_instances = get_instance_names(gcp, instance_group)
     alternate_backend_instances = get_instance_names(gcp,
                                                      same_zone_instance_group)
@@ -288,6 +290,7 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
 def test_new_instance_group_receives_traffic(gcp, backend_service,
                                              instance_group,
                                              same_zone_instance_group):
+    logger.info('Running test_new_instance_group_receives_traffic')
     instance_names = get_instance_names(gcp, instance_group)
     wait_until_all_rpcs_go_to_given_backends(instance_names,
                                              _WAIT_FOR_STATS_SEC)
@@ -308,6 +311,7 @@ def test_new_instance_group_receives_traffic(gcp, backend_service,
 
 
 def test_ping_pong(gcp, backend_service, instance_group):
+    logger.info('Running test_ping_pong')
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     instance_names = get_instance_names(gcp, instance_group)
     wait_until_all_rpcs_go_to_given_backends(instance_names,
@@ -316,6 +320,7 @@ def test_ping_pong(gcp, backend_service, instance_group):
 
 def test_remove_instance_group(gcp, backend_service, instance_group,
                                same_zone_instance_group):
+    logger.info('Running test_remove_instance_group')
     try:
         patch_backend_instances(gcp,
                                 backend_service,
@@ -341,6 +346,7 @@ def test_remove_instance_group(gcp, backend_service, instance_group,
 
 
 def test_round_robin(gcp, backend_service, instance_group):
+    logger.info('Running test_round_robin')
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     instance_names = get_instance_names(gcp, instance_group)
     threshold = 1
@@ -362,6 +368,9 @@ def test_round_robin(gcp, backend_service, instance_group):
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
         gcp, backend_service, primary_instance_group,
         secondary_zone_instance_group):
+    logger.info(
+        'Running test_secondary_locality_gets_no_requests_on_partial_primary_failure'
+    )
     try:
         patch_backend_instances(
             gcp, backend_service,
@@ -388,6 +397,8 @@ def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
 def test_secondary_locality_gets_requests_on_primary_failure(
         gcp, backend_service, primary_instance_group,
         secondary_zone_instance_group):
+    logger.info(
+        'Running test_secondary_locality_gets_requests_on_primary_failure')
     try:
         patch_backend_instances(
             gcp, backend_service,
