@@ -22,6 +22,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -780,23 +782,6 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
   // corresponding unref happens in on_status_received_ instead of here.
 }
 
-namespace {
-
-// TODO(roth): Replace this with the absl version once we can use absl.
-UniquePtr<char> StrCat(const std::set<StringView>& strings) {
-  gpr_strvec v;
-  gpr_strvec_init(&v);
-  for (const StringView& str : strings) {
-    gpr_strvec_add(&v, StringViewToCString(str).release());
-    gpr_strvec_add(&v, gpr_strdup(" "));
-  }
-  UniquePtr<char> result(gpr_strvec_flatten(&v, nullptr));
-  gpr_strvec_destroy(&v);
-  return result;
-}
-
-}  // namespace
-
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     const std::string& type_url) {
   // Buffer message sending if an existing message is in flight.
@@ -841,7 +826,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
             "error=%s resources=%s",
             xds_client(), type_url.c_str(), state.version.c_str(),
             state.nonce.c_str(), grpc_error_string(state.error),
-            StrCat(resource_names).get());
+            absl::StrJoin(resource_names, " ").c_str());
   }
   GRPC_ERROR_UNREF(state.error);
   state.error = GRPC_ERROR_NONE;

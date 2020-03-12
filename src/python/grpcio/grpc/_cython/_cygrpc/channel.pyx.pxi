@@ -256,6 +256,8 @@ cdef void _call(
         on_success(started_tags)
     else:
       raise ValueError('Cannot invoke RPC: %s' % channel_state.closed_reason)
+
+
 cdef void _process_integrated_call_tag(
     _ChannelState state, _BatchOperationTag tag) except *:
   cdef _CallState call_state = state.integrated_call_states.pop(tag)
