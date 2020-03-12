@@ -5128,6 +5128,7 @@ targets:
   - posix
 - name: bm_fullstack_streaming_pump
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/fullstack_streaming_pump.h
@@ -5195,6 +5196,7 @@ targets:
   - posix
 - name: bm_metadata
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -6054,6 +6056,7 @@ targets:
 - name: grpclb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
@@ -7058,6 +7061,7 @@ targets:
 - name: settings_timeout_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -7538,6 +7542,7 @@ targets:
 - name: xds_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
