@@ -792,7 +792,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
                 old_eds_service_name);
       }
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
-                                            endpoint_watcher_);
+                                            endpoint_watcher_,
+                                            /*delay_unsubscription=*/true);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO, "[xdslb %p] starting watch for %s", this,
@@ -1098,7 +1099,9 @@ void XdsLb::LocalityMap::UpdateXdsPickerLocked() {
     const auto& locality_name = p.first;
     Locality* locality = p.second.get();
     // Skip the localities that are not in the latest locality map update.
-    if (!locality_map_update()->Contains(locality_name)) continue;
+    const auto* locality_update = locality_map_update();
+    if (locality_update == nullptr) continue;
+    if (!locality_update->Contains(locality_name)) continue;
     if (locality->connectivity_state() != GRPC_CHANNEL_READY) continue;
     end += locality->weight();
     picker_list.push_back(
