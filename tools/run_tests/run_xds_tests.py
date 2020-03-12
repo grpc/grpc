@@ -143,10 +143,11 @@ if args.verbose:
 
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
-_WAIT_FOR_OPERATION_SEC = 60
+_WAIT_FOR_OPERATION_SEC = 120
 _INSTANCE_GROUP_SIZE = 2
 _NUM_TEST_RPCS = 10 * args.qps
-_WAIT_FOR_STATS_SEC = 60
+_WAIT_FOR_STATS_SEC = 120
+_WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _BOOTSTRAP_TEMPLATE = """
 {{
   "node": {{
@@ -281,7 +282,7 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
         if stats.num_failures > 0:
             raise Exception('Unexpected failure: %s', stats)
         wait_until_all_rpcs_go_to_given_backends(alternate_backend_instances,
-                                                 _WAIT_FOR_STATS_SEC)
+                                                 _WAIT_FOR_URL_MAP_PATCH_SEC)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_instances(gcp, alternate_backend_service, [])
@@ -292,8 +293,11 @@ def test_new_instance_group_receives_traffic(gcp, backend_service,
                                              same_zone_instance_group):
     logger.info('Running test_new_instance_group_receives_traffic')
     instance_names = get_instance_names(gcp, instance_group)
+    # TODO(ericgribkoff) Reduce this timeout. When running sequentially, this
+    # occurs after patching the url map in test_change_backend_service, so we
+    # need the extended timeout here as well.
     wait_until_all_rpcs_go_to_given_backends(instance_names,
-                                             _WAIT_FOR_STATS_SEC)
+                                             _WAIT_FOR_URL_MAP_PATCH_SEC)
     try:
         patch_backend_instances(gcp,
                                 backend_service,
