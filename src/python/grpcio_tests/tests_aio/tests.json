@@ -20,8 +20,6 @@
   "unit.connectivity_test.TestConnectivityState",
   "unit.done_callback_test.TestDoneCallback",
   "unit.init_test.TestChannel",
-  "unit.interceptor_test.TestInterceptedUnaryUnaryCall",
-  "unit.interceptor_test.TestUnaryUnaryClientInterceptor",
   "unit.metadata_test.TestMetadata",
   "unit.secure_call_test.TestStreamStreamSecureCall",
   "unit.secure_call_test.TestUnaryStreamSecureCall",
