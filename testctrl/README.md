@@ -48,10 +48,11 @@ to locate test results or error logs upon completion.
 
 To start the service without containers on your local machine, run:
 
-    $ make svc
-    $ bin/svc
+    $ go run ./cmd/svc/main.go
 
-You can force the service to use a different port with the flag `-port`.
+You can force the service to use a different port with the flag `-port`:
+
+    $ go run ./cmd/svc/main.go -- -port=4044
 
 When the service is started, it looks for an `$APP_ENV` environment variable.
 
@@ -82,9 +83,8 @@ To install the go plugin, navigate outside of the project directory and run:
 This binary will need to be added to your `$PATH` in order for a successful
 build.  It will be available wherever your system places go binaries.
 
-Once protoc is available, all protos can be built using:
-
-    $ make proto
+To build the protos, **you must navigate into the _proto/_ directory**, then you
+can run the `./build.sh` script.
 
 ### Inspecting the Service with grpc\_cli
 
@@ -101,9 +101,7 @@ easy access, it may be helpful to create a shell alias that expands to it.
 
 Finally, before submitting any code to GitHub, run it through `gofmt` to ensure
 that it follows the external Go style guides and [golint] to point out any lint
-errors.  You can do this by running:
+errors.
 
-    $ make fmt && make lint
-
-[golint]: https://github.com/golang/lint
 [grpc\_cli]: https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md
+
