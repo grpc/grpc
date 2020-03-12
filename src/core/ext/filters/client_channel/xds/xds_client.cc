@@ -22,6 +22,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -788,33 +790,46 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     return;
   }
   auto& state = state_map_[type_url];
-  grpc_error* error = state.error;
-  state.error = GRPC_ERROR_NONE;
   grpc_slice request_payload_slice;
+  std::set<StringView> resource_names;
   if (type_url == XdsApi::kLdsTypeUrl) {
+    resource_names.insert(xds_client()->server_name_);
     request_payload_slice = xds_client()->api_.CreateLdsRequest(
-        xds_client()->server_name_, state.version, state.nonce, error,
-        !sent_initial_message_);
+        xds_client()->server_name_, state.version, state.nonce,
+        GRPC_ERROR_REF(state.error), !sent_initial_message_);
     state.subscribed_resources[xds_client()->server_name_]->Start(Ref());
   } else if (type_url == XdsApi::kRdsTypeUrl) {
+    resource_names.insert(xds_client()->route_config_name_);
     request_payload_slice = xds_client()->api_.CreateRdsRequest(
-        xds_client()->route_config_name_, state.version, state.nonce, error,
-        !sent_initial_message_);
+        xds_client()->route_config_name_, state.version, state.nonce,
+        GRPC_ERROR_REF(state.error), !sent_initial_message_);
     state.subscribed_resources[xds_client()->route_config_name_]->Start(Ref());
   } else if (type_url == XdsApi::kCdsTypeUrl) {
+    resource_names = ClusterNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateCdsRequest(
-        ClusterNamesForRequest(), state.version, state.nonce, error,
+        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
         !sent_initial_message_);
   } else if (type_url == XdsApi::kEdsTypeUrl) {
+    resource_names = EdsServiceNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateEdsRequest(
-        EdsServiceNamesForRequest(), state.version, state.nonce, error,
+        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
         !sent_initial_message_);
   } else {
     request_payload_slice = xds_client()->api_.CreateUnsupportedTypeNackRequest(
-        type_url, state.nonce, state.error);
+        type_url, state.nonce, GRPC_ERROR_REF(state.error));
     state_map_.erase(type_url);
   }
   sent_initial_message_ = true;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
+            "error=%s resources=%s",
+            xds_client(), type_url.c_str(), state.version.c_str(),
+            state.nonce.c_str(), grpc_error_string(state.error),
+            absl::StrJoin(resource_names, " ").c_str());
+  }
+  GRPC_ERROR_UNREF(state.error);
+  state.error = GRPC_ERROR_NONE;
   // Create message payload.
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -1150,7 +1165,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
     // Ignore unparsable response.
-    gpr_log(GPR_ERROR, "[xds_client %p] No type_url found. error=%s",
+    gpr_log(GPR_ERROR,
+            "[xds_client %p] Error parsing ADS response (%s) -- ignoring",
             xds_client, grpc_error_string(parse_error));
     GRPC_ERROR_UNREF(parse_error);
   } else {
@@ -1162,10 +1178,11 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
       GRPC_ERROR_UNREF(state.error);
       state.error = parse_error;
       // NACK unacceptable update.
-      gpr_log(
-          GPR_ERROR,
-          "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
-          xds_client, grpc_error_string(parse_error));
+      gpr_log(GPR_ERROR,
+              "[xds_client %p] ADS response invalid for resource type %s "
+              "version %s, will NACK: nonce=%s error=%s",
+              xds_client, type_url.c_str(), version.c_str(),
+              state.nonce.c_str(), grpc_error_string(parse_error));
       ads_calld->SendMessageLocked(type_url);
     } else {
       ads_calld->seen_response_ = true;
@@ -1727,10 +1744,15 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
       request_timeout_(GetRequestTimeout(channel_args)),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
-      bootstrap_(XdsBootstrap::ReadFromFile(error)),
-      api_(bootstrap_ == nullptr ? nullptr : bootstrap_->node()),
+      bootstrap_(
+          XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
+      api_(this, &grpc_xds_client_trace,
+           bootstrap_ == nullptr ? nullptr : bootstrap_->node()),
       server_name_(server_name),
       service_config_watcher_(std::move(watcher)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
+  }
   if (*error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "[xds_client %p] failed to read bootstrap file: %s",
             this, grpc_error_string(*error));
@@ -1755,9 +1777,17 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
   }
 }
 
-XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
+XdsClient::~XdsClient() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] destroying xds client", this);
+  }
+  GRPC_COMBINER_UNREF(combiner_, "xds_client");
+}
 
 void XdsClient::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
+  }
   shutting_down_ = true;
   chand_.reset();
   // We do not clear cluster_map_ and endpoint_map_ if the xds client was
@@ -1782,6 +1812,10 @@ void XdsClient::WatchClusterData(
   // If we've already received an CDS update, notify the new watcher
   // immediately.
   if (cluster_state.update.has_value()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "[xds_client %p] returning cached cluster data for %s",
+              this, StringViewToCString(cluster_name).get());
+    }
     w->OnClusterChanged(cluster_state.update.value());
   }
   chand_->Subscribe(XdsApi::kCdsTypeUrl, cluster_name_str);
@@ -1812,6 +1846,10 @@ void XdsClient::WatchEndpointData(
   // If we've already received an EDS update, notify the new watcher
   // immediately.
   if (!endpoint_state.update.priority_list_update.empty()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "[xds_client %p] returning cached endpoint data for %s",
+              this, StringViewToCString(eds_service_name).get());
+    }
     w->OnEndpointChanged(endpoint_state.update);
   }
   chand_->Subscribe(XdsApi::kEdsTypeUrl, eds_service_name_str);
