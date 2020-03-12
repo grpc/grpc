@@ -1045,15 +1045,12 @@ grpc_error* RouteConfigParse(
 grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
                              const envoy_api_v2_DiscoveryResponse* response,
                              const std::string& expected_server_name,
-                             XdsApi::LdsUpdate* lds_update, upb_arena* arena) {
+                             absl::optional<XdsApi::LdsUpdate>* lds_update,
+                             upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
       envoy_api_v2_DiscoveryResponse_resources(response, &size);
-  if (size < 1) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "LDS response contains 0 resource.");
-  }
   for (size_t i = 0; i < size; ++i) {
     // Check the type_url of the resource.
     const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
@@ -1096,11 +1093,8 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
       grpc_error* error = RouteConfigParse(client, tracer, route_config,
                                            expected_server_name, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
-      lds_update->rds_update.emplace(std::move(rds_update));
-      const upb_strview route_config_name =
-          envoy_api_v2_RouteConfiguration_name(route_config);
-      lds_update->route_config_name =
-          std::string(route_config_name.data, route_config_name.size);
+      lds_update->emplace();
+      (*lds_update)->rds_update.emplace(std::move(rds_update));
       return GRPC_ERROR_NONE;
     }
     // Validate that RDS must be used to get the route_config dynamically.
@@ -1116,27 +1110,24 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
     const upb_strview route_config_name =
         envoy_config_filter_network_http_connection_manager_v2_Rds_route_config_name(
             rds);
-    lds_update->route_config_name =
+    lds_update->emplace();
+    (*lds_update)->route_config_name =
         std::string(route_config_name.data, route_config_name.size);
     return GRPC_ERROR_NONE;
   }
-  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "No listener found for expected server name.");
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error* RdsResponseParse(XdsClient* client, TraceFlag* tracer,
                              const envoy_api_v2_DiscoveryResponse* response,
                              const std::string& expected_server_name,
                              const std::string& expected_route_config_name,
-                             XdsApi::RdsUpdate* rds_update, upb_arena* arena) {
+                             absl::optional<XdsApi::RdsUpdate>* rds_update,
+                             upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
       envoy_api_v2_DiscoveryResponse_resources(response, &size);
-  if (size < 1) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "RDS response contains 0 resource.");
-  }
   for (size_t i = 0; i < size; ++i) {
     // Check the type_url of the resource.
     const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
@@ -1162,25 +1153,21 @@ grpc_error* RdsResponseParse(XdsClient* client, TraceFlag* tracer,
     grpc_error* error = RouteConfigParse(
         client, tracer, route_config, expected_server_name, &local_rds_update);
     if (error != GRPC_ERROR_NONE) return error;
-    *rds_update = std::move(local_rds_update);
+    rds_update->emplace(std::move(local_rds_update));
     return GRPC_ERROR_NONE;
   }
-  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "No route config found for expected name.");
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
                              const envoy_api_v2_DiscoveryResponse* response,
+                             const std::set<StringView>& expected_cluster_names,
                              XdsApi::CdsUpdateMap* cds_update_map,
                              upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
       envoy_api_v2_DiscoveryResponse_resources(response, &size);
-  if (size < 1) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "CDS response contains 0 resource.");
-  }
   // Parse all the resources in the CDS response.
   for (size_t i = 0; i < size; ++i) {
     XdsApi::CdsUpdate cds_update;
@@ -1197,6 +1184,13 @@ grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode cluster.");
     }
     MaybeLogCluster(client, tracer, cluster);
+    // Ignore unexpected cluster names.
+    upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
+    StringView cluster_name_strview(cluster_name.data, cluster_name.size);
+    if (expected_cluster_names.find(cluster_name_strview) ==
+        expected_cluster_names.end()) {
+      continue;
+    }
     // Check the cluster_discovery_type.
     if (!envoy_api_v2_Cluster_has_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
@@ -1235,7 +1229,6 @@ grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
-    upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
     cds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),
                             std::move(cds_update));
   }
@@ -1363,10 +1356,6 @@ grpc_error* EdsResponsedParse(
   size_t size;
   const google_protobuf_Any* const* resources =
       envoy_api_v2_DiscoveryResponse_resources(response, &size);
-  if (size < 1) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "EDS response contains 0 resource.");
-  }
   for (size_t i = 0; i < size; ++i) {
     XdsApi::EdsUpdate eds_update;
     // Check the type_url of the resource.
@@ -1442,8 +1431,10 @@ grpc_error* EdsResponsedParse(
 grpc_error* XdsApi::ParseAdsResponse(
     const grpc_slice& encoded_response, const std::string& expected_server_name,
     const std::string& expected_route_config_name,
+    const std::set<StringView>& expected_cluster_names,
     const std::set<StringView>& expected_eds_service_names,
-    LdsUpdate* lds_update, RdsUpdate* rds_update, CdsUpdateMap* cds_update_map,
+    absl::optional<LdsUpdate>* lds_update,
+    absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
     EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
     std::string* type_url) {
   upb::Arena arena;
@@ -1477,8 +1468,8 @@ grpc_error* XdsApi::ParseAdsResponse(
                             expected_route_config_name, rds_update,
                             arena.ptr());
   } else if (*type_url == kCdsTypeUrl) {
-    return CdsResponseParse(client_, tracer_, response, cds_update_map,
-                            arena.ptr());
+    return CdsResponseParse(client_, tracer_, response, expected_cluster_names,
+                            cds_update_map, arena.ptr());
   } else if (*type_url == kEdsTypeUrl) {
     return EdsResponsedParse(client_, tracer_, response,
                              expected_eds_service_names, eds_update_map,

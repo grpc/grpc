@@ -232,10 +232,12 @@ class XdsApi {
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
       const std::string& expected_route_config_name,
+      const std::set<StringView>& expected_cluster_names,
       const std::set<StringView>& expected_eds_service_names,
-      LdsUpdate* lds_update, RdsUpdate* rds_update,
-      CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-      std::string* version, std::string* nonce, std::string* type_url);
+      absl::optional<LdsUpdate>* lds_update,
+      absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
+      EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
+      std::string* type_url);
 
   // Creates an LRS request querying \a server_name.
   grpc_slice CreateLrsInitialRequest(const std::string& server_name);
