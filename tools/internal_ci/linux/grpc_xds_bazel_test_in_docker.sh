@@ -47,7 +47,8 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
 
 bazel build test/cpp/interop:xds_interop_client
 
-GRPC_VERBOSITY=debug GRPC_TRACE=xds,xds_client "$PYTHON" tools/run_tests/run_xds_tests.py \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,xds_lb "$PYTHON" \
+  tools/run_tests/run_xds_tests.py \
     --test_case=all \
     --project_id=grpc-testing \
     --gcp_suffix=$(date '+%s') \
