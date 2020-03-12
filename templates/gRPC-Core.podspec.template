@@ -193,7 +193,7 @@
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'BoringSSL-GRPC', '0.0.7'
-      abseil_version = '0.20200225.0'
+      abseil_version = '1.20200225.0'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
