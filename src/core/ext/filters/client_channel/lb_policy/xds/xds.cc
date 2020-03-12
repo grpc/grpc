@@ -69,7 +69,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_xds_trace(false, "xds");
+TraceFlag grpc_lb_xds_trace(false, "xds_lb");
 
 namespace {
 
@@ -619,6 +619,9 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
       if (strstr(grpc_error_string(error), "xds call failed")) {
         xds_policy_->channel_control_helper()->RequestReresolution();
       }
+    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p] xds watcher reported error (ignoring): %s",
+              xds_policy_.get(), grpc_error_string(error));
     }
     GRPC_ERROR_UNREF(error);
   }
@@ -643,9 +646,8 @@ XdsLb::XdsLb(Args args)
       locality_map_failover_timeout_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS,
           {GRPC_XDS_DEFAULT_FAILOVER_TIMEOUT_MS, 0, INT_MAX})) {
-  if (xds_client_from_channel_ != nullptr &&
-      GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Using xds client %p from channel", this,
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] created -- xds client from channel: %p", this,
             xds_client_from_channel_.get());
   }
   // Record server name.
@@ -687,6 +689,10 @@ void XdsLb::ShutdownLocked() {
   // destroying the Xds client leading to a situation where the Xds lb policy is
   // never destroyed.
   if (xds_client_from_channel_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p] cancelling watch for %s", this,
+              eds_service_name());
+    }
     xds_client()->CancelEndpointDataWatch(StringView(eds_service_name()),
                                           endpoint_watcher_);
     xds_client_from_channel_.reset();
@@ -781,8 +787,16 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
   if (is_initial_update ||
       strcmp(old_eds_service_name, eds_service_name()) != 0) {
     if (!is_initial_update) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO, "[xdslb %p] cancelling watch for %s", this,
+                old_eds_service_name);
+      }
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
                                             endpoint_watcher_);
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p] starting watch for %s", this,
+              eds_service_name());
     }
     auto watcher = absl::make_unique<EndpointWatcher>(
         Ref(DEBUG_LOCATION, "EndpointWatcher"));
@@ -1071,6 +1085,9 @@ void XdsLb::LocalityMap::ResetBackoffLocked() {
 }
 
 void XdsLb::LocalityMap::UpdateXdsPickerLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] constructing new picker", xds_policy());
+  }
   // Construct a new xds picker which maintains a map of all locality pickers
   // that are ready. Each locality is represented by a portion of the range
   // proportional to its weight, such that the total range is the sum of the
@@ -1086,6 +1103,11 @@ void XdsLb::LocalityMap::UpdateXdsPickerLocked() {
     end += locality->weight();
     picker_list.push_back(
         std::make_pair(end, locality->GetLoadReportingPicker()));
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p]   locality=%s weight=%d picker=%p",
+              xds_policy(), locality_name->AsHumanReadableString(),
+              locality->weight(), picker_list.back().second.get());
+    }
   }
   xds_policy()->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_READY,
@@ -1492,6 +1514,12 @@ XdsLb::LocalityMap::Locality::Helper::CreateSubchannel(
 void XdsLb::LocalityMap::Locality::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
   if (locality_->xds_policy()->shutting_down_) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p helper %p] child policy handler %p reports state=%s",
+            locality_->xds_policy(), this, locality_->child_policy_.get(),
+            ConnectivityStateName(state));
+  }
   // Cache the state and picker in the locality.
   locality_->connectivity_state_ = state;
   locality_->picker_wrapper_ =
