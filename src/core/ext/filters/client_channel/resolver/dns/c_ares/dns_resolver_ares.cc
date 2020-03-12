@@ -499,7 +499,7 @@ void grpc_resolver_dns_ares_init() {
     }
     grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        grpc_core::MakeUnique<grpc_core::AresDnsResolverFactory>());
+        absl::make_unique<grpc_core::AresDnsResolverFactory>());
   } else {
     g_use_ares_dns_resolver = false;
   }

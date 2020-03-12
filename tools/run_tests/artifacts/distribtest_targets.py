@@ -340,7 +340,7 @@ def targets():
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
-        # RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_7'),
+        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_7'),
         RubyDistribTest('linux', 'x64', 'centos6'),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'fedora23'),

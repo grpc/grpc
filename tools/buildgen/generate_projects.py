@@ -39,7 +39,7 @@ args = argp.parse_args()
 
 json = args.build_files
 
-test = {} if 'TEST' in os.environ else None
+test = {} if os.environ.get('TEST', 'false') == 'true' else None
 
 plugins = sorted(glob.glob('tools/buildgen/plugins/*.py'))
 

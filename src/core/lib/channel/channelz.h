@@ -148,17 +148,13 @@ class CallCountingHelper {
     // Make sure the size is exactly one cache line.
     uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(Atomic<intptr_t>) -
                     sizeof(Atomic<gpr_cycle_counter>)];
-  }
-#if GRPC_USE_ABSL
+  };
   // TODO(soheilhy,veblush): Revist this after abseil integration.
   // This has a problem when using abseil inlined_vector because it
   // carries an alignment attribute properly but our allocator doesn't
   // respect this. To avoid UBSAN errors, this should be removed with
   // abseil inlined_vector.
-  ;
-#else
-  GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
-#endif
+  // GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   struct CounterData {
     int64_t calls_started = 0;

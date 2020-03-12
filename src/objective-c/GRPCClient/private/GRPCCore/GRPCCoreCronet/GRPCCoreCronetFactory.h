@@ -27,6 +27,6 @@
  * dependency of the project and use gGRPCCoreCronetID in call options to
  * specify that this is the transport to be used for a call.
  */
-@interface GRPCCoreCronetFactory : NSObject<GRPCCoreTransportFactory>
+@interface GRPCCoreCronetFactory : NSObject <GRPCCoreTransportFactory>
 
 @end

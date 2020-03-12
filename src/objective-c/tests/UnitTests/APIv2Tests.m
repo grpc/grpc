@@ -57,7 +57,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
 @end
 
 // Convenience class to use blocks as callbacks
-@interface ClientTestsBlockCallbacks : NSObject<GRPCResponseHandler>
+@interface ClientTestsBlockCallbacks : NSObject <GRPCResponseHandler>
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                 messageCallback:(void (^)(id))messageCallback
@@ -131,7 +131,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
 @end
 
-@interface CallAPIv2Tests : XCTestCase<GRPCAuthorizationProtocol>
+@interface CallAPIv2Tests : XCTestCase <GRPCAuthorizationProtocol>
 
 @end
 
@@ -139,17 +139,21 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
 - (void)setUp {
   // This method isn't implemented by the remote server.
-  kInexistentMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"Inexistent"];
-  kEmptyCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"EmptyCall"];
-  kUnaryCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"UnaryCall"];
+  kInexistentMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                       service:kService
+                                                        method:@"Inexistent"];
+  kEmptyCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                      service:kService
+                                                       method:@"EmptyCall"];
+  kUnaryCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                      service:kService
+                                                       method:@"UnaryCall"];
   kOutputStreamingCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
                                                                 service:kService
                                                                  method:@"StreamingOutputCall"];
-  kFullDuplexCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"FullDuplexCall"];
+  kFullDuplexCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                           service:kService
+                                                            method:@"FullDuplexCall"];
 }
 
 - (void)testMetadata {
@@ -217,54 +221,58 @@ static const NSTimeInterval kInvertedTimeout = 2;
   options.initialMetadata = headers;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:request
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:^(
-                                                                    NSDictionary *initialMetadata) {
-               NSString *userAgent = initialMetadata[@"x-grpc-test-echo-useragent"];
-               // Test the regex is correct
-               NSString *expectedUserAgent = @"Foo grpc-objc/";
-               expectedUserAgent =
-                   [expectedUserAgent stringByAppendingString:GRPC_OBJC_VERSION_STRING];
-               expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];
-               expectedUserAgent =
-                   [expectedUserAgent stringByAppendingString:GRPC_C_VERSION_STRING];
-               expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
-               expectedUserAgent = [expectedUserAgent stringByAppendingString:@GPR_PLATFORM_STRING];
-               expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2; "];
-               expectedUserAgent = [expectedUserAgent
-                   stringByAppendingString:[NSString stringWithUTF8String:grpc_g_stands_for()]];
-               expectedUserAgent = [expectedUserAgent stringByAppendingString:@")"];
-               XCTAssertEqualObjects(userAgent, expectedUserAgent);
+             responseHandler:
+                 [[ClientTestsBlockCallbacks alloc]
+                     initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
+                       NSString *userAgent = initialMetadata[@"x-grpc-test-echo-useragent"];
+                       // Test the regex is correct
+                       NSString *expectedUserAgent = @"Foo grpc-objc/";
+                       expectedUserAgent =
+                           [expectedUserAgent stringByAppendingString:GRPC_OBJC_VERSION_STRING];
+                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];
+                       expectedUserAgent =
+                           [expectedUserAgent stringByAppendingString:GRPC_C_VERSION_STRING];
+                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
+                       expectedUserAgent =
+                           [expectedUserAgent stringByAppendingString:@GPR_PLATFORM_STRING];
+                       expectedUserAgent =
+                           [expectedUserAgent stringByAppendingString:@"; chttp2; "];
+                       expectedUserAgent = [expectedUserAgent
+                           stringByAppendingString:[NSString
+                                                       stringWithUTF8String:grpc_g_stands_for()]];
+                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@")"];
+                       XCTAssertEqualObjects(userAgent, expectedUserAgent);
 
-               NSError *error = nil;
-               // Change in format of user-agent field in a direction that does not match
-               // the regex will likely cause problem for certain gRPC users. For details,
-               // refer to internal doc https://goo.gl/c2diBc
-               NSRegularExpression *regex = [NSRegularExpression
-                   regularExpressionWithPattern:
-                       @" grpc-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?/[^ ,]+( \\([^)]*\\))?"
-                                        options:0
-                                          error:&error];
+                       NSError *error = nil;
+                       // Change in format of user-agent field in a direction that does not match
+                       // the regex will likely cause problem for certain gRPC users. For details,
+                       // refer to internal doc https://goo.gl/c2diBc
+                       NSRegularExpression *regex = [NSRegularExpression
+                           regularExpressionWithPattern:
+                               @" grpc-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?/[^ ,]+( \\([^)]*\\))?"
+                                                options:0
+                                                  error:&error];
 
-               NSString *customUserAgent =
-                   [regex stringByReplacingMatchesInString:userAgent
-                                                   options:0
-                                                     range:NSMakeRange(0, [userAgent length])
-                                              withTemplate:@""];
-               XCTAssertEqualObjects(customUserAgent, @"Foo");
-               [recvInitialMd fulfill];
-             }
-                                 messageCallback:^(id message) {
-                                   XCTAssertNotNil(message);
-                                   XCTAssertEqual([message length], 0,
-                                                  @"Non-empty response received: %@", message);
-                                 }
-                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                   if (error) {
-                                     XCTFail(@"Finished with unexpected error: %@", error);
-                                   } else {
-                                     [completion fulfill];
-                                   }
-                                 }]
+                       NSString *customUserAgent = [regex
+                           stringByReplacingMatchesInString:userAgent
+                                                    options:0
+                                                      range:NSMakeRange(0, [userAgent length])
+                                               withTemplate:@""];
+                       XCTAssertEqualObjects(customUserAgent, @"Foo");
+                       [recvInitialMd fulfill];
+                     }
+                     messageCallback:^(id message) {
+                       XCTAssertNotNil(message);
+                       XCTAssertEqual([message length], 0, @"Non-empty response received: %@",
+                                      message);
+                     }
+                     closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                       if (error) {
+                         XCTFail(@"Finished with unexpected error: %@", error);
+                       } else {
+                         [completion fulfill];
+                       }
+                     }]
                  callOptions:options];
   [call writeData:[NSData data]];
   [call start];
@@ -406,9 +414,11 @@ static const NSTimeInterval kInvertedTimeout = 2;
                        XCTFail(@"Failure: response received; Expect: no response received.");
                      }
                      closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                       XCTAssertNotNil(error,
-                                       @"Failure: no error received; Expect: receive "
-                                       @"deadline exceeded.");
+                       XCTAssertNotNil(error, @"Failure: no error received; Expect: receive "
+                                              @"deadline exceeded.");
+                       if (error.code != GRPCErrorCodeDeadlineExceeded) {
+                         NSLog(@"Unexpected error: %@", error);
+                       }
                        XCTAssertEqual(error.code, GRPCErrorCodeDeadlineExceeded);
                        [completion fulfill];
                      }]

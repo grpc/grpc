@@ -99,7 +99,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
     Combiner* /*combiner*/) {
-  return grpc_core::MakeUnique<GrpcPolledFdFactoryPosix>();
+  return absl::make_unique<GrpcPolledFdFactoryPosix>();
 }
 
 }  // namespace grpc_core

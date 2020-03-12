@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM debian:10
   
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -57,9 +57,6 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
-# Add Debian 'buster' repository, we will need it for installing newer versions of python
-RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
-RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
@@ -68,10 +65,12 @@ RUN mkdir /var/local/jenkins
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
+
 #========================
 # Sanity test dependencies
 RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
+
 # Make Python 3.7 the default Python 3 version
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
 RUN apt-get update && apt-get install -y \
@@ -83,13 +82,16 @@ RUN apt-get update && apt-get install -y \
 RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
 RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
 
-RUN apt-get update && apt-get -y install wget xz-utils
-RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
-ENV CLANG_FORMAT=clang-format
-RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
-ENV CLANG_TIDY=clang-tidy
+# Install clang & clang-format
+RUN apt-get install -y clang clang-format
+
+# Install clang-tidy 6.0
+# This is because clang-tidy 7.0 started treating compiler errors as tidy errors
+# and there are a couple of files which are not properly compiled via tidy so it
+# should be using 6.0 version until all compilation errors are addressed.
+RUN apt-get install -y clang-tidy-6.0
+ENV CLANG_TIDY=clang-tidy-6.0
+
 
 #========================
 # Bazel installation

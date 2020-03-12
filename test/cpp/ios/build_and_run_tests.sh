@@ -36,5 +36,5 @@ xcodebuild \
     -destination name="iPhone 8" \
     test \
     | ./verbose_time.sh \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' -
+    | grep -E -v "$XCODEBUILD_FILTER" \
+    | grep -E -v '^$' -

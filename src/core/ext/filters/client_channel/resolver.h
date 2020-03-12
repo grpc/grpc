@@ -60,9 +60,9 @@ class Resolver : public InternallyRefCounted<Resolver> {
     Result() = default;
     ~Result();
     Result(const Result& other);
-    Result(Result&& other);
+    Result(Result&& other) noexcept;
     Result& operator=(const Result& other);
-    Result& operator=(Result&& other);
+    Result& operator=(Result&& other) noexcept;
   };
 
   /// A proxy object used by the resolver to return results to the

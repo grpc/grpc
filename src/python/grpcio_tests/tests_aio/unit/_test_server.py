@@ -14,7 +14,6 @@
 
 import asyncio
 import datetime
-import logging
 
 import grpc
 from grpc.experimental import aio
@@ -117,8 +116,12 @@ def _create_extra_generic_handler(servicer: _TestServiceServicer):
                                                 rpc_method_handlers)
 
 
-async def start_test_server(port=0, secure=False, server_credentials=None):
-    server = aio.server(options=(('grpc.so_reuseport', 0),))
+async def start_test_server(port=0,
+                            secure=False,
+                            server_credentials=None,
+                            interceptors=None):
+    server = aio.server(options=(('grpc.so_reuseport', 0),),
+                        interceptors=interceptors)
     servicer = _TestServiceServicer()
     test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
 

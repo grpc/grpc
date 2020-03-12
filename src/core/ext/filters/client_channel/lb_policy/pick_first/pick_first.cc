@@ -201,7 +201,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_core::MakeUnique<TransientFailurePicker>(error));
+        absl::make_unique<TransientFailurePicker>(error));
     return;
   }
   // If one of the subchannels in the new list is already in state
@@ -319,10 +319,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_TRANSIENT_FAILURE,
-            grpc_core::MakeUnique<TransientFailurePicker>(error));
+            absl::make_unique<TransientFailurePicker>(error));
       } else {
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING, grpc_core::MakeUnique<QueuePicker>(p->Ref(
+            GRPC_CHANNEL_CONNECTING, absl::make_unique<QueuePicker>(p->Ref(
                                          DEBUG_LOCATION, "QueuePicker")));
       }
     } else {
@@ -338,7 +338,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->selected_ = nullptr;
         p->subchannel_list_.reset();
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_IDLE, grpc_core::MakeUnique<QueuePicker>(
+            GRPC_CHANNEL_IDLE, absl::make_unique<QueuePicker>(
                                    p->Ref(DEBUG_LOCATION, "QueuePicker")));
       } else {
         // This is unlikely but can happen when a subchannel has been asked
@@ -347,10 +347,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         if (connectivity_state == GRPC_CHANNEL_READY) {
           p->channel_control_helper()->UpdateState(
               GRPC_CHANNEL_READY,
-              grpc_core::MakeUnique<Picker>(subchannel()->Ref()));
+              absl::make_unique<Picker>(subchannel()->Ref()));
         } else {  // CONNECTING
           p->channel_control_helper()->UpdateState(
-              connectivity_state, grpc_core::MakeUnique<QueuePicker>(
+              connectivity_state, absl::make_unique<QueuePicker>(
                                       p->Ref(DEBUG_LOCATION, "QueuePicker")));
         }
       }
@@ -395,7 +395,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
           p->channel_control_helper()->UpdateState(
               GRPC_CHANNEL_TRANSIENT_FAILURE,
-              grpc_core::MakeUnique<TransientFailurePicker>(error));
+              absl::make_unique<TransientFailurePicker>(error));
         }
       }
       sd->CheckConnectivityStateAndStartWatchingLocked();
@@ -406,7 +406,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // Only update connectivity state in case 1.
       if (subchannel_list() == p->subchannel_list_.get()) {
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING, grpc_core::MakeUnique<QueuePicker>(p->Ref(
+            GRPC_CHANNEL_CONNECTING, absl::make_unique<QueuePicker>(p->Ref(
                                          DEBUG_LOCATION, "QueuePicker")));
       }
       break;
@@ -446,7 +446,7 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
   }
   p->selected_ = this;
   p->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, grpc_core::MakeUnique<Picker>(subchannel()->Ref()));
+      GRPC_CHANNEL_READY, absl::make_unique<Picker>(subchannel()->Ref()));
   for (size_t i = 0; i < subchannel_list()->num_subchannels(); ++i) {
     if (i != Index()) {
       subchannel_list()->subchannel(i)->ShutdownLocked();
@@ -503,7 +503,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_pick_first_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::MakeUnique<grpc_core::PickFirstFactory>());
+          absl::make_unique<grpc_core::PickFirstFactory>());
 }
 
 void grpc_lb_policy_pick_first_shutdown() {}

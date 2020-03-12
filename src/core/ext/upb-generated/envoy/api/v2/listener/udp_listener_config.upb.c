@@ -11,6 +11,7 @@
 #include "envoy/api/v2/listener/udp_listener_config.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -29,6 +30,12 @@ const upb_msglayout envoy_api_v2_listener_UdpListenerConfig_msginit = {
   &envoy_api_v2_listener_UdpListenerConfig_submsgs[0],
   &envoy_api_v2_listener_UdpListenerConfig__fields[0],
   UPB_SIZE(16, 32), 3, false,
+};
+
+const upb_msglayout envoy_api_v2_listener_ActiveRawUdpListenerConfig_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, false,
 };
 
 #include "upb/port_undef.inc"

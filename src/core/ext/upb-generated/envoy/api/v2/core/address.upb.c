@@ -11,18 +11,20 @@
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_field envoy_api_v2_core_Pipe__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+static const upb_msglayout_field envoy_api_v2_core_Pipe__fields[2] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(0, 0), 0, 0, 13, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_Pipe_msginit = {
   NULL,
   &envoy_api_v2_core_Pipe__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(16, 32), 2, false,
 };
 
 static const upb_msglayout_field envoy_api_v2_core_SocketAddress__fields[6] = {

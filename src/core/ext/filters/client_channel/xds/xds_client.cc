@@ -22,6 +22,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -788,33 +790,46 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     return;
   }
   auto& state = state_map_[type_url];
-  grpc_error* error = state.error;
-  state.error = GRPC_ERROR_NONE;
   grpc_slice request_payload_slice;
+  std::set<StringView> resource_names;
   if (type_url == XdsApi::kLdsTypeUrl) {
+    resource_names.insert(xds_client()->server_name_);
     request_payload_slice = xds_client()->api_.CreateLdsRequest(
-        xds_client()->server_name_, state.version, state.nonce, error,
-        !sent_initial_message_);
+        xds_client()->server_name_, state.version, state.nonce,
+        GRPC_ERROR_REF(state.error), !sent_initial_message_);
     state.subscribed_resources[xds_client()->server_name_]->Start(Ref());
   } else if (type_url == XdsApi::kRdsTypeUrl) {
+    resource_names.insert(xds_client()->route_config_name_);
     request_payload_slice = xds_client()->api_.CreateRdsRequest(
-        xds_client()->route_config_name_, state.version, state.nonce, error,
-        !sent_initial_message_);
+        xds_client()->route_config_name_, state.version, state.nonce,
+        GRPC_ERROR_REF(state.error), !sent_initial_message_);
     state.subscribed_resources[xds_client()->route_config_name_]->Start(Ref());
   } else if (type_url == XdsApi::kCdsTypeUrl) {
+    resource_names = ClusterNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateCdsRequest(
-        ClusterNamesForRequest(), state.version, state.nonce, error,
+        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
         !sent_initial_message_);
   } else if (type_url == XdsApi::kEdsTypeUrl) {
+    resource_names = EdsServiceNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateEdsRequest(
-        EdsServiceNamesForRequest(), state.version, state.nonce, error,
+        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
         !sent_initial_message_);
   } else {
     request_payload_slice = xds_client()->api_.CreateUnsupportedTypeNackRequest(
-        type_url, state.nonce, state.error);
+        type_url, state.nonce, GRPC_ERROR_REF(state.error));
     state_map_.erase(type_url);
   }
   sent_initial_message_ = true;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
+            "error=%s resources=%s",
+            xds_client(), type_url.c_str(), state.version.c_str(),
+            state.nonce.c_str(), grpc_error_string(state.error),
+            absl::StrJoin(resource_names, " ").c_str());
+  }
+  GRPC_ERROR_UNREF(state.error);
+  state.error = GRPC_ERROR_NONE;
   // Create message payload.
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -1150,7 +1165,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
     // Ignore unparsable response.
-    gpr_log(GPR_ERROR, "[xds_client %p] No type_url found. error=%s",
+    gpr_log(GPR_ERROR,
+            "[xds_client %p] Error parsing ADS response (%s) -- ignoring",
             xds_client, grpc_error_string(parse_error));
     GRPC_ERROR_UNREF(parse_error);
   } else {
@@ -1162,10 +1178,11 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
       GRPC_ERROR_UNREF(state.error);
       state.error = parse_error;
       // NACK unacceptable update.
-      gpr_log(
-          GPR_ERROR,
-          "[xds_client %p] ADS response can't be accepted, NACKing. error=%s",
-          xds_client, grpc_error_string(parse_error));
+      gpr_log(GPR_ERROR,
+              "[xds_client %p] ADS response invalid for resource type %s "
+              "version %s, will NACK: nonce=%s error=%s",
+              xds_client, type_url.c_str(), version.c_str(),
+              state.nonce.c_str(), grpc_error_string(parse_error));
       ads_calld->SendMessageLocked(type_url);
     } else {
       ads_calld->seen_response_ = true;
@@ -1314,19 +1331,39 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimerLocked(
   self->SendReportLocked();
 }
 
+namespace {
+
+bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
+  for (const auto& p : snapshot) {
+    const XdsApi::ClusterLoadReport& cluster_snapshot = p.second;
+    for (const auto& q : cluster_snapshot.dropped_requests) {
+      if (q.second > 0) return false;
+    }
+    for (const auto& q : cluster_snapshot.locality_stats) {
+      const XdsClusterLocalityStats::Snapshot& locality_snapshot = q.second;
+      if (!locality_snapshot.IsZero()) return false;
+    }
+  }
+  return true;
+}
+
+}  // namespace
+
 void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
-  // Create a request that contains the load report.
-  grpc_slice request_payload_slice =
-      xds_client()->api_.CreateLrsRequest(xds_client()->ClientStatsMap());
+  // Construct snapshot from all reported stats.
+  XdsApi::ClusterLoadReportMap snapshot =
+      xds_client()->BuildLoadReportSnapshot();
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
-  last_report_counters_were_zero_ = static_cast<bool>(
-      grpc_slice_eq(request_payload_slice, grpc_empty_slice()));
+  last_report_counters_were_zero_ = LoadReportCountersAreZero(snapshot);
   if (old_val && last_report_counters_were_zero_) {
     ScheduleNextReportLocked();
     return;
   }
+  // Create a request that contains the snapshot.
+  grpc_slice request_payload_slice =
+      xds_client()->api_.CreateLrsRequest(std::move(snapshot));
   parent_->send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1504,14 +1541,12 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   // Don't start if the ADS call hasn't received any valid response. Note that
   // this must be the first channel because it is the current channel but its
   // ADS call hasn't seen any response.
-  AdsCallState* ads_calld = chand()->ads_calld_->calld();
-  if (ads_calld == nullptr || !ads_calld->seen_response()) return;
-  // Start reporting.
-  for (auto& p : chand()->xds_client_->endpoint_map_) {
-    for (auto* client_stats : p.second.client_stats) {
-      client_stats->MaybeInitLastReportTime();
-    }
+  if (chand()->ads_calld_ == nullptr ||
+      chand()->ads_calld_->calld() == nullptr ||
+      !chand()->ads_calld_->calld()->seen_response()) {
+    return;
   }
+  // Start reporting.
   reporter_ = MakeOrphanable<Reporter>(
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
 }
@@ -1699,13 +1734,6 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
       {15000, 0, INT_MAX});
 }
 
-UniquePtr<char> GenerateBuildVersionString() {
-  char* build_version_str;
-  gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
-               GPR_PLATFORM_STRING);
-  return UniquePtr<char>(build_version_str);
-}
-
 }  // namespace
 
 XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
@@ -1714,14 +1742,17 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
       request_timeout_(GetRequestTimeout(channel_args)),
-      build_version_(GenerateBuildVersionString()),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
-      bootstrap_(XdsBootstrap::ReadFromFile(error)),
-      api_(bootstrap_ == nullptr ? nullptr : bootstrap_->node(),
-           build_version_.get()),
+      bootstrap_(
+          XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
+      api_(this, &grpc_xds_client_trace,
+           bootstrap_ == nullptr ? nullptr : bootstrap_->node()),
       server_name_(server_name),
       service_config_watcher_(std::move(watcher)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
+  }
   if (*error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "[xds_client %p] failed to read bootstrap file: %s",
             this, grpc_error_string(*error));
@@ -1746,9 +1777,17 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
   }
 }
 
-XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
+XdsClient::~XdsClient() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] destroying xds client", this);
+  }
+  GRPC_COMBINER_UNREF(combiner_, "xds_client");
+}
 
 void XdsClient::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
+  }
   shutting_down_ = true;
   chand_.reset();
   // We do not clear cluster_map_ and endpoint_map_ if the xds client was
@@ -1773,6 +1812,10 @@ void XdsClient::WatchClusterData(
   // If we've already received an CDS update, notify the new watcher
   // immediately.
   if (cluster_state.update.has_value()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "[xds_client %p] returning cached cluster data for %s",
+              this, StringViewToCString(cluster_name).get());
+    }
     w->OnClusterChanged(cluster_state.update.value());
   }
   chand_->Subscribe(XdsApi::kCdsTypeUrl, cluster_name_str);
@@ -1803,6 +1846,10 @@ void XdsClient::WatchEndpointData(
   // If we've already received an EDS update, notify the new watcher
   // immediately.
   if (!endpoint_state.update.priority_list_update.empty()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "[xds_client %p] returning cached endpoint data for %s",
+              this, StringViewToCString(eds_service_name).get());
+    }
     w->OnEndpointChanged(endpoint_state.update);
   }
   chand_->Subscribe(XdsApi::kEdsTypeUrl, eds_service_name_str);
@@ -1823,31 +1870,104 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
   }
 }
 
-void XdsClient::AddClientStats(StringView /*lrs_server*/,
-                               StringView cluster_name,
-                               XdsClientStats* client_stats) {
-  EndpointState& endpoint_state = endpoint_map_[std::string(cluster_name)];
+RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
+    StringView lrs_server, StringView cluster_name,
+    StringView eds_service_name) {
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  endpoint_state.client_stats.insert(client_stats);
+  auto key =
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+  // We jump through some hoops here to make sure that the StringViews
+  // stored in the XdsClusterDropStats object point to the strings
+  // in the load_report_map_ key, so that they have the same lifetime.
+  auto it = load_report_map_
+                .emplace(std::make_pair(std::move(key), LoadReportState()))
+                .first;
+  auto cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
+      Ref(DEBUG_LOCATION, "DropStats"), lrs_server,
+      it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/);
+  it->second.drop_stats.insert(cluster_drop_stats.get());
   chand_->MaybeStartLrsCall();
+  return cluster_drop_stats;
 }
 
-void XdsClient::RemoveClientStats(StringView /*lrs_server*/,
-                                  StringView cluster_name,
-                                  XdsClientStats* client_stats) {
-  EndpointState& endpoint_state = endpoint_map_[std::string(cluster_name)];
+void XdsClient::RemoveClusterDropStats(
+    StringView /*lrs_server*/, StringView cluster_name,
+    StringView eds_service_name, XdsClusterDropStats* cluster_drop_stats) {
+  auto load_report_it = load_report_map_.find(
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (load_report_it == load_report_map_.end()) return;
+  LoadReportState& load_report_state = load_report_it->second;
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
   // TODO(roth): In principle, we should try to send a final load report
   // containing whatever final stats have been accumulated since the
   // last load report.
-  auto it = endpoint_state.client_stats.find(client_stats);
-  if (it != endpoint_state.client_stats.end()) {
-    endpoint_state.client_stats.erase(it);
+  auto it = load_report_state.drop_stats.find(cluster_drop_stats);
+  if (it != load_report_state.drop_stats.end()) {
+    load_report_state.drop_stats.erase(it);
+    if (load_report_state.drop_stats.empty() &&
+        load_report_state.locality_stats.empty()) {
+      load_report_map_.erase(load_report_it);
+      if (chand_ != nullptr && load_report_map_.empty()) {
+        chand_->StopLrsCall();
+      }
+    }
   }
-  if (chand_ != nullptr && endpoint_state.client_stats.empty()) {
-    chand_->StopLrsCall();
+}
+
+RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
+    StringView lrs_server, StringView cluster_name, StringView eds_service_name,
+    RefCountedPtr<XdsLocalityName> locality) {
+  // TODO(roth): When we add support for direct federation, use the
+  // server name specified in lrs_server.
+  auto key =
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+  // We jump through some hoops here to make sure that the StringViews
+  // stored in the XdsClusterLocalityStats object point to the strings
+  // in the load_report_map_ key, so that they have the same lifetime.
+  auto it = load_report_map_
+                .emplace(std::make_pair(std::move(key), LoadReportState()))
+                .first;
+  auto cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
+      Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server,
+      it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/,
+      locality);
+  it->second.locality_stats[std::move(locality)].insert(
+      cluster_locality_stats.get());
+  chand_->MaybeStartLrsCall();
+  return cluster_locality_stats;
+}
+
+void XdsClient::RemoveClusterLocalityStats(
+    StringView /*lrs_server*/, StringView cluster_name,
+    StringView eds_service_name, const RefCountedPtr<XdsLocalityName>& locality,
+    XdsClusterLocalityStats* cluster_locality_stats) {
+  auto load_report_it = load_report_map_.find(
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (load_report_it == load_report_map_.end()) return;
+  LoadReportState& load_report_state = load_report_it->second;
+  // TODO(roth): When we add support for direct federation, use the
+  // server name specified in lrs_server.
+  // TODO(roth): In principle, we should try to send a final load report
+  // containing whatever final stats have been accumulated since the
+  // last load report.
+  auto locality_it = load_report_state.locality_stats.find(locality);
+  if (locality_it == load_report_state.locality_stats.end()) return;
+  auto& locality_set = locality_it->second;
+  auto it = locality_set.find(cluster_locality_stats);
+  if (it != locality_set.end()) {
+    locality_set.erase(it);
+    if (locality_set.empty()) {
+      load_report_state.locality_stats.erase(locality_it);
+      if (load_report_state.locality_stats.empty() &&
+          load_report_state.drop_stats.empty()) {
+        load_report_map_.erase(load_report_it);
+        if (chand_ != nullptr && load_report_map_.empty()) {
+          chand_->StopLrsCall();
+        }
+      }
+    }
   }
 }
 
@@ -1876,17 +1996,34 @@ grpc_error* XdsClient::CreateServiceConfig(
   return error;
 }
 
-std::map<StringView, std::set<XdsClientStats*>, StringLess>
-XdsClient::ClientStatsMap() const {
-  std::map<StringView, std::set<XdsClientStats*>, StringLess> client_stats_map;
-  for (const auto& p : endpoint_map_) {
-    const StringView cluster_name = p.first;
-    const auto& client_stats = p.second.client_stats;
-    if (chand_->lrs_calld()->ShouldSendLoadReports(cluster_name)) {
-      client_stats_map.emplace(cluster_name, client_stats);
+XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot() {
+  XdsApi::ClusterLoadReportMap snapshot_map;
+  for (auto& p : load_report_map_) {
+    const auto& cluster_key = p.first;  // cluster and EDS service name
+    LoadReportState& load_report = p.second;
+    XdsApi::ClusterLoadReport& snapshot = snapshot_map[cluster_key];
+    // Aggregate drop stats.
+    for (auto& drop_stats : load_report.drop_stats) {
+      for (const auto& p : drop_stats->GetSnapshotAndReset()) {
+        snapshot.dropped_requests[p.first] += p.second;
+      }
     }
+    // Aggregate locality stats.
+    for (auto& p : load_report.locality_stats) {
+      XdsLocalityName* locality_name = p.first.get();
+      auto& locality_stats_set = p.second;
+      XdsClusterLocalityStats::Snapshot& locality_snapshot =
+          snapshot.locality_stats[locality_name];
+      for (auto& locality_stats : locality_stats_set) {
+        locality_snapshot += locality_stats->GetSnapshotAndReset();
+      }
+    }
+    // Compute load report interval.
+    const grpc_millis now = ExecCtx::Get()->Now();
+    snapshot.load_report_interval = now - load_report.last_report_time;
+    load_report.last_report_time = now;
   }
-  return client_stats_map;
+  return snapshot_map;
 }
 
 void XdsClient::NotifyOnError(grpc_error* error) {

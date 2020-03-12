@@ -41,34 +41,34 @@ static const upb_msglayout *const validate_FieldRules_submsgs[22] = {
 };
 
 static const upb_msglayout_field validate_FieldRules__fields[22] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 8, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 9, 11, 1},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 10, 11, 1},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 20, 11, 1},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 21, 11, 1},
-  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 16, 11, 1},
-  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 17, 11, 1},
-  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, 1},
-  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 7, 11, 1},
-  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 14, 11, 1},
-  {12, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 15, 11, 1},
-  {13, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
-  {14, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 18, 11, 1},
-  {15, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
-  {16, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, 1},
-  {17, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 12, 11, 1},
-  {18, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 13, 11, 1},
-  {19, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 11, 11, 1},
-  {20, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
-  {21, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, 1},
-  {22, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 19, 11, 1},
+  {1, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 8, 11, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 3, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 9, 11, 1},
+  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 10, 11, 1},
+  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 20, 11, 1},
+  {6, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 21, 11, 1},
+  {7, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 16, 11, 1},
+  {8, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 17, 11, 1},
+  {9, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 6, 11, 1},
+  {10, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 7, 11, 1},
+  {11, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 14, 11, 1},
+  {12, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 15, 11, 1},
+  {13, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
+  {14, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 18, 11, 1},
+  {15, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 2, 11, 1},
+  {16, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 5, 11, 1},
+  {17, UPB_SIZE(4, 8), 1, 12, 11, 1},
+  {18, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 13, 11, 1},
+  {19, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 11, 11, 1},
+  {20, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+  {21, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 4, 11, 1},
+  {22, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 19, 11, 1},
 };
 
 const upb_msglayout validate_FieldRules_msginit = {
   &validate_FieldRules_submsgs[0],
   &validate_FieldRules__fields[0],
-  UPB_SIZE(8, 16), 22, false,
+  UPB_SIZE(16, 32), 22, false,
 };
 
 static const upb_msglayout_field validate_FloatRules__fields[7] = {
@@ -273,7 +273,7 @@ const upb_msglayout validate_BoolRules_msginit = {
   UPB_SIZE(2, 2), 1, false,
 };
 
-static const upb_msglayout_field validate_StringRules__fields[20] = {
+static const upb_msglayout_field validate_StringRules__fields[24] = {
   {1, UPB_SIZE(56, 56), 7, 0, 9, 1},
   {2, UPB_SIZE(8, 8), 1, 0, 4, 1},
   {3, UPB_SIZE(16, 16), 2, 0, 4, 1},
@@ -283,23 +283,27 @@ static const upb_msglayout_field validate_StringRules__fields[20] = {
   {7, UPB_SIZE(72, 88), 9, 0, 9, 1},
   {8, UPB_SIZE(80, 104), 10, 0, 9, 1},
   {9, UPB_SIZE(88, 120), 11, 0, 9, 1},
-  {10, UPB_SIZE(96, 136), 0, 0, 9, 3},
-  {11, UPB_SIZE(100, 144), 0, 0, 9, 3},
-  {12, UPB_SIZE(104, 152), UPB_SIZE(-109, -157), 0, 8, 1},
-  {13, UPB_SIZE(104, 152), UPB_SIZE(-109, -157), 0, 8, 1},
-  {14, UPB_SIZE(104, 152), UPB_SIZE(-109, -157), 0, 8, 1},
-  {15, UPB_SIZE(104, 152), UPB_SIZE(-109, -157), 0, 8, 1},
-  {16, UPB_SIZE(104, 152), UPB_SIZE(-109, -157), 0, 8, 1},
-  {17, UPB_SIZE(104, 152), UPB_SIZE(-109, -157), 0, 8, 1},
-  {18, UPB_SIZE(104, 152), UPB_SIZE(-109, -157), 0, 8, 1},
+  {10, UPB_SIZE(104, 152), 0, 0, 9, 3},
+  {11, UPB_SIZE(108, 160), 0, 0, 9, 3},
+  {12, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
+  {13, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
+  {14, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
+  {15, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
+  {16, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
+  {17, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
+  {18, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
   {19, UPB_SIZE(40, 40), 5, 0, 4, 1},
   {20, UPB_SIZE(48, 48), 6, 0, 4, 1},
+  {21, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
+  {22, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 8, 1},
+  {23, UPB_SIZE(96, 136), 12, 0, 9, 1},
+  {24, UPB_SIZE(112, 168), UPB_SIZE(-121, -177), 0, 14, 1},
 };
 
 const upb_msglayout validate_StringRules_msginit = {
   NULL,
   &validate_StringRules__fields[0],
-  UPB_SIZE(112, 160), 20, false,
+  UPB_SIZE(128, 192), 24, false,
 };
 
 static const upb_msglayout_field validate_BytesRules__fields[13] = {

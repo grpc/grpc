@@ -20,17 +20,18 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
+#include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -378,14 +379,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   if (channelz_enabled) {
     // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
     // it in here, so SocketNode knows its own address.
-    char* socket_name = nullptr;
-    gpr_asprintf(&socket_name, "%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            "", t->peer_string, socket_name);
-    // TODO(veblush): Remove this once gpr_asprintf is replaced by
-    // absl::StrFormat
-    gpr_free(socket_name);
+            "", t->peer_string,
+            absl::StrFormat("%s %s", get_vtable()->name, t->peer_string));
   }
   return enable_bdp;
 }
@@ -1099,8 +1096,10 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
             "data equal to \"too_many_pings\"");
     double current_keepalive_time_ms = static_cast<double>(t->keepalive_time);
+    constexpr int max_keepalive_time_ms =
+        INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     t->keepalive_time =
-        current_keepalive_time_ms > INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER
+        current_keepalive_time_ms > static_cast<double>(max_keepalive_time_ms)
             ? GRPC_MILLIS_INF_FUTURE
             : static_cast<grpc_millis>(current_keepalive_time_ms *
                                        KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
