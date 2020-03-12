@@ -128,7 +128,8 @@ class XdsClient::ChannelState::AdsCallState
   bool seen_response() const { return seen_response_; }
 
   void Subscribe(const std::string& type_url, const std::string& name);
-  void Unsubscribe(const std::string& type_url, const std::string& name);
+  void Unsubscribe(const std::string& type_url, const std::string& name,
+                   bool delay_unsubscription);
 
   bool HasSubscribedResources() const;
 
@@ -557,9 +558,10 @@ void XdsClient::ChannelState::Subscribe(const std::string& type_url,
 }
 
 void XdsClient::ChannelState::Unsubscribe(const std::string& type_url,
-                                          const std::string& name) {
+                                          const std::string& name,
+                                          bool delay_unsubscription) {
   if (ads_calld_ != nullptr) {
-    ads_calld_->calld()->Unsubscribe(type_url, name);
+    ads_calld_->calld()->Unsubscribe(type_url, name, delay_unsubscription);
     if (!ads_calld_->calld()->HasSubscribedResources()) ads_calld_.reset();
   }
 }
@@ -862,9 +864,10 @@ void XdsClient::ChannelState::AdsCallState::Subscribe(
 }
 
 void XdsClient::ChannelState::AdsCallState::Unsubscribe(
-    const std::string& type_url, const std::string& name) {
+    const std::string& type_url, const std::string& name,
+    bool delay_unsubscription) {
   state_map_[type_url].subscribed_resources.erase(name);
-  SendMessageLocked(type_url);
+  if (!delay_unsubscription) SendMessageLocked(type_url);
 }
 
 bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
@@ -910,7 +913,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     return;
   }
   if (!xds_client()->route_config_name_.empty()) {
-    Unsubscribe(XdsApi::kRdsTypeUrl, xds_client()->route_config_name_);
+    Unsubscribe(
+        XdsApi::kRdsTypeUrl, xds_client()->route_config_name_,
+        /*delay_unsubscription=*/!lds_update->route_config_name.empty());
   }
   xds_client()->route_config_name_ = std::move(lds_update->route_config_name);
   if (lds_update->rds_update.has_value()) {
@@ -1874,7 +1879,8 @@ void XdsClient::WatchClusterData(
 }
 
 void XdsClient::CancelClusterDataWatch(StringView cluster_name,
-                                       ClusterWatcherInterface* watcher) {
+                                       ClusterWatcherInterface* watcher,
+                                       bool delay_unsubscription) {
   if (shutting_down_) return;
   std::string cluster_name_str = std::string(cluster_name);
   ClusterState& cluster_state = cluster_map_[cluster_name_str];
@@ -1883,7 +1889,8 @@ void XdsClient::CancelClusterDataWatch(StringView cluster_name,
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
       cluster_map_.erase(cluster_name_str);
-      chand_->Unsubscribe(XdsApi::kCdsTypeUrl, cluster_name_str);
+      chand_->Unsubscribe(XdsApi::kCdsTypeUrl, cluster_name_str,
+                          delay_unsubscription);
     }
   }
 }
@@ -1908,7 +1915,8 @@ void XdsClient::WatchEndpointData(
 }
 
 void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
-                                        EndpointWatcherInterface* watcher) {
+                                        EndpointWatcherInterface* watcher,
+                                        bool delay_unsubscription) {
   if (shutting_down_) return;
   std::string eds_service_name_str = std::string(eds_service_name);
   EndpointState& endpoint_state = endpoint_map_[eds_service_name_str];
@@ -1917,7 +1925,8 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
     endpoint_state.watchers.erase(it);
     if (endpoint_state.watchers.empty()) {
       endpoint_map_.erase(eds_service_name_str);
-      chand_->Unsubscribe(XdsApi::kEdsTypeUrl, eds_service_name_str);
+      chand_->Unsubscribe(XdsApi::kEdsTypeUrl, eds_service_name_str,
+                          delay_unsubscription);
     }
   }
 }

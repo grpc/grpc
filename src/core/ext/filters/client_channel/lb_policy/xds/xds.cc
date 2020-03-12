@@ -792,7 +792,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
                 old_eds_service_name);
       }
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
-                                            endpoint_watcher_);
+                                            endpoint_watcher_,
+                                            /*delay_unsubscription=*/true);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO, "[xdslb %p] starting watch for %s", this,

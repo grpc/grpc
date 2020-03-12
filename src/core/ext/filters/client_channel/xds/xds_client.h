@@ -86,20 +86,26 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
   void WatchClusterData(StringView cluster_name,
                         std::unique_ptr<ClusterWatcherInterface> watcher);
   void CancelClusterDataWatch(StringView cluster_name,
-                              ClusterWatcherInterface* watcher);
+                              ClusterWatcherInterface* watcher,
+                              bool delay_unsubscription = false);
 
   // Start and cancel endpoint data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
   void WatchEndpointData(StringView eds_service_name,
                          std::unique_ptr<EndpointWatcherInterface> watcher);
   void CancelEndpointDataWatch(StringView eds_service_name,
-                               EndpointWatcherInterface* watcher);
+                               EndpointWatcherInterface* watcher,
+                               bool delay_unsubscription = false);
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
   RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
@@ -167,7 +173,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     void CancelConnectivityWatchLocked();
 
     void Subscribe(const std::string& type_url, const std::string& name);
-    void Unsubscribe(const std::string& type_url, const std::string& name);
+    void Unsubscribe(const std::string& type_url, const std::string& name,
+                     bool delay_unsubscription);
 
    private:
     class StateWatcher;
