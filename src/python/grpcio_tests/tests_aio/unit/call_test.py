@@ -457,16 +457,16 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         # Should be around the same as the timeout
         remained_time = call.time_remaining()
-        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT * 3 // 2)
-        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 2)
+        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT * 3 / 2)
+        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 5 / 2)
 
         response = await call.read()
         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         # Should be around the timeout minus a unit of wait time
         remained_time = call.time_remaining()
-        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT // 2)
-        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 3 // 2)
+        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT / 2)
+        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 3 / 2)
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 

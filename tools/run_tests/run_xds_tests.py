@@ -34,6 +34,8 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
+formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
+console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
@@ -71,8 +73,8 @@ argp.add_argument(
     '--client_cmd',
     default=None,
     help='Command to launch xDS test client. This script will fill in '
-    '{service_host}, {service_port},{stats_port} and {qps} parameters using '
-    'str.format(), and generate the GRPC_XDS_BOOTSTRAP file.')
+    '{server_uri}, {stats_port} and {qps} parameters using str.format(), and '
+    'generate the GRPC_XDS_BOOTSTRAP file.')
 argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
@@ -101,12 +103,16 @@ argp.add_argument('--network',
                   default='global/networks/default',
                   help='GCP network to use')
 argp.add_argument('--service_port_range',
-                  default='8080:8100',
+                  default='80',
                   type=parse_port_range,
                   help='Listening port for created gRPC backends. Specified as '
                   'either a single int or as a range in the format min:max, in '
                   'which case an available port p will be chosen s.t. min <= p '
                   '<= max')
+argp.add_argument('--forwarding_rule_ip_prefix',
+                  default='172.16.0.',
+                  help='If set, an available IP with this prefix followed by '
+                  '0-255 will be used for the generated forwarding rule.')
 argp.add_argument(
     '--stats_port',
     default=8079,
@@ -135,11 +141,13 @@ args = argp.parse_args()
 if args.verbose:
     logger.setLevel(logging.DEBUG)
 
+_DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
-_WAIT_FOR_OPERATION_SEC = 60
+_WAIT_FOR_OPERATION_SEC = 120
 _INSTANCE_GROUP_SIZE = 2
 _NUM_TEST_RPCS = 10 * args.qps
-_WAIT_FOR_STATS_SEC = 60
+_WAIT_FOR_STATS_SEC = 120
+_WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _BOOTSTRAP_TEMPLATE = """
 {{
   "node": {{
@@ -226,6 +234,7 @@ def wait_until_all_rpcs_go_to_given_backends(backends,
 
 
 def test_backends_restart(gcp, backend_service, instance_group):
+    logger.info('Running test_backends_restart')
     instance_names = get_instance_names(gcp, instance_group)
     num_instances = len(instance_names)
     start_time = time.time()
@@ -256,6 +265,7 @@ def test_backends_restart(gcp, backend_service, instance_group):
 def test_change_backend_service(gcp, original_backend_service, instance_group,
                                 alternate_backend_service,
                                 same_zone_instance_group):
+    logger.info('Running test_change_backend_service')
     original_backend_instances = get_instance_names(gcp, instance_group)
     alternate_backend_instances = get_instance_names(gcp,
                                                      same_zone_instance_group)
@@ -272,7 +282,7 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
         if stats.num_failures > 0:
             raise Exception('Unexpected failure: %s', stats)
         wait_until_all_rpcs_go_to_given_backends(alternate_backend_instances,
-                                                 _WAIT_FOR_STATS_SEC)
+                                                 _WAIT_FOR_URL_MAP_PATCH_SEC)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_instances(gcp, alternate_backend_service, [])
@@ -281,9 +291,13 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
 def test_new_instance_group_receives_traffic(gcp, backend_service,
                                              instance_group,
                                              same_zone_instance_group):
+    logger.info('Running test_new_instance_group_receives_traffic')
     instance_names = get_instance_names(gcp, instance_group)
+    # TODO(ericgribkoff) Reduce this timeout. When running sequentially, this
+    # occurs after patching the url map in test_change_backend_service, so we
+    # need the extended timeout here as well.
     wait_until_all_rpcs_go_to_given_backends(instance_names,
-                                             _WAIT_FOR_STATS_SEC)
+                                             _WAIT_FOR_URL_MAP_PATCH_SEC)
     try:
         patch_backend_instances(gcp,
                                 backend_service,
@@ -301,6 +315,7 @@ def test_new_instance_group_receives_traffic(gcp, backend_service,
 
 
 def test_ping_pong(gcp, backend_service, instance_group):
+    logger.info('Running test_ping_pong')
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     instance_names = get_instance_names(gcp, instance_group)
     wait_until_all_rpcs_go_to_given_backends(instance_names,
@@ -309,6 +324,7 @@ def test_ping_pong(gcp, backend_service, instance_group):
 
 def test_remove_instance_group(gcp, backend_service, instance_group,
                                same_zone_instance_group):
+    logger.info('Running test_remove_instance_group')
     try:
         patch_backend_instances(gcp,
                                 backend_service,
@@ -334,6 +350,7 @@ def test_remove_instance_group(gcp, backend_service, instance_group,
 
 
 def test_round_robin(gcp, backend_service, instance_group):
+    logger.info('Running test_round_robin')
     wait_for_healthy_backends(gcp, backend_service, instance_group)
     instance_names = get_instance_names(gcp, instance_group)
     threshold = 1
@@ -355,6 +372,9 @@ def test_round_robin(gcp, backend_service, instance_group):
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
         gcp, backend_service, primary_instance_group,
         secondary_zone_instance_group):
+    logger.info(
+        'Running test_secondary_locality_gets_no_requests_on_partial_primary_failure'
+    )
     try:
         patch_backend_instances(
             gcp, backend_service,
@@ -381,6 +401,8 @@ def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
 def test_secondary_locality_gets_requests_on_primary_failure(
         gcp, backend_service, primary_instance_group,
         secondary_zone_instance_group):
+    logger.info(
+        'Running test_secondary_locality_gets_requests_on_primary_failure')
     try:
         patch_backend_instances(
             gcp, backend_service,
@@ -453,6 +475,7 @@ nohup build/install/grpc-interop-testing/bin/xds-test-server --port=%d 1>/dev/nu
         }
     }
 
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.instanceTemplates().insert(project=gcp.project,
                                                     body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -470,6 +493,7 @@ def add_instance_group(gcp, zone, name, size):
         }]
     }
 
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.instanceGroupManagers().insert(project=gcp.project,
                                                         zone=zone,
                                                         body=config).execute()
@@ -491,6 +515,7 @@ def create_health_check(gcp, name):
             'portName': 'grpc'
         }
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.healthChecks().insert(project=gcp.project,
                                                body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -507,6 +532,7 @@ def create_health_check_firewall_rule(gcp, name):
         'sourceRanges': ['35.191.0.0/16', '130.211.0.0/22'],
         'targetTags': ['allow-health-checks'],
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.firewalls().insert(project=gcp.project,
                                             body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -522,6 +548,7 @@ def add_backend_service(gcp, name):
         'portName': 'grpc',
         'protocol': 'HTTP2'
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.backendServices().insert(project=gcp.project,
                                                   body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -543,6 +570,7 @@ def create_url_map(gcp, name, backend_service, host_name):
             'pathMatcher': _PATH_MATCHER_NAME
         }]
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.urlMaps().insert(project=gcp.project,
                                           body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -554,21 +582,23 @@ def create_target_http_proxy(gcp, name):
         'name': name,
         'url_map': gcp.url_map.url,
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.targetHttpProxies().insert(project=gcp.project,
                                                     body=config).execute()
     wait_for_global_operation(gcp, result['name'])
     gcp.target_http_proxy = GcpResource(config['name'], result['targetLink'])
 
 
-def create_global_forwarding_rule(gcp, name, port):
+def create_global_forwarding_rule(gcp, name, ip, port):
     config = {
         'name': name,
         'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
         'portRange': str(port),
-        'IPAddress': '0.0.0.0',
+        'IPAddress': ip,
         'network': args.network,
         'target': gcp.target_http_proxy.url,
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.globalForwardingRules().insert(project=gcp.project,
                                                         body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -671,6 +701,7 @@ def patch_backend_instances(gcp,
             'maxRate': 1 if balancing_mode == 'RATE' else None
         } for instance_group in instance_groups],
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
         body=config).execute()
@@ -706,6 +737,7 @@ def patch_url_map_backend_service(gcp, backend_service):
             'defaultService': backend_service.url,
         }]
     }
+    logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.urlMaps().patch(project=gcp.project,
                                          urlMap=gcp.url_map.name,
                                          body=config).execute()
@@ -886,18 +918,28 @@ try:
         create_target_http_proxy(gcp, target_http_proxy_name)
         potential_service_ports = list(args.service_port_range)
         random.shuffle(potential_service_ports)
+        if args.forwarding_rule_ip_prefix == '':
+            potential_ips = ['0.0.0.0']
+        else:
+            potential_ips = [
+                args.forwarding_rule_ip_prefix + str(x) for x in range(256)
+            ]
+        random.shuffle(potential_ips)
         for port in potential_service_ports:
-            try:
-                create_global_forwarding_rule(gcp, forwarding_rule_name, port)
-                gcp.service_port = port
-                break
-            except googleapiclient.errors.HttpError as http_error:
-                logger.warning(
-                    'Got error %s when attempting to create forwarding rule to '
-                    'port %d. Retrying with another port.' % (http_error, port))
+            for ip in potential_ips:
+                try:
+                    create_global_forwarding_rule(gcp, forwarding_rule_name, ip,
+                                                  port)
+                    gcp.service_port = port
+                    break
+                except googleapiclient.errors.HttpError as http_error:
+                    logger.warning(
+                        'Got error %s when attempting to create forwarding rule to '
+                        '%s:%d. Retrying with another ip:port.' %
+                        (http_error, ip, port))
         if not gcp.service_port:
-            raise Exception('Failed to pick a service port in the range %s' %
-                            args.service_port_range)
+            raise Exception(
+                'Failed to find a valid ip:port for the forwarding rule')
         create_instance_template(gcp, template_name, args.network,
                                  args.source_image)
         instance_group = add_instance_group(gcp, args.zone, instance_group_name,
@@ -975,8 +1017,11 @@ try:
 
     wait_for_healthy_backends(gcp, backend_service, instance_group)
 
-    cmd = args.client_cmd.format(service_host=service_host_name,
-                                 service_port=gcp.service_port,
+    if gcp.service_port == _DEFAULT_SERVICE_PORT:
+        server_uri = service_host_name
+    else:
+        server_uri = service_host_name + ':' + str(gcp.service_port)
+    cmd = args.client_cmd.format(server_uri=server_uri,
                                  stats_port=args.stats_port,
                                  qps=args.qps)
     client_process = start_xds_client(cmd)
