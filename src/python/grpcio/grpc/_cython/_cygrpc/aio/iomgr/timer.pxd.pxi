@@ -15,11 +15,10 @@
 cdef class _AsyncioTimer:
     cdef:
         grpc_custom_timer * _grpc_timer
-        object _deadline
-        object _timer_handler
-        int _active
+        object _timer_future
+        bint _active
 
     @staticmethod
-    cdef _AsyncioTimer create(grpc_custom_timer * grpc_timer, deadline)
+    cdef _AsyncioTimer create(grpc_custom_timer * grpc_timer, float timeout)
 
     cdef stop(self)

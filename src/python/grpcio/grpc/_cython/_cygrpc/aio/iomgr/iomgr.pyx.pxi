@@ -49,7 +49,6 @@ cdef void asyncio_socket_connect(
         const grpc_sockaddr* addr,
         size_t addr_len,
         grpc_custom_connect_callback connect_cb) with gil:
-
     host, port = sockaddr_to_tuple(addr, addr_len)
     socket = <_AsyncioSocket>grpc_socket.impl
     socket.connect(host, port, connect_cb)
@@ -185,14 +184,15 @@ cdef void asyncio_resolve_async(
 
 cdef void asyncio_timer_start(grpc_custom_timer* grpc_timer) with gil:
     timer = _AsyncioTimer.create(grpc_timer, grpc_timer.timeout_ms / 1000.0)
-    Py_INCREF(timer)
     grpc_timer.timer = <void*>timer
 
 
 cdef void asyncio_timer_stop(grpc_custom_timer* grpc_timer) with gil:
-    timer = <_AsyncioTimer>grpc_timer.timer
-    timer.stop()
-    Py_DECREF(timer)
+    if grpc_timer.timer == NULL:
+        return
+    else:
+        timer = <_AsyncioTimer>grpc_timer.timer
+        timer.stop()
 
 
 cdef void asyncio_init_loop() with gil:

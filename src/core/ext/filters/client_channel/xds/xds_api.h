@@ -34,6 +34,8 @@
 
 namespace grpc_core {
 
+class XdsClient;
+
 class XdsApi {
  public:
   static const char* kLdsTypeUrl;
@@ -187,7 +189,7 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  explicit XdsApi(const XdsBootstrap::Node* node);
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
 
   // Creates a request to nack an unsupported resource type.
   // Takes ownership of \a error.
@@ -249,6 +251,8 @@ class XdsApi {
                                grpc_millis* load_reporting_interval);
 
  private:
+  XdsClient* client_;
+  TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;
   const std::string build_version_;
   const std::string user_agent_name_;
