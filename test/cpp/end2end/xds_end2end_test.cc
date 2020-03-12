@@ -2104,6 +2104,64 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
                   ::testing::Le(kLocalityWeightRate1 * (1 + kErrorTolerance))));
 }
 
+// Tests that the locality map can be changed without failing RPCs 
+TEST_P(LocalityMapTest, ChangeLocalityTest) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 1000;
+  // The locality weight for the first 3 localities.
+  const std::vector<int> kLocalityWeights0 = {2, 3, 4};
+  const double kTotalLocalityWeight0 =
+      std::accumulate(kLocalityWeights0.begin(), kLocalityWeights0.end(), 0);
+  std::vector<double> locality_weight_rate_0;
+  for (int weight : kLocalityWeights0) {
+    locality_weight_rate_0.push_back(weight / kTotalLocalityWeight0);
+  }
+  // Delete the first locality, keep the second locality, change the third
+  // locality's weight from 4 to 2, and add a new locality with weight 6.
+  const std::vector<int> kLocalityWeights1 = {3, 2, 6};
+  const double kTotalLocalityWeight1 =
+      std::accumulate(kLocalityWeights1.begin(), kLocalityWeights1.end(), 0);
+  std::vector<double> locality_weight_rate_1 = {
+      0 /* placeholder for locality 0 */};
+  for (int weight : kLocalityWeights1) {
+    locality_weight_rate_1.push_back(weight / kTotalLocalityWeight1);
+  }
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1), 2},
+      //{"locality1", GetBackendPorts(1, 2), 3},
+      //{"locality2", GetBackendPorts(2, 3), 4},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // Wait for the first 3 backends to be ready.
+  //WaitForAllBackends(0, 3);
+  WaitForBackend(0);
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  // Send kNumRpcs RPCs.
+  CheckRpcSendOk(kNumRpcs);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  args = AdsServiceImpl::EdsResourceArgs({
+      //{"locality1", GetBackendPorts(1, 2), 3},
+      //{"locality2", GetBackendPorts(2, 3), 2},
+      {"locality3", GetBackendPorts(3, 4), 6},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // Backend 3 hasn't received any request.
+  EXPECT_EQ(0U, backends_[3]->backend_service()->request_count());
+  // Wait until the locality update has been processed, as signaled by backend 3
+  // receiving a request. DONNA FIX: in the mean time RPC should be ok
+  CheckRpcSendOk(kNumRpcs);
+  WaitForBackend(3);
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  // Send kNumRpcs RPCs.
+  CheckRpcSendOk(kNumRpcs);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  // Backend 0 no longer receives any request.
+  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
+}
+
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
 TEST_P(LocalityMapTest, StressTest) {
