@@ -63,8 +63,8 @@ _FLAKY_TESTS = [
         data = [
             "//src/python/grpcio_tests/tests/unit/credentials",
         ],
-        imports = ["../../"],
         flaky = test_file_name in _FLAKY_TESTS,
+        imports = ["../../"],
         main = test_file_name,
         python_version = "PY3",
         deps = [
