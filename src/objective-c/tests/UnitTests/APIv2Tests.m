@@ -401,6 +401,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.timeout = 0.001;
+  options.transportType = GRPCTransportTypeInsecure;
   GRPCRequestOptions *requestOptions =
       [[GRPCRequestOptions alloc] initWithHost:kHostAddress
                                           path:kFullDuplexCallMethod.HTTPPath
