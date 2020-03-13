@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	pb "google.golang.org/grpc/benchmark/grpc_testing"
+	pb "github.com/codeblooded/grpc-proto/genproto/grpc/testing"
 )
 
 // Session is a test scenario, its components and metdata.

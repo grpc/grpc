@@ -53,7 +53,7 @@ define-import "google/longrunning/operations.proto" "google.golang.org/genproto/
 # A possible solution would be to download the protobufs from grpc/grpc-proto on
 # github and use them to compile. However, this is also not desirable.
 include "../../"  # root of grpc/grpc
-define-import "src/proto/grpc/testing/control.proto" "google.golang.org/grpc/benchmark/grpc_testing"
+define-import "src/proto/grpc/testing/control.proto" "github.com/codeblooded/grpc-proto/genproto/grpc/testing"
 
 # The local location of the proto files.
 include "./"
