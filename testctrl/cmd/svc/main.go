@@ -22,31 +22,41 @@ import (
 	"os"
 	"strings"
 
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/grpc/grpc/testctrl/auth"
 	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
-	"github.com/grpc/grpc/testctrl/kubernetes"
 	"github.com/grpc/grpc/testctrl/svc"
+
 	lrPb "google.golang.org/genproto/googleapis/longrunning"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
-func setupProdEnv(adapter *kubernetes.Adapter) {
-	if err := adapter.ConnectWithinCluster(); err != nil {
+
+func setupProdEnv() *kubernetes.Clientset {
+	clientset, err := auth.ConnectWithinCluster()
+	if err != nil {
 		log.Fatalf("Unable to connect to kubernetes API within cluster: %v", err)
 	}
+	return clientset
 }
 
-func setupDevEnv(adapter *kubernetes.Adapter, grpcServer *grpc.Server) {
+func setupDevEnv(grpcServer *grpc.Server) *kubernetes.Clientset {
 	c, set := os.LookupEnv("KUBE_CONFIG_FILE")
 	if !set {
 		log.Fatalf("Missing a kube config file, specify its absolute path in the KUBE_CONFIG_FILE env variable.")
 	}
-	if err := adapter.ConnectWithConfig(c); err != nil {
+
+	clientset, err := auth.ConnectWithConfig(c)
+	if err != nil {
 		log.Fatalf("Invalid config file specified by the KUBE_CONFIG_FILE env variable, unable to connect: %v", err)
 	}
 
 	log.Println("Enabling reflection for grpc_cli; avoid this flag in production.")
 	reflection.Register(grpcServer)
+
+	return clientset
 }
 
 func main() {
@@ -54,15 +64,15 @@ func main() {
 	flag.Parse()
 
 	grpcServer := grpc.NewServer()
-	adapter := &kubernetes.Adapter{}
+	var clientset *kubernetes.Clientset
 
 	env := os.Getenv("APP_ENV")
 	if strings.Compare(env, "production") == 0 {
 		log.Println("App environment set to production")
-		setupProdEnv(adapter)
+		clientset = setupProdEnv()
 	} else {
 		log.Println("App environment set to development")
-		setupDevEnv(adapter, grpcServer)
+		clientset = setupDevEnv(grpcServer)
 	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
@@ -70,6 +80,8 @@ func main() {
 		log.Fatalf("Failed to listen on port %d: %v", *port, err)
 	}
 
+	// TODO: inject clientset into scheduling service
+	_ = clientset
 	lrPb.RegisterOperationsServer(grpcServer, &svc.OperationsServer{})
 	pb.RegisterSchedulingServiceServer(grpcServer, &svc.SchedulingServer{})
 
@@ -79,3 +91,4 @@ func main() {
 		log.Fatalf("Server unexpectedly crashed: %v", err)
 	}
 }
+
