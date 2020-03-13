@@ -17,7 +17,7 @@ package svc
 import (
 	"context"
 
-	svcPb "github.com/grpc/grpc/testctrl/genproto/testctrl/svc"
+	svcPb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
 	lrPb "google.golang.org/genproto/googleapis/longrunning"
 )
 

@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	pb "github.com/grpc/grpc/testctrl/genproto/testctrl/svc"
+	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
 	"github.com/grpc/grpc/testctrl/kubernetes"
 	"github.com/grpc/grpc/testctrl/svc"
 	lrPb "google.golang.org/genproto/googleapis/longrunning"

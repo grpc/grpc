@@ -1,7 +1,7 @@
 package types
 
 import (
-	pb "github.com/grpc/grpc/testctrl/genproto/testctrl/svc"
+	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
 	"testing"
 )
 

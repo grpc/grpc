@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 
-	pb "github.com/grpc/grpc/testctrl/genproto/testctrl/svc"
+	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
 )
 
 // TestEventKindProto checks that the Proto method on the EventKind converts to the correct enum value
