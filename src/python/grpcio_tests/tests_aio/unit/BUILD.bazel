@@ -51,7 +51,7 @@ py_library(
 )
 
 _FLAKY_TESTS = [
-    # NOTE(lidiz) this tests use many tcp ports; flaky under parallel runs.
+    # TODO(https://github.com/grpc/grpc/issues/22347) remove from this list.
     "channel_argument_test.py",
 ]
 

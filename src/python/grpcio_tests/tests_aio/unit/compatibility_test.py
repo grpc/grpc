@@ -43,8 +43,9 @@ def _unique_options() -> Sequence[Tuple[str, float]]:
     return (('iv', random.random()),)
 
 
-@unittest.skipIf(cygrpc.grpc_aio_engine() != cygrpc.AsyncIOEngine.POLLER,
-                 'Compatible mode needs POLLER completion queue.')
+@unittest.skipIf(
+    os.environ.get('GRPC_ASYNCIO_ENGINE', '').lower() != 'poller',
+    'Compatible mode needs POLLER completion queue.')
 class TestCompatibility(AioTestBase):
 
     async def setUp(self):
@@ -65,7 +66,7 @@ class TestCompatibility(AioTestBase):
         await self._async_server.stop(None)
 
     async def _run_in_another_thread(self, func: Callable[[], None]):
-        work_done = asyncio.Event()
+        work_done = asyncio.Event(loop=self.loop)
 
         def thread_work():
             func()
@@ -162,17 +163,14 @@ class TestCompatibility(AioTestBase):
 
     async def test_server(self):
 
-        def echo(a, b):
-            return a
-
         class GenericHandlers(grpc.GenericRpcHandler):
 
             def service(self, handler_call_details):
-                return grpc.unary_unary_rpc_method_handler(echo)
+                return grpc.unary_unary_rpc_method_handler(lambda x, _: x)
 
         # It's fine to instantiate server object in the event loop thread.
         # The server will spawn its own serving thread.
-        server = grpc.server(ThreadPoolExecutor(max_workers=10),
+        server = grpc.server(ThreadPoolExecutor(),
                              handlers=(GenericHandlers(),))
         port = server.add_insecure_port('0')
         server.start()
@@ -200,7 +198,7 @@ class TestCompatibility(AioTestBase):
                 call = async_stub.UnaryCall(messages_pb2.SimpleRequest())
                 response = await call
                 self.assertIsInstance(response, messages_pb2.SimpleResponse)
-                self.assertEqual(grpc.StatusCode.OK, call.code())
+                self.assertEqual(grpc.StatusCode.OK, await call.code())
 
             loop = asyncio.new_event_loop()
             loop.run_until_complete(async_work())
