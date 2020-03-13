@@ -97,8 +97,7 @@ constexpr char kDefaultServiceConfig[] =
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
- public:
-  size_t request_count() {
+  [[[]]] public : size_t request_count() {
     grpc::internal::MutexLock lock(&mu_);
     return request_count_;
   }
