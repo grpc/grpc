@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	pb "github.com/grpc/grpc/testctrl/genproto/testctrl/svc"
+	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
 )
 
 // Component represents a dependency for a session. Benchmarks tend to have three components: a

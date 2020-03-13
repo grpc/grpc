@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package grpc.testing.benchmarking.scheduling.v1;
 
-option go_package = "github.com/grpc/grpc/testctrl/genproto/testctrl/svc";
+option go_package = "github.com/grpc/grpc/testctrl/proto/scheduling/v1";
 
 import "google/longrunning/operations.proto";
 import "google/protobuf/duration.proto";

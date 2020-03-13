@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/grpc/grpc/testctrl/genproto/testctrl/svc"
+	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
 )
 
 // Event represents an action at a specific point in time on a subject. Likely, the subject is a

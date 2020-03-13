@@ -2,7 +2,7 @@ package test
 
 import (
 	"github.com/grpc/grpc/testctrl/svc/types"
-	pb "github.com/grpc/grpc/testctrl/genproto/grpc/testing"
+	pb "google.golang.org/grpc/benchmark/grpc_testing"
 )
 
 type SessionBuilder struct {
