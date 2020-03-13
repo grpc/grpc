@@ -29,6 +29,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -483,7 +484,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.config = config.config;
-  update_args.addresses = addresses;
+  update_args.addresses = FilterAddressesForChild(addresses, name_);
   update_args.args = grpc_channel_args_copy(args);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {

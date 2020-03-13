@@ -28,6 +28,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
@@ -659,36 +660,22 @@ void EdsLb::UpdatePriorityList(
   UpdateChildPolicyLocked();
 }
 
-void* LocalityNameCopy(void* p) {
-  XdsLocalityName* name = static_cast<XdsLocalityName*>(p);
-  name->Ref(DEBUG_LOCATION, "channel_args").release();
-  return p;
-}
-void LocalityNameDestroy(void* p) {
-  XdsLocalityName* name = static_cast<XdsLocalityName*>(p);
-  name->Unref(DEBUG_LOCATION, "channel_args");
-}
-int LocalityNameCmp(void* p1, void* p2) {
-  XdsLocalityName* name1 = static_cast<XdsLocalityName*>(p1);
-  XdsLocalityName* name2 = static_cast<XdsLocalityName*>(p2);
-  return name1->Compare(*name2);
-}
-const grpc_arg_pointer_vtable locality_name_arg_vtable = {
-    LocalityNameCopy, LocalityNameDestroy, LocalityNameCmp};
-
 ServerAddressList EdsLb::CreateChildPolicyAddresses() {
   ServerAddressList addresses;
   for (uint32_t priority = 0; priority < priority_list_update_.size();
        ++priority) {
+    std::string priority_child_name =
+        absl::StrCat("child", priority_child_numbers_[priority]);
     const auto* locality_map = priority_list_update_.Find(priority);
     GPR_ASSERT(locality_map != nullptr);
     for (const auto& p : locality_map->localities) {
+      const auto& locality_name = p.first;
       const auto& locality = p.second;
+      std::vector<std::string> hierarchical_path = {
+          priority_child_name, locality_name->AsHumanReadableString()};
       for (size_t i = 0; i < locality.serverlist.size(); ++i) {
         const ServerAddress& address = locality.serverlist[i];
-        grpc_arg new_arg = grpc_channel_arg_pointer_create(
-            const_cast<char*>(GRPC_ARG_ADDRESS_EDS_LOCALITY),
-            locality.name.get(), &locality_name_arg_vtable);
+        grpc_arg new_arg = MakeHierarchicalPathArg(hierarchical_path);
         grpc_channel_args* args = grpc_channel_args_copy_and_add(
             address.args(), &new_arg, 1);
         addresses.emplace_back(address.address(), args);
@@ -741,17 +728,10 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
       } else {
         endpoint_picking_policy = config_->endpoint_picking_policy();
       }
-      // Wrap that in the eds_locality_filter policy.
-      Json::Array eds_locality_policy = {Json::Object{
-          {"eds_locality_filter_experimental", Json::Object{
-              {"locality", locality_name_json},
-              {"childPolicy", std::move(endpoint_picking_policy)},
-          }},
-      }};
       // Add weighted target entry.
       weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
           {"weight", locality.lb_weight},
-          {"childPolicy", Json::Array{std::move(eds_locality_policy)}},
+          {"childPolicy", std::move(endpoint_picking_policy)},
       };
     }
     // Add priority entry.

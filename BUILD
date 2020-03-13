@@ -320,7 +320,6 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_cds",
         "grpc_lb_policy_eds",
-        "grpc_lb_policy_eds_locality_filter",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_lrs",
         "grpc_resolver_xds",
@@ -339,7 +338,6 @@ grpc_cc_library(
     deps = [
         "grpc_common",
         "grpc_lb_policy_cds_secure",
-        "grpc_lb_policy_eds_locality_filter_secure",
         "grpc_lb_policy_eds_secure",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_lrs_secure",
@@ -1386,6 +1384,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_address_filtering",
         "grpc_xds_client",
     ],
 )
@@ -1405,38 +1404,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
-        "grpc_xds_client_secure",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_eds_locality_filter",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_eds_locality_filter_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
+        "grpc_lb_address_filtering",
         "grpc_xds_client_secure",
     ],
 )
@@ -1464,6 +1432,24 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_address_filtering",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/address_filtering.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/address_filtering.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
     ],
 )
 
@@ -1517,6 +1503,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_address_filtering",
     ],
 )
 
@@ -1529,6 +1516,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_address_filtering",
     ],
 )
 

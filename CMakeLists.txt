@@ -1316,6 +1316,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
+  src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
@@ -1328,7 +1329,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
@@ -1974,6 +1974,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
+  src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
@@ -1986,7 +1987,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/eds_locality_filter.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
