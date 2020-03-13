@@ -52,13 +52,5 @@ cdef class CallbackWrapper:
     cdef grpc_experimental_completion_queue_functor *c_functor(self)
 
 
-cdef class CallbackCompletionQueue:
-    cdef grpc_completion_queue *_cq
-    cdef object _shutdown_completed  # asyncio.Future
-    cdef CallbackWrapper _wrapper
-
-    cdef grpc_completion_queue* c_ptr(self)
-
-
 cdef class GrpcCallWrapper:
     cdef grpc_call* call

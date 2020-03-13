@@ -162,7 +162,7 @@ class Server(_base_server.Server):
         be safe to slightly extend the underlying Cython object's life span.
         """
         if hasattr(self, '_server'):
-            self._loop.create_task(self._server.shutdown(None))
+            cygrpc.aio_loop_schedule_coroutine(self._server.shutdown(None))
 
 
 def server(migration_thread_pool: Optional[Executor] = None,

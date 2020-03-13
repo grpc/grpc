@@ -69,27 +69,6 @@ cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler
     InternalError)
 
 
-cdef class CallbackCompletionQueue:
-
-    def __cinit__(self):
-        self._shutdown_completed = grpc_aio_loop().create_future()
-        self._wrapper = CallbackWrapper(
-            self._shutdown_completed,
-            CQ_SHUTDOWN_FAILURE_HANDLER)
-        self._cq = grpc_completion_queue_create_for_callback(
-            self._wrapper.c_functor(),
-            NULL
-        )
-
-    cdef grpc_completion_queue* c_ptr(self):
-        return self._cq
-
-    async def shutdown(self):
-        grpc_completion_queue_shutdown(self._cq)
-        await self._shutdown_completed
-        grpc_completion_queue_destroy(self._cq)
-
-
 class ExecuteBatchError(Exception): pass
 
 
