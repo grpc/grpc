@@ -126,23 +126,28 @@ def _run_single_channel(args: argparse.Namespace):
             sys.stdout.flush()
             start = time.time()
             end = start + duration_per_query
-            call, _ = stub.UnaryCall.with_call(messages_pb2.SimpleRequest(),
-                                               timeout=float(
-                                                   args.rpc_timeout_sec))
-            print(f"Got result {request_id}")
-            sys.stdout.flush()
-            with _global_lock:
-                for watcher in _watchers:
-                    # TODO: Implement a peer details getter.
-                    peer = f"192.168.1.{request_id % 255}"
-                    watcher.on_rpc_complete(request_id, peer)
-            if args.print_response:
-                if call.code() == grpc.StatusCode.OK:
-                    print("Successful response.")
-                    sys.stdout.flush()
+            try:
+                response, call = stub.UnaryCall.with_call(messages_pb2.SimpleRequest(),
+                                                   timeout=float(
+                                                       args.rpc_timeout_sec))
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+                    print(f"RPC timed out after {args.rpc_timeout_sec}")
                 else:
-                    print(f"RPC failed: {call}")
-                    sys.stdout.flush()
+                    raise
+            else:
+                print(f"Got result {request_id}")
+                sys.stdout.flush()
+                with _global_lock:
+                    for watcher in _watchers:
+                        watcher.on_rpc_complete(request_id, response.hostname)
+                if args.print_response:
+                    if call.code() == grpc.StatusCode.OK:
+                        print("Successful response.")
+                        sys.stdout.flush()
+                    else:
+                        print(f"RPC failed: {call}")
+                        sys.stdout.flush()
             now = time.time()
             while now < end:
                 time.sleep(end - now)
