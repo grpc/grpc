@@ -278,6 +278,7 @@ libs:
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/random.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
@@ -320,6 +321,7 @@ libs:
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
   - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/random.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
   - src/core/lib/gpr/string_util_windows.cc
@@ -388,6 +390,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/rls/rls.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
@@ -513,6 +516,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
@@ -746,6 +750,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
@@ -889,6 +894,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
@@ -6824,6 +6830,50 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
+- name: rls_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/test_lb_policies.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/lookup/rls.proto
+  - src/proto/grpc/testing/lookup/rls_config.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/core/util/test_lb_policies.cc
+  - test/cpp/end2end/rls_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  - absl/types:optional
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: rls_key_builder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/rls_key_builder_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: secure_auth_context_test
   gtest: true
   build: test

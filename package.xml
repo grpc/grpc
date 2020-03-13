@@ -121,6 +121,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/rls/rls.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/rls/rls.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/cds.cc" role="src" />
@@ -389,6 +391,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c" role="src" />
@@ -462,6 +466,8 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/log_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/random.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/random.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.h" role="src" />
