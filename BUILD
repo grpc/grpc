@@ -338,6 +338,7 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_cds_secure",
         "grpc_lb_policy_grpclb_secure",
+        "grpc_lb_policy_rls_secure",
         "grpc_lb_policy_xds_secure",
         "grpc_resolver_xds_secure",
         "grpc_secure",
@@ -496,6 +497,7 @@ grpc_cc_library(
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
         "src/core/lib/gpr/murmur_hash.cc",
+        "src/core/lib/gpr/random.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
         "src/core/lib/gpr/string_util_windows.cc",
@@ -528,6 +530,7 @@ grpc_cc_library(
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/murmur_hash.h",
+        "src/core/lib/gpr/random.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
@@ -1284,6 +1287,37 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "rls_upb",
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_rls_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_secure",
+        "rls_upb",
     ],
 )
 
