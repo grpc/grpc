@@ -184,8 +184,6 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertEqual(await call.details(),
                          'Locally cancelled by application!')
 
-    @unittest.skip(
-        "segmentation fault: https://github.com/grpc/grpc/issues/22302")
     async def test_cancel_unary_unary_in_task(self):
         coro_started = asyncio.Event()
         call = self._stub.EmptyCall(messages_pb2.SimpleRequest())
@@ -365,8 +363,6 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
-    @unittest.skip(
-        "segmentation fault: https://github.com/grpc/grpc/issues/22302")
     async def test_cancel_unary_stream_in_task_using_read(self):
         coro_started = asyncio.Event()
 
@@ -396,8 +392,6 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         with self.assertRaises(asyncio.CancelledError):
             await task
 
-    @unittest.skip(
-        "segmentation fault: https://github.com/grpc/grpc/issues/22302")
     async def test_cancel_unary_stream_in_task_using_async_for(self):
         coro_started = asyncio.Event()
 
