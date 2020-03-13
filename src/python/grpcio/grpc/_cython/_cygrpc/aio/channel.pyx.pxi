@@ -31,7 +31,7 @@ cdef class AioChannel:
             options = ()
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
         self._target = target
-        self.cq = CallbackCompletionQueue()
+        self.cq = create_completion_queue()
         self.loop = loop
         self._status = AIO_CHANNEL_STATUS_READY
 

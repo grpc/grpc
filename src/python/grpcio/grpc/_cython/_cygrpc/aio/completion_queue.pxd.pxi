@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef enum AioChannelStatus:
-    AIO_CHANNEL_STATUS_UNKNOWN
-    AIO_CHANNEL_STATUS_READY
-    AIO_CHANNEL_STATUS_CLOSING
-    AIO_CHANNEL_STATUS_DESTROYED
+cdef class BaseCompletionQueue:
+    cdef grpc_completion_queue *_cq
 
-cdef class AioChannel:
-    cdef:
-        grpc_channel * channel
-        BaseCompletionQueue cq
-        object loop
-        bytes _target
-        AioChannelStatus _status
+    cdef grpc_completion_queue* c_ptr(self)
+
+cdef class PollerCompletionQueue(BaseCompletionQueue):
+    cdef bint _shutdown
+    cdef object _shutdown_completed
+    cdef object _poller_thread
+
+    cdef void _poll(self) except *
+
+
+cdef class CallbackCompletionQueue(BaseCompletionQueue):
+    cdef object _shutdown_completed  # asyncio.Future
+    cdef CallbackWrapper _wrapper
