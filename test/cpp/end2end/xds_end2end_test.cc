@@ -1209,11 +1209,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
-  void WaitForBackend(size_t backend_idx, bool reset_counters = true) {
+  void WaitForBackend(size_t backend_idx, bool reset_counters = true,
+                      bool require_success = false) {
     gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
             static_cast<unsigned long>(backend_idx));
     do {
-      (void)SendRpc();
+      Status status = SendRpc();
+      if (require_success) {
+        EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                                 << " message=" << status.error_message();
+      }
     } while (backends_[backend_idx]->backend_service()->request_count() == 0);
     if (reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========",
@@ -2300,6 +2305,31 @@ TEST_P(LocalityMapTest, UpdateMap) {
             ::testing::Ge(locality_weight_rate_1[i] * (1 - kErrorTolerance)),
             ::testing::Le(locality_weight_rate_1[i] * (1 + kErrorTolerance))));
   }
+}
+
+// Tests that we don't fail RPCs when replacing all of the localities in
+// a given priority.
+TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  args = AdsServiceImpl::EdsResourceArgs({
+      {"locality1", GetBackendPorts(1, 2)},
+  });
+  std::thread delayed_resource_setter(std::bind(
+      &BasicTest::SetEdsResourceWithDelay, this, 0,
+      AdsServiceImpl::BuildEdsResource(args), 5000, kDefaultResourceName));
+  // Wait for the first backend to be ready.
+  WaitForBackend(0);
+  // Keep sending RPCs until we switch over to backend 1, which tells us
+  // that we received the update.  No RPCs should fail during this
+  // transition.
+  WaitForBackend(1, /*reset_counters=*/true, /*require_success=*/true);
+  delayed_resource_setter.join();
 }
 
 class FailoverTest : public BasicTest {
