@@ -513,9 +513,6 @@ class ServerContext : public ServerContextBase {
 
   using ServerContextBase::AddInitialMetadata;
   using ServerContextBase::AddTrailingMetadata;
-  using ServerContextBase::IsCancelled;
-  using ServerContextBase::SetLoadReportingCosts;
-  using ServerContextBase::TryCancel;
   using ServerContextBase::auth_context;
   using ServerContextBase::c_call;
   using ServerContextBase::census_context;
@@ -524,10 +521,13 @@ class ServerContext : public ServerContextBase {
   using ServerContextBase::compression_level;
   using ServerContextBase::compression_level_set;
   using ServerContextBase::deadline;
+  using ServerContextBase::IsCancelled;
   using ServerContextBase::peer;
   using ServerContextBase::raw_deadline;
   using ServerContextBase::set_compression_algorithm;
   using ServerContextBase::set_compression_level;
+  using ServerContextBase::SetLoadReportingCosts;
+  using ServerContextBase::TryCancel;
 
   // Sync/CQ-based Async ServerContext only
   using ServerContextBase::AsyncNotifyWhenDone;
@@ -555,9 +555,6 @@ class CallbackServerContext : public ServerContextBase {
 
   using ServerContextBase::AddInitialMetadata;
   using ServerContextBase::AddTrailingMetadata;
-  using ServerContextBase::IsCancelled;
-  using ServerContextBase::SetLoadReportingCosts;
-  using ServerContextBase::TryCancel;
   using ServerContextBase::auth_context;
   using ServerContextBase::c_call;
   using ServerContextBase::census_context;
@@ -566,10 +563,13 @@ class CallbackServerContext : public ServerContextBase {
   using ServerContextBase::compression_level;
   using ServerContextBase::compression_level_set;
   using ServerContextBase::deadline;
+  using ServerContextBase::IsCancelled;
   using ServerContextBase::peer;
   using ServerContextBase::raw_deadline;
   using ServerContextBase::set_compression_algorithm;
   using ServerContextBase::set_compression_level;
+  using ServerContextBase::SetLoadReportingCosts;
+  using ServerContextBase::TryCancel;
 
   // CallbackServerContext only
   using ServerContextBase::DefaultReactor;

@@ -19,7 +19,7 @@
 #import <ProtoRPC/ProtoRPC.h>
 
 // Convenience class to use blocks as callbacks
-@interface PerfTestsBlockCallbacks : NSObject<GRPCProtoResponseHandler>
+@interface PerfTestsBlockCallbacks : NSObject <GRPCProtoResponseHandler>
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                 messageCallback:(void (^)(id))messageCallback

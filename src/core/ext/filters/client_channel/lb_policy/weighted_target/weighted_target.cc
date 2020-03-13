@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+// FIXME: go through logging guidelines and make sure all policies comply
+
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
@@ -166,7 +168,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // The owning LB policy.
     RefCountedPtr<WeightedTargetLb> weighted_target_policy_;
 
-    // Points to the corresponding key in WeightedTargetLb::targets_.
     const std::string& name_;
 
     uint32_t weight_;
@@ -241,7 +242,11 @@ WeightedTargetLb::WeightedTargetLb(Args args)
 // FIXME: new channel arg
       child_retention_interval_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS,
-          {GRPC_WEIGHTED_TARGET_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})) {}
+          {GRPC_WEIGHTED_TARGET_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO, "[weighted_target_lb %p] created", this);
+  }
+}
 
 WeightedTargetLb::~WeightedTargetLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
@@ -303,6 +308,12 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
 }
 
 void WeightedTargetLb::UpdateStateLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO,
+            "[weighted_target_lb %p] scanning children to determine "
+            "connectivity state",
+            this);
+  }
   // Construct a new picker which maintains a map of all child pickers
   // that are ready. Each child is represented by a portion of the range
   // proportional to its weight, such that the total range is the sum of the
@@ -315,11 +326,18 @@ void WeightedTargetLb::UpdateStateLocked() {
   size_t num_idle = 0;
   size_t num_transient_failures = 0;
   for (const auto& p : targets_) {
-    const auto& child_name = p.first;
+    const std::string& child_name = p.first;
     const WeightedChild* child = p.second.get();
     // Skip the targets that are not in the latest update.
     if (config_->target_map().find(child_name) == config_->target_map().end()) {
       continue;
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+      gpr_log(GPR_INFO,
+              "[weighted_target_lb %p]   child=%s state=%s weight=%d picker=%p",
+              this, child_name.c_str(),
+              ConnectivityStateName(child->connectivity_state()),
+              child->weight(), child->picker_wrapper().get());
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {

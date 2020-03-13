@@ -42,14 +42,28 @@ struct grpc_tls_key_materials_config
   int version() const { return version_; }
 
   /** Setters for member fields. **/
+  // TODO(ZhenLian): Remove this function
   void set_pem_root_certs(grpc_core::UniquePtr<char> pem_root_certs) {
     pem_root_certs_ = std::move(pem_root_certs);
+  }
+  // The ownerships of |pem_root_certs| remain with the caller.
+  void set_pem_root_certs(const char* pem_root_certs) {
+    // make a copy of pem_root_certs.
+    grpc_core::UniquePtr<char> pem_root_ptr(gpr_strdup(pem_root_certs));
+    pem_root_certs_ = std::move(pem_root_ptr);
   }
   void add_pem_key_cert_pair(grpc_core::PemKeyCertPair pem_key_cert_pair) {
     pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
   }
-  void set_key_materials(grpc_core::UniquePtr<char> pem_root_certs,
-                         PemKeyCertPairList pem_key_cert_pair_list);
+  // The ownerships of |pem_root_certs| and |pem_key_cert_pairs| remain with the
+  // caller.
+  void set_key_materials(const char* pem_root_certs,
+                         const grpc_ssl_pem_key_cert_pair** pem_key_cert_pairs,
+                         size_t num_key_cert_pairs);
+  // The ownerships of |pem_root_certs| and |pem_key_cert_pair_list| remain with
+  // the caller.
+  void set_key_materials(const char* pem_root_certs,
+                         const PemKeyCertPairList& pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; }
 
  private:

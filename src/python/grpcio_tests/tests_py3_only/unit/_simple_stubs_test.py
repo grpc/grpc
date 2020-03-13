@@ -174,13 +174,6 @@ class SimpleStubsTest(unittest.TestCase):
                 channel_credentials=grpc.local_channel_credentials())
             self.assertEqual(_REQUEST, response)
 
-    def test_channel_credentials_default(self):
-        with _server(grpc.local_server_credentials()) as port:
-            target = f'localhost:{port}'
-            response = grpc.experimental.unary_unary(_REQUEST, target,
-                                                     _UNARY_UNARY)
-            self.assertEqual(_REQUEST, response)
-
     def test_channels_cached(self):
         with _server(grpc.local_server_credentials()) as port:
             target = f'localhost:{port}'

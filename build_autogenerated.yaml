@@ -927,6 +927,7 @@ libs:
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/dualstack_socket_posix.cc
   - src/core/lib/iomgr/endpoint.cc
   - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -1754,6 +1755,7 @@ libs:
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/dualstack_socket_posix.cc
   - src/core/lib/iomgr/endpoint.cc
   - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -5136,6 +5138,7 @@ targets:
   - posix
 - name: bm_fullstack_streaming_pump
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/fullstack_streaming_pump.h
@@ -5203,6 +5206,7 @@ targets:
   - posix
 - name: bm_metadata
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -5989,6 +5993,24 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
+- name: grpc_tls_credentials_options_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/security/grpc_tls_credentials_options_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: grpc_tool_test
   gtest: true
   build: test
@@ -6044,6 +6066,7 @@ targets:
 - name: grpclb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
@@ -6242,19 +6265,6 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-- name: inlined_vector_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/inlined_vector_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -7061,6 +7071,7 @@ targets:
 - name: settings_timeout_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -7541,6 +7552,7 @@ targets:
 - name: xds_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
@@ -7568,4 +7580,40 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_interop_client
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_client.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: xds_interop_server
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_server.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 tests: []

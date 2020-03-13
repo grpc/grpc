@@ -97,7 +97,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
     gpr_log(GPR_ERROR, "JSON parsing failed: %s", grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
   }
-  return grpc_auth_refresh_token_create_from_json(std::move(json));
+  return grpc_auth_refresh_token_create_from_json(json);
 }
 
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {

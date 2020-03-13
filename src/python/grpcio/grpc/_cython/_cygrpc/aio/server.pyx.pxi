@@ -15,6 +15,7 @@
 
 import inspect
 import traceback
+import functools
 
 
 cdef int _EMPTY_FLAG = 0
@@ -214,15 +215,34 @@ cdef class _ServicerContext:
         self._rpc_state.disable_next_compression = True
 
 
-cdef _find_method_handler(str method, tuple metadata, list generic_handlers):
+async def _run_interceptor(object interceptors, object query_handler,
+                           object handler_call_details):
+    interceptor = next(interceptors, None)
+    if interceptor:
+        continuation = functools.partial(_run_interceptor, interceptors,
+                                         query_handler)
+        return await interceptor.intercept_service(continuation, handler_call_details)
+    else:
+        return query_handler(handler_call_details)
+
+
+async def _find_method_handler(str method, tuple metadata, list generic_handlers,
+                          tuple interceptors):
+    def query_handlers(handler_call_details):
+        for generic_handler in generic_handlers:
+            method_handler = generic_handler.service(handler_call_details)
+            if method_handler is not None:
+                return method_handler
+        return None
+
     cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(method,
                                                                         metadata)
-
-    for generic_handler in generic_handlers:
-        method_handler = generic_handler.service(handler_call_details)
-        if method_handler is not None:
-            return method_handler
-    return None
+    # interceptor
+    if interceptors:
+        return await _run_interceptor(iter(interceptors), query_handlers,
+                                      handler_call_details)
+    else:
+        return query_handlers(handler_call_details)
 
 
 async def _finish_handler_with_unary_response(RPCState rpc_state,
@@ -523,13 +543,15 @@ async def _schedule_rpc_coro(object rpc_coro,
     await _handle_cancellation_from_core(rpc_task, rpc_state, loop)
 
 
-async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
+async def _handle_rpc(list generic_handlers, tuple interceptors,
+                      RPCState rpc_state, object loop):
     cdef object method_handler
     # Finds the method handler (application logic)
-    method_handler = _find_method_handler(
+    method_handler = await _find_method_handler(
         rpc_state.method().decode(),
         rpc_state.invocation_metadata(),
         generic_handlers,
+        interceptors,
     )
     if method_handler is None:
         rpc_state.status_sent = True
@@ -612,8 +634,9 @@ cdef class AioServer:
             SERVER_SHUTDOWN_FAILURE_HANDLER)
         self._crash_exception = None
 
+        self._interceptors = ()
         if interceptors:
-            raise NotImplementedError()
+            self._interceptors = interceptors
         if maximum_concurrent_rpcs:
             raise NotImplementedError()
         if thread_pool:
@@ -669,6 +692,7 @@ cdef class AioServer:
             # the coroutine onto event loop inside of the cancellation
             # coroutine.
             rpc_coro = _handle_rpc(self._generic_handlers,
+                                   self._interceptors,
                                    rpc_state,
                                    self._loop)
 

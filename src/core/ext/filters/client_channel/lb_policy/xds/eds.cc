@@ -238,7 +238,6 @@ class EdsLb : public LoadBalancingPolicy {
   RefCountedPtr<XdsClusterDropStats> drop_stats_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
-  OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
 
   // The latest state and picker returned from the child policy.
   grpc_connectivity_state child_state_;
@@ -246,7 +245,6 @@ class EdsLb : public LoadBalancingPolicy {
 
   // Non-null iff we are in fallback mode.
   OrphanablePtr<LoadBalancingPolicy> fallback_policy_;
-  OrphanablePtr<LoadBalancingPolicy> pending_fallback_policy_;
 
   // Whether the checks for fallback at startup are ALL pending. There are
   // several cases where this can be reset:
@@ -394,7 +392,7 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
     // immediately.  This short-circuits the timeout for the
     // fallback-at-startup case.
     if (eds_policy_->fallback_at_startup_checks_pending_) {
-      gpr_log(GPR_INFO,
+      gpr_log(GPR_ERROR,
               "[edslb %p] xds watcher reported error; entering fallback "
               "mode: %s",
               eds_policy_.get(), grpc_error_string(error));
@@ -434,10 +432,9 @@ EdsLb::EdsLb(Args args)
       lb_fallback_timeout_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS,
           {GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT, 0, INT_MAX})) {
-  if (xds_client_from_channel_ != nullptr &&
-      GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] Using xds client %p from channel", this,
-            xds_client_from_channel_.get());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+    gpr_log(GPR_INFO, "[edslb %p] created -- xds client from channel: %p",
+            this, xds_client_from_channel_.get());
   }
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
@@ -474,20 +471,10 @@ void EdsLb::ShutdownLocked() {
                                      interested_parties());
     child_policy_.reset();
   }
-  if (pending_child_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(
-        pending_child_policy_->interested_parties(), interested_parties());
-    pending_child_policy_.reset();
-  }
   if (fallback_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(fallback_policy_->interested_parties(),
                                      interested_parties());
     fallback_policy_.reset();
-  }
-  if (pending_fallback_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(
-        pending_fallback_policy_->interested_parties(), interested_parties());
-    pending_fallback_policy_.reset();
   }
   drop_stats_.reset();
   // Cancel the endpoint watch here instead of in our dtor if we are using the
@@ -495,6 +482,10 @@ void EdsLb::ShutdownLocked() {
   // destroying the Xds client leading to a situation where the Xds lb policy is
   // never destroyed.
   if (xds_client_from_channel_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+      gpr_log(GPR_INFO, "[edslb %p] cancelling xds watch for %s", this,
+              std::string(GetEdsResourceName()).c_str());
+    }
     xds_client()->CancelEndpointDataWatch(GetEdsResourceName(),
                                           endpoint_watcher_);
     xds_client_from_channel_.reset();
@@ -563,8 +554,17 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   // Update endpoint watcher if needed.
   if (is_initial_update || old_eds_resource_name != GetEdsResourceName()) {
     if (!is_initial_update) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+        gpr_log(GPR_INFO, "[edslb %p] cancelling xds watch for %s", this,
+                std::string(old_eds_resource_name).c_str());
+      }
       xds_client()->CancelEndpointDataWatch(old_eds_resource_name,
-                                            endpoint_watcher_);
+                                            endpoint_watcher_,
+                                            /*delay_unsubscription=*/true);
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+      gpr_log(GPR_INFO, "[edslb %p] starting xds watch for %s", this,
+              std::string(GetEdsResourceName()).c_str());
     }
     auto watcher =
         absl::make_unique<EndpointWatcher>(Ref(DEBUG_LOCATION, "EndpointWatcher"));
@@ -581,14 +581,8 @@ void EdsLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) {
     child_policy_->ResetBackoffLocked();
   }
-  if (pending_child_policy_ != nullptr) {
-    pending_child_policy_->ResetBackoffLocked();
-  }
   if (fallback_policy_ != nullptr) {
     fallback_policy_->ResetBackoffLocked();
-  }
-  if (pending_fallback_policy_ != nullptr) {
-    pending_fallback_policy_->ResetBackoffLocked();
   }
 }
 
@@ -860,6 +854,9 @@ EdsLb::CreateChildPolicyLocked(const grpc_channel_args* args) {
 
 void EdsLb::MaybeUpdateDropPickerLocked() {
   if (child_picker_ == nullptr) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+    gpr_log(GPR_INFO, "[edslb %p] constructing new drop picker", this);
+  }
   channel_control_helper()->UpdateState(
       child_state_, absl::make_unique<DropPicker>(this));
 }

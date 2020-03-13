@@ -140,17 +140,14 @@ static int client_cred_reload_sync(void* /*config_user_data*/,
     arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
     return 0;
   }
-  grpc_ssl_pem_key_cert_pair** key_cert_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair**>(
-          gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair*)));
-  key_cert_pair[0] = static_cast<grpc_ssl_pem_key_cert_pair*>(
-      gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  key_cert_pair[0]->private_key = gpr_strdup(test_server1_key);
-  key_cert_pair[0]->cert_chain = gpr_strdup(test_server1_cert);
+  const grpc_ssl_pem_key_cert_pair pem_key_pair = {
+      test_server1_key,
+      test_server1_cert,
+  };
   if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
+    const auto* pem_key_pair_ptr = &pem_key_pair;
     grpc_tls_key_materials_config_set_key_materials(
-        arg->key_materials_config, gpr_strdup(test_root_cert),
-        (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
+        arg->key_materials_config, test_root_cert, &pem_key_pair_ptr, 1);
   }
   // new credential has been reloaded.
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
@@ -166,21 +163,18 @@ static int server_cred_reload_sync(void* /*config_user_data*/,
     arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
     return 0;
   }
-  grpc_ssl_pem_key_cert_pair** key_cert_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair**>(
-          gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair*)));
-  key_cert_pair[0] = static_cast<grpc_ssl_pem_key_cert_pair*>(
-      gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  key_cert_pair[0]->private_key = gpr_strdup(test_server1_key);
-  key_cert_pair[0]->cert_chain = gpr_strdup(test_server1_cert);
+  const grpc_ssl_pem_key_cert_pair pem_key_pair = {
+      test_server1_key,
+      test_server1_cert,
+  };
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(arg->key_materials_config != nullptr);
   GPR_ASSERT(arg->key_materials_config->pem_key_cert_pair_list().data() !=
              nullptr);
   if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
+    const auto* pem_key_pair_ptr = &pem_key_pair;
     grpc_tls_key_materials_config_set_key_materials(
-        arg->key_materials_config, gpr_strdup(test_root_cert),
-        (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
+        arg->key_materials_config, test_root_cert, &pem_key_pair_ptr, 1);
   }
   // new credential has been reloaded.
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
