@@ -79,10 +79,11 @@ argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
                   help='Zone to use for secondary TD locality tests')
-argp.add_argument('--qps', default=10, help='Client QPS')
+argp.add_argument('--qps', default=10, type=int, help='Client QPS')
 argp.add_argument(
     '--wait_for_backend_sec',
     default=600,
+    type=int,
     help='Time limit for waiting for created backend services to report '
     'healthy when launching or updated GCP resources')
 argp.add_argument(
@@ -124,6 +125,9 @@ argp.add_argument('--xds_server',
 argp.add_argument('--source_image',
                   default='projects/debian-cloud/global/images/family/debian-9',
                   help='Source image for VMs created during the test')
+argp.add_argument('--machine_type',
+                  default='e2-standard-2',
+                  help='Machine type for VMs created during the test')
 argp.add_argument(
     '--tolerate_gcp_errors',
     default=False,
@@ -429,14 +433,14 @@ def test_secondary_locality_gets_requests_on_primary_failure(
         patch_backend_instances(gcp, backend_service, [primary_instance_group])
 
 
-def create_instance_template(gcp, name, network, source_image):
+def create_instance_template(gcp, name, network, source_image, machine_type):
     config = {
         'name': name,
         'properties': {
             'tags': {
                 'items': ['allow-health-checks']
             },
-            'machineType': 'e2-standard-2',
+            'machineType': machine_type,
             'serviceAccounts': [{
                 'email': 'default',
                 'scopes': ['https://www.googleapis.com/auth/cloud-platform',]
@@ -941,7 +945,7 @@ try:
             raise Exception(
                 'Failed to find a valid ip:port for the forwarding rule')
         create_instance_template(gcp, template_name, args.network,
-                                 args.source_image)
+                                 args.source_image, args.machine_type)
         instance_group = add_instance_group(gcp, args.zone, instance_group_name,
                                             _INSTANCE_GROUP_SIZE)
         patch_backend_instances(gcp, backend_service, [instance_group])
