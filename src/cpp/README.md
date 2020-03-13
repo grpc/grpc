@@ -9,6 +9,20 @@ This section describes how to add gRPC as a dependency to your C++ project.
 In the C++ world, there's no universally accepted standard for managing project dependencies.
 Therefore, gRPC supports several major build systems, which should satisfy most users.
 
+## Supported Platforms
+
+* Supported: These platforms are officially supported. We test our code on these
+platform and have automated continuous integration tests for them.
+
+* Best Effort: We may or may not have continous integration tests for these, but we are fairly confident that gRPC C++ would work on them.
+We will make our best effort to support them, and we welcome patches for such platforms, but we might need to declare bankruptcy on some issues.
+
+| Operating System | Architectures | Versions | Support Level |
+|------------------|---------------|----------|---------------|
+| Linux            | x86, x64      | clang 3.4+, GCC 4.9+ | Supported |
+| Windows 7+       | x86, x64      | Visual Studio 2015+  | Supported |
+| MacOS            | x86, x64      | clang 3.4+, XCode 7.2+ | Supported |
+
 ## Bazel
 
 Bazel is the primary build system used by the core gRPC development team. Bazel
