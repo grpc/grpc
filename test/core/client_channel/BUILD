@@ -45,6 +45,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "rls_key_builder_test",
+    srcs = ["rls_key_builder_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "parse_address_with_named_scope_id_test",
     srcs = ["parse_address_with_named_scope_id_test.cc"],
     language = "C++",
