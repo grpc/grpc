@@ -74,6 +74,7 @@ cdef class CallbackCompletionQueue(BaseCompletionQueue):
         self._shutdown_completed = self._loop.create_future()
         self._wrapper = CallbackWrapper(
             self._shutdown_completed,
+            self._loop,
             CQ_SHUTDOWN_FAILURE_HANDLER)
         self._cq = grpc_completion_queue_create_for_callback(
             self._wrapper.c_functor(),

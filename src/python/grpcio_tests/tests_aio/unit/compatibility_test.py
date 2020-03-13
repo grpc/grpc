@@ -71,8 +71,7 @@ class TestCompatibility(AioTestBase):
             func()
             self.loop.call_soon_threadsafe(work_done.set)
 
-        thread = threading.Thread(target=thread_work)
-        thread.daemon = True
+        thread = threading.Thread(target=thread_work, daemon=True)
         thread.start()
         await work_done.wait()
         thread.join()
