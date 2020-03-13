@@ -455,6 +455,31 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "rls_end2end_test",
+    srcs = ["rls_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/types:optional",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/lookup/v1:rls_config_proto",
+        "//src/proto/grpc/lookup/v1:rls_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//src/proto/grpc/lb/v1:load_balancer_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:test_lb_policies",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "service_config_end2end_test",
     srcs = ["service_config_end2end_test.cc"],
     external_deps = [
