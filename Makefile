@@ -2184,12 +2184,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_error || ( echo test bm_error failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_streaming_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong || ( echo test bm_fullstack_streaming_ping_pong failed ; exit 1 )
-	$(E) "[RUN]     Testing bm_fullstack_streaming_pump"
-	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump || ( echo test bm_fullstack_streaming_pump failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_unary_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong || ( echo test bm_fullstack_unary_ping_pong failed ; exit 1 )
-	$(E) "[RUN]     Testing bm_metadata"
-	$(Q) $(BINDIR)/$(CONFIG)/bm_metadata || ( echo test bm_metadata failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_pollset"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_pollset || ( echo test bm_pollset failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_timer"
@@ -2260,8 +2256,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_tool_test || ( echo test grpc_tool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpclb_end2end_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpclb_end2end_test || ( echo test grpclb_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_session_reuse_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test || ( echo test h2_ssl_session_reuse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing head_of_line_blocking_bad_client_test"
@@ -2338,8 +2332,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/service_config_end2end_test || ( echo test service_config_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing service_config_test"
 	$(Q) $(BINDIR)/$(CONFIG)/service_config_test || ( echo test service_config_test failed ; exit 1 )
-	$(E) "[RUN]     Testing settings_timeout_test"
-	$(Q) $(BINDIR)/$(CONFIG)/settings_timeout_test || ( echo test settings_timeout_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing simple_request_bad_client_test"
@@ -2386,8 +2378,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing xds_bootstrap_test"
 	$(Q) $(BINDIR)/$(CONFIG)/xds_bootstrap_test || ( echo test xds_bootstrap_test failed ; exit 1 )
-	$(E) "[RUN]     Testing xds_end2end_test"
-	$(Q) $(BINDIR)/$(CONFIG)/xds_end2end_test || ( echo test xds_end2end_test failed ; exit 1 )
 
 
 flaky_test_cxx: buildtests_cxx

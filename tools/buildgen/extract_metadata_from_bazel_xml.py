@@ -43,6 +43,7 @@ def _rule_dict_from_xml_node(rule_xml_node):
         'args': [],
         'generator_function': None,
         'size': None,
+        'flaky': False,
     }
     for child in rule_xml_node:
         # all the metadata we want is stored under "list" tags
@@ -54,6 +55,10 @@ def _rule_dict_from_xml_node(rule_xml_node):
             string_name = child.attrib['name']
             if string_name in ['generator_function', 'size']:
                 result[string_name] = child.attrib['value']
+        if child.tag == 'boolean':
+            bool_name = child.attrib['name']
+            if bool_name in ['flaky']:
+                result[bool_name] = child.attrib['value'] == 'true'
     return result
 
 
@@ -476,6 +481,13 @@ def _generate_build_extra_metadata_for_tests(tests, bazel_rules):
         bazel_tags = bazel_rule['tags']
         if 'manual' in bazel_tags:
             # don't run the tests marked as "manual"
+            test_dict['run'] = False
+
+        if bazel_rule['flaky']:
+            # don't run tests that are marked as "flaky" under bazel
+            # because that would only add noise for the run_tests.py tests
+            # and seeing more failures for tests that we already know are flaky
+            # doesn't really help anything
             test_dict['run'] = False
 
         if 'no_uses_polling' in bazel_tags:

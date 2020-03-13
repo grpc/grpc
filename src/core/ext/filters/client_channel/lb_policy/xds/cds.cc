@@ -295,7 +295,8 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
                 old_config->cluster().c_str());
       }
       xds_client_->CancelClusterDataWatch(
-          StringView(old_config->cluster().c_str()), cluster_watcher_);
+          StringView(old_config->cluster().c_str()), cluster_watcher_,
+          /*delay_unsubscription=*/true);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
