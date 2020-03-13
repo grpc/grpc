@@ -24,6 +24,8 @@
 
 namespace grpc_core {
 
+TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
+
 namespace {
 
 //
@@ -38,14 +40,28 @@ class XdsResolver : public Resolver {
         interested_parties_(args.pollset_set) {
     char* path = args.uri->path;
     if (path[0] == '/') ++path;
-    server_name_.reset(gpr_strdup(path));
+    server_name_ = path;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO, "[xds_resolver %p] created for server name %s", this,
+              server_name_.c_str());
+    }
   }
 
-  ~XdsResolver() override { grpc_channel_args_destroy(args_); }
+  ~XdsResolver() override {
+    grpc_channel_args_destroy(args_);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO, "[xds_resolver %p] destroyed", this);
+    }
+  }
 
   void StartLocked() override;
 
-  void ShutdownLocked() override { xds_client_.reset(); }
+  void ShutdownLocked() override {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
+    }
+    xds_client_.reset();
+  }
 
  private:
   class ServiceConfigWatcher : public XdsClient::ServiceConfigWatcherInterface {
@@ -60,7 +76,7 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  grpc_core::UniquePtr<char> server_name_;
+  std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
@@ -69,6 +85,10 @@ class XdsResolver : public Resolver {
 void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
     RefCountedPtr<ServiceConfig> service_config) {
   if (resolver_->xds_client_ == nullptr) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] received updated service config: %s",
+            resolver_.get(), service_config->json_string().c_str());
+  }
   grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
   Result result;
   result.args =
@@ -79,6 +99,8 @@ void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
 
 void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
   if (resolver_->xds_client_ == nullptr) return;
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", resolver_.get(),
+          grpc_error_string(error));
   grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
   Result result;
   result.args =
@@ -90,7 +112,7 @@ void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
   xds_client_ = MakeOrphanable<XdsClient>(
-      combiner(), interested_parties_, StringView(server_name_.get()),
+      combiner(), interested_parties_, server_name_,
       absl::make_unique<ServiceConfigWatcher>(Ref()), *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
