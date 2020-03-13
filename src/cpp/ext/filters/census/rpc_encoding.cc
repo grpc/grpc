@@ -22,13 +22,6 @@
 
 namespace grpc {
 
-constexpr size_t TraceContextEncoding::kGrpcTraceContextSize;
-constexpr size_t TraceContextEncoding::kEncodeDecodeFailure;
-constexpr size_t TraceContextEncoding::kVersionIdSize;
-constexpr size_t TraceContextEncoding::kFieldIdSize;
-constexpr size_t TraceContextEncoding::kVersionIdOffset;
-constexpr size_t TraceContextEncoding::kVersionId;
-
 constexpr size_t RpcServerStatsEncoding::kRpcServerStatsSize;
 constexpr size_t RpcServerStatsEncoding::kEncodeDecodeFailure;
 constexpr size_t RpcServerStatsEncoding::kVersionIdSize;
