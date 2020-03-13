@@ -298,7 +298,7 @@ class XdsLb : public LoadBalancingPolicy {
     ~LocalityMap() { xds_policy_.reset(DEBUG_LOCATION, "LocalityMap"); }
 
     void UpdateLocked(
-        const XdsApi::PriorityListUpdate::LocalityMap& locality_map_update,
+        const XdsApi::PriorityListUpdate::LocalityMap& priority_update,
         bool update_locality_stats);
     void ResetBackoffLocked();
     void UpdateXdsPickerLocked();
@@ -792,7 +792,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
                 old_eds_service_name);
       }
       xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
-                                            endpoint_watcher_);
+                                            endpoint_watcher_,
+                                            /*delay_unsubscription=*/true);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO, "[xdslb %p] starting watch for %s", this,
@@ -1032,7 +1033,7 @@ XdsLb::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
 }
 
 void XdsLb::LocalityMap::UpdateLocked(
-    const XdsApi::PriorityListUpdate::LocalityMap& locality_map_update,
+    const XdsApi::PriorityListUpdate::LocalityMap& priority_update,
     bool update_locality_stats) {
   if (xds_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
@@ -1042,11 +1043,11 @@ void XdsLb::LocalityMap::UpdateLocked(
   // Maybe reactivate the locality map in case all the active locality maps have
   // failed.
   MaybeReactivateLocked();
-  // Remove (later) the localities not in locality_map_update.
+  // Remove (later) the localities not in priority_update.
   for (auto iter = localities_.begin(); iter != localities_.end();) {
     const auto& name = iter->first;
     Locality* locality = iter->second.get();
-    if (locality_map_update.Contains(name)) {
+    if (priority_update.Contains(name)) {
       ++iter;
       continue;
     }
@@ -1057,8 +1058,8 @@ void XdsLb::LocalityMap::UpdateLocked(
       ++iter;
     }
   }
-  // Add or update the localities in locality_map_update.
-  for (const auto& p : locality_map_update.localities) {
+  // Add or update the localities in priority_update.
+  for (const auto& p : priority_update.localities) {
     const auto& name = p.first;
     const auto& locality_update = p.second;
     OrphanablePtr<Locality>& locality = localities_[name];
@@ -1077,6 +1078,32 @@ void XdsLb::LocalityMap::UpdateLocked(
     // with the future ones.
     locality->UpdateLocked(locality_update.lb_weight,
                            locality_update.serverlist, update_locality_stats);
+  }
+  // If this is the current priority and we removed all of the READY
+  // localities, go into state CONNECTING.
+  // TODO(roth): Ideally, we should model this as a graceful policy
+  // switch: we should keep using the old localities for a short period
+  // of time, long enough to give the new localities a chance to get
+  // connected.  As part of refactoring this policy, we should try to
+  // fix that.
+  if (priority_ == xds_policy()->current_priority_) {
+    bool found_ready = false;
+    for (auto& p : localities_) {
+      const auto& locality_name = p.first;
+      Locality* locality = p.second.get();
+      if (!locality_map_update()->Contains(locality_name)) continue;
+      if (locality->connectivity_state() == GRPC_CHANNEL_READY) {
+        found_ready = true;
+        break;
+      }
+    }
+    if (!found_ready) {
+      xds_policy_->channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_CONNECTING,
+          absl::make_unique<QueuePicker>(
+              xds_policy_->Ref(DEBUG_LOCATION, "QueuePicker")));
+      xds_policy_->current_priority_ = UINT32_MAX;
+    }
   }
 }
 
@@ -1098,7 +1125,9 @@ void XdsLb::LocalityMap::UpdateXdsPickerLocked() {
     const auto& locality_name = p.first;
     Locality* locality = p.second.get();
     // Skip the localities that are not in the latest locality map update.
-    if (!locality_map_update()->Contains(locality_name)) continue;
+    const auto* locality_update = locality_map_update();
+    if (locality_update == nullptr) continue;
+    if (!locality_update->Contains(locality_name)) continue;
     if (locality->connectivity_state() != GRPC_CHANNEL_READY) continue;
     end += locality->weight();
     picker_list.push_back(
