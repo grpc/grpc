@@ -122,7 +122,7 @@ def _run_single_channel(args: argparse.Namespace):
             with _global_lock:
                 request_id = _global_rpc_id
                 _global_rpc_id += 1
-            print(f"Sending request to backend: {request_id}")
+            print(f"[{threading.get_ident()}] Sending request to backend: {request_id}")
             sys.stdout.flush()
             start = time.time()
             end = start + duration_per_query
