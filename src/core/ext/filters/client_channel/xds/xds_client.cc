@@ -1948,7 +1948,17 @@ grpc_error* XdsClient::CreateServiceConfig(
                "  \"loadBalancingConfig\":[\n"
                "    { \"xds_routing_experimental\":{\n"
                "      \"actions\":[\n"
-               "      { \"name\": \"default\",\n"
+               "      { \"cds\": \"cluster_1\",\n"
+               "        \"child_policy\":[\n"
+               "          { \"cds_experimental\":{\n"
+               "            \"cluster\": \"%s\"\n"
+               "          } },\n"
+               "          { \"cds_experimental\":{\n"
+               "            \"cluster\": \"%s\"\n"
+               "          } }\n"
+               "        ]\n"
+               "      },\n"
+               "      { \"cds\": \"cluster_2\",\n"
                "        \"child_policy\":[\n"
                "          { \"cds_experimental\":{\n"
                "            \"cluster\": \"%s\"\n"
@@ -1958,7 +1968,7 @@ grpc_error* XdsClient::CreateServiceConfig(
                "    } }\n"
                "  ]\n"
                "}",
-               cluster_name.c_str());
+               cluster_name.c_str(), "blah2", "blah3");
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json, &error);
   gpr_free(json);
