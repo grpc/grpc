@@ -5128,6 +5128,7 @@ targets:
   - posix
 - name: bm_fullstack_streaming_pump
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/fullstack_streaming_pump.h
@@ -5195,6 +5196,7 @@ targets:
   - posix
 - name: bm_metadata
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -6054,6 +6056,7 @@ targets:
 - name: grpclb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
@@ -7058,6 +7061,7 @@ targets:
 - name: settings_timeout_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -7538,6 +7542,7 @@ targets:
 - name: xds_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
@@ -7565,4 +7570,40 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_interop_client
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_client.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: xds_interop_server
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_server.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 tests: []

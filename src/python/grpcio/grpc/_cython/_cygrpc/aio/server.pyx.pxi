@@ -613,7 +613,7 @@ cdef class AioServer:
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
-        self._cq = CallbackCompletionQueue()
+        self._cq = create_completion_queue()
         grpc_server_register_completion_queue(
             self._server.c_server,
             self._cq.c_ptr(),
@@ -736,7 +736,7 @@ cdef class AioServer:
         # The shutdown callback won't be called until there is no live RPC.
         grpc_server_shutdown_and_notify(
             self._server.c_server,
-            self._cq._cq,
+            self._cq.c_ptr(),
             self._shutdown_callback_wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.

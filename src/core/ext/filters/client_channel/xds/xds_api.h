@@ -34,6 +34,8 @@
 
 namespace grpc_core {
 
+class XdsClient;
+
 class XdsApi {
  public:
   static const char* kLdsTypeUrl;
@@ -187,7 +189,7 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  explicit XdsApi(const XdsBootstrap::Node* node);
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
 
   // Creates a request to nack an unsupported resource type.
   // Takes ownership of \a error.
@@ -230,10 +232,12 @@ class XdsApi {
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
       const std::string& expected_route_config_name,
+      const std::set<StringView>& expected_cluster_names,
       const std::set<StringView>& expected_eds_service_names,
-      LdsUpdate* lds_update, RdsUpdate* rds_update,
-      CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-      std::string* version, std::string* nonce, std::string* type_url);
+      absl::optional<LdsUpdate>* lds_update,
+      absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
+      EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
+      std::string* type_url);
 
   // Creates an LRS request querying \a server_name.
   grpc_slice CreateLrsInitialRequest(const std::string& server_name);
@@ -249,6 +253,8 @@ class XdsApi {
                                grpc_millis* load_reporting_interval);
 
  private:
+  XdsClient* client_;
+  TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;
   const std::string build_version_;
   const std::string user_agent_name_;

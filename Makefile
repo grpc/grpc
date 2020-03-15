@@ -1307,6 +1307,8 @@ work_serializer_test: $(BINDIR)/$(CONFIG)/work_serializer_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 xds_bootstrap_test: $(BINDIR)/$(CONFIG)/xds_bootstrap_test
 xds_end2end_test: $(BINDIR)/$(CONFIG)/xds_end2end_test
+xds_interop_client: $(BINDIR)/$(CONFIG)/xds_interop_client
+xds_interop_server: $(BINDIR)/$(CONFIG)/xds_interop_server
 boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
 boringssl_crypto_test: $(BINDIR)/$(CONFIG)/boringssl_crypto_test
 alts_credentials_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry
@@ -1666,6 +1668,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
+  $(BINDIR)/$(CONFIG)/xds_interop_client \
+  $(BINDIR)/$(CONFIG)/xds_interop_server \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test \
   $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry \
@@ -1822,6 +1826,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
+  $(BINDIR)/$(CONFIG)/xds_interop_client \
+  $(BINDIR)/$(CONFIG)/xds_interop_server \
   $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry \
@@ -2178,12 +2184,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_error || ( echo test bm_error failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_streaming_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong || ( echo test bm_fullstack_streaming_ping_pong failed ; exit 1 )
-	$(E) "[RUN]     Testing bm_fullstack_streaming_pump"
-	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump || ( echo test bm_fullstack_streaming_pump failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_unary_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong || ( echo test bm_fullstack_unary_ping_pong failed ; exit 1 )
-	$(E) "[RUN]     Testing bm_metadata"
-	$(Q) $(BINDIR)/$(CONFIG)/bm_metadata || ( echo test bm_metadata failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_pollset"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_pollset || ( echo test bm_pollset failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_timer"
@@ -2254,8 +2256,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_tool_test || ( echo test grpc_tool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpclb_end2end_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpclb_end2end_test || ( echo test grpclb_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_session_reuse_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test || ( echo test h2_ssl_session_reuse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing head_of_line_blocking_bad_client_test"
@@ -2332,8 +2332,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/service_config_end2end_test || ( echo test service_config_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing service_config_test"
 	$(Q) $(BINDIR)/$(CONFIG)/service_config_test || ( echo test service_config_test failed ; exit 1 )
-	$(E) "[RUN]     Testing settings_timeout_test"
-	$(Q) $(BINDIR)/$(CONFIG)/settings_timeout_test || ( echo test settings_timeout_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing simple_request_bad_client_test"
@@ -2380,8 +2378,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing xds_bootstrap_test"
 	$(Q) $(BINDIR)/$(CONFIG)/xds_bootstrap_test || ( echo test xds_bootstrap_test failed ; exit 1 )
-	$(E) "[RUN]     Testing xds_end2end_test"
-	$(Q) $(BINDIR)/$(CONFIG)/xds_end2end_test || ( echo test xds_end2end_test failed ; exit 1 )
 
 
 flaky_test_cxx: buildtests_cxx
@@ -19150,6 +19146,112 @@ endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+
+
+XDS_INTEROP_CLIENT_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
+    test/cpp/interop/xds_interop_client.cc \
+
+XDS_INTEROP_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(XDS_INTEROP_CLIENT_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/xds_interop_client: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/xds_interop_client: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/xds_interop_client: $(PROTOBUF_DEP) $(XDS_INTEROP_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(XDS_INTEROP_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/xds_interop_client
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/xds_interop_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_xds_interop_client: $(XDS_INTEROP_CLIENT_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(XDS_INTEROP_CLIENT_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/xds_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+
+XDS_INTEROP_SERVER_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
+    test/cpp/interop/xds_interop_server.cc \
+
+XDS_INTEROP_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(XDS_INTEROP_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/xds_interop_server: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/xds_interop_server: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/xds_interop_server: $(PROTOBUF_DEP) $(XDS_INTEROP_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(XDS_INTEROP_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/xds_interop_server
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/xds_interop_server.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_xds_interop_server: $(XDS_INTEROP_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(XDS_INTEROP_SERVER_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/xds_interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 BORINGSSL_SSL_TEST_SRC = \
