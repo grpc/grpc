@@ -64,6 +64,7 @@ END2END_FIXTURES = {
         fullstack = False,
         client_channel = False,
         _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_full": _fixture_options(),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
@@ -91,13 +92,19 @@ END2END_FIXTURES = {
     "h2_ssl": _fixture_options(secure = True),
     "h2_ssl_cred_reload": _fixture_options(secure = True),
     "h2_tls": _fixture_options(secure = True),
-    "h2_local_uds": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_uds": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
+    ),
     "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "inproc": _fixture_options(
         secure = True,
@@ -126,6 +133,7 @@ END2END_NOSEC_FIXTURES = {
         secure = False,
         _platforms = ["linux", "mac", "posix"],
         supports_msvc = False,
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_full": _fixture_options(secure = False),
     "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
@@ -160,6 +168,7 @@ END2END_NOSEC_FIXTURES = {
         _platforms = ["linux", "mac", "posix"],
         secure = False,
         supports_msvc = False,
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
 }
 
