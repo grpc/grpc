@@ -27,6 +27,7 @@ import (
 	"github.com/grpc/grpc/testctrl/auth"
 	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
 	"github.com/grpc/grpc/testctrl/svc"
+	"github.com/grpc/grpc/testctrl/svc/orch"
 
 	lrPb "google.golang.org/genproto/googleapis/longrunning"
 	"google.golang.org/grpc"
@@ -75,15 +76,21 @@ func main() {
 		clientset = setupDevEnv(grpcServer)
 	}
 
+	controller := orch.NewController(clientset)
+
+	if err := controller.Start(); err != nil {
+		log.Fatalf("unable to start orchestration controller: %v", err)
+	}
+
+	defer controller.Stop()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("Failed to listen on port %d: %v", *port, err)
 	}
 
-	// TODO: inject clientset into scheduling service
-	_ = clientset
 	lrPb.RegisterOperationsServer(grpcServer, &svc.OperationsServer{})
-	pb.RegisterSchedulingServiceServer(grpcServer, &svc.SchedulingServer{})
+	pb.RegisterSchedulingServiceServer(grpcServer, &svc.SchedulingServer{controller})
 
 	log.Printf("Running gRPC server (insecure) on port %d", *port)
 	err = grpcServer.Serve(lis)

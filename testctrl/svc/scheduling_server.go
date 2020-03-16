@@ -18,10 +18,20 @@ import (
 	"context"
 
 	svcPb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
+	"github.com/grpc/grpc/testctrl/svc/types"
+
 	lrPb "google.golang.org/genproto/googleapis/longrunning"
 )
 
+// Scheduler is a single method interface for queueing sessions.
+type Scheduler interface {
+	// Schedule enqueues a session, returning any immediate error. Infrastructure and
+	// test runtime errors will not be returned.
+	Schedule(s *types.Session) error
+}
+
 type SchedulingServer struct {
+	Scheduler Scheduler
 }
 
 func (s *SchedulingServer) StartTestSession(ctx context.Context, req *svcPb.StartTestSessionRequest) (*lrPb.Operation, error) {
