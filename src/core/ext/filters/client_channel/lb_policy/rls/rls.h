@@ -140,7 +140,7 @@ class RlsLb : public LoadBalancingPolicy {
     /// same time.
     class RefHandler : public RefCounted<RefHandler> {
      public:
-      RefHandler(ChildPolicyWrapper* child) : child_(child) {}
+      RefHandler(ChildPolicyWrapper* child, RlsLb* parent);
 
       ChildPolicyWrapper* child() const;
 
