@@ -90,6 +90,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "bm_arena",
+    size = "large",
     srcs = ["bm_arena.cc"],
     tags = [
         "no_mac",
