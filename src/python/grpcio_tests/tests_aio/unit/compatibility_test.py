@@ -168,7 +168,7 @@ class TestCompatibility(AioTestBase):
         # The server will spawn its own serving thread.
         server = grpc.server(ThreadPoolExecutor(),
                              handlers=(GenericHandlers(),))
-        port = server.add_insecure_port('0')
+        port = server.add_insecure_port('localhost:0')
         server.start()
 
         def sync_work() -> None:
