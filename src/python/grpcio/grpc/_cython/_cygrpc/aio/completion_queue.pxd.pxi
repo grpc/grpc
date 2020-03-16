@@ -19,12 +19,14 @@ cdef class BaseCompletionQueue:
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef bint _shutdown
-    cdef object _shutdown_completed
     cdef object _poller_thread
+    cdef object _loop
 
     cdef void _poll(self) except *
+    cdef void shutdown(self) nogil
 
 
 cdef class CallbackCompletionQueue(BaseCompletionQueue):
     cdef object _shutdown_completed  # asyncio.Future
     cdef CallbackWrapper _wrapper
+    cdef object _loop

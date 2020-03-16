@@ -115,7 +115,7 @@ cdef class _AioCall(GrpcCallWrapper):
             self._channel.channel,
             NULL,
             _EMPTY_MASK,
-            self._channel.cq.c_ptr(),
+            global_completion_queue(),
             method_slice,
             NULL,
             c_deadline,
