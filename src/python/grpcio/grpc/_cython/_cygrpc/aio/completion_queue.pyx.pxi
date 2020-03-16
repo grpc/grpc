@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from libc.stdio cimport printf
+
 cdef gpr_timespec _GPR_INF_FUTURE = gpr_inf_future(GPR_CLOCK_REALTIME)
 
 
@@ -30,7 +32,6 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
     def __cinit__(self):
         self._cq = grpc_completion_queue_create_for_next(NULL)
         self._shutdown = False
-        self._shutdown_completed = threading.Event()
         self._poller_thread = threading.Thread(target=self._poll_wrapper, daemon=True)
         self._poller_thread.start()
 
@@ -48,7 +49,6 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                 raise AssertionError("Core should not return GRPC_QUEUE_TIMEOUT!")
             elif event.type == GRPC_QUEUE_SHUTDOWN:
                 self._shutdown = True
-                self._shutdown_completed.set()
             else:
                 context = <CallbackContext *>event.tag
                 loop = <object>context.loop
@@ -60,11 +60,10 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
     def _poll_wrapper(self):
         self._poll()
 
-    def shutdown(self):
+    cdef void shutdown(self) nogil:
+        # TODO(https://github.com/grpc/grpc/issues/22365) perform graceful shutdown
         grpc_completion_queue_shutdown(self._cq)
-        self._shutdown_completed.wait()
         grpc_completion_queue_destroy(self._cq)
-        self._poller_thread.join()
 
 
 cdef class CallbackCompletionQueue(BaseCompletionQueue):

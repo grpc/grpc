@@ -16,23 +16,19 @@
 import asyncio
 import logging
 import os
-import unittest
-import threading
-from concurrent.futures import ThreadPoolExecutor
-import time
 import random
+import threading
+import unittest
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Sequence, Tuple
 
 import grpc
 from grpc.experimental import aio
-from grpc._cython import cygrpc
 
-from tests_aio.unit._test_base import AioTestBase
-from tests.unit.framework.common import test_constants
-from tests.unit.framework.common import get_socket
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+from tests.unit.framework.common import test_constants
+from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
-from tests_aio.unit import _common
 
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7

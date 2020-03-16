@@ -103,12 +103,12 @@ def _grpc_shutdown_wrapper(_):
 cdef _actual_aio_shutdown():
     if _global_aio_state.engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
         future = schedule_coro_threadsafe(
-            _global_aio_state.cq.shutdown,
+            _global_aio_state.cq.shutdown(),
             (<CallbackCompletionQueue>_global_aio_state.cq)._loop
         )
         future.add_done_callback(_grpc_shutdown_wrapper)
     elif _global_aio_state.engine is AsyncIOEngine.POLLER:
-        _global_aio_state.cq.shutdown()
+        (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
         grpc_shutdown_blocking()
     else:
         raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
