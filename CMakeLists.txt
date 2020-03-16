@@ -447,7 +447,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c check_gcp_environment_linux_test)
   add_dependencies(buildtests_c check_gcp_environment_windows_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c client_ssl)
+    add_dependencies(buildtests_c client_ssl_test)
   endif()
   add_dependencies(buildtests_c cmdline_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -481,10 +481,10 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c fd_posix_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c fling)
+    add_dependencies(buildtests_c fling_stream_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c fling_stream)
+    add_dependencies(buildtests_c fling_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c fork_test)
@@ -497,10 +497,10 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c grpc_completion_queue_test)
   add_dependencies(buildtests_c grpc_ipv6_loopback_available_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
+    add_dependencies(buildtests_c handshake_server_with_readahead_handshaker_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c handshake_verify_peer_options)
+    add_dependencies(buildtests_c handshake_verify_peer_options_test)
   endif()
   add_dependencies(buildtests_c histogram_test)
   add_dependencies(buildtests_c host_port_test)
@@ -555,7 +555,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c sequential_connectivity_test)
   add_dependencies(buildtests_c server_chttp2_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c server_ssl)
+    add_dependencies(buildtests_c server_ssl_test)
   endif()
   add_dependencies(buildtests_c server_test)
   add_dependencies(buildtests_c slice_buffer_test)
@@ -4619,11 +4619,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(client_ssl
+  add_executable(client_ssl_test
     test/core/handshake/client_ssl.cc
   )
 
-  target_include_directories(client_ssl
+  target_include_directories(client_ssl_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4635,7 +4635,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(client_ssl
+  target_link_libraries(client_ssl_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
@@ -5279,15 +5279,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(fling
+  add_executable(fling_stream_test
     test/core/end2end/data/client_certs.cc
     test/core/end2end/data/server1_cert.cc
     test/core/end2end/data/server1_key.cc
     test/core/end2end/data/test_root_cert.cc
-    test/core/fling/fling_test.cc
+    test/core/fling/fling_stream_test.cc
   )
 
-  target_include_directories(fling
+  target_include_directories(fling_stream_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5299,7 +5299,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(fling
+  target_link_libraries(fling_stream_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
@@ -5314,15 +5314,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(fling_stream
+  add_executable(fling_test
     test/core/end2end/data/client_certs.cc
     test/core/end2end/data/server1_cert.cc
     test/core/end2end/data/server1_key.cc
     test/core/end2end/data/test_root_cert.cc
-    test/core/fling/fling_stream_test.cc
+    test/core/fling/fling_test.cc
   )
 
-  target_include_directories(fling_stream
+  target_include_directories(fling_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5334,7 +5334,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(fling_stream
+  target_link_libraries(fling_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
@@ -5589,12 +5589,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(handshake_server_with_readahead_handshaker
+  add_executable(handshake_server_with_readahead_handshaker_test
     test/core/handshake/readahead_handshaker_server_ssl.cc
     test/core/handshake/server_ssl_common.cc
   )
 
-  target_include_directories(handshake_server_with_readahead_handshaker
+  target_include_directories(handshake_server_with_readahead_handshaker_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5606,7 +5606,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(handshake_server_with_readahead_handshaker
+  target_link_libraries(handshake_server_with_readahead_handshaker_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
@@ -5621,11 +5621,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(handshake_verify_peer_options
+  add_executable(handshake_verify_peer_options_test
     test/core/handshake/verify_peer_options.cc
   )
 
-  target_include_directories(handshake_verify_peer_options
+  target_include_directories(handshake_verify_peer_options_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5637,7 +5637,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(handshake_verify_peer_options
+  target_link_libraries(handshake_verify_peer_options_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
@@ -6850,12 +6850,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(server_ssl
+  add_executable(server_ssl_test
     test/core/handshake/server_ssl.cc
     test/core/handshake/server_ssl_common.cc
   )
 
-  target_include_directories(server_ssl
+  target_include_directories(server_ssl_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6867,7 +6867,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(server_ssl
+  target_link_libraries(server_ssl_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
