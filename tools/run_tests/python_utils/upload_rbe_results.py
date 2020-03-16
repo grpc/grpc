@@ -216,8 +216,9 @@ if __name__ == "__main__":
         elif 'tests' not in action['testAction']['testSuite']:
             continue
         else:
-            test_cases = action['testAction']['testSuite']['tests'][0][
-                'testSuite']['tests']
+            test_cases = []
+            for tests_item in action['testAction']['testSuite']['tests']:
+                test_cases += tests_item['testSuite']['tests']
         for test_case in test_cases:
             if any(s in test_case['testCase'] for s in ['errors', 'failures']):
                 result = 'FAILED'
