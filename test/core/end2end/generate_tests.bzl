@@ -32,7 +32,8 @@ def _fixture_options(
         supports_proxy_auth = False,
         supports_write_buffering = True,
         client_channel = True,
-        supports_msvc = True):
+        supports_msvc = True,
+        flaky_tests = []):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -47,6 +48,7 @@ def _fixture_options(
         client_channel = client_channel,
         supports_msvc = supports_msvc,
         _platforms = _platforms,
+        flaky_tests = flaky_tests,
     )
 
 # maps fixture name to whether it requires the security library
@@ -427,6 +429,7 @@ def grpc_end2end_tests():
                     t,
                 ],
                 tags = ["no_linux"] + _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
             )
 
             for poller in POLLERS:
@@ -440,6 +443,7 @@ def grpc_end2end_tests():
                         poller,
                     ],
                     tags = ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
                 )
 
 def grpc_end2end_nosec_tests():
@@ -495,6 +499,7 @@ def grpc_end2end_nosec_tests():
                     t,
                 ],
                 tags = ["no_linux"] + _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
             )
 
             for poller in POLLERS:
@@ -508,4 +513,5 @@ def grpc_end2end_nosec_tests():
                         poller,
                     ],
                     tags = ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
                 )
