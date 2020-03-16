@@ -2216,8 +2216,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/client_channel_stress_test || ( echo test client_channel_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_interceptors_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test || ( echo test client_interceptors_end2end_test failed ; exit 1 )
-	$(E) "[RUN]     Testing client_lb_end2end_test"
-	$(Q) $(BINDIR)/$(CONFIG)/client_lb_end2end_test || ( echo test client_lb_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing codegen_test_full"
 	$(Q) $(BINDIR)/$(CONFIG)/codegen_test_full || ( echo test codegen_test_full failed ; exit 1 )
 	$(E) "[RUN]     Testing codegen_test_minimal"
