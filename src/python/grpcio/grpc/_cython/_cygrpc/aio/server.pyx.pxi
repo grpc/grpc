@@ -676,7 +676,7 @@ cdef class AioServer:
 
     async def _server_main_loop(self,
                                 object server_started):
-        self._server.start()
+        self._server.start(backup_queue=False)
         cdef RPCState rpc_state
         server_started.set_result(True)
 
