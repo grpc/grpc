@@ -1040,7 +1040,7 @@ channel_stack_builder_test: $(BINDIR)/$(CONFIG)/channel_stack_builder_test
 channel_stack_test: $(BINDIR)/$(CONFIG)/channel_stack_test
 check_gcp_environment_linux_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test
 check_gcp_environment_windows_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test
-client_ssl: $(BINDIR)/$(CONFIG)/client_ssl
+client_ssl_test: $(BINDIR)/$(CONFIG)/client_ssl_test
 cmdline_test: $(BINDIR)/$(CONFIG)/cmdline_test
 combiner_test: $(BINDIR)/$(CONFIG)/combiner_test
 completion_queue_threading_test: $(BINDIR)/$(CONFIG)/completion_queue_threading_test
@@ -1062,8 +1062,8 @@ fake_resolver_test: $(BINDIR)/$(CONFIG)/fake_resolver_test
 fake_transport_security_test: $(BINDIR)/$(CONFIG)/fake_transport_security_test
 fd_conservation_posix_test: $(BINDIR)/$(CONFIG)/fd_conservation_posix_test
 fd_posix_test: $(BINDIR)/$(CONFIG)/fd_posix_test
-fling: $(BINDIR)/$(CONFIG)/fling
-fling_stream: $(BINDIR)/$(CONFIG)/fling_stream
+fling_stream_test: $(BINDIR)/$(CONFIG)/fling_stream_test
+fling_test: $(BINDIR)/$(CONFIG)/fling_test
 fork_test: $(BINDIR)/$(CONFIG)/fork_test
 format_request_test: $(BINDIR)/$(CONFIG)/format_request_test
 frame_handler_test: $(BINDIR)/$(CONFIG)/frame_handler_test
@@ -1072,8 +1072,8 @@ grpc_alts_credentials_options_test: $(BINDIR)/$(CONFIG)/grpc_alts_credentials_op
 grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
 grpc_ipv6_loopback_available_test: $(BINDIR)/$(CONFIG)/grpc_ipv6_loopback_available_test
-handshake_server_with_readahead_handshaker: $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
-handshake_verify_peer_options: $(BINDIR)/$(CONFIG)/handshake_verify_peer_options
+handshake_server_with_readahead_handshaker_test: $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker_test
+handshake_verify_peer_options_test: $(BINDIR)/$(CONFIG)/handshake_verify_peer_options_test
 histogram_test: $(BINDIR)/$(CONFIG)/histogram_test
 host_port_test: $(BINDIR)/$(CONFIG)/host_port_test
 hpack_encoder_test: $(BINDIR)/$(CONFIG)/hpack_encoder_test
@@ -1114,7 +1114,7 @@ secure_endpoint_test: $(BINDIR)/$(CONFIG)/secure_endpoint_test
 security_connector_test: $(BINDIR)/$(CONFIG)/security_connector_test
 sequential_connectivity_test: $(BINDIR)/$(CONFIG)/sequential_connectivity_test
 server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
-server_ssl: $(BINDIR)/$(CONFIG)/server_ssl
+server_ssl_test: $(BINDIR)/$(CONFIG)/server_ssl_test
 server_test: $(BINDIR)/$(CONFIG)/server_test
 slice_buffer_test: $(BINDIR)/$(CONFIG)/slice_buffer_test
 slice_string_helpers_test: $(BINDIR)/$(CONFIG)/slice_string_helpers_test
@@ -1417,7 +1417,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/channel_stack_test \
   $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
   $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test \
-  $(BINDIR)/$(CONFIG)/client_ssl \
+  $(BINDIR)/$(CONFIG)/client_ssl_test \
   $(BINDIR)/$(CONFIG)/cmdline_test \
   $(BINDIR)/$(CONFIG)/combiner_test \
   $(BINDIR)/$(CONFIG)/completion_queue_threading_test \
@@ -1439,8 +1439,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/fake_transport_security_test \
   $(BINDIR)/$(CONFIG)/fd_conservation_posix_test \
   $(BINDIR)/$(CONFIG)/fd_posix_test \
-  $(BINDIR)/$(CONFIG)/fling \
-  $(BINDIR)/$(CONFIG)/fling_stream \
+  $(BINDIR)/$(CONFIG)/fling_stream_test \
+  $(BINDIR)/$(CONFIG)/fling_test \
   $(BINDIR)/$(CONFIG)/fork_test \
   $(BINDIR)/$(CONFIG)/format_request_test \
   $(BINDIR)/$(CONFIG)/frame_handler_test \
@@ -1449,8 +1449,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
   $(BINDIR)/$(CONFIG)/grpc_ipv6_loopback_available_test \
-  $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker \
-  $(BINDIR)/$(CONFIG)/handshake_verify_peer_options \
+  $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker_test \
+  $(BINDIR)/$(CONFIG)/handshake_verify_peer_options_test \
   $(BINDIR)/$(CONFIG)/histogram_test \
   $(BINDIR)/$(CONFIG)/host_port_test \
   $(BINDIR)/$(CONFIG)/hpack_encoder_test \
@@ -1491,7 +1491,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/security_connector_test \
   $(BINDIR)/$(CONFIG)/sequential_connectivity_test \
   $(BINDIR)/$(CONFIG)/server_chttp2_test \
-  $(BINDIR)/$(CONFIG)/server_ssl \
+  $(BINDIR)/$(CONFIG)/server_ssl_test \
   $(BINDIR)/$(CONFIG)/server_test \
   $(BINDIR)/$(CONFIG)/slice_buffer_test \
   $(BINDIR)/$(CONFIG)/slice_string_helpers_test \
@@ -1910,8 +1910,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test || ( echo test check_gcp_environment_linux_test failed ; exit 1 )
 	$(E) "[RUN]     Testing check_gcp_environment_windows_test"
 	$(Q) $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test || ( echo test check_gcp_environment_windows_test failed ; exit 1 )
-	$(E) "[RUN]     Testing client_ssl"
-	$(Q) $(BINDIR)/$(CONFIG)/client_ssl || ( echo test client_ssl failed ; exit 1 )
+	$(E) "[RUN]     Testing client_ssl_test"
+	$(Q) $(BINDIR)/$(CONFIG)/client_ssl_test || ( echo test client_ssl_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cmdline_test"
 	$(Q) $(BINDIR)/$(CONFIG)/cmdline_test || ( echo test cmdline_test failed ; exit 1 )
 	$(E) "[RUN]     Testing combiner_test"
@@ -1954,10 +1954,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/fd_conservation_posix_test || ( echo test fd_conservation_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fd_posix_test || ( echo test fd_posix_test failed ; exit 1 )
-	$(E) "[RUN]     Testing fling"
-	$(Q) $(BINDIR)/$(CONFIG)/fling || ( echo test fling failed ; exit 1 )
-	$(E) "[RUN]     Testing fling_stream"
-	$(Q) $(BINDIR)/$(CONFIG)/fling_stream || ( echo test fling_stream failed ; exit 1 )
+	$(E) "[RUN]     Testing fling_stream_test"
+	$(Q) $(BINDIR)/$(CONFIG)/fling_stream_test || ( echo test fling_stream_test failed ; exit 1 )
+	$(E) "[RUN]     Testing fling_test"
+	$(Q) $(BINDIR)/$(CONFIG)/fling_test || ( echo test fling_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fork_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fork_test || ( echo test fork_test failed ; exit 1 )
 	$(E) "[RUN]     Testing format_request_test"
@@ -1974,10 +1974,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_completion_queue_test || ( echo test grpc_completion_queue_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_ipv6_loopback_available_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_ipv6_loopback_available_test || ( echo test grpc_ipv6_loopback_available_test failed ; exit 1 )
-	$(E) "[RUN]     Testing handshake_server_with_readahead_handshaker"
-	$(Q) $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker || ( echo test handshake_server_with_readahead_handshaker failed ; exit 1 )
-	$(E) "[RUN]     Testing handshake_verify_peer_options"
-	$(Q) $(BINDIR)/$(CONFIG)/handshake_verify_peer_options || ( echo test handshake_verify_peer_options failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_server_with_readahead_handshaker_test"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker_test || ( echo test handshake_server_with_readahead_handshaker_test failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_verify_peer_options_test"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_verify_peer_options_test || ( echo test handshake_verify_peer_options_test failed ; exit 1 )
 	$(E) "[RUN]     Testing histogram_test"
 	$(Q) $(BINDIR)/$(CONFIG)/histogram_test || ( echo test histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing host_port_test"
@@ -2058,8 +2058,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/sequential_connectivity_test || ( echo test sequential_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_chttp2_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_chttp2_test || ( echo test server_chttp2_test failed ; exit 1 )
-	$(E) "[RUN]     Testing server_ssl"
-	$(Q) $(BINDIR)/$(CONFIG)/server_ssl || ( echo test server_ssl failed ; exit 1 )
+	$(E) "[RUN]     Testing server_ssl_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_ssl_test || ( echo test server_ssl_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_test || ( echo test server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_buffer_test"
@@ -2186,6 +2186,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong || ( echo test bm_fullstack_streaming_ping_pong failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_unary_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong || ( echo test bm_fullstack_unary_ping_pong failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_metadata"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_metadata || ( echo test bm_metadata failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_pollset"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_pollset || ( echo test bm_pollset failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_timer"
@@ -7619,34 +7621,34 @@ endif
 endif
 
 
-CLIENT_SSL_SRC = \
+CLIENT_SSL_TEST_SRC = \
     test/core/handshake/client_ssl.cc \
 
-CLIENT_SSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_SSL_SRC))))
+CLIENT_SSL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_SSL_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/client_ssl: openssl_dep_error
+$(BINDIR)/$(CONFIG)/client_ssl_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/client_ssl: $(CLIENT_SSL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(BINDIR)/$(CONFIG)/client_ssl_test: $(CLIENT_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_SSL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/client_ssl
+	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/client_ssl_test
 
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/handshake/client_ssl.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
-deps_client_ssl: $(CLIENT_SSL_OBJS:.o=.dep)
+deps_client_ssl_test: $(CLIENT_SSL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CLIENT_SSL_OBJS:.o=.dep)
+-include $(CLIENT_SSL_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8353,72 +8355,28 @@ endif
 endif
 
 
-FLING_SRC = \
-    test/core/end2end/data/client_certs.cc \
-    test/core/end2end/data/server1_cert.cc \
-    test/core/end2end/data/server1_key.cc \
-    test/core/end2end/data/test_root_cert.cc \
-    test/core/fling/fling_test.cc \
-
-FLING_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/fling: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/fling: $(FLING_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(FLING_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fling
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/fling/fling_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_fling: $(FLING_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(FLING_OBJS:.o=.dep)
-endif
-endif
-
-
-FLING_STREAM_SRC = \
+FLING_STREAM_TEST_SRC = \
     test/core/end2end/data/client_certs.cc \
     test/core/end2end/data/server1_cert.cc \
     test/core/end2end/data/server1_key.cc \
     test/core/end2end/data/test_root_cert.cc \
     test/core/fling/fling_stream_test.cc \
 
-FLING_STREAM_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_STREAM_SRC))))
+FLING_STREAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_STREAM_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/fling_stream: openssl_dep_error
+$(BINDIR)/$(CONFIG)/fling_stream_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/fling_stream: $(FLING_STREAM_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(BINDIR)/$(CONFIG)/fling_stream_test: $(FLING_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(FLING_STREAM_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fling_stream
+	$(Q) $(LDXX) $(LDFLAGS) $(FLING_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fling_stream_test
 
 endif
 
@@ -8432,11 +8390,55 @@ $(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG
 
 $(OBJDIR)/$(CONFIG)/test/core/fling/fling_stream_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
-deps_fling_stream: $(FLING_STREAM_OBJS:.o=.dep)
+deps_fling_stream_test: $(FLING_STREAM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(FLING_STREAM_OBJS:.o=.dep)
+-include $(FLING_STREAM_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+FLING_TEST_SRC = \
+    test/core/end2end/data/client_certs.cc \
+    test/core/end2end/data/server1_cert.cc \
+    test/core/end2end/data/server1_key.cc \
+    test/core/end2end/data/test_root_cert.cc \
+    test/core/fling/fling_test.cc \
+
+FLING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/fling_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/fling_test: $(FLING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(FLING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fling_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/fling/fling_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_fling_test: $(FLING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(FLING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8715,25 +8717,25 @@ endif
 endif
 
 
-HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_SRC = \
+HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_TEST_SRC = \
     test/core/handshake/readahead_handshaker_server_ssl.cc \
     test/core/handshake/server_ssl_common.cc \
 
-HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_SRC))))
+HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker: openssl_dep_error
+$(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker: $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker_test: $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
+	$(Q) $(LDXX) $(LDFLAGS) $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker_test
 
 endif
 
@@ -8741,43 +8743,43 @@ $(OBJDIR)/$(CONFIG)/test/core/handshake/readahead_handshaker_server_ssl.o:  $(LI
 
 $(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl_common.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
-deps_handshake_server_with_readahead_handshaker: $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS:.o=.dep)
+deps_handshake_server_with_readahead_handshaker_test: $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS:.o=.dep)
+-include $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_TEST_OBJS:.o=.dep)
 endif
 endif
 
 
-HANDSHAKE_VERIFY_PEER_OPTIONS_SRC = \
+HANDSHAKE_VERIFY_PEER_OPTIONS_TEST_SRC = \
     test/core/handshake/verify_peer_options.cc \
 
-HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_VERIFY_PEER_OPTIONS_SRC))))
+HANDSHAKE_VERIFY_PEER_OPTIONS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_VERIFY_PEER_OPTIONS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/handshake_verify_peer_options: openssl_dep_error
+$(BINDIR)/$(CONFIG)/handshake_verify_peer_options_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/handshake_verify_peer_options: $(HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(BINDIR)/$(CONFIG)/handshake_verify_peer_options_test: $(HANDSHAKE_VERIFY_PEER_OPTIONS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_verify_peer_options
+	$(Q) $(LDXX) $(LDFLAGS) $(HANDSHAKE_VERIFY_PEER_OPTIONS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_verify_peer_options_test
 
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/handshake/verify_peer_options.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
-deps_handshake_verify_peer_options: $(HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS:.o=.dep)
+deps_handshake_verify_peer_options_test: $(HANDSHAKE_VERIFY_PEER_OPTIONS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS:.o=.dep)
+-include $(HANDSHAKE_VERIFY_PEER_OPTIONS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10137,25 +10139,25 @@ endif
 endif
 
 
-SERVER_SSL_SRC = \
+SERVER_SSL_TEST_SRC = \
     test/core/handshake/server_ssl.cc \
     test/core/handshake/server_ssl_common.cc \
 
-SERVER_SSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_SSL_SRC))))
+SERVER_SSL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_SSL_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/server_ssl: openssl_dep_error
+$(BINDIR)/$(CONFIG)/server_ssl_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/server_ssl: $(SERVER_SSL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(BINDIR)/$(CONFIG)/server_ssl_test: $(SERVER_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_SSL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/server_ssl
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/server_ssl_test
 
 endif
 
@@ -10163,11 +10165,11 @@ $(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl.o:  $(LIBDIR)/$(CONFIG)/libgr
 
 $(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl_common.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
-deps_server_ssl: $(SERVER_SSL_OBJS:.o=.dep)
+deps_server_ssl_test: $(SERVER_SSL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(SERVER_SSL_OBJS:.o=.dep)
+-include $(SERVER_SSL_TEST_OBJS:.o=.dep)
 endif
 endif
 
