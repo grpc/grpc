@@ -47,7 +47,6 @@ def _test_case_from_arg(test_case_arg):
 
 
 async def test_interoperability():
-    aio.init_grpc_aio()
 
     args = interop_client_lib.parse_interop_client_args()
     channel = _create_channel(args)

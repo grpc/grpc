@@ -12,98 +12,128 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import enum
 
-cdef bint _grpc_aio_initialized = False
-# NOTE(lidiz) Theoretically, applications can run in multiple event loops as
-# long as they are in the same thread with same magic. This is not a supported
-# use case. So, the gRPC Python Async Stack should use a single event loop
-# picked by "init_grpc_aio".
-cdef object _grpc_aio_loop  # asyncio.AbstractEventLoop
-cdef int64_t _event_loop_thread_ident
-cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'default').lower()
-grpc_aio_engine = None
-cdef object _grpc_initialization_lock = threading.Lock()
+cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'default').upper()
+cdef _AioState _global_aio_state = _AioState()
 
 
 class AsyncIOEngine(enum.Enum):
     DEFAULT = 'default'
-    CUSTOM_IO_MANAGER = 'custom'
+    CUSTOM_IO_MANAGER = 'custom_io_manager'
     POLLER = 'poller'
 
 
-def init_grpc_aio():
-    global _grpc_aio_initialized
-    global _grpc_aio_loop
-    global _event_loop_thread_ident
-    global grpc_aio_engine
-
-    with _grpc_initialization_lock:
-        # Marks this function as called
-        if _grpc_aio_initialized:
-            return
-        else:
-            _grpc_aio_initialized = True
-
-        # Picks the engine for gRPC AsyncIO Stack
-        for engine_type in AsyncIOEngine:
-            if engine_type.value == _GRPC_ASYNCIO_ENGINE:
-                grpc_aio_engine = engine_type
-                break
-        if grpc_aio_engine is None or grpc_aio_engine is AsyncIOEngine.DEFAULT:
-            grpc_aio_engine = AsyncIOEngine.CUSTOM_IO_MANAGER
-
-        # Anchors the event loop that the gRPC library going to use.
-        _grpc_aio_loop = asyncio.get_event_loop()
-        _event_loop_thread_ident = threading.current_thread().ident
-
-        if grpc_aio_engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
-            # Activates asyncio IO manager.
-            # NOTE(lidiz) Custom IO manager must be activated before the first
-            # `grpc_init()`. Otherwise, some special configurations in Core won't
-            # pick up the change, and resulted in SEGFAULT or ABORT.
-            install_asyncio_iomgr()
-
-            # TODO(https://github.com/grpc/grpc/issues/22244) we need a the
-            # grpc_shutdown_blocking() counterpart for this call. Otherwise, the gRPC
-            # library won't shutdown cleanly.
-            grpc_init()
-
-            # Timers are triggered by the Asyncio loop. We disable
-            # the background thread that is being used by the native
-            # gRPC iomgr.
-            grpc_timer_manager_set_threading(False)
-
-            # gRPC callbaks are executed within the same thread used by the Asyncio
-            # event loop, as it is being done by the other Asyncio callbacks.
-            Executor.SetThreadingAll(False)
-        else:
-            # TODO(https://github.com/grpc/grpc/issues/22244) we need a the
-            # grpc_shutdown_blocking() counterpart for this call. Otherwise, the gRPC
-            # library won't shutdown cleanly.
-            grpc_init()
+cdef _default_asyncio_engine():
+    return AsyncIOEngine.CUSTOM_IO_MANAGER
 
 
-def grpc_aio_loop():
-    """Returns the one-and-only gRPC Aio event loop."""
-    return _grpc_aio_loop
+cdef grpc_completion_queue *global_completion_queue():
+    return _global_aio_state.cq.c_ptr()
 
 
-def aio_loop_schedule_coroutine(object coro):
-    """Thread-safely schedules coroutine to gRPC Aio event loop.
+cdef class _AioState:
 
-    If invoked within the same thread as the event loop, return an
-    Asyncio.Task. Otherwise, return a concurrent.futures.Future (the sync
-    Future). For non-asyncio threads, sync Future objects are probably easier
-    to handle (without worrying other thread-safety stuff).
-    """
-    if _event_loop_thread_ident != threading.current_thread().ident:
-        return asyncio.run_coroutine_threadsafe(coro, _grpc_aio_loop)
+    def __cinit__(self):
+        self.lock = threading.RLock()
+        self.refcount = 0
+        self.engine = None
+        self.cq = None
+
+
+cdef _initialize_custom_io_manager():
+    # Activates asyncio IO manager.
+    # NOTE(lidiz) Custom IO manager must be activated before the first
+    # `grpc_init()`. Otherwise, some special configurations in Core won't
+    # pick up the change, and resulted in SEGFAULT or ABORT.
+    install_asyncio_iomgr()
+
+    # Initializes gRPC Core, must be called before other Core API
+    grpc_init()
+
+    # Timers are triggered by the Asyncio loop. We disable
+    # the background thread that is being used by the native
+    # gRPC iomgr.
+    grpc_timer_manager_set_threading(False)
+
+    # gRPC callbaks are executed within the same thread used by the Asyncio
+    # event loop, as it is being done by the other Asyncio callbacks.
+    Executor.SetThreadingAll(False)
+
+    # Creates the only completion queue
+    _global_aio_state.cq = CallbackCompletionQueue()
+
+
+cdef _initialize_poller():
+    # Initializes gRPC Core, must be called before other Core API
+    grpc_init()
+
+    # Creates the only completion queue
+    _global_aio_state.cq = PollerCompletionQueue()
+
+
+cdef _actual_aio_initialization():
+    # Picks the engine for gRPC AsyncIO Stack
+    _global_aio_state.engine = AsyncIOEngine.__members__.get(
+        _GRPC_ASYNCIO_ENGINE,
+        AsyncIOEngine.DEFAULT,
+    )
+    if _global_aio_state.engine is AsyncIOEngine.DEFAULT:
+        _global_aio_state.engine = _default_asyncio_engine()
+    _LOGGER.info('Using %s as I/O engine', _global_aio_state.engine)
+
+    # Initializes the process-level state accordingly
+    if _global_aio_state.engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
+        _initialize_custom_io_manager()
+    elif _global_aio_state.engine is AsyncIOEngine.POLLER:
+        _initialize_poller()
     else:
-        return _grpc_aio_loop.create_task(coro)
+        raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
 
 
-def aio_loop_call_soon_threadsafe(object func, *args):
-    # TODO(lidiz) After we are confident, we can drop this assert. Otherwsie,
-    # we should limit this function to non-grpc-event-loop thread.
-    assert _event_loop_thread_ident != threading.current_thread().ident
-    return _grpc_aio_loop.call_soon_threadsafe(func, *args)
+def _grpc_shutdown_wrapper(_):
+    """A thin Python wrapper of Core's shutdown function.
+
+    Define functions are not allowed in "cdef" functions, and Cython complains
+    about a simple lambda with a C function.
+    """
+    grpc_shutdown_blocking()
+
+
+cdef _actual_aio_shutdown():
+    if _global_aio_state.engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
+        future = schedule_coro_threadsafe(
+            _global_aio_state.cq.shutdown(),
+            (<CallbackCompletionQueue>_global_aio_state.cq)._loop
+        )
+        future.add_done_callback(_grpc_shutdown_wrapper)
+    elif _global_aio_state.engine is AsyncIOEngine.POLLER:
+        (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
+        grpc_shutdown_blocking()
+    else:
+        raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
+
+
+cdef init_grpc_aio():
+    """Initialis the gRPC AsyncIO module.
+    
+    Expected to be invoked on critical class constructors.
+    E.g., AioChannel, AioServer.
+    """
+    with _global_aio_state.lock:
+        _global_aio_state.refcount += 1
+        if _global_aio_state.refcount == 1:
+            _actual_aio_initialization()
+
+
+cdef shutdown_grpc_aio():
+    """Shuts down the gRPC AsyncIO module.
+
+    Expected to be invoked on critical class destructors.
+    E.g., AioChannel, AioServer.
+    """
+    with _global_aio_state.lock:
+        assert _global_aio_state.refcount > 0
+        _global_aio_state.refcount -= 1
+        if not _global_aio_state.refcount:
+            _actual_aio_shutdown()

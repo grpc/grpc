@@ -21,7 +21,7 @@ from typing import Any, Optional, Sequence, Tuple
 
 import grpc
 from grpc._cython.cygrpc import (EOF, AbortError, BaseError, InternalError,
-                                 UsageError, init_grpc_aio)
+                                 UsageError)
 
 from ._base_call import (Call, RpcContext, StreamStreamCall, StreamUnaryCall,
                          UnaryStreamCall, UnaryUnaryCall)
@@ -46,7 +46,6 @@ __all__ = (
     'UnaryStreamCall',
     'StreamUnaryCall',
     'StreamStreamCall',
-    'init_grpc_aio',
     'Channel',
     'UnaryUnaryMultiCallable',
     'UnaryStreamMultiCallable',
