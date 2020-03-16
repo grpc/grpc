@@ -5196,7 +5196,6 @@ targets:
   - posix
 - name: bm_metadata
   build: test
-  run: false
   language: c++
   headers: []
   src:
