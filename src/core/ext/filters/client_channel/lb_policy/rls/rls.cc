@@ -703,7 +703,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
       if (it == lb_policy_->child_policy_map_.end()) {
         child_policy_wrapper_ = RefCountedPtr<ChildPolicyWrapper::RefHandler>(
             new ChildPolicyWrapper::RefHandler(
-                new ChildPolicyWrapper(lb_policy_->Ref(), response.target)));
+                new ChildPolicyWrapper(lb_policy_->Ref(), response.target), lb_policy_.get()));
         Json copied_child_policy_config =
             lb_policy_->current_config_->child_policy_config();
         grpc_error* error = InsertOrUpdateChildPolicyField(
@@ -1278,6 +1278,10 @@ void RlsLb::ControlChannel::StateWatcher::OnReadyLocked(void* arg,
   }
 }
 
+RlsLb::ChildPolicyWrapper::RefHandler::RefHandler(ChildPolicyWrapper* child, RlsLb* parent) : child_(child) {
+  parent->child_policy_map_.emplace(child->target(), this);
+}
+
 RlsLb::ChildPolicyWrapper* RlsLb::ChildPolicyWrapper::RefHandler::child()
     const {
   return child_.get();
@@ -1500,30 +1504,29 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     }
   }
 
-  bool default_child_policy_updated = false;
-  if (current_config_->request_processing_strategy() !=
-          RequestProcessingStrategy::SYNC_LOOKUP_CLIENT_SEES_ERROR &&
-      (old_config == nullptr ||
-       current_config_->default_target() != old_config->default_target())) {
-    default_child_policy_.reset(new ChildPolicyWrapper::RefHandler(
-        new ChildPolicyWrapper(Ref(), current_config_->default_target())));
-    default_child_policy_->child()->UpdateLocked(
-        current_config_->child_policy_config(), current_addresses_,
-        current_channel_args_);
-    default_child_policy_updated = true;
+  if (old_config == nullptr || current_config_->default_target() != old_config->default_target()) {
+    if (current_config_->request_processing_strategy() ==
+          RequestProcessingStrategy::SYNC_LOOKUP_CLIENT_SEES_ERROR) {
+      default_child_policy_.reset();
+    } else {
+      auto it = child_policy_map_.find(current_config_->default_target());
+      if (it == child_policy_map_.end()) {
+        default_child_policy_.reset(new ChildPolicyWrapper::RefHandler(
+            new ChildPolicyWrapper(Ref(), current_config_->default_target()),
+            this));
+        default_child_policy_->child()->UpdateLocked(
+            current_config_->child_policy_config(), current_addresses_,
+            current_channel_args_);
+      } else {
+        default_child_policy_ = it->second->Ref();
+      }
+    }
   }
 
   if (old_config == nullptr ||
       (current_config_->child_policy_config() !=
        old_config->child_policy_config()) ||
       (current_addresses_ != old_addresses)) {
-    if (current_config_->request_processing_strategy() !=
-            RequestProcessingStrategy::SYNC_LOOKUP_CLIENT_SEES_ERROR &&
-        !default_child_policy_updated) {
-      default_child_policy_->child()->UpdateLocked(
-          current_config_->child_policy_config(), current_addresses_,
-          current_channel_args_);
-    }
     for (auto& child : child_policy_map_) {
       Json copied_child_policy_config = current_config_->child_policy_config();
       grpc_error* error = InsertOrUpdateChildPolicyField(
