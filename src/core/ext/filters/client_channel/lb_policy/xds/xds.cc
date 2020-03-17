@@ -723,9 +723,6 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
   }
   const bool is_initial_update = args_ == nullptr;
   // Update config.
-// FIXME: remove support for changing eds_service_name, since that
-// should never happen now
-  const char* old_eds_service_name = eds_service_name();
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
   // Update fallback address list.
@@ -773,30 +770,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
           eds_service_name(), eds_service_name());
     }
   }
-  // Update priority list.
-  // Note that this comes after updating drop_stats_, since we want that
-  // to be used by any new picker we create here.
-  // No need to do this on the initial update, since there won't be any
-  // priorities to update yet.
-  if (!is_initial_update) {
-    const bool update_locality_stats =
-        config_->lrs_load_reporting_server_name() !=
-            old_config->lrs_load_reporting_server_name() ||
-        strcmp(old_eds_service_name, eds_service_name()) != 0;
-    UpdatePrioritiesLocked(update_locality_stats);
-  }
-  // Update endpoint watcher if needed.
-  if (is_initial_update ||
-      strcmp(old_eds_service_name, eds_service_name()) != 0) {
-    if (!is_initial_update) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-        gpr_log(GPR_INFO, "[xdslb %p] cancelling watch for %s", this,
-                old_eds_service_name);
-      }
-      xds_client()->CancelEndpointDataWatch(StringView(old_eds_service_name),
-                                            endpoint_watcher_,
-                                            /*delay_unsubscription=*/true);
-    }
+  // On the initial update, create the endpoint watcher.
+  if (is_initial_update) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO, "[xdslb %p] starting watch for %s", this,
               eds_service_name());
@@ -806,6 +781,16 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     endpoint_watcher_ = watcher.get();
     xds_client()->WatchEndpointData(StringView(eds_service_name()),
                                     std::move(watcher));
+  } else {
+    // Update priority list.
+    // Note that this comes after updating drop_stats_, since we want that
+    // to be used by any new picker we create here.
+    // No need to do this on the initial update, since there won't be any
+    // priorities to update yet.
+    const bool update_locality_stats =
+        config_->lrs_load_reporting_server_name() !=
+            old_config->lrs_load_reporting_server_name();
+    UpdatePrioritiesLocked(update_locality_stats);
   }
 }
 
