@@ -228,7 +228,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const std::string& cluster_name,
       RefCountedPtr<ServiceConfig>* service_config) const;
 
-  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot();
+  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot(
+      const std::set<std::string>& clusters);
 
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);

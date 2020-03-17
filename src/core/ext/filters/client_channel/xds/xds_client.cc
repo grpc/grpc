@@ -302,7 +302,6 @@ class XdsClient::ChannelState::LrsCallState
   void Orphan() override;
 
   void MaybeStartReportingLocked();
-  bool ShouldSendLoadReports(const StringView& cluster_name) const;
 
   RetryableCall<LrsCallState>* parent() { return parent_.get(); }
   ChannelState* chand() const { return parent_->chand(); }
@@ -1411,7 +1410,7 @@ bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
 void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   // Construct snapshot from all reported stats.
   XdsApi::ClusterLoadReportMap snapshot =
-      xds_client()->BuildLoadReportSnapshot();
+      xds_client()->BuildLoadReportSnapshot(parent_->cluster_names_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
@@ -1614,13 +1613,6 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   // Start reporting.
   reporter_ = MakeOrphanable<Reporter>(
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
-}
-
-bool XdsClient::ChannelState::LrsCallState::ShouldSendLoadReports(
-    const StringView& cluster_name) const {
-  // Only send load reports for the clusters that are asked for by the LRS
-  // server.
-  return cluster_names_.find(std::string(cluster_name)) != cluster_names_.end();
 }
 
 void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
@@ -2051,14 +2043,24 @@ grpc_error* XdsClient::CreateServiceConfig(
   return error;
 }
 
-XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot() {
+XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot(
+    const std::set<std::string>& clusters) {
   XdsApi::ClusterLoadReportMap snapshot_map;
   for (auto load_report_it = load_report_map_.begin();
        load_report_it != load_report_map_.end();) {
     // Cluster key is cluster and EDS service name.
     const auto& cluster_key = load_report_it->first;
     LoadReportState& load_report = load_report_it->second;
-    XdsApi::ClusterLoadReport& snapshot = snapshot_map[cluster_key];
+    // If the CDS response for a cluster indicates to use LRS but the
+    // LRS server does not say that it wants reports for this cluster,
+    // then we'll have stats objects here whose data we're not going to
+    // include in the load report.  However, we still need to clear out
+    // the data from the stats objects, so that if the LRS server starts
+    // asking for the data in the future, we don't incorrectly include
+    // data from previous reporting intervals in that future report.
+    const bool record_stats =
+        clusters.find(cluster_key.first) != clusters.end();
+    XdsApi::ClusterLoadReport snapshot;
     // Aggregate drop stats.
     snapshot.dropped_requests = std::move(load_report.deleted_drop_stats);
     for (auto& drop_stats : load_report.drop_stats) {
@@ -2090,15 +2092,21 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot() {
         ++it;
       }
     }
+    if (record_stats) {
+      // Compute load report interval.
+      const grpc_millis now = ExecCtx::Get()->Now();
+      snapshot.load_report_interval = now - load_report.last_report_time;
+      load_report.last_report_time = now;
+      // Record snapshot.
+      snapshot_map[cluster_key] = std::move(snapshot);
+    }
+    // If the only thing left in this entry was final snapshots from
+    // deleted stats objects, remove the entry.
     if (load_report.locality_stats.empty() && load_report.drop_stats.empty()) {
       load_report_it = load_report_map_.erase(load_report_it);
     } else {
       ++load_report_it;
     }
-    // Compute load report interval.
-    const grpc_millis now = ExecCtx::Get()->Now();
-    snapshot.load_report_interval = now - load_report.last_report_time;
-    load_report.last_report_time = now;
   }
   return snapshot_map;
 }

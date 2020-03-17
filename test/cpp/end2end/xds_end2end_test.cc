@@ -943,45 +943,45 @@ class LrsServiceImpl : public LrsService,
 
   explicit LrsServiceImpl(int client_load_reporting_interval_seconds)
       : client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {}
+            client_load_reporting_interval_seconds),
+        cluster_names_({kDefaultResourceName}) {}
 
   Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
     gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
+    GPR_ASSERT(client_load_reporting_interval_seconds_ > 0);
     // Take a reference of the LrsServiceImpl object, reference will go
     // out of scope after this method exits.
     std::shared_ptr<LrsServiceImpl> lrs_service_impl = shared_from_this();
-    // Read request.
+    // Read initial request.
     LoadStatsRequest request;
     if (stream->Read(&request)) {
-      if (client_load_reporting_interval_seconds_ > 0) {
-        IncreaseRequestCount();
-        // Send response.
-        LoadStatsResponse response;
-        std::string server_name;
-        auto it = request.node().metadata().fields().find(
-            "PROXYLESS_CLIENT_HOSTNAME");
-        if (it != request.node().metadata().fields().end()) {
-          server_name = it->second.string_value();
+      IncreaseRequestCount();  // Only for initial request.
+      // Verify server name set in metadata.
+      auto it = request.node().metadata().fields().find(
+          "PROXYLESS_CLIENT_HOSTNAME");
+      GPR_ASSERT(it != request.node().metadata().fields().end());
+      EXPECT_EQ(it->second.string_value(), kDefaultResourceName);
+      // Send initial response.
+      LoadStatsResponse response;
+      for (const std::string& cluster_name : cluster_names_) {
+        response.add_clusters(cluster_name);
+      }
+      response.mutable_load_reporting_interval()->set_seconds(
+          client_load_reporting_interval_seconds_);
+      stream->Write(response);
+      IncreaseResponseCount();
+      // Wait for report.
+      request.Clear();
+      while (stream->Read(&request)) {
+        gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
+                this, request.DebugString().c_str());
+        std::vector<ClientStats> stats;
+        for (const auto& cluster_stats : request.cluster_stats()) {
+          stats.emplace_back(cluster_stats);
         }
-        GPR_ASSERT(server_name != "");
-        response.add_clusters(server_name);
-        response.mutable_load_reporting_interval()->set_seconds(
-            client_load_reporting_interval_seconds_);
-        stream->Write(response);
-        IncreaseResponseCount();
-        // Wait for report.
-        request.Clear();
-        while (stream->Read(&request)) {
-          gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
-                  this, request.DebugString().c_str());
-          std::vector<ClientStats> stats;
-          for (const auto& cluster_stats : request.cluster_stats()) {
-            stats.emplace_back(cluster_stats);
-          }
-          grpc_core::MutexLock lock(&load_report_mu_);
-          result_queue_.emplace_back(std::move(stats));
-          if (load_report_cond_ != nullptr) load_report_cond_->Signal();
-        }
+        grpc_core::MutexLock lock(&load_report_mu_);
+        result_queue_.emplace_back(std::move(stats));
+        if (load_report_cond_ != nullptr) load_report_cond_->Signal();
       }
       // Wait until notified done.
       grpc_core::MutexLock lock(&lrs_mu_);
@@ -989,6 +989,11 @@ class LrsServiceImpl : public LrsService,
     }
     gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
     return Status::OK;
+  }
+
+  // Must be called before the LRS call is started.
+  void set_cluster_names(const std::set<std::string>& cluster_names) {
+    cluster_names_ = cluster_names;
   }
 
   void Start() {
@@ -1032,6 +1037,7 @@ class LrsServiceImpl : public LrsService,
   }
 
   const int client_load_reporting_interval_seconds_;
+  std::set<std::string> cluster_names_;
 
   grpc_core::CondVar lrs_cv_;
   grpc_core::Mutex lrs_mu_;  // Protects lrs_done_.
@@ -1738,6 +1744,8 @@ class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
 // Tests load reporting when switching over from one cluster to another.
 TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
   const char* kNewClusterName = "new_cluster_name";
+  balancers_[0]->lrs_service()->set_cluster_names(
+      {kDefaultResourceName, kNewClusterName});
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // cluster kDefaultResourceName -> locality0 -> backends 0 and 1
@@ -3381,6 +3389,39 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
             client_stats.total_issued_requests());
   EXPECT_EQ(0U, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
+}
+
+// Tests that we don't include stats for clusters that are not requested
+// by the LRS server.
+TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
+  balancers_[0]->lrs_service()->set_cluster_names({"bogus"});
+  SetNextResolution({});
+  SetNextResolutionForLbChannel({balancers_[0]->port()});
+  const size_t kNumRpcsPerAddress = 100;
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // Wait until all backends are ready.
+  int num_ok = 0;
+  int num_failure = 0;
+  int num_drops = 0;
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backends_[i]->backend_service()->request_count());
+  }
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
+  // The load report received at the balancer should be correct.
+  std::vector<ClientStats> load_report =
+      balancers_[0]->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(load_report.size(), 0UL);
 }
 
 // Tests that if the balancer restarts, the client load report contains the
