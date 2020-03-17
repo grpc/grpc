@@ -5732,6 +5732,7 @@ targets:
 - name: end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/interceptors_util.h
