@@ -24,6 +24,13 @@ cdef extern from "<queue>" namespace "std" nogil:
         size_t size()
 
 
+cdef extern from "<mutex>" namespace "std" nogil:
+    cdef cppclass mutex:
+        mutex()
+        void lock()
+        void unlock()
+
+
 ctypedef queue[grpc_event] cpp_event_queue
 
 
@@ -45,6 +52,7 @@ cdef class BaseCompletionQueue:
 cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef bint _shutdown
     cdef cpp_event_queue _queue
+    cdef mutex _queue_mutex
     cdef object _poller_thread
     cdef int _write_fd
     cdef object _read_socket

@@ -67,7 +67,9 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
             elif event.type == GRPC_QUEUE_SHUTDOWN:
                 self._shutdown = True
             else:
+                self._queue_mutex.lock()
                 self._queue.push(event)
+                self._queue_mutex.unlock()
                 _unified_socket_write(self._write_fd)
 
     def _poll_wrapper(self):
@@ -85,9 +87,15 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         cdef grpc_event event
         cdef CallbackContext *context
 
-        while not self._queue.empty():
-            event = self._queue.front()
-            self._queue.pop()
+        while True:
+            self._queue_mutex.lock()
+            if self._queue.empty():
+                self._queue_mutex.unlock()
+                break
+            else:
+                event = self._queue.front()
+                self._queue.pop()
+                self._queue_mutex.unlock()
 
             context = <CallbackContext *>event.tag
             loop = <object>context.loop
