@@ -45,12 +45,24 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
     "$PROTO_SOURCE_DIR"/messages.proto \
     "$PROTO_SOURCE_DIR"/empty.proto
 
-bazel build test/cpp/interop:xds_interop_client
+export GRPC_VERBOSITY=debug
+export GRPC_TRACE=xds_client,xds_resolver,cds_lb,xds_lb
 
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,xds_lb "$PYTHON" \
+bazel build test/cpp/interop:xds_interop_client
+"$PYTHON" \
   tools/run_tests/run_xds_tests.py \
     --test_case=all \
     --project_id=grpc-testing \
     --gcp_suffix=$(date '+%s') \
     --verbose \
     --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps}'
+
+
+bazel build //src/python/grpcio_tests/tests/interop:xds_interop_client
+"$PYTHON" \
+  tools/run_tests/run_xds_tests.py \
+    --test_case=all \
+    --project_id=grpc-testing \
+    --gcp_suffix=$(date '+%s') \
+    --verbose \
+    --client_cmd='bazel run //src/python/grpcio_tests/tests/interop:xds_interop_client -- --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps} --verbose'
