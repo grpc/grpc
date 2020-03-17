@@ -852,6 +852,7 @@ class ServerUnaryStreamer final
     return body_.Read(request);
   }
 
+  using internal::WriterInterface<ResponseType>::Write;
   /// Block to write \a msg to the stream with WriteOptions \a options.
   /// This is thread-safe with respect to \a ReaderInterface::Read
   ///
@@ -859,7 +860,6 @@ class ServerUnaryStreamer final
   /// \param options The WriteOptions affecting the write operation.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  using internal::WriterInterface<ResponseType>::Write;
   bool Write(const ResponseType& response,
              ::grpc::WriteOptions options) override {
     if (write_done_ || !read_done_) {
@@ -919,6 +919,7 @@ class ServerSplitStreamer final
     return body_.Read(request);
   }
 
+  using internal::WriterInterface<ResponseType>::Write;
   /// Block to write \a msg to the stream with WriteOptions \a options.
   /// This is thread-safe with respect to \a ReaderInterface::Read
   ///
@@ -926,7 +927,6 @@ class ServerSplitStreamer final
   /// \param options The WriteOptions affecting the write operation.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  using internal::WriterInterface<ResponseType>::Write;
   bool Write(const ResponseType& response,
              ::grpc::WriteOptions options) override {
     return read_done_ && body_.Write(response, options);

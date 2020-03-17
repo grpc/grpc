@@ -48,7 +48,7 @@ class MethodHandler {
     /// \param context : the ServerContext structure for this server call
     /// \param req : the request payload, if appropriate for this RPC
     /// \param req_status : the request status after any interceptors have run
-    /// \param handler_data: internal data for the handler.
+    /// \param handler_data : internal data for the handler.
     /// \param requester : used only by the callback API. It is a function
     ///        called by the RPC Controller to request another RPC (and also
     ///        to set up the state required to make that request possible)
