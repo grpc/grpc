@@ -272,7 +272,10 @@ class ClientBidiReactor {
   void RemoveHold() { stream_->RemoveHold(); }
 
   /// Notifies the application that all operations associated with this RPC
-  /// have completed and provides the RPC status outcome.
+  /// have completed and all Holds have been removed. OnDone provides the RPC
+  /// status outcome for both successful and failed RPCs and will be called in
+  /// all cases. If it is not called, it indicates an application-level problem
+  /// (like failure to remove a hold).
   ///
   /// \param[in] s The status outcome of this RPC
   virtual void OnDone(const ::grpc::Status& /*s*/) {}
@@ -283,19 +286,21 @@ class ClientBidiReactor {
   /// call of OnReadDone or OnDone.
   ///
   /// \param[in] ok Was the initial metadata read successfully? If false, no
-  ///               new read/write operation will succeed.
+  ///               new read/write operation will succeed, and any further
+  ///               Start* operations should not be called.
   virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartRead operation completed.
   ///
   /// \param[in] ok Was it successful? If false, no new read/write operation
-  ///               will succeed.
+  ///               will succeed, and any further Start* should not be called.
   virtual void OnReadDone(bool /*ok*/) {}
 
-  /// Notifies the application that a StartWrite operation completed.
+  /// Notifies the application that a StartWrite or StartWriteLast operation
+  /// completed.
   ///
   /// \param[in] ok Was it successful? If false, no new read/write operation
-  ///               will succeed.
+  ///               will succeed, and any further Start* should not be called.
   virtual void OnWriteDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWritesDone operation completed. Note
@@ -303,7 +308,8 @@ class ClientBidiReactor {
   /// those that are implicitly invoked as part of a StartWriteLast.
   ///
   /// \param[in] ok Was it successful? If false, the application will later see
-  ///               the failure reflected as a bad status in OnDone.
+  ///               the failure reflected as a bad status in OnDone and no
+  ///               further Start* should be called.
   virtual void OnWritesDoneDone(bool /*ok*/) {}
 
  private:
