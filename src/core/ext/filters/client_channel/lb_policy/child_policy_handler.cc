@@ -276,8 +276,8 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
 }
 
 bool ChildPolicyHandler::ConfigChangeRequiresNewPolicyInstance(
-      LoadBalancingPolicy::Config* old_config,
-      LoadBalancingPolicy::Config* new_config) const {
+    LoadBalancingPolicy::Config* old_config,
+    LoadBalancingPolicy::Config* new_config) const {
   return strcmp(old_config->name(), new_config->name()) != 0;
 }
 

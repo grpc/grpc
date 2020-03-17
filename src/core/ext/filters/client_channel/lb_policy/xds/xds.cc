@@ -1170,8 +1170,8 @@ XdsLb::LocalityMap::ExtractLocalityLocked(
 
 void XdsLb::LocalityMap::DeactivateLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] deactivating priority %" PRIu32,
-            xds_policy(), priority_);
+    gpr_log(GPR_INFO, "[xdslb %p] deactivating priority %" PRIu32, xds_policy(),
+            priority_);
   }
   // If already deactivated, don't do it again.
   if (delayed_removal_timer_callback_pending_) return;
@@ -1198,8 +1198,8 @@ bool XdsLb::LocalityMap::MaybeReactivateLocked() {
   if (priority_ >= xds_policy_->current_priority_) return false;
   // Reactivate this priority by cancelling deletion timer.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] reactivating priority %" PRIu32,
-            xds_policy(), priority_);
+    gpr_log(GPR_INFO, "[xdslb %p] reactivating priority %" PRIu32, xds_policy(),
+            priority_);
   }
   if (delayed_removal_timer_callback_pending_) {
     grpc_timer_cancel(&delayed_removal_timer_);
@@ -1458,8 +1458,8 @@ void XdsLb::LocalityMap::Locality::UpdateLocked(uint32_t locality_weight,
   weight_ = locality_weight;
   if (delayed_removal_timer_callback_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO, "[xdslb %p] Locality %p %s: reactivating",
-              xds_policy(), this, name_->AsHumanReadableString());
+      gpr_log(GPR_INFO, "[xdslb %p] Locality %p %s: reactivating", xds_policy(),
+              this, name_->AsHumanReadableString());
     }
     grpc_timer_cancel(&delayed_removal_timer_);
   }
@@ -1519,8 +1519,8 @@ void XdsLb::LocalityMap::Locality::DeactivateLocked() {
   // If already deactivated, don't do that again.
   if (weight_ == 0) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Locality %p %s: deactivating",
-            xds_policy(), this, name_->AsHumanReadableString());
+    gpr_log(GPR_INFO, "[xdslb %p] Locality %p %s: deactivating", xds_policy(),
+            this, name_->AsHumanReadableString());
   }
   // Set the locality weight to 0 so that future xds picker won't contain this
   // locality.
@@ -1713,10 +1713,12 @@ class XdsFactory : public LoadBalancingPolicyFactory {
       XdsConfig* new_xds_config = static_cast<XdsConfig*>(new_config);
       const char* old_eds_service_name =
           old_xds_config->eds_service_name() == nullptr
-              ? "" : old_xds_config->eds_service_name();
+              ? ""
+              : old_xds_config->eds_service_name();
       const char* new_eds_service_name =
           new_xds_config->eds_service_name() == nullptr
-              ? "" : new_xds_config->eds_service_name();
+              ? ""
+              : new_xds_config->eds_service_name();
       return strcmp(old_eds_service_name, new_eds_service_name) != 0;
     }
 

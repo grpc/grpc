@@ -1765,26 +1765,27 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancers_[0]->lrs_service()->WaitForLoadReport();
-  EXPECT_THAT(load_report, ::testing::ElementsAre(
-      ::testing::AllOf(
+  EXPECT_THAT(
+      load_report,
+      ::testing::ElementsAre(::testing::AllOf(
           ::testing::Property(&ClientStats::cluster_name, kDefaultResourceName),
-          ::testing::Property(&ClientStats::locality_stats,
-              ::testing::ElementsAre(
-                  ::testing::Pair(
-                      "locality0",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_successful_requests,
-                              num_ok),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_requests_in_progress,
-                              0UL),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_error_requests,
-                              num_failure),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_issued_requests,
-                              num_failure + num_ok))))),
+          ::testing::Property(
+              &ClientStats::locality_stats,
+              ::testing::ElementsAre(::testing::Pair(
+                  "locality0",
+                  ::testing::AllOf(
+                      ::testing::Field(&ClientStats::LocalityStats::
+                                           total_successful_requests,
+                                       num_ok),
+                      ::testing::Field(&ClientStats::LocalityStats::
+                                           total_requests_in_progress,
+                                       0UL),
+                      ::testing::Field(
+                          &ClientStats::LocalityStats::total_error_requests,
+                          num_failure),
+                      ::testing::Field(
+                          &ClientStats::LocalityStats::total_issued_requests,
+                          num_failure + num_ok))))),
           ::testing::Property(&ClientStats::total_dropped_requests,
                               num_drops))));
   // Change RDS resource to point to new cluster.
@@ -1800,51 +1801,55 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
   // Wait for all new backends to be used.
   std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(2, 4);
   // The load report received at the balancer should be correct.
-  load_report =
-      balancers_[0]->lrs_service()->WaitForLoadReport();
-  EXPECT_THAT(load_report, ::testing::ElementsAre(
-      ::testing::AllOf(
-          ::testing::Property(&ClientStats::cluster_name, kDefaultResourceName),
-          ::testing::Property(&ClientStats::locality_stats,
-              ::testing::ElementsAre(
-                  ::testing::Pair(
+  load_report = balancers_[0]->lrs_service()->WaitForLoadReport();
+  EXPECT_THAT(
+      load_report,
+      ::testing::ElementsAre(
+          ::testing::AllOf(
+              ::testing::Property(&ClientStats::cluster_name,
+                                  kDefaultResourceName),
+              ::testing::Property(
+                  &ClientStats::locality_stats,
+                  ::testing::ElementsAre(::testing::Pair(
                       "locality0",
                       ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_successful_requests,
-                              ::testing::Lt(num_ok)),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_requests_in_progress,
-                              0UL),
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_successful_requests,
+                                           ::testing::Lt(num_ok)),
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_requests_in_progress,
+                                           0UL),
                           ::testing::Field(
                               &ClientStats::LocalityStats::total_error_requests,
                               ::testing::Le(num_failure)),
                           ::testing::Field(
-                              &ClientStats::LocalityStats::total_issued_requests,
+                              &ClientStats::LocalityStats::
+                                  total_issued_requests,
                               ::testing::Le(num_failure + num_ok)))))),
-          ::testing::Property(&ClientStats::total_dropped_requests,
-                              num_drops)),
-      ::testing::AllOf(
-          ::testing::Property(&ClientStats::cluster_name, kNewClusterName),
-          ::testing::Property(&ClientStats::locality_stats,
-              ::testing::ElementsAre(
-                  ::testing::Pair(
+              ::testing::Property(&ClientStats::total_dropped_requests,
+                                  num_drops)),
+          ::testing::AllOf(
+              ::testing::Property(&ClientStats::cluster_name, kNewClusterName),
+              ::testing::Property(
+                  &ClientStats::locality_stats,
+                  ::testing::ElementsAre(::testing::Pair(
                       "locality1",
                       ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_successful_requests,
-                              ::testing::Le(num_ok)),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_requests_in_progress,
-                              0UL),
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_successful_requests,
+                                           ::testing::Le(num_ok)),
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_requests_in_progress,
+                                           0UL),
                           ::testing::Field(
                               &ClientStats::LocalityStats::total_error_requests,
                               ::testing::Le(num_failure)),
                           ::testing::Field(
-                              &ClientStats::LocalityStats::total_issued_requests,
+                              &ClientStats::LocalityStats::
+                                  total_issued_requests,
                               ::testing::Le(num_failure + num_ok)))))),
-          ::testing::Property(&ClientStats::total_dropped_requests,
-                              num_drops))));
+              ::testing::Property(&ClientStats::total_dropped_requests,
+                                  num_drops))));
   int total_ok = 0;
   int total_failure = 0;
   for (const ClientStats& client_stats : load_report) {
