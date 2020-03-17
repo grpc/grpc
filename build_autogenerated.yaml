@@ -4085,6 +4085,7 @@ targets:
   - upb
 - name: sequential_connectivity_test
   build: test
+  run: false
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h

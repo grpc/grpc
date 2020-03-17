@@ -2054,8 +2054,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/secure_endpoint_test || ( echo test secure_endpoint_test failed ; exit 1 )
 	$(E) "[RUN]     Testing security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/security_connector_test || ( echo test security_connector_test failed ; exit 1 )
-	$(E) "[RUN]     Testing sequential_connectivity_test"
-	$(Q) $(BINDIR)/$(CONFIG)/sequential_connectivity_test || ( echo test sequential_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_chttp2_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_chttp2_test || ( echo test server_chttp2_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_ssl_test"
