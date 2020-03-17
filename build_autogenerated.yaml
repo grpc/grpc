@@ -5578,6 +5578,7 @@ targets:
 - name: client_lb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/test_lb_policies.h
