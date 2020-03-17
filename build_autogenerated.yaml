@@ -4085,6 +4085,7 @@ targets:
   - upb
 - name: sequential_connectivity_test
   build: test
+  run: false
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
@@ -5731,6 +5732,7 @@ targets:
 - name: end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/interceptors_util.h
