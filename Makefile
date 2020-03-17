@@ -2234,8 +2234,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test || ( echo test destroy_grpclb_channel_with_active_connect_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing duplicate_header_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test || ( echo test duplicate_header_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing end2end_test"
-	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_details_test"
 	$(Q) $(BINDIR)/$(CONFIG)/error_details_test || ( echo test error_details_test failed ; exit 1 )
 	$(E) "[RUN]     Testing eventmanager_libuv_test"
