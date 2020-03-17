@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# NOTE(lidiz) Unfortunately, we can't use "cimport" here because Cython
+# links it with exception handling. It introduces new dependencies.
 cdef extern from "<queue>" namespace "std" nogil:
     cdef cppclass queue[T]:
         queue()
