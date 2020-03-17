@@ -2072,21 +2072,21 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot(
     for (auto it = load_report.locality_stats.begin();
          it != load_report.locality_stats.end();) {
       const RefCountedPtr<XdsLocalityName>& locality_name = it->first;
-      auto& locality_stats = it->second;
+      auto& locality_state = it->second;
       XdsClusterLocalityStats::Snapshot& locality_snapshot =
           snapshot.locality_stats[locality_name];
-      for (auto& locality_stats : locality_stats.locality_stats) {
+      for (auto& locality_stats : locality_state.locality_stats) {
         locality_snapshot += locality_stats->GetSnapshotAndReset();
       }
       // Add final snapshots from recently deleted locality stats objects.
       for (auto& deleted_locality_stats :
-           locality_stats.deleted_locality_stats) {
+           locality_state.deleted_locality_stats) {
         locality_snapshot += deleted_locality_stats;
       }
-      locality_stats.deleted_locality_stats.clear();
+      locality_state.deleted_locality_stats.clear();
       // If the only thing left in this entry was final snapshots from
       // deleted locality stats objects, remove the entry.
-      if (locality_stats.locality_stats.empty()) {
+      if (locality_state.locality_stats.empty()) {
         it = load_report.locality_stats.erase(it);
       } else {
         ++it;
