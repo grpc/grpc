@@ -75,6 +75,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
             self._poll()
 
     cdef shutdown(self):
+        self._loop.remove_reader(self._read_socket)
         # TODO(https://github.com/grpc/grpc/issues/22365) perform graceful shutdown
         grpc_completion_queue_shutdown(self._cq)
         grpc_completion_queue_destroy(self._cq)
