@@ -44,7 +44,6 @@ typedef enum {
   TSI_OUT_OF_RESOURCES = 12,
   TSI_ASYNC = 13,
   TSI_HANDSHAKE_SHUTDOWN = 14,
-  TSI_CLOSE_NOTIFY = 15,  // Indicates that the connection should be closed.
 } tsi_result;
 
 typedef enum {
