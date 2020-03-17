@@ -37,12 +37,7 @@ formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
-# TODO: Make this logfile configurable.
-file_handler = logging.FileHandler('/tmp/python_xds_interop_client.log', mode='a')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
 
-# TODO: Back with a LoadBalancerStatsResponse proto?
 class _StatsWatcher:
     _start: int
     _end: int
@@ -57,14 +52,13 @@ class _StatsWatcher:
         self._end = end
         self._rpcs_needed = end - start
         self._rpcs_by_peer = collections.defaultdict(int)
-        self._lock = threading.Lock()
-        self._condition = threading.Condition(self._lock)
+        self._condition = threading.Condition()
         self._no_remote_peer = 0
 
     def on_rpc_complete(self, request_id: int, peer: str) -> None:
         """Records statistics for a single RPC."""
         if self._start <= request_id < self._end:
-            with self._lock:
+            with self._condition:
                 if not peer:
                     self._no_remote_peer += 1
                 else:
@@ -75,17 +69,13 @@ class _StatsWatcher:
     def await_rpc_stats_response(self, timeout_sec: int
                                 ) -> messages_pb2.LoadBalancerStatsResponse:
         """Blocks until a full response has been collected."""
-        logger.info("Awaiting RPC stats response")
-        with self._lock:
-            logger.debug(f"Waiting for {timeout_sec} on condition variable.")
+        with self._condition:
             self._condition.wait_for(lambda: not self._rpcs_needed,
                                      timeout=float(timeout_sec))
-            logger.debug(f"Waited for {timeout_sec} on condition variable.")
             response = messages_pb2.LoadBalancerStatsResponse()
             for peer, count in self._rpcs_by_peer.items():
                 response.rpcs_by_peer[peer] = count
             response.num_failures = self._no_remote_peer + self._rpcs_needed
-        logger.info("Finished awaiting rpc stats response")
         return response
 
 
@@ -125,18 +115,16 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
         logger.info("Returning stats response: {}".format(response))
         return response
 
-def _start_rpc(request_id: int,
-               stub: test_pb2_grpc.TestServiceStub,
-               timeout: float,
-               futures: Mapping[int, grpc.Future]) -> None:
-    logger.info(f"[{threading.get_ident()}] Sending request to backend: {request_id}")
+
+def _start_rpc(request_id: int, stub: test_pb2_grpc.TestServiceStub,
+               timeout: float, futures: Mapping[int, grpc.Future]) -> None:
+    logger.info(f"Sending request to backend: {request_id}")
     future = stub.UnaryCall.future(messages_pb2.SimpleRequest(),
-                                       timeout=timeout)
+                                   timeout=timeout)
     futures[request_id] = future
 
 
-def _on_rpc_done(rpc_id: int,
-                 future: grpc.Future,
+def _on_rpc_done(rpc_id: int, future: grpc.Future,
                  print_response: bool) -> None:
     exception = future.exception()
     hostname = ""
@@ -158,19 +146,17 @@ def _on_rpc_done(rpc_id: int,
         for watcher in _watchers:
             watcher.on_rpc_complete(rpc_id, hostname)
 
+
 def _remove_completed_rpcs(futures: Mapping[int, grpc.Future],
-        print_response: bool) -> None:
+                           print_response: bool) -> None:
     logger.debug("Removing completed RPCs")
     done = []
     for future_id, future in futures.items():
         if future.done():
-            logger.debug("Calling _on_rpc_done")
             _on_rpc_done(future_id, future, args.print_response)
-            logger.debug("Called _on_rpc_done")
             done.append(future_id)
     for rpc_id in done:
         del futures[rpc_id]
-    logger.debug("Removed completed RPCs")
 
 
 def _cancel_all_rpcs(futures: Mapping[int, grpc.Future]) -> None:
@@ -179,7 +165,6 @@ def _cancel_all_rpcs(futures: Mapping[int, grpc.Future]) -> None:
         future.cancel()
 
 
-# TODO: Accept finer-grained arguments.
 def _run_single_channel(args: argparse.Namespace):
     global _global_rpc_id  # pylint: disable=global-statement
     duration_per_query = 1.0 / float(args.qps)
@@ -194,7 +179,6 @@ def _run_single_channel(args: argparse.Namespace):
             start = time.time()
             end = start + duration_per_query
             _start_rpc(request_id, stub, float(args.rpc_timeout_sec), futures)
-            # TODO: Complete RPCs more frequently than 1 / QPS?
             _remove_completed_rpcs(futures, args.print_response)
             logger.debug(f"Currently {len(futures)} in-flight RPCs")
             now = time.time()
@@ -204,7 +188,6 @@ def _run_single_channel(args: argparse.Namespace):
         _cancel_all_rpcs(futures)
 
 
-# TODO: Accept finer-grained arguments.
 def _run(args: argparse.Namespace) -> None:
     logger.info("Starting python xDS Interop Client.")
     global _global_server  # pylint: disable=global-statement
@@ -252,8 +235,20 @@ if __name__ == "__main__":
         default=50052,
         type=int,
         help="The port on which to expose the peer distribution stats service.")
+    parser.add_argument('--verbose',
+                        help='verbose log output',
+                        default=False,
+                        action='store_true')
+    parser.add_argument("--log_file",
+                        default=None,
+                        type=str,
+                        help="A file to log to.")
     args = parser.parse_args()
     signal.signal(signal.SIGINT, _handle_sigint)
-    logger.setLevel(logging.DEBUG)
-    # logging.basicConfig(level=logging.INFO, stream=sys.stderr)
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+    if args.log_file:
+        file_handler = logging.FileHandler(args.log_file, mode='a')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
     _run(args)
