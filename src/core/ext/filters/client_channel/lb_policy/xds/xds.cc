@@ -25,6 +25,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/types/optional.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -80,7 +82,7 @@ class XdsConfig : public LoadBalancingPolicy::Config {
   XdsConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
             RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy,
             std::string eds_service_name,
-            Optional<std::string> lrs_load_reporting_server_name)
+            absl::optional<std::string> lrs_load_reporting_server_name)
       : child_policy_(std::move(child_policy)),
         fallback_policy_(std::move(fallback_policy)),
         eds_service_name_(std::move(eds_service_name)),
@@ -101,7 +103,7 @@ class XdsConfig : public LoadBalancingPolicy::Config {
     return eds_service_name_.empty() ? nullptr : eds_service_name_.c_str();
   };
 
-  const Optional<std::string>& lrs_load_reporting_server_name() const {
+  const absl::optional<std::string>& lrs_load_reporting_server_name() const {
     return lrs_load_reporting_server_name_;
   };
 
@@ -109,7 +111,7 @@ class XdsConfig : public LoadBalancingPolicy::Config {
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
   std::string eds_service_name_;
-  Optional<std::string> lrs_load_reporting_server_name_;
+  absl::optional<std::string> lrs_load_reporting_server_name_;
 };
 
 class XdsLb : public LoadBalancingPolicy {
@@ -1656,7 +1658,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (error_list.empty()) {
-      Optional<std::string> optional_lrs_load_reporting_server_name;
+      absl::optional<std::string> optional_lrs_load_reporting_server_name;
       if (lrs_load_reporting_server_name != nullptr) {
         optional_lrs_load_reporting_server_name.emplace(
             std::string(lrs_load_reporting_server_name));
