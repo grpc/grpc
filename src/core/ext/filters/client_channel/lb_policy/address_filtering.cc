@@ -61,24 +61,24 @@ grpc_arg MakeHierarchicalPathArg(const std::vector<std::string>& path) {
       &hierarchical_path_arg_vtable);
 }
 
-ServerAddressList FilterAddressesForChild(const ServerAddressList& addresses,
-                                          absl::string_view child_name) {
-  ServerAddressList selected_addresses;
+HierarchicalAddressMap MakeHierarchicalAddressMap(
+    const ServerAddressList& addresses) {
+  HierarchicalAddressMap result;
   for (const ServerAddress& address : addresses) {
     auto* path = grpc_channel_args_find_pointer<std::vector<std::string>>(
         address.args(), GRPC_ARG_HIERARCHICAL_PATH);
     if (path == nullptr || path->empty()) continue;
     auto it = path->begin();
-    if (*it != child_name) continue;
+    ServerAddressList& target_list = result[*it];
     ++it;
     std::vector<std::string> remaining_path(it, path->end());
     const char* name_to_remove = GRPC_ARG_HIERARCHICAL_PATH;
     grpc_arg new_arg = MakeHierarchicalPathArg(remaining_path);
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
         address.args(), &name_to_remove, 1, &new_arg, 1);
-    selected_addresses.emplace_back(address.address(), new_args);
+    target_list.emplace_back(address.address(), new_args);
   }
-  return selected_addresses;
+  return result;
 }
 
 }  // namespace grpc_core

@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <vector>
 #include <string>
 
@@ -30,8 +31,10 @@ namespace grpc_core {
 
 grpc_arg MakeHierarchicalPathArg(const std::vector<std::string>& path);
 
-ServerAddressList FilterAddressesForChild(const ServerAddressList& addresses,
-                                          absl::string_view child_name);
+using HierarchicalAddressMap = std::map<std::string, ServerAddressList>;
+
+HierarchicalAddressMap MakeHierarchicalAddressMap(
+    const ServerAddressList& addresses);
 
 }  // namespace grpc_core
 

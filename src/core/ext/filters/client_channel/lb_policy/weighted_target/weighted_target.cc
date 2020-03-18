@@ -126,7 +126,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     void Orphan() override;
 
     void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
-                      const ServerAddressList& addresses,
+                      ServerAddressList addresses,
                       const grpc_channel_args* args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
@@ -295,6 +295,8 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     }
   }
   // Add or update the targets in the new config.
+  HierarchicalAddressMap address_map =
+      MakeHierarchicalAddressMap(args.addresses);
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     const WeightedTargetLbConfig::ChildConfig& config = p.second;
@@ -304,7 +306,7 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
       it->second = MakeOrphanable<WeightedChild>(
           Ref(DEBUG_LOCATION, "WeightedChild"), it->first);
     }
-    it->second->UpdateLocked(config, args.addresses, args.args);
+    it->second->UpdateLocked(config, std::move(address_map[name]), args.args);
   }
 }
 
@@ -469,7 +471,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 
 void WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    const ServerAddressList& addresses, const grpc_channel_args* args) {
+    ServerAddressList addresses, const grpc_channel_args* args) {
   if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;
@@ -484,7 +486,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.config = config.config;
-  update_args.addresses = FilterAddressesForChild(addresses, name_);
+  update_args.addresses = std::move(addresses);
   update_args.args = grpc_channel_args_copy(args);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
