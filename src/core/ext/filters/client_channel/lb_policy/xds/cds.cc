@@ -113,8 +113,14 @@ class CdsLb : public LoadBalancingPolicy {
 
 void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client",
-            parent_.get());
+    gpr_log(GPR_INFO,
+            "[cdslb %p] received CDS update from xds client %p: "
+            "eds_service_name=%s lrs_load_reporting_server_name=%s",
+            parent_.get(), parent_->xds_client_.get(),
+            cluster_data.eds_service_name.c_str(),
+            cluster_data.lrs_load_reporting_server_name.has_value()
+                ? cluster_data.lrs_load_reporting_server_name.value().c_str()
+                : "(unset)");
   }
   // Construct config for child policy.
   Json::Object child_config = {
@@ -152,9 +158,18 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     parent_->child_policy_ =
         LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
             "xds_experimental", std::move(args));
+    if (parent_->child_policy_ == nullptr) {
+      OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "failed to create xds_experimental child policy"));
+      return;
+    }
     grpc_pollset_set_add_pollset_set(
         parent_->child_policy_->interested_parties(),
         parent_->interested_parties());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+      gpr_log(GPR_INFO, "[cdslb %p] created child policy xds_experimental (%p)",
+              parent_.get(), parent_->child_policy_.get());
+    }
   }
   // Update child policy.
   UpdateArgs args;
@@ -220,9 +235,9 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
 CdsLb::CdsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       xds_client_(XdsClient::GetFromChannelArgs(*args.args)) {
-  if (xds_client_ != nullptr && GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] Using xds client %p from channel", this,
-            xds_client_.get());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p from channel",
+            this, xds_client_.get());
   }
 }
 
@@ -245,6 +260,10 @@ void CdsLb::ShutdownLocked() {
   }
   if (xds_client_ != nullptr) {
     if (cluster_watcher_ != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+                config_->cluster().c_str());
+      }
       xds_client_->CancelClusterDataWatch(
           StringView(config_->cluster().c_str()), cluster_watcher_);
     }
@@ -257,12 +276,13 @@ void CdsLb::ResetBackoffLocked() {
 }
 
 void CdsLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] received update", this);
-  }
   // Update config.
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s", this,
+            config_->cluster().c_str());
+  }
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
@@ -270,8 +290,17 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   // If cluster name changed, cancel watcher and restart.
   if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
     if (old_config != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+                old_config->cluster().c_str());
+      }
       xds_client_->CancelClusterDataWatch(
-          StringView(old_config->cluster().c_str()), cluster_watcher_);
+          StringView(old_config->cluster().c_str()), cluster_watcher_,
+          /*delay_unsubscription=*/true);
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+      gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
+              config_->cluster().c_str());
     }
     auto watcher = absl::make_unique<ClusterWatcher>(Ref());
     cluster_watcher_ = watcher.get();

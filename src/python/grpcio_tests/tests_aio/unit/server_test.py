@@ -348,11 +348,10 @@ class TestServer(AioTestBase):
 
         await self._server.stop(test_constants.SHORT_TIMEOUT)
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
         self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                          exception_context.exception.code())
-        self.assertIn('GOAWAY', exception_context.exception.details())
 
     async def test_concurrent_graceful_shutdown(self):
         call = self._channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)
@@ -384,21 +383,18 @@ class TestServer(AioTestBase):
             self._server.stop(test_constants.LONG_TIMEOUT),
         )
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
         self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                          exception_context.exception.code())
-        self.assertIn('GOAWAY', exception_context.exception.details())
 
-    @unittest.skip('https://github.com/grpc/grpc/issues/20818')
     async def test_shutdown_before_call(self):
-        server_target, server, _ = _start_test_server()
-        await server.stop(None)
+        await self._server.stop(None)
 
         # Ensures the server is cleaned up at this point.
         # Some proper exception should be raised.
-        async with aio.insecure_channel('localhost:%d' % port) as channel:
-            await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
+        with self.assertRaises(aio.AioRpcError):
+            await self._channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
 
     async def test_unimplemented(self):
         call = self._channel.unary_unary(_UNIMPLEMENTED_METHOD)

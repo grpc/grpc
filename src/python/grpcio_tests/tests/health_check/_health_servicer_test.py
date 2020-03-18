@@ -50,7 +50,6 @@ class BaseWatchTests(object):
             self._servicer = health.HealthServicer(
                 experimental_non_blocking=non_blocking,
                 experimental_thread_pool=thread_pool)
-            self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
             self._servicer.set(_SERVING_SERVICE,
                                health_pb2.HealthCheckResponse.SERVING)
             self._servicer.set(_UNKNOWN_SERVICE,

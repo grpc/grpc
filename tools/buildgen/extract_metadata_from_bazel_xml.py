@@ -43,6 +43,7 @@ def _rule_dict_from_xml_node(rule_xml_node):
         'args': [],
         'generator_function': None,
         'size': None,
+        'flaky': False,
     }
     for child in rule_xml_node:
         # all the metadata we want is stored under "list" tags
@@ -54,6 +55,10 @@ def _rule_dict_from_xml_node(rule_xml_node):
             string_name = child.attrib['name']
             if string_name in ['generator_function', 'size']:
                 result[string_name] = child.attrib['value']
+        if child.tag == 'boolean':
+            bool_name = child.attrib['name']
+            if bool_name in ['flaky']:
+                result[bool_name] = child.attrib['value'] == 'true'
     return result
 
 
@@ -478,6 +483,13 @@ def _generate_build_extra_metadata_for_tests(tests, bazel_rules):
             # don't run the tests marked as "manual"
             test_dict['run'] = False
 
+        if bazel_rule['flaky']:
+            # don't run tests that are marked as "flaky" under bazel
+            # because that would only add noise for the run_tests.py tests
+            # and seeing more failures for tests that we already know are flaky
+            # doesn't really help anything
+            test_dict['run'] = False
+
         if 'no_uses_polling' in bazel_tags:
             test_dict['uses_polling'] = False
 
@@ -551,14 +563,6 @@ def _generate_build_extra_metadata_for_tests(tests, bazel_rules):
                     'short name of "%s" collides with another test, renaming to %s'
                     % (test_name, long_name))
                 test_metadata[test_name]['_RENAME'] = long_name
-
-    # TODO(jtattermusch): in bazel, add "_test" suffix to the test names
-    # test does not have "_test" suffix: fling
-    # test does not have "_test" suffix: fling_stream
-    # test does not have "_test" suffix: client_ssl
-    # test does not have "_test" suffix: handshake_server_with_readahead_handshaker
-    # test does not have "_test" suffix: handshake_verify_peer_options
-    # test does not have "_test" suffix: server_ssl
 
     return test_metadata
 

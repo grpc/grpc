@@ -15,6 +15,7 @@
 
 cdef class _AsyncioResolver:
     def __cinit__(self):
+        self._loop = asyncio.get_event_loop()
         self._grpc_resolver = NULL
         self._task_resolve = None
 
@@ -32,7 +33,7 @@ cdef class _AsyncioResolver:
     async def _async_resolve(self, bytes host, bytes port):
         self._task_resolve = None
         try:
-            resolved = await grpc_aio_loop().getaddrinfo(host, port)
+            resolved = await self._loop.getaddrinfo(host, port)
         except Exception as e:
             grpc_custom_resolve_callback(
                 <grpc_custom_resolver*>self._grpc_resolver,
@@ -50,6 +51,6 @@ cdef class _AsyncioResolver:
     cdef void resolve(self, char* host, char* port):
         assert not self._task_resolve
 
-        self._task_resolve = grpc_aio_loop().create_task(
+        self._task_resolve = self._loop.create_task(
             self._async_resolve(host, port)
         )
