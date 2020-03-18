@@ -75,4 +75,4 @@ class Metadata(abc.Mapping):
 
     def __repr__(self):
         view = tuple(self)
-        return f"{0!r}({1!r})".format(self.__class__.__name__, view)
+        return "{0}({1!r})".format(self.__class__.__name__, view)

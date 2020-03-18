@@ -279,13 +279,12 @@ class MetadataTypeTest(unittest.TestCase):
     def test_get_all_items(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
         self.assertEqual(metadata.get_all("key1"), ["value1", "other value 1"])
-        self.assertEqual(metadata.get_all("KEY1"), ["value1", "other value 1"])
         self.assertEqual(metadata.get_all("key2"), ["value2"])
         self.assertEqual(metadata.get_all("non existing key"), [])
 
     def test_container(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
-        self.assertIn("key", metadata)
+        self.assertIn("key1", metadata)
 
     def test_equals(self):
         metadata = Metadata()
@@ -311,7 +310,7 @@ class MetadataTypeTest(unittest.TestCase):
         metadata.set_all("key", ["value1", b"new value 2"])
 
         self.assertEqual(metadata["key"], "value1")
-        self.assertEqual(metadata.get_all("value1"), ["value1", b"new value 2"])
+        self.assertEqual(metadata.get_all("key"), ["value1", b"new value 2"])
 
 
 if __name__ == '__main__':
