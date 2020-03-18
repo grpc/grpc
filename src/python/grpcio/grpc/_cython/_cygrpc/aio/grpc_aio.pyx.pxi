@@ -108,7 +108,7 @@ cdef _actual_aio_shutdown():
         )
         future.add_done_callback(_grpc_shutdown_wrapper)
     elif _global_aio_state.engine is AsyncIOEngine.POLLER:
-        (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
+        _global_aio_state.cq.shutdown()
         grpc_shutdown_blocking()
     else:
         raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
