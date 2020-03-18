@@ -1796,9 +1796,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
   }
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-  SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
-#endif
+  // TODO: Allow user to set min/max TLS version.
+  // https://github.com/grpc/grpc/issues/22403
 
   impl = static_cast<tsi_ssl_client_handshaker_factory*>(
       gpr_zalloc(sizeof(*impl)));
@@ -1960,9 +1959,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         result = TSI_OUT_OF_RESOURCES;
         break;
       }
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-      SSL_CTX_set_min_proto_version(impl->ssl_contexts[i], TLS1_2_VERSION);
-#endif
+      // TODO: Allow user to set min/max TLS version.
+      // https://github.com/grpc/grpc/issues/22403
       result = populate_ssl_context(impl->ssl_contexts[i],
                                     &options->pem_key_cert_pairs[i],
                                     options->cipher_suites);
