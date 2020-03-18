@@ -192,7 +192,7 @@ class XdsApi {
 
   struct ClusterLoadReport {
     XdsClusterDropStats::DroppedRequestsMap dropped_requests;
-    std::map<XdsLocalityName*, XdsClusterLocalityStats::Snapshot,
+    std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
              XdsLocalityName::Less>
         locality_stats;
     grpc_millis load_report_interval;
