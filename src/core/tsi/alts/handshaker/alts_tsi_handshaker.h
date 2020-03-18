@@ -55,7 +55,7 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
  * - self: address of ALTS TSI handshaker instance to be returned from the
  *   method.
  * - user_specified_max_frame_size: Determines the maximum frame size used by
- * frame protector that is specified via user. If unspecified, the value is 0.
+ *   frame protector that is specified via user. If unspecified, the value is 0.
  *
  * It returns TSI_OK on success and an error status code on failure. Note that
  * if interested_parties is nullptr, a dedicated TSI thread will be created and

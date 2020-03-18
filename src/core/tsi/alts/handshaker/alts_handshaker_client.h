@@ -134,7 +134,7 @@ void alts_handshaker_client_destroy(alts_handshaker_client* client);
  * - is_client: a boolean value indicating if the created handshaker client is
  *   used at the client (is_client = true) or server (is_client = false) side.
  * - max_frame_size: Maximum frame size used by frame protector (User specified
- * maximum frame size if present or default max frame size).
+ *   maximum frame size if present or default max frame size).
  *
  * It returns the created ALTS handshaker client on success, and NULL
  * on failure.
