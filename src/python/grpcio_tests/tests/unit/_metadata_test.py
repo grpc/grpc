@@ -267,10 +267,6 @@ class MetadataTypeTest(unittest.TestCase):
             metadata["key not found"]
         self.assertIsNone(metadata.get("key not found"))
 
-    def test_view(self):
-        self.assertEqual(
-            Metadata(*self._DEFAULT_DATA).view(), self._DEFAULT_DATA)
-
     def test_add_value(self):
         metadata = Metadata()
         metadata.add("key", "value")
@@ -279,7 +275,6 @@ class MetadataTypeTest(unittest.TestCase):
 
         self.assertEqual(metadata["key"], "value")
         self.assertEqual(metadata["key2"], "value2")
-        self.assertEqual(metadata["KEY2"], "value2")
 
     def test_get_all_items(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
@@ -290,9 +285,7 @@ class MetadataTypeTest(unittest.TestCase):
 
     def test_container(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
-        for key in ("key1", "Key1", "KEY1"):
-            with self.subTest(case=key):
-                self.assertIn(key, metadata, "{0!r} not found".format(key))
+        self.assertIn("key", metadata)
 
     def test_equals(self):
         metadata = Metadata()
@@ -302,6 +295,23 @@ class MetadataTypeTest(unittest.TestCase):
 
         self.assertEqual(metadata, metadata2)
         self.assertNotEqual(metadata, "foo")
+
+    def test_repr(self):
+        metadata = Metadata(*self._DEFAULT_DATA)
+        expected = "Metadata({0!r})".format(self._DEFAULT_DATA)
+        self.assertEqual(repr(metadata), expected)
+
+    def test_set(self):
+        metadata = Metadata(*self._DEFAULT_DATA)
+        metadata["key"] = "override value"
+        self.assertEqual(metadata["key"], "override value")
+
+    def test_set_all(self):
+        metadata = Metadata(self._DEFAULT_DATA)
+        metadata.set_all("key", ["value1", b"new value 2"])
+
+        self.assertEqual(metadata["key"], "value1")
+        self.assertEqual(metadata.get_all("value1"), ["value1", b"new value 2"])
 
 
 if __name__ == '__main__':

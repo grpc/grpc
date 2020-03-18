@@ -60,6 +60,7 @@
   "unit._metadata_code_details_test.MetadataCodeDetailsTest",
   "unit._metadata_flags_test.MetadataFlagsTest",
   "unit._metadata_test.MetadataTest",
+  "unit._metadata_test.MetadataTypeTest",
   "unit._reconnect_test.ReconnectTest",
   "unit._resource_exhausted_test.ResourceExhaustedTest",
   "unit._rpc_test.RPCTest",

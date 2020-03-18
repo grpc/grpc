@@ -26,15 +26,15 @@ class Metadata(abc.Mapping):
         * The order of the values by key is preserved
         * Getting by an element by key, retrieves the first mapped value
         * Supports an immutable view of the data
+        * Allows partial mutation on the data without recreating the new object from scratch.
     """
 
-    def __init__(self, *args) -> None:
+    def __init__(self, *args: Tuple[str, AnyStr]) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
 
     def add(self, key: str, value: str) -> None:
-        key = key.lower()
         self._metadata.setdefault(key, [])
         self._metadata[key].append(value)
 
@@ -43,30 +43,36 @@ class Metadata(abc.Mapping):
 
     def __getitem__(self, key: str) -> str:
         try:
-            first, *_ = self._metadata[key.lower()]
-            return first
-        except ValueError as e:
+            return self._metadata[key][0]
+        except (ValueError, IndexError) as e:
             raise KeyError("{0!r}".format(key)) from e
 
-    def __iter__(self) -> Iterator[Tuple[AnyStr, AnyStr]]:
+    def __setitem__(self, key: str, value: AnyStr) -> None:
+        self._metadata[key] = [value]
+
+    def __iter__(self) -> Iterator[Tuple[str, AnyStr]]:
         for key, values in self._metadata.items():
             for value in values:
                 yield (key, value)
-
-    def view(self) -> Tuple[AnyStr, AnyStr]:
-        return tuple(self)
 
     def get_all(self, key: str) -> List[str]:
         """For compatibility with other Metadata abstraction objects (like in Java),
         this would return all items under the desired <key>.
         """
-        return self._metadata.get(key.lower(), [])
+        return self._metadata.get(key, [])
+
+    def set_all(self, key: str, values: List[AnyStr]) -> None:
+        self._metadata[key] = values
 
     def __contains__(self, key: str) -> bool:
-        return key.lower() in self._metadata
+        return key in self._metadata
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return NotImplemented
 
         return self._metadata == other._metadata
+
+    def __repr__(self):
+        view = tuple(self)
+        return f"{0!r}({1!r})".format(self.__class__.__name__, view)
