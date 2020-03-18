@@ -49,9 +49,9 @@
 #define ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL \
   "test application protocol"
 #define ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL "test record protocol"
+#define ALTS_TSI_HANDSHAKER_TEST_MIN_FRAME_SIZE 16 * 1024
 #define ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE 256 * 1024
 #define ALTS_TSI_HANDSHAKER_TEST_DEFAULT_MAX_FRAME_SIZE 128 * 1024
-#define ALTS_TSI_HANDSHAKER_TEST_MIN_MAX_FRAME_SIZE 16 * 1024
 
 using grpc_core::internal::alts_handshaker_client_check_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing;
@@ -371,8 +371,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   size_t actual_max_frame_size;
   tsi_zero_copy_grpc_protector_max_frame_size(zero_copy_protector,
                                               &actual_max_frame_size);
-  GPR_ASSERT(actual_max_frame_size,
-             ALTS_TSI_HANDSHAKER_TEST_MIN_MAX_FRAME_SIZE);
+  GPR_ASSERT(actual_max_frame_size, ALTS_TSI_HANDSHAKER_TEST_MIN_FRAME_SIZE);
   /* Validate peer identity. */
   tsi_peer peer;
   GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) == TSI_OK);
