@@ -48,11 +48,11 @@ to locate test results or error logs upon completion.
 
 To start the service without containers on your local machine, run:
 
-    $ go run ./cmd/svc/main.go
+    $ go run ./cmd/svc/main.go -alsologtostderr
 
 You can force the service to use a different port with the flag `-port`:
 
-    $ go run ./cmd/svc/main.go -- -port=4044
+    $ go run ./cmd/svc/main.go -port=4044 -alsologtostderr
 
 When the service is started, it looks for an `$APP_ENV` environment variable.
 

@@ -17,12 +17,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"strings"
 
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/golang/glog"
 
 	"github.com/grpc/grpc/testctrl/auth"
 	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
@@ -38,7 +39,7 @@ import (
 func setupProdEnv() *kubernetes.Clientset {
 	clientset, err := auth.ConnectWithinCluster()
 	if err != nil {
-		log.Fatalf("Unable to connect to kubernetes API within cluster: %v", err)
+		glog.Fatalf("unable to connect to kubernetes API within cluster: %v", err)
 	}
 	return clientset
 }
@@ -46,15 +47,15 @@ func setupProdEnv() *kubernetes.Clientset {
 func setupDevEnv(grpcServer *grpc.Server) *kubernetes.Clientset {
 	c, set := os.LookupEnv("KUBE_CONFIG_FILE")
 	if !set {
-		log.Fatalf("Missing a kube config file, specify its absolute path in the KUBE_CONFIG_FILE env variable.")
+		glog.Fatalf("missing a kube config file, specify its absolute path in the KUBE_CONFIG_FILE env variable")
 	}
 
 	clientset, err := auth.ConnectWithConfig(c)
 	if err != nil {
-		log.Fatalf("Invalid config file specified by the KUBE_CONFIG_FILE env variable, unable to connect: %v", err)
+		glog.Fatalf("invalid config file specified by the KUBE_CONFIG_FILE env variable, unable to connect: %v", err)
 	}
 
-	log.Println("Enabling reflection for grpc_cli; avoid this flag in production.")
+	glog.Infoln("enabling reflection for grpc_cli; avoid this flag in production")
 	reflection.Register(grpcServer)
 
 	return clientset
@@ -63,39 +64,40 @@ func setupDevEnv(grpcServer *grpc.Server) *kubernetes.Clientset {
 func main() {
 	port := flag.Int("port", 50051, "Port to start the service.")
 	flag.Parse()
+	defer glog.Flush()
 
 	grpcServer := grpc.NewServer()
 	var clientset *kubernetes.Clientset
 
 	env := os.Getenv("APP_ENV")
 	if strings.Compare(env, "production") == 0 {
-		log.Println("App environment set to production")
+		glog.Infoln("App environment set to production")
 		clientset = setupProdEnv()
 	} else {
-		log.Println("App environment set to development")
+		glog.Infoln("App environment set to development")
 		clientset = setupDevEnv(grpcServer)
 	}
 
 	controller := orch.NewController(clientset)
 
 	if err := controller.Start(); err != nil {
-		log.Fatalf("unable to start orchestration controller: %v", err)
+		glog.Fatalf("unable to start orchestration controller: %v", err)
 	}
 
 	defer controller.Stop()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
-		log.Fatalf("Failed to listen on port %d: %v", *port, err)
+		glog.Fatalf("failed to listen on port %d: %v", *port, err)
 	}
 
 	lrPb.RegisterOperationsServer(grpcServer, &svc.OperationsServer{})
 	pb.RegisterSchedulingServiceServer(grpcServer, &svc.SchedulingServer{controller})
 
-	log.Printf("Running gRPC server (insecure) on port %d", *port)
+	glog.Infof("running gRPC server (insecure) on port %d", *port)
 	err = grpcServer.Serve(lis)
 	if err != nil {
-		log.Fatalf("Server unexpectedly crashed: %v", err)
+		glog.Fatalf("server unexpectedly crashed: %v", err)
 	}
 }
 
