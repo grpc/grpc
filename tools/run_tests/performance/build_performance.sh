@@ -70,8 +70,7 @@ do
     tools/run_tests/performance/build_performance_node.sh
     ;;
   "python")
-    # python workers are only run with python2.7 and building with multiple python versions is costly
-    python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --compiler python2.7 --build_only -j 8
+    $bazel build -c opt //src/python/grpcio_tests/tests/qps:qps_worker
     ;;
   "python_asyncio")
     $bazel build -c opt //src/python/grpcio_tests/tests_aio/benchmark:worker

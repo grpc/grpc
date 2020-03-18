@@ -1707,7 +1707,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
     }
   }
   gpr_log(GPR_ERROR, "No match found for server name: %s.", servername);
-  return SSL_TLSEXT_ERR_ALERT_WARNING;
+  return SSL_TLSEXT_ERR_NOACK;
 }
 
 #if TSI_OPENSSL_ALPN_SUPPORT
