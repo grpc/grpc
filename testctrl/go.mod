@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/codeblooded/grpc-proto v0.0.0-20200313013133-528fc9e42025
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.5
 	github.com/google/uuid v1.1.1
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
