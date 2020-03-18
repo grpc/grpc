@@ -3108,7 +3108,7 @@ TEST_P(FallbackTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
 }
 
 // Tests that fallback mode is exited if the child policy becomes ready.
-TEST_P(FallbackTest, FallbackModeIsExitedAfterChildRready) {
+TEST_P(FallbackTest, FallbackModeIsExitedAfterChildReady) {
   // Return an unreachable balancer and one fallback backend.
   SetNextResolution({backends_[0]->port()});
   SetNextResolutionForLbChannel({g_port_saver->GetPort()});
