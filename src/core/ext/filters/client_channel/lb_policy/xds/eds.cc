@@ -307,6 +307,7 @@ void EdsLb::Helper::UpdateState(
   // If the new state is READY, cancel the fallback-at-startup checks.
   if (state == GRPC_CHANNEL_READY) {
     eds_policy_->MaybeCancelFallbackAtStartupChecks();
+    eds_policy_->MaybeExitFallbackMode();
   }
   // Wrap the picker in a DropPicker and pass it up.
   eds_policy_->MaybeUpdateDropPickerLocked();
@@ -824,7 +825,7 @@ EdsLb::CreateChildPolicyLocked(const grpc_channel_args* args) {
 }
 
 void EdsLb::MaybeUpdateDropPickerLocked() {
-  if (child_picker_ == nullptr) return;
+  if (child_picker_ == nullptr || fallback_policy_ != nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO, "[edslb %p] constructing new drop picker", this);
   }

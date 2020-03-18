@@ -5453,6 +5453,7 @@ targets:
 - name: channelz_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/util/channel_trace_proto_helper.h
