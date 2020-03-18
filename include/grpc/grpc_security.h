@@ -838,65 +838,50 @@ typedef void (*grpc_tls_on_credential_reload_done_cb)(
     grpc_tls_credential_reload_arg* arg);
 
 /** A struct containing all information necessary to schedule/cancel a
-    credential reload request. To help understand each field, we mark each
-    field with some labels. Here is the explanation:
-    -------------------------label explanation----------------------------------
-    [USER-MANAGED]: fields that are managed directly by the end users
-    [SYSTEM-PROVIDED]: fields that needed to retrieve implementations in C core
-    and would be provided by the gRPC stack
-    [WRAP-LANG]: fields that needed to retrieve the particular implementation in
-    wrap language
-    [ASYNC_ONLY]: fields that only used when in asynchronous mode. If a field
-    doesn't have this label, we can assume it should be applied to both
-    synchronous and asynchronous mode.
-    Note that if a field is marked both as [USER-MANAGED] and [SYSTEM-PROVIDED],
-    it indicates that the field is initiated by the gRPC stack, but users
-    need to properly manage them to correctly perform credential reloading.
-    ----------------------label explanation ends--------------------------------
-    - cb[USER-MANAGED][ASYNC_ONLY]: a callback-function provided by gRPC stack
-      for users to indicate an asynchronous reloading operation is complete.
-      After calling this function, gRPC stack would be notified and continue
-      rest of the authentication.
-    - cb_user_data[SYSTEM-PROVIDED][ASYNC_ONLY]: a pointer used to retrieve the
-      corresponding security connector implementation. This is needed because
-      we need to use the |peer_checked| closure in security connector after
-      users call |cb|.
-    - key_materials_config[USER-MANAGED][SYSTEM-PROVIDED]: an in/output
-      parameter containing currently used/newly reloaded credentials. Users can
-      assume it always points to a non-null object.
-      If users set |status| to |GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED|,
-      key_materials_config should not be modified.
-      If set to |GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW|, key_materials_config
-      object can be updated by the new credentials.
-      Note that, key_materials_config might be shared by multiple connections,
-      because each key_materials_config is attached to a security_connector, and
-          1. on client side, if retry mechanism happens, one security_connector
-          can map to multiple connections
-          2. on server side, all connections share the same security_connector
-      But the reload logic is guaranteed to be invoked in every connection.
-    - status[USER-MANAGED]: a per-connection parameter to indicate the finish
-      status of a schedule/cancel request.
-      If set to |GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED|, gRPC stack
-      would take current |grpc_tls_key_materials_config| as credentials;
-      If set to |GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW|, gRPC stack would
-      perform credential reloading, using newly loaded |key_materials_config|;
-      If set to |GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL|, users also need to
-      set |error_details|.
-    - err_details[USER-MANAGED][SYSTEM-PROVIDED]: a per-connection
-      parameter to hold the error message if a schedule/cancel request fails.
-    - config[SYSTEM-PROVIDED]: a pointer to the unique
-      |grpc_tls_credential_reload_config| instance that this argument
-      corresponds to. This is needed because when C core stack invoke APIs in C
-      core configs, it will eventually need to invoke wrap language config APIs
-      implemented by user applications, which requires to access wrap language
-      config from a C core arg.
-    - context[WRAP-LANG]: a pointer to a wrapped language implementation of this
-      |grpc_tls_credential_reload_arg| instance. This is used to map C core arg
-      that is passed to |Cancel| API to a corresponding wrap language arg
-      understood by user applications, and thus it could remove the previously
-      scheduled request from a processing queue.
-    - destroy_context[WRAP-LANG]: a pointer to a caller-provided method that
-      cleans up any data associated with the context pointer.
+    credential reload request.
+    Note that we currently only support synchronous credential reloading. All
+    the fields related to asynchronous credential reloading can be ignored for
+    now.
+    - cb and cb_user_data represent a gRPC-provided callback and an argument
+      passed to it.
+      They are expected to be used when credential reloading is done
+      asynchronously, and |cb| is expected to be called at the end of each
+      asynchronous reloading operation, to notify the C core stack to continue
+      the handshake. |cb_user_data| will be handled by C core stack and no
+      operation is needed on this field.
+    - key_materials_config is an in/output parameter containing currently
+      used/newly reloaded credentials. It is used in combination with |status|
+      (see comments for |status| for more).
+    - status: a parameter to indicate the finish status of a schedule/cancel
+      request. For each handshake, users could return different values, in
+      combination with |key_materials_config| and |error_details|, to indicate
+      different behaviors:
+      If set |status| to |GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW|, C core stack
+      would use whatever we set in |key_materials_config| as the new
+      credential;
+      If set |status| to |GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED|, C core
+      stack would continue with the value in |key_materials_config| as the
+      credential. No operations on |key_materials_config| needed;
+      If set |status| to |GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL|,
+      |error_details| also need to be set in order for the C core stack to
+      propagate the error information.
+    - error_details: a parameter to hold the error message if a schedule/cancel
+      request fails(see comments for |status| for more).
+    - config is a pointer to the unique grpc_tls_credential_reload_config
+      instance that this argument corresponds to.
+      This field will be filled by the C core stack.
+    - context: a pointer for the wrap language implementation to put whatever
+      they want to pass through, from the schedule API to cancel API, of
+      grpc_tls_credential_reload_config.
+      This is used in schedule API to pass some values we want to later retrieve
+      in cancel API(for example, a wrapped language implementation of this
+      |grpc_tls_credential_reload_arg| instance).
+      This field only need to be used when credential reloaded asynchronously,
+      and when cancel API is used.
+    - destroy_context: a pointer to a caller-provided method that cleans up any
+      data associated with the context pointer.
+      This field only need to be used when credential reloaded asynchronously,
+      and when cancel API is used.
     Note the API is experimental now and subject to change.
 */
 struct grpc_tls_credential_reload_arg {
@@ -953,56 +938,50 @@ typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
     grpc_tls_server_authorization_check_arg* arg);
 
 /** A struct containing all information necessary to schedule/cancel a server
-    authorization check request.To help understand each field, we mark each
-    field with some labels. Here is the explanation:
-    -------------------------label explanation----------------------------------
-    [USER-MANAGED]: fields that are managed directly by the end users
-    [USER-OBSERVED]: fields that are read-only to users
-    [SYSTEM-PROVIDED]: fields whose values are provided by gRPC stack and used
-    by the C core implementation
-    [WRAP-LANG]: fields that needed to retrieve the particular implementation in
-    wrap language.
-    [ASYNC-ONLY]: fields that only used when in asynchronous mode. If a field
-    doesn't have this label, we can assume it should be applied to both
-    synchronous and asynchronous mode.
-    Note that if a field is marked both as [USER-MANAGED] and [SYSTEM-PROVIDED],
-    it indicates that the field is initiated by the gRPC stack, but users
-    need to properly manage them to correctly perform custom server
-    authorization.
-    ----------------------label explanation ends--------------------------------
-    - cb[USER-MANAGED][ASYNC-ONLY]: a callback-function provided by gRPC stack
-      for users to indicate an asynchronous reloading operation is complete.
-      After calling this function, gRPC stack would be notified and continue
-      rest of the authentication.
-    - cb_user_data[SYSTEM-PROVIDED][ASYNC-ONLY]: a pointer used to retrieve the
-      corresponding security connector implementation. This is needed because
-      we need to use the |peer_checked| closure in security connector when users
-      call |cb|.
-    - success[USER-MANAGED]: a variable used to store the result of server
-      authorization check. A non-zero value indicates a successful check, and
-      zero value indicates failure.
-    - target_name[USER-OBSERVED]: a per connection parameter indicating the name
-      of an endpoint the channel is connecting to.
-    - peer_cert[USER-OBSERVED]: a per connection parameter representing a
-      complete certificate chain from the peer identity, including both signing
-      and leaf certificates.
-    - status[USER-MANAGED]: a per-connection parameter indicating the finish
-      status of a a scheduled/cancelled server authorization check request.
-    - err_details[USER-MANAGED][system-provided]: a per-connection
-      parameter to hold the error message if a schedule/cancel request fails.
-    - config[SYSTEM-PROVIDED]: a pointer to the unique
-      |grpc_tls_credential_reload_config| instance that this argument
-      corresponds to. This is needed because when C core stack invoke APIs in C
-      core configs, it will eventually need to invoke wrap language config APIs
-      implemented by user applications, which requires to access wrap language
-      config from a C core arg.
-    - context[WRAP-LANG]: a pointer to a wrapped language implementation of this
-      |grpc_tls_credential_reload_arg| instance. This is used to map C core arg
-      that is passed to |Cancel| API to a corresponding wrap language arg
-      understood by user applications, and thus it could remove the previously
-      scheduled request from a processing queue.
-    - destroy_context[WRAP-LANG]: a pointer to a caller-provided method that
-      cleans up any data associated with the context pointer.
+    authorization check request.
+    - cb and cb_user_data represent a gRPC-provided callback and an argument
+      passed to it.
+      They are expected to be used when credential reloading is done
+      asynchronously, and |cb| is expected to be called at the end of each
+      asynchronous reloading operation, to notify the C core stack to continue
+      the handshake. |cb_user_data| will be handled by C core stack and no
+      operation is needed on this field.
+    - success: a variable used to store the result of server authorization
+      check. A non-zero value indicates a successful check, and zero value
+      indicates failure.
+      If set |success| to 0, |error_details| also need to be set in order for
+      the C core stack to propagate the error information.
+    - target_name is the name of an endpoint the channel is connecting to.
+      This field is not expected to be changed.
+    - peer_cert: represents leaf certificates sent from the peer.
+      This field is not expected to be changed.
+    - peer_cert_full_chain: represents a complete certificate chain including
+      both signing and leaf certificates.
+      This field is not expected to be changed.
+    - status: a parameter to indicate the finish status of a schedule/cancel
+      request. For each handshake, users could return different values, in
+      combination with |error_details|, to indicate different behaviors:
+      If set |status| to |GRPC_STATUS_OK|, nothing need to be done;
+      If set |status| to any other parameters, |error_details| also need to be
+      set in order for the C core stack to propagate the error information.
+    - error_details: a parameter to hold the error message if a schedule/cancel
+      request fails(see comments for |status| for more).
+    - config is a pointer to the unique
+      grpc_tls_server_authorization_check_config instance that this argument
+      corresponds to.
+      This field will be filled by the C core stack.
+    - context: a pointer for the wrap language implementation to put whatever
+      they want to pass through, from the schedule API to cancel API, of
+      grpc_tls_credential_reload_config.
+      This is used in schedule API to pass some values we want to later retrieve
+      in cancel API(for example, a wrapped language implementation of this
+      |grpc_tls_credential_reload_arg| instance).
+      This field only need to be used when credential reloaded asynchronously,
+      and when cancel API is used.
+    - destroy_context: a pointer to a caller-provided method that cleans up any
+      data associated with the context pointer.
+      This field only need to be used when credential reloaded asynchronously,
+      and when cancel API is used.
    Note the API is experimental now and subject to change.
 */
 struct grpc_tls_server_authorization_check_arg {
