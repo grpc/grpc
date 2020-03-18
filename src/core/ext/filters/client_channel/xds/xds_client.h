@@ -209,8 +209,14 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   struct LoadReportState {
+    struct LocalityState {
+      std::set<XdsClusterLocalityStats*> locality_stats;
+      std::vector<XdsClusterLocalityStats::Snapshot> deleted_locality_stats;
+    };
+
     std::set<XdsClusterDropStats*> drop_stats;
-    std::map<RefCountedPtr<XdsLocalityName>, std::set<XdsClusterLocalityStats*>,
+    XdsClusterDropStats::DroppedRequestsMap deleted_drop_stats;
+    std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
     grpc_millis last_report_time = ExecCtx::Get()->Now();
@@ -223,7 +229,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const std::string& cluster_name,
       RefCountedPtr<ServiceConfig>* service_config) const;
 
-  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot();
+  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot(
+      const std::set<std::string>& clusters);
 
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);
