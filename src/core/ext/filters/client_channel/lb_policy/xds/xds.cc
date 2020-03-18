@@ -920,12 +920,14 @@ void XdsLb::UpdateXdsPickerLocked() {
   // If we are in fallback mode, don't generate an xds picker from localities.
   if (fallback_policy_ != nullptr) return;
   if (current_priority_ == UINT32_MAX) {
-    grpc_error* error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ready locality map"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::make_unique<TransientFailurePicker>(error));
+    if (fallback_policy_ == nullptr) {
+      grpc_error* error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ready locality map"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE,
+          absl::make_unique<TransientFailurePicker>(error));
+    }
     return;
   }
   priorities_[current_priority_]->UpdateXdsPickerLocked();
@@ -1022,7 +1024,7 @@ XdsLb::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
       &on_failover_timer_);
   failover_timer_callback_pending_ = true;
   // This is the first locality map ever created, report CONNECTING.
-  if (priority_ == 0) {
+  if (priority_ == 0 && xds_policy_->fallback_policy_ == nullptr) {
     xds_policy_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING,
         absl::make_unique<QueuePicker>(
