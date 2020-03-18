@@ -68,8 +68,7 @@ grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status()
 }
 
 grpc::string TlsCredentialReloadArg::error_details() const {
-  grpc::string cpp_error_details(c_arg_->error_details);
-  return cpp_error_details;
+  return c_arg_->error_details->error_details();
 }
 
 void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
@@ -159,7 +158,7 @@ void TlsCredentialReloadArg::set_status(
 
 void TlsCredentialReloadArg::set_error_details(
     const grpc::string& error_details) {
-  c_arg_->error_details = gpr_strdup(error_details.c_str());
+  c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
 void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
@@ -221,8 +220,7 @@ grpc_status_code TlsServerAuthorizationCheckArg::status() const {
 }
 
 grpc::string TlsServerAuthorizationCheckArg::error_details() const {
-  grpc::string cpp_error_details(c_arg_->error_details);
-  return cpp_error_details;
+  return c_arg_->error_details->error_details();
 }
 
 void TlsServerAuthorizationCheckArg::set_cb_user_data(void* cb_user_data) {
@@ -254,7 +252,7 @@ void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
 
 void TlsServerAuthorizationCheckArg::set_error_details(
     const grpc::string& error_details) {
-  c_arg_->error_details = gpr_strdup(error_details.c_str());
+  c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
 void TlsServerAuthorizationCheckArg::OnServerAuthorizationCheckDoneCallback() {
