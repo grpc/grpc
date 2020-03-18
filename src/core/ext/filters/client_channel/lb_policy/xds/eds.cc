@@ -20,6 +20,7 @@
 #include <limits.h>
 
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 
@@ -54,7 +55,7 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
  public:
   EdsLbConfig(
       std::string cluster_name, std::string eds_service_name,
-      Optional<std::string> lrs_load_reporting_server_name,
+      absl::optional<std::string> lrs_load_reporting_server_name,
       Json locality_picking_policy, Json endpoint_picking_policy,
       RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy)
       : cluster_name_(std::move(cluster_name)),
@@ -69,7 +70,7 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
 
   const std::string& cluster_name() const { return cluster_name_; }
   const std::string& eds_service_name() const { return eds_service_name_; }
-  const Optional<std::string>& lrs_load_reporting_server_name() const {
+  const absl::optional<std::string>& lrs_load_reporting_server_name() const {
     return lrs_load_reporting_server_name_;
   };
   const Json& locality_picking_policy() const {
@@ -85,7 +86,7 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
  private:
   std::string cluster_name_;
   std::string eds_service_name_;
-  Optional<std::string> lrs_load_reporting_server_name_;
+  absl::optional<std::string> lrs_load_reporting_server_name_;
   Json locality_picking_policy_;
   Json endpoint_picking_policy_;
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
@@ -500,7 +501,6 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   }
   const bool is_initial_update = args_ == nullptr;
   // Update config.
-  StringView old_eds_resource_name = GetEdsResourceName();
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
   // Update fallback address list.
@@ -552,17 +552,8 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   // Note that this comes after updating drop_stats_, since we want that
   // to be used by any new picker we create here.
   if (child_policy_ != nullptr) UpdateChildPolicyLocked();
-  // Update endpoint watcher if needed.
-  if (is_initial_update || old_eds_resource_name != GetEdsResourceName()) {
-    if (!is_initial_update) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-        gpr_log(GPR_INFO, "[edslb %p] cancelling xds watch for %s", this,
-                std::string(old_eds_resource_name).c_str());
-      }
-      xds_client()->CancelEndpointDataWatch(old_eds_resource_name,
-                                            endpoint_watcher_,
-                                            /*delay_unsubscription=*/true);
-    }
+  // Create endpoint watcher if needed.
+  if (is_initial_update) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
       gpr_log(GPR_INFO, "[edslb %p] starting xds watch for %s", this,
               std::string(GetEdsResourceName()).c_str());
@@ -933,7 +924,7 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<EdsLb>(std::move(args));
+    return MakeOrphanable<XdsChildHandler>(std::move(args), &grpc_lb_eds_trace);
   }
 
   const char* name() const override { return kEds; }
@@ -976,7 +967,7 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // LRS load reporting server name.
-    Optional<std::string> lrs_load_reporting_server_name;
+    absl::optional<std::string> lrs_load_reporting_server_name;
     it = json.object_value().find("lrsLoadReportingServerName");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
@@ -1061,6 +1052,30 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
   }
+
+ private:
+  class XdsChildHandler : public ChildPolicyHandler {
+   public:
+    XdsChildHandler(Args args, TraceFlag* tracer)
+        : ChildPolicyHandler(std::move(args), tracer) {}
+
+    bool ConfigChangeRequiresNewPolicyInstance(
+        LoadBalancingPolicy::Config* old_config,
+        LoadBalancingPolicy::Config* new_config) const override {
+      GPR_ASSERT(old_config->name() == kEds);
+      GPR_ASSERT(new_config->name() == kEds);
+      EdsLbConfig* old_eds_config = static_cast<EdsLbConfig*>(old_config);
+      EdsLbConfig* new_eds_config = static_cast<EdsLbConfig*>(new_config);
+      return old_eds_config->cluster_name() != new_eds_config->cluster_name() ||
+             old_eds_config->eds_service_name() !=
+                 new_eds_config->eds_service_name();
+    }
+
+    OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+        const char* name, LoadBalancingPolicy::Args args) const override {
+      return MakeOrphanable<EdsLb>(std::move(args));
+    }
+  };
 };
 
 }  // namespace

@@ -14,6 +14,7 @@
 
 cdef class _AsyncioResolver:
     cdef:
+        object _loop
         grpc_custom_resolver* _grpc_resolver
         object _task_resolve
 

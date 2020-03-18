@@ -31,10 +31,13 @@ cdef class _AsyncioSocket:
         self._task_connect = None
         self._task_read = None
         self._task_write = None
+        self._task_listen = None
         self._read_buffer = NULL
         self._server = None
         self._py_socket = None
         self._peername = None
+        self._closed = False
+        self._loop = asyncio.get_event_loop()
 
     @staticmethod
     cdef _AsyncioSocket create(grpc_custom_socket * grpc_socket,
@@ -88,7 +91,7 @@ cdef class _AsyncioSocket:
         assert not self._reader
         assert not self._task_connect
 
-        self._task_connect = grpc_aio_loop().create_task(
+        self._task_connect = self._loop.create_task(
             self._async_connect(host, port)
         )
         self._grpc_connect_cb = grpc_connect_cb
@@ -120,7 +123,7 @@ cdef class _AsyncioSocket:
 
         self._grpc_read_cb = grpc_read_cb
         self._read_buffer = buffer_
-        self._task_read = grpc_aio_loop().create_task(self._async_read(length))
+        self._task_read = self._loop.create_task(self._async_read(length))
 
     async def _async_write(self, bytearray outbound_buffer):
         self._writer.write(outbound_buffer)
@@ -153,14 +156,20 @@ cdef class _AsyncioSocket:
             outbound_buffer.extend(<bytes>start[:length])
 
         self._grpc_write_cb = grpc_write_cb
-        self._task_write = grpc_aio_loop().create_task(self._async_write(outbound_buffer))
+        self._task_write = self._loop.create_task(self._async_write(outbound_buffer))
 
     cdef bint is_connected(self):
         return self._reader and not self._reader._transport.is_closing()
 
     cdef void close(self):
+        if self._closed:
+            return
+        else:
+            self._closed = True
         if self.is_connected():
             self._writer.close()
+        if self._task_listen and not self._task_listen.done():
+            self._task_listen.close()
         if self._server:
             self._server.close()
         # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
@@ -170,6 +179,10 @@ cdef class _AsyncioSocket:
             self._py_socket.close()
 
     def _new_connection_callback(self, object reader, object writer):
+        # If the socket is closed, stop.
+        if self._closed:
+            return
+
         # Close the connection if server is not started yet.
         if self._grpc_accept_cb == NULL:
             writer.close()
@@ -197,7 +210,7 @@ cdef class _AsyncioSocket:
                 sock=self._py_socket,
             )
 
-        grpc_aio_loop().create_task(create_asyncio_server())
+        self._task_listen = self._loop.create_task(create_asyncio_server())
 
     cdef accept(self,
                 grpc_custom_socket* grpc_socket_client,

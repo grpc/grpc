@@ -228,7 +228,7 @@ class Channel(_base_channel.Channel):
                     "UnaryUnaryClientInterceptors, the following are invalid: {}"\
                     .format(invalid_interceptors))
 
-        self._loop = cygrpc.grpc_aio_loop()
+        self._loop = asyncio.get_event_loop()
         self._channel = cygrpc.AioChannel(
             _common.encode(target),
             _augment_channel_arguments(options, compression), credentials,

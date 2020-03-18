@@ -147,15 +147,18 @@ if args.verbose:
 
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
-_WAIT_FOR_OPERATION_SEC = 120
+_WAIT_FOR_OPERATION_SEC = 300
 _INSTANCE_GROUP_SIZE = 2
 _NUM_TEST_RPCS = 10 * args.qps
-_WAIT_FOR_STATS_SEC = 120
+_WAIT_FOR_STATS_SEC = 180
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _BOOTSTRAP_TEMPLATE = """
 {{
   "node": {{
-    "id": "{node_id}"
+    "id": "{node_id}",
+    "metadata": {{
+      "TRAFFICDIRECTOR_NETWORK_NAME": "%s"
+    }}
   }},
   "xds_servers": [{{
     "server_uri": "%s",
@@ -166,7 +169,7 @@ _BOOTSTRAP_TEMPLATE = """
       }}
     ]
   }}]
-}}""" % args.xds_server
+}}""" % (args.network.split('/')[-1], args.xds_server)
 _PATH_MATCHER_NAME = 'path-matcher'
 _BASE_TEMPLATE_NAME = 'test-template'
 _BASE_INSTANCE_GROUP_NAME = 'test-ig'
@@ -712,7 +715,10 @@ def patch_backend_instances(gcp,
     wait_for_global_operation(gcp, result['name'])
 
 
-def resize_instance_group(gcp, instance_group, new_size, timeout_sec=120):
+def resize_instance_group(gcp,
+                          instance_group,
+                          new_size,
+                          timeout_sec=_WAIT_FOR_OPERATION_SEC):
     result = gcp.compute.instanceGroupManagers().resize(
         project=gcp.project,
         zone=instance_group.zone,
