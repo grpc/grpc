@@ -302,7 +302,6 @@ class XdsClient::ChannelState::LrsCallState
   void Orphan() override;
 
   void MaybeStartReportingLocked();
-  bool ShouldSendLoadReports(const StringView& cluster_name) const;
 
   RetryableCall<LrsCallState>* parent() { return parent_.get(); }
   ChannelState* chand() const { return parent_->chand(); }
@@ -1414,7 +1413,7 @@ bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
 void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   // Construct snapshot from all reported stats.
   XdsApi::ClusterLoadReportMap snapshot =
-      xds_client()->BuildLoadReportSnapshot();
+      xds_client()->BuildLoadReportSnapshot(parent_->cluster_names_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
@@ -1460,6 +1459,12 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
   Reporter* self = static_cast<Reporter*>(arg);
   grpc_byte_buffer_destroy(self->parent_->send_message_payload_);
   self->parent_->send_message_payload_ = nullptr;
+  // If there are no more registered stats to report, cancel the call.
+  if (self->xds_client()->load_report_map_.empty()) {
+    self->parent_->chand()->StopLrsCall();
+    self->Unref(DEBUG_LOCATION, "Reporter+report_done+no_more_reporters");
+    return;
+  }
   if (error != GRPC_ERROR_NONE || !self->IsCurrentReporterOnCall()) {
     // If this reporter is no longer the current one on the call, the reason
     // might be that it was orphaned for a new one due to config update.
@@ -1611,13 +1616,6 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   // Start reporting.
   reporter_ = MakeOrphanable<Reporter>(
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
-}
-
-bool XdsClient::ChannelState::LrsCallState::ShouldSendLoadReports(
-    const StringView& cluster_name) const {
-  // Only send load reports for the clusters that are asked for by the LRS
-  // server.
-  return cluster_names_.find(std::string(cluster_name)) != cluster_names_.end();
 }
 
 void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
@@ -1966,19 +1964,14 @@ void XdsClient::RemoveClusterDropStats(
   LoadReportState& load_report_state = load_report_it->second;
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  // TODO(roth): In principle, we should try to send a final load report
-  // containing whatever final stats have been accumulated since the
-  // last load report.
   auto it = load_report_state.drop_stats.find(cluster_drop_stats);
   if (it != load_report_state.drop_stats.end()) {
-    load_report_state.drop_stats.erase(it);
-    if (load_report_state.drop_stats.empty() &&
-        load_report_state.locality_stats.empty()) {
-      load_report_map_.erase(load_report_it);
-      if (chand_ != nullptr && load_report_map_.empty()) {
-        chand_->StopLrsCall();
-      }
+    // Record final drop stats in deleted_drop_stats, which will be
+    // added to the next load report.
+    for (const auto& p : cluster_drop_stats->GetSnapshotAndReset()) {
+      load_report_state.deleted_drop_stats[p.first] += p.second;
     }
+    load_report_state.drop_stats.erase(it);
   }
 }
 
@@ -1999,7 +1992,7 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
       Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server,
       it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/,
       locality);
-  it->second.locality_stats[std::move(locality)].insert(
+  it->second.locality_stats[std::move(locality)].locality_stats.insert(
       cluster_locality_stats.get());
   chand_->MaybeStartLrsCall();
   return cluster_locality_stats;
@@ -2015,25 +2008,16 @@ void XdsClient::RemoveClusterLocalityStats(
   LoadReportState& load_report_state = load_report_it->second;
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  // TODO(roth): In principle, we should try to send a final load report
-  // containing whatever final stats have been accumulated since the
-  // last load report.
   auto locality_it = load_report_state.locality_stats.find(locality);
   if (locality_it == load_report_state.locality_stats.end()) return;
-  auto& locality_set = locality_it->second;
+  auto& locality_set = locality_it->second.locality_stats;
   auto it = locality_set.find(cluster_locality_stats);
   if (it != locality_set.end()) {
+    // Record final snapshot in deleted_locality_stats, which will be
+    // added to the next load report.
+    locality_it->second.deleted_locality_stats.emplace_back(
+        cluster_locality_stats->GetSnapshotAndReset());
     locality_set.erase(it);
-    if (locality_set.empty()) {
-      load_report_state.locality_stats.erase(locality_it);
-      if (load_report_state.locality_stats.empty() &&
-          load_report_state.drop_stats.empty()) {
-        load_report_map_.erase(load_report_it);
-        if (chand_ != nullptr && load_report_map_.empty()) {
-          chand_->StopLrsCall();
-        }
-      }
-    }
   }
 }
 
@@ -2062,32 +2046,70 @@ grpc_error* XdsClient::CreateServiceConfig(
   return error;
 }
 
-XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot() {
+XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot(
+    const std::set<std::string>& clusters) {
   XdsApi::ClusterLoadReportMap snapshot_map;
-  for (auto& p : load_report_map_) {
-    const auto& cluster_key = p.first;  // cluster and EDS service name
-    LoadReportState& load_report = p.second;
-    XdsApi::ClusterLoadReport& snapshot = snapshot_map[cluster_key];
+  for (auto load_report_it = load_report_map_.begin();
+       load_report_it != load_report_map_.end();) {
+    // Cluster key is cluster and EDS service name.
+    const auto& cluster_key = load_report_it->first;
+    LoadReportState& load_report = load_report_it->second;
+    // If the CDS response for a cluster indicates to use LRS but the
+    // LRS server does not say that it wants reports for this cluster,
+    // then we'll have stats objects here whose data we're not going to
+    // include in the load report.  However, we still need to clear out
+    // the data from the stats objects, so that if the LRS server starts
+    // asking for the data in the future, we don't incorrectly include
+    // data from previous reporting intervals in that future report.
+    const bool record_stats =
+        clusters.find(cluster_key.first) != clusters.end();
+    XdsApi::ClusterLoadReport snapshot;
     // Aggregate drop stats.
+    snapshot.dropped_requests = std::move(load_report.deleted_drop_stats);
     for (auto& drop_stats : load_report.drop_stats) {
       for (const auto& p : drop_stats->GetSnapshotAndReset()) {
         snapshot.dropped_requests[p.first] += p.second;
       }
     }
     // Aggregate locality stats.
-    for (auto& p : load_report.locality_stats) {
-      XdsLocalityName* locality_name = p.first.get();
-      auto& locality_stats_set = p.second;
+    for (auto it = load_report.locality_stats.begin();
+         it != load_report.locality_stats.end();) {
+      const RefCountedPtr<XdsLocalityName>& locality_name = it->first;
+      auto& locality_state = it->second;
       XdsClusterLocalityStats::Snapshot& locality_snapshot =
           snapshot.locality_stats[locality_name];
-      for (auto& locality_stats : locality_stats_set) {
+      for (auto& locality_stats : locality_state.locality_stats) {
         locality_snapshot += locality_stats->GetSnapshotAndReset();
       }
+      // Add final snapshots from recently deleted locality stats objects.
+      for (auto& deleted_locality_stats :
+           locality_state.deleted_locality_stats) {
+        locality_snapshot += deleted_locality_stats;
+      }
+      locality_state.deleted_locality_stats.clear();
+      // If the only thing left in this entry was final snapshots from
+      // deleted locality stats objects, remove the entry.
+      if (locality_state.locality_stats.empty()) {
+        it = load_report.locality_stats.erase(it);
+      } else {
+        ++it;
+      }
     }
-    // Compute load report interval.
-    const grpc_millis now = ExecCtx::Get()->Now();
-    snapshot.load_report_interval = now - load_report.last_report_time;
-    load_report.last_report_time = now;
+    if (record_stats) {
+      // Compute load report interval.
+      const grpc_millis now = ExecCtx::Get()->Now();
+      snapshot.load_report_interval = now - load_report.last_report_time;
+      load_report.last_report_time = now;
+      // Record snapshot.
+      snapshot_map[cluster_key] = std::move(snapshot);
+    }
+    // If the only thing left in this entry was final snapshots from
+    // deleted stats objects, remove the entry.
+    if (load_report.locality_stats.empty() && load_report.drop_stats.empty()) {
+      load_report_it = load_report_map_.erase(load_report_it);
+    } else {
+      ++load_report_it;
+    }
   }
   return snapshot_map;
 }
