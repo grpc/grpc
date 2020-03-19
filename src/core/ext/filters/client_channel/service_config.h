@@ -131,6 +131,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
                                              grpc_error** error);
 
   ServiceConfig(std::string json_string, Json json, grpc_error** error);
+  ~ServiceConfig();
 
   const std::string& json_string() const { return json_string_; }
 

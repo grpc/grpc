@@ -77,6 +77,12 @@ ServiceConfig::ServiceConfig(std::string json_string, Json json,
   }
 }
 
+ServiceConfig::~ServiceConfig() {
+  for (auto& p : parsed_method_configs_map_) {
+    grpc_slice_unref_internal(p.first);
+  }
+}
+
 grpc_error* ServiceConfig::ParseGlobalParams() {
   std::vector<grpc_error*> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
