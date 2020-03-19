@@ -39,16 +39,40 @@ class Metadata(abc.Mapping):
         self._metadata[key].append(value)
 
     def __len__(self) -> int:
-        return len(self._metadata)
+        """Return the total number of elements that there are in the metadata,
+        including multiple values for the same key.
+        """
+        return sum(map(len, self._metadata.values()))
 
     def __getitem__(self, key: str) -> str:
+        """When calling <metadata>[<key>], the first element of all those
+        mapped for <key> is returned.
+        """
         try:
             return self._metadata[key][0]
         except (ValueError, IndexError) as e:
             raise KeyError("{0!r}".format(key)) from e
 
     def __setitem__(self, key: str, value: AnyStr) -> None:
-        self._metadata[key] = [value]
+        """Calling metadata[<key>] = <value>
+        Maps <value> to the first instance of <key>.
+        """
+        if key not in self:
+            self._metadata[key] = [value]
+        else:
+            current_values = self.get_all(key)
+            self._metadata[key] = [value, *current_values[1:]]
+
+    def __delitem__(self, key: str) -> None:
+        """``del metadata[<key>]`` deletes the first mapping for <key>."""
+        current_values = self.get_all(key)
+        if not current_values:
+            raise KeyError(repr(key))
+        self._metadata[key] = current_values[1:]
+
+    def delete_all(self, key: str) -> None:
+        """Delete all mappings for <key>."""
+        del self._metadata[key]
 
     def __iter__(self) -> Iterator[Tuple[str, AnyStr]]:
         for key, values in self._metadata.items():

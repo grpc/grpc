@@ -248,7 +248,8 @@ class MetadataTypeTest(unittest.TestCase):
     def test_init_metadata(self):
         test_cases = {
             "emtpy": (),
-            "with-data": self._DEFAULT_DATA,
+            "with-single-data": self._DEFAULT_DATA,
+            "with-multi-data": self._MULTI_ENTRY_DATA,
         }
         for case, args in test_cases.items():
             with self.subTest(case=case):
@@ -301,16 +302,42 @@ class MetadataTypeTest(unittest.TestCase):
         self.assertEqual(repr(metadata), expected)
 
     def test_set(self):
-        metadata = Metadata(*self._DEFAULT_DATA)
-        metadata["key"] = "override value"
-        self.assertEqual(metadata["key"], "override value")
+        metadata = Metadata(*self._MULTI_ENTRY_DATA)
+        override_value = "override value"
+        for _ in range(3):
+            metadata["key1"] = override_value
+
+        self.assertEqual(metadata["key1"], override_value)
+        self.assertEqual(metadata.get_all("key1"),
+                         [override_value, "other value 1"])
+
+        empty_metadata = Metadata()
+        for _ in range(3):
+            empty_metadata["key"] = override_value
+
+        self.assertEqual(empty_metadata["key"], override_value)
+        self.assertEqual(empty_metadata.get_all("key"), [override_value])
 
     def test_set_all(self):
-        metadata = Metadata(self._DEFAULT_DATA)
+        metadata = Metadata(*self._DEFAULT_DATA)
         metadata.set_all("key", ["value1", b"new value 2"])
 
         self.assertEqual(metadata["key"], "value1")
         self.assertEqual(metadata.get_all("key"), ["value1", b"new value 2"])
+
+    def test_delete_values(self):
+        metadata = Metadata(*self._MULTI_ENTRY_DATA)
+        del metadata["key1"]
+        self.assertEqual(metadata.get("key1"), "other value 1")
+
+        metadata.delete_all("key1")
+        self.assertNotIn("key1", metadata)
+
+        metadata.delete_all("key2")
+        self.assertEqual(len(metadata), 0)
+
+        with self.assertRaises(KeyError):
+            del metadata["other key"]
 
 
 if __name__ == '__main__':
