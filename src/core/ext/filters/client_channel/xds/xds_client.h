@@ -21,13 +21,14 @@
 
 #include <set>
 
+#include "absl/types/optional.h"
+
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -208,8 +209,14 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   struct LoadReportState {
+    struct LocalityState {
+      std::set<XdsClusterLocalityStats*> locality_stats;
+      std::vector<XdsClusterLocalityStats::Snapshot> deleted_locality_stats;
+    };
+
     std::set<XdsClusterDropStats*> drop_stats;
-    std::map<RefCountedPtr<XdsLocalityName>, std::set<XdsClusterLocalityStats*>,
+    XdsClusterDropStats::DroppedRequestsMap deleted_drop_stats;
+    std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
     grpc_millis last_report_time = ExecCtx::Get()->Now();
@@ -222,7 +229,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const std::string& cluster_name,
       RefCountedPtr<ServiceConfig>* service_config) const;
 
-  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot();
+  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot(
+      const std::set<std::string>& clusters);
 
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);
@@ -246,8 +254,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  std::string route_config_name_;
-  std::string cluster_name_;
+  absl::optional<XdsApi::LdsUpdate> lds_result_;
+  absl::optional<XdsApi::RdsUpdate> rds_result_;
+
   // One entry for each watched CDS resource.
   std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
   // One entry for each watched EDS resource.
