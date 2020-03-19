@@ -15,6 +15,7 @@
 
 import inspect
 import traceback
+import functools
 
 
 cdef int _EMPTY_FLAG = 0
@@ -214,15 +215,34 @@ cdef class _ServicerContext:
         self._rpc_state.disable_next_compression = True
 
 
-cdef _find_method_handler(str method, tuple metadata, list generic_handlers):
+async def _run_interceptor(object interceptors, object query_handler,
+                           object handler_call_details):
+    interceptor = next(interceptors, None)
+    if interceptor:
+        continuation = functools.partial(_run_interceptor, interceptors,
+                                         query_handler)
+        return await interceptor.intercept_service(continuation, handler_call_details)
+    else:
+        return query_handler(handler_call_details)
+
+
+async def _find_method_handler(str method, tuple metadata, list generic_handlers,
+                          tuple interceptors):
+    def query_handlers(handler_call_details):
+        for generic_handler in generic_handlers:
+            method_handler = generic_handler.service(handler_call_details)
+            if method_handler is not None:
+                return method_handler
+        return None
+
     cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(method,
                                                                         metadata)
-
-    for generic_handler in generic_handlers:
-        method_handler = generic_handler.service(handler_call_details)
-        if method_handler is not None:
-            return method_handler
-    return None
+    # interceptor
+    if interceptors:
+        return await _run_interceptor(iter(interceptors), query_handlers,
+                                      handler_call_details)
+    else:
+        return query_handlers(handler_call_details)
 
 
 async def _finish_handler_with_unary_response(RPCState rpc_state,
@@ -523,13 +543,15 @@ async def _schedule_rpc_coro(object rpc_coro,
     await _handle_cancellation_from_core(rpc_task, rpc_state, loop)
 
 
-async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
+async def _handle_rpc(list generic_handlers, tuple interceptors,
+                      RPCState rpc_state, object loop):
     cdef object method_handler
     # Finds the method handler (application logic)
-    method_handler = _find_method_handler(
+    method_handler = await _find_method_handler(
         rpc_state.method().decode(),
         rpc_state.invocation_metadata(),
         generic_handlers,
+        interceptors,
     )
     if method_handler is None:
         rpc_state.status_sent = True
@@ -588,13 +610,13 @@ cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
                  options, maximum_concurrent_rpcs):
+        init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
-        self._cq = CallbackCompletionQueue()
         grpc_server_register_completion_queue(
             self._server.c_server,
-            self._cq.c_ptr(),
+            global_completion_queue(),
             NULL
         )
 
@@ -609,11 +631,13 @@ cdef class AioServer:
         self._shutdown_completed = self._loop.create_future()
         self._shutdown_callback_wrapper = CallbackWrapper(
             self._shutdown_completed,
+            self._loop,
             SERVER_SHUTDOWN_FAILURE_HANDLER)
         self._crash_exception = None
 
+        self._interceptors = ()
         if interceptors:
-            raise NotImplementedError()
+            self._interceptors = interceptors
         if maximum_concurrent_rpcs:
             raise NotImplementedError()
         if thread_pool:
@@ -636,11 +660,12 @@ cdef class AioServer:
         cdef object future = self._loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
+            self._loop,
             REQUEST_CALL_FAILURE_HANDLER)
         error = grpc_server_request_call(
             self._server.c_server, &rpc_state.call, &rpc_state.details,
             &rpc_state.request_metadata,
-            self._cq.c_ptr(), self._cq.c_ptr(),
+            global_completion_queue(), global_completion_queue(),
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
@@ -651,7 +676,7 @@ cdef class AioServer:
 
     async def _server_main_loop(self,
                                 object server_started):
-        self._server.start()
+        self._server.start(backup_queue=False)
         cdef RPCState rpc_state
         server_started.set_result(True)
 
@@ -669,6 +694,7 @@ cdef class AioServer:
             # the coroutine onto event loop inside of the cancellation
             # coroutine.
             rpc_coro = _handle_rpc(self._generic_handlers,
+                                   self._interceptors,
                                    rpc_state,
                                    self._loop)
 
@@ -712,7 +738,7 @@ cdef class AioServer:
         # The shutdown callback won't be called until there is no live RPC.
         grpc_server_shutdown_and_notify(
             self._server.c_server,
-            self._cq._cq,
+            global_completion_queue(),
             self._shutdown_callback_wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.
@@ -765,9 +791,6 @@ cdef class AioServer:
                 self._server.is_shutdown = True
                 self._status = AIO_SERVER_STATUS_STOPPED
 
-                # Shuts down the completion queue
-                await self._cq.shutdown()
-    
     async def wait_for_termination(self, object timeout):
         if timeout is None:
             await self._shutdown_completed
@@ -799,3 +822,4 @@ cdef class AioServer:
                 self,
                 self._status
             )
+        shutdown_grpc_aio()

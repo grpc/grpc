@@ -21,7 +21,7 @@ from typing import Any, Optional, Sequence, Tuple
 
 import grpc
 from grpc._cython.cygrpc import (EOF, AbortError, BaseError, InternalError,
-                                 UsageError, init_grpc_aio)
+                                 UsageError)
 
 from ._base_call import (Call, RpcContext, StreamStreamCall, StreamUnaryCall,
                          UnaryStreamCall, UnaryUnaryCall)
@@ -30,7 +30,7 @@ from ._base_channel import (Channel, StreamStreamMultiCallable,
                             UnaryUnaryMultiCallable)
 from ._call import AioRpcError
 from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
-                           UnaryUnaryClientInterceptor)
+                           UnaryUnaryClientInterceptor, ServerInterceptor)
 from ._server import server
 from ._base_server import Server, ServicerContext
 from ._typing import ChannelArgumentType
@@ -46,7 +46,6 @@ __all__ = (
     'UnaryStreamCall',
     'StreamUnaryCall',
     'StreamStreamCall',
-    'init_grpc_aio',
     'Channel',
     'UnaryUnaryMultiCallable',
     'UnaryStreamMultiCallable',
@@ -55,6 +54,7 @@ __all__ = (
     'ClientCallDetails',
     'UnaryUnaryClientInterceptor',
     'InterceptedUnaryUnaryCall',
+    'ServerInterceptor',
     'insecure_channel',
     'server',
     'Server',

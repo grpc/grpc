@@ -32,7 +32,8 @@ def _fixture_options(
         supports_proxy_auth = False,
         supports_write_buffering = True,
         client_channel = True,
-        supports_msvc = True):
+        supports_msvc = True,
+        flaky_tests = []):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -47,6 +48,7 @@ def _fixture_options(
         client_channel = client_channel,
         supports_msvc = supports_msvc,
         _platforms = _platforms,
+        flaky_tests = flaky_tests,
     )
 
 # maps fixture name to whether it requires the security library
@@ -62,6 +64,7 @@ END2END_FIXTURES = {
         fullstack = False,
         client_channel = False,
         _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_full": _fixture_options(),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
@@ -89,13 +92,19 @@ END2END_FIXTURES = {
     "h2_ssl": _fixture_options(secure = True),
     "h2_ssl_cred_reload": _fixture_options(secure = True),
     "h2_tls": _fixture_options(secure = True),
-    "h2_local_uds": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_uds": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
+    ),
     "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "inproc": _fixture_options(
         secure = True,
@@ -124,6 +133,7 @@ END2END_NOSEC_FIXTURES = {
         secure = False,
         _platforms = ["linux", "mac", "posix"],
         supports_msvc = False,
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_full": _fixture_options(secure = False),
     "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
@@ -158,6 +168,7 @@ END2END_NOSEC_FIXTURES = {
         _platforms = ["linux", "mac", "posix"],
         secure = False,
         supports_msvc = False,
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
 }
 
@@ -427,6 +438,7 @@ def grpc_end2end_tests():
                     t,
                 ],
                 tags = ["no_linux"] + _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
             )
 
             for poller in POLLERS:
@@ -440,6 +452,7 @@ def grpc_end2end_tests():
                         poller,
                     ],
                     tags = ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
                 )
 
 def grpc_end2end_nosec_tests():
@@ -495,6 +508,7 @@ def grpc_end2end_nosec_tests():
                     t,
                 ],
                 tags = ["no_linux"] + _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
             )
 
             for poller in POLLERS:
@@ -508,4 +522,5 @@ def grpc_end2end_nosec_tests():
                         poller,
                     ],
                     tags = ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
                 )

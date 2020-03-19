@@ -31,10 +31,12 @@ cdef class _AsyncioSocket:
         self._task_connect = None
         self._task_read = None
         self._task_write = None
+        self._task_listen = None
         self._read_buffer = NULL
         self._server = None
         self._py_socket = None
         self._peername = None
+        self._closed = False
         self._loop = asyncio.get_event_loop()
 
     @staticmethod
@@ -62,27 +64,37 @@ cdef class _AsyncioSocket:
         connected = self.is_connected()
         return f"<{class_name} {id_} connected={connected}>"
 
-    def _connect_cb(self, future):
+    async def _async_connect(self, object host, object port,):
+        self._task_connect = None
         try:
-            self._reader, self._writer = future.result()
+            self._reader, self._writer = await asyncio.open_connection(host, port)
         except Exception as e:
             self._grpc_connect_cb(
                 <grpc_custom_socket*>self._grpc_socket,
-                grpc_socket_error("Socket connect failed: {}".format(e).encode())
+                grpc_socket_error("Socket connect failed: {}: {}".format(type(e), str(e)).encode())
             )
-            return
-        finally:
-            self._task_connect = None
+        else:
+            # gRPC default posix implementation disables nagle
+            # algorithm.
+            sock = self._writer.transport.get_extra_info('socket')
+            sock.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
-        # gRPC default posix implementation disables nagle
-        # algorithm.
-        sock = self._writer.transport.get_extra_info('socket')
-        sock.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
+            self._grpc_connect_cb(
+                <grpc_custom_socket*>self._grpc_socket,
+                <grpc_error*>0
+            )
 
-        self._grpc_connect_cb(
-            <grpc_custom_socket*>self._grpc_socket,
-            <grpc_error*>0
+    cdef void connect(self,
+                      object host,
+                      object port,
+                      grpc_custom_connect_callback grpc_connect_cb):
+        assert not self._reader
+        assert not self._task_connect
+
+        self._task_connect = self._loop.create_task(
+            self._async_connect(host, port)
         )
+        self._grpc_connect_cb = grpc_connect_cb
 
     async def _async_read(self, size_t length):
         self._task_read = None
@@ -105,19 +117,6 @@ cdef class _AsyncioSocket:
                 len(inbound_buffer),
                 <grpc_error*>0
             )
-
-    cdef void connect(self,
-                      object host,
-                      object port,
-                      grpc_custom_connect_callback grpc_connect_cb):
-        assert not self._reader
-        assert not self._task_connect
-
-        self._task_connect = asyncio.ensure_future(
-            asyncio.open_connection(host, port)
-        )
-        self._grpc_connect_cb = grpc_connect_cb
-        self._task_connect.add_done_callback(self._connect_cb)
 
     cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb):
         assert not self._task_read
@@ -163,8 +162,14 @@ cdef class _AsyncioSocket:
         return self._reader and not self._reader._transport.is_closing()
 
     cdef void close(self):
+        if self._closed:
+            return
+        else:
+            self._closed = True
         if self.is_connected():
             self._writer.close()
+        if self._task_listen and not self._task_listen.done():
+            self._task_listen.close()
         if self._server:
             self._server.close()
         # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
@@ -174,6 +179,10 @@ cdef class _AsyncioSocket:
             self._py_socket.close()
 
     def _new_connection_callback(self, object reader, object writer):
+        # If the socket is closed, stop.
+        if self._closed:
+            return
+
         # Close the connection if server is not started yet.
         if self._grpc_accept_cb == NULL:
             writer.close()
@@ -201,7 +210,7 @@ cdef class _AsyncioSocket:
                 sock=self._py_socket,
             )
 
-        self._loop.create_task(create_asyncio_server())
+        self._task_listen = self._loop.create_task(create_asyncio_server())
 
     cdef accept(self,
                 grpc_custom_socket* grpc_socket_client,

@@ -176,7 +176,7 @@ grpc_core::ServerAddressList BuildLbAddrInputs(
   return addresses;
 }
 
-void VerifyLbAddrOutputs(const grpc_core::ServerAddressList addresses,
+void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
                          std::vector<std::string> expected_addrs) {
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {

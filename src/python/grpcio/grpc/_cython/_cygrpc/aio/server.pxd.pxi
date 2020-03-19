@@ -51,7 +51,6 @@ cdef enum AioServerStatus:
 
 cdef class AioServer:
     cdef Server _server
-    cdef CallbackCompletionQueue _cq
     cdef list _generic_handlers
     cdef AioServerStatus _status
     cdef object _loop  # asyncio.EventLoop
@@ -61,3 +60,4 @@ cdef class AioServer:
     cdef CallbackWrapper _shutdown_callback_wrapper
     cdef object _crash_exception  # Exception
     cdef set _ongoing_rpc_tasks
+    cdef tuple _interceptors

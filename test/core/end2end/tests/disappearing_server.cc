@@ -210,7 +210,9 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
 
 void disappearing_server(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
+#ifndef GPR_WINDOWS /* b/148110727 for more details */
   disappearing_server_test(config);
+#endif /* GPR_WINDOWS */
 }
 
 void disappearing_server_pre_init(void) {}
