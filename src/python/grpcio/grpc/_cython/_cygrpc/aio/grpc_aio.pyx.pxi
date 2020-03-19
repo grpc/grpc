@@ -115,8 +115,8 @@ cdef _actual_aio_shutdown():
 
 
 cpdef init_grpc_aio():
-    """Initialis the gRPC AsyncIO module.
-    
+    """Initializes the gRPC AsyncIO module.
+
     Expected to be invoked on critical class constructors.
     E.g., AioChannel, AioServer.
     """
