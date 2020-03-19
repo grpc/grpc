@@ -74,7 +74,7 @@ class LrsLbConfig : public LoadBalancingPolicy::Config {
 
 class LrsLb : public LoadBalancingPolicy {
  public:
-  explicit LrsLb(Args args);
+  LrsLb(RefCountedPtr<XdsClient> xds_client, Args args);
 
   const char* name() const override { return kLrs; }
 
@@ -185,14 +185,12 @@ LoadBalancingPolicy::PickResult LrsLb::LoadReportingPicker::Pick(
 // LrsLb
 //
 
-LrsLb::LrsLb(Args args)
+LrsLb::LrsLb(RefCountedPtr<XdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)),
-      xds_client_(XdsClient::GetFromChannelArgs(*args.args)) {
-// FIXME: error if not set
-  if (xds_client_ != nullptr &&
-      GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-    gpr_log(GPR_INFO, "[lrs_lb %p] Using xds client %p from channel", this,
-            xds_client_.get());
+      xds_client_(std::move(xds_client)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
+    gpr_log(GPR_INFO, "[lrs_lb %p] created -- using xds client %p from channel",
+            this, xds_client_.get());
   }
 }
 
@@ -315,8 +313,6 @@ void LrsLb::Helper::UpdateState(
   lrs_policy_->state_ = state;
   lrs_policy_->picker_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
   // Wrap the picker and return it to the channel.
-// FIXME: maybe wrap picker only in state READY?  but then what do we do
-// in RLS, where we might return TF but still be able to route some calls?
   lrs_policy_->channel_control_helper()->UpdateState(
       state,
       absl::make_unique<LoadReportingPicker>(
@@ -341,7 +337,15 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<LrsLb>(std::move(args));
+    RefCountedPtr<XdsClient> xds_client =
+        XdsClient::GetFromChannelArgs(*args.args);
+    if (xds_client == nullptr) {
+      gpr_log(GPR_ERROR,
+              "XdsClient not present in channel args -- cannot instantiate "
+              "lrs LB policy");
+      return nullptr;
+    }
+    return MakeOrphanable<LrsLb>(std::move(xds_client), std::move(args));
   }
 
   const char* name() const override { return kLrs; }

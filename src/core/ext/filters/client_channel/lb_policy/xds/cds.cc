@@ -50,7 +50,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
 // CDS LB policy.
 class CdsLb : public LoadBalancingPolicy {
  public:
-  explicit CdsLb(Args args);
+  CdsLb(RefCountedPtr<XdsClient> xds_client, Args args);
 
   const char* name() const override { return kCds; }
 
@@ -245,10 +245,9 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
 // CdsLb
 //
 
-CdsLb::CdsLb(Args args)
+CdsLb::CdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)),
-      xds_client_(XdsClient::GetFromChannelArgs(*args.args)) {
-// FIXME: error if xds client not present in channel args
+      xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p from channel",
             this, xds_client_.get());
@@ -331,7 +330,15 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<CdsLb>(std::move(args));
+    RefCountedPtr<XdsClient> xds_client =
+        XdsClient::GetFromChannelArgs(*args.args);
+    if (xds_client == nullptr) {
+      gpr_log(GPR_ERROR,
+              "XdsClient not present in channel args -- cannot instantiate "
+              "cds LB policy");
+      return nullptr;
+    }
+    return MakeOrphanable<CdsLb>(std::move(xds_client), std::move(args));
   }
 
   const char* name() const override { return kCds; }
