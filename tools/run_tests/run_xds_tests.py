@@ -158,6 +158,9 @@ _BOOTSTRAP_TEMPLATE = """
     "id": "{node_id}",
     "metadata": {{
       "TRAFFICDIRECTOR_NETWORK_NAME": "%s"
+    }},
+    "locality": {{
+      "zone": "%s"
     }}
   }},
   "xds_servers": [{{
@@ -169,7 +172,7 @@ _BOOTSTRAP_TEMPLATE = """
       }}
     ]
   }}]
-}}""" % (args.network.split('/')[-1], args.xds_server)
+}}""" % (args.network.split('/')[-1], args.zone, args.xds_server)
 _PATH_MATCHER_NAME = 'path-matcher'
 _BASE_TEMPLATE_NAME = 'test-template'
 _BASE_INSTANCE_GROUP_NAME = 'test-ig'
