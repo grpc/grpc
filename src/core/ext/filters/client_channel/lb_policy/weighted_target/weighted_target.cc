@@ -38,8 +38,6 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/timer.h"
 
-#define GRPC_WEIGHTED_TARGET_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
-
 namespace grpc_core {
 
 TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");
@@ -47,6 +45,10 @@ TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");
 namespace {
 
 constexpr char kWeightedTarget[] = "weighted_target_experimental";
+
+// How long we keep a child around for after it has been removed from
+// the config.
+constexpr int kChildRetentionIntervalMs = 15 * 60 * 1000;
 
 // Config for weighted_target LB policy.
 class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
@@ -192,8 +194,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
   void UpdateStateLocked();
 
-  const grpc_millis child_retention_interval_ms_;
-
   // Current config from the resolver.
   RefCountedPtr<WeightedTargetLbConfig> config_;
 
@@ -239,11 +239,7 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
 //
 
 WeightedTargetLb::WeightedTargetLb(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-// FIXME: new channel arg
-      child_retention_interval_ms_(grpc_channel_args_find_integer(
-          args.args, GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS,
-          {GRPC_WEIGHTED_TARGET_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})) {
+    : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] created", this);
   }
@@ -280,18 +276,11 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the targets not in the new config.
-  for (auto it = targets_.begin(); it != targets_.end();) {
-    const std::string& name = it->first;
-    WeightedChild* child = it->second.get();
-    if (config_->target_map().find(name) != config_->target_map().end()) {
-      ++it;
-      continue;
-    }
-    if (child_retention_interval_ms_ == 0) {
-      it = targets_.erase(it);
-    } else {
+  for (const auto& p : targets_) {
+    const std::string& name = p.first;
+    WeightedChild* child = p.second.get();
+    if (config_->target_map().find(name) == config_->target_map().end()) {
       child->DeactivateLocked();
-      ++it;
     }
   }
   // Add or update the targets in the new config.
@@ -518,8 +507,7 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(
       &delayed_removal_timer_,
-      ExecCtx::Get()->Now() +
-          weighted_target_policy_->child_retention_interval_ms_,
+      ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
       &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }

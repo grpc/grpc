@@ -1140,7 +1140,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       args.SetInt(GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS, fallback_timeout);
     }
     if (failover_timeout > 0) {
-      args.SetInt(GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS, failover_timeout);
+      args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
     if (xds_resource_does_not_exist_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
