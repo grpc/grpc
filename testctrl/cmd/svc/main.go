@@ -20,6 +20,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -63,6 +64,7 @@ func setupDevEnv(grpcServer *grpc.Server) *kubernetes.Clientset {
 
 func main() {
 	port := flag.Int("port", 50051, "Port to start the service.")
+	shutdownTimeout := flag.Duration("shutdownTimeout", 5*time.Minute, "Time alloted to a graceful shutdown.")
 	flag.Parse()
 	defer glog.Flush()
 
@@ -84,7 +86,7 @@ func main() {
 		glog.Fatalf("unable to start orchestration controller: %v", err)
 	}
 
-	defer controller.Stop()
+	defer controller.Stop(*shutdownTimeout)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {

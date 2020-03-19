@@ -1,6 +1,8 @@
 package orch
 
 import (
+	"time"
+
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/grpc/grpc/testctrl/svc/types"
@@ -30,9 +32,12 @@ func (c *Controller) Start() error {
 	return nil
 }
 
-// Stop safely terminates all goroutines spawned by the call to Start. It returns immediately, but
-// it allows the active sessions to finish before terminating goroutines.
-func (c *Controller) Stop() error {
+// Stop attempts to terminate all orchestration goroutines spawned by a call to Start. It waits for
+// executors to exit. Then, it kills the kubernetes watcher.
+//
+// If the timeout is reached before executors exit, an error is returned. The kubernetes watcher is
+// still terminated. Any sessions running on the unterminated executors will likely fail.
+func (c *Controller) Stop(timeout time.Duration) error {
 	return nil
 }
 
