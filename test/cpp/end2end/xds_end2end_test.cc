@@ -2417,7 +2417,8 @@ TEST_P(LocalityMapTest, UpdateMap) {
   }
   const double kErrorTolerance = 0.2;
   for (size_t i = 0; i < 3; ++i) {
-    gpr_log(GPR_INFO, "Locality %zu rete %f", i, locality_picked_rates[i]);
+    gpr_log(GPR_INFO, "Locality %" PRIuPTR " rate %f", i,
+            locality_picked_rates[i]);
     EXPECT_THAT(
         locality_picked_rates[i],
         ::testing::AllOf(
@@ -2451,7 +2452,8 @@ TEST_P(LocalityMapTest, UpdateMap) {
         kNumRpcs);
   }
   for (size_t i = 1; i < 4; ++i) {
-    gpr_log(GPR_INFO, "Locality %zu rete %f", i, locality_picked_rates[i]);
+    gpr_log(GPR_INFO, "Locality %" PRIuPTR " rate %f", i,
+            locality_picked_rates[i]);
     EXPECT_THAT(
         locality_picked_rates[i],
         ::testing::AllOf(
