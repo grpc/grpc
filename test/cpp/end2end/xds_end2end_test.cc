@@ -2375,7 +2375,7 @@ TEST_P(LocalityMapTest, StressTest) {
 TEST_P(LocalityMapTest, UpdateMap) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 1000;
+  const size_t kNumRpcs = 3000;
   // The locality weight for the first 3 localities.
   const std::vector<int> kLocalityWeights0 = {2, 3, 4};
   const double kTotalLocalityWeight0 =
@@ -2417,6 +2417,8 @@ TEST_P(LocalityMapTest, UpdateMap) {
   }
   const double kErrorTolerance = 0.2;
   for (size_t i = 0; i < 3; ++i) {
+    gpr_log(GPR_INFO, "Locality %" PRIuPTR " rate %f", i,
+            locality_picked_rates[i]);
     EXPECT_THAT(
         locality_picked_rates[i],
         ::testing::AllOf(
@@ -2434,7 +2436,7 @@ TEST_P(LocalityMapTest, UpdateMap) {
   EXPECT_EQ(0U, backends_[3]->backend_service()->request_count());
   // Wait until the locality update has been processed, as signaled by backend 3
   // receiving a request.
-  WaitForBackend(3);
+  WaitForAllBackends(3, 4);
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   // Send kNumRpcs RPCs.
   CheckRpcSendOk(kNumRpcs);
@@ -2450,6 +2452,8 @@ TEST_P(LocalityMapTest, UpdateMap) {
         kNumRpcs);
   }
   for (size_t i = 1; i < 4; ++i) {
+    gpr_log(GPR_INFO, "Locality %" PRIuPTR " rate %f", i,
+            locality_picked_rates[i]);
     EXPECT_THAT(
         locality_picked_rates[i],
         ::testing::AllOf(
