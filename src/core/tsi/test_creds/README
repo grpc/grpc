@@ -71,7 +71,10 @@ $ rm ca.srl
 Sync up with other repositories
 ===============================
 
-You will need to copy the test credentials to the following places
+Copies of these keys exist in multiple locations across all the grpc repos
+(e.g., see the following partial list). You need to be careful when updating
+the keys.
+
 grpc-dart/interop/
 grpc-dotnet/testassets/Certs/InteropTests/
 grpc-go/testdata/
