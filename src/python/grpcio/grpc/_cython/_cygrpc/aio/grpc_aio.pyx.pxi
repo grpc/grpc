@@ -114,9 +114,9 @@ cdef _actual_aio_shutdown():
         raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
 
 
-cdef init_grpc_aio():
-    """Initialis the gRPC AsyncIO module.
-    
+cpdef init_grpc_aio():
+    """Initializes the gRPC AsyncIO module.
+
     Expected to be invoked on critical class constructors.
     E.g., AioChannel, AioServer.
     """
@@ -126,7 +126,7 @@ cdef init_grpc_aio():
             _actual_aio_initialization()
 
 
-cdef shutdown_grpc_aio():
+cpdef shutdown_grpc_aio():
     """Shuts down the gRPC AsyncIO module.
 
     Expected to be invoked on critical class destructors.
