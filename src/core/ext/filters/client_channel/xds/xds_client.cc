@@ -894,7 +894,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
             "[xds_client %p] LDS update received: route_config_name=%s, "
             "cluster_name=%s",
             xds_client(),
-            (lds_update->route_config_name.empty()
+            (!lds_update->route_config_name.empty()
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"),
             (lds_update->rds_update.has_value()
