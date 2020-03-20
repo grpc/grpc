@@ -87,3 +87,6 @@ src/python/grpcio_tests/tests/interop/credentials/
 src/python/grpcio_tests/tests/unit/credentials/
 src/ruby/spec/testdata/
 test/core/end2end/data/
+
+Please also append old ca.pem into new ca.pem so that tests in the old releases
+are interopable with tests in the new releases.
