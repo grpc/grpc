@@ -5,6 +5,7 @@ import (
 
 	"k8s.io/api/core/v1"
 
+	orchTest "github.com/grpc/grpc/testctrl/svc/orch/test"
 	"github.com/grpc/grpc/testctrl/svc/types"
 	"github.com/grpc/grpc/testctrl/svc/types/test"
 )
@@ -35,55 +36,55 @@ func TestNewObjects(t *testing.T) {
 func TestObjectUpdate(t *testing.T) {
 	cases := []struct {
 		phase          v1.PodPhase
-		cstatus        containerStateTestCase
+		cstatus        orchTest.ContainerStateCase
 		expectedHealth Health
 	}{
 		// pod pending cases
-		{v1.PodPending, terminatedState, Unhealthy},
-		{v1.PodPending, terminatingState, Unhealthy},
-		{v1.PodPending, waitingState, Unknown},
-		{v1.PodPending, crashWaitingState, Unhealthy},
-		{v1.PodPending, runningState, Unknown},
-		{v1.PodPending, emptyState, Unknown},
+		{v1.PodPending, orchTest.ContainerStateCases.Terminated, Unhealthy},
+		{v1.PodPending, orchTest.ContainerStateCases.Terminating, Unhealthy},
+		{v1.PodPending, orchTest.ContainerStateCases.Waiting, Unknown},
+		{v1.PodPending, orchTest.ContainerStateCases.CrashWaiting, Unhealthy},
+		{v1.PodPending, orchTest.ContainerStateCases.Running, Unknown},
+		{v1.PodPending, orchTest.ContainerStateCases.Empty, Unknown},
 
 		// pod running cases
-		{v1.PodRunning, terminatedState, Unhealthy},
-		{v1.PodRunning, terminatingState, Unhealthy},
-		{v1.PodRunning, waitingState, Unhealthy},
-		{v1.PodRunning, crashWaitingState, Unhealthy},
-		{v1.PodRunning, runningState, Healthy},
-		{v1.PodRunning, emptyState, Unhealthy},
+		{v1.PodRunning, orchTest.ContainerStateCases.Terminated, Unhealthy},
+		{v1.PodRunning, orchTest.ContainerStateCases.Terminating, Unhealthy},
+		{v1.PodRunning, orchTest.ContainerStateCases.Waiting, Unhealthy},
+		{v1.PodRunning, orchTest.ContainerStateCases.CrashWaiting, Unhealthy},
+		{v1.PodRunning, orchTest.ContainerStateCases.Running, Healthy},
+		{v1.PodRunning, orchTest.ContainerStateCases.Empty, Unhealthy},
 
 		// pod succeeded cases
-		{v1.PodSucceeded, terminatedState, Done},
-		{v1.PodSucceeded, terminatingState, Done},
-		{v1.PodSucceeded, waitingState, Done},
-		{v1.PodSucceeded, crashWaitingState, Failed},
-		{v1.PodSucceeded, runningState, Done},
-		{v1.PodSucceeded, emptyState, Done},
+		{v1.PodSucceeded, orchTest.ContainerStateCases.Terminated, Done},
+		{v1.PodSucceeded, orchTest.ContainerStateCases.Terminating, Done},
+		{v1.PodSucceeded, orchTest.ContainerStateCases.Waiting, Done},
+		{v1.PodSucceeded, orchTest.ContainerStateCases.CrashWaiting, Failed},
+		{v1.PodSucceeded, orchTest.ContainerStateCases.Running, Done},
+		{v1.PodSucceeded, orchTest.ContainerStateCases.Empty, Done},
 
 		// pod failed cases
-		{v1.PodFailed, terminatedState, Failed},
-		{v1.PodFailed, terminatingState, Failed},
-		{v1.PodFailed, waitingState, Failed},
-		{v1.PodFailed, crashWaitingState, Failed},
-		{v1.PodFailed, runningState, Failed},
-		{v1.PodFailed, emptyState, Failed},
+		{v1.PodFailed, orchTest.ContainerStateCases.Terminated, Failed},
+		{v1.PodFailed, orchTest.ContainerStateCases.Terminating, Failed},
+		{v1.PodFailed, orchTest.ContainerStateCases.Waiting, Failed},
+		{v1.PodFailed, orchTest.ContainerStateCases.CrashWaiting, Failed},
+		{v1.PodFailed, orchTest.ContainerStateCases.Running, Failed},
+		{v1.PodFailed, orchTest.ContainerStateCases.Empty, Failed},
 
 		// pod unknown cases
-		{v1.PodUnknown, terminatedState, Unhealthy},
-		{v1.PodUnknown, terminatingState, Unhealthy},
-		{v1.PodUnknown, waitingState, Unhealthy},
-		{v1.PodUnknown, crashWaitingState, Unhealthy},
-		{v1.PodUnknown, runningState, Unhealthy},
-		{v1.PodUnknown, emptyState, Unknown},
+		{v1.PodUnknown, orchTest.ContainerStateCases.Terminated, Unhealthy},
+		{v1.PodUnknown, orchTest.ContainerStateCases.Terminating, Unhealthy},
+		{v1.PodUnknown, orchTest.ContainerStateCases.Waiting, Unhealthy},
+		{v1.PodUnknown, orchTest.ContainerStateCases.CrashWaiting, Unhealthy},
+		{v1.PodUnknown, orchTest.ContainerStateCases.Running, Unhealthy},
+		{v1.PodUnknown, orchTest.ContainerStateCases.Empty, Unknown},
 	}
 
 	for _, c := range cases {
 		status := v1.PodStatus{
 			Phase: c.phase,
 			ContainerStatuses: []v1.ContainerStatus{
-				c.cstatus.status,
+				c.cstatus.Status,
 			},
 		}
 
@@ -92,66 +93,7 @@ func TestObjectUpdate(t *testing.T) {
 
 		if o.Health() != c.expectedHealth {
 			t.Errorf("Object Update set health '%v' but expected '%v' for pod phase '%v' and status '%v'",
-				o.Health(), c.expectedHealth, c.phase, c.cstatus.description)
+				o.Health(), c.expectedHealth, c.phase, c.cstatus.Description)
 		}
 	}
-}
-
-type containerStateTestCase struct {
-	description string
-	status      v1.ContainerStatus
-}
-
-var terminatingState = containerStateTestCase{
-	description: "container terminating",
-	status: v1.ContainerStatus{
-		State: v1.ContainerState{
-			Terminated: &v1.ContainerStateTerminated{},
-		},
-	},
-}
-
-var terminatedState = containerStateTestCase{
-	description: "container terminated",
-	status: v1.ContainerStatus{
-		LastTerminationState: v1.ContainerState{
-			Terminated: &v1.ContainerStateTerminated{},
-		},
-	},
-}
-
-var waitingState = containerStateTestCase{
-	description: "container waiting",
-	status: v1.ContainerStatus{
-		State: v1.ContainerState{
-			Waiting: &v1.ContainerStateWaiting{},
-		},
-	},
-}
-
-var crashWaitingState = containerStateTestCase{
-	description: "container crash waiting",
-	status: v1.ContainerStatus{
-		State: v1.ContainerState{
-			Waiting: &v1.ContainerStateWaiting{
-				Reason: "CrashLoopBackOff",
-			},
-		},
-	},
-}
-
-var runningState = containerStateTestCase{
-	description: "container running",
-	status: v1.ContainerStatus{
-		State: v1.ContainerState{
-			Running: &v1.ContainerStateRunning{},
-		},
-	},
-}
-
-var emptyState = containerStateTestCase{
-	description: "no container state",
-	status: v1.ContainerStatus{
-		State: v1.ContainerState{},
-	},
 }
