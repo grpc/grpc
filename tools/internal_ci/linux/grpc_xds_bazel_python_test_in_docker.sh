@@ -53,4 +53,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,xds_lb "$PYTHON" 
     --project_id=grpc-testing \
     --gcp_suffix=$(date '+%s') \
     --verbose \
-    --client_cmd='bazel run //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client -- --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps}'
+    --client_cmd='bazel run //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client -- --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps} --verbose'
