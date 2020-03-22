@@ -27,6 +27,7 @@
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
+#include "src/core/tsi/transport_security_grpc.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 #include "test/core/util/test_config.h"
@@ -291,13 +292,13 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   // Validate max frame size value after Frame Size Negotiation. Here peer max
   // frame size is greater than default value, and user specified max frame size
   // is absent.
-  tsi_zero_copy_grpc_protector* zero_copy_protector;
+  tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
   GPR_ASSERT(tsi_handshaker_result_create_zero_copy_frame_protector(
                  result, nullptr, &zero_copy_protector) == TSI_OK);
   size_t actual_max_frame_size;
   tsi_zero_copy_grpc_protector_max_frame_size(zero_copy_protector,
                                               &actual_max_frame_size);
-  GPR_ASSERT(actual_max_frame_size,
+  GPR_ASSERT(actual_max_frame_size ==
              ALTS_TSI_HANDSHAKER_TEST_DEFAULT_MAX_FRAME_SIZE);
   /* Validate peer identity. */
   tsi_peer peer;
@@ -362,7 +363,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   // Validate max frame size value after Frame Size Negotiation. The negotiated
   // frame size value equals minimum send frame size, due to the absence of peer
   // max frame size.
-  tsi_zero_copy_grpc_protector* zero_copy_protector;
+  tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
   size_t user_specified_max_frame_size =
       ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE;
   GPR_ASSERT(tsi_handshaker_result_create_zero_copy_frame_protector(
@@ -371,7 +372,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   size_t actual_max_frame_size;
   tsi_zero_copy_grpc_protector_max_frame_size(zero_copy_protector,
                                               &actual_max_frame_size);
-  GPR_ASSERT(actual_max_frame_size, ALTS_TSI_HANDSHAKER_TEST_MIN_FRAME_SIZE);
+  GPR_ASSERT(actual_max_frame_size == ALTS_TSI_HANDSHAKER_TEST_MIN_FRAME_SIZE);
   /* Validate peer identity. */
   tsi_peer peer;
   GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) == TSI_OK);

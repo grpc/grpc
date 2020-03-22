@@ -197,8 +197,8 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
   GPR_ASSERT(upb_strview_eql(
       grpc_gcp_StartClientHandshakeReq_target_name(client_start),
       upb_strview_makez(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME)));
-  GPR_ASSERT(grpc_gcp_StartClientHandshakeReq_max_frame_size(
-      client_start, ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE));
+  GPR_ASSERT(grpc_gcp_StartClientHandshakeReq_max_frame_size(client_start) ==
+             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
   GPR_ASSERT(validate_op(client, op, nops, true /* is_start */));
   return GRPC_CALL_OK;
 }
@@ -247,8 +247,8 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
                              upb_strview_makez(ALTS_RECORD_PROTOCOL)));
   validate_rpc_protocol_versions(
       grpc_gcp_StartServerHandshakeReq_rpc_versions(server_start));
-  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_max_frame_size(
-      server_start, ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE));
+  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_max_frame_size(server_start) ==
+             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
   GPR_ASSERT(validate_op(client, op, nops, true /* is_start */));
   return GRPC_CALL_OK;
 }
