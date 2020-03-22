@@ -42,6 +42,18 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
+  // Returns true if transitioning from the old config to the new config
+  // requires instantiating a new policy object.
+  virtual bool ConfigChangeRequiresNewPolicyInstance(
+      LoadBalancingPolicy::Config* old_config,
+      LoadBalancingPolicy::Config* new_config) const;
+
+  // Instantiates a new policy of the specified name.
+  // May be overridden by subclasses to avoid recursion when an LB
+  // policy factory returns a ChildPolicyHandler.
+  virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      const char* name, LoadBalancingPolicy::Args args) const;
+
  private:
   class Helper;
 
@@ -54,6 +66,11 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   TraceFlag* tracer_;
 
   bool shutting_down_ = false;
+
+  // The most recent config passed to UpdateLocked().
+  // If pending_child_policy_ is non-null, this is the config passed to
+  // pending_child_policy_; otherwise, it's the config passed to child_policy_.
+  RefCountedPtr<LoadBalancingPolicy::Config> current_config_;
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;

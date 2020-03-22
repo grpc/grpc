@@ -23,10 +23,10 @@ cdef class _AioState:
 cdef grpc_completion_queue *global_completion_queue()
 
 
-cdef init_grpc_aio()
+cpdef init_grpc_aio()
 
 
-cdef shutdown_grpc_aio()
+cpdef shutdown_grpc_aio()
 
 
 cdef extern from "src/core/lib/iomgr/timer_manager.h":

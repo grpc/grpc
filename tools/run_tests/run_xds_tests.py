@@ -82,7 +82,7 @@ argp.add_argument('--secondary_zone',
 argp.add_argument('--qps', default=10, type=int, help='Client QPS')
 argp.add_argument(
     '--wait_for_backend_sec',
-    default=600,
+    default=1200,
     type=int,
     help='Time limit for waiting for created backend services to report '
     'healthy when launching or updated GCP resources')
@@ -158,6 +158,9 @@ _BOOTSTRAP_TEMPLATE = """
     "id": "{node_id}",
     "metadata": {{
       "TRAFFICDIRECTOR_NETWORK_NAME": "%s"
+    }},
+    "locality": {{
+      "zone": "%s"
     }}
   }},
   "xds_servers": [{{
@@ -169,7 +172,7 @@ _BOOTSTRAP_TEMPLATE = """
       }}
     ]
   }}]
-}}""" % (args.network.split('/')[-1], args.xds_server)
+}}""" % (args.network.split('/')[-1], args.zone, args.xds_server)
 _PATH_MATCHER_NAME = 'path-matcher'
 _BASE_TEMPLATE_NAME = 'test-template'
 _BASE_INSTANCE_GROUP_NAME = 'test-ig'
