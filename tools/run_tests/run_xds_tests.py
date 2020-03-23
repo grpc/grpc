@@ -198,7 +198,8 @@ _BASE_URL_MAP_NAME = 'test-map'
 _BASE_SERVICE_HOST = 'grpc-test'
 _BASE_TARGET_PROXY_NAME = 'test-target-proxy'
 _BASE_FORWARDING_RULE_NAME = 'test-forwarding-rule'
-_TEST_LOG_BASE_DIR = 'github/grpc/reports'
+_TEST_LOG_BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  '../../reports')
 _SPONGE_LOG_NAME = 'sponge_log.log'
 _SPONGE_XML_NAME = 'sponge_log.xml'
 
