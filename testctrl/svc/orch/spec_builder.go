@@ -1,6 +1,7 @@
 package orch
 
 import (
+	"encoding/json"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,11 +13,12 @@ import (
 
 const driverPort int32 = 10000
 const serverPort int32 = 10010
+
 var zero int32 = 0
 
 // SpecBuilder creates valid Kubernetes specs for components.
 type SpecBuilder struct {
-	session *types.Session
+	session   *types.Session
 	component *types.Component
 }
 
@@ -33,6 +35,7 @@ func (sb *SpecBuilder) Containers() []apiv1.Container {
 			Name:  sb.component.Name(),
 			Image: sb.component.ContainerImage(),
 			Ports: sb.ContainerPorts(),
+			Env:   sb.Env(),
 		},
 	}
 }
@@ -63,12 +66,12 @@ func (sb *SpecBuilder) ContainerPorts() []apiv1.ContainerPort {
 func (sb *SpecBuilder) Deployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: sb.ObjectMeta(),
-		Spec: sb.DeploymentSpec(),
+		Spec:       sb.DeploymentSpec(),
 	}
 }
 
 // DeploymentSpec builds a Kubernetes deployment spec object.
-func (sb *SpecBuilder) DeploymentSpec() appsv1.DeploymentSpec{
+func (sb *SpecBuilder) DeploymentSpec() appsv1.DeploymentSpec {
 	replicas := sb.component.Replicas()
 
 	return appsv1.DeploymentSpec{
@@ -78,11 +81,11 @@ func (sb *SpecBuilder) DeploymentSpec() appsv1.DeploymentSpec{
 		},
 		Strategy: appsv1.DeploymentStrategy{
 			// disable rolling updates
-			Type: "Recreate",
+			Type:          "Recreate",
 			RollingUpdate: nil,
 		},
-		RevisionHistoryLimit: &zero,  // disable rollbacks
-		Template: sb.PodTemplateSpec(),
+		RevisionHistoryLimit: &zero, // disable rollbacks
+		Template:             sb.PodTemplateSpec(),
 	}
 }
 
@@ -90,8 +93,8 @@ func (sb *SpecBuilder) DeploymentSpec() appsv1.DeploymentSpec{
 // component. Most importantly, it includes the component's name and necessary labels.
 func (sb *SpecBuilder) ObjectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:        sb.component.Name(),
-		Labels:      sb.Labels(),
+		Name:   sb.component.Name(),
+		Labels: sb.Labels(),
 	}
 }
 
@@ -104,8 +107,8 @@ func (sb *SpecBuilder) ObjectMeta() metav1.ObjectMeta {
 //	 4. `component-kind` set to the kind of component (e.g. "driver")
 func (sb *SpecBuilder) Labels() map[string]string {
 	return map[string]string{
-		"autogen": "1",
-		"session-name": sb.session.Name(),
+		"autogen":        "1",
+		"session-name":   sb.session.Name(),
 		"component-name": sb.component.Name(),
 		"component-kind": strings.ToLower(sb.component.Kind().String()),
 	}
@@ -121,3 +124,32 @@ func (sb *SpecBuilder) PodTemplateSpec() apiv1.PodTemplateSpec {
 	}
 }
 
+// Env returns the environment variables that should be set based on the type of component.
+func (sb *SpecBuilder) Env() []apiv1.EnvVar {
+	var vars []apiv1.EnvVar
+
+	for k, v := range sb.component.Env() {
+		vars = append(vars, apiv1.EnvVar{
+			Name:  k,
+			Value: v,
+		})
+	}
+
+	if sb.component.Kind() == types.DriverComponent {
+		vars = append(vars, apiv1.EnvVar{
+			Name:  "SCENARIO_JSON",
+			Value: sb.scenarioJson(),
+		})
+	}
+
+	return vars
+}
+
+func (sb *SpecBuilder) scenarioJson() string {
+	bytes, err := json.Marshal(sb.session.Scenario())
+	if err != nil {
+		return ""
+	}
+
+	return string(bytes)
+}
