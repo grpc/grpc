@@ -240,7 +240,7 @@ class EdsLb : public LoadBalancingPolicy {
   // The latest data from the endpoint watcher.
   XdsApi::PriorityListUpdate priority_list_update_;
   // State used to retain child policy names for priority policy.
-  std::vector<int /*child_number*/> priority_child_numbers_;
+  std::vector<size_t /*child_number*/> priority_child_numbers_;
 
   RefCountedPtr<XdsApi::DropConfig> drop_config_;
   RefCountedPtr<XdsClusterDropStats> drop_stats_;
@@ -594,14 +594,14 @@ void EdsLb::UpdatePriorityList(
     XdsApi::PriorityListUpdate priority_list_update) {
   // Build some maps from locality to child number and the reverse from
   // the old data in priority_list_update_ and priority_child_numbers_.
-  std::map<XdsLocalityName*, int /*child_number*/, XdsLocalityName::Less>
+  std::map<XdsLocalityName*, size_t /*child_number*/, XdsLocalityName::Less>
       locality_child_map;
-  std::map<int, std::set<XdsLocalityName*>> child_locality_map;
+  std::map<size_t, std::set<XdsLocalityName*>> child_locality_map;
   for (uint32_t priority = 0; priority < priority_list_update_.size();
        ++priority) {
     auto* locality_map = priority_list_update_.Find(priority);
     GPR_ASSERT(locality_map != nullptr);
-    int child_number = priority_child_numbers_[priority];
+    size_t child_number = priority_child_numbers_[priority];
     for (const auto& p : locality_map->localities) {
       XdsLocalityName* locality_name = p.first.get();
       locality_child_map[locality_name] = child_number;
@@ -609,17 +609,17 @@ void EdsLb::UpdatePriorityList(
     }
   }
   // Construct new list of children.
-  std::vector<int> priority_child_numbers;
+  std::vector<size_t> priority_child_numbers;
   for (uint32_t priority = 0; priority < priority_list_update.size();
        ++priority) {
     auto* locality_map = priority_list_update.Find(priority);
     GPR_ASSERT(locality_map != nullptr);
-    int child_number = -1;
+    absl::optional<size_t> child_number;
     // If one of the localities in this priority already existed, reuse its
     // child number.
     for (const auto& p : locality_map->localities) {
       XdsLocalityName* locality_name = p.first.get();
-      if (child_number == -1) {
+      if (!child_number.has_value()) {
         auto it = locality_child_map.find(locality_name);
         if (it != locality_child_map.end()) {
           child_number = it->second;
@@ -628,7 +628,7 @@ void EdsLb::UpdatePriorityList(
           // that we don't incorrectly reuse this child number for a
           // subsequent priority.
           for (XdsLocalityName* old_locality
-               : child_locality_map[child_number]) {
+               : child_locality_map[*child_number]) {
             locality_child_map.erase(old_locality);
           }
         }
@@ -640,17 +640,15 @@ void EdsLb::UpdatePriorityList(
       }
     }
     // If we didn't find an existing child number, assign a new one.
-    if (child_number == -1) {
-// FIXME: better error handling
-      GPR_ASSERT(child_locality_map.size() < INT_MAX);
+    if (!child_number.has_value()) {
       for (child_number = 0;
-           child_locality_map.find(child_number) != child_locality_map.end();
-           ++child_number);
+           child_locality_map.find(*child_number) != child_locality_map.end();
+           ++(*child_number));
       // Add entry so we know that the child number is in use.
       // (Don't need to add the list of localities, since we won't use them.)
-      child_locality_map[child_number];
+      child_locality_map[*child_number];
     }
-    priority_child_numbers.push_back(child_number);
+    priority_child_numbers.push_back(*child_number);
   }
   // Save update.
   priority_list_update_ = std::move(priority_list_update);
@@ -734,7 +732,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
       };
     }
     // Add priority entry.
-    const int child_number = priority_child_numbers_[priority];
+    const size_t child_number = priority_child_numbers_[priority];
     std::string child_name = absl::StrCat("child", child_number);
     priority_priorities.emplace_back(child_name);
     Json locality_picking_config = config_->locality_picking_policy();
