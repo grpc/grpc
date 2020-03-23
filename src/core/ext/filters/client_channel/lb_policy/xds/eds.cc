@@ -49,16 +49,18 @@ TraceFlag grpc_lb_eds_trace(false, "eds_lb");
 
 namespace {
 
+constexpr char kXds[] = "xds_experimental";
 constexpr char kEds[] = "eds_experimental";
 
 class EdsLbConfig : public LoadBalancingPolicy::Config {
  public:
   EdsLbConfig(
-      std::string cluster_name, std::string eds_service_name,
+      const char* name, std::string cluster_name, std::string eds_service_name,
       absl::optional<std::string> lrs_load_reporting_server_name,
       Json locality_picking_policy, Json endpoint_picking_policy,
       RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy)
-      : cluster_name_(std::move(cluster_name)),
+      : name_(name),
+        cluster_name_(std::move(cluster_name)),
         eds_service_name_(std::move(eds_service_name)),
         lrs_load_reporting_server_name_(
             std::move(lrs_load_reporting_server_name)),
@@ -66,7 +68,7 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
         endpoint_picking_policy_(std::move(endpoint_picking_policy)),
         fallback_policy_(std::move(fallback_policy)) {}
 
-  const char* name() const override { return kEds; }
+  const char* name() const override { return name_; }
 
   const std::string& cluster_name() const { return cluster_name_; }
   const std::string& eds_service_name() const { return eds_service_name_; }
@@ -84,6 +86,7 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
   }
 
  private:
+  const char* name_;
   std::string cluster_name_;
   std::string eds_service_name_;
   absl::optional<std::string> lrs_load_reporting_server_name_;
@@ -94,9 +97,9 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
 
 class EdsLb : public LoadBalancingPolicy {
  public:
-  explicit EdsLb(Args args);
+  EdsLb(const char* name, Args args);
 
-  const char* name() const override { return kEds; }
+  const char* name() const override { return name_; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -211,6 +214,9 @@ class EdsLb : public LoadBalancingPolicy {
     return xds_client_from_channel_ != nullptr ? xds_client_from_channel_.get()
                                                : xds_client_.get();
   }
+
+  // Policy name (kXds or kEds).
+  const char* name_;
 
   // Server name from target URI.
   std::string server_name_;
@@ -429,8 +435,9 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
 // EdsLb public methods
 //
 
-EdsLb::EdsLb(Args args)
+EdsLb::EdsLb(const char* name, Args args)
     : LoadBalancingPolicy(std::move(args)),
+      name_(name),
       xds_client_from_channel_(XdsClient::GetFromChannelArgs(*args.args)),
       lb_fallback_timeout_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS,
@@ -923,12 +930,15 @@ void EdsLb::MaybeExitFallbackMode() {
 
 class EdsLbFactory : public LoadBalancingPolicyFactory {
  public:
+  explicit EdsLbFactory(const char* name) : name_(name) {}
+
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<XdsChildHandler>(std::move(args), &grpc_lb_eds_trace);
+    return MakeOrphanable<EdsChildHandler>(std::move(args), &grpc_lb_eds_trace,
+                                           name_);
   }
 
-  const char* name() const override { return kEds; }
+  const char* name() const override { return name_; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error** error) const override {
@@ -937,28 +947,14 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:loadBalancingPolicy error:xds policy requires configuration. "
+          "field:loadBalancingPolicy error:eds policy requires configuration. "
           "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
     std::vector<grpc_error*> error_list;
-    // Cluster name.
-    std::string cluster_name;
-    auto it = json.object_value().find("clusterName");
-// FIXME: this should be required... maybe make this behavior
-// conditional based on whether this policy is invoked as
-// xds_experimental or eds_experimental?
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:clusterName error:type should be string"));
-      } else {
-        cluster_name = it->second.string_value();
-      }
-    }
     // EDS service name.
     std::string eds_service_name;
-    it = json.object_value().find("edsServiceName");
+    auto it = json.object_value().find("edsServiceName");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -966,6 +962,23 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
       } else {
         eds_service_name = it->second.string_value();
       }
+    }
+    // Cluster name.
+    std::string cluster_name;
+    if (name_ == kEds) {
+      it = json.object_value().find("clusterName");
+      if (it != json.object_value().end()) {
+        if (it->second.type() != Json::Type::STRING) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:clusterName error:type should be string"));
+        } else {
+          cluster_name = it->second.string_value();
+        }
+      }
+    } else {
+      // For xds policy, this field does not exist in the config, so it
+      // will always be set to the same value as edsServiceName.
+      cluster_name = eds_service_name;
     }
     // LRS load reporting server name.
     absl::optional<std::string> lrs_load_reporting_server_name;
@@ -978,19 +991,19 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
         lrs_load_reporting_server_name.emplace(it->second.string_value());
       }
     }
-    // Locality-picking policy.
-    Json locality_picking_policy;
-    it = json.object_value().find("localityPickingPolicy");
-    if (it == json.object_value().end()) {
-      locality_picking_policy = Json::Array{
-        Json::Object{
-            {"weighted_target_experimental", Json::Object{
-                {"targets", Json::Object()},
-            }},
-        },
-      };
-    } else {
-      locality_picking_policy = it->second;
+    // Locality-picking policy.  Not supported for xds policy.
+    Json locality_picking_policy = Json::Array{
+      Json::Object{
+          {"weighted_target_experimental", Json::Object{
+              {"targets", Json::Object()},
+          }},
+      },
+    };
+    if (name_ == kEds) {
+      it = json.object_value().find("localityPickingPolicy");
+      if (it != json.object_value().end()) {
+        locality_picking_policy = it->second;
+      }
     }
     grpc_error* parse_error = GRPC_ERROR_NONE;
     if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
@@ -1000,9 +1013,11 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
           "localityPickingPolicy", &parse_error, 1));
       GRPC_ERROR_UNREF(parse_error);
     }
-    // Endpoint-picking policy.
+    // Endpoint-picking policy.  Called "childPolicy" for xds policy.
+    const char* field_name =
+        name_ == kEds ? "endpointPickingPolicy" : "childPolicy";
     Json endpoint_picking_policy;
-    it = json.object_value().find("endpointPickingPolicy");
+    it = json.object_value().find(field_name);
     if (it == json.object_value().end()) {
       endpoint_picking_policy = Json::Array{
         Json::Object{
@@ -1017,7 +1032,7 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
             endpoint_picking_policy, &parse_error) == nullptr) {
       GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
       error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "endpointPickingPolicy", &parse_error, 1));
+          field_name, &parse_error, 1));
       GRPC_ERROR_UNREF(parse_error);
     }
     // Fallback policy.
@@ -1043,7 +1058,7 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       return MakeRefCounted<EdsLbConfig>(
-          std::move(cluster_name), std::move(eds_service_name),
+          name_, std::move(cluster_name), std::move(eds_service_name),
           std::move(lrs_load_reporting_server_name),
           std::move(locality_picking_policy),
           std::move(endpoint_picking_policy), std::move(fallback_policy));
@@ -1055,16 +1070,16 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
   }
 
  private:
-  class XdsChildHandler : public ChildPolicyHandler {
+  class EdsChildHandler : public ChildPolicyHandler {
    public:
-    XdsChildHandler(Args args, TraceFlag* tracer)
-        : ChildPolicyHandler(std::move(args), tracer) {}
+    EdsChildHandler(Args args, TraceFlag* tracer, const char* name)
+        : ChildPolicyHandler(std::move(args), tracer), name_(name) {}
 
     bool ConfigChangeRequiresNewPolicyInstance(
         LoadBalancingPolicy::Config* old_config,
         LoadBalancingPolicy::Config* new_config) const override {
-      GPR_ASSERT(old_config->name() == kEds);
-      GPR_ASSERT(new_config->name() == kEds);
+      GPR_ASSERT(old_config->name() == name_);
+      GPR_ASSERT(new_config->name() == name_);
       EdsLbConfig* old_eds_config = static_cast<EdsLbConfig*>(old_config);
       EdsLbConfig* new_eds_config = static_cast<EdsLbConfig*>(new_config);
       return old_eds_config->cluster_name() != new_eds_config->cluster_name() ||
@@ -1074,9 +1089,14 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
 
     OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
         const char* name, LoadBalancingPolicy::Args args) const override {
-      return MakeOrphanable<EdsLb>(std::move(args));
+      return MakeOrphanable<EdsLb>(name_, std::move(args));
     }
+
+   private:
+    const char* name_;
   };
+
+  const char* name_;
 };
 
 }  // namespace
@@ -1090,7 +1110,13 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_eds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::EdsLbFactory>());
+          absl::make_unique<grpc_core::EdsLbFactory>(grpc_core::kEds));
+  // TODO(roth): This is here just for backward compatibility with some
+  // old tests we have internally.  Remove this once they are upgraded
+  // to use the new policy name and config.
+  grpc_core::LoadBalancingPolicyRegistry::Builder::
+      RegisterLoadBalancingPolicyFactory(
+          absl::make_unique<grpc_core::EdsLbFactory>(grpc_core::kXds));
 }
 
 void grpc_lb_policy_eds_shutdown() {}
