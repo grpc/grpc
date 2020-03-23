@@ -760,9 +760,22 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
   if (error != GRPC_ERROR_NONE) {
-// FIXME: how do we handle this error?
-gpr_log(GPR_ERROR, "ERROR PARSING LB CONFIG: %s", grpc_error_string(error));
-    GPR_ASSERT(false);
+    // This should never happen, but if it does, we basically have no
+    // way to fix it, so we put the channel in TRANSIENT_FAILURE.
+    gpr_log(GPR_ERROR,
+            "[edslb %p] error parsing generated child policy config -- "
+            "will put channel in TRANSIENT_FAILURE: %s",
+            this, grpc_error_string(error));
+    error = grpc_error_set_int(
+        grpc_error_add_child(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "eds LB policy: error parsing generated child policy config"),
+            error),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        absl::make_unique<TransientFailurePicker>(error));
+    return nullptr;
   }
   return config;
 }
@@ -770,8 +783,9 @@ gpr_log(GPR_ERROR, "ERROR PARSING LB CONFIG: %s", grpc_error_string(error));
 void EdsLb::UpdateChildPolicyLocked() {
   if (shutting_down_) return;
   UpdateArgs update_args;
-  update_args.addresses = CreateChildPolicyAddresses();
   update_args.config = CreateChildPolicyConfig();
+  if (update_args.config == nullptr) return;
+  update_args.addresses = CreateChildPolicyAddresses();
   update_args.args = CreateChildPolicyArgsLocked(args_);
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(update_args.args);
