@@ -3,6 +3,8 @@ package orch
 import (
 	"fmt"
 	"sync"
+
+	"k8s.io/api/core/v1"
 )
 
 // Monitor manages a list of objects, providing facilities to update them, check the aggregate
