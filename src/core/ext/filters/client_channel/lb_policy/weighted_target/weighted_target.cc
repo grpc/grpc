@@ -79,7 +79,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   const char* name() const override { return kWeightedTarget; }
 
   void UpdateLocked(UpdateArgs args) override;
-  void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
  private:
@@ -128,7 +127,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
                       ServerAddressList addresses,
                       const grpc_channel_args* args);
-    void ExitIdleLocked();
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -256,10 +254,6 @@ void WeightedTargetLb::ShutdownLocked() {
   }
   shutting_down_ = true;
   targets_.clear();
-}
-
-void WeightedTargetLb::ExitIdleLocked() {
-  for (auto& p : targets_) p.second->ExitIdleLocked();
 }
 
 void WeightedTargetLb::ResetBackoffLocked() {
@@ -485,10 +479,6 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   child_policy_->UpdateLocked(std::move(update_args));
 }
 
-void WeightedTargetLb::WeightedChild::ExitIdleLocked() {
-  child_policy_->ExitIdleLocked();
-}
-
 void WeightedTargetLb::WeightedChild::ResetBackoffLocked() {
   child_policy_->ResetBackoffLocked();
 }
@@ -546,6 +536,10 @@ void WeightedTargetLb::WeightedChild::Helper::UpdateState(
   // Cache the picker in the WeightedChild.
   weighted_child_->picker_wrapper_ =
       MakeRefCounted<ChildPickerWrapper>(std::move(picker));
+  // If the child reports IDLE, immediately tell it to exit idle.
+  if (state == GRPC_CHANNEL_IDLE) {
+    weighted_child_->child_policy_->ExitIdleLocked();
+  }
   // Decide what state to report for aggregation purposes.
   // If we haven't seen a failure since the last time we were in state
   // READY, then we report the state change as-is.  However, once we do see
