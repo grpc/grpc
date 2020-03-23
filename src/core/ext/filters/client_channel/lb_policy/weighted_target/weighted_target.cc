@@ -107,14 +107,12 @@ class WeightedTargetLb : public LoadBalancingPolicy {
         InlinedVector<std::pair<uint32_t,
                                 RefCountedPtr<ChildPickerWrapper>>, 1>;
 
-    WeightedPicker(RefCountedPtr<WeightedTargetLb> parent, PickerList pickers)
-        : parent_(std::move(parent)), pickers_(std::move(pickers)) {}
-    ~WeightedPicker() { parent_.reset(DEBUG_LOCATION, "WeightedPicker"); }
+    explicit WeightedPicker(PickerList pickers)
+        : pickers_(std::move(pickers)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
-    RefCountedPtr<WeightedTargetLb> parent_;
     PickerList pickers_;
   };
 
@@ -371,8 +369,7 @@ void WeightedTargetLb::UpdateStateLocked() {
   std::unique_ptr<SubchannelPicker> picker;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = absl::make_unique<WeightedPicker>(
-          Ref(DEBUG_LOCATION, "WeightedPicker"), std::move(picker_list));
+      picker = absl::make_unique<WeightedPicker>(std::move(picker_list));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
