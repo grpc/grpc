@@ -704,7 +704,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
   call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
@@ -893,7 +894,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
             "[xds_client %p] LDS update received: route_config_name=%s, "
             "cluster_name=%s",
             xds_client(),
-            (lds_update->route_config_name.empty()
+            (!lds_update->route_config_name.empty()
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"),
             (lds_update->rds_update.has_value()
@@ -1520,7 +1521,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
   // Op: send request message.
