@@ -6,16 +6,17 @@ import (
 
 type ComponentBuilder struct {
 	container string
-	kind types.ComponentKind
-	replicas int32
-	env map[string]string
+	kind      types.ComponentKind
+	replicas  int32
+	env       map[string]string
 }
 
 func NewComponentBuilder() *ComponentBuilder {
 	return &ComponentBuilder{
 		container: "example:latest",
-		kind: types.ClientComponent,
-		replicas: 1,
+		kind:      types.ClientComponent,
+		replicas:  1,
+		env:       make(map[string]string),
 	}
 }
 

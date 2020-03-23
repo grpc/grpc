@@ -8,7 +8,8 @@ import (
 )
 
 // Component represents a dependency for a session. Benchmarks tend to have three components: a
-// driver, server and client. Each component can have many identical replicas.
+// driver, server and client. Each component can have many identical replicas. Do not create
+// Components using a literal, use the NewComponent constructor.
 type Component struct {
 	name           string
 	containerImage string
@@ -39,6 +40,7 @@ func NewComponent(containerImage string, kind ComponentKind, replicas int32) *Co
 		containerImage: containerImage,
 		kind:           kind,
 		replicas:       replicas,
+		env:		make(map[string]string),
 	}
 }
 
