@@ -20,7 +20,8 @@ created. AsyncIO doesn't provide thread safety for most of its APIs.
 from typing import Any, Optional, Sequence, Tuple
 
 import grpc
-from grpc._cython.cygrpc import (EOF, AbortError, BaseError, InternalError,
+from grpc._cython.cygrpc import (init_grpc_aio, shutdown_grpc_aio, EOF,
+                                 AbortError, BaseError, InternalError,
                                  UsageError)
 
 from ._base_call import (Call, RpcContext, StreamStreamCall, StreamUnaryCall,
@@ -39,6 +40,8 @@ from ._channel import insecure_channel, secure_channel
 ###################################  __all__  #################################
 
 __all__ = (
+    'init_grpc_aio',
+    'shutdown_grpc_aio',
     'AioRpcError',
     'RpcContext',
     'Call',

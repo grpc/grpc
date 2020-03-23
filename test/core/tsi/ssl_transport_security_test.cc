@@ -16,22 +16,22 @@
  *
  */
 
+#include "src/core/tsi/ssl_transport_security.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 extern "C" {
 #include <openssl/crypto.h>
@@ -45,6 +45,7 @@ extern "C" {
 #define SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM 2
 #define SSL_TSI_TEST_BAD_SERVER_KEY_CERT_PAIRS_NUM 1
 #define SSL_TSI_TEST_CREDENTIALS_DIR "src/core/tsi/test_creds/"
+#define SSL_TSI_TEST_WRONG_SNI "test.google.cn"
 
 // OpenSSL 1.1 uses AES256 for encryption session ticket by default so specify
 // different STEK size.
@@ -308,10 +309,14 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
     check_security_level(&peer);
-    if (ssl_fixture->server_name_indication != nullptr) {
-      check_server1_peer(&peer);
-    } else {
+    if (ssl_fixture->server_name_indication == nullptr ||
+        strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_WRONG_SNI) ==
+            0) {
+      // Expect server to use default server0.pem.
       check_server0_peer(&peer);
+    } else {
+      // Expect server to use server1.pem.
+      check_server1_peer(&peer);
     }
   } else {
     GPR_ASSERT(ssl_fixture->base.client_result == nullptr);
@@ -547,6 +552,19 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->server_name_indication =
       const_cast<char*>("juju.test.google.fr");
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
+void ssl_tsi_test_do_handshake_with_wrong_server_name_indication() {
+  gpr_log(GPR_INFO,
+          "ssl_tsi_test_do_handshake_with_wrong_server_name_indication");
+  /* server certs do not contain "test.google.cn". */
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  ssl_fixture->server_name_indication =
+      const_cast<char*>(SSL_TSI_TEST_WRONG_SNI);
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
@@ -915,6 +933,7 @@ int main(int argc, char** argv) {
   ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
   ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
   ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
+  ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
   ssl_tsi_test_do_handshake_with_bad_server_cert();
   ssl_tsi_test_do_handshake_with_bad_client_cert();
 #ifdef OPENSSL_IS_BORINGSSL

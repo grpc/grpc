@@ -56,6 +56,7 @@ py_binary(
     python_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/interop:resources",
         "//src/python/grpcio_tests/tests/interop:server",
         "//src/python/grpcio_tests/tests_aio/unit:_test_server",
     ],
@@ -70,5 +71,6 @@ py_binary(
         ":methods",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/interop:client",
+        "//src/python/grpcio_tests/tests/interop:resources",
     ],
 )

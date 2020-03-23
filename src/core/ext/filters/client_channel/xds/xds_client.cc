@@ -716,6 +716,11 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                     grpc_schedule_on_exec_ctx);
   if (xds_client()->service_config_watcher_ != nullptr) {
     Subscribe(XdsApi::kLdsTypeUrl, xds_client()->server_name_);
+    if (xds_client()->lds_result_.has_value() &&
+        !xds_client()->lds_result_->route_config_name.empty()) {
+      Subscribe(XdsApi::kRdsTypeUrl,
+                xds_client()->lds_result_->route_config_name);
+    }
   }
   for (const auto& p : xds_client()->cluster_map_) {
     Subscribe(XdsApi::kCdsTypeUrl, std::string(p.first));
@@ -894,7 +899,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
             "[xds_client %p] LDS update received: route_config_name=%s, "
             "cluster_name=%s",
             xds_client(),
-            (lds_update->route_config_name.empty()
+            (!lds_update->route_config_name.empty()
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"),
             (lds_update->rds_update.has_value()
