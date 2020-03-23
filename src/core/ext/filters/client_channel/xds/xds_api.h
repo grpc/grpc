@@ -43,9 +43,15 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
+  struct RdsRoute {
+    std::string service;
+    std::string method;
+    std::string action_type;
+    std::string action_name;
+  };
+
   struct RdsUpdate {
-    // The name to use in the CDS request.
-    std::string cluster_name;
+    std::vector<RdsRoute> routes;
   };
 
   struct LdsUpdate {

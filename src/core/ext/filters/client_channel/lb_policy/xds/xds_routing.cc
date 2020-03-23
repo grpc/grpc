@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
 
@@ -52,17 +53,23 @@ class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
   };
 
+  using Matcher = std::pair<std::string, std::string>;
+  using RouteVector = std::vector<std::pair<Matcher, std::string>>;
   using ActionMap = std::map<std::string, ChildConfig>;
 
-  explicit XdsRoutingLbConfig(ActionMap action_map)
-      : action_map_(std::move(action_map)) {}
+  explicit XdsRoutingLbConfig(ActionMap action_map, RouteVector route_vector)
+      : action_map_(std::move(action_map)),
+        route_vector_(std::move(route_vector)) {}
 
   const char* name() const override { return kXdsRouting; }
 
   const ActionMap& action_map() const { return action_map_; }
 
+  const RouteVector& route_vector() const { return route_vector_; }
+
  private:
   ActionMap action_map_;
+  RouteVector route_vector_;
 };
 
 // xds_routing LB policy.
@@ -80,12 +87,15 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   // A simple wrapper for ref-counting a picker from the child policy.
   class ChildPickerWrapper : public RefCounted<ChildPickerWrapper> {
    public:
-    explicit ChildPickerWrapper(std::unique_ptr<SubchannelPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) {
-      return picker_->Pick(std::move(args)); }
+    explicit ChildPickerWrapper(const std::string& name,
+                                std::unique_ptr<SubchannelPicker> picker)
+        : name_(name), picker_(std::move(picker)) {}
+    PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+
+    std::string name() { return name_; }
 
    private:
+    std::string name_;
     std::unique_ptr<SubchannelPicker> picker_;
   };
 
@@ -99,7 +109,9 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // is the previous value in the vector and is 0 for the first element.
     using PickerList = InlinedVector<RefCountedPtr<ChildPickerWrapper>, 1>;
 
-    XdsRoutingPicker(RefCountedPtr<XdsRoutingLb> parent, PickerList pickers)
+    using PickerMap = std::map<std::string, RefCountedPtr<ChildPickerWrapper>>;
+
+    XdsRoutingPicker(RefCountedPtr<XdsRoutingLb> parent, PickerMap pickers)
         : parent_(std::move(parent)), pickers_(std::move(pickers)) {}
     ~XdsRoutingPicker() { parent_.reset(DEBUG_LOCATION, "XdsRoutingPicker"); }
 
@@ -107,13 +119,14 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
    private:
     RefCountedPtr<XdsRoutingLb> parent_;
-    PickerList pickers_;
+    PickerMap pickers_;
   };
 
   // Each XdsRoutingChild holds a ref to its parent XdsRoutingLb.
   class XdsRoutingChild : public InternallyRefCounted<XdsRoutingChild> {
    public:
-    XdsRoutingChild(RefCountedPtr<XdsRoutingLb> xds_routing_policy, const std::string& name);
+    XdsRoutingChild(RefCountedPtr<XdsRoutingLb> xds_routing_policy,
+                    const std::string& name);
     ~XdsRoutingChild();
 
     void Orphan() override;
@@ -131,6 +144,8 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     RefCountedPtr<ChildPickerWrapper> picker_wrapper() const {
       return picker_wrapper_;
     }
+
+    std::string name() const { return name_; }
 
    private:
     class Helper : public ChannelControlHelper {
@@ -200,8 +215,31 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 //
 
 XdsRoutingLb::PickResult XdsRoutingLb::XdsRoutingPicker::Pick(PickArgs args) {
-  gpr_log(GPR_INFO, "donna picked first first");
-  return pickers_[0]->Pick(args);
+  std::string path;
+  for (const auto& p : *(args.initial_metadata)) {
+    if (memcmp(p.first.data(), ":path", static_cast<int>(p.first.size())) ==
+        0) {
+      path = std::string(p.second.data(), static_cast<int>(p.second.size()));
+      break;
+    }
+  }
+  std::vector<std::string> v = absl::StrSplit(path, '/');
+  GPR_DEBUG_ASSERT(v.size() == 3);
+  std::string service = v[1];
+  std::string method = v[2];
+  for (int i = 0; i < parent_->config_->route_vector().size(); ++i) {
+    if (service == parent_->config_->route_vector()[i].first.first &&
+        ("" == parent_->config_->route_vector()[i].first.second ||
+         method == parent_->config_->route_vector()[i].first.second)) {
+      auto picker = pickers_.find(parent_->config_->route_vector()[i].second);
+      if (picker != pickers_.end()) {
+        gpr_log(GPR_INFO, "XdsRouting Picked: %s for path %s",
+                picker->first.c_str(), path.c_str());
+        return picker->second.get()->Pick(args);
+      }
+    }
+  }
+  return pickers_.begin()->second.get()->Pick(args);
 }
 
 //
@@ -217,7 +255,8 @@ XdsRoutingLb::XdsRoutingLb(Args args)
 
 XdsRoutingLb::~XdsRoutingLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_routing_lb %p] destroying xds_routing LB policy", this);
+    gpr_log(GPR_INFO, "[xds_routing_lb %p] destroying xds_routing LB policy",
+            this);
   }
 }
 
@@ -266,8 +305,8 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
     auto it = actions_.find(name);
     if (it == actions_.end()) {
       it = actions_.emplace(std::make_pair(name, nullptr)).first;
-      it->second =
-          MakeOrphanable<XdsRoutingChild>(Ref(DEBUG_LOCATION, "XdsRoutingChild"), it->first);
+      it->second = MakeOrphanable<XdsRoutingChild>(
+          Ref(DEBUG_LOCATION, "XdsRoutingChild"), it->first);
     }
     it->second->UpdateLocked(config, args.addresses, args.args);
   }
@@ -278,7 +317,7 @@ void XdsRoutingLb::UpdateStateLocked() {
   // that are ready. Each child is represented by a portion of the range
   // proportional to its weight, such that the total range is the sum of the
   // weights of all children.
-  XdsRoutingPicker::PickerList picker_list;
+  XdsRoutingPicker::PickerMap picker_map;
   // Also count the number of children in each state, to determine the
   // overall state.
   size_t num_connecting = 0;
@@ -293,7 +332,7 @@ void XdsRoutingLb::UpdateStateLocked() {
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
-        picker_list.push_back(child->picker_wrapper());
+        picker_map[child_name] = child->picker_wrapper();
         break;
       }
       case GRPC_CHANNEL_CONNECTING: {
@@ -314,7 +353,7 @@ void XdsRoutingLb::UpdateStateLocked() {
   }
   // Determine aggregated connectivity state.
   grpc_connectivity_state connectivity_state;
-  if (picker_list.size() > 0) {
+  if (picker_map.size() > 0) {
     connectivity_state = GRPC_CHANNEL_READY;
   } else if (num_connecting > 0) {
     connectivity_state = GRPC_CHANNEL_CONNECTING;
@@ -330,8 +369,8 @@ void XdsRoutingLb::UpdateStateLocked() {
   std::unique_ptr<SubchannelPicker> picker;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = absl::make_unique<XdsRoutingPicker>(Ref(DEBUG_LOCATION, "XdsRoutingPicker"),
-                                            std::move(picker_list));
+      picker = absl::make_unique<XdsRoutingPicker>(
+          Ref(DEBUG_LOCATION, "XdsRoutingPicker"), std::move(picker_map));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
@@ -350,8 +389,8 @@ void XdsRoutingLb::UpdateStateLocked() {
 // XdsRoutingLb::XdsRoutingChild
 //
 
-XdsRoutingLb::XdsRoutingChild::XdsRoutingChild(RefCountedPtr<XdsRoutingLb> xds_routing_policy,
-                          const std::string& name)
+XdsRoutingLb::XdsRoutingChild::XdsRoutingChild(
+    RefCountedPtr<XdsRoutingLb> xds_routing_policy, const std::string& name)
     : xds_routing_policy_(std::move(xds_routing_policy)), name_(name) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_routing_lb %p] created XdsRoutingChild %p for %s",
@@ -361,7 +400,8 @@ XdsRoutingLb::XdsRoutingChild::XdsRoutingChild(RefCountedPtr<XdsRoutingLb> xds_r
 
 XdsRoutingLb::XdsRoutingChild::~XdsRoutingChild() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_routing_lb %p] XdsRoutingChild %p %s: destroying child",
+    gpr_log(GPR_INFO,
+            "[xds_routing_lb %p] XdsRoutingChild %p %s: destroying child",
             xds_routing_policy_.get(), this, name_.c_str());
   }
   xds_routing_policy_.reset(DEBUG_LOCATION, "XdsRoutingChild");
@@ -369,7 +409,8 @@ XdsRoutingLb::XdsRoutingChild::~XdsRoutingChild() {
 
 void XdsRoutingLb::XdsRoutingChild::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_routing_lb %p] XdsRoutingChild %p %s: shutting down child",
+    gpr_log(GPR_INFO,
+            "[xds_routing_lb %p] XdsRoutingChild %p %s: shutting down child",
             xds_routing_policy_.get(), this, name_.c_str());
   }
   // Remove the child policy's interested_parties pollset_set from the
@@ -387,7 +428,8 @@ void XdsRoutingLb::XdsRoutingChild::Orphan() {
   Unref();
 }
 
-OrphanablePtr<LoadBalancingPolicy> XdsRoutingLb::XdsRoutingChild::CreateChildPolicyLocked(
+OrphanablePtr<LoadBalancingPolicy>
+XdsRoutingLb::XdsRoutingChild::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = xds_routing_policy_->combiner();
@@ -411,9 +453,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsRoutingLb::XdsRoutingChild::CreateChildPol
   return lb_policy;
 }
 
-void XdsRoutingLb::XdsRoutingChild::UpdateLocked(const XdsRoutingLbConfig::ChildConfig& config,
-                                   const ServerAddressList& addresses,
-                                   const grpc_channel_args* args) {
+void XdsRoutingLb::XdsRoutingChild::UpdateLocked(
+    const XdsRoutingLbConfig::ChildConfig& config,
+    const ServerAddressList& addresses, const grpc_channel_args* args) {
   if (xds_routing_policy_->shutting_down_) return;
   // Update child weight.
   // Reactivate if needed.
@@ -434,12 +476,15 @@ void XdsRoutingLb::XdsRoutingChild::UpdateLocked(const XdsRoutingLbConfig::Child
     gpr_log(GPR_INFO,
             "[xds_routing_lb %p] XdsRoutingChild %p %s: Updating child "
             "policy handler %p",
-            xds_routing_policy_.get(), this, name_.c_str(), child_policy_.get());
+            xds_routing_policy_.get(), this, name_.c_str(),
+            child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
 }
 
-void XdsRoutingLb::XdsRoutingChild::ExitIdleLocked() { child_policy_->ExitIdleLocked(); }
+void XdsRoutingLb::XdsRoutingChild::ExitIdleLocked() {
+  child_policy_->ExitIdleLocked();
+}
 
 void XdsRoutingLb::XdsRoutingChild::ResetBackoffLocked() {
   child_policy_->ResetBackoffLocked();
@@ -459,7 +504,8 @@ void XdsRoutingLb::XdsRoutingChild::DeactivateLocked() {
   delayed_removal_timer_callback_pending_ = true;
 }
 
-void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimer(void* arg, grpc_error* error) {
+void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimer(void* arg,
+                                                          grpc_error* error) {
   XdsRoutingChild* self = static_cast<XdsRoutingChild*>(arg);
   self->xds_routing_policy_->combiner()->Run(
       GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
@@ -467,8 +513,8 @@ void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimer(void* arg, grpc_error*
       GRPC_ERROR_REF(error));
 }
 
-void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimerLocked(void* arg,
-                                                  grpc_error* error) {
+void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimerLocked(
+    void* arg, grpc_error* error) {
   XdsRoutingChild* self = static_cast<XdsRoutingChild*>(arg);
   self->delayed_removal_timer_callback_pending_ = false;
   if (error == GRPC_ERROR_NONE && !self->shutdown_) {
@@ -481,21 +527,23 @@ void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimerLocked(void* arg,
 // XdsRoutingLb::XdsRoutingChild::Helper
 //
 
-RefCountedPtr<SubchannelInterface> XdsRoutingLb::XdsRoutingChild::Helper::CreateSubchannel(
+RefCountedPtr<SubchannelInterface>
+XdsRoutingLb::XdsRoutingChild::Helper::CreateSubchannel(
     const grpc_channel_args& args) {
-  gpr_log(GPR_INFO, "donna XdsRoutingChild::Helper::CreateSubchannel");
+  gpr_log(GPR_INFO, "XdsRoutingChild::Helper::CreateSubchannel");
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return nullptr;
-  return xds_routing_child_->xds_routing_policy_->channel_control_helper()->CreateSubchannel(
-      args);
+  return xds_routing_child_->xds_routing_policy_->channel_control_helper()
+      ->CreateSubchannel(args);
 }
 
 void XdsRoutingLb::XdsRoutingChild::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
-  gpr_log(GPR_INFO, "donna XdsRoutingChild::Helper::UpdateState");
+  gpr_log(GPR_INFO, "XdsRoutingChild::Helper::UpdateState %s",
+          xds_routing_child_->name().c_str());
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
   // Cache the picker in the XdsRoutingChild.
-  xds_routing_child_->picker_wrapper_ =
-      MakeRefCounted<ChildPickerWrapper>(std::move(picker));
+  xds_routing_child_->picker_wrapper_ = MakeRefCounted<ChildPickerWrapper>(
+      xds_routing_child_->name(), std::move(picker));
   // Decide what state to report for aggregation purposes.
   // If we haven't seen a failure since the last time we were in state
   // READY, then we report the state change as-is.  However, once we do see
@@ -516,14 +564,15 @@ void XdsRoutingLb::XdsRoutingChild::Helper::UpdateState(
 
 void XdsRoutingLb::XdsRoutingChild::Helper::RequestReresolution() {
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
-  xds_routing_child_->xds_routing_policy_->channel_control_helper()->RequestReresolution();
+  xds_routing_child_->xds_routing_policy_->channel_control_helper()
+      ->RequestReresolution();
 }
 
-void XdsRoutingLb::XdsRoutingChild::Helper::AddTraceEvent(TraceSeverity severity,
-                                            StringView message) {
+void XdsRoutingLb::XdsRoutingChild::Helper::AddTraceEvent(
+    TraceSeverity severity, StringView message) {
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
-  xds_routing_child_->xds_routing_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                   message);
+  xds_routing_child_->xds_routing_policy_->channel_control_helper()
+      ->AddTraceEvent(severity, message);
 }
 
 //
@@ -565,11 +614,14 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
       for (const auto& p : it->second.array_value()) {
         auto it_cds = p.object_value().find("cds");
         auto it_weighted_target = p.object_value().find("weighted_target");
-        if (it_cds == p.object_value().end() && it_weighted_target == p.object_value().end()) {
+        if (it_cds == p.object_value().end() &&
+            it_weighted_target == p.object_value().end()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:actions error: each action needs to be either cds or weighted target"));
+              "field:actions error: each action needs to be either cds or "
+              "weighted target"));
         }
-        auto it_name = (it_cds == p.object_value().end() ? it_weighted_target : it_cds);
+        auto it_name =
+            (it_cds == p.object_value().end() ? it_weighted_target : it_cds);
         auto it_child_policy = p.object_value().find("child_policy");
         if (it_child_policy == p.object_value().end()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -594,12 +646,57 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
         }
       }
     }
+    XdsRoutingLbConfig::RouteVector route_vector;
+    auto route_iter = json.object_value().find("routes");
+    if (route_iter == json.object_value().end()) {
+      gpr_log(GPR_INFO, "No routes specified");
+    } else if (route_iter->second.type() != Json::Type::ARRAY) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:routes error:type should be array"));
+    } else {
+      for (const auto& p : route_iter->second.array_value()) {
+        auto method_name = p.object_value().find("methodName");
+        if (method_name == p.object_value().end()) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:routes error:methodName is required"));
+        } else {
+          auto action_name = p.object_value().find("action");
+          if (action_name == p.object_value().end()) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "field:routes error:action is required"));
+          } else {
+            XdsRoutingLbConfig::Matcher matcher;
+            auto service = method_name->second.object_value().find("service");
+            auto method = method_name->second.object_value().find("method");
+            if (service == method_name->second.object_value().end() &&
+                method != method_name->second.object_value().end()) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:methodName error: service is empty when method is "
+                  "not"));
+            }
+            if (service != method_name->second.object_value().end()) {
+              matcher.first = service->second.string_value();
+            } else {
+              matcher.first = "";
+            }
+            if (method != method_name->second.object_value().end()) {
+              matcher.second = method->second.string_value();
+            } else {
+              matcher.first = "";
+            }
+            route_vector.emplace_back(matcher,
+                                      action_name->second.string_value());
+          }
+        }
+      }
+    }
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "xds_routing_experimental LB policy config", &error_list);
       return nullptr;
     }
-    return MakeRefCounted<XdsRoutingLbConfig>(std::move(action_map));
+    return MakeRefCounted<XdsRoutingLbConfig>(std::move(action_map),
+                                              std::move(route_vector));
   }
 
  private:

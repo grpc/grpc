@@ -218,8 +218,15 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
+  char* CreateServiceConfigActionCluster(
+      const std::string& cluster_name, const bool without_comma = false) const;
+  char* CreateServiceConfigRoute(const std::string& prefix,
+                                 const std::string& service,
+                                 const std::string& method,
+                                 const bool without_comma = false) const;
+
   grpc_error* CreateServiceConfig(
-      const std::string& cluster_name,
+      const XdsApi::RdsUpdate& rds_update,
       RefCountedPtr<ServiceConfig>* service_config) const;
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot();

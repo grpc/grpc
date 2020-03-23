@@ -24,6 +24,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -1011,34 +1012,61 @@ grpc_error* RouteConfigParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No route found in the virtual host.");
   }
-  // Only look at the last one in the route list (the default route),
-  const envoy_api_v2_route_Route* route = routes[size - 1];
-  // Validate that the match field must have a prefix field which is an empty
-  // string.
-  const envoy_api_v2_route_RouteMatch* match =
-      envoy_api_v2_route_Route_match(route);
-  if (!envoy_api_v2_route_RouteMatch_has_prefix(match)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No prefix field found in RouteMatch.");
+
+  for (size_t i = 0; i < size; ++i) {
+    const envoy_api_v2_route_Route* route = routes[i];
+    const envoy_api_v2_route_RouteMatch* match =
+        envoy_api_v2_route_Route_match(route);
+    XdsApi::RdsRoute rds_route;
+    const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
+    const upb_strview path = envoy_api_v2_route_RouteMatch_path(match);
+    if (!upb_strview_eql(prefix, upb_strview_makez(""))) {
+      std::string prefix_string = std::string(prefix.data, prefix.size);
+      std::vector<std::string> v = absl::StrSplit(prefix_string, '/');
+      if (v.size() != 2) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Prefix not in the required format of /service/");
+      }
+      rds_route.service = v[1];
+      if (!upb_strview_eql(path, upb_strview_makez(""))) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Prefix is not empty string, path cannot also be non-empty.");
+      }
+    } else if (!upb_strview_eql(path, upb_strview_makez(""))) {
+      std::string path_string = std::string(path.data, path.size);
+      std::vector<std::string> v = absl::StrSplit(path_string, '/');
+      if (v.size() != 3) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Path not in the required format of /service/method");
+      }
+      rds_route.service = v[1];
+      rds_route.method = v[2];
+      if (!upb_strview_eql(prefix, upb_strview_makez(""))) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Path is not empty string, prefix cannot also be non-empty.");
+      }
+    }
+    if (!envoy_api_v2_route_Route_has_route(route)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No RouteAction found in route.");
+    }
+    const envoy_api_v2_route_RouteAction* route_action =
+        envoy_api_v2_route_Route_route(route);
+    // Get the cluster in the RouteAction.
+    if (!envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No cluster found in RouteAction.");
+    }
+    const upb_strview action =
+        envoy_api_v2_route_RouteAction_cluster(route_action);
+    rds_route.action_name = std::string(action.data, action.size);
+    rds_update->routes.emplace_back(std::move(rds_route));
+    gpr_log(GPR_INFO, "RouteConfigParse a route %s %s %s %s",
+            rds_update->routes[i].service.c_str(),
+            rds_update->routes[i].method.c_str(),
+            rds_update->routes[i].action_type.c_str(),
+            rds_update->routes[i].action_name.c_str());
   }
-  const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
-  if (!upb_strview_eql(prefix, upb_strview_makez(""))) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Prefix is not empty string.");
-  }
-  if (!envoy_api_v2_route_Route_has_route(route)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No RouteAction found in route.");
-  }
-  const envoy_api_v2_route_RouteAction* route_action =
-      envoy_api_v2_route_Route_route(route);
-  // Get the cluster in the RouteAction.
-  if (!envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No cluster found in RouteAction.");
-  }
-  const upb_strview cluster =
-      envoy_api_v2_route_RouteAction_cluster(route_action);
-  rds_update->cluster_name = std::string(cluster.data, cluster.size);
   return GRPC_ERROR_NONE;
 }
 

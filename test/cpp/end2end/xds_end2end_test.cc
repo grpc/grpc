@@ -1921,6 +1921,91 @@ TEST_P(LdsTest, Timeout) {
   CheckRpcSendFailure();
 }
 
+TEST_P(LdsTest, XdsRoutingPathMatching) {
+  const char* kNewClusterName = "new_cluster_name";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(0, 2);
+  // Populate new EDS resource.
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 4)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewClusterName),
+      kNewClusterName);
+  // Populate new CDS resource.
+  Cluster new_cluster = balancers_[0]->ads_service()->default_cluster();
+  new_cluster.set_name(kNewClusterName);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster, kNewClusterName);
+  // Change RDS resource to point to new cluster.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->set_path("/grpc.testing.EchoTestService/Echo");
+  //->set_prefix("/dgrpc.testing.EchoTestService");
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  Listener listener =
+      balancers_[0]->ads_service()->BuildListener(new_route_config);
+  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  // Wait for all new backends to be used.
+  std::tuple<int, int, int> counts = WaitForAllBackends(2, 4);
+  // Make sure no RPCs failed in the transition.
+  EXPECT_EQ(0, std::get<1>(counts));
+}
+
+TEST_P(LdsTest, XdsRoutingPrefixMatching) {
+  const char* kNewClusterName = "new_cluster_name";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(0, 2);
+  // Populate new EDS resource.
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 4)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewClusterName),
+      kNewClusterName);
+  // Populate new CDS resource.
+  Cluster new_cluster = balancers_[0]->ads_service()->default_cluster();
+  new_cluster.set_name(kNewClusterName);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster, kNewClusterName);
+  // Change RDS resource to point to new cluster.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->set_prefix("/grpc.testing.EchoTestService");
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  Listener listener =
+      balancers_[0]->ads_service()->BuildListener(new_route_config);
+  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  // Wait for all new backends to be used.
+  std::tuple<int, int, int> counts = WaitForAllBackends(2, 4);
+  // Make sure no RPCs failed in the transition.
+  EXPECT_EQ(0, std::get<1>(counts));
+}
+
 using RdsTest = BasicTest;
 
 // Tests that RDS client should send an ACK upon correct RDS response.
