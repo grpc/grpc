@@ -22,7 +22,7 @@ cd grpc/examples/python/xds
 ```sh
 virtualenv venv -p python3
 source venv/bin/activate
-pip install grpcio protobuf
+pip install grpcio protobuf grpcio-reflection grpcio-health-checking
 python server.py
 ```
 
