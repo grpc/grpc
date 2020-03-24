@@ -1107,10 +1107,13 @@ try:
             result.returncode = 0
         except Exception as e:
             result.state = 'FAILED'
-            result.message = str(e).encode('UTF-8')
+            result.message = str(e)
         finally:
             if client_process:
                 client_process.terminate()
+            # Workaround for Python 3, as report_utils will invoke decode() on
+            # result.message, which has a default value of ''.
+            result.message = result.message.encode('UTF-8')
             test_results[test_case] = [result]
     if not os.path.exists(_TEST_LOG_BASE_DIR):
         os.makedirs(_TEST_LOG_BASE_DIR)
