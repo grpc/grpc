@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
-from typing import List, Tuple, AnyStr, Iterator, Any
+from typing import List, Tuple, Iterator, Any, Text, Union
 from collections import abc, OrderedDict
+
+MetadataKey = Text
+MetadataValue = Union[str, bytes]
 
 
 class Metadata(abc.Mapping):
@@ -29,12 +32,12 @@ class Metadata(abc.Mapping):
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
 
-    def __init__(self, *args: Tuple[str, AnyStr]) -> None:
+    def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
 
-    def add(self, key: str, value: str) -> None:
+    def add(self, key: MetadataKey, value: MetadataValue) -> None:
         self._metadata.setdefault(key, [])
         self._metadata[key].append(value)
 
@@ -44,7 +47,7 @@ class Metadata(abc.Mapping):
         """
         return sum(map(len, self._metadata.values()))
 
-    def __getitem__(self, key: str) -> str:
+    def __getitem__(self, key: MetadataKey) -> MetadataValue:
         """When calling <metadata>[<key>], the first element of all those
         mapped for <key> is returned.
         """
@@ -53,7 +56,7 @@ class Metadata(abc.Mapping):
         except (ValueError, IndexError) as e:
             raise KeyError("{0!r}".format(key)) from e
 
-    def __setitem__(self, key: str, value: AnyStr) -> None:
+    def __setitem__(self, key: MetadataKey, value: MetadataValue) -> None:
         """Calling metadata[<key>] = <value>
         Maps <value> to the first instance of <key>.
         """
@@ -63,40 +66,40 @@ class Metadata(abc.Mapping):
             current_values = self.get_all(key)
             self._metadata[key] = [value, *current_values[1:]]
 
-    def __delitem__(self, key: str) -> None:
+    def __delitem__(self, key: MetadataKey) -> None:
         """``del metadata[<key>]`` deletes the first mapping for <key>."""
         current_values = self.get_all(key)
         if not current_values:
             raise KeyError(repr(key))
         self._metadata[key] = current_values[1:]
 
-    def delete_all(self, key: str) -> None:
+    def delete_all(self, key: MetadataKey) -> None:
         """Delete all mappings for <key>."""
         del self._metadata[key]
 
-    def __iter__(self) -> Iterator[Tuple[str, AnyStr]]:
+    def __iter__(self) -> Iterator[Tuple[MetadataKey, MetadataValue]]:
         for key, values in self._metadata.items():
             for value in values:
                 yield (key, value)
 
-    def get_all(self, key: str) -> List[str]:
+    def get_all(self, key: MetadataKey) -> List[MetadataValue]:
         """For compatibility with other Metadata abstraction objects (like in Java),
         this would return all items under the desired <key>.
         """
         return self._metadata.get(key, [])
 
-    def set_all(self, key: str, values: List[AnyStr]) -> None:
+    def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
         self._metadata[key] = values
 
-    def __contains__(self, key: str) -> bool:
+    def __contains__(self, key: MetadataKey) -> bool:
         return key in self._metadata
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
-            return NotImplemented
+            return NotImplemented  # pytype: disable=bad-return-type
 
         return self._metadata == other._metadata
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         view = tuple(self)
         return "{0}({1!r})".format(self.__class__.__name__, view)
