@@ -236,6 +236,9 @@ void check_server0_peer(tsi_peer* peer) {
              nullptr);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "foo.test.google.com.au") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bar.test.google.com.au") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "BAR.TEST.GOOGLE.COM.AU") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "Bar.Test.Google.Com.Au") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bAr.TeST.gOOgle.cOm.AU") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bar.test.google.blah") == 0);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "foo.bar.test.google.com.au") ==
              0);

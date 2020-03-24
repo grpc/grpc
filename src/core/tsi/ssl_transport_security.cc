@@ -35,6 +35,8 @@
 #include <sys/socket.h>
 #endif
 
+#include "absl/strings/match.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -1658,7 +1660,7 @@ static int does_entry_match_name(grpc_core::StringView entry,
     if (entry.empty()) return 0;
   }
 
-  if (name == entry) {
+  if (absl::EqualsIgnoreCase(name, entry)) {
     return 1; /* Perfect match. */
   }
   if (entry.front() != '*') return 0;
@@ -1685,7 +1687,7 @@ static int does_entry_match_name(grpc_core::StringView entry,
   if (name_subdomain.back() == '.') {
     name_subdomain.remove_suffix(1);
   }
-  return !entry.empty() && name_subdomain == entry;
+  return !entry.empty() && absl::EqualsIgnoreCase(name_subdomain, entry);
 }
 
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
