@@ -1069,6 +1069,7 @@ try:
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         test_log_file = open(os.path.join(log_dir, _SPONGE_LOG_NAME), 'w+')
+        client_process = None
         try:
             client_process = subprocess.Popen(client_cmd,
                                               env=client_env,
@@ -1106,6 +1107,7 @@ try:
             result.state = 'PASSED'
             result.returncode = 0
         except Exception as e:
+            logger.error('Test case %s failed: %s' % (test_case, e))
             result.state = 'FAILED'
             result.message = str(e)
         finally:
