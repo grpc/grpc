@@ -17,15 +17,8 @@ import grpc
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 
-# TODO(https://github.com/grpc/grpc/issues/19863): Remove.
-try:
-    from src.python.grpcio_reflection.grpc_reflection.v1alpha \
-        import reflection_pb2 as _reflection_pb2
-    from src.python.grpcio_reflection.grpc_reflection.v1alpha \
-        import reflection_pb2_grpc as _reflection_pb2_grpc
-except ImportError:
-    from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
-    from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
+from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
+from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
 
 _POOL = descriptor_pool.Default()
 SERVICE_NAME = _reflection_pb2.DESCRIPTOR.services_by_name[
@@ -96,10 +89,8 @@ class ReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
             message_descriptor = self._pool.FindMessageTypeByName(
                 containing_type)
             extension_numbers = tuple(
-                sorted(
-                    extension.number
-                    for extension in self._pool.FindAllExtensions(
-                        message_descriptor)))
+                sorted(extension.number for extension in
+                       self._pool.FindAllExtensions(message_descriptor)))
         except KeyError:
             return _not_found_error()
         else:
@@ -111,11 +102,10 @@ class ReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
 
     def _list_services(self):
         return _reflection_pb2.ServerReflectionResponse(
-            list_services_response=_reflection_pb2.ListServiceResponse(
-                service=[
-                    _reflection_pb2.ServiceResponse(name=service_name)
-                    for service_name in self._service_names
-                ]))
+            list_services_response=_reflection_pb2.ListServiceResponse(service=[
+                _reflection_pb2.ServiceResponse(name=service_name)
+                for service_name in self._service_names
+            ]))
 
     def ServerReflectionInfo(self, request_iterator, context):
         # pylint: disable=unused-argument
@@ -138,8 +128,8 @@ class ReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
                 yield _reflection_pb2.ServerReflectionResponse(
                     error_response=_reflection_pb2.ErrorResponse(
                         error_code=grpc.StatusCode.INVALID_ARGUMENT.value[0],
-                        error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1]
-                        .encode(),
+                        error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1].
+                        encode(),
                     ))
 
 

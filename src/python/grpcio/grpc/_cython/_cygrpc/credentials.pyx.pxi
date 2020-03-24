@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import grpc
-import threading
-
 
 def _spawn_callback_in_thread(cb_func, args):
-  ForkManagedThread(target=cb_func, args=args).start()
+  t = ForkManagedThread(target=cb_func, args=args)
+  t.setDaemon(True)
+  t.start()
 
 async_callback_func = _spawn_callback_in_thread
 
@@ -37,12 +34,14 @@ cdef class CallCredentials:
     raise NotImplementedError()
 
 
-cdef int _get_metadata(
-    void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data,
-    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) except * with gil:
+cdef int _get_metadata(void *state,
+                       grpc_auth_metadata_context context,
+                       grpc_credentials_plugin_metadata_cb cb,
+                       void *user_data,
+                       grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                       size_t *num_creds_md,
+                       grpc_status_code *status,
+                       const char **error_details) except * with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -76,7 +75,9 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
     fork_handlers_and_grpc_init()
-    return grpc_metadata_credentials_create_from_plugin(c_metadata_plugin, NULL)
+    # TODO(yihuazhang): Expose min_security_level via the Python API so that
+    # applications can decide what minimum security level their plugins require.
+    return grpc_metadata_credentials_create_from_plugin(c_metadata_plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL)
 
 
 cdef grpc_call_credentials *_composition(call_credentialses):

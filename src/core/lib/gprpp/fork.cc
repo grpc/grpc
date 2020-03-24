@@ -164,7 +164,7 @@ class ThreadState {
   int count_;
 };
 
-}  // namespace
+}  // namespace internal
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
@@ -172,15 +172,15 @@ void Fork::GlobalInit() {
                            MemoryOrder::RELAXED);
   }
   if (support_enabled_.Load(MemoryOrder::RELAXED)) {
-    exec_ctx_state_ = grpc_core::New<internal::ExecCtxState>();
-    thread_state_ = grpc_core::New<internal::ThreadState>();
+    exec_ctx_state_ = new internal::ExecCtxState();
+    thread_state_ = new internal::ThreadState();
   }
 }
 
 void Fork::GlobalShutdown() {
   if (support_enabled_.Load(MemoryOrder::RELAXED)) {
-    grpc_core::Delete(exec_ctx_state_);
-    grpc_core::Delete(thread_state_);
+    delete exec_ctx_state_;
+    delete thread_state_;
   }
 }
 

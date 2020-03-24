@@ -31,8 +31,7 @@ char* grpc_base64_encode(const void* data, size_t data_size, int url_safe,
 
 /* estimate the upper bound on size of base64 encoded data. The actual size
  * is guaranteed to be less than or equal to the size returned here. */
-size_t grpc_base64_estimate_encoded_size(size_t data_size, int url_safe,
-                                         int multiline);
+size_t grpc_base64_estimate_encoded_size(size_t data_size, int multiline);
 
 /* Encodes data using base64 and write it to memory pointed to by result. It is
  * the caller's responsibility to allocate enough memory in |result| to fit the

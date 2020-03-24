@@ -107,10 +107,12 @@ def mako_plugin(dictionary):
 
     # build reverse dependency map
     things = {}
-    for thing in dictionary['libs'] + dictionary['targets'] + dictionary['filegroups']:
+    for thing in dictionary['libs'] + dictionary['targets'] + dictionary[
+            'filegroups']:
         things[thing['name']] = thing
         thing['used_by'] = []
-    thing_deps = lambda t: t.get('uses', []) + t.get('filegroups', []) + t.get('deps', [])
+    thing_deps = lambda t: t.get('uses', []) + t.get('filegroups', []) + t.get(
+        'deps', [])
     for thing in things.itervalues():
         done = set()
         todo = thing_deps(thing)
@@ -150,7 +152,7 @@ def mako_plugin(dictionary):
                 lib[lst] = vals
             lib['plugins'] = plugins
         if lib.get('generate_plugin_registry', False):
-            lib['src'].append(
-                'src/core/plugin_registry/%s_plugin_registry.cc' % lib['name'])
+            lib['src'].append('src/core/plugin_registry/%s_plugin_registry.cc' %
+                              lib['name'])
         for lst in FILEGROUP_LISTS:
             lib[lst] = uniquify(lib.get(lst, []))

@@ -32,6 +32,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+using grpc_core::Json;
+
 void grpc_service_account_jwt_access_credentials::reset_cache() {
   GRPC_MDELEM_UNREF(cached_.jwt_md);
   cached_.jwt_md = GRPC_MDNULL;
@@ -50,9 +52,9 @@ grpc_service_account_jwt_access_credentials::
 }
 
 bool grpc_service_account_jwt_access_credentials::get_request_metadata(
-    grpc_polling_entity* pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error** error) {
+    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
+    grpc_credentials_mdelem_array* md_array,
+    grpc_closure* /*on_request_metadata*/, grpc_error** error) {
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
@@ -104,7 +106,7 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
 }
 
 void grpc_service_account_jwt_access_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
+    grpc_credentials_mdelem_array* /*md_array*/, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -136,26 +138,14 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
 }
 
 static char* redact_private_key(const char* json_key) {
-  char* json_copy = gpr_strdup(json_key);
-  grpc_json* json = grpc_json_parse_string(json_copy);
-  if (!json) {
-    gpr_free(json_copy);
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_key, &error);
+  if (error != GRPC_ERROR_NONE || json.type() != Json::Type::OBJECT) {
+    GRPC_ERROR_UNREF(error);
     return gpr_strdup("<Json failed to parse.>");
   }
-  const char* redacted = "<redacted>";
-  grpc_json* current = json->child;
-  while (current) {
-    if (current->type == GRPC_JSON_STRING &&
-        strcmp(current->key, "private_key") == 0) {
-      current->value = const_cast<char*>(redacted);
-      break;
-    }
-    current = current->next;
-  }
-  char* clean_json = grpc_json_dump_to_string(json, 2);
-  gpr_free(json_copy);
-  grpc_json_destroy(json);
-  return clean_json;
+  (*json.mutable_object())["private_key"] = "<redacted>";
+  return gpr_strdup(json.Dump(/*indent=*/2).c_str());
 }
 
 grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(

@@ -118,27 +118,27 @@ void ServerRetryThrottleData::RecordSuccess() {
 
 namespace {
 
-void* copy_server_name(void* key, void* unused) {
+void* copy_server_name(void* key, void* /*unused*/) {
   return gpr_strdup(static_cast<const char*>(key));
 }
 
-long compare_server_name(void* key1, void* key2, void* unused) {
+long compare_server_name(void* key1, void* key2, void* /*unused*/) {
   return strcmp(static_cast<const char*>(key1), static_cast<const char*>(key2));
 }
 
-void destroy_server_retry_throttle_data(void* value, void* unused) {
+void destroy_server_retry_throttle_data(void* value, void* /*unused*/) {
   ServerRetryThrottleData* throttle_data =
       static_cast<ServerRetryThrottleData*>(value);
   throttle_data->Unref();
 }
 
-void* copy_server_retry_throttle_data(void* value, void* unused) {
+void* copy_server_retry_throttle_data(void* value, void* /*unused*/) {
   ServerRetryThrottleData* throttle_data =
       static_cast<ServerRetryThrottleData*>(value);
   return throttle_data->Ref().release();
 }
 
-void destroy_server_name(void* key, void* unused) { gpr_free(key); }
+void destroy_server_name(void* key, void* /*unused*/) { gpr_free(key); }
 
 const grpc_avl_vtable avl_vtable = {
     destroy_server_name, copy_server_name, compare_server_name,

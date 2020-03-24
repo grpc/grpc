@@ -20,7 +20,7 @@
 #include "test/core/bad_client/bad_client.h"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* registered_method) {
+                     void* /*registered_method*/) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)

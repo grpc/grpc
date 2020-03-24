@@ -128,10 +128,9 @@ static void alts_crypter_test_multiple_random_seal_unseal(
   gpr_free(duplicate_buffer2);
 }
 
-static void alts_crypter_test_corrupted_unseal(alts_crypter* server_seal,
-                                               alts_crypter* server_unseal,
-                                               alts_crypter* client_seal,
-                                               alts_crypter* client_unseal) {
+static void alts_crypter_test_corrupted_unseal(
+    alts_crypter* server_seal, alts_crypter* server_unseal,
+    alts_crypter* client_seal, alts_crypter* /*client_unseal*/) {
   size_t data_size = gsec_test_bias_random_uint32(1024) + 1;
   size_t num_overhead_bytes = alts_crypter_num_overhead_bytes(server_seal);
   size_t protected_data_size = data_size + num_overhead_bytes;
@@ -487,7 +486,7 @@ static void alts_crypter_do_generic_tests() {
                                    client_unseal);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   alts_crypter_do_generic_tests();
   return 0;
 }

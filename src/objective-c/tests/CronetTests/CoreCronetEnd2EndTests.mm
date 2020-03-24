@@ -41,7 +41,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -59,7 +59,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data *ffd = grpc_core::New<fullstack_secure_fixture_data>();
+  fullstack_secure_fixture_data *ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
 
   grpc_core::JoinHostPort(&ffd->localaddr, "127.0.0.1", port);
@@ -103,7 +103,7 @@ static void chttp2_init_server_secure_fullstack(grpc_end2end_test_fixture *f,
 
 static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
-  grpc_core::Delete(ffd);
+  delete ffd;
 }
 
 static void cronet_init_client_simple_ssl_secure_fullstack(grpc_end2end_test_fixture *f,
@@ -177,7 +177,7 @@ static char *roots_filename;
 
   grpc_init();
 
-  configureCronet();
+  configureCronet(/*enable_netlog=*/false);
 }
 
 // The tearDown() function is run after all test cases finish running

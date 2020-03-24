@@ -19,7 +19,7 @@ shopt -s nullglob
 
 cd "$(dirname "$0")/../../.."
 
-GRPC_VERSION=$(grep -e "^ *version: " build.yaml | head -n 1 | sed 's/.*: //')
+GRPC_VERSION=$(grep -e "^ *version: " build_handwritten.yaml | head -n 1 | sed 's/.*: //')
 
 INPUT_ARTIFACTS=$KOKORO_GFILE_DIR/github/grpc/artifacts
 INDEX_FILENAME=index.xml
@@ -223,7 +223,7 @@ EOF
 
 # Upload the current build artifacts
 gsutil -m cp -r "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT"
-# Upload directory indicies for subdirectories
+# Upload directory indices for subdirectories
 (
   cd "$LOCAL_BUILD_ROOT"
   find * -type d | while read -r directory

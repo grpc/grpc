@@ -41,6 +41,11 @@ cdef extern from "grpc/byte_buffer_reader.h":
     pass
 
 
+cdef extern from "grpc/impl/codegen/grpc_types.h":
+    ctypedef struct grpc_experimental_completion_queue_functor:
+        void (*functor_run)(grpc_experimental_completion_queue_functor*, int);
+
+
 cdef extern from "grpc/grpc.h":
 
   ctypedef struct grpc_slice:
@@ -325,6 +330,7 @@ cdef extern from "grpc/grpc.h":
   ctypedef struct grpc_op:
     grpc_op_type type "op"
     uint32_t flags
+    void * reserved
     grpc_op_data data
 
   void grpc_init() nogil
@@ -349,6 +355,10 @@ cdef extern from "grpc/grpc.h":
                                          void *reserved) nogil
   void grpc_completion_queue_shutdown(grpc_completion_queue *cq) nogil
   void grpc_completion_queue_destroy(grpc_completion_queue *cq) nogil
+
+  grpc_completion_queue *grpc_completion_queue_create_for_callback(
+    grpc_experimental_completion_queue_functor* shutdown_callback,
+    void *reserved) nogil
 
   grpc_call_error grpc_call_start_batch(
       grpc_call *call, const grpc_op *ops, size_t nops, void *tag,
@@ -422,6 +432,13 @@ cdef extern from "grpc/grpc_security.h":
     GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY
     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+
+  ctypedef enum grpc_security_level:
+    GRPC_SECURITY_MIN
+    GRPC_SECURITY_NONE = GRPC_SECURITY_MIN
+    GRPC_INTEGRITY_ONLY
+    GRPC_PRIVACY_AND_INTEGRITY
+    GRPC_SECURITY_MAX = GRPC_PRIVACY_AND_INTEGRITY
 
   ctypedef enum grpc_ssl_certificate_config_reload_status:
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
@@ -552,7 +569,7 @@ cdef extern from "grpc/grpc_security.h":
     const char *type
 
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
-      grpc_metadata_credentials_plugin plugin, void *reserved) nogil
+      grpc_metadata_credentials_plugin plugin, grpc_security_level min_security_level, void *reserved) nogil
 
   ctypedef struct grpc_auth_property_iterator:
     pass

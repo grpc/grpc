@@ -12,7 +12,7 @@
 #include "envoy/api/v2/core/base.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
-#include "gogoproto/gogo.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 
 #include "upb/port_def.inc"
 

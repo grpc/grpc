@@ -41,11 +41,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "absl/container/inlined_vector.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -190,7 +190,15 @@ struct grpc_fd {
     grpc_iomgr_unregister_object(&iomgr_object);
 
     POLLABLE_UNREF(pollable_obj, "fd_pollable");
-    pollset_fds.clear();
+
+    // To clear out the allocations of pollset_fds, we need to swap its
+    // contents with a newly-constructed (and soon to be destructed) local
+    // variable of its same type. This is because InlinedVector::clear is _not_
+    // guaranteed to actually free up allocations and this is important since
+    // this object doesn't have a conventional destructor.
+    absl::InlinedVector<int, 1> pollset_fds_tmp;
+    pollset_fds_tmp.swap(pollset_fds);
+
     gpr_mu_destroy(&pollable_mu);
     gpr_mu_destroy(&orphan_mu);
 
@@ -232,8 +240,8 @@ struct grpc_fd {
 
   // Protects pollable_obj and pollset_fds.
   gpr_mu pollable_mu;
-  grpc_core::InlinedVector<int, 1> pollset_fds;  // Used in PO_MULTI.
-  pollable* pollable_obj = nullptr;              // Used in PO_FD.
+  absl::InlinedVector<int, 1> pollset_fds;  // Used in PO_MULTI.
+  pollable* pollable_obj = nullptr;         // Used in PO_FD.
 
   grpc_core::LockfreeEvent read_closure;
   grpc_core::LockfreeEvent write_closure;
@@ -352,15 +360,23 @@ static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
             gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
   }
 #else
-#define REF_BY(fd, n, reason) ref_by(fd, n)
-#define UNREF_BY(fd, n, reason) unref_by(fd, n)
+#define REF_BY(fd, n, reason) \
+  do {                        \
+    ref_by(fd, n);            \
+    (void)(reason);           \
+  } while (0)
+#define UNREF_BY(fd, n, reason) \
+  do {                          \
+    unref_by(fd, n);            \
+    (void)(reason);             \
+  } while (0)
 static void ref_by(grpc_fd* fd, int n) {
 #endif
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
 }
 
 /* Uninitialize and add to the freelist */
-static void fd_destroy(void* arg, grpc_error* error) {
+static void fd_destroy(void* arg, grpc_error* /*error*/) {
   grpc_fd* fd = static_cast<grpc_fd*>(arg);
   fd->destroy();
 
@@ -385,7 +401,8 @@ static void unref_by(grpc_fd* fd, int n) {
 #endif
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
-    GRPC_CLOSURE_SCHED(
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(fd_destroy, fd, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   } else {
@@ -479,7 +496,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
      to be alive (and not added to freelist) until the end of this function */
   REF_BY(fd, 1, reason);
 
-  GRPC_CLOSURE_SCHED(fd->on_done_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure, GRPC_ERROR_NONE);
 
   if (pollable_obj) {
     gpr_mu_unlock(&pollable_obj->owner_orphan_mu);
@@ -654,7 +671,8 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
   if (pollset->shutdown_closure != nullptr && pollset->root_worker == nullptr &&
       pollset->containing_pollset_set_count == 0) {
     GPR_TIMER_MARK("pollset_finish_shutdown", 0);
-    GRPC_CLOSURE_SCHED(pollset->shutdown_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_closure,
+                            GRPC_ERROR_NONE);
     pollset->shutdown_closure = nullptr;
     pollset->already_shutdown = true;
   }
@@ -1042,7 +1060,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
 }
 
 static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
-                       grpc_pollset_worker** worker_hdl) {
+                       grpc_pollset_worker** /*worker_hdl*/) {
   GPR_TIMER_SCOPE("end_worker", 0);
   gpr_mu_lock(&pollset->mu);
   gpr_mu_lock(&worker->pollable_obj->mu);
@@ -1542,8 +1560,8 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
   gpr_mu_unlock(&b->mu);
 }
 
-static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                        grpc_pollset_set* item) {}
+static void pollset_set_del_pollset_set(grpc_pollset_set* /*bag*/,
+                                        grpc_pollset_set* /*item*/) {}
 
 /*******************************************************************************
  * Event engine binding
@@ -1553,8 +1571,8 @@ static bool is_any_background_poller_thread(void) { return false; }
 
 static void shutdown_background_closure(void) {}
 
-static bool add_closure_to_background_poller(grpc_closure* closure,
-                                             grpc_error* error) {
+static bool add_closure_to_background_poller(grpc_closure* /*closure*/,
+                                             grpc_error* /*error*/) {
   return false;
 }
 
@@ -1603,7 +1621,7 @@ static const grpc_event_engine_vtable vtable = {
 };
 
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
-    bool explicitly_requested) {
+    bool /*explicitly_requested*/) {
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping epollex because of no wakeup fd.");
     return nullptr;
@@ -1631,7 +1649,7 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
 /* If GRPC_LINUX_EPOLL_CREATE1 is not defined, it means
    epoll_create1 is not available. Return NULL */
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
-    bool explicitly_requested) {
+    bool /*explicitly_requested*/) {
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLLEX) */

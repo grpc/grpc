@@ -72,7 +72,7 @@ func testAllSettingsFramesAcked(ctx *HTTP2InteropCtx) error {
 
 	var settingsFramesReceived = 0
 	// The server by default sends a settings frame as part of the handshake, and another
-	// after the receipt of the initial settings frame as part of our conneection preface.
+	// after the receipt of the initial settings frame as part of our connection preface.
 	// This means we expected 1 + 1 + 10 = 12 settings frames in return, with all but the
 	// first having the ack bit.
 	for settingsFramesReceived < 12 {
@@ -86,7 +86,7 @@ func testAllSettingsFramesAcked(ctx *HTTP2InteropCtx) error {
 			settingsFramesReceived += 1
 			if settingsFramesReceived == 1 {
 				if f.Header.Flags&SETTINGS_FLAG_ACK > 0 {
-					return fmt.Errorf("settings frame should not have used ack: %v")
+					return fmt.Errorf("settings frame should not have used ack: %v", f)
 				}
 				continue
 			}

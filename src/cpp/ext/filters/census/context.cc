@@ -18,10 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "opencensus/tags/context_util.h"
+#include "opencensus/trace/context_util.h"
 #include "src/cpp/ext/filters/census/context.h"
 
 namespace grpc {
 
+using ::opencensus::tags::TagMap;
 using ::opencensus::trace::Span;
 using ::opencensus::trace::SpanContext;
 
@@ -40,7 +43,7 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
       return;
     }
   }
-  new (context) CensusContext(method);
+  new (context) CensusContext(method, TagMap{});
 }
 
 void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
@@ -52,11 +55,19 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
     SpanContext span_ctxt = parent_ctxt->Context();
     Span span = parent_ctxt->Span();
     if (span_ctxt.IsValid()) {
-      new (ctxt) CensusContext(method, &span);
+      new (ctxt) CensusContext(method, &span, TagMap{});
       return;
     }
   }
-  new (ctxt) CensusContext(method);
+  const Span& span = opencensus::trace::GetCurrentSpan();
+  const TagMap& tags = opencensus::tags::GetCurrentTagMap();
+  if (span.context().IsValid()) {
+    // Create span with parent.
+    new (ctxt) CensusContext(method, &span, tags);
+    return;
+  }
+  // Create span without parent.
+  new (ctxt) CensusContext(method, tags);
 }
 
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,

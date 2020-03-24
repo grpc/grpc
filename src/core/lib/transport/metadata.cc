@@ -207,7 +207,7 @@ size_t InternedMetadata::CleanupLinkedMetadata(
     next = md->link_.next;
     if (md->AllRefsDropped()) {
       prev_next->next = next;
-      grpc_core::Delete(md);
+      delete md;
       num_freed++;
     } else {
       prev_next = &md->link_;
@@ -256,9 +256,9 @@ void grpc_mdctx_global_shutdown() {
         abort();
       }
     }
-      // For ASAN builds, we don't want to crash here, because that will
-      // prevent ASAN from providing leak detection information, which is
-      // far more useful than this simple assertion.
+    // For ASAN builds, we don't want to crash here, because that will
+    // prevent ASAN from providing leak detection information, which is
+    // far more useful than this simple assertion.
 #ifndef GRPC_ASAN_ENABLED
     GPR_DEBUG_ASSERT(shard->count == 0);
 #endif
@@ -373,14 +373,13 @@ static grpc_mdelem md_create(
       // We allocate backing store.
       return key_definitely_static
                  ? GRPC_MAKE_MDELEM(
-                       grpc_core::New<AllocatedMetadata>(
+                       new AllocatedMetadata(
                            key, value,
                            static_cast<const AllocatedMetadata::NoRefKey*>(
                                nullptr)),
                        GRPC_MDELEM_STORAGE_ALLOCATED)
-                 : GRPC_MAKE_MDELEM(
-                       grpc_core::New<AllocatedMetadata>(key, value),
-                       GRPC_MDELEM_STORAGE_ALLOCATED);
+                 : GRPC_MAKE_MDELEM(new AllocatedMetadata(key, value),
+                                    GRPC_MDELEM_STORAGE_ALLOCATED);
     }
   }
   return md_create_maybe_static<key_definitely_static, value_definitely_static>(
@@ -456,11 +455,10 @@ static grpc_mdelem md_create_must_intern(const grpc_slice& key,
 
   /* not found: create a new pair */
   md = key_definitely_static
-           ? grpc_core::New<InternedMetadata>(
+           ? new InternedMetadata(
                  key, value, hash, shard->elems[idx].next,
                  static_cast<const InternedMetadata::NoRefKey*>(nullptr))
-           : grpc_core::New<InternedMetadata>(key, value, hash,
-                                              shard->elems[idx].next);
+           : new InternedMetadata(key, value, hash, shard->elems[idx].next);
   shard->elems[idx].next = md;
   shard->count++;
 
@@ -656,7 +654,7 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       auto* md = reinterpret_cast<AllocatedMetadata*> GRPC_MDELEM_DATA(gmd);
       if (GPR_UNLIKELY(md->Unref(FWD_DEBUG_ARGS))) {
-        grpc_core::Delete(md);
+        delete md;
       }
       break;
     }
@@ -674,7 +672,7 @@ void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
       break;
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
-      grpc_core::Delete(reinterpret_cast<AllocatedMetadata*>(ptr));
+      delete reinterpret_cast<AllocatedMetadata*>(ptr);
       break;
     }
   }

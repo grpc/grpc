@@ -21,13 +21,8 @@ import logging
 import argparse
 import grpc
 
-# TODO(https://github.com/grpc/grpc/issues/19863): Remove.
-try:
-    from src.python.grpcio_channelz.grpc_channelz.v1 import channelz_pb2
-    from src.python.grpcio_channelz.grpc_channelz.v1 import channelz_pb2_grpc
-except ImportError:
-    from grpc_channelz.v1 import channelz_pb2
-    from grpc_channelz.v1 import channelz_pb2_grpc
+from grpc_channelz.v1 import channelz_pb2
+from grpc_channelz.v1 import channelz_pb2_grpc
 
 
 def run(addr):
@@ -40,12 +35,11 @@ def run(addr):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--addr',
-        nargs=1,
-        type=str,
-        default='[::]:50051',
-        help='the address to request')
+    parser.add_argument('--addr',
+                        nargs=1,
+                        type=str,
+                        default='[::]:50051',
+                        help='the address to request')
     args = parser.parse_args()
     run(addr=args.addr)
 

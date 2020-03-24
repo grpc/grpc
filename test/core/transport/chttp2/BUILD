@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])  # Apache v2
 
@@ -24,6 +24,7 @@ grpc_fuzzer(
     name = "hpack_parser_fuzzer",
     srcs = ["hpack_parser_fuzzer_test.cc"],
     corpus = "hpack_parser_corpus",
+    tags = ["no_windows"],
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -45,6 +46,7 @@ grpc_cc_test(
     name = "bin_decoder_test",
     srcs = ["bin_decoder_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -56,6 +58,7 @@ grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -70,6 +73,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -81,6 +85,7 @@ grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -92,6 +97,7 @@ grpc_cc_test(
     name = "hpack_parser_test",
     srcs = ["hpack_parser_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -103,6 +109,7 @@ grpc_cc_test(
     name = "hpack_table_test",
     srcs = ["hpack_table_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -127,6 +134,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,  # TODO(b/148399919)
     language = "C++",
     deps = [
         "//:gpr",
@@ -139,6 +147,7 @@ grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",

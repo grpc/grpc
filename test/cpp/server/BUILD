@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/cpp/server")
 
@@ -24,12 +24,12 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -38,12 +38,12 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -52,10 +52,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
     ],
-    tags = ["no_windows"],
 )

@@ -29,26 +29,26 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/util/test_config.h"
 
-static grpc_error* channel_init_func(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* channel_init_func(grpc_channel_element* /*elem*/,
+                                     grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* call_init_func(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* call_init_func(grpc_call_element* /*elem*/,
+                                  const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static void channel_destroy_func(grpc_channel_element* elem) {}
+static void channel_destroy_func(grpc_channel_element* /*elem*/) {}
 
-static void call_destroy_func(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {}
+static void call_destroy_func(grpc_call_element* /*elem*/,
+                              const grpc_call_final_info* /*final_info*/,
+                              grpc_closure* /*ignored*/) {}
 
 bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
-void set_arg_once_fn(grpc_channel_stack* channel_stack,
-                     grpc_channel_element* elem, void* arg) {
+void set_arg_once_fn(grpc_channel_stack* /*channel_stack*/,
+                     grpc_channel_element* /*elem*/, void* arg) {
   bool* called = static_cast<bool*>(arg);
   // Make sure this function is only called once per arg.
   GPR_ASSERT(*called == false);

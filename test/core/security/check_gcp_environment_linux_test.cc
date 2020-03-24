@@ -72,7 +72,7 @@ static void test_gcp_environment_check_failure() {
   GPR_ASSERT(!check_bios_data_linux_test("\n"));
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   /* Tests. */
   test_gcp_environment_check_success();
   test_gcp_environment_check_failure();
@@ -81,6 +81,6 @@ int main(int argc, char** argv) {
 
 #else  // GPR_LINUX
 
-int main(int argc, char** argv) { return 0; }
+int main(int /*argc*/, char** /*argv*/) { return 0; }
 
 #endif  // GPR_LINUX

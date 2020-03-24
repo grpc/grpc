@@ -40,7 +40,14 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+/* TODO(yashykt): When our macos testing infrastructure becomes good enough, we
+ * wouldn't need to reduce the number of threads on MacOS */
+#ifdef __APPLE__
+#define NUM_THREADS 10
+#else
 #define NUM_THREADS 100
+#endif /* __APPLE */
+
 #define NUM_OUTER_LOOPS 10
 #define NUM_INNER_LOOPS 10
 #define DELAY_MILLIS 10
@@ -105,7 +112,7 @@ void server_thread(void* vargs) {
 }
 
 static void on_connect(void* vargs, grpc_endpoint* tcp,
-                       grpc_pollset* accepting_pollset,
+                       grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   struct server_thread_args* args =
@@ -160,7 +167,7 @@ void bad_server_thread(void* vargs) {
   gpr_free(args->addr);
 }
 
-static void done_pollset_shutdown(void* pollset, grpc_error* error) {
+static void done_pollset_shutdown(void* pollset, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }

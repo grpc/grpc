@@ -203,7 +203,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
 }
 
 void grpc_call_stack_ignore_set_pollset_or_pollset_set(
-    grpc_call_element* elem, grpc_polling_entity* pollent) {}
+    grpc_call_element* /*elem*/, grpc_polling_entity* /*pollent*/) {}
 
 void grpc_call_stack_destroy(grpc_call_stack* stack,
                              const grpc_call_final_info* final_info,

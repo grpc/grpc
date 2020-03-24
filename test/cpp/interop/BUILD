@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(
     name = "test/cpp/interop",
@@ -44,13 +44,14 @@ grpc_cc_binary(
         "grpclb_fallback_test.cc",
     ],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
+        "//:grpc++",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
-        "//:grpc++",
     ],
 )
 
@@ -191,6 +192,53 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "xds_interop_client",
+    srcs = [
+        "xds_interop_client.cc",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_binary(
+    name = "xds_interop_server",
+    srcs = [
+        "xds_interop_server.cc",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_binary(
+    name = "http2_client",
+    srcs = [
+        "http2_client.cc",
+        "http2_client.h",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

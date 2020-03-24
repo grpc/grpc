@@ -54,7 +54,7 @@ static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<grpc_chttp2_hpack_compressor> c(
       new grpc_chttp2_hpack_compressor);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_chttp2_hpack_compressor_init(c.get());
     grpc_chttp2_hpack_compressor_destroy(c.get());
     grpc_core::ExecCtx::Get()->Flush();
@@ -131,11 +131,12 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
+    static constexpr int kEnsureMaxFrameAtLeast = 2;
     grpc_encode_header_options hopt = {
         static_cast<uint32_t>(state.iterations()),
         state.range(0) != 0,
         Fixture::kEnableTrueBinary,
-        static_cast<size_t>(state.range(1)),
+        static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
         &stats,
     };
     grpc_chttp2_encode_header(c.get(), nullptr, 0, &b, &hopt, &outbuf);
@@ -435,11 +436,11 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
   grpc_chttp2_hpack_parser p;
   // Initial destruction so we don't leak memory in the loop.
   grpc_chttp2_hptbl_destroy(&p.table);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_chttp2_hpack_parser_init(&p);
     // Note that grpc_chttp2_hpack_parser_destroy frees the table dynamic
     // elements so we need to recreate it here. In actual operation,
-    // grpc_core::New<grpc_chttp2_hpack_parser_destroy> allocates the table once
+    // new grpc_chttp2_hpack_parser_destroy allocates the table once
     // and for all.
     new (&p.table) grpc_chttp2_hptbl();
     grpc_chttp2_hpack_parser_destroy(&p);
@@ -450,7 +451,7 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static grpc_error* UnrefHeader(void* user_data, grpc_mdelem md) {
+static grpc_error* UnrefHeader(void* /*user_data*/, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
 }
@@ -832,7 +833,7 @@ static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
 }
 
 // Benchmark timeout handling
-static grpc_error* OnHeaderTimeout(void* user_data, grpc_mdelem md) {
+static grpc_error* OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
     grpc_millis* cached_timeout =
         static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));

@@ -21,10 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <iterator>
+
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -91,11 +93,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Application-specific requests cost metrics.  Metric names are
     /// determined by the application.  Each value is an absolute cost
     /// (e.g. 3487 bytes of storage) associated with the request.
-    Map<StringView, double, StringLess> request_cost;
+    std::map<StringView, double, StringLess> request_cost;
     /// Application-specific resource utilization metrics.  Metric names
     /// are determined by the application.  Each value is expressed as a
     /// fraction of total resources available.
-    Map<StringView, double, StringLess> utilization;
+    std::map<StringView, double, StringLess> utilization;
   };
 
   /// Interface for accessing per-call state.
@@ -109,23 +111,42 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// automatically freed when the call is complete.
     /// It is more efficient to use this than to allocate memory directly
     /// for allocations that need to be made on a per-call basis.
-    virtual void* Alloc(size_t size) GRPC_ABSTRACT;
+    virtual void* Alloc(size_t size) = 0;
 
     /// Returns the backend metric data returned by the server for the call,
     /// or null if no backend metric data was returned.
-    virtual const BackendMetricData* GetBackendMetricData() GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual const BackendMetricData* GetBackendMetricData() = 0;
   };
 
   /// Interface for accessing metadata.
   /// Implemented by the client channel and used by the SubchannelPicker.
   class MetadataInterface {
    public:
-    // Implementations whose iterators fit in intptr_t may internally
-    // cast this directly to their iterator type.  Otherwise, they may
-    // dynamically allocate their iterators and store the address here.
-    typedef intptr_t Iterator;
+    class iterator
+        : public std::iterator<std::input_iterator_tag,
+                               std::pair<StringView, StringView>,  // value_type
+                               std::ptrdiff_t,  // difference_type
+                               std::pair<StringView, StringView>*,  // pointer
+                               std::pair<StringView, StringView>&   // reference
+                               > {
+     public:
+      iterator(const MetadataInterface* md, intptr_t handle)
+          : md_(md), handle_(handle) {}
+      iterator& operator++() {
+        handle_ = md_->IteratorHandleNext(handle_);
+        return *this;
+      }
+      bool operator==(iterator other) const {
+        return md_ == other.md_ && handle_ == other.handle_;
+      }
+      bool operator!=(iterator other) const { return !(*this == other); }
+      value_type operator*() const { return md_->IteratorHandleGet(handle_); }
+
+     private:
+      friend class MetadataInterface;
+      const MetadataInterface* md_;
+      intptr_t handle_;
+    };
 
     virtual ~MetadataInterface() = default;
 
@@ -134,20 +155,25 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Implementations must ensure that the key and value remain alive
     /// until the call ends.  If desired, they may be allocated via
     /// CallState::Alloc().
-    virtual void Add(StringView key, StringView value) GRPC_ABSTRACT;
+    virtual void Add(StringView key, StringView value) = 0;
 
     /// Iteration interface.
-    virtual Iterator Begin() const GRPC_ABSTRACT;
-    virtual bool IsEnd(Iterator it) const GRPC_ABSTRACT;
-    virtual void Next(Iterator* it) const GRPC_ABSTRACT;
-    virtual StringView Key(Iterator it) const GRPC_ABSTRACT;
-    virtual StringView Value(Iterator it) const GRPC_ABSTRACT;
+    virtual iterator begin() const = 0;
+    virtual iterator end() const = 0;
 
-    /// Removes the element pointed to by \a it, which is modified to
-    /// point to the next element.
-    virtual void Erase(Iterator* it) GRPC_ABSTRACT;
+    /// Removes the element pointed to by \a it.
+    /// Returns an iterator pointing to the next element.
+    virtual iterator erase(iterator it) = 0;
 
-    GRPC_ABSTRACT_BASE_CLASS
+   protected:
+    intptr_t GetIteratorHandle(const iterator& it) const { return it.handle_; }
+
+   private:
+    friend class iterator;
+
+    virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
+    virtual std::pair<StringView /*key*/, StringView /*value */>
+    IteratorHandleGet(intptr_t handle) const = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -194,20 +220,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Used only if type is PICK_COMPLETE.
     /// Callback set by LB policy to be notified of trailing metadata.
-    /// The user_data argument will be set to the
-    /// recv_trailing_metadata_ready_user_data field.
-    /// recv_trailing_metadata will be set to the metadata, which may be
-    /// modified by the callback.  The callback does not take ownership,
-    /// however, so any data that needs to be used after returning must
-    /// be copied.
-    /// call_state can be used to obtain backend metric data.
-    // TODO(roth): Replace grpc_error with something better before we allow
-    // people outside of gRPC team to use this API.
-    void (*recv_trailing_metadata_ready)(
-        void* user_data, grpc_error* error,
-        MetadataInterface* recv_trailing_metadata,
-        CallState* call_state) = nullptr;
-    void* recv_trailing_metadata_ready_user_data = nullptr;
+    /// If set by LB policy, the client channel will invoke the callback
+    /// when trailing metadata is returned.
+    /// The metadata may be modified by the callback.  However, the callback
+    /// does not take ownership, so any data that needs to be used after
+    /// returning must be copied.
+    /// The call state can be used to obtain backend metric data.
+    std::function<void(grpc_error*, MetadataInterface*, CallState*)>
+        recv_trailing_metadata_ready;
   };
 
   /// A subchannel picker is the object used to pick the subchannel to
@@ -229,9 +249,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     SubchannelPicker() = default;
     virtual ~SubchannelPicker() = default;
 
-    virtual PickResult Pick(PickArgs args) GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual PickResult Pick(PickArgs args) = 0;
   };
 
   /// A proxy object implemented by the client channel and used by the
@@ -246,22 +264,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Creates a new subchannel with the specified channel args.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) GRPC_ABSTRACT;
+        const grpc_channel_args& args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
-                             UniquePtr<SubchannelPicker>) GRPC_ABSTRACT;
+                             std::unique_ptr<SubchannelPicker>) = 0;
 
     /// Requests that the resolver re-resolve.
-    virtual void RequestReresolution() GRPC_ABSTRACT;
+    virtual void RequestReresolution() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
-    virtual void AddTraceEvent(TraceSeverity severity,
-                               StringView message) GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual void AddTraceEvent(TraceSeverity severity, StringView message) = 0;
   };
 
   /// Interface for configuration data used by an LB policy implementation.
@@ -272,9 +287,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual ~Config() = default;
 
     // Returns the load balancing policy name
-    virtual const char* name() const GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual const char* name() const = 0;
   };
 
   /// Data passed to the UpdateLocked() method when new addresses and
@@ -289,9 +302,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     UpdateArgs() = default;
     ~UpdateArgs() { grpc_channel_args_destroy(args); }
     UpdateArgs(const UpdateArgs& other);
-    UpdateArgs(UpdateArgs&& other);
+    UpdateArgs(UpdateArgs&& other) noexcept;
     UpdateArgs& operator=(const UpdateArgs& other);
-    UpdateArgs& operator=(UpdateArgs&& other);
+    UpdateArgs& operator=(UpdateArgs&& other) noexcept;
   };
 
   /// Args used to instantiate an LB policy.
@@ -301,13 +314,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // TODO(roth): Once we have a C++-like interface for combiners, this
     // API should change to take a smart pointer that does pass ownership
     // of a reference.
-    grpc_combiner* combiner = nullptr;
+    Combiner* combiner = nullptr;
     /// Channel control helper.
     /// Note: LB policies MUST NOT call any method on the helper from
     /// their constructor.
-    UniquePtr<ChannelControlHelper> channel_control_helper;
+    std::unique_ptr<ChannelControlHelper> channel_control_helper;
     /// Channel args.
     // TODO(roth): Find a better channel args representation for this API.
+    // TODO(roth): Clarify ownership semantics here -- currently, this
+    // does not take ownership of args, which is the opposite of how we
+    // handle them in UpdateArgs.
     const grpc_channel_args* args = nullptr;
   };
 
@@ -319,12 +335,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
 
   /// Returns the name of the LB policy.
-  virtual const char* name() const GRPC_ABSTRACT;
+  virtual const char* name() const = 0;
 
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
   /// the resolver returns a new result.
-  virtual void UpdateLocked(UpdateArgs) GRPC_ABSTRACT;  // NOLINT
+  virtual void UpdateLocked(UpdateArgs) = 0;  // NOLINT
 
   /// Tries to enter a READY connectivity state.
   /// This is a no-op by default, since most LB policies never go into
@@ -332,7 +348,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void ExitIdleLocked() {}
 
   /// Resets connection backoff.
-  virtual void ResetBackoffLocked() GRPC_ABSTRACT;
+  virtual void ResetBackoffLocked() = 0;
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
@@ -370,10 +386,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_error* error_;
   };
 
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
-  grpc_combiner* combiner() const { return combiner_; }
+  Combiner* combiner() const { return combiner_; }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
@@ -382,15 +396,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   }
 
   /// Shuts down the policy.
-  virtual void ShutdownLocked() GRPC_ABSTRACT;
+  virtual void ShutdownLocked() = 0;
 
  private:
   /// Combiner under which LB policy actions take place.
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
-  UniquePtr<ChannelControlHelper> channel_control_helper_;
+  std::unique_ptr<ChannelControlHelper> channel_control_helper_;
 };
 
 }  // namespace grpc_core

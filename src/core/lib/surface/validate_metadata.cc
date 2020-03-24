@@ -67,6 +67,10 @@ grpc_error* grpc_validate_header_key_is_legal(const grpc_slice& slice) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Metadata keys cannot be zero length");
   }
+  if (GRPC_SLICE_LENGTH(slice) > UINT32_MAX) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Metadata keys cannot be larger than UINT32_MAX");
+  }
   if (GRPC_SLICE_START_PTR(slice)[0] == ':') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Metadata keys cannot start with :");

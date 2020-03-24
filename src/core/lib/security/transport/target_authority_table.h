@@ -26,7 +26,7 @@
 namespace grpc_core {
 
 /// A hash table mapping target addresses to authorities.
-typedef SliceHashTable<UniquePtr<char>> TargetAuthorityTable;
+typedef SliceHashTable<grpc_core::UniquePtr<char>> TargetAuthorityTable;
 
 /// Returns a channel argument containing \a table.
 grpc_arg CreateTargetAuthorityTableChannelArg(TargetAuthorityTable* table);

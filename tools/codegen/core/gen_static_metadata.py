@@ -65,7 +65,6 @@ CONFIG = [
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats',
-    '/envoy.api.v2.EndpointDiscoveryService/StreamEndpoints',
     '/grpc.health.v1.Health/Watch',
     '/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources',
     # compression algorithm names
@@ -319,17 +318,15 @@ if args:
         D = open('/dev/null', 'w')
 else:
     H = open(
-        os.path.join(
-            os.path.dirname(sys.argv[0]),
-            '../../../src/core/lib/transport/static_metadata.h'), 'w')
+        os.path.join(os.path.dirname(sys.argv[0]),
+                     '../../../src/core/lib/transport/static_metadata.h'), 'w')
     C = open(
-        os.path.join(
-            os.path.dirname(sys.argv[0]),
-            '../../../src/core/lib/transport/static_metadata.cc'), 'w')
+        os.path.join(os.path.dirname(sys.argv[0]),
+                     '../../../src/core/lib/transport/static_metadata.cc'), 'w')
     D = open(
-        os.path.join(
-            os.path.dirname(sys.argv[0]),
-            '../../../test/core/end2end/fuzzers/hpack.dictionary'), 'w')
+        os.path.join(os.path.dirname(sys.argv[0]),
+                     '../../../test/core/end2end/fuzzers/hpack.dictionary'),
+        'w')
 
 # copy-paste copyright notice from this file
 with open(sys.argv[0]) as my_source:
@@ -482,9 +479,8 @@ for i, elem in enumerate(all_strs):
 print >> C, '};'  # static slices
 print >> C, 'StaticMetadata static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
 for idx, (a, b) in enumerate(all_elems):
-    print >> C, 'StaticMetadata(%s,%s, %d),' % (slice_def_for_ctx(str_idx(a)),
-                                                slice_def_for_ctx(str_idx(b)),
-                                                idx)
+    print >> C, 'StaticMetadata(%s,%s, %d),' % (slice_def_for_ctx(
+        str_idx(a)), slice_def_for_ctx(str_idx(b)), idx)
 print >> C, '};'  # static_mdelem_table
 print >> C, ('''
 /* Warning: the core static metadata currently operates under the soft constraint
@@ -527,7 +523,7 @@ uint64_t StaticMetadataInitCanary() {
 
 void grpc_init_static_metadata_ctx(void) {
   grpc_core::g_static_metadata_slice_ctx
-    = grpc_core::New<grpc_core::StaticMetadataCtx>();
+    = new grpc_core::StaticMetadataCtx();
   grpc_core::g_static_metadata_slice_table
     = grpc_core::g_static_metadata_slice_ctx->slices;
   grpc_core::g_static_metadata_slice_refcounts
@@ -539,8 +535,7 @@ void grpc_init_static_metadata_ctx(void) {
 }
 
 void grpc_destroy_static_metadata_ctx(void) {
-  grpc_core::Delete<grpc_core::StaticMetadataCtx>(
-    grpc_core::g_static_metadata_slice_ctx);
+  delete grpc_core::g_static_metadata_slice_ctx;
   grpc_core::g_static_metadata_slice_ctx = nullptr;
   grpc_core::g_static_metadata_slice_table = nullptr;
   grpc_core::g_static_metadata_slice_refcounts = nullptr;
@@ -592,8 +587,8 @@ print >> H, ('extern uintptr_t '
 for i, elem in enumerate(all_elems):
     md_name = mangle(elem).upper()
     print >> H, '/* "%s": "%s" */' % elem
-    print >> H, ('#define %s (grpc_static_mdelem_manifested()[%d])' % (md_name,
-                                                                       i))
+    print >> H, ('#define %s (grpc_static_mdelem_manifested()[%d])' %
+                 (md_name, i))
 print >> H
 
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
@@ -627,9 +622,12 @@ def perfect_hash(keys, name):
         return x + p.r[y]
 
     return {
-        'PHASHNKEYS': len(p.slots),
-        'pyfunc': f,
-        'code': """
+        'PHASHNKEYS':
+            len(p.slots),
+        'pyfunc':
+            f,
+        'code':
+            """
 static const int8_t %(name)s_r[] = {%(r)s};
 static uint32_t %(name)s_phash(uint32_t i) {
   i %(offset_sign)s= %(offset)d;
@@ -643,12 +641,12 @@ static uint32_t %(name)s_phash(uint32_t i) {
   return h;
 }
     """ % {
-            'name': name,
-            'r': ','.join('%d' % (r if r is not None else 0) for r in p.r),
-            't': p.t,
-            'offset': abs(p.offset),
-            'offset_sign': '+' if p.offset > 0 else '-'
-        }
+                'name': name,
+                'r': ','.join('%d' % (r if r is not None else 0) for r in p.r),
+                't': p.t,
+                'offset': abs(p.offset),
+                'offset_sign': '+' if p.offset > 0 else '-'
+            }
     }
 
 
@@ -703,8 +701,8 @@ slice_ref_as_static = ('reinterpret_cast<' + static_slice_ref_type + '>(' +
                        slice_to_slice_ref + ')')
 slice_ref_idx = slice_ref_as_static + '->index'
 batch_idx_type = 'grpc_metadata_batch_callouts_index'
-slice_ref_idx_to_batch_idx = (
-    'static_cast<' + batch_idx_type + '>(' + slice_ref_idx + ')')
+slice_ref_idx_to_batch_idx = ('static_cast<' + batch_idx_type + '>(' +
+                              slice_ref_idx + ')')
 batch_invalid_idx = 'GRPC_BATCH_CALLOUTS_COUNT'
 batch_invalid_u32 = 'static_cast<uint32_t>(' + batch_invalid_idx + ')'
 # Assemble GRPC_BATCH_INDEX_OF(slice) macro as a join for ease of reading.

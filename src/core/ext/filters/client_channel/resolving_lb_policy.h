@@ -52,20 +52,19 @@ namespace grpc_core {
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   // Synchronous callback that takes the resolver result and sets
-  // lb_policy_name and lb_policy_config to point to the right data.
+  // lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
-  // If the returned service_config_error is not none and lb_policy_name is
-  // empty, it means that we don't have a valid service config to use, and we
-  // should set the channel to be in TRANSIENT_FAILURE.
+  // If the returned no_valid_service_config is true, that means that we
+  // don't have a valid service config to use, and we should set the channel
+  // to be in TRANSIENT_FAILURE.
   typedef bool (*ProcessResolverResultCallback)(
       void* user_data, const Resolver::Result& result,
-      const char** lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config,
-      grpc_error** service_config_error);
+      grpc_error** service_config_error, bool* no_valid_service_config);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
-      Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
+      Args args, TraceFlag* tracer, grpc_core::UniquePtr<char> target_uri,
       ProcessResolverResultCallback process_resolver_result,
       void* process_resolver_result_user_data);
 
@@ -74,7 +73,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // No-op -- should never get updates from the channel.
   // TODO(roth): Need to support updating child LB policy's config for xds
   // use case.
-  void UpdateLocked(UpdateArgs args) override {}
+  void UpdateLocked(UpdateArgs /*args*/) override {}
 
   void ExitIdleLocked() override;
 
@@ -92,12 +91,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void OnResolverError(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(
-      const char* lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-      Resolver::Result result, TraceStringVector* trace_strings);
+      Resolver::Result result);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
-      const char* lb_policy_name, const grpc_channel_args& args,
-      TraceStringVector* trace_strings);
+      const grpc_channel_args& args);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       bool resolution_contains_addresses, TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
@@ -106,10 +103,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;
-  UniquePtr<char> target_uri_;
+  grpc_core::UniquePtr<char> target_uri_;
   ProcessResolverResultCallback process_resolver_result_ = nullptr;
   void* process_resolver_result_user_data_ = nullptr;
-  UniquePtr<char> child_policy_name_;
+  grpc_core::UniquePtr<char> child_policy_name_;
   RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config_;
 
   // Resolver and associated state.
@@ -118,7 +115,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  OrphanablePtr<LoadBalancingPolicy> pending_lb_policy_;
 };
 
 }  // namespace grpc_core

@@ -53,7 +53,7 @@ typedef struct args_struct {
   grpc_pollset_set* pollset_set;
 } args_struct;
 
-static void do_nothing(void* arg, grpc_error* error) {}
+static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void args_init(args_struct* args) {
   gpr_event_init(&args->ev);
@@ -231,9 +231,10 @@ int main(int argc, char** argv) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
             resolver.get());
   }
-  if (gpr_stricmp(resolver_type, "native") == 0) {
+  if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-  } else if (gpr_stricmp(resolver_type, "ares") == 0) {
+  } else if (resolver_type != nullptr &&
+             gpr_stricmp(resolver_type, "ares") == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");

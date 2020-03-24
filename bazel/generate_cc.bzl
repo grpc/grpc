@@ -4,9 +4,10 @@ This is an internal rule used by cc_grpc_library, and shouldn't be used
 directly.
 """
 
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
-    "get_include_protoc_args",
+    "get_include_directory",
     "get_plugin_args",
     "get_proto_root",
     "proto_path_to_generated_filename",
@@ -107,7 +108,10 @@ def generate_cc_impl(ctx):
         arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
         tools = []
 
-    arguments += get_include_protoc_args(includes)
+    arguments += [
+        "--proto_path={}".format(get_include_directory(i))
+        for i in includes
+    ]
 
     # Include the output directory so that protoc puts the generated code in the
     # right directory.

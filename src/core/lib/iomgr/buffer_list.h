@@ -114,6 +114,10 @@ struct Timestamps {
 #ifdef GRPC_LINUX_ERRQUEUE
 class TracedBuffer {
  public:
+  /** Use AddNewEntry function instead of using this directly. */
+  TracedBuffer(uint32_t seq_no, void* arg)
+      : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
+
   /** Add a new entry in the TracedBuffer list pointed to by head. Also saves
    * sendmsg_time with the current timestamp. */
   static void AddNewEntry(grpc_core::TracedBuffer** head, uint32_t seq_no,
@@ -133,11 +137,6 @@ class TracedBuffer {
                        grpc_error* shutdown_err);
 
  private:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-
-  TracedBuffer(uint32_t seq_no, void* arg)
-      : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
-
   uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
   void* arg_;       /* The arg to pass to timestamps_callback */
   grpc_core::Timestamps ts_; /* The timestamps corresponding to this buffer */
@@ -147,7 +146,7 @@ class TracedBuffer {
 class TracedBuffer {
  public:
   /* Dummy shutdown function */
-  static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
+  static void Shutdown(grpc_core::TracedBuffer** /*head*/, void* /*remaining*/,
                        grpc_error* shutdown_err) {
     GRPC_ERROR_UNREF(shutdown_err);
   }

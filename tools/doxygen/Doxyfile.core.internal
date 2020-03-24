@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 8.0.0
+PROJECT_NUMBER         = 10.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -793,6 +793,7 @@ doc/interop-test-descriptions.md \
 doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
+doc/security_audit.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
 doc/server_side_auth.md \
@@ -804,6 +805,7 @@ doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
+doc/xds-test-descriptions.md \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
@@ -814,40 +816,27 @@ include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
 include/grpc/impl/codegen/atm.h \
-include/grpc/impl/codegen/atm.h \
-include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
-include/grpc/impl/codegen/atm_gcc_sync.h \
-include/grpc/impl/codegen/atm_windows.h \
 include/grpc/impl/codegen/atm_windows.h \
 include/grpc/impl/codegen/byte_buffer.h \
 include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/fork.h \
-include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
-include/grpc/impl/codegen/gpr_slice.h \
-include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/log.h \
-include/grpc/impl/codegen/log.h \
-include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
-include/grpc/impl/codegen/sync.h \
-include/grpc/impl/codegen/sync_custom.h \
+include/grpc/impl/codegen/sync_abseil.h \
 include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
-include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_windows.h \
 include/grpc/impl/codegen/sync_windows.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
@@ -864,6 +853,7 @@ include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \
+include/grpc/support/sync_abseil.h \
 include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
@@ -887,7 +877,6 @@ src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
-src/core/ext/filters/client_channel/connector.cc \
 src/core/ext/filters/client_channel/connector.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
@@ -899,6 +888,8 @@ src/core/ext/filters/client_channel/http_proxy.cc \
 src/core/ext/filters/client_channel/http_proxy.h \
 src/core/ext/filters/client_channel/lb_policy.cc \
 src/core/ext/filters/client_channel/lb_policy.h \
+src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
+src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
@@ -912,14 +903,9 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
+src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
@@ -927,7 +913,6 @@ src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/parse_address.cc \
 src/core/ext/filters/client_channel/parse_address.h \
-src/core/ext/filters/client_channel/proxy_mapper.cc \
 src/core/ext/filters/client_channel/proxy_mapper.h \
 src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
 src/core/ext/filters/client_channel/proxy_mapper_registry.h \
@@ -973,6 +958,17 @@ src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
+src/core/ext/filters/client_channel/xds/xds_api.cc \
+src/core/ext/filters/client_channel/xds/xds_api.h \
+src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
+src/core/ext/filters/client_channel/xds/xds_bootstrap.h \
+src/core/ext/filters/client_channel/xds/xds_channel.h \
+src/core/ext/filters/client_channel/xds/xds_channel_args.h \
+src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
+src/core/ext/filters/client_channel/xds/xds_client.cc \
+src/core/ext/filters/client_channel/xds/xds_client.h \
+src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
+src/core/ext/filters/client_channel/xds/xds_client_stats.h \
 src/core/ext/filters/client_idle/client_idle_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
@@ -1061,10 +1057,16 @@ src/core/ext/transport/chttp2/transport/writing.cc \
 src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
+src/core/ext/upb-generated/envoy/annotations/deprecation.upb.h \
+src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
+src/core/ext/upb-generated/envoy/annotations/resource.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/cds.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/cluster.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
@@ -1089,18 +1091,62 @@ src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/eds.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/lds.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/listener.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/rds.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/route.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/route/route.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/srds.upb.h \
+src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
+src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h \
+src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
+src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h \
+src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
+src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.h \
 src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
 src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h \
 src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
 src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h \
+src/core/ext/upb-generated/envoy/type/http.upb.c \
+src/core/ext/upb-generated/envoy/type/http.upb.h \
+src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
+src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h \
+src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
+src/core/ext/upb-generated/envoy/type/matcher/string.upb.h \
+src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
+src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h \
 src/core/ext/upb-generated/envoy/type/percent.upb.c \
 src/core/ext/upb-generated/envoy/type/percent.upb.h \
 src/core/ext/upb-generated/envoy/type/range.upb.c \
 src/core/ext/upb-generated/envoy/type/range.upb.h \
+src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
+src/core/ext/upb-generated/envoy/type/semantic_version.upb.h \
+src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
+src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.h \
 src/core/ext/upb-generated/gogoproto/gogo.upb.c \
 src/core/ext/upb-generated/gogoproto/gogo.upb.h \
 src/core/ext/upb-generated/google/api/annotations.upb.c \
@@ -1133,6 +1179,10 @@ src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
 src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h \
 src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
 src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h \
+src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
+src/core/ext/upb-generated/udpa/annotations/migrate.upb.h \
+src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
+src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h \
 src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
 src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h \
 src/core/ext/upb-generated/validate/validate.upb.c \
@@ -1203,8 +1253,6 @@ src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
 src/core/lib/gpr/log_posix.cc \
 src/core/lib/gpr/log_windows.cc \
-src/core/lib/gpr/mpscq.cc \
-src/core/lib/gpr/mpscq.h \
 src/core/lib/gpr/murmur_hash.cc \
 src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
@@ -1215,6 +1263,7 @@ src/core/lib/gpr/string_util_windows.cc \
 src/core/lib/gpr/string_windows.cc \
 src/core/lib/gpr/string_windows.h \
 src/core/lib/gpr/sync.cc \
+src/core/lib/gpr/sync_abseil.cc \
 src/core/lib/gpr/sync_posix.cc \
 src/core/lib/gpr/sync_windows.cc \
 src/core/lib/gpr/time.cc \
@@ -1234,7 +1283,6 @@ src/core/lib/gpr/tmpfile_windows.cc \
 src/core/lib/gpr/useful.h \
 src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/README.md \
-src/core/lib/gprpp/abstract.h \
 src/core/lib/gprpp/arena.cc \
 src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic.h \
@@ -1252,9 +1300,10 @@ src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
 src/core/lib/gprpp/memory.h \
+src/core/lib/gprpp/mpscq.cc \
+src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/optional.h \
 src/core/lib/gprpp/orphanable.h \
-src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/string_view.h \
@@ -1280,6 +1329,7 @@ src/core/lib/iomgr/cfstream_handle.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.cc \
 src/core/lib/iomgr/combiner.h \
+src/core/lib/iomgr/dualstack_socket_posix.cc \
 src/core/lib/iomgr/dynamic_annotations.h \
 src/core/lib/iomgr/endpoint.cc \
 src/core/lib/iomgr/endpoint.h \
@@ -1342,6 +1392,8 @@ src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
 src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/nameser.h \
+src/core/lib/iomgr/poller/eventmanager_libuv.cc \
+src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
@@ -1355,9 +1407,11 @@ src/core/lib/iomgr/pollset_set_custom.h \
 src/core/lib/iomgr/pollset_set_windows.cc \
 src/core/lib/iomgr/pollset_set_windows.h \
 src/core/lib/iomgr/pollset_uv.cc \
+src/core/lib/iomgr/pollset_uv.h \
 src/core/lib/iomgr/pollset_windows.cc \
 src/core/lib/iomgr/pollset_windows.h \
 src/core/lib/iomgr/port.h \
+src/core/lib/iomgr/python_util.h \
 src/core/lib/iomgr/resolve_address.cc \
 src/core/lib/iomgr/resolve_address.h \
 src/core/lib/iomgr/resolve_address_custom.cc \
@@ -1416,6 +1470,7 @@ src/core/lib/iomgr/timer.h \
 src/core/lib/iomgr/timer_custom.cc \
 src/core/lib/iomgr/timer_custom.h \
 src/core/lib/iomgr/timer_generic.cc \
+src/core/lib/iomgr/timer_generic.h \
 src/core/lib/iomgr/timer_heap.cc \
 src/core/lib/iomgr/timer_heap.h \
 src/core/lib/iomgr/timer_manager.cc \
@@ -1432,14 +1487,11 @@ src/core/lib/iomgr/wakeup_fd_pipe.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
-src/core/lib/json/json.cc \
+src/core/lib/iomgr/work_serializer.cc \
+src/core/lib/iomgr/work_serializer.h \
 src/core/lib/json/json.h \
-src/core/lib/json/json_common.h \
 src/core/lib/json/json_reader.cc \
-src/core/lib/json/json_reader.h \
-src/core/lib/json/json_string.cc \
 src/core/lib/json/json_writer.cc \
-src/core/lib/json/json_writer.h \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \
@@ -1484,8 +1536,8 @@ src/core/lib/security/credentials/ssl/ssl_credentials.cc \
 src/core/lib/security/credentials/ssl/ssl_credentials.h \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
-src/core/lib/security/credentials/tls/spiffe_credentials.cc \
-src/core/lib/security/credentials/tls/spiffe_credentials.h \
+src/core/lib/security/credentials/tls/tls_credentials.cc \
+src/core/lib/security/credentials/tls/tls_credentials.h \
 src/core/lib/security/security_connector/alts/alts_security_connector.cc \
 src/core/lib/security/security_connector/alts/alts_security_connector.h \
 src/core/lib/security/security_connector/fake/fake_security_connector.cc \
@@ -1502,8 +1554,10 @@ src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
 src/core/lib/security/security_connector/ssl/ssl_security_connector.h \
 src/core/lib/security/security_connector/ssl_utils.cc \
 src/core/lib/security/security_connector/ssl_utils.h \
-src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
-src/core/lib/security/security_connector/tls/spiffe_security_connector.h \
+src/core/lib/security/security_connector/ssl_utils_config.cc \
+src/core/lib/security/security_connector/ssl_utils_config.h \
+src/core/lib/security/security_connector/tls/tls_security_connector.cc \
+src/core/lib/security/security_connector/tls/tls_security_connector.h \
 src/core/lib/security/transport/auth_filters.h \
 src/core/lib/security/transport/client_auth_filter.cc \
 src/core/lib/security/transport/secure_endpoint.cc \
@@ -1650,21 +1704,7 @@ src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
-src/core/tsi/transport_security_interface.h \
-third_party/upb/upb/decode.c \
-third_party/upb/upb/decode.h \
-third_party/upb/upb/encode.c \
-third_party/upb/upb/encode.h \
-third_party/upb/upb/generated_util.h \
-third_party/upb/upb/msg.c \
-third_party/upb/upb/msg.h \
-third_party/upb/upb/port.c \
-third_party/upb/upb/port_def.inc \
-third_party/upb/upb/port_undef.inc \
-third_party/upb/upb/table.c \
-third_party/upb/upb/table.int.h \
-third_party/upb/upb/upb.c \
-third_party/upb/upb/upb.h
+src/core/tsi/transport_security_interface.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

@@ -35,6 +35,12 @@ grpc_cc_test(
 grpc_cc_test(
     name = "client_channel_stress_test",
     srcs = ["client_channel_stress_test.cc"],
+    # TODO(jtattermusch): test fails frequently on Win RBE, but passes locally
+    # reenable the tests once it works reliably on Win RBE.
+    tags = [
+        "no_test_android",  # fails on android due to "Too many open files".
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -46,6 +52,20 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "destroy_grpclb_channel_with_active_connect_stress_test",
+    srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )

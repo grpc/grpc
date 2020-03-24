@@ -4,8 +4,14 @@ gRPC environment variables
 gRPC C core based implementations (those contained in this repository) expose
 some configuration as environment variables that can be set.
 
-* http_proxy
-  The URI of the proxy to use for HTTP CONNECT support.
+* grpc_proxy, https_proxy, http_proxy
+  The URI of the proxy to use for HTTP CONNECT support. These variables are
+  checked in order, and the first one that has a value is used.
+
+* no_grpc_proxy, no_proxy
+  A comma separated list of hostnames to connect to without using a proxy even
+  if a proxy is set. These variables are checked in order, and the first one
+  that has a value is used.
 
 * GRPC_ABORT_ON_LEAKS
   A debugging aid to cause a call to abort() when gRPC objects are leaked past
@@ -43,6 +49,7 @@ some configuration as environment variables that can be set.
   - cares_resolver - traces operations of the c-ares based DNS resolver
   - cares_address_sorting - traces operations of the c-ares based DNS
     resolver's resolved address sorter
+  - cds_lb - traces cds LB policy
   - channel - traces operations on the C core channel stack
   - client_channel_call - traces client channel call batch activity
   - client_channel_routing - traces client channel call routing, including
@@ -71,11 +78,15 @@ some configuration as environment variables that can be set.
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - subchannel - traces the connectivity state of subchannel
+  - subchannel_pool - traces subchannel pool
   - timer - timers (alarms) in the grpc internals
   - timer_check - more detailed trace of timer logic in grpc internals
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
   - tsi - traces tsi transport security
+  - xds_client - traces xds client
+  - xds_lb - traces xds LB policy
+  - xds_resolver - traces xds resolver
 
   The following tracers will only run in binaries built in DEBUG mode. This is
   accomplished by invoking `CONFIG=dbg make <target>`

@@ -35,6 +35,11 @@ python -m pip install google-api-python-client
 powershell -File src\csharp\install_dotnet_sdk.ps1
 set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
 
+@rem Install Python 3.8.0
+@rem NOTE(lidiz): Python installer process may live longer than expected, and
+@rem has other side effects. It needs to be installed last to reduce impact.
+powershell -File tools\internal_ci\helper_scripts\install_python38.ps1
+
 @rem Disable some unwanted dotnet options
 set NUGET_XMLDOC_MODE=skip
 set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true

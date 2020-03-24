@@ -46,7 +46,7 @@ namespace testing {
 
 class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
   Status BidiStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;

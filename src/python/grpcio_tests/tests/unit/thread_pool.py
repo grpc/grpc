@@ -24,7 +24,7 @@ class RecordingThreadPool(futures.ThreadPoolExecutor):
         self._lock = threading.Lock()
         self._was_used = False
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(self, fn, *args, **kwargs):  # pylint: disable=arguments-differ
         with self._lock:
             self._was_used = True
         self._tp_executor.submit(fn, *args, **kwargs)

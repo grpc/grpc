@@ -45,18 +45,18 @@ void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   if (creds) creds->Unref();
 }
 
-static grpc_core::Map<grpc_core::UniquePtr<char>,
-                      grpc_core::RefCountedPtr<grpc_channel_credentials>,
-                      grpc_core::StringLess>* g_grpc_control_plane_creds;
+static std::map<grpc_core::UniquePtr<char>,
+                grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                grpc_core::StringLess>* g_grpc_control_plane_creds;
 static gpr_mu g_control_plane_creds_mu;
 
 static void do_control_plane_creds_init() {
   gpr_mu_init(&g_control_plane_creds_mu);
   GPR_ASSERT(g_grpc_control_plane_creds == nullptr);
-  g_grpc_control_plane_creds = grpc_core::New<
-      grpc_core::Map<grpc_core::UniquePtr<char>,
-                     grpc_core::RefCountedPtr<grpc_channel_credentials>,
-                     grpc_core::StringLess>>();
+  g_grpc_control_plane_creds =
+      new std::map<grpc_core::UniquePtr<char>,
+                   grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                   grpc_core::StringLess>();
 }
 
 void grpc_control_plane_credentials_init() {
@@ -65,7 +65,7 @@ void grpc_control_plane_credentials_init() {
 }
 
 void grpc_test_only_control_plane_credentials_destroy() {
-  grpc_core::Delete(g_grpc_control_plane_creds);
+  delete g_grpc_control_plane_creds;
   g_grpc_control_plane_creds = nullptr;
   gpr_mu_destroy(&g_control_plane_creds_mu);
 }

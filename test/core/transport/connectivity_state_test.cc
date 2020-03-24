@@ -20,124 +20,176 @@
 
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tracer_util.h"
 
-#define THE_ARG ((void*)(size_t)0xcafebabe)
+namespace grpc_core {
+namespace {
 
-int g_counter;
-
-static void must_succeed(void* arg, grpc_error* error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(arg == THE_ARG);
-  g_counter++;
+TEST(ConnectivityStateName, Basic) {
+  EXPECT_STREQ("IDLE", ConnectivityStateName(GRPC_CHANNEL_IDLE));
+  EXPECT_STREQ("CONNECTING", ConnectivityStateName(GRPC_CHANNEL_CONNECTING));
+  EXPECT_STREQ("READY", ConnectivityStateName(GRPC_CHANNEL_READY));
+  EXPECT_STREQ("TRANSIENT_FAILURE",
+               ConnectivityStateName(GRPC_CHANNEL_TRANSIENT_FAILURE));
+  EXPECT_STREQ("SHUTDOWN", ConnectivityStateName(GRPC_CHANNEL_SHUTDOWN));
 }
 
-static void must_fail(void* arg, grpc_error* error) {
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
-  GPR_ASSERT(arg == THE_ARG);
-  g_counter++;
+class Watcher : public ConnectivityStateWatcherInterface {
+ public:
+  Watcher(int* count, grpc_connectivity_state* output,
+          bool* destroyed = nullptr)
+      : count_(count), output_(output), destroyed_(destroyed) {}
+
+  ~Watcher() {
+    if (destroyed_ != nullptr) *destroyed_ = true;
+  }
+
+  void Notify(grpc_connectivity_state new_state) override {
+    ++*count_;
+    *output_ = new_state;
+  }
+
+ private:
+  int* count_;
+  grpc_connectivity_state* output_;
+  bool* destroyed_;
+};
+
+TEST(StateTracker, SetAndGetState) {
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_CONNECTING);
+  EXPECT_EQ(tracker.state(), GRPC_CHANNEL_CONNECTING);
+  tracker.SetState(GRPC_CHANNEL_READY, "whee");
+  EXPECT_EQ(tracker.state(), GRPC_CHANNEL_READY);
 }
 
-static void test_connectivity_state_name(void) {
-  gpr_log(GPR_DEBUG, "test_connectivity_state_name");
-  GPR_ASSERT(0 ==
-             strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_IDLE), "IDLE"));
-  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_CONNECTING),
-                         "CONNECTING"));
-  GPR_ASSERT(0 ==
-             strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_READY), "READY"));
-  GPR_ASSERT(
-      0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_TRANSIENT_FAILURE),
-                  "TRANSIENT_FAILURE"));
-  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_SHUTDOWN),
-                         "SHUTDOWN"));
-}
-
-static void test_check(void) {
-  grpc_connectivity_state_tracker tracker;
-  grpc_core::ExecCtx exec_ctx;
-  gpr_log(GPR_DEBUG, "test_check");
-  grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
-  GPR_ASSERT(grpc_connectivity_state_check(&tracker) == GRPC_CHANNEL_IDLE);
-  grpc_connectivity_state_destroy(&tracker);
-}
-
-static void test_subscribe_then_unsubscribe(void) {
-  grpc_connectivity_state_tracker tracker;
-  grpc_closure* closure =
-      GRPC_CLOSURE_CREATE(must_fail, THE_ARG, grpc_schedule_on_exec_ctx);
+TEST(StateTracker, NotificationUponAddingWatcher) {
+  int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_core::ExecCtx exec_ctx;
-  gpr_log(GPR_DEBUG, "test_subscribe_then_unsubscribe");
-  g_counter = 0;
-  grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
-  GPR_ASSERT(grpc_connectivity_state_notify_on_state_change(&tracker, &state,
-                                                            closure));
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
-  GPR_ASSERT(g_counter == 0);
-  grpc_connectivity_state_notify_on_state_change(&tracker, nullptr, closure);
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
-  GPR_ASSERT(g_counter == 1);
-
-  grpc_connectivity_state_destroy(&tracker);
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_CONNECTING);
+  tracker.AddWatcher(GRPC_CHANNEL_IDLE,
+                     MakeOrphanable<Watcher>(&count, &state));
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
 }
 
-static void test_subscribe_then_destroy(void) {
-  grpc_connectivity_state_tracker tracker;
-  grpc_closure* closure =
-      GRPC_CLOSURE_CREATE(must_succeed, THE_ARG, grpc_schedule_on_exec_ctx);
+TEST(StateTracker, NotificationUponStateChange) {
+  int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_core::ExecCtx exec_ctx;
-  gpr_log(GPR_DEBUG, "test_subscribe_then_destroy");
-  g_counter = 0;
-  grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
-  GPR_ASSERT(grpc_connectivity_state_notify_on_state_change(&tracker, &state,
-                                                            closure));
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
-  GPR_ASSERT(g_counter == 0);
-  grpc_connectivity_state_destroy(&tracker);
-
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
-  GPR_ASSERT(g_counter == 1);
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
+  tracker.AddWatcher(GRPC_CHANNEL_IDLE,
+                     MakeOrphanable<Watcher>(&count, &state));
+  EXPECT_EQ(count, 0);
+  EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
+  tracker.SetState(GRPC_CHANNEL_CONNECTING, "whee");
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
 }
 
-static void test_subscribe_with_failure_then_destroy(void) {
-  grpc_connectivity_state_tracker tracker;
-  grpc_closure* closure =
-      GRPC_CLOSURE_CREATE(must_fail, THE_ARG, grpc_schedule_on_exec_ctx);
+TEST(StateTracker, SubscribeThenUnsubscribe) {
+  int count = 0;
+  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  bool destroyed = false;
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
+  ConnectivityStateWatcherInterface* watcher =
+      new Watcher(&count, &state, &destroyed);
+  tracker.AddWatcher(GRPC_CHANNEL_IDLE,
+                     OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
+  // No initial notification, since we started the watch from the
+  // current state.
+  EXPECT_EQ(count, 0);
+  EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
+  // Cancel watch.  This should not generate another notification.
+  tracker.RemoveWatcher(watcher);
+  EXPECT_TRUE(destroyed);
+  EXPECT_EQ(count, 0);
+  EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
+}
+
+TEST(StateTracker, OrphanUponShutdown) {
+  int count = 0;
+  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  bool destroyed = false;
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
+  ConnectivityStateWatcherInterface* watcher =
+      new Watcher(&count, &state, &destroyed);
+  tracker.AddWatcher(GRPC_CHANNEL_IDLE,
+                     OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
+  // No initial notification, since we started the watch from the
+  // current state.
+  EXPECT_EQ(count, 0);
+  EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
+  // Set state to SHUTDOWN.
+  tracker.SetState(GRPC_CHANNEL_SHUTDOWN, "shutting down");
+  EXPECT_TRUE(destroyed);
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
+}
+
+TEST(StateTracker, AddWhenAlreadyShutdown) {
+  int count = 0;
+  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  bool destroyed = false;
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_SHUTDOWN);
+  ConnectivityStateWatcherInterface* watcher =
+      new Watcher(&count, &state, &destroyed);
+  tracker.AddWatcher(GRPC_CHANNEL_IDLE,
+                     OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
+  EXPECT_TRUE(destroyed);
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
+}
+
+TEST(StateTracker, NotifyShutdownAtDestruction) {
+  int count = 0;
+  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  {
+    ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
+    tracker.AddWatcher(GRPC_CHANNEL_IDLE,
+                       MakeOrphanable<Watcher>(&count, &state));
+    // No initial notification, since we started the watch from the
+    // current state.
+    EXPECT_EQ(count, 0);
+    EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
+  }
+  // Upon tracker destruction, we get a notification for SHUTDOWN.
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
+}
+
+TEST(StateTracker, DoNotNotifyShutdownAtDestructionIfAlreadyInShutdown) {
+  int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_SHUTDOWN;
-  grpc_core::ExecCtx exec_ctx;
-  gpr_log(GPR_DEBUG, "test_subscribe_with_failure_then_destroy");
-  g_counter = 0;
-  grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_SHUTDOWN, "xxx");
-  GPR_ASSERT(0 == grpc_connectivity_state_notify_on_state_change(
-                      &tracker, &state, closure));
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
-  GPR_ASSERT(g_counter == 0);
-  grpc_connectivity_state_destroy(&tracker);
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
-  GPR_ASSERT(g_counter == 1);
+  {
+    ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_SHUTDOWN);
+    tracker.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
+                       MakeOrphanable<Watcher>(&count, &state));
+    // No initial notification, since we started the watch from the
+    // current state.
+    EXPECT_EQ(count, 0);
+    EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
+  }
+  // No additional notification upon tracker destruction, since we were
+  // already in state SHUTDOWN.
+  EXPECT_EQ(count, 0);
+  EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
 }
+
+}  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_connectivity_state_trace);
-  test_connectivity_state_name();
-  test_check();
-  test_subscribe_then_unsubscribe();
-  test_subscribe_then_destroy();
-  test_subscribe_with_failure_then_destroy();
+  grpc_core::testing::grpc_tracer_enable_flag(
+      &grpc_core::grpc_connectivity_state_trace);
+  int ret = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return ret;
 }

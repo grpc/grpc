@@ -145,6 +145,8 @@ class ClientRpcInfo {
       // No interceptors to register
       return;
     }
+    // NOTE: The following is not a range-based for loop because it will only
+    //       iterate over a portion of the creators vector.
     for (auto it = creators.begin() + interceptor_pos; it != creators.end();
          ++it) {
       auto* interceptor = (*it)->CreateClientInterceptor(this);

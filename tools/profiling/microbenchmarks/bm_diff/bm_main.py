@@ -28,51 +28,46 @@ import multiprocessing
 import subprocess
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests',
+                 'python_utils'))
 import check_on_pr
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
-        'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
+                 'python_utils'))
 import jobset
 
 
 def _args():
     argp = argparse.ArgumentParser(
         description='Perform diff on microbenchmarks')
-    argp.add_argument(
-        '-t',
-        '--track',
-        choices=sorted(bm_constants._INTERESTING),
-        nargs='+',
-        default=sorted(bm_constants._INTERESTING),
-        help='Which metrics to track')
-    argp.add_argument(
-        '-b',
-        '--benchmarks',
-        nargs='+',
-        choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        help='Which benchmarks to run')
-    argp.add_argument(
-        '-d',
-        '--diff_base',
-        type=str,
-        help='Commit or branch to compare the current one to')
+    argp.add_argument('-t',
+                      '--track',
+                      choices=sorted(bm_constants._INTERESTING),
+                      nargs='+',
+                      default=sorted(bm_constants._INTERESTING),
+                      help='Which metrics to track')
+    argp.add_argument('-b',
+                      '--benchmarks',
+                      nargs='+',
+                      choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      help='Which benchmarks to run')
+    argp.add_argument('-d',
+                      '--diff_base',
+                      type=str,
+                      help='Commit or branch to compare the current one to')
     argp.add_argument(
         '-o',
         '--old',
         default='old',
         type=str,
-        help='Name of baseline run to compare to. Ususally just called "old"')
-    argp.add_argument(
-        '-r',
-        '--regex',
-        type=str,
-        default="",
-        help='Regex to filter benchmarks run')
+        help='Name of baseline run to compare to. Usually just called "old"')
+    argp.add_argument('-r',
+                      '--regex',
+                      type=str,
+                      default="",
+                      help='Regex to filter benchmarks run')
     argp.add_argument(
         '-l',
         '--loops',
@@ -81,24 +76,22 @@ def _args():
         help=
         'Number of times to loops the benchmarks. More loops cuts down on noise'
     )
-    argp.add_argument(
-        '-j',
-        '--jobs',
-        type=int,
-        default=multiprocessing.cpu_count(),
-        help='Number of CPUs to use')
-    argp.add_argument(
-        '--pr_comment_name',
-        type=str,
-        default="microbenchmarks",
-        help='Name that Jenkins will use to commen on the PR')
+    argp.add_argument('-j',
+                      '--jobs',
+                      type=int,
+                      default=multiprocessing.cpu_count(),
+                      help='Number of CPUs to use')
+    argp.add_argument('--pr_comment_name',
+                      type=str,
+                      default="microbenchmarks",
+                      help='Name that Jenkins will use to comment on the PR')
     argp.add_argument('--counters', dest='counters', action='store_true')
     argp.add_argument('--no-counters', dest='counters', action='store_false')
     argp.set_defaults(counters=True)
     args = argp.parse_args()
     assert args.diff_base or args.old, "One of diff_base or old must be set!"
     if args.loops < 3:
-        print "WARNING: This run will likely be noisy. Increase loops."
+        print("WARNING: This run will likely be noisy. Increase loops.")
     return args
 
 
@@ -109,7 +102,7 @@ def eintr_be_gone(fn):
         while True:
             try:
                 return fn(*args)
-            except IOError, e:
+            except IOError as e:
                 if e.errno != errno.EINTR:
                     raise
 

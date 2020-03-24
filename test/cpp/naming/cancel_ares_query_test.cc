@@ -81,7 +81,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_combiner* lock;
+  grpc_core::Combiner* lock;
   grpc_channel_args* channel_args;
 };
 
@@ -95,7 +95,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* arg, grpc_error* error) {}
+void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
@@ -142,11 +142,11 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
     gpr_mu_unlock(args_->mu);
   }
 
-  void ReturnResult(grpc_core::Resolver::Result result) override {
+  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {
     GPR_ASSERT(false);
   }
 
-  void ReturnError(grpc_error* error) override { GPR_ASSERT(false); }
+  void ReturnError(grpc_error* /*error*/) override { GPR_ASSERT(false); }
 
  private:
   ArgsStruct* args_;
@@ -164,8 +164,8 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(
           client_target, nullptr, args->pollset_set, args->lock,
-          grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
-              grpc_core::New<AssertFailureResultHandler>(args)));
+          std::unique_ptr<grpc_core::Resolver::ResultHandler>(
+              new AssertFailureResultHandler(args)));
   gpr_free(client_target);
   resolver->StartLocked();
   // Without resetting and causing resolver shutdown, the
@@ -314,7 +314,7 @@ void TestCancelDuringActiveQuery(
   gpr_free(client_target);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
-  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(10);
+  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(100);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);

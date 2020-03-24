@@ -1,22 +1,15 @@
 """Load dependencies needed to compile and test the grpc python library as a 3rd-party consumer."""
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
 def grpc_python_deps():
-    native.bind(
-        name = "six",
-        actual = "@six_archive//:six",
-    )
-
     # protobuf binds to the name "six", so we can't use it here.
     # See https://github.com/bazelbuild/bazel/issues/1952 for why bind is
     # horrible.
-    if "six_archive" not in native.existing_rules():
+    if "six" not in native.existing_rules():
         http_archive(
-            name = "six_archive",
-            strip_prefix = "six-1.12.0",
+            name = "six",
             build_file = "@com_github_grpc_grpc//third_party:six.BUILD",
             sha256 = "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73",
             urls = ["https://files.pythonhosted.org/packages/dd/bf/4138e7bfb757de47d1f4b6994648ec67a51efe58fa907c1e11e350cddfca/six-1.12.0.tar.gz"],
@@ -41,12 +34,11 @@ def grpc_python_deps():
         )
 
     if "io_bazel_rules_python" not in native.existing_rules():
-        git_repository(
+        http_archive(
             name = "io_bazel_rules_python",
-            commit = "fdbb17a4118a1728d19e638a5291b4c4266ea5b8",
-            remote = "https://github.com/bazelbuild/rules_python.git",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
+            sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
         )
-
 
     if "rules_python" not in native.existing_rules():
         http_archive(
@@ -73,4 +65,3 @@ def grpc_python_deps():
                 "https://github.com/cython/cython/archive/c2b80d87658a8525ce091cbe146cb7eaa29fed5c.tar.gz",
             ],
         )
-

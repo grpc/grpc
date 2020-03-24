@@ -47,7 +47,7 @@ namespace Grpc.Core
     /// </para>
     /// </summary>
     /// <typeparam name="T">The message type.</typeparam>
-    public interface IAsyncStreamReader<T>
+    public interface IAsyncStreamReader<out T>
     {
         /// <summary>
         /// Gets the current element in the iteration.

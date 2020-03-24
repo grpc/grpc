@@ -23,7 +23,6 @@ class DailyCron(webapp2.RequestHandler):
         self.response.status = 204
 
 
-app = webapp2.WSGIApplication(
-    [
-        ('/daily', DailyCron),
-    ], debug=True)
+app = webapp2.WSGIApplication([
+    ('/daily', DailyCron),
+], debug=True)

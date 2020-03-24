@@ -86,7 +86,7 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
     //    or our maximum allocation size
     // 3. Provide the slice start and size available
     // 4. Add the slice being returned to the slice buffer
-    size_t remain = total_size_ - byte_count_;
+    size_t remain = static_cast<size_t>(total_size_ - byte_count_);
     if (have_backup_) {
       /// If we have a backup slice, we should use it first
       slice_ = backup_slice_;
@@ -138,7 +138,7 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
   }
 
   /// Returns the total number of bytes written since this object was created.
-  grpc::protobuf::int64 ByteCount() const override { return byte_count_; }
+  int64_t ByteCount() const override { return byte_count_; }
 
   // These protected members are needed to support internal optimizations.
   // they expose internal bits of grpc core that are NOT stable. If you have

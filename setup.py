@@ -29,12 +29,16 @@ import sysconfig
 import setuptools
 from setuptools.command import egg_info
 
+import subprocess
+from subprocess import PIPE
+
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
 PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
+ABSL_INCLUDE = (os.path.join('third_party', 'abseil-cpp'),)
 ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting', 'include'),)
 CARES_INCLUDE = (
     os.path.join('third_party', 'cares'),
@@ -47,7 +51,7 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
-SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
+SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src', 'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext', 'upb-generated'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
@@ -78,6 +82,8 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -136,6 +142,17 @@ ENABLE_CYTHON_TRACING = os.environ.get(
 ENABLE_DOCUMENTATION_BUILD = os.environ.get(
     'GRPC_PYTHON_ENABLE_DOCUMENTATION_BUILD', False)
 
+def check_linker_need_libatomic():
+  """Test if linker on system needs libatomic."""
+  code_test = (b'#include <atomic>\n' +
+               b'int main() { return std::atomic<int64_t>{}; }')
+  cc_test = subprocess.Popen(['cc', '-x', 'c++', '-std=c++11', '-'],
+                             stdin=PIPE,
+                             stdout=PIPE,
+                             stderr=PIPE)
+  cc_test.communicate(input=code_test)
+  return cc_test.returncode != 0
+
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
@@ -147,16 +164,21 @@ EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
   EXTRA_ENV_COMPILE_ARGS = ' -std=c++11'
-  if 'win32' in sys.platform and sys.version_info < (3, 5):
-    EXTRA_ENV_COMPILE_ARGS += ' -D_hypot=hypot'
-    # We use define flags here and don't directly add to DEFINE_MACROS below to
-    # ensure that the expert user/builder has a way of turning it off (via the
-    # envvars) without adding yet more GRPC-specific envvars.
-    # See https://sourceforge.net/p/mingw-w64/bugs/363/
-    if '32' in platform.architecture()[0]:
-      EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+  if 'win32' in sys.platform:
+    if sys.version_info < (3, 5):
+      EXTRA_ENV_COMPILE_ARGS += ' -D_hypot=hypot'
+      # We use define flags here and don't directly add to DEFINE_MACROS below to
+      # ensure that the expert user/builder has a way of turning it off (via the
+      # envvars) without adding yet more GRPC-specific envvars.
+      # See https://sourceforge.net/p/mingw-w64/bugs/363/
+      if '32' in platform.architecture()[0]:
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+      else:
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
     else:
-      EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
+      # We need to statically link the C++ Runtime, only the C runtime is
+      # available dynamically
+      EXTRA_ENV_COMPILE_ARGS += ' /MT'
   elif "linux" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
@@ -166,15 +188,15 @@ if EXTRA_ENV_LINK_ARGS is None:
   EXTRA_ENV_LINK_ARGS = ''
   if "linux" in sys.platform or "darwin" in sys.platform:
     EXTRA_ENV_LINK_ARGS += ' -lpthread'
+    if check_linker_need_libatomic():
+      EXTRA_ENV_LINK_ARGS += ' -latomic'
   elif "win32" in sys.platform and sys.version_info < (3, 5):
     msvcr = cygwinccompiler.get_msvcr()[0]
-    # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
-    # influence on the linkage outcome on MinGW for non-C++ programs.
     EXTRA_ENV_LINK_ARGS += (
-        ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr} '
-        '-static'.format(msvcr=msvcr))
+        ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
+        ' -static -lshlwapi'.format(msvcr=msvcr))
   if "linux" in sys.platform:
-    EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy  -static-libgcc'
+    EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy -static-libgcc'
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -205,6 +227,7 @@ if BUILD_WITH_SYSTEM_CARES:
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) +
     CORE_INCLUDE +
+    ABSL_INCLUDE +
     ADDRESS_SORTING_INCLUDE +
     CARES_INCLUDE +
     SSL_INCLUDE +
@@ -218,7 +241,7 @@ if "linux" in sys.platform:
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 if "win32" in sys.platform:
-  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32',)
+  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32', 'dbghelp',)
 if BUILD_WITH_SYSTEM_OPENSSL:
   EXTENSION_LIBRARIES += ('ssl', 'crypto',)
 if BUILD_WITH_SYSTEM_ZLIB:
@@ -265,6 +288,7 @@ if 'darwin' in sys.platform and PY3:
         r'macosx-10.7-\1',
         util.get_platform())
 
+
 def cython_extensions_and_necessity():
   cython_module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.pyx')
@@ -295,6 +319,8 @@ def cython_extensions_and_necessity():
   need_cython = BUILD_WITH_CYTHON
   if not BUILD_WITH_CYTHON:
     need_cython = need_cython or not commands.check_and_update_cythonization(extensions)
+  # TODO: the strategy for conditional compiling and exposing the aio Cython
+  # dependencies will be revisited by https://github.com/grpc/grpc/issues/19728
   return commands.try_cythonize(extensions, linetracing=ENABLE_CYTHON_TRACING, mandatory=BUILD_WITH_CYTHON), need_cython
 
 CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()

@@ -43,31 +43,27 @@ class ThreadPoolInterface {
   // current thread to be blocked (in case of unable to schedule).
   // Closure should contain a function pointer and arguments it will take, more
   // details for closure struct at /grpc/include/grpc/impl/codegen/grpc_types.h
-  virtual void Add(grpc_experimental_completion_queue_functor* closure)
-      GRPC_ABSTRACT;
+  virtual void Add(grpc_experimental_completion_queue_functor* closure) = 0;
 
   // Returns the current number of pending closures
-  virtual int num_pending_closures() const GRPC_ABSTRACT;
+  virtual int num_pending_closures() const = 0;
 
   // Returns the capacity of pool (number of worker threads in pool)
-  virtual int pool_capacity() const GRPC_ABSTRACT;
+  virtual int pool_capacity() const = 0;
 
   // Thread option accessor
-  virtual const Thread::Options& thread_options() const GRPC_ABSTRACT;
+  virtual const Thread::Options& thread_options() const = 0;
 
   // Returns the thread name for threads in this ThreadPool.
-  virtual const char* thread_name() const GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual const char* thread_name() const = 0;
 };
 
 // Worker thread for threadpool. Executes closures in the queue, until getting a
 // NULL closure.
 class ThreadPoolWorker {
  public:
-  ThreadPoolWorker(const char* thd_name, ThreadPoolInterface* pool,
-                   MPMCQueueInterface* queue, Thread::Options& options,
-                   int index)
+  ThreadPoolWorker(const char* thd_name, MPMCQueueInterface* queue,
+                   Thread::Options& options, int index)
       : queue_(queue), thd_name_(thd_name), index_(index) {
     thd_ = Thread(thd_name,
                   [](void* th) { static_cast<ThreadPoolWorker*>(th)->Run(); },

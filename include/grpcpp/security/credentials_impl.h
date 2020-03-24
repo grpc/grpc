@@ -28,6 +28,7 @@
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments_impl.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
@@ -114,6 +115,9 @@ class CallCredentials : private grpc::GrpcLibraryCodegen {
 
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
+  virtual grpc::string DebugString() {
+    return "CallCredentials did not provide a debug string";
+  }
 
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -249,6 +253,10 @@ class MetadataCredentialsPlugin {
       grpc::string_ref service_url, grpc::string_ref method_name,
       const grpc::AuthContext& channel_auth_context,
       std::multimap<grpc::string, grpc::string>* metadata) = 0;
+
+  virtual grpc::string DebugString() {
+    return "MetadataCredentialsPlugin did not provide a debug string";
+  }
 };
 
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
@@ -320,6 +328,10 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options);
 
+std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin,
+    grpc_security_level min_security_level);
+
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {
   /// service accounts of target endpoint that will be acceptable
@@ -335,6 +347,10 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
 /// Builds Local Credentials.
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
+
+/// Builds TLS Credentials given TLS options.
+std::shared_ptr<ChannelCredentials> TlsCredentials(
+    const TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc_impl

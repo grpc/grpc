@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -82,7 +82,7 @@ static void create_test_socket(int port, int* socket_fd,
 }
 
 /* Dummy gRPC callback */
-void no_op_cb(void* arg, int success) {}
+void no_op_cb(void* /*arg*/, int /*success*/) {}
 
 /* =======An upload server to test notify_on_read===========
    The server simply reads and counts a stream of bytes. */
@@ -112,7 +112,7 @@ typedef struct {
 /* Called when an upload session can be safely shutdown.
    Close session FD and start to shutdown listen FD. */
 static void session_shutdown_cb(void* arg, /*session */
-                                bool success) {
+                                bool /*success*/) {
   session* se = static_cast<session*>(arg);
   server* sv = se->sv;
   grpc_fd_orphan(se->em_fd, nullptr, nullptr, "a");
@@ -168,7 +168,7 @@ static void session_read_cb(void* arg, /*session */
 
 /* Called when the listen FD can be safely shutdown.
    Close listen FD and signal that server can be shutdown. */
-static void listen_shutdown_cb(void* arg /*server */, int success) {
+static void listen_shutdown_cb(void* arg /*server*/, int /*success*/) {
   server* sv = static_cast<server*>(arg);
 
   grpc_fd_orphan(sv->em_fd, nullptr, nullptr, "b");
@@ -287,7 +287,7 @@ static void client_init(client* cl) {
 }
 
 /* Called when a client upload session is ready to shutdown. */
-static void client_session_shutdown_cb(void* arg /*client */, int success) {
+static void client_session_shutdown_cb(void* arg /*client*/, int /*success*/) {
   client* cl = static_cast<client*>(arg);
   grpc_fd_orphan(cl->em_fd, nullptr, nullptr, "c");
   cl->done = 1;
@@ -401,10 +401,10 @@ typedef struct fd_change_data {
 
 void init_change_data(fd_change_data* fdc) { fdc->cb_that_ran = nullptr; }
 
-void destroy_change_data(fd_change_data* fdc) {}
+void destroy_change_data(fd_change_data* /*fdc*/) {}
 
 static void first_read_callback(void* arg /* fd_change_data */,
-                                grpc_error* error) {
+                                grpc_error* /*error*/) {
   fd_change_data* fdc = static_cast<fd_change_data*>(arg);
 
   gpr_mu_lock(g_mu);
@@ -415,7 +415,7 @@ static void first_read_callback(void* arg /* fd_change_data */,
 }
 
 static void second_read_callback(void* arg /* fd_change_data */,
-                                 grpc_error* error) {
+                                 grpc_error* /*error*/) {
   fd_change_data* fdc = static_cast<fd_change_data*>(arg);
 
   gpr_mu_lock(g_mu);
@@ -509,7 +509,7 @@ static void test_grpc_fd_change(void) {
   close(sv[1]);
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
@@ -533,8 +533,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_EV */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_EV */

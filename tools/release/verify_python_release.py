@@ -108,7 +108,9 @@ if __name__ == "__main__":
         "artifacts to be uploaded. Note that PyPI may take several minutes"
         "after the upload to reflect the proper metadata.")
     parser.add_argument("version")
-    parser.add_argument(
-        "packages", nargs='*', type=str, default=_DEFAULT_PACKAGES)
+    parser.add_argument("packages",
+                        nargs='*',
+                        type=str,
+                        default=_DEFAULT_PACKAGES)
     args = parser.parse_args()
     _verify_release(args.version, args.packages)

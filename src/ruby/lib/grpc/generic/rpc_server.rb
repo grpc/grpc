@@ -241,7 +241,7 @@ module GRPC
     # server's current call loop is it's last.
     def stop
       # if called via run_till_terminated_or_interrupted,
-      #   signal stop_server_thread and dont do anything
+      #   signal stop_server_thread and don't do anything
       if @stop_server.nil? == false && @stop_server == false
         @stop_server = true
         @stop_server_cv.broadcast

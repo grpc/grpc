@@ -76,7 +76,7 @@ catch the `RpcError` raised by the for loop upon cancellation.
 
 #### Cancellation on the Server Side
 
-A server is reponsible for cancellation in two ways. It must respond in some way
+A server is responsible for cancellation in two ways. It must respond in some way
 when a client initiates a cancellation, otherwise long-running computations
 could continue indefinitely.
 

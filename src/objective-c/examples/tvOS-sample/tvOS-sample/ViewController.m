@@ -25,8 +25,10 @@
 #import "src/objective-c/examples/RemoteTestClient/Messages.pbobjc.h"
 #import "src/objective-c/examples/RemoteTestClient/Test.pbrpc.h"
 #endif
+#import <GRPCClient/GRPCCallOptions.h>
+#import <ProtoRPC/ProtoRPC.h>
 
-@interface ViewController ()<GRPCProtoResponseHandler>
+@interface ViewController () <GRPCProtoResponseHandler>
 
 @end
 
@@ -48,8 +50,9 @@
 - (IBAction)makeCall:(id)sender {
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseSize = 100;
-  GRPCUnaryProtoCall *call =
-      [_service unaryCallWithMessage:request responseHandler:self callOptions:nil];
+  GRPCUnaryProtoCall *call = [_service unaryCallWithMessage:request
+                                            responseHandler:self
+                                                callOptions:nil];
   [call start];
 }
 

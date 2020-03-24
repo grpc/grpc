@@ -1,8 +1,8 @@
 ---
 name: Request a cleanup
 about: Suggest a cleanup in our repository
-labels: kind/internal cleanup
-assignees: nanahpang
+labels: kind/internal cleanup, priority/P2
+assignees: markroth 
 
 ---
 

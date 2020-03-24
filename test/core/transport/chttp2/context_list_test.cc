@@ -49,7 +49,7 @@ void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts,
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }
 
-void discard_write(grpc_slice slice) {}
+void discard_write(grpc_slice /*slice*/) {}
 
 class ContextListTest : public ::testing::Test {
  protected:
@@ -164,8 +164,10 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

@@ -30,7 +30,7 @@
 
 static int got_sigint = 0;
 
-static void sigint_handler(int x) { got_sigint = 1; }
+static void sigint_handler(int /*x*/) { got_sigint = 1; }
 
 const char* bad_ssl_addr(int argc, char** argv) {
   gpr_cmdline* cl;

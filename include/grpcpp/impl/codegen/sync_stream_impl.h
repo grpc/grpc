@@ -38,7 +38,7 @@ class ClientStreamingInterface {
   /// Block waiting until the stream finishes and a final status of the call is
   /// available.
   ///
-  /// It is appropriate to call this method when both:
+  /// It is appropriate to call this method exactly once when both:
   ///   * the calling code (client-side) has no more message to send
   ///     (this can be declared implicitly by calling this method, or
   ///     explicitly through an earlier call to <i>WritesDone</i> method of the
@@ -193,7 +193,8 @@ class ClientReader final : public ClientReaderInterface<R> {
   }
 
   bool NextMessageSize(uint32_t* sz) override {
-    *sz = call_.max_receive_message_size();
+    int result = call_.max_receive_message_size();
+    *sz = (result > 0) ? result : UINT32_MAX;
     return true;
   }
 
@@ -463,7 +464,8 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   }
 
   bool NextMessageSize(uint32_t* sz) override {
-    *sz = call_.max_receive_message_size();
+    int result = call_.max_receive_message_size();
+    *sz = (result > 0) ? result : UINT32_MAX;
     return true;
   }
 
@@ -597,7 +599,8 @@ class ServerReader final : public ServerReaderInterface<R> {
   }
 
   bool NextMessageSize(uint32_t* sz) override {
-    *sz = call_->max_receive_message_size();
+    int result = call_->max_receive_message_size();
+    *sz = (result > 0) ? result : UINT32_MAX;
     return true;
   }
 
@@ -613,7 +616,7 @@ class ServerReader final : public ServerReaderInterface<R> {
   ServerContext* const ctx_;
 
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class ::grpc_impl::internal::ClientStreamingHandler;
 
   ServerReader(::grpc::internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
@@ -688,7 +691,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
   ::grpc_impl::ServerContext* const ctx_;
 
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class ::grpc_impl::internal::ServerStreamingHandler;
 
   ServerWriter(::grpc::internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
@@ -724,7 +727,8 @@ class ServerReaderWriterBody final {
   }
 
   bool NextMessageSize(uint32_t* sz) {
-    *sz = call_->max_receive_message_size();
+    int result = call_->max_receive_message_size();
+    *sz = (result > 0) ? result : UINT32_MAX;
     return true;
   }
 
@@ -800,7 +804,7 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
  private:
   internal::ServerReaderWriterBody<W, R> body_;
 
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler<
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerReaderWriter<W, R>, false>;
   ServerReaderWriter(::grpc::internal::Call* call,
                      ::grpc_impl::ServerContext* ctx)
@@ -870,7 +874,7 @@ class ServerUnaryStreamer final
   bool read_done_;
   bool write_done_;
 
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler<
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerUnaryStreamer<RequestType, ResponseType>, true>;
   ServerUnaryStreamer(::grpc::internal::Call* call,
                       ::grpc_impl::ServerContext* ctx)
@@ -932,7 +936,7 @@ class ServerSplitStreamer final
   internal::ServerReaderWriterBody<ResponseType, RequestType> body_;
   bool read_done_;
 
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler<
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerSplitStreamer<RequestType, ResponseType>, false>;
   ServerSplitStreamer(::grpc::internal::Call* call,
                       ::grpc_impl::ServerContext* ctx)

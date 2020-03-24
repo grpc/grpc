@@ -54,15 +54,16 @@ struct passthru_endpoint {
 };
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool urgent) {
+                    grpc_closure* cb, bool /*urgent*/) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    GRPC_CLOSURE_SCHED(
-        cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, cb,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
-    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -76,7 +77,7 @@ static half* other_half(half* h) {
 }
 
 static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* arg) {
+                     grpc_closure* cb, void* /*arg*/) {
   half* m = other_half(reinterpret_cast<half*>(ep));
   gpr_mu_lock(&m->parent->mu);
   grpc_error* error = GRPC_ERROR_NONE;
@@ -87,7 +88,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     for (size_t i = 0; i < slices->count; i++) {
       grpc_slice_buffer_add(m->on_read_out, grpc_slice_copy(slices->slices[i]));
     }
-    GRPC_CLOSURE_SCHED(m->on_read, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read, GRPC_ERROR_NONE);
     m->on_read = nullptr;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
@@ -96,31 +97,32 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     }
   }
   gpr_mu_unlock(&m->parent->mu);
-  GRPC_CLOSURE_SCHED(cb, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
 }
 
-static void me_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
+static void me_add_to_pollset(grpc_endpoint* /*ep*/,
+                              grpc_pollset* /*pollset*/) {}
 
-static void me_add_to_pollset_set(grpc_endpoint* ep,
-                                  grpc_pollset_set* pollset) {}
+static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
+                                  grpc_pollset_set* /*pollset*/) {}
 
-static void me_delete_from_pollset_set(grpc_endpoint* ep,
-                                       grpc_pollset_set* pollset) {}
+static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
+                                       grpc_pollset_set* /*pollset*/) {}
 
 static void me_shutdown(grpc_endpoint* ep, grpc_error* why) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
-    GRPC_CLOSURE_SCHED(
-        m->on_read,
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, m->on_read,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   m = other_half(m);
   if (m->on_read) {
-    GRPC_CLOSURE_SCHED(
-        m->on_read,
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, m->on_read,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
@@ -153,9 +155,9 @@ static char* me_get_peer(grpc_endpoint* ep) {
              : gpr_strdup("fake:mock_server_endpoint");
 }
 
-static int me_get_fd(grpc_endpoint* ep) { return -1; }
+static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
 
-static bool me_can_track_err(grpc_endpoint* ep) { return false; }
+static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
 
 static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
   half* m = reinterpret_cast<half*>(ep);

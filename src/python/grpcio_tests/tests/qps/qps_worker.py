@@ -37,11 +37,10 @@ def run_worker_server(port):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='gRPC Python performance testing worker')
-    parser.add_argument(
-        '--driver_port',
-        type=int,
-        dest='port',
-        help='The port the worker should listen on')
+    parser.add_argument('--driver_port',
+                        type=int,
+                        dest='port',
+                        help='The port the worker should listen on')
     args = parser.parse_args()
 
     run_worker_server(args.port)

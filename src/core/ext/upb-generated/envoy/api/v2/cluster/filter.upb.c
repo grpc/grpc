@@ -10,8 +10,8 @@
 #include "upb/msg.h"
 #include "envoy/api/v2/cluster/filter.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 #include "validate/validate.upb.h"
-#include "gogoproto/gogo.upb.h"
 
 #include "upb/port_def.inc"
 

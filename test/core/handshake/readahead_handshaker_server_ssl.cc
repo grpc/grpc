@@ -55,8 +55,8 @@ class ReadAheadHandshaker : public Handshaker {
  public:
   virtual ~ReadAheadHandshaker() {}
   const char* name() const override { return "read_ahead"; }
-  void Shutdown(grpc_error* why) override {}
-  void DoHandshake(grpc_tcp_server_acceptor* acceptor,
+  void Shutdown(grpc_error* /*why*/) override {}
+  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
     grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
@@ -66,8 +66,8 @@ class ReadAheadHandshaker : public Handshaker {
 
 class ReadAheadHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* args,
-                      grpc_pollset_set* interested_parties,
+  void AddHandshakers(const grpc_channel_args* /*args*/,
+                      grpc_pollset_set* /*interested_parties*/,
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<ReadAheadHandshaker>());
   }
@@ -76,12 +76,12 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 
 }  // namespace grpc_core
 
-int main(int argc, char* argv[]) {
+int main(int /*argc*/, char* /*argv*/[]) {
   using namespace grpc_core;
   grpc_init();
   HandshakerRegistry::RegisterHandshakerFactory(
       true /* at_start */, HANDSHAKER_SERVER,
-      UniquePtr<HandshakerFactory>(New<ReadAheadHandshakerFactory>()));
+      absl::make_unique<ReadAheadHandshakerFactory>());
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
   grpc_shutdown_blocking();

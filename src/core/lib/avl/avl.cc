@@ -294,7 +294,7 @@ grpc_avl grpc_avl_remove(grpc_avl avl, void* key, void* user_data) {
   return avl;
 }
 
-grpc_avl grpc_avl_ref(grpc_avl avl, void* user_data) {
+grpc_avl grpc_avl_ref(grpc_avl avl, void* /*user_data*/) {
   ref_node(avl.root);
   return avl;
 }

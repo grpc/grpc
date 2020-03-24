@@ -138,15 +138,16 @@ bool CheckExpectedCompression(const ServerContext& context,
 
 class TestServiceImpl : public TestService::Service {
  public:
-  Status EmptyCall(ServerContext* context, const grpc::testing::Empty* request,
-                   grpc::testing::Empty* response) {
+  Status EmptyCall(ServerContext* context,
+                   const grpc::testing::Empty* /*request*/,
+                   grpc::testing::Empty* /*response*/) {
     MaybeEchoMetadata(context);
     return Status::OK;
   }
 
   // Response contains current timestamp. We ignore everything in the request.
   Status CacheableUnaryCall(ServerContext* context,
-                            const SimpleRequest* request,
+                            const SimpleRequest* /*request*/,
                             SimpleResponse* response) {
     gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
     std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
@@ -287,7 +288,7 @@ class TestServiceImpl : public TestService::Service {
   }
 
   Status HalfDuplexCall(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<StreamingOutputCallResponse,
                          StreamingOutputCallRequest>* stream) {
     std::vector<StreamingOutputCallRequest> requests;

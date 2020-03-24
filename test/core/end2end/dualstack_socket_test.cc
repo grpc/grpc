@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 
 #include <string.h>
 
@@ -51,7 +51,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void do_nothing(void* ignored) {}
+static void do_nothing(void* /*ignored*/) {}
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses* res = nullptr;
@@ -370,8 +370,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_EV */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_EV */

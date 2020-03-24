@@ -13,6 +13,8 @@
 # limitations under the License.
 # distutils: language=c++
 
+cimport cpython
+
 include "_cygrpc/grpc.pxi"
 
 include "_cygrpc/arguments.pxd.pxi"
@@ -32,7 +34,21 @@ include "_cygrpc/time.pxd.pxi"
 include "_cygrpc/vtable.pxd.pxi"
 include "_cygrpc/_hooks.pxd.pxi"
 
+include "_cygrpc/iomgr.pxd.pxi"
+
 include "_cygrpc/grpc_gevent.pxd.pxi"
 
 IF UNAME_SYSNAME != "Windows":
     include "_cygrpc/fork_posix.pxd.pxi"
+
+# Following pxi files are part of the Aio module
+include "_cygrpc/aio/iomgr/socket.pxd.pxi"
+include "_cygrpc/aio/iomgr/timer.pxd.pxi"
+include "_cygrpc/aio/iomgr/resolver.pxd.pxi"
+include "_cygrpc/aio/completion_queue.pxd.pxi"
+include "_cygrpc/aio/rpc_status.pxd.pxi"
+include "_cygrpc/aio/grpc_aio.pxd.pxi"
+include "_cygrpc/aio/callback_common.pxd.pxi"
+include "_cygrpc/aio/call.pxd.pxi"
+include "_cygrpc/aio/channel.pxd.pxi"
+include "_cygrpc/aio/server.pxd.pxi"

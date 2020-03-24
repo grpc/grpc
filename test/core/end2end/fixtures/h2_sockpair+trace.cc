@@ -74,7 +74,7 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_endpoint_pair* sfd =
       static_cast<grpc_endpoint_pair*>(gpr_malloc(sizeof(grpc_endpoint_pair)));
 

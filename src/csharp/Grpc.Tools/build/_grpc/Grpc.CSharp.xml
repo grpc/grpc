@@ -22,7 +22,7 @@
       <EnumValue Name="None" DisplayName="Do not generate" />
       <EnumProperty.DataSource>
         <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
-                    PersistenceStyle="Attribute" />
+                    PersistenceStyle="Attribute" HasConfigurationCondition="false" />
       </EnumProperty.DataSource>
     </EnumProperty>
 

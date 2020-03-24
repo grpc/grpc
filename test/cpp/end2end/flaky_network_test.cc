@@ -32,6 +32,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <random>
@@ -344,8 +345,8 @@ std::vector<TestScenario> CreateTestScenarios() {
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(FlakyNetworkTest, FlakyNetworkTest,
-                        ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(FlakyNetworkTest, FlakyNetworkTest,
+                         ::testing::ValuesIn(CreateTestScenarios()));
 
 // Network interface connected to server flaps
 TEST_P(FlakyNetworkTest, NetworkTransition) {
@@ -548,7 +549,7 @@ TEST_P(FlakyNetworkTest, ServerRestartKeepaliveDisabled) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;
 }

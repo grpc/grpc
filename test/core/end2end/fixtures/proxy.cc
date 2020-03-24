@@ -89,7 +89,7 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   int proxy_port = grpc_pick_unused_port_or_die();
   int server_port = grpc_pick_unused_port_or_die();
 
-  grpc_end2end_proxy* proxy = grpc_core::New<grpc_end2end_proxy>();
+  grpc_end2end_proxy* proxy = new grpc_end2end_proxy();
 
   grpc_core::JoinHostPort(&proxy->proxy_port, "localhost", proxy_port);
   grpc_core::JoinHostPort(&proxy->server_port, "localhost", server_port);
@@ -120,7 +120,7 @@ static closure* new_closure(void (*func)(void* arg, int success), void* arg) {
   return cl;
 }
 
-static void shutdown_complete(void* arg, int success) {
+static void shutdown_complete(void* arg, int /*success*/) {
   grpc_end2end_proxy* proxy = static_cast<grpc_end2end_proxy*>(arg);
   proxy->shutdown = 1;
   grpc_completion_queue_shutdown(proxy->cq);
@@ -134,10 +134,10 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy* proxy) {
   grpc_channel_destroy(proxy->client);
   grpc_completion_queue_destroy(proxy->cq);
   grpc_call_details_destroy(&proxy->new_call_details);
-  grpc_core::Delete(proxy);
+  delete proxy;
 }
 
-static void unrefpc(proxy_call* pc, const char* reason) {
+static void unrefpc(proxy_call* pc, const char* /*reason*/) {
   if (gpr_unref(&pc->refs)) {
     grpc_call_unref(pc->c2p);
     grpc_call_unref(pc->p2s);
@@ -149,14 +149,16 @@ static void unrefpc(proxy_call* pc, const char* reason) {
   }
 }
 
-static void refpc(proxy_call* pc, const char* reason) { gpr_ref(&pc->refs); }
+static void refpc(proxy_call* pc, const char* /*reason*/) {
+  gpr_ref(&pc->refs);
+}
 
-static void on_c2p_sent_initial_metadata(void* arg, int success) {
+static void on_c2p_sent_initial_metadata(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   unrefpc(pc, "on_c2p_sent_initial_metadata");
 }
 
-static void on_p2s_recv_initial_metadata(void* arg, int success) {
+static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   grpc_op op;
   grpc_call_error err;
@@ -178,7 +180,7 @@ static void on_p2s_recv_initial_metadata(void* arg, int success) {
   unrefpc(pc, "on_p2s_recv_initial_metadata");
 }
 
-static void on_p2s_sent_initial_metadata(void* arg, int success) {
+static void on_p2s_sent_initial_metadata(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   unrefpc(pc, "on_p2s_sent_initial_metadata");
 }
@@ -205,7 +207,7 @@ static void on_p2s_sent_message(void* arg, int success) {
   unrefpc(pc, "on_p2s_sent_message");
 }
 
-static void on_p2s_sent_close(void* arg, int success) {
+static void on_p2s_sent_close(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   unrefpc(pc, "on_p2s_sent_close");
 }
@@ -285,7 +287,7 @@ static void on_p2s_recv_msg(void* arg, int success) {
   unrefpc(pc, "on_p2s_recv_msg");
 }
 
-static void on_c2p_sent_status(void* arg, int success) {
+static void on_c2p_sent_status(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   unrefpc(pc, "on_c2p_sent_status");
 }
@@ -315,7 +317,7 @@ static void on_p2s_status(void* arg, int success) {
   unrefpc(pc, "on_p2s_status");
 }
 
-static void on_c2p_closed(void* arg, int success) {
+static void on_c2p_closed(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   unrefpc(pc, "on_c2p_closed");
 }

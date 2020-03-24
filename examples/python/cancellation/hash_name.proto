@@ -21,7 +21,7 @@ message HashNameRequest {
   // The string that is desired in the secret's hash.
   string desired_name = 1;
 
-  // The ideal Hamming distance betwen desired_name and the secret that will
+  // The ideal Hamming distance between desired_name and the secret that will
   // be searched for.
   int32 ideal_hamming_distance = 2;
 

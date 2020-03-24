@@ -18,15 +18,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#if defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && \
+    !defined(GPR_CUSTOM_SYNC)
+
 #include <grpc/support/alloc.h>
-
-#ifdef GPR_POSIX_SYNC
-
-#include <errno.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
+#include <errno.h>
 #include <time.h>
+
 #include "src/core/lib/profiling/timers.h"
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
@@ -170,4 +172,5 @@ void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   GPR_ASSERT(pthread_once(once, init_function) == 0);
 }
 
-#endif /* GRP_POSIX_SYNC */
+#endif /* defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && \
+          !defined(GPR_CUSTOM_SYNC) */

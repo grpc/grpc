@@ -20,7 +20,9 @@ import unittest
 
 import grpc
 
-import duration_pb2
+from google.protobuf import duration_pb2
+from google.protobuf import timestamp_pb2
+from concurrent import futures
 import helloworld_pb2
 import helloworld_pb2_grpc
 
@@ -31,12 +33,13 @@ _SERVER_ADDRESS = '{}:0'.format(_HOST)
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     def SayHello(self, request, context):
-        request_in_flight = datetime.now() - request.request_initation.ToDatetime()
+        request_in_flight = datetime.datetime.now() - \
+                            request.request_initiation.ToDatetime()
         request_duration = duration_pb2.Duration()
         request_duration.FromTimedelta(request_in_flight)
         return helloworld_pb2.HelloReply(
-                message='Hello, %s!' % request.name,
-                request_duration=request_duration,
+            message='Hello, %s!' % request.name,
+            request_duration=request_duration,
         )
 
 
@@ -53,19 +56,19 @@ def _listening_server():
 
 
 class ImportTest(unittest.TestCase):
-    def run():
+    def test_import(self):
         with _listening_server() as port:
             with grpc.insecure_channel('{}:{}'.format(_HOST, port)) as channel:
                 stub = helloworld_pb2_grpc.GreeterStub(channel)
                 request_timestamp = timestamp_pb2.Timestamp()
                 request_timestamp.GetCurrentTime()
                 response = stub.SayHello(helloworld_pb2.HelloRequest(
-                                            name='you',
-                                            request_initiation=request_timestamp,
-                                        ),
-                                         wait_for_ready=True)
+                    name='you',
+                    request_initiation=request_timestamp,
+                ),
+                    wait_for_ready=True)
                 self.assertEqual(response.message, "Hello, you!")
-                self.assertGreater(response.request_duration.microseconds, 0)
+                self.assertGreater(response.request_duration.nanos, 0)
 
 
 if __name__ == '__main__':

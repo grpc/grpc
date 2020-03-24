@@ -28,11 +28,11 @@
 
 #include "test/core/util/test_config.h"
 
-static grpc_combiner* g_combiner;
+static grpc_core::Combiner* g_combiner;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
-  void ReturnResult(grpc_core::Resolver::Result result) override {}
+  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
 
   void ReturnError(grpc_error* error) override { GRPC_ERROR_UNREF(error); }
 };
@@ -47,9 +47,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  args.result_handler =
-      grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
-          grpc_core::New<ResultHandler>());
+  args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
@@ -70,9 +68,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  args.result_handler =
-      grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
-          grpc_core::New<ResultHandler>());
+  args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);

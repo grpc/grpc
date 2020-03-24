@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package testcodegen;
+package helloworld;
 
 service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply) {}

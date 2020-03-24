@@ -33,11 +33,11 @@
 #include <sys/wait.h>
 #endif
 
-#include "test/cpp/util/subprocess.h"
-#include "test/cpp/util/test_config.h"
-
 #include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/util/subprocess.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(
     running_under_bazel, false,
@@ -59,7 +59,7 @@ using grpc::SubProcess;
 
 static volatile sig_atomic_t abort_wait_for_child = 0;
 
-static void sighandler(int sig) { abort_wait_for_child = 1; }
+static void sighandler(int /*sig*/) { abort_wait_for_child = 1; }
 
 static void register_sighandler() {
   struct sigaction act;
@@ -161,6 +161,7 @@ void InvokeResolverComponentTestsRunner(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
   GPR_ASSERT(FLAGS_test_bin_name != "");

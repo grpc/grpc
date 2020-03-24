@@ -133,13 +133,13 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return ret;
   }
 
-  Status CoreCount(ServerContext* ctx, const CoreRequest*,
+  Status CoreCount(ServerContext* /*ctx*/, const CoreRequest*,
                    CoreResponse* resp) override {
     resp->set_cores(gpr_cpu_num_cores());
     return Status::OK;
   }
 
-  Status QuitWorker(ServerContext* ctx, const Void*, Void*) override {
+  Status QuitWorker(ServerContext* /*ctx*/, const Void*, Void*) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Quitting worker busy");
@@ -181,7 +181,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     acquired_ = false;
   }
 
-  Status RunClientBody(ServerContext* ctx,
+  Status RunClientBody(ServerContext* /*ctx*/,
                        ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
@@ -191,7 +191,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
       return Status(StatusCode::INVALID_ARGUMENT, "Invalid setup arg");
     }
     gpr_log(GPR_INFO, "RunClientBody: about to create client");
-    auto client = CreateClient(args.setup());
+    std::unique_ptr<Client> client = CreateClient(args.setup());
     if (!client) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create client");
     }
@@ -221,7 +221,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return Status::OK;
   }
 
-  Status RunServerBody(ServerContext* ctx,
+  Status RunServerBody(ServerContext* /*ctx*/,
                        ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
     ServerArgs args;
     if (!stream->Read(&args)) {
@@ -234,7 +234,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
       args.mutable_setup()->set_port(server_port_);
     }
     gpr_log(GPR_INFO, "RunServerBody: about to create server");
-    auto server = CreateServer(args.setup());
+    std::unique_ptr<Server> server = CreateServer(args.setup());
     if (g_inproc_servers != nullptr) {
       g_inproc_servers->push_back(server.get());
     }

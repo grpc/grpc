@@ -24,10 +24,6 @@ CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
 
 ./tools/run_tests/start_port_server.py || true
 
-make CONFIG=opt memory_usage_test memory_usage_client memory_usage_server -j $CPUS
-bins/opt/memory_usage_test
-bq load microbenchmarks.memory memory_usage.csv
-
 tools/run_tests/run_microbenchmark.py --collect summary --bigquery_upload || FAILED="true"
 
 # kill port_server.py to prevent the build from hanging

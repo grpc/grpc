@@ -49,9 +49,9 @@
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
+using grpc::lb::v1::LoadBalancer;
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
-using grpc::lb::v1::LoadBalancer;
 
 namespace grpc {
 namespace testing {
@@ -73,7 +73,7 @@ class BalancerServiceImpl : public LoadBalancer::Service {
   explicit BalancerServiceImpl(const std::vector<int>& all_backend_ports)
       : all_backend_ports_(all_backend_ports) {}
 
-  Status BalanceLoad(ServerContext* context, Stream* stream) override {
+  Status BalanceLoad(ServerContext* /*context*/, Stream* stream) override {
     gpr_log(GPR_INFO, "LB[%p]: Start BalanceLoad.", this);
     LoadBalanceRequest request;
     stream->Read(&request);
@@ -329,9 +329,9 @@ class ClientChannelStressTest {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::ClientChannelStressTest test;
+  grpc_init();
   test.Run();
   grpc_shutdown();
   return 0;

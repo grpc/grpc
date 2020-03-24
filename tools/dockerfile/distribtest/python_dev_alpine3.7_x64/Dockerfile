@@ -14,9 +14,9 @@
 
 FROM alpine:3.7
 
-RUN apk add --update build-base python python-dev py-pip
+RUN apk add --update build-base linux-headers python python-dev py-pip
 
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip==19.3.1
 
 RUN pip install virtualenv
 

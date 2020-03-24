@@ -51,7 +51,7 @@ static void create_sockets(int sv[2]) {
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   sp_fixture_data* fixture_data =
       static_cast<sp_fixture_data*>(gpr_malloc(sizeof(*fixture_data)));
 

@@ -98,7 +98,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
   } else {
     pollset->on_shutdown = closure;
   }
@@ -146,7 +146,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        GRPC_CLOSURE_SCHED(pollset->on_shutdown, GRPC_ERROR_NONE);
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->on_shutdown,
+                                GRPC_ERROR_NONE);
         pollset->on_shutdown = NULL;
       }
       goto done;
@@ -184,19 +185,23 @@ done:
 
 static grpc_error* pollset_kick(grpc_pollset* p,
                                 grpc_pollset_worker* specific_worker) {
+  bool should_kick_global = false;
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
+      should_kick_global = true;
       for (specific_worker =
                p->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next;
            specific_worker != &p->root_worker;
            specific_worker =
                specific_worker->links[GRPC_POLLSET_WORKER_LINK_POLLSET].next) {
         specific_worker->kicked = 1;
+        should_kick_global = false;
         gpr_cv_signal(&specific_worker->cv);
       }
       p->kicked_without_pollers = 1;
       if (p->is_iocp_worker) {
         grpc_iocp_kick();
+        should_kick_global = false;
       }
     } else {
       if (p->is_iocp_worker && g_active_poller == specific_worker) {
@@ -215,6 +220,15 @@ static grpc_error* pollset_kick(grpc_pollset* p,
       grpc_iocp_kick();
     } else {
       p->kicked_without_pollers = 1;
+      should_kick_global = true;
+    }
+  }
+  if (should_kick_global && g_active_poller == NULL) {
+    grpc_pollset_worker* next_global_worker = pop_front_worker(
+        &g_global_root_worker, GRPC_POLLSET_WORKER_LINK_GLOBAL);
+    if (next_global_worker != NULL) {
+      next_global_worker->kicked = 1;
+      gpr_cv_signal(&next_global_worker->cv);
     }
   }
   return GRPC_ERROR_NONE;

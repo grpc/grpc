@@ -30,8 +30,8 @@ namespace grpc_core {
 // Resolver
 //
 
-Resolver::Resolver(grpc_combiner* combiner,
-                   UniquePtr<ResultHandler> result_handler)
+Resolver::Resolver(Combiner* combiner,
+                   std::unique_ptr<ResultHandler> result_handler)
     : InternallyRefCounted(&grpc_trace_resolver_refcount),
       result_handler_(std::move(result_handler)),
       combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}
@@ -54,7 +54,7 @@ Resolver::Result::Result(const Result& other) {
   args = grpc_channel_args_copy(other.args);
 }
 
-Resolver::Result::Result(Result&& other) {
+Resolver::Result::Result(Result&& other) noexcept {
   addresses = std::move(other.addresses);
   service_config = std::move(other.service_config);
   service_config_error = other.service_config_error;
@@ -73,7 +73,7 @@ Resolver::Result& Resolver::Result::operator=(const Result& other) {
   return *this;
 }
 
-Resolver::Result& Resolver::Result::operator=(Result&& other) {
+Resolver::Result& Resolver::Result::operator=(Result&& other) noexcept {
   addresses = std::move(other.addresses);
   service_config = std::move(other.service_config);
   GRPC_ERROR_UNREF(service_config_error);

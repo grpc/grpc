@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "test/core/util/test_config.h"
 
 static int all_ok = 1;
 
@@ -99,6 +100,7 @@ static void expect_binary_header(const char* hdr, int binary) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   /* Base64 test vectors from RFC 4648, with padding removed */

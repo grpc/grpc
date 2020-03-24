@@ -1,10 +1,11 @@
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
-    "get_include_protoc_args",
+    "get_include_directory",
     "get_plugin_args",
     "proto_path_to_generated_filename",
 )
-load(":grpc_util.bzl", "to_upper_camel_with_extension",)
+load(":grpc_util.bzl", "to_upper_camel_with_extension")
 
 _GRPC_PROTO_HEADER_FMT = "{}.pbrpc.h"
 _GRPC_PROTO_SRC_FMT = "{}.pbrpc.m"
@@ -37,10 +38,12 @@ def _generate_objc_impl(ctx):
         if file_path in files_with_rpc:
             outs += [_get_output_file_name_from_proto(proto, _GRPC_PROTO_HEADER_FMT)]
             outs += [_get_output_file_name_from_proto(proto, _GRPC_PROTO_SRC_FMT)]
-    
+
     out_files = [ctx.actions.declare_file(out) for out in outs]
     dir_out = _join_directories([
-        str(ctx.genfiles_dir.path), target_package, _GENERATED_PROTOS_DIR
+        str(ctx.genfiles_dir.path),
+        target_package,
+        _GENERATED_PROTOS_DIR,
     ])
 
     arguments = []
@@ -55,7 +58,11 @@ def _generate_objc_impl(ctx):
     arguments += ["--objc_out=" + dir_out]
 
     arguments += ["--proto_path=."]
-    arguments += get_include_protoc_args(protos)
+    arguments += [
+        "--proto_path={}".format(get_include_directory(i))
+        for i in protos
+    ]
+
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
     arguments += ["--proto_path={}".format(dir_out)]
@@ -66,8 +73,9 @@ def _generate_objc_impl(ctx):
     well_known_proto_files = []
     if ctx.attr.use_well_known_protos:
         f = ctx.attr.well_known_protos.files.to_list()[0].dirname
+
         # go two levels up so that #import "google/protobuf/..." is correct
-        arguments += ["-I{0}".format(f + "/../..")] 
+        arguments += ["-I{0}".format(f + "/../..")]
         well_known_proto_files = ctx.attr.well_known_protos.files.to_list()
     ctx.actions.run(
         inputs = protos + well_known_proto_files,
@@ -86,6 +94,7 @@ def _label_to_full_file_path(src, package):
             # "a.proto" -> ":a.proto"
             src = ":" + src
         src = "//" + package + src
+
     # Converts //path/to/package:File.ext to path/to/package/File.ext.
     src = src.replace("//", "")
     src = src.replace(":", "/")
@@ -115,7 +124,8 @@ def _get_directory_from_proto(proto):
 
 def _get_full_path_from_file(file):
     gen_dir_length = 0
-    # if file is generated, then prepare to remote its root 
+
+    # if file is generated, then prepare to remote its root
     # (including CPU architecture...)
     if not file.is_source:
         gen_dir_length = len(file.root.path) + 1
@@ -125,7 +135,6 @@ def _get_full_path_from_file(file):
 def _join_directories(directories):
     massaged_directories = [directory for directory in directories if len(directory) != 0]
     return "/".join(massaged_directories)
-
 
 generate_objc = rule(
     attrs = {
@@ -142,14 +151,14 @@ generate_objc = rule(
         ),
         "srcs": attr.string_list(
             mandatory = False,
-            allow_empty = True
+            allow_empty = True,
         ),
         "use_well_known_protos": attr.bool(
             mandatory = False,
-            default = False
+            default = False,
         ),
         "well_known_protos": attr.label(
-            default = "@com_google_protobuf//:well_known_protos"
+            default = "@com_google_protobuf//:well_known_protos",
         ),
         "_protoc": attr.label(
             default = Label("//external:protocol_compiler"),
@@ -158,7 +167,7 @@ generate_objc = rule(
         ),
     },
     output_to_genfiles = True,
-    implementation = _generate_objc_impl
+    implementation = _generate_objc_impl,
 )
 
 def _group_objc_files_impl(ctx):
@@ -172,8 +181,8 @@ def _group_objc_files_impl(ctx):
     else:
         fail("Undefined gen_mode")
     out_files = [
-        file 
-        for file in ctx.attr.src.files.to_list() 
+        file
+        for file in ctx.attr.src.files.to_list()
         if file.basename.endswith(suffix)
     ]
     return struct(files = depset(out_files))
@@ -185,9 +194,9 @@ generate_objc_hdrs = rule(
         ),
         "gen_mode": attr.int(
             default = _GENERATE_HDRS,
-        )
+        ),
     },
-    implementation = _group_objc_files_impl
+    implementation = _group_objc_files_impl,
 )
 
 generate_objc_srcs = rule(
@@ -197,9 +206,9 @@ generate_objc_srcs = rule(
         ),
         "gen_mode": attr.int(
             default = _GENERATE_SRCS,
-        )
+        ),
     },
-    implementation = _group_objc_files_impl
+    implementation = _group_objc_files_impl,
 )
 
 generate_objc_non_arc_srcs = rule(
@@ -209,7 +218,7 @@ generate_objc_non_arc_srcs = rule(
         ),
         "gen_mode": attr.int(
             default = _GENERATE_NON_ARC_SRCS,
-        )
+        ),
     },
-    implementation = _group_objc_files_impl
+    implementation = _group_objc_files_impl,
 )

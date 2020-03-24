@@ -97,20 +97,20 @@ void ProtoServerReflection::FillErrorResponse(const Status& status,
   error_response->set_error_message(status.error_message());
 }
 
-Status ProtoServerReflection::ListService(ServerContext* context,
+Status ProtoServerReflection::ListService(ServerContext* /*context*/,
                                           ListServiceResponse* response) {
   if (services_ == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Services not found.");
   }
-  for (auto it = services_->begin(); it != services_->end(); ++it) {
+  for (const auto& value : *services_) {
     ServiceResponse* service_response = response->add_service();
-    service_response->set_name(*it);
+    service_response->set_name(value);
   }
   return Status::OK;
 }
 
 Status ProtoServerReflection::GetFileByName(
-    ServerContext* context, const grpc::string& filename,
+    ServerContext* /*context*/, const grpc::string& filename,
     ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
@@ -127,7 +127,7 @@ Status ProtoServerReflection::GetFileByName(
 }
 
 Status ProtoServerReflection::GetFileContainingSymbol(
-    ServerContext* context, const grpc::string& symbol,
+    ServerContext* /*context*/, const grpc::string& symbol,
     ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
@@ -144,7 +144,7 @@ Status ProtoServerReflection::GetFileContainingSymbol(
 }
 
 Status ProtoServerReflection::GetFileContainingExtension(
-    ServerContext* context, const ExtensionRequest* request,
+    ServerContext* /*context*/, const ExtensionRequest* request,
     ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
@@ -168,7 +168,7 @@ Status ProtoServerReflection::GetFileContainingExtension(
 }
 
 Status ProtoServerReflection::GetAllExtensionNumbers(
-    ServerContext* context, const grpc::string& type,
+    ServerContext* /*context*/, const grpc::string& type,
     ExtensionNumberResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
@@ -182,8 +182,8 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
 
   std::vector<const protobuf::FieldDescriptor*> extensions;
   descriptor_pool_->FindAllExtensions(desc, &extensions);
-  for (auto it = extensions.begin(); it != extensions.end(); it++) {
-    response->add_extension_number((*it)->number());
+  for (const auto& value : extensions) {
+    response->add_extension_number(value->number());
   }
   response->set_base_type_name(type);
   return Status::OK;

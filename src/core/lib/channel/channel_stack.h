@@ -42,6 +42,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -67,7 +68,7 @@ typedef struct {
   const void* server_transport_data;
   grpc_call_context_element* context;
   const grpc_slice& path;
-  gpr_timespec start_time;
+  gpr_cycle_counter start_time;
   grpc_millis deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;
@@ -234,13 +235,25 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
   grpc_stream_unref(&(channel_stack)->refcount, reason)
 #else
 #define GRPC_CALL_STACK_REF(call_stack, reason) \
-  grpc_stream_ref(&(call_stack)->refcount)
+  do {                                          \
+    grpc_stream_ref(&(call_stack)->refcount);   \
+    (void)(reason);                             \
+  } while (0);
 #define GRPC_CALL_STACK_UNREF(call_stack, reason) \
-  grpc_stream_unref(&(call_stack)->refcount)
+  do {                                            \
+    grpc_stream_unref(&(call_stack)->refcount);   \
+    (void)(reason);                               \
+  } while (0);
 #define GRPC_CHANNEL_STACK_REF(channel_stack, reason) \
-  grpc_stream_ref(&(channel_stack)->refcount)
+  do {                                                \
+    grpc_stream_ref(&(channel_stack)->refcount);      \
+    (void)(reason);                                   \
+  } while (0);
 #define GRPC_CHANNEL_STACK_UNREF(channel_stack, reason) \
-  grpc_stream_unref(&(channel_stack)->refcount)
+  do {                                                  \
+    grpc_stream_unref(&(channel_stack)->refcount);      \
+    (void)(reason);                                     \
+  } while (0);
 #endif
 
 /* Destroy a call stack */

@@ -22,27 +22,24 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 
 namespace grpc_core {
 
 class LoadBalancingPolicyFactory {
  public:
+  virtual ~LoadBalancingPolicyFactory() {}
+
   /// Returns a new LB policy instance.
   virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      LoadBalancingPolicy::Args) const GRPC_ABSTRACT;
+      LoadBalancingPolicy::Args) const = 0;
 
   /// Returns the LB policy name that this factory provides.
   /// Caller does NOT take ownership of result.
-  virtual const char* name() const GRPC_ABSTRACT;
+  virtual const char* name() const = 0;
 
   virtual RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const GRPC_ABSTRACT;
-
-  virtual ~LoadBalancingPolicyFactory() {}
-
-  GRPC_ABSTRACT_BASE_CLASS;
+      const Json& json, grpc_error** error) const = 0;
 };
 
 }  // namespace grpc_core

@@ -20,10 +20,12 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_perf_multilang_rc
 
 # "smoketest" scenarios on a single VM (=no remote VM for running qps_workers)
+# TODO(jtattermusch): add back "node" language once the scenarios are passing again
+# See https://github.com/grpc/grpc/issues/20234
 tools/run_tests/run_performance_tests.py \
-    -l c++ csharp ruby java python go php7 php7_protobuf_c node \
+    -l c++ csharp ruby java python python_asyncio go php7 php7_protobuf_c \
     --netperf \
     --category smoketest \
     -u kbuilder \
     --bq_result_table performance_test.performance_experiment_singlevm \
-    --xml_report reports/singlemachine/sponge_log.xml
+    --xml_report run_performance_tests/singlemachine/sponge_log.xml

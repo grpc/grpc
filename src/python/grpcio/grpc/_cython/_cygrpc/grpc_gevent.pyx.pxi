@@ -13,9 +13,7 @@
 # limitations under the License.
 # distutils: language=c++
 
-cimport cpython
 from libc cimport string
-from libc.stdlib cimport malloc, free
 import errno
 gevent_g = None
 gevent_socket = None
@@ -23,51 +21,6 @@ gevent_hub = None
 gevent_event = None
 g_event = None
 g_pool = None
-
-cdef grpc_error* grpc_error_none():
-  return <grpc_error*>0
-
-cdef grpc_error* socket_error(str syscall, str err):
-  error_str = "{} failed: {}".format(syscall, err)
-  error_bytes = str_to_bytes(error_str)
-  return grpc_socket_error(error_bytes)
-
-cdef resolved_addr_to_tuple(grpc_resolved_address* address):
-  cdef char* res_str
-  port = grpc_sockaddr_get_port(address)
-  str_len = grpc_sockaddr_to_string(&res_str, address, 0) 
-  byte_str = _decode(<bytes>res_str[:str_len])
-  if byte_str.endswith(':' + str(port)):
-    byte_str = byte_str[:(0 - len(str(port)) - 1)]
-  byte_str = byte_str.lstrip('[')
-  byte_str = byte_str.rstrip(']')
-  byte_str = '{}'.format(byte_str)
-  return byte_str, port
-
-cdef sockaddr_to_tuple(const grpc_sockaddr* address, size_t length):
-  cdef grpc_resolved_address c_addr
-  string.memcpy(<void*>c_addr.addr, <void*> address, length)
-  c_addr.len = length
-  return resolved_addr_to_tuple(&c_addr)
-
-cdef sockaddr_is_ipv4(const grpc_sockaddr* address, size_t length):
-  cdef grpc_resolved_address c_addr
-  string.memcpy(<void*>c_addr.addr, <void*> address, length)
-  c_addr.len = length
-  return grpc_sockaddr_get_uri_scheme(&c_addr) == b'ipv4'
-
-cdef grpc_resolved_addresses* tuples_to_resolvaddr(tups):
-  cdef grpc_resolved_addresses* addresses
-  tups_set = set((tup[4][0], tup[4][1]) for tup in tups)
-  addresses = <grpc_resolved_addresses*> malloc(sizeof(grpc_resolved_addresses))
-  addresses.naddrs = len(tups_set)
-  addresses.addrs = <grpc_resolved_address*> malloc(sizeof(grpc_resolved_address) * len(tups_set))
-  i = 0
-  for tup in set(tups_set):
-    hostname = str_to_bytes(tup[0])
-    grpc_string_to_sockaddr(&addresses.addrs[i], hostname, tup[1])
-    i += 1
-  return addresses
 
 def _spawn_greenlet(*args):
   greenlet = g_pool.spawn(*args)
@@ -78,11 +31,15 @@ def _spawn_greenlet(*args):
 
 cdef class SocketWrapper:
   def __cinit__(self):
+    fork_handlers_and_grpc_init()
     self.sockopts = []
     self.socket = None
     self.c_socket = NULL
     self.c_buffer = NULL
     self.len = 0
+
+  def __dealloc__(self):
+    grpc_shutdown_blocking()
 
 cdef grpc_error* socket_init(grpc_custom_socket* socket, int domain) with gil:
   sw = SocketWrapper()
@@ -304,9 +261,13 @@ cdef void socket_accept(grpc_custom_socket* socket, grpc_custom_socket* client,
 
 cdef class ResolveWrapper:
   def __cinit__(self):
+    fork_handlers_and_grpc_init()
     self.c_resolver = NULL
     self.c_host = NULL
     self.c_port = NULL
+
+  def __dealloc__(self):
+    grpc_shutdown_blocking()
 
 cdef socket_resolve_async_cython(ResolveWrapper resolve_wrapper):
   try:
@@ -344,6 +305,7 @@ cdef grpc_error* socket_resolve(char* host, char* port,
 
 cdef class TimerWrapper:
   def __cinit__(self, deadline):
+    fork_handlers_and_grpc_init()
     self.timer = gevent_hub.get_hub().loop.timer(deadline)
     self.event = None
 
@@ -359,6 +321,9 @@ cdef class TimerWrapper:
   def stop(self):
     self.event.set()
     self.timer.stop()
+
+  def __dealloc__(self):
+    grpc_shutdown_blocking()
 
 cdef void timer_start(grpc_custom_timer* t) with gil:
   timer = TimerWrapper(t.timeout_ms / 1000.0)

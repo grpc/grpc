@@ -136,6 +136,7 @@ EXPORTS
     grpc_local_server_credentials_create
     grpc_tls_credentials_options_create
     grpc_tls_credentials_options_set_cert_request_type
+    grpc_tls_credentials_options_set_server_verification_option
     grpc_tls_credentials_options_set_key_materials_config
     grpc_tls_credentials_options_set_credential_reload_config
     grpc_tls_credentials_options_set_server_authorization_check_config
@@ -217,8 +218,6 @@ EXPORTS
     gpr_realloc
     gpr_malloc_aligned
     gpr_free_aligned
-    gpr_set_allocation_functions
-    gpr_get_allocation_functions
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
     gpr_format_message

@@ -52,6 +52,8 @@ namespace Grpc.Core.Tests
                     }
                     if (str == "SERIALIZE_TO_NULL")
                     {
+                        // for contextual marshaller, serializing to null payload corresponds
+                        // to not calling the Complete() method in the serializer.
                         return;
                     }
                     var bytes = System.Text.Encoding.UTF8.GetBytes(str);

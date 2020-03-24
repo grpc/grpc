@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler'
-  v = '3.8.0'
+  v = '3.11.2'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
   s.description = <<-DESC
@@ -123,6 +123,11 @@ Pod::Spec.new do |s|
   bazel = "#{repo_root}/tools/bazel"
   
   s.prepare_command = <<-CMD
-    #{bazel} build @com_google_protobuf//:protoc
+    if [ ! -f bin/protoc ]; then
+      #{bazel} build @com_google_protobuf//:protoc
+    else
+      mv bin/protoc .
+      mv include/google .
+    fi
   CMD
 end

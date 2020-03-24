@@ -18,9 +18,8 @@
 
 #import <XCTest/XCTest.h>
 
-#ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
-#endif
+#import <GRPCClient/GRPCCallOptions.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
@@ -86,7 +85,7 @@ dispatch_once_t initCronet;
   self.continueAfterFailure = NO;
 
   _remoteService = [RMTTestService serviceWithHost:kRemoteSSLHost callOptions:nil];
-  configureCronet();
+  configureCronet(/*enable_netlog=*/false);
 
   // Default stack with remote host
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -101,11 +100,12 @@ dispatch_once_t initCronet;
 
   // Local stack with SSL
   NSBundle *bundle = [NSBundle bundleForClass:[self class]];
-  NSString *certsPath =
-      [bundle pathForResource:@"TestCertificates.bundle/test-certificates" ofType:@"pem"];
+  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
+                                         ofType:@"pem"];
   NSError *error = nil;
-  NSString *certs =
-      [NSString stringWithContentsOfFile:certsPath encoding:NSUTF8StringEncoding error:&error];
+  NSString *certs = [NSString stringWithContentsOfFile:certsPath
+                                              encoding:NSUTF8StringEncoding
+                                                 error:&error];
   XCTAssertNil(error);
 
   options = [[GRPCMutableCallOptions alloc] init];

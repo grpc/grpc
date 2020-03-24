@@ -70,10 +70,16 @@ typedef set<StringPair> StringPairSet;
 class IndentScope {
  public:
   explicit IndentScope(grpc_generator::Printer* printer) : printer_(printer) {
+    // NOTE(rbellevi): Two-space tabs are hard-coded in the protocol compiler.
+    // Doubling our indents and outdents guarantees compliance with PEP8.
+    printer_->Indent();
     printer_->Indent();
   }
 
-  ~IndentScope() { printer_->Outdent(); }
+  ~IndentScope() {
+    printer_->Outdent();
+    printer_->Outdent();
+  }
 
  private:
   grpc_generator::Printer* printer_;
@@ -92,8 +98,9 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
     // smarter and more sophisticated, but at the moment, if there is
     // no docstring to print, we simply emit "pass" to ensure validity
     // of the generated code.
-    out->Print("# missing associated documentation comment in .proto file\n");
-    out->Print("pass\n");
+    out->Print(
+        "\"\"\"Missing associated documentation comment in .proto "
+        "file\"\"\"\n");
     return;
   }
   out->Print("\"\"\"");
@@ -570,6 +577,93 @@ bool PrivateGenerator::PrintAddServicerToServer(
   return true;
 }
 
+/* Prints out a service class used as a container for static methods pertaining
+ * to a class. This class has the exact name of service written in the ".proto"
+ * file, with no suffixes. Since this class merely acts as a namespace, it
+ * should never be instantiated.
+ */
+bool PrivateGenerator::PrintServiceClass(
+    const grpc::string& package_qualified_service_name,
+    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+  StringMap dict;
+  dict["Service"] = service->name();
+  out->Print("\n\n");
+  out->Print(" # This class is part of an EXPERIMENTAL API.\n");
+  out->Print(dict, "class $Service$(object):\n");
+  {
+    IndentScope class_indent(out);
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
+    for (int i = 0; i < service->method_count(); ++i) {
+      const auto& method = service->method(i);
+      grpc::string request_module_and_class;
+      if (!method->get_module_and_message_path_input(
+              &request_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
+        return false;
+      }
+      grpc::string response_module_and_class;
+      if (!method->get_module_and_message_path_output(
+              &response_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
+        return false;
+      }
+      out->Print("\n");
+      StringMap method_dict;
+      method_dict["Method"] = method->name();
+      out->Print("@staticmethod\n");
+      out->Print(method_dict, "def $Method$(");
+      grpc::string request_parameter(
+          method->ClientStreaming() ? "request_iterator" : "request");
+      StringMap args_dict;
+      args_dict["RequestParameter"] = request_parameter;
+      {
+        IndentScope args_indent(out);
+        IndentScope args_double_indent(out);
+        out->Print(args_dict, "$RequestParameter$,\n");
+        out->Print("target,\n");
+        out->Print("options=(),\n");
+        out->Print("channel_credentials=None,\n");
+        out->Print("call_credentials=None,\n");
+        out->Print("compression=None,\n");
+        out->Print("wait_for_ready=None,\n");
+        out->Print("timeout=None,\n");
+        out->Print("metadata=None):\n");
+      }
+      {
+        IndentScope method_indent(out);
+        grpc::string arity_method_name =
+            grpc::string(method->ClientStreaming() ? "stream" : "unary") + "_" +
+            grpc::string(method->ServerStreaming() ? "stream" : "unary");
+        args_dict["ArityMethodName"] = arity_method_name;
+        args_dict["PackageQualifiedService"] = package_qualified_service_name;
+        args_dict["Method"] = method->name();
+        out->Print(args_dict,
+                   "return "
+                   "grpc.experimental.$ArityMethodName$($RequestParameter$, "
+                   "target, '/$PackageQualifiedService$/$Method$',\n");
+        {
+          IndentScope continuation_indent(out);
+          StringMap serializer_dict;
+          serializer_dict["RequestModuleAndClass"] = request_module_and_class;
+          serializer_dict["ResponseModuleAndClass"] = response_module_and_class;
+          out->Print(serializer_dict,
+                     "$RequestModuleAndClass$.SerializeToString,\n");
+          out->Print(serializer_dict, "$ResponseModuleAndClass$.FromString,\n");
+          out->Print("options, channel_credentials,\n");
+          out->Print(
+              "call_credentials, compression, wait_for_ready, timeout, "
+              "metadata)\n");
+        }
+      }
+    }
+  }
+  // TODO(rbellevi): Add methods pertinent to the server side as well.
+  return true;
+}
+
 bool PrivateGenerator::PrintBetaPreamble(grpc_generator::Printer* out) {
   StringMap var;
   var["Package"] = config.beta_package_root;
@@ -646,7 +740,9 @@ bool PrivateGenerator::PrintGAServices(grpc_generator::Printer* out) {
     if (!(PrintStub(package_qualified_service_name, service.get(), out) &&
           PrintServicer(service.get(), out) &&
           PrintAddServicerToServer(package_qualified_service_name,
-                                   service.get(), out))) {
+                                   service.get(), out) &&
+          PrintServiceClass(package_qualified_service_name, service.get(),
+                            out))) {
       return false;
     }
   }
@@ -756,6 +852,29 @@ static bool GenerateGrpc(GeneratorContext* context, PrivateGenerator& generator,
   }
 }
 
+static bool ParseParameters(const grpc::string& parameter,
+                            grpc::string* grpc_version,
+                            std::vector<grpc::string>* strip_prefixes,
+                            grpc::string* error) {
+  std::vector<grpc::string> comma_delimited_parameters;
+  grpc_python_generator::Split(parameter, ',', &comma_delimited_parameters);
+  if (comma_delimited_parameters.size() == 1 &&
+      comma_delimited_parameters[0].empty()) {
+    *grpc_version = "grpc_2_0";
+  } else if (comma_delimited_parameters.size() == 1) {
+    *grpc_version = comma_delimited_parameters[0];
+  } else if (comma_delimited_parameters.size() == 2) {
+    *grpc_version = comma_delimited_parameters[0];
+    std::copy(comma_delimited_parameters.begin() + 1,
+              comma_delimited_parameters.end(),
+              std::back_inserter(*strip_prefixes));
+  } else {
+    *error = "--grpc_python_out received too many comma-delimited parameters.";
+    return false;
+  }
+  return true;
+}
+
 bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
                                    const grpc::string& parameter,
                                    GeneratorContext* context,
@@ -778,14 +897,19 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   generator_file_name = file->name();
 
   ProtoBufFile pbfile(file);
-  PrivateGenerator generator(config_, &pbfile);
-  if (parameter == "" || parameter == "grpc_2_0") {
+  grpc::string grpc_version;
+  GeneratorConfiguration extended_config(config_);
+  bool success = ParseParameters(parameter, &grpc_version,
+                                 &(extended_config.prefixes_to_filter), error);
+  PrivateGenerator generator(extended_config, &pbfile);
+  if (!success) return false;
+  if (grpc_version == "grpc_2_0") {
     return GenerateGrpc(context, generator, pb2_grpc_file_name, true);
-  } else if (parameter == "grpc_1_0") {
+  } else if (grpc_version == "grpc_1_0") {
     return GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
            GenerateGrpc(context, generator, pb2_file_name, false);
   } else {
-    *error = "Invalid parameter '" + parameter + "'.";
+    *error = "Invalid grpc version '" + grpc_version + "'.";
     return false;
   }
 }

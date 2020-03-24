@@ -89,7 +89,7 @@ static void backup_poller_shutdown_unref(backup_poller* p) {
   }
 }
 
-static void done_poller(void* arg, grpc_error* error) {
+static void done_poller(void* arg, grpc_error* /*error*/) {
   backup_poller_shutdown_unref(static_cast<backup_poller*>(arg));
 }
 

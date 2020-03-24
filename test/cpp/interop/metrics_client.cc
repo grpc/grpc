@@ -43,7 +43,7 @@ using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 
 // Do not log anything
-void BlackholeLogger(gpr_log_func_args* args) {}
+void BlackholeLogger(gpr_log_func_args* /*args*/) {}
 
 // Prints the values of all Gauges (unless total_only is set to 'true' in which
 // case this only prints the sum of all gauge values).

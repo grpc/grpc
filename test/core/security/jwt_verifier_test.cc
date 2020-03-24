@@ -32,6 +32,8 @@
 #include "src/core/lib/slice/b64.h"
 #include "test/core/util/test_config.h"
 
+using grpc_core::Json;
+
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.
    Maximum size for a string literal is 509 chars in C89, yay!  */
@@ -205,14 +207,17 @@ static void test_jwt_issuer_email_domain(void) {
 
 static void test_claims_success(void) {
   grpc_jwt_claims* claims;
-  grpc_slice s = grpc_slice_from_copied_string(claims_without_time_constraint);
-  grpc_json* json = grpc_json_parse_string_with_len(
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
-  GPR_ASSERT(json != nullptr);
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(claims_without_time_constraint, &error);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+  }
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(json.type() == Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json, s);
+  claims = grpc_jwt_claims_from_json(json);
   GPR_ASSERT(claims != nullptr);
-  GPR_ASSERT(grpc_jwt_claims_json(claims) == json);
+  GPR_ASSERT(*grpc_jwt_claims_json(claims) == json);
   GPR_ASSERT(strcmp(grpc_jwt_claims_audience(claims), "https://foo.com") == 0);
   GPR_ASSERT(strcmp(grpc_jwt_claims_issuer(claims), "blah.foo.com") == 0);
   GPR_ASSERT(strcmp(grpc_jwt_claims_subject(claims), "juju@blah.foo.com") == 0);
@@ -224,17 +229,20 @@ static void test_claims_success(void) {
 
 static void test_expired_claims_failure(void) {
   grpc_jwt_claims* claims;
-  grpc_slice s = grpc_slice_from_copied_string(expired_claims);
-  grpc_json* json = grpc_json_parse_string_with_len(
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(expired_claims, &error);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+  }
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(json.type() == Json::Type::OBJECT);
   gpr_timespec exp_iat = {100, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_exp = {120, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_nbf = {60, 0, GPR_CLOCK_REALTIME};
-  GPR_ASSERT(json != nullptr);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json, s);
+  claims = grpc_jwt_claims_from_json(json);
   GPR_ASSERT(claims != nullptr);
-  GPR_ASSERT(grpc_jwt_claims_json(claims) == json);
+  GPR_ASSERT(*grpc_jwt_claims_json(claims) == json);
   GPR_ASSERT(strcmp(grpc_jwt_claims_audience(claims), "https://foo.com") == 0);
   GPR_ASSERT(strcmp(grpc_jwt_claims_issuer(claims), "blah.foo.com") == 0);
   GPR_ASSERT(strcmp(grpc_jwt_claims_subject(claims), "juju@blah.foo.com") == 0);
@@ -249,21 +257,28 @@ static void test_expired_claims_failure(void) {
 }
 
 static void test_invalid_claims_failure(void) {
-  grpc_slice s = grpc_slice_from_copied_string(invalid_claims);
-  grpc_json* json = grpc_json_parse_string_with_len(
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(invalid_claims, &error);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+  }
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(json.type() == Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
-  GPR_ASSERT(grpc_jwt_claims_from_json(json, s) == nullptr);
+  GPR_ASSERT(grpc_jwt_claims_from_json(json) == nullptr);
 }
 
 static void test_bad_audience_claims_failure(void) {
   grpc_jwt_claims* claims;
-  grpc_slice s = grpc_slice_from_copied_string(claims_without_time_constraint);
-  grpc_json* json = grpc_json_parse_string_with_len(
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
-  GPR_ASSERT(json != nullptr);
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(claims_without_time_constraint, &error);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+  }
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(json.type() == Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json, s);
+  claims = grpc_jwt_claims_from_json(json);
   GPR_ASSERT(claims != nullptr);
   GPR_ASSERT(grpc_jwt_claims_check(claims, "https://bar.com") ==
              GRPC_JWT_VERIFIER_BAD_AUDIENCE);
@@ -272,12 +287,15 @@ static void test_bad_audience_claims_failure(void) {
 
 static void test_bad_subject_claims_failure(void) {
   grpc_jwt_claims* claims;
-  grpc_slice s = grpc_slice_from_copied_string(claims_with_bad_subject);
-  grpc_json* json = grpc_json_parse_string_with_len(
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
-  GPR_ASSERT(json != nullptr);
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(claims_with_bad_subject, &error);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+  }
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(json.type() == Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json, s);
+  claims = grpc_jwt_claims_from_json(json);
   GPR_ASSERT(claims != nullptr);
   GPR_ASSERT(grpc_jwt_claims_check(claims, "https://foo.com") ==
              GRPC_JWT_VERIFIER_BAD_SUBJECT);
@@ -318,15 +336,15 @@ static grpc_httpcli_response http_response(int status, char* body) {
 }
 
 static int httpcli_post_should_not_be_called(
-    const grpc_httpcli_request* request, const char* body_bytes,
-    size_t body_size, grpc_millis deadline, grpc_closure* on_done,
-    grpc_httpcli_response* response) {
+    const grpc_httpcli_request* /*request*/, const char* /*body_bytes*/,
+    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP POST should not be called" == nullptr);
   return 1;
 }
 
 static int httpcli_get_google_keys_for_email(
-    const grpc_httpcli_request* request, grpc_millis deadline,
+    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   *response = http_response(200, good_google_email_keys());
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
@@ -335,7 +353,7 @@ static int httpcli_get_google_keys_for_email(
                     "/robot/v1/metadata/x509/"
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -372,13 +390,13 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
 }
 
 static int httpcli_get_custom_keys_for_email(
-    const grpc_httpcli_request* request, grpc_millis deadline,
+    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/jwk/foo@bar.com") == 0);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -405,18 +423,18 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
 }
 
 static int httpcli_get_jwk_set(const grpc_httpcli_request* request,
-                               grpc_millis deadline, grpc_closure* on_done,
+                               grpc_millis /*deadline*/, grpc_closure* on_done,
                                grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/oauth2/v3/certs") == 0);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
 static int httpcli_get_openid_config(const grpc_httpcli_request* request,
-                                     grpc_millis deadline,
+                                     grpc_millis /*deadline*/,
                                      grpc_closure* on_done,
                                      grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_openid_config));
@@ -425,7 +443,7 @@ static int httpcli_get_openid_config(const grpc_httpcli_request* request,
   GPR_ASSERT(strcmp(request->http.path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override(httpcli_get_jwk_set,
                             httpcli_post_should_not_be_called);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -460,11 +478,11 @@ static void on_verification_key_retrieval_error(void* user_data,
 }
 
 static int httpcli_get_bad_json(const grpc_httpcli_request* request,
-                                grpc_millis deadline, grpc_closure* on_done,
+                                grpc_millis /*deadline*/, grpc_closure* on_done,
                                 grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -566,10 +584,9 @@ static void test_jwt_verifier_bad_signature(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
-static int httpcli_get_should_not_be_called(const grpc_httpcli_request* request,
-                                            grpc_millis deadline,
-                                            grpc_closure* on_done,
-                                            grpc_httpcli_response* response) {
+static int httpcli_get_should_not_be_called(
+    const grpc_httpcli_request* /*request*/, grpc_millis /*deadline*/,
+    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
   GPR_ASSERT(0);
   return 1;
 }

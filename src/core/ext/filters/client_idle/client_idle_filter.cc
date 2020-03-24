@@ -27,10 +27,9 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-// The idle filter is enabled in client channel by default.
-// Set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to [1000, INT_MAX) in channel args to
-// configure the idle timeout.
-#define DEFAULT_IDLE_TIMEOUT_MS (30 /*minutes*/ * 60 * 1000)
+// TODO(juanlishen): The idle filter is disabled in client channel by default
+// due to b/143502997. Try to fix the bug and enable the filter by default.
+#define DEFAULT_IDLE_TIMEOUT_MS INT_MAX
 // The user input idle timeout smaller than this would be capped to it.
 #define MIN_IDLE_TIMEOUT_MS (1 /*second*/ * 1000)
 
@@ -283,7 +282,8 @@ void ChannelData::DecreaseCallCount() {
 }
 
 ChannelData::ChannelData(grpc_channel_element* elem,
-                         grpc_channel_element_args* args, grpc_error** error)
+                         grpc_channel_element_args* args,
+                         grpc_error** /*error*/)
     : elem_(elem),
       channel_stack_(args->channel_stack),
       client_idle_timeout_(GetClientIdleTimeout(args->channel_args)) {
@@ -352,7 +352,7 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
 }
 
 void ChannelData::IdleTransportOpCompleteCallback(void* arg,
-                                                  grpc_error* error) {
+                                                  grpc_error* /*error*/) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
 }
@@ -389,15 +389,15 @@ class CallData {
 };
 
 grpc_error* CallData::Init(grpc_call_element* elem,
-                           const grpc_call_element_args* args) {
+                           const grpc_call_element_args* /*args*/) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->IncreaseCallCount();
   return GRPC_ERROR_NONE;
 }
 
 void CallData::Destroy(grpc_call_element* elem,
-                       const grpc_call_final_info* final_info,
-                       grpc_closure* ignored) {
+                       const grpc_call_final_info* /*final_info*/,
+                       grpc_closure* /*ignored*/) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->DecreaseCallCount();
 }
@@ -416,7 +416,7 @@ const grpc_channel_filter grpc_client_idle_filter = {
     "client_idle"};
 
 static bool MaybeAddClientIdleFilter(grpc_channel_stack_builder* builder,
-                                     void* arg) {
+                                     void* /*arg*/) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (!grpc_channel_args_want_minimal_stack(channel_args) &&

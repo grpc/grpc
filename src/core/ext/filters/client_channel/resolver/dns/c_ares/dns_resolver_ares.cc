@@ -76,6 +76,8 @@ class AresDnsResolver : public Resolver {
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
 
+  static void OnNextResolution(void* arg, grpc_error* error);
+  static void OnResolved(void* arg, grpc_error* error);
   static void OnNextResolutionLocked(void* arg, grpc_error* error);
   static void OnResolvedLocked(void* arg, grpc_error* error);
 
@@ -106,7 +108,7 @@ class AresDnsResolver : public Resolver {
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
-  UniquePtr<ServerAddressList> addresses_;
+  std::unique_ptr<ServerAddressList> addresses_;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
   // has shutdown been initiated
@@ -152,10 +154,7 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   if (args.pollset_set != nullptr) {
     grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
   }
-  GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolutionLocked, this,
-                    grpc_combiner_scheduler(combiner()));
-  GRPC_CLOSURE_INIT(&on_resolved_, OnResolvedLocked, this,
-                    grpc_combiner_scheduler(combiner()));
+
   const grpc_arg* query_timeout_ms_arg =
       grpc_channel_args_find(channel_args_, GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
   query_timeout_ms_ = grpc_channel_arg_get_integer(
@@ -200,6 +199,13 @@ void AresDnsResolver::ShutdownLocked() {
   }
 }
 
+void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
+  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  r->combiner()->Run(GRPC_CLOSURE_INIT(&r->on_next_resolution_,
+                                       OnNextResolutionLocked, r, nullptr),
+                     GRPC_ERROR_REF(error));
+}
+
 void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GRPC_CARES_TRACE_LOG(
@@ -217,104 +223,99 @@ void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   r->Unref(DEBUG_LOCATION, "next_resolution_timer");
 }
 
-bool ValueInJsonArray(grpc_json* array, const char* value) {
-  for (grpc_json* entry = array->child; entry != nullptr; entry = entry->next) {
-    if (entry->type == GRPC_JSON_STRING && strcmp(entry->value, value) == 0) {
+bool ValueInJsonArray(const Json::Array& array, const char* value) {
+  for (const Json& entry : array) {
+    if (entry.type() == Json::Type::STRING && entry.string_value() == value) {
       return true;
     }
   }
   return false;
 }
 
-char* ChooseServiceConfig(char* service_config_choice_json,
-                          grpc_error** error) {
-  grpc_json* choices_json = grpc_json_parse_string(service_config_choice_json);
-  if (choices_json == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Service Config JSON Parsing, error: could not parse");
-    return nullptr;
-  }
-  if (choices_json->type != GRPC_JSON_ARRAY) {
+std::string ChooseServiceConfig(char* service_config_choice_json,
+                                grpc_error** error) {
+  Json json = Json::Parse(service_config_choice_json, error);
+  if (*error != GRPC_ERROR_NONE) return "";
+  if (json.type() != Json::Type::ARRAY) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Service Config Choices, error: should be of type array");
-    return nullptr;
+    return "";
   }
-  char* service_config = nullptr;
+  const Json* service_config = nullptr;
   InlinedVector<grpc_error*, 4> error_list;
-  bool found_choice = false;  // have we found a choice?
-  for (grpc_json* choice = choices_json->child; choice != nullptr;
-       choice = choice->next) {
-    if (choice->type != GRPC_JSON_OBJECT) {
+  for (const Json& choice : json.array_value()) {
+    if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Service Config Choice, error: should be of type object"));
       continue;
     }
-    grpc_json* service_config_json = nullptr;
-    bool selected = true;  // has this choice been rejected?
-    for (grpc_json* field = choice->child; field != nullptr;
-         field = field->next) {
-      // Check client language, if specified.
-      if (strcmp(field->key, "clientLanguage") == 0) {
-        if (field->type != GRPC_JSON_ARRAY) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:clientLanguage error:should be of type array"));
-        } else if (!ValueInJsonArray(field, "c++")) {
-          selected = false;
-        }
+    // Check client language, if specified.
+    auto it = choice.object_value().find("clientLanguage");
+    if (it != choice.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:clientLanguage error:should be of type array"));
+      } else if (!ValueInJsonArray(it->second.array_value(), "c++")) {
+        continue;
       }
-      // Check client hostname, if specified.
-      if (strcmp(field->key, "clientHostname") == 0) {
-        if (field->type != GRPC_JSON_ARRAY) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:clientHostname error:should be of type array"));
-          continue;
-        }
+    }
+    // Check client hostname, if specified.
+    it = choice.object_value().find("clientHostname");
+    if (it != choice.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:clientHostname error:should be of type array"));
+      } else {
         char* hostname = grpc_gethostname();
-        if (hostname == nullptr || !ValueInJsonArray(field, hostname)) {
-          selected = false;
-        }
-      }
-      // Check percentage, if specified.
-      if (strcmp(field->key, "percentage") == 0) {
-        if (field->type != GRPC_JSON_NUMBER) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:percentage error:should be of type number"));
+        if (hostname == nullptr ||
+            !ValueInJsonArray(it->second.array_value(), hostname)) {
           continue;
         }
+      }
+    }
+    // Check percentage, if specified.
+    it = choice.object_value().find("percentage");
+    if (it != choice.object_value().end()) {
+      if (it->second.type() != Json::Type::NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:percentage error:should be of type number"));
+      } else {
         int random_pct = rand() % 100;
         int percentage;
-        if (sscanf(field->value, "%d", &percentage) != 1) {
+        if (sscanf(it->second.string_value().c_str(), "%d", &percentage) != 1) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:percentage error:should be of type integer"));
+        } else if (random_pct > percentage || percentage == 0) {
           continue;
         }
-        if (random_pct > percentage || percentage == 0) {
-          selected = false;
-        }
-      }
-      // Save service config.
-      if (strcmp(field->key, "serviceConfig") == 0) {
-        if (field->type == GRPC_JSON_OBJECT) {
-          service_config_json = field;
-        } else {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:serviceConfig error:should be of type object"));
-        }
       }
     }
-    if (!found_choice && selected && service_config_json != nullptr) {
-      service_config = grpc_json_dump_to_string(service_config_json, 0);
-      found_choice = true;
+    // Found service config.
+    it = choice.object_value().find("serviceConfig");
+    if (it == choice.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:serviceConfig error:required field missing"));
+    } else if (it->second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:serviceConfig error:should be of type object"));
+    } else if (service_config == nullptr) {
+      service_config = &it->second;
     }
   }
-  grpc_json_destroy(choices_json);
   if (!error_list.empty()) {
-    gpr_free(service_config);
     service_config = nullptr;
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service Config Choices Parser",
                                            &error_list);
   }
-  return service_config;
+  if (service_config == nullptr) return "";
+  return service_config->Dump();
+}
+
+void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
+  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  r->combiner()->Run(
+      GRPC_CLOSURE_INIT(&r->on_resolved_, OnResolvedLocked, r, nullptr),
+      GRPC_ERROR_REF(error));
 }
 
 void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
@@ -331,17 +332,16 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     Result result;
     result.addresses = std::move(*r->addresses_);
     if (r->service_config_json_ != nullptr) {
-      char* service_config_string = ChooseServiceConfig(
+      std::string service_config_string = ChooseServiceConfig(
           r->service_config_json_, &result.service_config_error);
       gpr_free(r->service_config_json_);
       if (result.service_config_error == GRPC_ERROR_NONE &&
-          service_config_string != nullptr) {
+          !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
-                             r, service_config_string);
+                             r, service_config_string.c_str());
         result.service_config = ServiceConfig::Create(
             service_config_string, &result.service_config_error);
       }
-      gpr_free(service_config_string);
     }
     result.args = grpc_channel_args_copy(r->channel_args_);
     r->result_handler()->ReturnResult(std::move(result));
@@ -373,6 +373,8 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     } else {
       GRPC_CARES_TRACE_LOG("resolver:%p retrying immediately", r);
     }
+    GRPC_CLOSURE_INIT(&r->on_next_resolution_, OnNextResolution, r,
+                      grpc_schedule_on_exec_ctx);
     grpc_timer_init(&r->next_resolution_timer_, next_try,
                     &r->on_next_resolution_);
   }
@@ -400,6 +402,8 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       // new closure API is done, find a way to track this ref with the timer
       // callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
+      GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
+                        grpc_schedule_on_exec_ctx);
       grpc_timer_init(&next_resolution_timer_,
                       ExecCtx::Get()->Now() + ms_until_next_resolution,
                       &on_next_resolution_);
@@ -417,6 +421,7 @@ void AresDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   service_config_json_ = nullptr;
+  GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
   pending_request_ = grpc_dns_lookup_ares_locked(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
       &on_resolved_, &addresses_, enable_srv_queries_ /* check_grpclb */,
@@ -433,10 +438,10 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* uri) const override { return true; }
+  bool IsValidUri(const grpc_uri* /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    return OrphanablePtr<Resolver>(New<AresDnsResolver>(std::move(args)));
+    return MakeOrphanable<AresDnsResolver>(std::move(args));
   }
 
   const char* scheme() const override { return "dns"; }
@@ -494,8 +499,7 @@ void grpc_resolver_dns_ares_init() {
     }
     grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-            grpc_core::New<grpc_core::AresDnsResolverFactory>()));
+        absl::make_unique<grpc_core::AresDnsResolverFactory>());
   } else {
     g_use_ares_dns_resolver = false;
   }

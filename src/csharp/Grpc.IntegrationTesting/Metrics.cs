@@ -35,10 +35,10 @@ namespace Grpc.Testing {
             "dWdlUmVzcG9uc2ViBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.GaugeResponse), global::Grpc.Testing.GaugeResponse.Parser, new[]{ "Name", "LongValue", "DoubleValue", "StringValue" }, new[]{ "Value" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.GaugeRequest), global::Grpc.Testing.GaugeRequest.Parser, new[]{ "Name" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EmptyMessage), global::Grpc.Testing.EmptyMessage.Parser, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.GaugeResponse), global::Grpc.Testing.GaugeResponse.Parser, new[]{ "Name", "LongValue", "DoubleValue", "StringValue" }, new[]{ "Value" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.GaugeRequest), global::Grpc.Testing.GaugeRequest.Parser, new[]{ "Name" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EmptyMessage), global::Grpc.Testing.EmptyMessage.Parser, null, null, null, null, null)
           }));
     }
     #endregion
@@ -46,7 +46,7 @@ namespace Grpc.Testing {
   }
   #region Messages
   /// <summary>
-  /// Reponse message containing the gauge name and value
+  /// Response message containing the gauge name and value
   /// </summary>
   public sealed partial class GaugeResponse : pb::IMessage<GaugeResponse> {
     private static readonly pb::MessageParser<GaugeResponse> _parser = new pb::MessageParser<GaugeResponse>(() => new GaugeResponse());

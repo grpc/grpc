@@ -44,6 +44,8 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
 
+using grpc_core::Json;
+
 /* -- Constants. -- */
 
 #define GRPC_COMPUTE_ENGINE_DETECTION_HOST "metadata.google.internal."
@@ -154,7 +156,7 @@ static void on_metadata_server_detection_http_response(void* user_data,
   gpr_mu_unlock(g_polling_mu);
 }
 
-static void destroy_pollset(void* p, grpc_error* e) {
+static void destroy_pollset(void* p, grpc_error* /*e*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
@@ -216,24 +218,25 @@ static int is_metadata_server_reachable() {
 /* Takes ownership of creds_path if not NULL. */
 static grpc_error* create_default_creds_from_path(
     char* creds_path, grpc_core::RefCountedPtr<grpc_call_credentials>* creds) {
-  grpc_json* json = nullptr;
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_core::RefCountedPtr<grpc_call_credentials> result;
   grpc_slice creds_data = grpc_empty_slice();
   grpc_error* error = GRPC_ERROR_NONE;
+  Json json;
+  grpc_core::StringView str;
   if (creds_path == nullptr) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("creds_path unset");
     goto end;
   }
   error = grpc_load_file(creds_path, 0, &creds_data);
-  if (error != GRPC_ERROR_NONE) {
-    goto end;
-  }
-  json = grpc_json_parse_string_with_len(
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(creds_data),
+  if (error != GRPC_ERROR_NONE) goto end;
+  str = grpc_core::StringView(
+      reinterpret_cast<char*>(GRPC_SLICE_START_PTR(creds_data)),
       GRPC_SLICE_LENGTH(creds_data));
-  if (json == nullptr) {
+  json = Json::Parse(str, &error);
+  if (error != GRPC_ERROR_NONE) goto end;
+  if (json.type() != Json::Type::OBJECT) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
         GRPC_ERROR_STR_RAW_BYTES, grpc_slice_ref_internal(creds_data));
@@ -271,7 +274,6 @@ end:
   GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);
   if (creds_path != nullptr) gpr_free(creds_path);
   grpc_slice_unref_internal(creds_data);
-  grpc_json_destroy(json);
   *creds = result;
   return error;
 }

@@ -16,11 +16,13 @@
 # Builds docker image and runs a command under it.
 # You should never need to call this script on your own.
 
+# shellcheck disable=SC2103
+
 set -ex
 
 cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
-cd - # shellcheck disable=SC2103
+cd -
 
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.

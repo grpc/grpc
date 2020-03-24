@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -39,7 +38,7 @@ typedef struct grpc_udp_server grpc_udp_server;
  * Its implementation should do the real IO work, e.g. read packet and write. */
 class GrpcUdpHandler {
  public:
-  GrpcUdpHandler(grpc_fd* emfd, void* user_data) {}
+  GrpcUdpHandler(grpc_fd* /* emfd */, void* /* user_data */) {}
   virtual ~GrpcUdpHandler() {}
 
   // Interfaces to be implemented by subclasses to do the actual setup/tear down
@@ -47,18 +46,16 @@ class GrpcUdpHandler {
 
   // Called when data is available to read from the socket. Returns true if
   // there is more data to read after this call.
-  virtual bool Read() GRPC_ABSTRACT;
+  virtual bool Read() = 0;
   // Called when socket becomes write unblocked. The given closure should be
   // scheduled when the socket becomes blocked next time.
   virtual void OnCanWrite(void* user_data,
-                          grpc_closure* notify_on_write_closure) GRPC_ABSTRACT;
+                          grpc_closure* notify_on_write_closure) = 0;
   // Called before the gRPC FD is orphaned. Notify udp server to continue
   // orphaning fd by scheduling the given closure, afterwards the associated fd
   // will be closed.
   virtual void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure,
-                                 void* user_data) GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+                                 void* user_data) = 0;
 };
 
 class GrpcUdpHandlerFactory {
@@ -67,11 +64,8 @@ class GrpcUdpHandlerFactory {
   /* Called when start to listen on a socket.
    * Return an instance of the implementation of GrpcUdpHandler interface which
    * will process I/O events for this socket from now on. */
-  virtual GrpcUdpHandler* CreateUdpHandler(grpc_fd* emfd,
-                                           void* user_data) GRPC_ABSTRACT;
-  virtual void DestroyUdpHandler(GrpcUdpHandler* handler) GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual GrpcUdpHandler* CreateUdpHandler(grpc_fd* emfd, void* user_data) = 0;
+  virtual void DestroyUdpHandler(GrpcUdpHandler* handler) = 0;
 };
 
 /* Create a server, initially not bound to any ports */

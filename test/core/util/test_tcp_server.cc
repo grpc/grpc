@@ -34,7 +34,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void on_server_destroyed(void* data, grpc_error* error) {
+static void on_server_destroyed(void* data, grpc_error* /*error*/) {
   test_tcp_server* server = static_cast<test_tcp_server*>(data);
   server->shutdown = 1;
 }
@@ -87,8 +87,8 @@ void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {
   gpr_mu_unlock(server->mu);
 }
 
-static void do_nothing(void* arg, grpc_error* error) {}
-static void finish_pollset(void* arg, grpc_error* error) {
+static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void finish_pollset(void* arg, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(arg));
 }
 

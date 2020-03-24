@@ -73,7 +73,8 @@ class CoreCodegen final : public CoreCodegenInterface {
                                                void* reserved) override;
   void grpc_call_ref(grpc_call* call) override;
   void grpc_call_unref(grpc_call* call) override;
-  virtual void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;
+  void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;
+  const char* grpc_call_error_to_string(grpc_call_error error) override;
 
   grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) override;
   void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;

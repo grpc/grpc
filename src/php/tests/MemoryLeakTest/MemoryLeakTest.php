@@ -47,7 +47,7 @@ function waitUntilNotIdle($channel) {
 }
 
 // Set up
-$channel = new Grpc\Channel('localhost:0', ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+$channel = new Grpc\Channel('localhost:50101', ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
 
 // Test InsecureCredentials
 assert('Grpc\Channel' == get_class($channel));
@@ -56,28 +56,16 @@ assert('Grpc\Channel' == get_class($channel));
 $state = $channel->getConnectivityState();
 assert(0 == $state);
 
-// Test GetConnectivityStateWithInt
-$state = $channel->getConnectivityState(123);
-assert(0 == $state);
-
-// Test GetConnectivityStateWithString
-$state = $channel->getConnectivityState('hello');
-assert(0 == $state);
-
-// Test GetConnectivityStateWithBool
-$state = $channel->getConnectivityState(true);
-assert(0 == $state);
-
 $channel->close();
 
 // Test GetTarget
-$channel = new Grpc\Channel('localhost:8888', ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+$channel = new Grpc\Channel('localhost:50102', ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
 $target = $channel->getTarget();
 assert(is_string($target) == true);
 $channel->close();
 
 // Test WatchConnectivityState
-$channel = new Grpc\Channel('localhost:0', ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+$channel = new Grpc\Channel('localhost:50103', ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
 $now = Grpc\Timeval::now();
 $deadline = $now->add(new Grpc\Timeval(100*1000));
 

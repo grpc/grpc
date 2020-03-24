@@ -29,10 +29,28 @@
 
 /** -- gRPC TLS key materials config API implementation. -- **/
 void grpc_tls_key_materials_config::set_key_materials(
-    grpc_core::UniquePtr<char> pem_root_certs,
-    PemKeyCertPairList pem_key_cert_pair_list) {
-  pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
-  pem_root_certs_ = std::move(pem_root_certs);
+    const char* pem_root_certs,
+    const grpc_ssl_pem_key_cert_pair** pem_key_cert_pairs,
+    size_t num_key_cert_pairs) {
+  this->set_pem_root_certs(pem_root_certs);
+  grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list;
+  for (size_t i = 0; i < num_key_cert_pairs; i++) {
+    auto current_pair = static_cast<grpc_ssl_pem_key_cert_pair*>(
+        gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+    current_pair->cert_chain = gpr_strdup(pem_key_cert_pairs[i]->cert_chain);
+    current_pair->private_key = gpr_strdup(pem_key_cert_pairs[i]->private_key);
+    cert_pair_list.emplace_back(grpc_core::PemKeyCertPair(current_pair));
+  }
+  pem_key_cert_pair_list_ = std::move(cert_pair_list);
+}
+
+void grpc_tls_key_materials_config::set_key_materials(
+    const char* pem_root_certs,
+    const PemKeyCertPairList& pem_key_cert_pair_list) {
+  this->set_pem_root_certs(pem_root_certs);
+  grpc_tls_key_materials_config::PemKeyCertPairList dup_list(
+      pem_key_cert_pair_list);
+  pem_key_cert_pair_list_ = std::move(dup_list);
 }
 
 /** -- gRPC TLS credential reload config API implementation. -- **/
@@ -76,7 +94,7 @@ grpc_tls_server_authorization_check_config::
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
-  return grpc_core::New<grpc_tls_credentials_options>();
+  return new grpc_tls_credentials_options();
 }
 
 int grpc_tls_credentials_options_set_cert_request_type(
@@ -89,6 +107,26 @@ int grpc_tls_credentials_options_set_cert_request_type(
     return 0;
   }
   options->set_cert_request_type(type);
+  return 1;
+}
+
+int grpc_tls_credentials_options_set_server_verification_option(
+    grpc_tls_credentials_options* options,
+    grpc_tls_server_verification_option server_verification_option) {
+  if (options == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Invalid nullptr arguments to "
+            "grpc_tls_credentials_options_set_server_verification_option()");
+    return 0;
+  }
+  if (server_verification_option != GRPC_TLS_SERVER_VERIFICATION &&
+      options->server_authorization_check_config() == nullptr) {
+    gpr_log(GPR_ERROR,
+            "server_authorization_check_config needs to be specified when"
+            "server_verification_option is not GRPC_TLS_SERVER_VERIFICATION");
+    return 0;
+  }
+  options->set_server_verification_option(server_verification_option);
   return 1;
 }
 
@@ -133,7 +171,7 @@ int grpc_tls_credentials_options_set_server_authorization_check_config(
 }
 
 grpc_tls_key_materials_config* grpc_tls_key_materials_config_create() {
-  return grpc_core::New<grpc_tls_key_materials_config>();
+  return new grpc_tls_key_materials_config();
 }
 
 int grpc_tls_key_materials_config_set_key_materials(
@@ -145,15 +183,7 @@ int grpc_tls_key_materials_config_set_key_materials(
             "grpc_tls_key_materials_config_set_key_materials()");
     return 0;
   }
-  grpc_core::UniquePtr<char> pem_root(const_cast<char*>(root_certs));
-  grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list;
-  for (size_t i = 0; i < num; i++) {
-    grpc_core::PemKeyCertPair key_cert_pair(
-        const_cast<grpc_ssl_pem_key_cert_pair*>(key_cert_pairs[i]));
-    cert_pair_list.emplace_back(std::move(key_cert_pair));
-  }
-  config->set_key_materials(std::move(pem_root), std::move(cert_pair_list));
-  gpr_free(key_cert_pairs);
+  config->set_key_materials(root_certs, key_cert_pairs, num);
   return 1;
 }
 
@@ -192,8 +222,8 @@ grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(
         "Schedule API is nullptr in creating TLS credential reload config.");
     return nullptr;
   }
-  return grpc_core::New<grpc_tls_credential_reload_config>(
-      config_user_data, schedule, cancel, destruct);
+  return new grpc_tls_credential_reload_config(config_user_data, schedule,
+                                               cancel, destruct);
 }
 
 grpc_tls_server_authorization_check_config*
@@ -210,6 +240,6 @@ grpc_tls_server_authorization_check_config_create(
             "check config.");
     return nullptr;
   }
-  return grpc_core::New<grpc_tls_server_authorization_check_config>(
+  return new grpc_tls_server_authorization_check_config(
       config_user_data, schedule, cancel, destruct);
 }

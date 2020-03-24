@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp1.0;net45</TargetFrameworks>
+    <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -16,17 +16,15 @@
     <PackageReference Include="Grpc" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Auth" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Tools" Version="__GRPC_NUGET_VERSION__" />
-    <PackageReference Include="Google.Protobuf" Version="3.7.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.11.2" />
   </ItemGroup>
   
   <ItemGroup>
     <Protobuf Include="**\*.proto" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <!-- Workaround for https://github.com/dotnet/sdk/issues/335 -->
-    <FrameworkPathOverride Condition="Exists('/usr/lib/mono/4.5-api')">/usr/lib/mono/4.5-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="Exists('/usr/local/lib/mono/4.5-api')">/usr/local/lib/mono/4.5-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="Exists('/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api')">/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api</FrameworkPathOverride>
-  </PropertyGroup>
+  <!-- Needed for the net45 build to work on Unix. See https://github.com/dotnet/designs/pull/33 -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

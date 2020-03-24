@@ -15,12 +15,18 @@
  * limitations under the License.
  *
  */
-#ifdef GRPC_COMPILE_WITH_CRONET
-#import <Cronet/Cronet.h>
 
-#import "GRPCCall.h"
+#import "GRPCCallLegacy.h"
+#import "GRPCTypes.h"
 
-// Deprecated interface. Please use GRPCCallOptions instead.
+typedef struct stream_engine stream_engine;
+
+// Transport id for Cronet transport
+extern const GRPCTransportID gGRPCCoreCronetID;
+
+/**
+ * The interface is deprecated. Please use GRPCCallOptions instead for corresponding configurations.
+ */
 @interface GRPCCall (Cronet)
 
 + (void)useCronetWithEngine:(stream_engine*)engine;
@@ -28,4 +34,3 @@
 + (BOOL)isUsingCronet;
 
 @end
-#endif

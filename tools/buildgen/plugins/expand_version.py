@@ -100,6 +100,12 @@ class Version:
         """Version string for PHP Composer package"""
         return '%d.%d.%d' % (self.major, self.minor, self.patch)
 
+    def php_current_version(self):
+        return '7.2'
+
+    def php_debian_version(self):
+        return 'stretch'
+
 
 def mako_plugin(dictionary):
     """Expand version numbers:
@@ -116,8 +122,8 @@ def mako_plugin(dictionary):
         version_tag = '%s_version' % language
         override_major = settings.get('%s_major_version' % language, None)
         if version_tag in settings:
-            settings[version_tag] = Version(
-                settings[version_tag], override_major=override_major)
+            settings[version_tag] = Version(settings[version_tag],
+                                            override_major=override_major)
         else:
-            settings[version_tag] = Version(
-                version_str, override_major=override_major)
+            settings[version_tag] = Version(version_str,
+                                            override_major=override_major)

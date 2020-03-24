@@ -27,7 +27,8 @@ def create_docker_jobspec(name,
                           environ={},
                           flake_retries=0,
                           timeout_retries=0,
-                          copy_rel_path=None):
+                          copy_rel_path=None,
+                          timeout_seconds=30 * 60):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
     environ['RUN_COMMAND'] = shell_command
@@ -47,7 +48,7 @@ def create_docker_jobspec(name,
         docker_args,
         environ=docker_env,
         shortname='distribtest.%s' % (name),
-        timeout_seconds=30 * 60,
+        timeout_seconds=timeout_seconds,
         flake_retries=flake_retries,
         timeout_retries=timeout_retries)
     return jobspec
@@ -67,14 +68,13 @@ def create_jobspec(name,
         environ['WORKSPACE_NAME'] = 'workspace_%s' % name
         cmdline = ['bash', 'tools/run_tests/artifacts/run_in_workspace.sh'
                   ] + cmdline
-    jobspec = jobset.JobSpec(
-        cmdline=cmdline,
-        environ=environ,
-        shortname='distribtest.%s' % (name),
-        timeout_seconds=timeout_seconds,
-        flake_retries=flake_retries,
-        timeout_retries=timeout_retries,
-        shell=shell)
+    jobspec = jobset.JobSpec(cmdline=cmdline,
+                             environ=environ,
+                             shortname='distribtest.%s' % (name),
+                             timeout_seconds=timeout_seconds,
+                             flake_retries=flake_retries,
+                             timeout_retries=timeout_retries,
+                             shell=shell)
     return jobspec
 
 
@@ -112,16 +112,14 @@ class CSharpDistribTest(object):
                 self.script_suffix,
                 copy_rel_path='test/distrib')
         elif self.platform == 'macos':
-            return create_jobspec(
-                self.name, [
-                    'test/distrib/csharp/run_distrib_test%s.sh' %
-                    self.script_suffix
-                ],
-                environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix
+            ],
+                                  environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+                                  use_workspace=True)
         elif self.platform == 'windows':
             if self.arch == 'x64':
-                # Use double leading / as the first occurence gets removed by msys bash
+                # Use double leading / as the first occurrence gets removed by msys bash
                 # when invoking the .bat file (side-effect of posix path conversion)
                 environ = {
                     'MSBUILD_EXTRA_ARGS': '//p:Platform=x64',
@@ -129,13 +127,12 @@ class CSharpDistribTest(object):
                 }
             else:
                 environ = {'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}
-            return create_jobspec(
-                self.name, [
-                    'test\\distrib\\csharp\\run_distrib_test%s.bat' %
-                    self.script_suffix
-                ],
-                environ=environ,
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'test\\distrib\\csharp\\run_distrib_test%s.bat' %
+                self.script_suffix
+            ],
+                                  environ=environ,
+                                  use_workspace=True)
         else:
             raise Exception("Not supported yet.")
 
@@ -238,8 +235,8 @@ class PHPDistribTest(object):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/distribtest/php_%s_%s' % (self.docker_suffix,
-                                                            self.arch),
+                'tools/dockerfile/distribtest/php_%s_%s' %
+                (self.docker_suffix, self.arch),
                 'test/distrib/php/run_distrib_test.sh',
                 copy_rel_path='test/distrib')
         elif self.platform == 'macos':
@@ -255,7 +252,7 @@ class PHPDistribTest(object):
 
 
 class CppDistribTest(object):
-    """Tests Cpp make intall by building examples."""
+    """Tests Cpp make install by building examples."""
 
     def __init__(self, platform, arch, docker_suffix=None, testcase=None):
         if platform == 'linux':
@@ -277,9 +274,11 @@ class CppDistribTest(object):
     def build_jobspec(self):
         if self.platform == 'linux':
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/distribtest/cpp_%s_%s' %
+                self.name,
+                'tools/dockerfile/distribtest/cpp_%s_%s' %
                 (self.docker_suffix, self.arch),
-                'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase)
+                'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase,
+                timeout_seconds=45 * 60)
         elif self.platform == 'windows':
             return create_jobspec(
                 self.name,
@@ -298,56 +297,54 @@ def targets():
     """Gets list of supported targets"""
     return [
         CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
-        CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
-        CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_externalproject'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
+        CppDistribTest('linux', 'x64', 'stretch', 'cmake'),
+        CppDistribTest('linux', 'x64', 'stretch', 'cmake_as_externalproject'),
+        CppDistribTest('linux', 'x64', 'stretch', 'cmake_fetchcontent'),
+        CppDistribTest('linux', 'x64', 'stretch', 'cmake_module_install'),
+        CppDistribTest('linux', 'x64', 'stretch',
+                       'cmake_module_install_pkgconfig'),
+        CppDistribTest('linux', 'x64', 'stretch', 'cmake_pkgconfig'),
+        CppDistribTest('linux', 'x64', 'stretch', 'raspberry_pi'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
+        CSharpDistribTest('linux', 'x64', 'stretch'),
+        CSharpDistribTest('linux', 'x64', 'stretch', use_dotnet_cli=True),
         CSharpDistribTest('linux', 'x64', 'centos7'),
-        CSharpDistribTest('linux', 'x64', 'ubuntu1404'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
-        CSharpDistribTest('linux', 'x64', 'ubuntu1404', use_dotnet_cli=True),
+        CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
+        CSharpDistribTest('linux', 'x64', 'alpine', use_dotnet_cli=True),
         CSharpDistribTest('macos', 'x86'),
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
-        PythonDistribTest('linux', 'x64', 'wheezy'),
         PythonDistribTest('linux', 'x64', 'jessie'),
         PythonDistribTest('linux', 'x86', 'jessie'),
         PythonDistribTest('linux', 'x64', 'centos6'),
         PythonDistribTest('linux', 'x64', 'centos7'),
-        PythonDistribTest('linux', 'x64', 'fedora20'),
-        PythonDistribTest('linux', 'x64', 'fedora21'),
-        PythonDistribTest('linux', 'x64', 'fedora22'),
         PythonDistribTest('linux', 'x64', 'fedora23'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1204'),
         PythonDistribTest('linux', 'x64', 'ubuntu1404'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
         PythonDistribTest('linux', 'x64', 'jessie', source=True),
         PythonDistribTest('linux', 'x86', 'jessie', source=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
-        PythonDistribTest('linux', 'x64', 'fedora22', source=True),
         PythonDistribTest('linux', 'x64', 'fedora23', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1404', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
-        RubyDistribTest('linux', 'x64', 'wheezy'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_3'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
+        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_7'),
         RubyDistribTest('linux', 'x64', 'centos6'),
         RubyDistribTest('linux', 'x64', 'centos7'),
-        RubyDistribTest('linux', 'x64', 'fedora20'),
-        RubyDistribTest('linux', 'x64', 'fedora21'),
-        RubyDistribTest('linux', 'x64', 'fedora22'),
         RubyDistribTest('linux', 'x64', 'fedora23'),
         RubyDistribTest('linux', 'x64', 'opensuse'),
-        RubyDistribTest('linux', 'x64', 'ubuntu1204'),
         RubyDistribTest('linux', 'x64', 'ubuntu1404'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
         PHPDistribTest('linux', 'x64', 'jessie'),

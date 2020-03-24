@@ -427,7 +427,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
   return callback(output);
 }
 
-bool GrpcTool::PrintType(int argc, const char** argv,
+bool GrpcTool::PrintType(int /*argc*/, const char** argv,
                          const CliCredentials& cred,
                          GrpcToolOutputCallback callback) {
   CommandUsage(

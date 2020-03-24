@@ -23,8 +23,10 @@
 
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/credentials_impl.h>
+#include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/config.h>
 
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -64,6 +66,10 @@ class SecureCallCredentials final : public CallCredentials {
 
   bool ApplyToCall(grpc_call* call) override;
   SecureCallCredentials* AsSecureCredentials() override { return this; }
+  grpc::string DebugString() override {
+    return absl::StrCat("SecureCallCredentials{",
+                        grpc::string(c_creds_->debug_string()), "}");
+  }
 
  private:
   grpc_call_credentials* const c_creds_;
@@ -92,6 +98,7 @@ class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
       grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
       size_t* num_creds_md, grpc_status_code* status,
       const char** error_details);
+  static char* DebugString(void* wrapper);
 
   explicit MetadataCredentialsPluginWrapper(
       std::unique_ptr<MetadataCredentialsPlugin> plugin);

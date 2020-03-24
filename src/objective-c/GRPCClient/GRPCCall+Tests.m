@@ -18,7 +18,7 @@
 
 #import "GRPCCall+Tests.h"
 
-#import "private/GRPCHost.h"
+#import "private/GRPCCore/GRPCHost.h"
 
 #import "GRPCCallOptions.h"
 
@@ -37,8 +37,9 @@
     [NSException raise:NSInvalidArgumentException format:@"testname must be provided."];
   }
   NSError *error = nil;
-  NSString *certs =
-      [NSString stringWithContentsOfFile:certsPath encoding:NSUTF8StringEncoding error:&error];
+  NSString *certs = [NSString stringWithContentsOfFile:certsPath
+                                              encoding:NSUTF8StringEncoding
+                                                 error:&error];
   if (error != nil) {
     [NSException raise:[error localizedDescription] format:@"failed to load certs"];
   }

@@ -106,7 +106,7 @@ inline grpc::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
   if (file->options().has_ruby_package()) {
     package_name = file->options().ruby_package();
 
-    // If :: is in the package convert the Ruby formated name
+    // If :: is in the package convert the Ruby formatted name
     //    -> A::B::C
     // to use the dot seperator notation
     //    -> A.B.C

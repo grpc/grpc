@@ -24,6 +24,16 @@ RUN apt-get update && apt-get install -y \
     nuget \
     && apt-get clean
 
+RUN apt-get update && apt-get install -y curl && apt-get clean
+
+# Install dotnet SDK
+ENV DOTNET_SDK_VERSION 2.1.500
+RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
+    && mkdir -p /usr/share/dotnet \
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
+    && rm dotnet.tar.gz \
+    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+
 RUN apt-get update && apt-get install -y unzip && apt-get clean
 
 # Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
