@@ -1,3 +1,5 @@
+// INTERNAL TESTING CODE!
+
 package test
 
 import (
