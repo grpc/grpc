@@ -20,6 +20,9 @@ cd grpc/examples/python/xds
 2. Run the server
 
 ```sh
+virtualenv venv -p python3
+source venv/bin/activate
+pip install grpcio protobuf
 python server.py
 ```
 
