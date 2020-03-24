@@ -125,18 +125,21 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   // Construct config for child policy.
   Json::Object child_config = {
       {"clusterName", parent_->config_->cluster()},
-      {"localityPickingPolicy", Json::Array{
-          Json::Object{
-              {"weighted_target_experimental", Json::Object{
-                  {"targets", Json::Object()},
-              }},
-          },
-      }},
-      {"endpointPickingPolicy", Json::Array{
-          Json::Object{
-              {"round_robin", Json::Object()},
-          },
-      }},
+      {"localityPickingPolicy",
+       Json::Array{
+           Json::Object{
+               {"weighted_target_experimental",
+                Json::Object{
+                    {"targets", Json::Object()},
+                }},
+           },
+       }},
+      {"endpointPickingPolicy",
+       Json::Array{
+           Json::Object{
+               {"round_robin", Json::Object()},
+           },
+       }},
   };
   if (!cluster_data.eds_service_name.empty()) {
     child_config["edsServiceName"] = cluster_data.eds_service_name;
@@ -169,8 +172,8 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     args.args = parent_->args_;
     args.channel_control_helper = absl::make_unique<Helper>(parent_->Ref());
     parent_->child_policy_ =
-        LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-            config->name(), std::move(args));
+        LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(config->name(),
+                                                               std::move(args));
     if (parent_->child_policy_ == nullptr) {
       OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "failed to create child policy"));
@@ -246,8 +249,7 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
 //
 
 CdsLb::CdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      xds_client_(std::move(xds_client)) {
+    : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p from channel",
             this, xds_client_.get());

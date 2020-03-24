@@ -25,10 +25,10 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -85,9 +85,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
    public:
     explicit ChildPickerWrapper(std::unique_ptr<SubchannelPicker> picker)
         : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) {
-      return picker_->Pick(std::move(args));
-    }
+    PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+
    private:
     std::unique_ptr<SubchannelPicker> picker_;
   };
@@ -101,8 +100,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // range proportional to the child's weight. The start of the range
     // is the previous value in the vector and is 0 for the first element.
     using PickerList =
-        InlinedVector<std::pair<uint32_t,
-                                RefCountedPtr<ChildPickerWrapper>>, 1>;
+        InlinedVector<std::pair<uint32_t, RefCountedPtr<ChildPickerWrapper>>,
+                      1>;
 
     explicit WeightedPicker(PickerList pickers)
         : pickers_(std::move(pickers)) {}
@@ -245,7 +244,8 @@ WeightedTargetLb::WeightedTargetLb(Args args)
 
 WeightedTargetLb::~WeightedTargetLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
-    gpr_log(GPR_INFO, "[weighted_target_lb %p] destroying weighted_target LB policy",
+    gpr_log(GPR_INFO,
+            "[weighted_target_lb %p] destroying weighted_target LB policy",
             this);
   }
 }
@@ -369,8 +369,8 @@ void WeightedTargetLb::UpdateStateLocked() {
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
-      picker = absl::make_unique<QueuePicker>(
-          Ref(DEBUG_LOCATION, "QueuePicker"));
+      picker =
+          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
       picker = absl::make_unique<TransientFailurePicker>(
@@ -411,8 +411,9 @@ void WeightedTargetLb::WeightedChild::Orphan() {
   }
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
-  grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-                                   weighted_target_policy_->interested_parties());
+  grpc_pollset_set_del_pollset_set(
+      child_policy_->interested_parties(),
+      weighted_target_policy_->interested_parties());
   child_policy_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
@@ -538,14 +539,13 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
   GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
                     grpc_schedule_on_exec_ctx);
   delayed_removal_timer_callback_pending_ = true;
-  grpc_timer_init(
-      &delayed_removal_timer_,
-      ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
-      &on_delayed_removal_timer_);
+  grpc_timer_init(&delayed_removal_timer_,
+                  ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
+                  &on_delayed_removal_timer_);
 }
 
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(void* arg,
-                                                   grpc_error* error) {
+                                                            grpc_error* error) {
   WeightedChild* self = static_cast<WeightedChild*>(arg);
   self->weighted_target_policy_->combiner()->Run(
       GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
@@ -556,8 +556,9 @@ void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(void* arg,
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimerLocked(
     void* arg, grpc_error* error) {
   WeightedChild* self = static_cast<WeightedChild*>(arg);
-  if (error == GRPC_ERROR_NONE && self->delayed_removal_timer_callback_pending_
-      && !self->shutdown_ && self->weight_ == 0) {
+  if (error == GRPC_ERROR_NONE &&
+      self->delayed_removal_timer_callback_pending_ && !self->shutdown_ &&
+      self->weight_ == 0) {
     self->delayed_removal_timer_callback_pending_ = false;
     self->weighted_target_policy_->targets_.erase(self->name_);
   }
@@ -572,8 +573,8 @@ RefCountedPtr<SubchannelInterface>
 WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
     const grpc_channel_args& args) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return nullptr;
-  return weighted_child_->weighted_target_policy_->channel_control_helper()->CreateSubchannel(
-      args);
+  return weighted_child_->weighted_target_policy_->channel_control_helper()
+      ->CreateSubchannel(args);
 }
 
 void WeightedTargetLb::WeightedChild::Helper::UpdateState(
@@ -584,14 +585,15 @@ void WeightedTargetLb::WeightedChild::Helper::UpdateState(
 
 void WeightedTargetLb::WeightedChild::Helper::RequestReresolution() {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
-  weighted_child_->weighted_target_policy_->channel_control_helper()->RequestReresolution();
+  weighted_child_->weighted_target_policy_->channel_control_helper()
+      ->RequestReresolution();
 }
 
-void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(TraceSeverity severity,
-                                                        StringView message) {
+void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
+    TraceSeverity severity, StringView message) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
-  weighted_child_->weighted_target_policy_->channel_control_helper()->AddTraceEvent(
-      severity, message);
+  weighted_child_->weighted_target_policy_->channel_control_helper()
+      ->AddTraceEvent(severity, message);
 }
 
 //

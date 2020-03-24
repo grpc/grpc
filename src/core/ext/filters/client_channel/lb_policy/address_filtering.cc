@@ -49,8 +49,7 @@ int HierarchicalPathCompare(void* p1, void* p2) {
 }
 
 const grpc_arg_pointer_vtable hierarchical_path_arg_vtable = {
-    HierarchicalPathCopy, HierarchicalPathDestroy,
-    HierarchicalPathCompare};
+    HierarchicalPathCopy, HierarchicalPathDestroy, HierarchicalPathCompare};
 
 }  // namespace
 

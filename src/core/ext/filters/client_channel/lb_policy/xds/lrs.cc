@@ -19,9 +19,9 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -91,6 +91,7 @@ class LrsLb : public LoadBalancingPolicy {
     explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
         : picker_(std::move(picker)) {}
     PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+
    private:
     std::unique_ptr<SubchannelPicker> picker_;
   };
@@ -191,8 +192,7 @@ LoadBalancingPolicy::PickResult LrsLb::LoadReportingPicker::Pick(
 //
 
 LrsLb::LrsLb(RefCountedPtr<XdsClient> xds_client, Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      xds_client_(std::move(xds_client)) {
+    : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
     gpr_log(GPR_INFO, "[lrs_lb %p] created -- using xds client %p from channel",
             this, xds_client_.get());
@@ -244,14 +244,13 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
   // Update load reporting if needed.
   if (old_config == nullptr ||
       config_->lrs_load_reporting_server_name() !=
-           old_config->lrs_load_reporting_server_name() ||
+          old_config->lrs_load_reporting_server_name() ||
       config_->cluster_name() != old_config->cluster_name() ||
       config_->eds_service_name() != old_config->eds_service_name() ||
       *config_->locality_name() != *old_config->locality_name()) {
     locality_stats_ = xds_client_->AddClusterLocalityStats(
-        config_->lrs_load_reporting_server_name(),
-        config_->cluster_name(), config_->eds_service_name(),
-        config_->locality_name());
+        config_->lrs_load_reporting_server_name(), config_->cluster_name(),
+        config_->eds_service_name(), config_->locality_name());
     MaybeUpdatePickerLocked();
   }
   // Update child policy.
@@ -322,8 +321,8 @@ RefCountedPtr<SubchannelInterface> LrsLb::Helper::CreateSubchannel(
   return lrs_policy_->channel_control_helper()->CreateSubchannel(args);
 }
 
-void LrsLb::Helper::UpdateState(
-    grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
+void LrsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                std::unique_ptr<SubchannelPicker> picker) {
   if (lrs_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
     gpr_log(GPR_INFO,

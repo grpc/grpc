@@ -24,10 +24,10 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -58,13 +58,12 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
       std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>>
           children,
       std::vector<std::string> priorities)
-      : children_(std::move(children)),
-        priorities_(std::move(priorities)) {}
+      : children_(std::move(children)), priorities_(std::move(priorities)) {}
 
   const char* name() const override { return kPriority; }
 
   const std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>>&
-      children() const {
+  children() const {
     return children_;
   }
   const std::vector<std::string>& priorities() const { return priorities_; }
@@ -125,6 +124,7 @@ class PriorityLb : public LoadBalancingPolicy {
       explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
           : picker_(std::move(picker)) {}
       PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+
      private:
       std::unique_ptr<SubchannelPicker> picker_;
     };
@@ -137,6 +137,7 @@ class PriorityLb : public LoadBalancingPolicy {
       PickResult Pick(PickArgs args) override {
         return picker_->Pick(std::move(args));
       }
+
      private:
       RefCountedPtr<RefCountedPicker> picker_;
     };
@@ -402,8 +403,8 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
     // If the child for the priority does not exist yet, create it.
     const std::string& child_name = config_->priorities()[priority];
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-      gpr_log(GPR_INFO, "[priority_lb %p] trying priority %d, child %s",
-              this, priority, child_name.c_str());
+      gpr_log(GPR_INFO, "[priority_lb %p] trying priority %d, child %s", this,
+              priority, child_name.c_str());
     }
     auto& child = children_[child_name];
     if (child == nullptr) {
@@ -462,8 +463,8 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
 
 void PriorityLb::SelectPriorityLocked(uint32_t priority) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] selected priority %d, child %s",
-            this, priority, config_->priorities()[priority].c_str());
+    gpr_log(GPR_INFO, "[priority_lb %p] selected priority %d, child %s", this,
+            priority, config_->priorities()[priority].c_str());
   }
   current_priority_ = priority;
   current_child_from_before_update_ = nullptr;
@@ -608,8 +609,8 @@ void PriorityLb::ChildPriority::StartFailoverTimerLocked() {
   }
   Ref(DEBUG_LOCATION, "ChildPriority+OnFailoverTimerLocked").release();
   grpc_timer_init(
-      &failover_timer_, ExecCtx::Get()->Now() +
-          priority_policy_->child_failover_timeout_ms_,
+      &failover_timer_,
+      ExecCtx::Get()->Now() + priority_policy_->child_failover_timeout_ms_,
       &on_failover_timer_);
   failover_timer_callback_pending_ = true;
 }
@@ -628,11 +629,12 @@ void PriorityLb::ChildPriority::MaybeCancelFailoverTimerLocked() {
 
 void PriorityLb::ChildPriority::OnFailoverTimer(void* arg, grpc_error* error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
-  self->priority_policy_->combiner()->Run(
-      &self->on_failover_timer_locked_, GRPC_ERROR_REF(error));
+  self->priority_policy_->combiner()->Run(&self->on_failover_timer_locked_,
+                                          GRPC_ERROR_REF(error));
 }
 
-void PriorityLb::ChildPriority::OnFailoverTimerLocked(void* arg, grpc_error* error) {
+void PriorityLb::ChildPriority::OnFailoverTimerLocked(void* arg,
+                                                      grpc_error* error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
   if (error == GRPC_ERROR_NONE && self->failover_timer_callback_pending_ &&
       !self->priority_policy_->shutting_down_) {
@@ -643,7 +645,8 @@ void PriorityLb::ChildPriority::OnFailoverTimerLocked(void* arg, grpc_error* err
               self->priority_policy_.get(), self->name_.c_str(), self);
     }
     self->failover_timer_callback_pending_ = false;
-    self->OnConnectivityStateUpdateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, nullptr);
+    self->OnConnectivityStateUpdateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                          nullptr);
   }
   self->Unref(DEBUG_LOCATION, "ChildPriority+OnFailoverTimerLocked");
 }
@@ -663,9 +666,9 @@ void PriorityLb::ChildPriority::DeactivateLocked() {
   Ref(DEBUG_LOCATION, "ChildPriority+timer").release();
   GRPC_CLOSURE_INIT(&on_deactivation_timer_, OnDeactivationTimer, this,
                     grpc_schedule_on_exec_ctx);
-  grpc_timer_init(
-      &deactivation_timer_, ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
-      &on_deactivation_timer_);
+  grpc_timer_init(&deactivation_timer_,
+                  ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
+                  &on_deactivation_timer_);
   deactivation_timer_callback_pending_ = true;
 }
 
@@ -681,7 +684,7 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 }
 
 void PriorityLb::ChildPriority::OnDeactivationTimer(void* arg,
-                                                      grpc_error* error) {
+                                                    grpc_error* error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
   self->priority_policy_->combiner()->Run(
       GRPC_CLOSURE_INIT(&self->on_deactivation_timer_,
@@ -690,7 +693,7 @@ void PriorityLb::ChildPriority::OnDeactivationTimer(void* arg,
 }
 
 void PriorityLb::ChildPriority::OnDeactivationTimerLocked(void* arg,
-                                                            grpc_error* error) {
+                                                          grpc_error* error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
   if (error == GRPC_ERROR_NONE && self->deactivation_timer_callback_pending_ &&
       !self->priority_policy_->shutting_down_) {
@@ -719,8 +722,8 @@ RefCountedPtr<SubchannelInterface>
 PriorityLb::ChildPriority::Helper::CreateSubchannel(
     const grpc_channel_args& args) {
   if (priority_->priority_policy_->shutting_down_) return nullptr;
-  return priority_->priority_policy_->channel_control_helper()->CreateSubchannel(
-      args);
+  return priority_->priority_policy_->channel_control_helper()
+      ->CreateSubchannel(args);
 }
 
 void PriorityLb::ChildPriority::Helper::UpdateState(
@@ -731,7 +734,7 @@ void PriorityLb::ChildPriority::Helper::UpdateState(
 }
 
 void PriorityLb::ChildPriority::Helper::AddTraceEvent(TraceSeverity severity,
-                                              StringView message) {
+                                                      StringView message) {
   if (priority_->priority_policy_->shutting_down_) return;
   priority_->priority_policy_->channel_control_helper()->AddTraceEvent(severity,
                                                                        message);
@@ -780,18 +783,19 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
         if (element.type() != Json::Type::OBJECT) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("field:children key:", child_name,
-                           " error:should be type object").c_str()));
+                           " error:should be type object")
+                  .c_str()));
         } else {
           auto it2 = element.object_value().find("config");
           if (it2 == element.object_value().end()) {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
                 absl::StrCat("field:children key:", child_name,
-                             " error:missing 'config' field").c_str()));
+                             " error:missing 'config' field")
+                    .c_str()));
           } else {
             grpc_error* parse_error = GRPC_ERROR_NONE;
-            auto config =
-                LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-                    it2->second, &parse_error);
+            auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+                it2->second, &parse_error);
             if (config == nullptr) {
               GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
               error_list.push_back(
@@ -821,12 +825,14 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
         if (element.type() != Json::Type::STRING) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("field:priorities element:", i,
-                           " error:should be type string").c_str()));
+                           " error:should be type string")
+                  .c_str()));
         } else if (children.find(element.string_value()) == children.end()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("field:priorities element:", i,
                            " error:unknown child '", element.string_value(),
-                           "'").c_str()));
+                           "'")
+                  .c_str()));
         } else {
           priorities.emplace_back(element.string_value());
         }
@@ -835,7 +841,8 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("field:priorities error:priorities size (",
                          priorities.size(), ") != children size (",
-                         children.size(), ")").c_str()));
+                         children.size(), ")")
+                .c_str()));
       }
     }
     if (error_list.empty()) {
