@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-// FIXME: go through logging guidelines and make sure all policies comply
-
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
@@ -160,6 +158,10 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
         const grpc_channel_args* args);
+
+    void OnConnectivityStateUpdateLocked(
+        grpc_connectivity_state state,
+        std::unique_ptr<SubchannelPicker> picker);
 
     static void OnDelayedRemovalTimer(void* arg, grpc_error* error);
     static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
@@ -416,6 +418,7 @@ void WeightedTargetLb::WeightedChild::Orphan() {
   // the child.
   picker_wrapper_.reset();
   if (delayed_removal_timer_callback_pending_) {
+    delayed_removal_timer_callback_pending_ = false;
     grpc_timer_cancel(&delayed_removal_timer_);
   }
   shutdown_ = true;
@@ -457,6 +460,12 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   weight_ = config.weight;
   // Reactivate if needed.
   if (delayed_removal_timer_callback_pending_) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+      gpr_log(GPR_INFO,
+              "[weighted_target_lb %p] WeightedChild %p %s: reactivating",
+              weighted_target_policy_.get(), this, name_.c_str());
+    }
+    delayed_removal_timer_callback_pending_ = false;
     grpc_timer_cancel(&delayed_removal_timer_);
   }
   // Create child policy if needed.
@@ -483,20 +492,56 @@ void WeightedTargetLb::WeightedChild::ResetBackoffLocked() {
   child_policy_->ResetBackoffLocked();
 }
 
+void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
+    grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
+  // Cache the picker in the WeightedChild.
+  picker_wrapper_ = MakeRefCounted<ChildPickerWrapper>(std::move(picker));
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO,
+            "[weighted_target_lb %p] WeightedChild %p %s: connectivity "
+            "state update: state=%s picker_wrapper=%p",
+            weighted_target_policy_.get(), this, name_.c_str(),
+            ConnectivityStateName(state), picker_wrapper_.get());
+  }
+  // If the child reports IDLE, immediately tell it to exit idle.
+  if (state == GRPC_CHANNEL_IDLE) child_policy_->ExitIdleLocked();
+  // Decide what state to report for aggregation purposes.
+  // If we haven't seen a failure since the last time we were in state
+  // READY, then we report the state change as-is.  However, once we do see
+  // a failure, we report TRANSIENT_FAILURE and ignore any subsequent state
+  // changes until we go back into state READY.
+  if (!seen_failure_since_ready_) {
+    if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      seen_failure_since_ready_ = true;
+    }
+  } else {
+    if (state != GRPC_CHANNEL_READY) return;
+    seen_failure_since_ready_ = false;
+  }
+  connectivity_state_ = state;
+  // Notify the LB policy.
+  weighted_target_policy_->UpdateStateLocked();
+}
+
 void WeightedTargetLb::WeightedChild::DeactivateLocked() {
   // If already deactivated, don't do that again.
   if (weight_ == 0) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
+    gpr_log(GPR_INFO,
+            "[weighted_target_lb %p] WeightedChild %p %s: deactivating",
+            weighted_target_policy_.get(), this, name_.c_str());
+  }
   // Set the child weight to 0 so that future picker won't contain this child.
   weight_ = 0;
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "WeightedChild+timer").release();
   GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
                     grpc_schedule_on_exec_ctx);
+  delayed_removal_timer_callback_pending_ = true;
   grpc_timer_init(
       &delayed_removal_timer_,
       ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
       &on_delayed_removal_timer_);
-  delayed_removal_timer_callback_pending_ = true;
 }
 
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(void* arg,
@@ -511,8 +556,9 @@ void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(void* arg,
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimerLocked(
     void* arg, grpc_error* error) {
   WeightedChild* self = static_cast<WeightedChild*>(arg);
-  self->delayed_removal_timer_callback_pending_ = false;
-  if (error == GRPC_ERROR_NONE && !self->shutdown_ && self->weight_ == 0) {
+  if (error == GRPC_ERROR_NONE && self->delayed_removal_timer_callback_pending_
+      && !self->shutdown_ && self->weight_ == 0) {
+    self->delayed_removal_timer_callback_pending_ = false;
     self->weighted_target_policy_->targets_.erase(self->name_);
   }
   self->Unref(DEBUG_LOCATION, "WeightedChild+timer");
@@ -533,29 +579,7 @@ WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
 void WeightedTargetLb::WeightedChild::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
-  // Cache the picker in the WeightedChild.
-  weighted_child_->picker_wrapper_ =
-      MakeRefCounted<ChildPickerWrapper>(std::move(picker));
-  // If the child reports IDLE, immediately tell it to exit idle.
-  if (state == GRPC_CHANNEL_IDLE) {
-    weighted_child_->child_policy_->ExitIdleLocked();
-  }
-  // Decide what state to report for aggregation purposes.
-  // If we haven't seen a failure since the last time we were in state
-  // READY, then we report the state change as-is.  However, once we do see
-  // a failure, we report TRANSIENT_FAILURE and ignore any subsequent state
-  // changes until we go back into state READY.
-  if (!weighted_child_->seen_failure_since_ready_) {
-    if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      weighted_child_->seen_failure_since_ready_ = true;
-    }
-  } else {
-    if (state != GRPC_CHANNEL_READY) return;
-    weighted_child_->seen_failure_since_ready_ = false;
-  }
-  weighted_child_->connectivity_state_ = state;
-  // Notify the LB policy.
-  weighted_child_->weighted_target_policy_->UpdateStateLocked();
+  weighted_child_->OnConnectivityStateUpdateLocked(state, std::move(picker));
 }
 
 void WeightedTargetLb::WeightedChild::Helper::RequestReresolution() {
