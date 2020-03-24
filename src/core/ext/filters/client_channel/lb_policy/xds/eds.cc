@@ -182,8 +182,8 @@ class EdsLb : public LoadBalancingPolicy {
   void UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const grpc_channel_args* args);
-  ServerAddressList CreateChildPolicyAddresses();
-  RefCountedPtr<Config> CreateChildPolicyConfig();
+  ServerAddressList CreateChildPolicyAddressesLocked();
+  RefCountedPtr<Config> CreateChildPolicyConfigLocked();
   grpc_channel_args* CreateChildPolicyArgsLocked(
       const grpc_channel_args* args_in);
   void MaybeUpdateDropPickerLocked();
@@ -659,7 +659,7 @@ void EdsLb::UpdatePriorityList(
   UpdateChildPolicyLocked();
 }
 
-ServerAddressList EdsLb::CreateChildPolicyAddresses() {
+ServerAddressList EdsLb::CreateChildPolicyAddressesLocked() {
   ServerAddressList addresses;
   for (uint32_t priority = 0; priority < priority_list_update_.size();
        ++priority) {
@@ -684,7 +684,8 @@ ServerAddressList EdsLb::CreateChildPolicyAddresses() {
   return addresses;
 }
 
-RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
+RefCountedPtr<LoadBalancingPolicy::Config>
+EdsLb::CreateChildPolicyConfigLocked() {
   Json::Object priority_children;
   Json::Array priority_priorities;
   for (uint32_t priority = 0; priority < priority_list_update_.size();
@@ -786,9 +787,9 @@ RefCountedPtr<LoadBalancingPolicy::Config> EdsLb::CreateChildPolicyConfig() {
 void EdsLb::UpdateChildPolicyLocked() {
   if (shutting_down_) return;
   UpdateArgs update_args;
-  update_args.config = CreateChildPolicyConfig();
+  update_args.config = CreateChildPolicyConfigLocked();
   if (update_args.config == nullptr) return;
-  update_args.addresses = CreateChildPolicyAddresses();
+  update_args.addresses = CreateChildPolicyAddressesLocked();
   update_args.args = CreateChildPolicyArgsLocked(args_);
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(update_args.args);
