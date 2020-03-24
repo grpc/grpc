@@ -1241,6 +1241,12 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
     RegisterCallbackGenericService(unimplemented_service_.get());
   }
 
+#ifndef NDEBUG
+  for (size_t i = 0; i < num_cqs; i++) {
+    cq_list_.push_back(cqs[i]);
+  }
+#endif
+
   grpc_server_start(server_);
 
   if (!has_async_generic_service_ && !has_callback_generic_service_) {
@@ -1249,9 +1255,6 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
     }
 
     for (size_t i = 0; i < num_cqs; i++) {
-#ifndef NDEBUG
-      cq_list_.push_back(cqs[i]);
-#endif
       if (cqs[i]->IsFrequentlyPolled()) {
         new UnimplementedAsyncRequest(this, cqs[i]);
       }
