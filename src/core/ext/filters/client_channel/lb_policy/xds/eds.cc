@@ -52,6 +52,7 @@ namespace {
 constexpr char kXds[] = "xds_experimental";
 constexpr char kEds[] = "eds_experimental";
 
+// Config for EDS LB policy.
 class EdsLbConfig : public LoadBalancingPolicy::Config {
  public:
   EdsLbConfig(
@@ -95,6 +96,7 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
 };
 
+// EDS LB policy.
 class EdsLb : public LoadBalancingPolicy {
  public:
   EdsLb(const char* name, Args args);
