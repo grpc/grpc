@@ -14,18 +14,17 @@
 
 import enum
 
-cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'default').upper()
+cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'poller').upper()
 cdef _AioState _global_aio_state = _AioState()
 
 
 class AsyncIOEngine(enum.Enum):
-    DEFAULT = 'default'
     CUSTOM_IO_MANAGER = 'custom_io_manager'
     POLLER = 'poller'
 
 
 cdef _default_asyncio_engine():
-    return AsyncIOEngine.CUSTOM_IO_MANAGER
+    return AsyncIOEngine.POLLER
 
 
 cdef grpc_completion_queue *global_completion_queue():
@@ -76,10 +75,8 @@ cdef _actual_aio_initialization():
     # Picks the engine for gRPC AsyncIO Stack
     _global_aio_state.engine = AsyncIOEngine.__members__.get(
         _GRPC_ASYNCIO_ENGINE,
-        AsyncIOEngine.DEFAULT,
+        _default_asyncio_engine(),
     )
-    if _global_aio_state.engine is AsyncIOEngine.DEFAULT:
-        _global_aio_state.engine = _default_asyncio_engine()
     _LOGGER.info('Using %s as I/O engine', _global_aio_state.engine)
 
     # Initializes the process-level state accordingly

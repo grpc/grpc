@@ -2855,7 +2855,7 @@ TEST_P(DropTest, DropPerTenThousand) {
 TEST_P(DropTest, Update) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 1000;
+  const size_t kNumRpcs = 3000;
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
@@ -2888,6 +2888,7 @@ TEST_P(DropTest, Update) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  gpr_log(GPR_INFO, "First batch drop rate %f", seen_drop_rate);
   const double kErrorTolerance = 0.3;
   EXPECT_THAT(
       seen_drop_rate,
@@ -2936,6 +2937,7 @@ TEST_P(DropTest, Update) {
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  gpr_log(GPR_INFO, "Second batch drop rate %f", seen_drop_rate);
   EXPECT_THAT(
       seen_drop_rate,
       ::testing::AllOf(
