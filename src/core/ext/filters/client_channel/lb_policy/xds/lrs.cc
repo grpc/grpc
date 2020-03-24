@@ -37,6 +37,7 @@ namespace {
 
 constexpr char kLrs[] = "lrs_experimental";
 
+// Config for LRS LB policy.
 class LrsLbConfig : public LoadBalancingPolicy::Config {
  public:
   LrsLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
@@ -72,6 +73,7 @@ class LrsLbConfig : public LoadBalancingPolicy::Config {
   RefCountedPtr<XdsLocalityName> locality_name_;
 };
 
+// LRS LB policy.
 class LrsLb : public LoadBalancingPolicy {
  public:
   LrsLb(RefCountedPtr<XdsClient> xds_client, Args args);
@@ -79,6 +81,7 @@ class LrsLb : public LoadBalancingPolicy {
   const char* name() const override { return kLrs; }
 
   void UpdateLocked(UpdateArgs args) override;
+  void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
  private:
@@ -133,6 +136,8 @@ class LrsLb : public LoadBalancingPolicy {
       const grpc_channel_args* args);
   void UpdateChildPolicyLocked(ServerAddressList addresses,
                                const grpc_channel_args* args);
+
+  void MaybeUpdatePickerLocked();
 
   // Current config from the resolver.
   RefCountedPtr<LrsLbConfig> config_;
@@ -219,6 +224,10 @@ void LrsLb::ShutdownLocked() {
   xds_client_.reset();
 }
 
+void LrsLb::ExitIdleLocked() {
+  if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
+}
+
 void LrsLb::ResetBackoffLocked() {
   // The XdsClient will have its backoff reset by the xds resolver, so we
   // don't need to do it here.
@@ -243,16 +252,23 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
         config_->lrs_load_reporting_server_name(),
         config_->cluster_name(), config_->eds_service_name(),
         config_->locality_name());
-    // Update load reporting picker if needed.
-    if (picker_ != nullptr) {
-      channel_control_helper()->UpdateState(
-          state_,
-          absl::make_unique<LoadReportingPicker>(picker_, locality_stats_));
-    }
+    MaybeUpdatePickerLocked();
   }
   // Update child policy.
   UpdateChildPolicyLocked(std::move(args.addresses), args.args);
   args.args = nullptr;  // Ownership passed to UpdateChildPolicyLocked().
+}
+
+void LrsLb::MaybeUpdatePickerLocked() {
+  if (picker_ != nullptr) {
+    auto lrs_picker =
+        absl::make_unique<LoadReportingPicker>(picker_, locality_stats_);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
+      gpr_log(GPR_INFO, "[lrs_lb %p] updating connectivity: state=%s picker=%p",
+              this, ConnectivityStateName(state_), lrs_picker.get());
+    }
+    channel_control_helper()->UpdateState(state_, std::move(lrs_picker));
+  }
 }
 
 OrphanablePtr<LoadBalancingPolicy> LrsLb::CreateChildPolicyLocked(
@@ -309,14 +325,16 @@ RefCountedPtr<SubchannelInterface> LrsLb::Helper::CreateSubchannel(
 void LrsLb::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
   if (lrs_policy_->shutting_down_) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
+    gpr_log(GPR_INFO,
+            "[lrs_lb %p] child connectivity state update: state=%s picker=%p",
+            lrs_policy_.get(), ConnectivityStateName(state), picker.get());
+  }
   // Save the state and picker.
   lrs_policy_->state_ = state;
   lrs_policy_->picker_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
   // Wrap the picker and return it to the channel.
-  lrs_policy_->channel_control_helper()->UpdateState(
-      state,
-      absl::make_unique<LoadReportingPicker>(
-          lrs_policy_->picker_, lrs_policy_->locality_stats_));
+  lrs_policy_->MaybeUpdatePickerLocked();
 }
 
 void LrsLb::Helper::RequestReresolution() {
