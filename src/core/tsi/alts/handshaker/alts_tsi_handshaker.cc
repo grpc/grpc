@@ -41,10 +41,8 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
-// Frame size negotiation extends send frame size range to
-// [kMinFrameSize, kMaxFrameSize]
-constexpr size_t kMinFrameSize = 16 * 1024;
-constexpr size_t kMaxFrameSize = 128 * 1024;
+const size_t kMinFrameSize = 16 * 1024;
+const size_t kMaxFrameSize = 128 * 1024;
 
 /* Main struct for ALTS TSI handshaker. */
 struct alts_tsi_handshaker {

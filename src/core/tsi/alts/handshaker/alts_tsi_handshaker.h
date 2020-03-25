@@ -38,6 +38,11 @@
 
 const size_t kTsiAltsNumOfPeerProperties = 5;
 
+// Frame size negotiation extends send frame size range to
+// [kMinFrameSize, kMaxFrameSize]
+ABSL_CONST_INIT extern const size_t kMinFrameSize;
+ABSL_CONST_INIT extern const size_t kMaxFrameSize;
+
 typedef struct alts_tsi_handshaker alts_tsi_handshaker;
 
 /**
