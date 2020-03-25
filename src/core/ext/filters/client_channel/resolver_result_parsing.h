@@ -46,7 +46,7 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
 
   ClientChannelGlobalParsedConfig(
       RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config,
-      grpc_core::UniquePtr<char> parsed_deprecated_lb_policy,
+      std::string parsed_deprecated_lb_policy,
       const Optional<RetryThrottling>& retry_throttling,
       const char* health_check_service_name)
       : parsed_lb_config_(std::move(parsed_lb_config)),
@@ -62,8 +62,8 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
     return parsed_lb_config_;
   }
 
-  const char* parsed_deprecated_lb_policy() const {
-    return parsed_deprecated_lb_policy_.get();
+  const std::string& parsed_deprecated_lb_policy() const {
+    return parsed_deprecated_lb_policy_;
   }
 
   const char* health_check_service_name() const {
@@ -72,7 +72,7 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
-  grpc_core::UniquePtr<char> parsed_deprecated_lb_policy_;
+  std::string parsed_deprecated_lb_policy_;
   Optional<RetryThrottling> retry_throttling_;
   const char* health_check_service_name_;
 };
