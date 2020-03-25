@@ -43,7 +43,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
             message=f"Hello {request.name} from {self._hostname}!")
 
 
-def serve(port, hostname):
+def serve(port: int, hostname: str):
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()))
 
