@@ -1630,8 +1630,8 @@ void ChannelData::ProcessLbPolicy(
   // If not, try the setting from channel args.
   const char* policy_name = nullptr;
   if (parsed_service_config != nullptr &&
-      parsed_service_config->parsed_deprecated_lb_policy() != nullptr) {
-    policy_name = parsed_service_config->parsed_deprecated_lb_policy();
+      !parsed_service_config->parsed_deprecated_lb_policy().empty()) {
+    policy_name = parsed_service_config->parsed_deprecated_lb_policy().c_str();
   } else {
     const grpc_arg* channel_arg =
         grpc_channel_args_find(resolver_result.args, GRPC_ARG_LB_POLICY_NAME);
