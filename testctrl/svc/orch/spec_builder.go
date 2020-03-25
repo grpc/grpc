@@ -1,12 +1,13 @@
 package orch
 
 import (
-	"encoding/json"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/golang/protobuf/jsonpb"
 
 	"github.com/grpc/grpc/testctrl/svc/types"
 )
@@ -146,10 +147,16 @@ func (sb *SpecBuilder) Env() []apiv1.EnvVar {
 }
 
 func (sb *SpecBuilder) scenarioJson() string {
-	bytes, err := json.Marshal(sb.session.Scenario())
+	marshaler := &jsonpb.Marshaler{
+		Indent: "",
+		EnumsAsInts: true,
+		OrigName: true,
+	}
+
+	json, err := marshaler.MarshalToString(sb.session.Scenario())
 	if err != nil {
 		return ""
 	}
 
-	return string(bytes)
+	return json
 }
