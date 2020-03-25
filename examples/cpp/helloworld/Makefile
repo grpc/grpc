@@ -20,16 +20,18 @@ CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc`
 CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
-LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-           -pthread\
-           -lgrpc++_reflection\
-           -ldl
+AS_NEEDED    :=
+NO_AS_NEEDED :=
 else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-           -pthread\
-           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-           -ldl
+AS_NEEDED    := -Wl,--as-needed
+NO_AS_NEEDED := -Wl,--no-as-needed
 endif
+
+LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc grpc++`\
+           -pthread\
+           ${NO_AS_NEEDED} -lgrpc++_reflection ${AS_NEEDED} \
+           -ldl
+
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
