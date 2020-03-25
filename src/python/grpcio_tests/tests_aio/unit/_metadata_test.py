@@ -15,7 +15,7 @@
 import logging
 import unittest
 
-from grpc.experimental.aio._metadata import Metadata
+from grpc.experimental.aio import Metadata
 
 
 class TestTypeMetadata(unittest.TestCase):
