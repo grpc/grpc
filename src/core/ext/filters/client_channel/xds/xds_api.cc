@@ -330,18 +330,18 @@ void AddNodeLogFields(const envoy_api_v2_core_Node* node,
       envoy_api_v2_core_Node_metadata(node);
   if (metadata != nullptr) {
     fields->emplace_back("  metadata {");
-    size_t num_entries;
-    const google_protobuf_Struct_FieldsEntry* const* entries =
-        google_protobuf_Struct_fields(metadata, &num_entries);
-    for (size_t i = 0; i < num_entries; ++i) {
+    size_t entry_idx = UPB_MAP_BEGIN;
+    while (true) {
+      const google_protobuf_Struct_FieldsEntry* entry =
+          google_protobuf_Struct_fields_next(metadata, &entry_idx);
+      if (entry == nullptr) break;
       fields->emplace_back("    field {");
       // key
-      AddStringField("      key",
-                     google_protobuf_Struct_FieldsEntry_key(entries[i]),
+      AddStringField("      key", google_protobuf_Struct_FieldsEntry_key(entry),
                      fields);
       // value
       const google_protobuf_Value* value =
-          google_protobuf_Struct_FieldsEntry_value(entries[i]);
+          google_protobuf_Struct_FieldsEntry_value(entry);
       if (value != nullptr) {
         std::string value_str;
         if (google_protobuf_Value_has_string_value(value)) {
