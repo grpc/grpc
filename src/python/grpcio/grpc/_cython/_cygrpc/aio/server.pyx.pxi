@@ -610,13 +610,13 @@ cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
                  options, maximum_concurrent_rpcs):
+        init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
-        self._cq = CallbackCompletionQueue()
         grpc_server_register_completion_queue(
             self._server.c_server,
-            self._cq.c_ptr(),
+            global_completion_queue(),
             NULL
         )
 
@@ -631,6 +631,7 @@ cdef class AioServer:
         self._shutdown_completed = self._loop.create_future()
         self._shutdown_callback_wrapper = CallbackWrapper(
             self._shutdown_completed,
+            self._loop,
             SERVER_SHUTDOWN_FAILURE_HANDLER)
         self._crash_exception = None
 
@@ -659,11 +660,12 @@ cdef class AioServer:
         cdef object future = self._loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
+            self._loop,
             REQUEST_CALL_FAILURE_HANDLER)
         error = grpc_server_request_call(
             self._server.c_server, &rpc_state.call, &rpc_state.details,
             &rpc_state.request_metadata,
-            self._cq.c_ptr(), self._cq.c_ptr(),
+            global_completion_queue(), global_completion_queue(),
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
@@ -674,7 +676,7 @@ cdef class AioServer:
 
     async def _server_main_loop(self,
                                 object server_started):
-        self._server.start()
+        self._server.start(backup_queue=False)
         cdef RPCState rpc_state
         server_started.set_result(True)
 
@@ -736,7 +738,7 @@ cdef class AioServer:
         # The shutdown callback won't be called until there is no live RPC.
         grpc_server_shutdown_and_notify(
             self._server.c_server,
-            self._cq._cq,
+            global_completion_queue(),
             self._shutdown_callback_wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.
@@ -789,9 +791,6 @@ cdef class AioServer:
                 self._server.is_shutdown = True
                 self._status = AIO_SERVER_STATUS_STOPPED
 
-                # Shuts down the completion queue
-                await self._cq.shutdown()
-    
     async def wait_for_termination(self, object timeout):
         if timeout is None:
             await self._shutdown_completed
@@ -823,3 +822,4 @@ cdef class AioServer:
                 self,
                 self._status
             )
+        shutdown_grpc_aio()

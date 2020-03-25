@@ -135,6 +135,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "sequential_connectivity_test",
     srcs = ["sequential_connectivity_test.cc"],
+    flaky = True,  # TODO(b/151696318)
     language = "C++",
     deps = [
         "//:gpr",

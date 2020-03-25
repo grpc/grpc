@@ -21,13 +21,14 @@
 
 #include <set>
 
+#include "absl/types/optional.h"
+
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -86,20 +87,26 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
   void WatchClusterData(StringView cluster_name,
                         std::unique_ptr<ClusterWatcherInterface> watcher);
   void CancelClusterDataWatch(StringView cluster_name,
-                              ClusterWatcherInterface* watcher);
+                              ClusterWatcherInterface* watcher,
+                              bool delay_unsubscription = false);
 
   // Start and cancel endpoint data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
   void WatchEndpointData(StringView eds_service_name,
                          std::unique_ptr<EndpointWatcherInterface> watcher);
   void CancelEndpointDataWatch(StringView eds_service_name,
-                               EndpointWatcherInterface* watcher);
+                               EndpointWatcherInterface* watcher,
+                               bool delay_unsubscription = false);
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
   RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
@@ -167,7 +174,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     void CancelConnectivityWatchLocked();
 
     void Subscribe(const std::string& type_url, const std::string& name);
-    void Unsubscribe(const std::string& type_url, const std::string& name);
+    void Unsubscribe(const std::string& type_url, const std::string& name,
+                     bool delay_unsubscription);
 
    private:
     class StateWatcher;
@@ -189,7 +197,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         watchers;
     // The latest data seen from CDS.
-    Optional<XdsApi::CdsUpdate> update;
+    absl::optional<XdsApi::CdsUpdate> update;
   };
 
   struct EndpointState {
@@ -197,12 +205,18 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
              std::unique_ptr<EndpointWatcherInterface>>
         watchers;
     // The latest data seen from EDS.
-    XdsApi::EdsUpdate update;
+    absl::optional<XdsApi::EdsUpdate> update;
   };
 
   struct LoadReportState {
+    struct LocalityState {
+      std::set<XdsClusterLocalityStats*> locality_stats;
+      std::vector<XdsClusterLocalityStats::Snapshot> deleted_locality_stats;
+    };
+
     std::set<XdsClusterDropStats*> drop_stats;
-    std::map<RefCountedPtr<XdsLocalityName>, std::set<XdsClusterLocalityStats*>,
+    XdsClusterDropStats::DroppedRequestsMap deleted_drop_stats;
+    std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
     grpc_millis last_report_time = ExecCtx::Get()->Now();
@@ -215,7 +229,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const std::string& cluster_name,
       RefCountedPtr<ServiceConfig>* service_config) const;
 
-  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot();
+  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot(
+      const std::set<std::string>& clusters);
 
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);
@@ -239,11 +254,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  std::string route_config_name_;
-  std::string cluster_name_;
-  // All the received clusters are cached, no matter they are watched or not.
+  absl::optional<XdsApi::LdsUpdate> lds_result_;
+  absl::optional<XdsApi::RdsUpdate> rds_result_;
+
+  // One entry for each watched CDS resource.
   std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
-  // Only the watched EDS service names are stored.
+  // One entry for each watched EDS resource.
   std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
   std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,

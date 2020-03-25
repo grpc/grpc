@@ -20,8 +20,14 @@ from grpc.experimental import aio
 from tests_aio.unit._test_server import start_test_server
 from tests_aio.unit._test_base import AioTestBase
 
+from tests.unit import resources
 
-class TestInsecureChannel(AioTestBase):
+_PRIVATE_KEY = resources.private_key()
+_CERTIFICATE_CHAIN = resources.certificate_chain()
+_TEST_ROOT_CERTIFICATES = resources.test_root_certificates()
+
+
+class TestChannel(AioTestBase):
 
     async def test_insecure_channel(self):
         server_target, _ = await start_test_server()  # pylint: disable=unused-variable
@@ -29,21 +35,16 @@ class TestInsecureChannel(AioTestBase):
         channel = aio.insecure_channel(server_target)
         self.assertIsInstance(channel, aio.Channel)
 
+    async def tests_secure_channel(self):
+        server_target, _ = await start_test_server(secure=True)  # pylint: disable=unused-variable
+        credentials = grpc.ssl_channel_credentials(
+            root_certificates=_TEST_ROOT_CERTIFICATES,
+            private_key=_PRIVATE_KEY,
+            certificate_chain=_CERTIFICATE_CHAIN,
+        )
+        secure_channel = aio.secure_channel(server_target, credentials)
 
-class TestSecureChannel(AioTestBase):
-    """Test a secure channel connected to a secure server"""
-
-    def test_secure_channel(self):
-
-        async def coro():
-            server_target, _ = await start_test_server(secure=True)  # pylint: disable=unused-variable
-            credentials = grpc.local_channel_credentials(
-                grpc.LocalConnectionType.LOCAL_TCP)
-            secure_channel = aio.secure_channel(server_target, credentials)
-
-            self.assertIsInstance(secure_channel, aio.Channel)
-
-        self.loop.run_until_complete(coro())
+        self.assertIsInstance(secure_channel, aio.Channel)
 
 
 if __name__ == '__main__':
