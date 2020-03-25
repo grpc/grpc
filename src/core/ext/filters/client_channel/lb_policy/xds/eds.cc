@@ -114,7 +114,7 @@ class EdsLb : public LoadBalancingPolicy {
    public:
     explicit ChildPickerWrapper(std::unique_ptr<SubchannelPicker> picker)
         : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
 
    private:
     std::unique_ptr<SubchannelPicker> picker_;
@@ -289,7 +289,7 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
     return result;
   }
   // Not dropping, so delegate to child's picker.
-  return child_picker_->Pick(std::move(args));
+  return child_picker_->Pick(args);
 }
 
 //

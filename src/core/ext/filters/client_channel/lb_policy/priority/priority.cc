@@ -123,7 +123,7 @@ class PriorityLb : public LoadBalancingPolicy {
      public:
       explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
           : picker_(std::move(picker)) {}
-      PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+      PickResult Pick(PickArgs args) { return picker_->Pick(args); }
 
      private:
       std::unique_ptr<SubchannelPicker> picker_;
@@ -134,9 +134,7 @@ class PriorityLb : public LoadBalancingPolicy {
      public:
       explicit RefCountedPickerWrapper(RefCountedPtr<RefCountedPicker> picker)
           : picker_(std::move(picker)) {}
-      PickResult Pick(PickArgs args) override {
-        return picker_->Pick(std::move(args));
-      }
+      PickResult Pick(PickArgs args) override { return picker_->Pick(args); }
 
      private:
       RefCountedPtr<RefCountedPicker> picker_;

@@ -90,7 +90,7 @@ class LrsLb : public LoadBalancingPolicy {
    public:
     explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
         : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
 
    private:
     std::unique_ptr<SubchannelPicker> picker_;
