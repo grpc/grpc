@@ -252,7 +252,7 @@
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-  set(CMAKE_MODULE_PATH "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules")
+  list(APPEND CMAKE_MODULE_PATH "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules")
 
   if(MSVC)
     include(cmake/msvc_static_runtime.cmake)

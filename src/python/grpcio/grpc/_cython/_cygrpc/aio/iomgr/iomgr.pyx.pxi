@@ -188,6 +188,7 @@ cdef void asyncio_timer_start(grpc_custom_timer* grpc_timer) with gil:
 
 
 cdef void asyncio_timer_stop(grpc_custom_timer* grpc_timer) with gil:
+    # TODO(https://github.com/grpc/grpc/issues/22278) remove this if condition
     if grpc_timer.timer == NULL:
         return
     else:
@@ -211,7 +212,18 @@ cdef void asyncio_run_loop(size_t timeout_ms) with gil:
     pass
 
 
+def _auth_plugin_callback_wrapper(object cb,
+                                  str service_url,
+                                  str method_name,
+                                  object callback):
+    asyncio.get_event_loop().call_soon(cb, service_url, method_name, callback)
+
+
 def install_asyncio_iomgr():
+    # Auth plugins invoke user provided logic in another thread by default. We
+    # need to override that behavior by registering the call to the event loop.
+    set_async_callback_func(_auth_plugin_callback_wrapper)
+
     asyncio_resolver_vtable.resolve = asyncio_resolve
     asyncio_resolver_vtable.resolve_async = asyncio_resolve_async
 

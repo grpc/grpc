@@ -47,8 +47,6 @@ class HealthServicerTest(AioTestBase):
 
     async def setUp(self):
         self._servicer = health.aio.HealthServicer()
-        await self._servicer.set(health.OVERALL_HEALTH,
-                                 health_pb2.HealthCheckResponse.SERVING)
         await self._servicer.set(_SERVING_SERVICE,
                                  health_pb2.HealthCheckResponse.SERVING)
         await self._servicer.set(_UNKNOWN_SERVICE,

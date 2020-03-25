@@ -28,6 +28,7 @@ TEST_TARGETS="//src/python/... //examples/python/..."
 BAZEL_FLAGS="--spawn_strategy=standalone --genrule_strategy=standalone --test_output=errors"
 bazel test ${BAZEL_FLAGS} ${TEST_TARGETS}
 bazel test --config=python_single_threaded_unary_stream ${BAZEL_FLAGS} ${TEST_TARGETS}
+bazel test --config=python_poller_engine ${BAZEL_FLAGS} ${TEST_TARGETS}
 
 
 # TODO(https://github.com/grpc/grpc/issues/19854): Move this to a new Kokoro

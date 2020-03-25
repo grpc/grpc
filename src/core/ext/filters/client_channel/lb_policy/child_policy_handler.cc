@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstring>
+
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 
 #include "absl/strings/str_cat.h"
@@ -138,8 +140,6 @@ void ChildPolicyHandler::ShutdownLocked() {
 }
 
 void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
-  // The name of the policy that this update wants us to use.
-  const char* child_policy_name = args.config->name();
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -166,10 +166,10 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   //    previous update that changed the policy name, or we have already
   //    finished swapping in the new policy; in this case, child_policy_
   //    is non-null but pending_child_policy_ is null).  In this case:
-  //    a. If child_policy_->name() equals child_policy_name, then we
-  //       update the existing child policy.
-  //    b. If child_policy_->name() does not equal child_policy_name,
-  //       we create a new policy.  The policy will be stored in
+  //    a. If going from the current config to the new config does not
+  //       require a new policy, then we update the existing child policy.
+  //    b. If going from the current config to the new config does require a
+  //       new policy, we create a new policy.  The policy will be stored in
   //       pending_child_policy_ and will later be swapped into
   //       child_policy_ by the helper when the new child transitions
   //       into state READY.
@@ -180,10 +180,11 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   //    not yet transitioned into state READY and been swapped into
   //    child_policy_; in this case, both child_policy_ and
   //    pending_child_policy_ are non-null).  In this case:
-  //    a. If pending_child_policy_->name() equals child_policy_name,
-  //       then we update the existing pending child policy.
-  //    b. If pending_child_policy->name() does not equal
-  //       child_policy_name, then we create a new policy.  The new
+  //    a. If going from the current config to the new config does not
+  //       require a new policy, then we update the existing pending
+  //       child policy.
+  //    b. If going from the current config to the new config does require a
+  //       new child policy, then we create a new policy.  The new
   //       policy is stored in pending_child_policy_ (replacing the one
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
@@ -191,12 +192,10 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   const bool create_policy =
       // case 1
       child_policy_ == nullptr ||
-      // case 2b
-      (pending_child_policy_ == nullptr &&
-       strcmp(child_policy_->name(), child_policy_name) != 0) ||
-      // case 3b
-      (pending_child_policy_ != nullptr &&
-       strcmp(pending_child_policy_->name(), child_policy_name) != 0);
+      // cases 2b and 3b
+      ConfigChangeRequiresNewPolicyInstance(current_config_.get(),
+                                            args.config.get());
+  current_config_ = args.config;
   LoadBalancingPolicy* policy_to_update = nullptr;
   if (create_policy) {
     // Cases 1, 2b, and 3b: create a new child policy.
@@ -205,11 +204,11 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
       gpr_log(GPR_INFO,
               "[child_policy_handler %p] creating new %schild policy %s", this,
-              child_policy_ == nullptr ? "" : "pending ", child_policy_name);
+              child_policy_ == nullptr ? "" : "pending ", args.config->name());
     }
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
-    lb_policy = CreateChildPolicy(child_policy_name, *args.args);
+    lb_policy = CreateChildPolicy(args.config->name(), *args.args);
     policy_to_update = lb_policy.get();
   } else {
     // Cases 2a and 3a: update an existing policy.
@@ -257,8 +256,7 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
       std::unique_ptr<ChannelControlHelper>(helper);
   lb_policy_args.args = &args;
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
-      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-          child_policy_name, std::move(lb_policy_args));
+      CreateLoadBalancingPolicy(child_policy_name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", child_policy_name);
     return nullptr;
@@ -275,6 +273,19 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
+}
+
+bool ChildPolicyHandler::ConfigChangeRequiresNewPolicyInstance(
+    LoadBalancingPolicy::Config* old_config,
+    LoadBalancingPolicy::Config* new_config) const {
+  return strcmp(old_config->name(), new_config->name()) != 0;
+}
+
+OrphanablePtr<LoadBalancingPolicy>
+ChildPolicyHandler::CreateLoadBalancingPolicy(
+    const char* name, LoadBalancingPolicy::Args args) const {
+  return LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+      name, std::move(args));
 }
 
 }  // namespace grpc_core

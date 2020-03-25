@@ -30,7 +30,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     _gracefully_shutting_down: bool
 
     def __init__(self) -> None:
-        self._server_status = dict()
+        self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._server_watchers = collections.defaultdict(asyncio.Condition)
         self._gracefully_shutting_down = False
 

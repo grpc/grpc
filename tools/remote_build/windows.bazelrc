@@ -38,9 +38,6 @@ build --define GRPC_PORT_ISOLATED_RUNTIME=1
 build --test_tag_filters=-no_windows
 build --build_tag_filters=-no_windows
 
-# required for the tests to pass on Windows RBE
-build --incompatible_windows_native_test_wrapper
-
 # without verbose gRPC logs the test outputs are not very useful
 test --test_env=GRPC_VERBOSITY=debug
 

@@ -29,6 +29,9 @@ import time
 
 from oauth2client.client import GoogleCredentials
 
+import python_utils.jobset as jobset
+import python_utils.report_utils as report_utils
+
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 
@@ -37,6 +40,26 @@ console_handler = logging.StreamHandler()
 formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
+
+_TEST_CASES = [
+    'backends_restart',
+    'change_backend_service',
+    'new_instance_group_receives_traffic',
+    'ping_pong',
+    'remove_instance_group',
+    'round_robin',
+    'secondary_locality_gets_no_requests_on_partial_primary_failure',
+    'secondary_locality_gets_requests_on_primary_failure',
+]
+
+
+def parse_test_cases(arg):
+    if arg == 'all':
+        return _TEST_CASES
+    test_cases = arg.split(',')
+    if all([test_case in _TEST_CASES for test_case in test_cases]):
+        return test_cases
+    raise Exception('Failed to parse test cases %s' % arg)
 
 
 def parse_port_range(port_arg):
@@ -58,17 +81,9 @@ argp.add_argument(
 argp.add_argument(
     '--test_case',
     default='ping_pong',
-    choices=[
-        'all',
-        'backends_restart',
-        'change_backend_service',
-        'new_instance_group_receives_traffic',
-        'ping_pong',
-        'remove_instance_group',
-        'round_robin',
-        'secondary_locality_gets_no_requests_on_partial_primary_failure',
-        'secondary_locality_gets_requests_on_primary_failure',
-    ])
+    type=parse_test_cases,
+    help='Comma-separated list of test cases to run, or \'all\' to run every '
+    'test. Available tests: %s' % ' '.join(_TEST_CASES))
 argp.add_argument(
     '--client_cmd',
     default=None,
@@ -79,10 +94,11 @@ argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
                   help='Zone to use for secondary TD locality tests')
-argp.add_argument('--qps', default=10, help='Client QPS')
+argp.add_argument('--qps', default=10, type=int, help='Client QPS')
 argp.add_argument(
     '--wait_for_backend_sec',
-    default=600,
+    default=1200,
+    type=int,
     help='Time limit for waiting for created backend services to report '
     'healthy when launching or updated GCP resources')
 argp.add_argument(
@@ -124,6 +140,9 @@ argp.add_argument('--xds_server',
 argp.add_argument('--source_image',
                   default='projects/debian-cloud/global/images/family/debian-9',
                   help='Source image for VMs created during the test')
+argp.add_argument('--machine_type',
+                  default='e2-standard-2',
+                  help='Machine type for VMs created during the test')
 argp.add_argument(
     '--tolerate_gcp_errors',
     default=False,
@@ -143,15 +162,21 @@ if args.verbose:
 
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
-_WAIT_FOR_OPERATION_SEC = 120
+_WAIT_FOR_OPERATION_SEC = 300
 _INSTANCE_GROUP_SIZE = 2
 _NUM_TEST_RPCS = 10 * args.qps
-_WAIT_FOR_STATS_SEC = 120
+_WAIT_FOR_STATS_SEC = 180
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _BOOTSTRAP_TEMPLATE = """
 {{
   "node": {{
-    "id": "{node_id}"
+    "id": "{node_id}",
+    "metadata": {{
+      "TRAFFICDIRECTOR_NETWORK_NAME": "%s"
+    }},
+    "locality": {{
+      "zone": "%s"
+    }}
   }},
   "xds_servers": [{{
     "server_uri": "%s",
@@ -162,7 +187,7 @@ _BOOTSTRAP_TEMPLATE = """
       }}
     ]
   }}]
-}}""" % args.xds_server
+}}""" % (args.network.split('/')[-1], args.zone, args.xds_server)
 _PATH_MATCHER_NAME = 'path-matcher'
 _BASE_TEMPLATE_NAME = 'test-template'
 _BASE_INSTANCE_GROUP_NAME = 'test-ig'
@@ -173,6 +198,10 @@ _BASE_URL_MAP_NAME = 'test-map'
 _BASE_SERVICE_HOST = 'grpc-test'
 _BASE_TARGET_PROXY_NAME = 'test-target-proxy'
 _BASE_FORWARDING_RULE_NAME = 'test-forwarding-rule'
+_TEST_LOG_BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  '../../reports')
+_SPONGE_LOG_NAME = 'sponge_log.log'
+_SPONGE_XML_NAME = 'sponge_log.xml'
 
 
 def get_client_stats(num_rpcs, timeout_sec):
@@ -429,14 +458,14 @@ def test_secondary_locality_gets_requests_on_primary_failure(
         patch_backend_instances(gcp, backend_service, [primary_instance_group])
 
 
-def create_instance_template(gcp, name, network, source_image):
+def create_instance_template(gcp, name, network, source_image, machine_type):
     config = {
         'name': name,
         'properties': {
             'tags': {
                 'items': ['allow-health-checks']
             },
-            'machineType': 'e2-standard-2',
+            'machineType': machine_type,
             'serviceAccounts': [{
                 'email': 'default',
                 'scopes': ['https://www.googleapis.com/auth/cloud-platform',]
@@ -708,7 +737,10 @@ def patch_backend_instances(gcp,
     wait_for_global_operation(gcp, result['name'])
 
 
-def resize_instance_group(gcp, instance_group, new_size, timeout_sec=120):
+def resize_instance_group(gcp,
+                          instance_group,
+                          new_size,
+                          timeout_sec=_WAIT_FOR_OPERATION_SEC):
     result = gcp.compute.instanceGroupManagers().resize(
         project=gcp.project,
         zone=instance_group.zone,
@@ -892,8 +924,6 @@ if args.compute_discovery_document:
 else:
     compute = googleapiclient.discovery.build('compute', 'v1')
 
-client_process = None
-
 try:
     gcp = GcpState(compute, args.project_id)
     health_check_name = _BASE_HEALTH_CHECK_NAME + args.gcp_suffix
@@ -941,7 +971,7 @@ try:
             raise Exception(
                 'Failed to find a valid ip:port for the forwarding rule')
         create_instance_template(gcp, template_name, args.network,
-                                 args.source_image)
+                                 args.source_image, args.machine_type)
         instance_group = add_instance_group(gcp, args.zone, instance_group_name,
                                             _INSTANCE_GROUP_SIZE)
         patch_backend_instances(gcp, backend_service, [instance_group])
@@ -1021,56 +1051,78 @@ try:
         server_uri = service_host_name
     else:
         server_uri = service_host_name + ':' + str(gcp.service_port)
-    cmd = args.client_cmd.format(server_uri=server_uri,
-                                 stats_port=args.stats_port,
-                                 qps=args.qps)
-    client_process = start_xds_client(cmd)
+    with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
+        bootstrap_file.write(
+            _BOOTSTRAP_TEMPLATE.format(
+                node_id=socket.gethostname()).encode('utf-8'))
+        bootstrap_path = bootstrap_file.name
+    client_env = dict(os.environ, GRPC_XDS_BOOTSTRAP=bootstrap_path)
+    client_cmd = shlex.split(
+        args.client_cmd.format(server_uri=server_uri,
+                               stats_port=args.stats_port,
+                               qps=args.qps))
 
-    if args.test_case == 'all':
-        test_backends_restart(gcp, backend_service, instance_group)
-        test_change_backend_service(gcp, backend_service, instance_group,
-                                    alternate_backend_service,
-                                    same_zone_instance_group)
-        test_new_instance_group_receives_traffic(gcp, backend_service,
-                                                 instance_group,
-                                                 same_zone_instance_group)
-        test_ping_pong(gcp, backend_service, instance_group)
-        test_remove_instance_group(gcp, backend_service, instance_group,
-                                   same_zone_instance_group)
-        test_round_robin(gcp, backend_service, instance_group)
-        test_secondary_locality_gets_no_requests_on_partial_primary_failure(
-            gcp, backend_service, instance_group, secondary_zone_instance_group)
-        test_secondary_locality_gets_requests_on_primary_failure(
-            gcp, backend_service, instance_group, secondary_zone_instance_group)
-    elif args.test_case == 'backends_restart':
-        test_backends_restart(gcp, backend_service, instance_group)
-    elif args.test_case == 'change_backend_service':
-        test_change_backend_service(gcp, backend_service, instance_group,
-                                    alternate_backend_service,
-                                    same_zone_instance_group)
-    elif args.test_case == 'new_instance_group_receives_traffic':
-        test_new_instance_group_receives_traffic(gcp, backend_service,
-                                                 instance_group,
-                                                 same_zone_instance_group)
-    elif args.test_case == 'ping_pong':
-        test_ping_pong(gcp, backend_service, instance_group)
-    elif args.test_case == 'remove_instance_group':
-        test_remove_instance_group(gcp, backend_service, instance_group,
-                                   same_zone_instance_group)
-    elif args.test_case == 'round_robin':
-        test_round_robin(gcp, backend_service, instance_group)
-    elif args.test_case == 'secondary_locality_gets_no_requests_on_partial_primary_failure':
-        test_secondary_locality_gets_no_requests_on_partial_primary_failure(
-            gcp, backend_service, instance_group, secondary_zone_instance_group)
-    elif args.test_case == 'secondary_locality_gets_requests_on_primary_failure':
-        test_secondary_locality_gets_requests_on_primary_failure(
-            gcp, backend_service, instance_group, secondary_zone_instance_group)
-    else:
-        logger.error('Unknown test case: %s', args.test_case)
-        sys.exit(1)
+    test_results = {}
+    for test_case in args.test_case:
+        result = jobset.JobResult()
+        log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        test_log_file = open(os.path.join(log_dir, _SPONGE_LOG_NAME), 'w+')
+        try:
+            client_process = subprocess.Popen(client_cmd,
+                                              env=client_env,
+                                              stderr=subprocess.STDOUT,
+                                              stdout=test_log_file)
+            if test_case == 'backends_restart':
+                test_backends_restart(gcp, backend_service, instance_group)
+            elif test_case == 'change_backend_service':
+                test_change_backend_service(gcp, backend_service,
+                                            instance_group,
+                                            alternate_backend_service,
+                                            same_zone_instance_group)
+            elif test_case == 'new_instance_group_receives_traffic':
+                test_new_instance_group_receives_traffic(
+                    gcp, backend_service, instance_group,
+                    same_zone_instance_group)
+            elif test_case == 'ping_pong':
+                test_ping_pong(gcp, backend_service, instance_group)
+            elif test_case == 'remove_instance_group':
+                test_remove_instance_group(gcp, backend_service, instance_group,
+                                           same_zone_instance_group)
+            elif test_case == 'round_robin':
+                test_round_robin(gcp, backend_service, instance_group)
+            elif test_case == 'secondary_locality_gets_no_requests_on_partial_primary_failure':
+                test_secondary_locality_gets_no_requests_on_partial_primary_failure(
+                    gcp, backend_service, instance_group,
+                    secondary_zone_instance_group)
+            elif test_case == 'secondary_locality_gets_requests_on_primary_failure':
+                test_secondary_locality_gets_requests_on_primary_failure(
+                    gcp, backend_service, instance_group,
+                    secondary_zone_instance_group)
+            else:
+                logger.error('Unknown test case: %s', test_case)
+                sys.exit(1)
+            result.state = 'PASSED'
+            result.returncode = 0
+        except Exception as e:
+            result.state = 'FAILED'
+            result.message = str(e)
+        finally:
+            if client_process:
+                client_process.terminate()
+            # Workaround for Python 3, as report_utils will invoke decode() on
+            # result.message, which has a default value of ''.
+            result.message = result.message.encode('UTF-8')
+            test_results[test_case] = [result]
+    if not os.path.exists(_TEST_LOG_BASE_DIR):
+        os.makedirs(_TEST_LOG_BASE_DIR)
+    report_utils.render_junit_xml_report(test_results,
+                                         os.path.join(_TEST_LOG_BASE_DIR,
+                                                      _SPONGE_XML_NAME),
+                                         suite_name='xds_tests',
+                                         multi_target=True)
 finally:
-    if client_process:
-        client_process.terminate()
     if not args.keep_gcp_resources:
         logger.info('Cleaning up GCP resources. This may take some time.')
         clean_up(gcp)
