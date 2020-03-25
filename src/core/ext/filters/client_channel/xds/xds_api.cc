@@ -1347,7 +1347,7 @@ grpc_error* DropParseAndAppend(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* EdsResponsedParse(
+grpc_error* EdsResponseParse(
     XdsClient* client, TraceFlag* tracer,
     const envoy_api_v2_DiscoveryResponse* response,
     const std::set<StringView>& expected_eds_service_names,
@@ -1396,6 +1396,14 @@ grpc_error* EdsResponsedParse(
       // Filter out locality with weight 0.
       if (locality.lb_weight == 0) continue;
       eds_update.priority_list_update.Add(locality);
+    }
+    for (uint32_t priority = 0;
+         priority < eds_update.priority_list_update.size(); ++priority) {
+      auto* locality_map = eds_update.priority_list_update.Find(priority);
+      if (locality_map == nullptr || locality_map->size() == 0) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "EDS update includes sparse priority list");
+      }
     }
     // Get the drop config.
     eds_update.drop_config = MakeRefCounted<XdsApi::DropConfig>();
@@ -1471,9 +1479,9 @@ grpc_error* XdsApi::ParseAdsResponse(
     return CdsResponseParse(client_, tracer_, response, expected_cluster_names,
                             cds_update_map, arena.ptr());
   } else if (*type_url == kEdsTypeUrl) {
-    return EdsResponsedParse(client_, tracer_, response,
-                             expected_eds_service_names, eds_update_map,
-                             arena.ptr());
+    return EdsResponseParse(client_, tracer_, response,
+                            expected_eds_service_names, eds_update_map,
+                            arena.ptr());
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Unsupported ADS resource type.");
