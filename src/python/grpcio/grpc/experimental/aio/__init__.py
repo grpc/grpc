@@ -36,6 +36,7 @@ from ._server import server
 from ._base_server import Server, ServicerContext
 from ._typing import ChannelArgumentType
 from ._channel import insecure_channel, secure_channel
+from ._metadata import Metadata
 
 ###################################  __all__  #################################
 
@@ -68,4 +69,5 @@ __all__ = (
     'BaseError',
     'UsageError',
     'InternalError',
+    'Metadata',
 )
