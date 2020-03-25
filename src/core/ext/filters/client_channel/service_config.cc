@@ -136,12 +136,16 @@ grpc_error* ServiceConfig::ParseJsonMethodConfig(const Json& json) {
           }
           default_method_config_vector_ = vector_ptr;
         } else {
-          GPR_DEBUG_ASSERT(parse_error == GRPC_ERROR_NONE);
           grpc_slice key = grpc_slice_from_copied_string(path.c_str());
+          grpc_slice key = grpc_slice_from_copied_string(path.c_str());
+          // If the key is not already present in the map, this will
+          // store a ref to the key in the map.
           auto& value = parsed_method_configs_map_[key];
           if (value != nullptr) {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "field:name error:multiple method configs with same name"));
+            // The map entry already existed, so we need to unref the
+            // key we just created.
             grpc_slice_unref_internal(key);
           } else {
             value = vector_ptr;

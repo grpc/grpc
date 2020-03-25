@@ -628,7 +628,7 @@ class AuthMetadataPlugin(six.with_metaclass(abc.ABCMeta)):
     def __call__(self, context, callback):
         """Implements authentication by passing metadata to a callback.
 
-        Implementations of this method must not block.
+        This method will be invoked asynchronously in a separate thread.
 
         Args:
           context: An AuthMetadataContext providing information on the RPC that

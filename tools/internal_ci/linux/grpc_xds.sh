@@ -1,4 +1,5 @@
-# Copyright 2020 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_xds.sh"
-timeout_mins: 90
-env_vars {
-  key: "BAZEL_SCRIPT"
-  value: "tools/internal_ci/linux/grpc_xds_bazel_test_in_docker.sh"
-}
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
+export OUTPUT_DIR=reports
+exec tools/run_tests/dockerize/build_and_run_docker.sh
