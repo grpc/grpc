@@ -37,6 +37,7 @@ platform(
         # Use a different machine type than used on linux to avoid accidentally scheduling linux jobs on windows workers and vice versa on older release branches
         gce_machine_type = "n1-standard-2",
         os_family = "Windows",
-        labels = {"os": "windows_2019"},
+        # labels only supported starting from https://github.com/bazelbuild/bazel-toolchains/pull/748
+        #labels = {"os": "windows_2019"},
     ),
 )
