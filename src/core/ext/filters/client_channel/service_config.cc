@@ -137,7 +137,6 @@ grpc_error* ServiceConfig::ParseJsonMethodConfig(const Json& json) {
           default_method_config_vector_ = vector_ptr;
         } else {
           grpc_slice key = grpc_slice_from_copied_string(path.c_str());
-          grpc_slice key = grpc_slice_from_copied_string(path.c_str());
           // If the key is not already present in the map, this will
           // store a ref to the key in the map.
           auto& value = parsed_method_configs_map_[key];
