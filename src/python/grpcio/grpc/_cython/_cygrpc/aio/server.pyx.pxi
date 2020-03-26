@@ -494,7 +494,7 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
     except asyncio.CancelledError:
         _LOGGER.debug('RPC cancelled for servicer method [%s]', _decode(rpc_state.method()))
     except _ServerStoppedError:
-        _LOGGER.info('Aborting RPC due to server stop.')
+        _LOGGER.warning('Aborting method [%s] due to server stop.', _decode(rpc_state.method()))
     except Exception as e:
         _LOGGER.exception('Unexpected [%s] raised by servicer method [%s]' % (
             type(e).__name__,
