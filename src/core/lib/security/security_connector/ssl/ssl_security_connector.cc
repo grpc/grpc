@@ -190,9 +190,10 @@ class grpc_ssl_channel_security_connector final
                        grpc_auth_context* auth_context,
                        grpc_closure* /*on_call_host_checked*/,
                        grpc_error** error) override {
-    return grpc_ssl_check_call_host(host, target_name_.get(),
-                                    overridden_target_name_.get(), auth_context,
-                                    error);
+    return grpc_ssl_check_call_host(
+        host, target_name_.get(),
+        overridden_target_name_ != nullptr ? overridden_target_name_.get() : "",
+        auth_context, error);
   }
 
   void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
