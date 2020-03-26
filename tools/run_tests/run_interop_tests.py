@@ -308,6 +308,41 @@ class JavaOkHttpClient:
     def __str__(self):
         return 'javaokhttp'
 
+class KotlinLanguage:
+
+    def __init__(self):
+        self.client_cwd = '../grpc-kotlin'
+        self.server_cwd = '../grpc-kotlin'
+        self.http2_cwd = '../grpc-kotlin'
+        self.safename = str(self)
+
+    def client_cmd(self, args):
+        return ['./run-test-client.sh'] + args
+
+    def client_cmd_http2interop(self, args):
+        return [
+            './interop-testing/build/install/grpc-interop-testing/bin/http2-client'
+        ] + args
+
+    def cloud_to_prod_env(self):
+        return {}
+
+    def server_cmd(self, args):
+        return ['./run-test-server.sh'] + args
+
+    def global_env(self):
+        return {}
+
+    def unimplemented_test_cases(self):
+        return []
+
+    def unimplemented_test_cases_server(self):
+        # Does not support CompressedRequest feature.
+        # Only supports CompressedResponse feature for unary.
+        return _SKIP_CLIENT_COMPRESSION + ['server_compressed_streaming']
+
+    def __str__(self):
+        return 'kotlin'
 
 class GoLanguage:
 
@@ -732,6 +767,7 @@ _LANGUAGES = {
     'go': GoLanguage(),
     'java': JavaLanguage(),
     'javaokhttp': JavaOkHttpClient(),
+    'kotlin': KotlinLanguage(),
     'node': NodeLanguage(),
     'nodepurejs': NodePureJSLanguage(),
     'php': PHPLanguage(),
