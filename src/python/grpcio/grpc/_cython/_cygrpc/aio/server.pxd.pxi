@@ -43,9 +43,9 @@ cdef class RPCState(GrpcCallWrapper):
 
 cdef class _ServicerContext:
     cdef RPCState _rpc_state
-    cdef object _loop
-    cdef object _request_deserializer
-    cdef object _response_serializer
+    cdef object _loop  # asyncio.AbstractEventLoop
+    cdef object _request_deserializer  # Callable[[bytes], Any]
+    cdef object _response_serializer  # Callable[[Any], bytes]
 
 
 cdef class _MessageReceiver:
