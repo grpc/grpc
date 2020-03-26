@@ -1022,8 +1022,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
-                "subchannel %p; "
-                "hopping into work_serializer",
+                "subchannel %p; hopping into work_serializer",
                 parent_->chand_, parent_.get(), parent_->subchannel_);
       }
       // Will delete itself.
@@ -1066,16 +1065,16 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                   parent_->parent_->chand_, parent_->parent_.get(),
                   parent_->parent_->subchannel_, parent_->watcher_.get());
         }
-        while (true) {
-          grpc_connectivity_state state;
-          RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-          if (!parent_->PopConnectivityStateChange(&state,
-                                                   &connected_subchannel)) {
-            break;
-          }
-          // Ignore update if the parent WatcherWrapper has been replaced
-          // since this callback was scheduled.
-          if (parent_->watcher_ == nullptr) continue;
+        grpc_connectivity_state state;
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+        if (!parent_->PopConnectivityStateChange(&state,
+                                                 &connected_subchannel)) {
+          // There should be atleast one connectivity change in the queue.
+          GPR_DEBUG_ASSERT(false);
+        }
+        // Ignore update if the parent WatcherWrapper has been replaced
+        // since this callback was scheduled.
+        if (parent_->watcher_ != nullptr) {
           parent_->last_seen_state_ = state;
           parent_->parent_->MaybeUpdateConnectedSubchannel(
               std::move(connected_subchannel));

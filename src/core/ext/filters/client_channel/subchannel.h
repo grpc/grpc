@@ -185,17 +185,17 @@ class Subchannel {
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a
     // given watcher instance at any given time.
-    //
-    // When the state changes to READY, connected_subchannel will
-    // contain a ref to the connected subchannel.  When it changes from
-    // READY to some other state, the implementation must release its
-    // ref to the connected subchannel.
-    virtual void OnConnectivityStateChange()  // NOLINT
-        = 0;
+    // Implementations should call PopConnectivityStateChange to get the next
+    // connectivity state change.
+    virtual void OnConnectivityStateChange() = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
 
     // Enqueues connectivity state change notifications.
+    // When the state changes to READY, connected_subchannel will
+    // contain a ref to the connected subchannel.  When it changes from
+    // READY to some other state, the implementation must release its
+    // ref to the connected subchannel.
     // TODO(yashkt): This is currently needed to send the state updates in the
     // right order when asynchronously notifying. This will no longer be
     // necessary when we have access to EventManager.
