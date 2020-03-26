@@ -100,7 +100,7 @@ easy access, it may be helpful to create a shell alias that expands to it.
 ### Formatting and Linting
 
 Finally, before submitting any code to GitHub, run it through `gofmt` to ensure
-that it follows the external Go style guides and [golint] to point out any lint
+that it follows the external Go style guides and golint to point out any lint
 errors.
 
 [grpc\_cli]: https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md
