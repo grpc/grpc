@@ -2419,6 +2419,40 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
                   ::testing::Le(kLocalityWeightRate1 * (1 + kErrorTolerance))));
 }
 
+// Tests that we correctly handle a locality containing no endpoints.
+TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 5000;
+  const int kLocalityWeight0 = 2;
+  const int kLocalityWeight1 = 8;
+  const int kTotalLocalityWeight = kLocalityWeight0 + kLocalityWeight1;
+  const double kLocalityWeightRate0 =
+      static_cast<double>(kLocalityWeight0) / kTotalLocalityWeight;
+  const double kLocalityWeightRate1 =
+      static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
+  // ADS response contains 2 localities, each of which contains 1 backend.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(), kLocalityWeight0},
+      {"locality1", {}, kLocalityWeight1},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // Wait for both backends to be ready.
+  WaitForAllBackends();
+  // Send kNumRpcs RPCs.
+  CheckRpcSendOk(kNumRpcs);
+  // All traffic should go to the reachable locality.
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(),
+            kNumRpcs / backends_.size());
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(),
+            kNumRpcs / backends_.size());
+  EXPECT_EQ(backends_[2]->backend_service()->request_count(),
+            kNumRpcs / backends_.size());
+  EXPECT_EQ(backends_[3]->backend_service()->request_count(),
+            kNumRpcs / backends_.size());
+}
+
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
 TEST_P(LocalityMapTest, StressTest) {
@@ -2592,6 +2626,24 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
       AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   WaitForBackend(3, false);
   for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
+  }
+}
+
+// Does not choose priority with no endpoints.
+TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", {}, kDefaultLocalityWeight, 0},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  WaitForBackend(0, false);
+  for (size_t i = 1; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
 }
