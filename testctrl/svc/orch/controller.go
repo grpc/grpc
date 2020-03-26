@@ -199,15 +199,15 @@ type executorInfo struct {
 // execute performs the provision, monitoring and teardown of a session's resources.
 func (c *Controller) execute(info *executorInfo) error {
 	if err := c.provision(info); err != nil {
-		return fmt.Errorf("failed to provision resources with error: %v", err)
+		return fmt.Errorf("failed to provision resources: %v", err)
 	}
 
 	if err := c.monitorRun(info); err != nil {
-		return fmt.Errorf("failed to finish run with error: %v", err)
+		return fmt.Errorf("failed to finish testing: %v", err)
 	}
 
 	if err := c.teardown(info); err != nil {
-		glog.Errorf("failed to teardown components for session %v: %v", info.session, err)
+		glog.Errorf("failed to teardown components: %v", err)
 	}
 
 	return nil
@@ -217,11 +217,11 @@ func (c *Controller) execute(info *executorInfo) error {
 func (c *Controller) deploy(info *executorInfo, co *types.Component) error {
 	kind := strings.ToLower(co.Kind().String())
 
-	glog.V(2).Infof("deploying %v component %v for session %v", kind, co.Name(), info.session.Name())
+	glog.V(2).Infof("executor[%v]: deploying %v component %v", info.index, kind, co.Name())
 
 	pod := NewSpecBuilder(info.session, co).Pod()
 	if _, err := c.clientset.CoreV1().Pods(v1.NamespaceDefault).Create(pod); err != nil {
-		return fmt.Errorf("unable to deploy %v component %v with error: %v", kind, co.Name(), err)
+		return fmt.Errorf("unable to deploy %v component %v: %v", kind, co.Name(), err)
 	}
 	return nil
 }
@@ -263,7 +263,7 @@ func (c *Controller) provision(info *executorInfo) error {
 			}
 
 			if info.monitor.AnyFailed() {
-				return fmt.Errorf("provision cancelled due to component %v failure: %v",
+				return fmt.Errorf("provision cancelled due to failure in component %v: %v",
 					info.monitor.ErrObject().Name(), info.monitor.Error())
 			}
 
@@ -271,12 +271,14 @@ func (c *Controller) provision(info *executorInfo) error {
 				if ip := worker.PodStatus().PodIP; len(ip) > 0 {
 					assignedIP = true
 					workerIPs = append(workerIPs, ip)
-					glog.V(2).Infof("component %v was assigned IP address %v", worker.Name(), ip)
+					glog.V(2).Infof("executor[%v]: component %v was assigned IP address %v",
+						info.index, worker.Name(), ip)
 				}
 			}
 
 			if assignedIP && worker.Health() == Ready {
-				glog.V(1).Infof("component %v was successfully provisioned and is ready", worker.Name())
+				glog.V(1).Infof("executor[%v]: component %v was successfully provisioned and is ready",
+					info.index, worker.Name())
 				break
 			}
 		}
@@ -290,7 +292,7 @@ func (c *Controller) provision(info *executorInfo) error {
 	driver.Component().SetEnv("QPS_WORKERS", qpsWorkers)
 
 	if err := c.deploy(info, driver.Component()); err != nil {
-		return fmt.Errorf("driver component %v could not be deployed with error: %v", driver.Name(), err)
+		return fmt.Errorf("driver component %v could not be deployed: %v", driver.Name(), err)
 	}
 
 	for {
@@ -299,12 +301,12 @@ func (c *Controller) provision(info *executorInfo) error {
 		}
 
 		if info.monitor.AnyFailed() {
-			return fmt.Errorf("provision cancelled due to component %v failure: %v",
+			return fmt.Errorf("provision cancelled due to failure in component %v: %v",
 				info.monitor.ErrObject().Name(), info.monitor.Error())
 		}
 
 		if driver.Health() == Ready {
-			glog.V(1).Infof("driver component %v was successfully provisioned and is ready", driver.Name())
+			glog.V(1).Infof("component %v was successfully provisioned and is ready", driver.Name())
 			break
 		}
 	}
@@ -316,9 +318,12 @@ func (c *Controller) provision(info *executorInfo) error {
 // gracefully. If it encounters an unhealthy status, it immediately returns an error. If components
 // finish gracefully, it returns nil.
 func (c *Controller) monitorRun(info *executorInfo) error {
+	glog.Infof("executor[%v]: monitoring components while session %v runs",
+		info.index, info.session.Name())
+
 	for {
 		if info.monitor.AnyFailed() {
-			return fmt.Errorf("component %v is unhealthy, terminating with error: %v",
+			return fmt.Errorf("terminating because component %v has failed: %v",
 				info.monitor.ErrObject().Name(), info.monitor.Error())
 		}
 
@@ -339,15 +344,16 @@ func (c *Controller) teardown(info *executorInfo) error {
 	req := c.clientset.CoreV1().Pods(v1.NamespaceDefault).GetLogs(driverName, &v1.PodLogOptions{})
 	logBytes, err := req.DoRaw()
 	if err == nil {
-		glog.Infof("session %v had the following results: %v", info.session.Name(), string(logBytes))
+		glog.Infof("executor[%v]: session %v had the following logs: %v",
+			info.index, info.session.Name(), string(logBytes))
 	} else {
-		glog.Infof("could not get logs for session %v: %v", info.session.Name(), err)
+		glog.Infof("executor[%v]: session %v logs are inaccessible: %v",
+			info.index, info.session.Name(), err)
 	}
-	glog.Flush()
 
 	err = c.clientset.CoreV1().Pods(v1.NamespaceDefault).DeleteCollection(&metav1.DeleteOptions{}, listOpts)
 	if err != nil {
-		return fmt.Errorf("unable to teardown components with error: %v", err)
+		return fmt.Errorf("unable to delete components: %v", err)
 	}
 
 	return nil
