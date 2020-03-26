@@ -208,8 +208,8 @@ class Subchannel {
     }
 
     // Dequeues connectivity state change notifications. If the queue is empty,
-    // it returns false, otherwise returns true and sets \a state to the popped
-    // state change.
+    // it returns false, otherwise returns true and sets \a state and \a
+    // connected_subchannel to the popped state change and connected subchannel.
     bool PopConnectivityStateChange(
         grpc_connectivity_state* state,
         RefCountedPtr<ConnectedSubchannel>* connected_subchannel) {
