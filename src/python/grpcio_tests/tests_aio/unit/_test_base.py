@@ -46,10 +46,13 @@ def _get_default_loop(debug=True):
 
 # NOTE(gnossen) this test class can also be implemented with metaclass.
 class AioTestBase(unittest.TestCase):
+    # NOTE(lidi) We need to pick a loop for entire testing phase, otherwise it
+    # will trigger create new loops in new threads, leads to deadlock.
+    _TEST_LOOP = _get_default_loop()
 
     @property
     def loop(self):
-        return _get_default_loop()
+        return self._TEST_LOOP
 
     def __getattribute__(self, name):
         """Overrides the loading logic to support coroutine functions."""
@@ -58,7 +61,7 @@ class AioTestBase(unittest.TestCase):
         # If possible, converts the coroutine into a sync function.
         if name.startswith('test_') or name in _COROUTINE_FUNCTION_ALLOWLIST:
             if asyncio.iscoroutinefunction(attr):
-                return _async_to_sync_decorator(attr, _get_default_loop())
+                return _async_to_sync_decorator(attr, self._TEST_LOOP)
         # For other attributes, let them pass.
         return attr
 

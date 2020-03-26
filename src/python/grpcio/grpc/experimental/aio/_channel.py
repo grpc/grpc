@@ -240,7 +240,7 @@ class Channel(_base_channel.Channel):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._close(None)
 
-    async def _close(self, grace):
+    async def _close(self, grace):  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
@@ -252,7 +252,27 @@ class Channel(_base_channel.Channel):
         calls = []
         call_tasks = []
         for task in tasks:
-            stack = task.get_stack(limit=1)
+            try:
+                stack = task.get_stack(limit=1)
+            except AttributeError as attribute_error:
+                # NOTE(lidiz) tl;dr: If the Task is created with a CPython
+                # object, it will trigger AttributeError.
+                #
+                # In the global finalizer, the event loop schedules
+                # a CPython PyAsyncGenAThrow object.
+                # https://github.com/python/cpython/blob/00e45877e33d32bb61aa13a2033e3bba370bda4d/Lib/asyncio/base_events.py#L484
+                #
+                # However, the PyAsyncGenAThrow object is written in C and
+                # failed to include the normal Python frame objects. Hence,
+                # this exception is a false negative, and it is safe to ignore
+                # the failure. It is fixed by https://github.com/python/cpython/pull/18669,
+                # but not available until 3.9 or 3.8.3. So, we have to keep it
+                # for a while.
+                # TODO(lidiz) drop this hack after 3.8 deprecation
+                if 'frame' in str(attribute_error):
+                    continue
+                else:
+                    raise
 
             # If the Task is created by a C-extension, the stack will be empty.
             if not stack:

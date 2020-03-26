@@ -68,8 +68,7 @@ grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status()
 }
 
 grpc::string TlsCredentialReloadArg::error_details() const {
-  grpc::string cpp_error_details(c_arg_->error_details);
-  return cpp_error_details;
+  return c_arg_->error_details->error_details();
 }
 
 void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
@@ -119,9 +118,7 @@ void TlsCredentialReloadArg::set_key_materials(
         ConvertToCorePemKeyCertPair(key_cert_pair));
   }
   /** Populate the key materials config field of |c_arg_|. **/
-  ::grpc_core::UniquePtr<char> c_pem_root_certs(
-      gpr_strdup(pem_root_certs.c_str()));
-  c_arg_->key_materials_config->set_key_materials(std::move(c_pem_root_certs),
+  c_arg_->key_materials_config->set_key_materials(pem_root_certs.c_str(),
                                                   c_pem_key_cert_pair_list);
 }
 
@@ -150,7 +147,7 @@ void TlsCredentialReloadArg::set_key_materials_config(
     c_arg_->key_materials_config = grpc_tls_key_materials_config_create();
   }
   c_arg_->key_materials_config->set_key_materials(
-      std::move(c_pem_root_certs), std::move(c_pem_key_cert_pair_list));
+      key_materials_config->pem_root_certs().c_str(), c_pem_key_cert_pair_list);
   c_arg_->key_materials_config->set_version(key_materials_config->version());
 }
 
@@ -161,7 +158,7 @@ void TlsCredentialReloadArg::set_status(
 
 void TlsCredentialReloadArg::set_error_details(
     const grpc::string& error_details) {
-  c_arg_->error_details = gpr_strdup(error_details.c_str());
+  c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
 void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
@@ -223,8 +220,7 @@ grpc_status_code TlsServerAuthorizationCheckArg::status() const {
 }
 
 grpc::string TlsServerAuthorizationCheckArg::error_details() const {
-  grpc::string cpp_error_details(c_arg_->error_details);
-  return cpp_error_details;
+  return c_arg_->error_details->error_details();
 }
 
 void TlsServerAuthorizationCheckArg::set_cb_user_data(void* cb_user_data) {
@@ -256,7 +252,7 @@ void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
 
 void TlsServerAuthorizationCheckArg::set_error_details(
     const grpc::string& error_details) {
-  c_arg_->error_details = gpr_strdup(error_details.c_str());
+  c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
 void TlsServerAuthorizationCheckArg::OnServerAuthorizationCheckDoneCallback() {

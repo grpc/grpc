@@ -196,7 +196,7 @@ class Client {
       GRPC_LOG_IF_ERROR(
           "grpc_pollset_work",
           grpc_pollset_work(pollset_, &worker,
-                            grpc_core::ExecCtx::Get()->Now() + 1000));
+                            grpc_core::ExecCtx::Get()->Now() + 100));
       // Flushes any work scheduled before or during polling.
       grpc_core::ExecCtx::Get()->Flush();
       gpr_mu_unlock(mu_);

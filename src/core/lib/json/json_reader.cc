@@ -235,7 +235,7 @@ void JsonReader::SetString() {
 
 bool JsonReader::SetNumber() {
   Json* value = CreateAndLinkValue();
-  *value = Json(std::move(string_), /*is_number=*/true);
+  *value = Json(string_, /*is_number=*/true);
   string_.clear();
   return true;
 }

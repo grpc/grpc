@@ -25,14 +25,17 @@
 
 #include <set>
 
+#include "absl/types/optional.h"
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
-#include "src/core/lib/gprpp/optional.h"
 
 namespace grpc_core {
+
+class XdsClient;
 
 class XdsApi {
  public:
@@ -44,14 +47,25 @@ class XdsApi {
   struct RdsUpdate {
     // The name to use in the CDS request.
     std::string cluster_name;
+
+    bool operator==(const RdsUpdate& other) const {
+      return cluster_name == other.cluster_name;
+    }
   };
 
+  // TODO(roth): When we can use absl::variant<>, consider using that
+  // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
     // The name to use in the RDS request.
     std::string route_config_name;
     // The name to use in the CDS request. Present if the LDS response has it
     // inlined.
-    Optional<RdsUpdate> rds_update;
+    absl::optional<RdsUpdate> rds_update;
+
+    bool operator==(const LdsUpdate& other) const {
+      return route_config_name == other.route_config_name &&
+             rds_update == other.rds_update;
+    }
   };
 
   using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
@@ -66,7 +80,7 @@ class XdsApi {
     // If not set, load reporting will be disabled.
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
-    Optional<std::string> lrs_load_reporting_server_name;
+    absl::optional<std::string> lrs_load_reporting_server_name;
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
@@ -178,7 +192,7 @@ class XdsApi {
 
   struct ClusterLoadReport {
     XdsClusterDropStats::DroppedRequestsMap dropped_requests;
-    std::map<XdsLocalityName*, XdsClusterLocalityStats::Snapshot,
+    std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
              XdsLocalityName::Less>
         locality_stats;
     grpc_millis load_report_interval;
@@ -187,7 +201,7 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  explicit XdsApi(const XdsBootstrap::Node* node);
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
 
   // Creates a request to nack an unsupported resource type.
   // Takes ownership of \a error.
@@ -230,10 +244,12 @@ class XdsApi {
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
       const std::string& expected_route_config_name,
+      const std::set<StringView>& expected_cluster_names,
       const std::set<StringView>& expected_eds_service_names,
-      LdsUpdate* lds_update, RdsUpdate* rds_update,
-      CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-      std::string* version, std::string* nonce, std::string* type_url);
+      absl::optional<LdsUpdate>* lds_update,
+      absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
+      EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
+      std::string* type_url);
 
   // Creates an LRS request querying \a server_name.
   grpc_slice CreateLrsInitialRequest(const std::string& server_name);
@@ -249,6 +265,8 @@ class XdsApi {
                                grpc_millis* load_reporting_interval);
 
  private:
+  XdsClient* client_;
+  TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;
   const std::string build_version_;
   const std::string user_agent_name_;

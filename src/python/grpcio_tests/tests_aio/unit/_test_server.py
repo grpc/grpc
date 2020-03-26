@@ -14,10 +14,10 @@
 
 import asyncio
 import datetime
-import logging
 
 import grpc
 from grpc.experimental import aio
+from tests.unit import resources
 
 from src.proto.grpc.testing import empty_pb2, messages_pb2, test_pb2_grpc
 from tests_aio.unit import _constants
@@ -117,8 +117,12 @@ def _create_extra_generic_handler(servicer: _TestServiceServicer):
                                                 rpc_method_handlers)
 
 
-async def start_test_server(port=0, secure=False, server_credentials=None):
-    server = aio.server(options=(('grpc.so_reuseport', 0),))
+async def start_test_server(port=0,
+                            secure=False,
+                            server_credentials=None,
+                            interceptors=None):
+    server = aio.server(options=(('grpc.so_reuseport', 0),),
+                        interceptors=interceptors)
     servicer = _TestServiceServicer()
     test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
 
@@ -126,8 +130,9 @@ async def start_test_server(port=0, secure=False, server_credentials=None):
 
     if secure:
         if server_credentials is None:
-            server_credentials = grpc.local_server_credentials(
-                grpc.LocalConnectionType.LOCAL_TCP)
+            server_credentials = grpc.ssl_server_credentials([
+                (resources.private_key(), resources.certificate_chain())
+            ])
         port = server.add_secure_port('[::]:%d' % port, server_credentials)
     else:
         port = server.add_insecure_port('[::]:%d' % port)

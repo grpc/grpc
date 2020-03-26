@@ -14,7 +14,6 @@
 """Tests behavior of the Call classes."""
 
 import asyncio
-import datetime
 import logging
 import unittest
 
@@ -24,6 +23,8 @@ from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
+from tests.unit import resources
+
 from tests_aio.unit._test_server import start_test_server
 
 _NUM_STREAM_RESPONSES = 5
@@ -55,7 +56,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertTrue(str(call) is not None)
         self.assertTrue(repr(call) is not None)
 
-        response = await call
+        await call
 
         self.assertTrue(str(call) is not None)
         self.assertTrue(repr(call) is not None)
@@ -201,6 +202,17 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
         with self.assertRaises(asyncio.CancelledError):
             await task
+
+    async def test_passing_credentials_fails_over_insecure_channel(self):
+        call_credentials = grpc.composite_call_credentials(
+            grpc.access_token_call_credentials("abc"),
+            grpc.access_token_call_credentials("def"),
+        )
+        with self.assertRaisesRegex(
+                aio.UsageError,
+                "Call credentials are only valid on secure channels"):
+            self._stub.UnaryCall(messages_pb2.SimpleRequest(),
+                                 credentials=call_credentials)
 
 
 class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
@@ -410,33 +422,6 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         with self.assertRaises(asyncio.CancelledError):
             await task
 
-    def test_call_credentials(self):
-
-        class DummyAuth(grpc.AuthMetadataPlugin):
-
-            def __call__(self, context, callback):
-                signature = context.method_name[::-1]
-                callback((("test", signature),), None)
-
-        async def coro():
-            server_target, _ = await start_test_server(secure=False)  # pylint: disable=unused-variable
-
-            async with aio.insecure_channel(server_target) as channel:
-                hi = channel.unary_unary('/grpc.testing.TestService/UnaryCall',
-                                         request_serializer=messages_pb2.
-                                         SimpleRequest.SerializeToString,
-                                         response_deserializer=messages_pb2.
-                                         SimpleResponse.FromString)
-                call_credentials = grpc.metadata_call_credentials(DummyAuth())
-                call = hi(messages_pb2.SimpleRequest(),
-                          credentials=call_credentials)
-                response = await call
-
-                self.assertIsInstance(response, messages_pb2.SimpleResponse)
-                self.assertEqual(await call.code(), grpc.StatusCode.OK)
-
-        self.loop.run_until_complete(coro())
-
     async def test_time_remaining(self):
         request = messages_pb2.StreamingOutputCallRequest()
         # First message comes back immediately
@@ -457,16 +442,16 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         # Should be around the same as the timeout
         remained_time = call.time_remaining()
-        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT * 3 // 2)
-        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 2)
+        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT * 3 / 2)
+        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 5 / 2)
 
         response = await call.read()
         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         # Should be around the timeout minus a unit of wait time
         remained_time = call.time_remaining()
-        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT // 2)
-        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 3 // 2)
+        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT / 2)
+        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 3 / 2)
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 

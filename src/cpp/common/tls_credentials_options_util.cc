@@ -47,10 +47,8 @@ grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
         ::grpc_core::PemKeyCertPair(ssl_pair);
     c_pem_key_cert_pair_list.push_back(::std::move(c_pem_key_cert_pair));
   }
-  ::grpc_core::UniquePtr<char> c_pem_root_certs(
-      gpr_strdup(config->pem_root_certs().c_str()));
-  c_config->set_key_materials(std::move(c_pem_root_certs),
-                              std::move(c_pem_key_cert_pair_list));
+  c_config->set_key_materials(config->pem_root_certs().c_str(),
+                              c_pem_key_cert_pair_list);
   c_config->set_version(config->version());
   return c_config;
 }

@@ -99,3 +99,16 @@ class AbortError(BaseError):
 
 class InternalError(BaseError):
     """Raised upon unexpected errors in native code."""
+
+
+def schedule_coro_threadsafe(object coro, object loop):
+    try:
+        return loop.create_task(coro)
+    except RuntimeError as runtime_error:
+        if 'Non-thread-safe operation' in str(runtime_error):
+            return asyncio.run_coroutine_threadsafe(
+                coro,
+                loop,
+            )
+        else:
+            raise

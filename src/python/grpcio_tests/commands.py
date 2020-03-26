@@ -151,8 +151,6 @@ class TestAio(setuptools.Command):
 
     def run(self):
         self._add_eggs_to_path()
-        from grpc.experimental.aio import init_grpc_aio
-        init_grpc_aio()
 
         import tests
         loader = tests.Loader()
@@ -193,6 +191,7 @@ class TestGevent(setuptools.Command):
         'unit._server_ssl_cert_config_test',
         # TODO(https://github.com/grpc/grpc/issues/14901) enable this test
         'protoc_plugin._python_plugin_test.PythonPluginTest',
+        'protoc_plugin._python_plugin_test.SimpleStubsPluginTest',
         # Beta API is unsupported for gevent
         'protoc_plugin.beta_python_plugin_test',
         'unit.beta._beta_features_test',

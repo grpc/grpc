@@ -628,7 +628,7 @@ class AuthMetadataPlugin(six.with_metaclass(abc.ABCMeta)):
     def __call__(self, context, callback):
         """Implements authentication by passing metadata to a callback.
 
-        Implementations of this method must not block.
+        This method will be invoked asynchronously in a separate thread.
 
         Args:
           context: An AuthMetadataContext providing information on the RPC that
@@ -1074,6 +1074,14 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
         This method is idempotent.
         """
+        raise NotImplementedError()
+
+    def __enter__(self):
+        """Enters the runtime context related to the channel object."""
+        raise NotImplementedError()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exits the runtime context related to the channel object."""
         raise NotImplementedError()
 
 

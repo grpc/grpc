@@ -16,7 +16,7 @@ import asyncio
 import collections
 import functools
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Optional, Iterator, Sequence, Union
+from typing import Callable, Optional, Iterator, Sequence, Union, Awaitable
 
 import grpc
 from grpc._cython import cygrpc
@@ -28,6 +28,34 @@ from ._typing import (RequestType, SerializingFunction, DeserializingFunction,
                       MetadataType, ResponseType, DoneCallbackType)
 
 _LOCAL_CANCELLATION_DETAILS = 'Locally cancelled by application!'
+
+
+class ServerInterceptor(metaclass=ABCMeta):
+    """Affords intercepting incoming RPCs on the service-side.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abstractmethod
+    async def intercept_service(
+            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
+                grpc.RpcMethodHandler]],
+            handler_call_details: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
+        """Intercepts incoming RPCs before handing them over to a handler.
+
+        Args:
+            continuation: A function that takes a HandlerCallDetails and
+                proceeds to invoke the next interceptor in the chain, if any,
+                or the RPC handler lookup logic, with the call details passed
+                as an argument, and returns an RpcMethodHandler instance if
+                the RPC is considered serviced, or None otherwise.
+            handler_call_details: A HandlerCallDetails describing the RPC.
+
+        Returns:
+            An RpcMethodHandler with which the RPC may be serviced if the
+            interceptor chooses to service this RPC, or None otherwise.
+        """
 
 
 class ClientCallDetails(
@@ -132,10 +160,10 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
                  loop: asyncio.AbstractEventLoop) -> None:
         self._channel = channel
         self._loop = loop
-        self._interceptors_task = asyncio.ensure_future(self._invoke(
-            interceptors, method, timeout, metadata, credentials,
-            wait_for_ready, request, request_serializer, response_deserializer),
-                                                        loop=loop)
+        self._interceptors_task = loop.create_task(
+            self._invoke(interceptors, method, timeout, metadata, credentials,
+                         wait_for_ready, request, request_serializer,
+                         response_deserializer))
         self._pending_add_done_callbacks = []
         self._interceptors_task.add_done_callback(
             self._fire_pending_add_done_callbacks)

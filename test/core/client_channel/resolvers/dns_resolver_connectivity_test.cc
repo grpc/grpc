@@ -66,8 +66,8 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     bool /*check_grpclb*/, char** /*service_config_json*/,
     int /*query_timeout_ms*/,
-    std::shared_ptr<
-        grpc_core::WorkSerializer> /* work_serializer */) { /* NOLINT */
+    std::shared_ptr<grpc_core::WorkSerializer> /* work_serializer */) { /* NOLINT
+                                                                         */
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error* error = GRPC_ERROR_NONE;

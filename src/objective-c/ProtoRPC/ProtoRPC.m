@@ -111,7 +111,7 @@
 
 @end
 
-@interface GRPCStreamingProtoCall ()<GRPCResponseHandler>
+@interface GRPCStreamingProtoCall () <GRPCResponseHandler>
 
 @end
 
@@ -266,8 +266,8 @@
         }
         [copiedHandler didReceiveProtoMessage:parsed];
       });
-    } else if (!parsed &&
-               [_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
+    } else if (!parsed && [_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:
+                                                                                        error:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCProtoResponseHandler> copiedHandler = nil;
         @synchronized(self) {

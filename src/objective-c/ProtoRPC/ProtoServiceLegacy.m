@@ -59,8 +59,9 @@
   NSString *packageName = object_getIvar(self, packageNameIvar);
   NSString *serviceName = object_getIvar(self, serviceNameIvar);
 
-  GRPCProtoMethod *methodName =
-      [[GRPCProtoMethod alloc] initWithPackage:packageName service:serviceName method:method];
+  GRPCProtoMethod *methodName = [[GRPCProtoMethod alloc] initWithPackage:packageName
+                                                                 service:serviceName
+                                                                  method:method];
   return [[GRPCProtoCall alloc] initWithHost:host
                                       method:methodName
                               requestsWriter:requestsWriter

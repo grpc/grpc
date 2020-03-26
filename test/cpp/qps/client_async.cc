@@ -151,9 +151,9 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   // Specify which protected members we are using since there is no
   // member name resolution until the template types are fully resolved
  public:
+  using Client::closed_loop_;
   using Client::NextIssuer;
   using Client::SetupLoadTest;
-  using Client::closed_loop_;
   using ClientImpl<StubType, RequestType>::cores_;
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;

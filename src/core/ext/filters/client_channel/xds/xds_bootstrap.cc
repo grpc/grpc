@@ -29,20 +29,97 @@
 
 namespace grpc_core {
 
-std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(grpc_error** error) {
+namespace {
+
+UniquePtr<char> BootstrapString(const XdsBootstrap& bootstrap) {
+  gpr_strvec v;
+  gpr_strvec_init(&v);
+  char* tmp;
+  if (bootstrap.node() != nullptr) {
+    gpr_asprintf(&tmp,
+                 "node={\n"
+                 "  id=\"%s\",\n"
+                 "  cluster=\"%s\",\n"
+                 "  locality={\n"
+                 "    region=\"%s\",\n"
+                 "    zone=\"%s\",\n"
+                 "    subzone=\"%s\"\n"
+                 "  },\n"
+                 "  metadata=%s,\n"
+                 "},\n",
+                 bootstrap.node()->id.c_str(),
+                 bootstrap.node()->cluster.c_str(),
+                 bootstrap.node()->locality_region.c_str(),
+                 bootstrap.node()->locality_zone.c_str(),
+                 bootstrap.node()->locality_subzone.c_str(),
+                 bootstrap.node()->metadata.Dump().c_str());
+    gpr_strvec_add(&v, tmp);
+  }
+  gpr_asprintf(&tmp,
+               "servers=[\n"
+               "  {\n"
+               "    uri=\"%s\",\n"
+               "    creds=[\n",
+               bootstrap.server().server_uri.c_str());
+  gpr_strvec_add(&v, tmp);
+  for (size_t i = 0; i < bootstrap.server().channel_creds.size(); ++i) {
+    const auto& creds = bootstrap.server().channel_creds[i];
+    gpr_asprintf(&tmp, "      {type=\"%s\", config=%s},\n", creds.type.c_str(),
+                 creds.config.Dump().c_str());
+    gpr_strvec_add(&v, tmp);
+  }
+  gpr_strvec_add(&v, gpr_strdup("    ]\n  }\n]"));
+  UniquePtr<char> result(gpr_strvec_flatten(&v, nullptr));
+  gpr_strvec_destroy(&v);
+  return result;
+}
+
+}  // namespace
+
+std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
+                                                         TraceFlag* tracer,
+                                                         grpc_error** error) {
   grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
   if (path == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "GRPC_XDS_BOOTSTRAP env var not set");
+        "Environment variable GRPC_XDS_BOOTSTRAP not defined");
     return nullptr;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] Got bootstrap file location from "
+            "GRPC_XDS_BOOTSTRAP environment variable: %s",
+            client, path.get());
   }
   grpc_slice contents;
   *error = grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
   if (*error != GRPC_ERROR_NONE) return nullptr;
-  Json json = Json::Parse(StringViewFromSlice(contents), error);
+  StringView contents_str_view = StringViewFromSlice(contents);
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
+    UniquePtr<char> str = StringViewToCString(contents_str_view);
+    gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
+            str.get());
+  }
+  Json json = Json::Parse(contents_str_view, error);
   grpc_slice_unref_internal(contents);
-  if (*error != GRPC_ERROR_NONE) return nullptr;
-  return absl::make_unique<XdsBootstrap>(std::move(json), error);
+  if (*error != GRPC_ERROR_NONE) {
+    char* msg;
+    gpr_asprintf(&msg, "Failed to parse bootstrap file %s", path.get());
+    grpc_error* error_out =
+        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, error, 1);
+    gpr_free(msg);
+    GRPC_ERROR_UNREF(*error);
+    *error = error_out;
+    return nullptr;
+  }
+  std::unique_ptr<XdsBootstrap> result =
+      absl::make_unique<XdsBootstrap>(std::move(json), error);
+  if (*error == GRPC_ERROR_NONE && GRPC_TRACE_FLAG_ENABLED(*tracer)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] Bootstrap config for creating xds client:\n%s",
+            client, BootstrapString(*result).get());
+  }
+  return result;
 }
 
 XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {

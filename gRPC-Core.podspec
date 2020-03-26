@@ -173,7 +173,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.7'
-    abseil_version = '0.20200225.0'
+    abseil_version = '1.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -632,6 +632,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.cc',
                       'src/core/lib/iomgr/combiner.h',
+                      'src/core/lib/iomgr/dualstack_socket_posix.cc',
                       'src/core/lib/iomgr/dynamic_annotations.h',
                       'src/core/lib/iomgr/endpoint.cc',
                       'src/core/lib/iomgr/endpoint.h',
