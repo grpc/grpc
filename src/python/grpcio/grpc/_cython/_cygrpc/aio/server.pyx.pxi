@@ -109,10 +109,6 @@ cdef class RPCState:
 
 
 cdef class _ServicerContext:
-    cdef RPCState _rpc_state
-    cdef object _loop
-    cdef object _request_deserializer
-    cdef object _response_serializer
 
     def __cinit__(self,
                   RPCState rpc_state,
@@ -128,9 +124,9 @@ cdef class _ServicerContext:
         cdef bytes raw_message
         self._rpc_state.raise_for_termination()
 
-        if self._rpc_state.client_closed:
-            return EOF
         raw_message = await _receive_message(self._rpc_state, self._loop)
+        self._rpc_state.raise_for_termination()
+
         if raw_message is None:
             return EOF
         else:
@@ -414,15 +410,28 @@ async def _handle_unary_stream_rpc(object method_handler,
     )
 
 
-async def _message_receiver(_ServicerContext servicer_context):
+cdef class _MessageReceiver:
     """Bridge between the async generator API and the reader-writer API."""
-    cdef object message
-    while True:
-        message = await servicer_context.read()
-        if message is not EOF:
-            yield message
-        else:
-            break
+
+    def __cinit__(self, _ServicerContext servicer_context):
+        self._servicer_context = servicer_context
+        self._agen = None
+
+    async def _async_message_receiver(self):
+        """An async generator that receives messages."""
+        cdef object message
+        while True:
+            message = await self._servicer_context.read()
+            if message is not EOF:
+                yield message
+            else:
+                break
+
+    def __aiter__(self):
+        # Prevents never awaited warning if application never used the async generator
+        if self._agen is None:
+            self._agen = self._async_message_receiver()
+        return self._agen
 
 
 async def _handle_stream_unary_rpc(object method_handler,
@@ -437,7 +446,7 @@ async def _handle_stream_unary_rpc(object method_handler,
     )
 
     # Prepares the request generator
-    cdef object request_async_iterator = _message_receiver(servicer_context)
+    cdef object request_async_iterator = _MessageReceiver(servicer_context)
 
     # Finishes the application handler
     await _finish_handler_with_unary_response(
@@ -462,7 +471,7 @@ async def _handle_stream_stream_rpc(object method_handler,
     )
 
     # Prepares the request generator
-    cdef object request_async_iterator = _message_receiver(servicer_context)
+    cdef object request_async_iterator = _MessageReceiver(servicer_context)
 
     # Finishes the application handler
     await _finish_handler_with_stream_responses(
@@ -495,6 +504,12 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
         _LOGGER.debug('RPC cancelled for servicer method [%s]', _decode(rpc_state.method()))
     except _ServerStoppedError:
         _LOGGER.warning('Aborting method [%s] due to server stop.', _decode(rpc_state.method()))
+    except ExecuteBatchError:
+        # If client closed (aka. cancelled), ignore the failed batch operations.
+        if rpc_state.client_closed:
+            return
+        else:
+            raise
     except Exception as e:
         _LOGGER.exception('Unexpected [%s] raised by servicer method [%s]' % (
             type(e).__name__,

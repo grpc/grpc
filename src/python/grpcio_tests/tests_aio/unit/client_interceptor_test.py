@@ -686,5 +686,5 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

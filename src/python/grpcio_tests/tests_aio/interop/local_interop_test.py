@@ -64,7 +64,6 @@ class InteropTestCaseMixin:
         await methods.test_interoperability(
             methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE, self._stub, None)
 
-    @unittest.skip('TODO(https://github.com/grpc/grpc/issues/21707)')
     async def test_timeout_on_sleeping_server(self):
         await methods.test_interoperability(
             methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER, self._stub, None)
