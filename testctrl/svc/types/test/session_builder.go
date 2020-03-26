@@ -1,22 +1,36 @@
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // INTERNAL TESTING CODE!
 
 package test
 
 import (
-	"github.com/grpc/grpc/testctrl/svc/types"
 	pb "github.com/codeblooded/grpc-proto/genproto/grpc/testing"
+	"github.com/grpc/grpc/testctrl/svc/types"
 )
 
 type SessionBuilder struct {
-	driver *types.Component
-	workers []*types.Component
+	driver   *types.Component
+	workers  []*types.Component
 	scenario *pb.Scenario
 }
 
 func NewSessionBuilder() *SessionBuilder {
 	return &SessionBuilder{
-		driver: NewComponentBuilder().SetKind(types.DriverComponent).Build(),
-		workers: []*types.Component{},
+		driver:   NewComponentBuilder().SetKind(types.DriverComponent).Build(),
+		workers:  []*types.Component{},
 		scenario: nil,
 	}
 }

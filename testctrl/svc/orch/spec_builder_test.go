@@ -1,3 +1,17 @@
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package orch
 
 import (
@@ -28,7 +42,7 @@ func TestSpecBuilderContainers(t *testing.T) {
 
 func TestSpecBuilderContainerPorts(t *testing.T) {
 	cases := []struct {
-		kind types.ComponentKind
+		kind  types.ComponentKind
 		ports []int32
 	}{
 		{types.DriverComponent, []int32{driverPort}},
@@ -57,7 +71,6 @@ func TestSpecBuilderContainerPorts(t *testing.T) {
 		}
 	}
 }
-
 
 func TestSpecBuilderDeploymentSpec(t *testing.T) {
 	// Check that replicas are properly set
@@ -142,4 +155,3 @@ func TestSpecBuilderObjectMeta(t *testing.T) {
 		t.Errorf("SpecBuilder ObjectMeta did not set the K8s resource name to the component name; expected '%s' but got '%s'", componentName, resourceName)
 	}
 }
-
