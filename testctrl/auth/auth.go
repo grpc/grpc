@@ -52,4 +52,3 @@ func ConnectWithConfig(abspath string) (*kubernetes.Clientset, error) {
 
 	return clientset, nil
 }
-

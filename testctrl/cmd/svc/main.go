@@ -36,7 +36,6 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-
 func setupProdEnv() *kubernetes.Clientset {
 	clientset, err := auth.ConnectWithinCluster()
 	if err != nil {
@@ -102,4 +101,3 @@ func main() {
 		glog.Fatalf("server unexpectedly crashed: %v", err)
 	}
 }
-
