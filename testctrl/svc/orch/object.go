@@ -63,6 +63,7 @@ func (o *Object) Component() *types.Component {
 func (o *Object) Update(status v1.PodStatus) {
 	o.mux.Lock()
 	defer o.mux.Unlock()
+	o.podStatus = status
 
 	if count := len(status.ContainerStatuses); count != 1 {
 		o.health = NotReady

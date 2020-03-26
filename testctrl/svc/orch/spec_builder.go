@@ -17,11 +17,11 @@ package orch
 import (
 	"strings"
 
+	"github.com/golang/protobuf/jsonpb"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/golang/protobuf/jsonpb"
 
 	"github.com/grpc/grpc/testctrl/svc/types"
 )
@@ -135,6 +135,17 @@ func (sb *SpecBuilder) PodTemplateSpec() apiv1.PodTemplateSpec {
 		ObjectMeta: sb.ObjectMeta(),
 		Spec: apiv1.PodSpec{
 			Containers: sb.Containers(),
+			RestartPolicy: "Never",
+		},
+	}
+}
+
+func (sb *SpecBuilder) Pod() *apiv1.Pod {
+	return &apiv1.Pod{
+		ObjectMeta: sb.ObjectMeta(),
+		Spec: apiv1.PodSpec{
+			Containers: sb.Containers(),
+			RestartPolicy: "Never",
 		},
 	}
 }
