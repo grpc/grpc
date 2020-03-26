@@ -291,7 +291,7 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   // frame size is greater than default value, and user specified max frame size
   // is absent.
   tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
-  GPR_ASSERT(tsi_handshaker_result_create_zero_copy_frame_protector(
+  GPR_ASSERT(tsi_handshaker_result_create_zero_copy_grpc_protector(
                  result, nullptr, &zero_copy_protector) == TSI_OK);
   size_t actual_max_frame_size;
   tsi_zero_copy_grpc_protector_max_frame_size(zero_copy_protector,
@@ -363,7 +363,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
   size_t user_specified_max_frame_size =
       ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE;
-  GPR_ASSERT(tsi_handshaker_result_create_zero_copy_frame_protector(
+  GPR_ASSERT(tsi_handshaker_result_create_zero_copy_grpc_protector(
                  result, &user_specified_max_frame_size,
                  &zero_copy_protector) == TSI_OK);
   size_t actual_max_frame_size;
