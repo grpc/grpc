@@ -21,6 +21,8 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/golang/protobuf/jsonpb"
+
 	"github.com/grpc/grpc/testctrl/svc/types"
 )
 
@@ -48,6 +50,7 @@ func (sb *SpecBuilder) Containers() []apiv1.Container {
 			Name:  sb.component.Name(),
 			Image: sb.component.ContainerImage(),
 			Ports: sb.ContainerPorts(),
+			Env:   sb.Env(),
 		},
 	}
 }
@@ -134,4 +137,40 @@ func (sb *SpecBuilder) PodTemplateSpec() apiv1.PodTemplateSpec {
 			Containers: sb.Containers(),
 		},
 	}
+}
+
+// Env returns the environment variables that should be set based on the type of component.
+func (sb *SpecBuilder) Env() []apiv1.EnvVar {
+	var vars []apiv1.EnvVar
+
+	for k, v := range sb.component.Env() {
+		vars = append(vars, apiv1.EnvVar{
+			Name:  k,
+			Value: v,
+		})
+	}
+
+	if sb.component.Kind() == types.DriverComponent {
+		vars = append(vars, apiv1.EnvVar{
+			Name:  "SCENARIO_JSON",
+			Value: sb.scenarioJson(),
+		})
+	}
+
+	return vars
+}
+
+func (sb *SpecBuilder) scenarioJson() string {
+	marshaler := &jsonpb.Marshaler{
+		Indent:      "",
+		EnumsAsInts: true,
+		OrigName:    true,
+	}
+
+	json, err := marshaler.MarshalToString(sb.session.Scenario())
+	if err != nil {
+		return ""
+	}
+
+	return json
 }

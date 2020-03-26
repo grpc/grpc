@@ -16,11 +16,14 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/golang/protobuf/jsonpb"
 
+	grpcPb "github.com/codeblooded/grpc-proto/genproto/grpc/testing"
 	"github.com/grpc/grpc/testctrl/auth"
 	"github.com/grpc/grpc/testctrl/svc/orch"
 	"github.com/grpc/grpc/testctrl/svc/types"
@@ -31,6 +34,7 @@ func main() {
 	server := flag.String("server", "", "Container image of a server for testing")
 	client := flag.String("client", "", "Container image of a client for testing")
 	timeout := flag.Duration("timeout", 5*time.Minute, "Allow the controller to live for this duration")
+	scenarioJSON := flag.String("scenarioJSON", "", "Scenario protobuf with test config as a JSON object")
 	count := flag.Int("count", 1, "Number of sessions to schedule")
 
 	flag.Parse()
@@ -56,10 +60,21 @@ func main() {
 			driver := types.NewComponent(*driver, types.DriverComponent, 1)
 			server := types.NewComponent(*server, types.ServerComponent, 1)
 			client := types.NewComponent(*client, types.ClientComponent, 1)
-			// TODO(codeblooded): Add support for specifying scenario through flag
-			c.Schedule(types.NewSession(driver, []*types.Component{server, client}, nil))
+			c.Schedule(types.NewSession(driver, []*types.Component{server, client}, scenario(*scenarioJSON)))
 		}
 	}()
 
 	time.Sleep(*timeout)
+}
+
+func scenario(scenarioJSON string) *grpcPb.Scenario {
+	if len(scenarioJSON) == 0 {
+		return nil
+	}
+
+	var s grpcPb.Scenario
+	if err := jsonpb.UnmarshalString(scenarioJSON, &s); err != nil {
+		log.Fatalf("could not parse scenario json: %v", err)
+	}
+	return &s
 }

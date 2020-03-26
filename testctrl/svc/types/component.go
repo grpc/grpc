@@ -92,6 +92,15 @@ func (c *Component) SetEnv(key, value string) {
 	c.env[key] = value
 }
 
+// Env returns a copy of the environment variables that are set on a component.
+func (c *Component) Env() map[string]string {
+	clone := make(map[string]string)
+	for k, v := range c.env {
+		clone[k] = v
+	}
+	return clone
+}
+
 // ComponentKind specifies the type of component the test requires.
 type ComponentKind int32
 

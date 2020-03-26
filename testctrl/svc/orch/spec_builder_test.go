@@ -155,3 +155,50 @@ func TestSpecBuilderObjectMeta(t *testing.T) {
 		t.Errorf("SpecBuilder ObjectMeta did not set the K8s resource name to the component name; expected '%s' but got '%s'", componentName, resourceName)
 	}
 }
+
+func TestSpecBuilderEnv(t *testing.T) {
+	// check all component env variables are copied to spec
+	key := "TESTING"
+	value := "true"
+	component := test.NewComponentBuilder().SetEnv(key, value).Build()
+	session := test.NewSessionBuilder().SetComponents(component).Build()
+	sb := NewSpecBuilder(session, component)
+	got := getEnv(sb.Env(), key)
+	if got == nil || *got != value {
+		t.Errorf("SpecBuilder Env did not copy all component env variables")
+	}
+
+	// check SCENARIO_JSON is always and only set on driver
+	cases := []struct {
+		componentKind   types.ComponentKind
+		includeScenario bool
+	}{
+		{types.DriverComponent, true},
+		{types.ServerComponent, false},
+		{types.ClientComponent, false},
+	}
+
+	for _, c := range cases {
+		component := test.NewComponentBuilder().SetKind(c.componentKind).Build()
+		session := test.NewSessionBuilder().SetComponents(component).Build()
+		sb := NewSpecBuilder(session, component)
+		included := getEnv(sb.Env(), "SCENARIO_JSON") != nil
+
+		if included != c.includeScenario {
+			if c.includeScenario {
+				t.Errorf("SpecBuilder Env did not set $SCENARIO_JSON env variable for %v", c.componentKind)
+			} else {
+				t.Errorf("SpecBuilder Env unexpectedly set $SCENARIO_JSON env variable for %v", c.componentKind)
+			}
+		}
+	}
+}
+
+func getEnv(envs []apiv1.EnvVar, name string) *string {
+	for _, env := range envs {
+		if env.Name == name {
+			return &env.Value
+		}
+	}
+	return nil
+}
