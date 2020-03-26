@@ -79,7 +79,7 @@ func (m *Monitor) Update(pod *v1.Pod) error {
 	}
 
 	o.Update(pod.Status)
-	if o.Health() == Unhealthy || o.Health() == Failed {
+	if o.Health() == NotReady || o.Health() == Failed {
 		return o.Error()
 	}
 
@@ -105,13 +105,13 @@ func (m *Monitor) ErrObject() *Object {
 	return m.errObject
 }
 
-// Unhealthy returns true if any object has a health value of Unhealthy or Failed.
-func (m *Monitor) Unhealthy() bool {
+// AnyFailed returns true if any managed object has a Failed health value.
+func (m *Monitor) AnyFailed() bool {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
 	for _, o := range m.objects {
-		if o.Health() == Unhealthy || o.Health() == Failed {
+		if o.Health() == Failed {
 			m.errObject = o
 			return true
 		}
@@ -120,16 +120,16 @@ func (m *Monitor) Unhealthy() bool {
 	return false
 }
 
-// Done returns true if all objects have a health value of Done.
-func (m *Monitor) Done() bool {
+// AnySucceeded returns true if any managed object has a Succeeded health value.
+func (m *Monitor) AnySucceeded() bool {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
 	for _, o := range m.objects {
-		if o.Health() != Done {
-			return false
+		if o.Health() == Succeeded {
+			return true
 		}
 	}
 
-	return true
+	return false
 }

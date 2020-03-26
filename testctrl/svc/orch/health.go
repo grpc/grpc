@@ -18,19 +18,21 @@ package orch
 type Health int32
 
 const (
-	// Unknown indicates the health status has not been updated.
+	// Unknown indicates that the state of the object could not be mapped to a standard health
+	// value. The system should wait until another health value is set.
 	Unknown Health = iota
 
-	// Unhealthy indicates that the object is not available due an error.
-	Unhealthy
+	// Ready indicates that an object is healthy and available.
+	Ready
 
-	// Healthy indicates the object is available and appears to be running.
-	Healthy
+	// NotReady indicates that something is not yet correct with an object's state, but this
+	// may be recoverable.
+	NotReady
 
-	// Done indicates the object has terminated with a successful state.
-	Done
+	// Succeeded indicates that an object has terminated successfully.
+	Succeeded
 
-	// Failed indicates the object has terminated in an unsuccessful state.
+	// Failed indicates that an object has terminated due to a failure.
 	Failed
 )
 
@@ -40,9 +42,9 @@ func (h Health) String() string {
 }
 
 var healthConstToStringMap = map[Health]string{
-	Unknown:   "unknown",
-	Unhealthy: "unhealthy",
-	Healthy:   "healthy",
-	Done:      "done",
-	Failed:    "failed",
+	Unknown: "Unknown",
+	Ready: "Ready",
+	NotReady: "NotReady",
+	Succeeded: "Succeeded",
+	Failed: "Failed",
 }
