@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Builds Kotlin interop server and client in a base image.
+# Builds Java interop server and client in a base image.
 set -e
 
 cp -r /var/local/jenkins/grpc-kotlin /tmp/grpc-kotlin
@@ -25,9 +25,9 @@ pushd /tmp/grpc-kotlin
 ./gradlew --no-daemon :interop_testing:installDist -PskipCodegen=true -PskipAndroid=true
 
 mkdir -p /var/local/git/grpc-kotlin/
-cp -r --parents -t /var/local/git/grpc-kotlin/ \
-    interop_testing/build/install/ \
-    run-test-client.sh \
+cp -r --parents -t /var/local/git/grpc-kotlin/ ${'\\'}
+    interop_testing/build/install/ ${'\\'}
+    run-test-client.sh ${'\\'}
     run-test-server.sh
 
 popd
@@ -41,4 +41,3 @@ java.util.logging.ConsoleHandler.level = ALL
 .level = FINE
 io.grpc.netty.NettyClientHandler = ALL
 io.grpc.netty.NettyServerHandler = ALL" > /var/local/grpc_kotlin_logging/logconf.txt
-  

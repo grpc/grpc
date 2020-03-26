@@ -27,6 +27,7 @@ set -ex
 #  GRPC_ROOT - grpc base directory, default to top of this tree.
 #  GRPC_GO_ROOT - grpc-go base directory, default to '$GRPC_ROOT/../grpc-go'
 #  GRPC_JAVA_ROOT - grpc-java base directory, default to '$GRPC_ROOT/../grpc-java'
+#  GRPC_KOTLIN_ROOT - grpc-kotlin base directory, default to '$GRPC_ROOT/../grpc-kotlin'
 
 cd "$(dirname "$0")/../../.."
 echo "GRPC_ROOT: ${GRPC_ROOT:=$(pwd)}"
@@ -38,6 +39,14 @@ then
   MOUNT_ARGS+=" -v $GRPC_JAVA_ROOT:/var/local/jenkins/grpc-java:ro"
 else
   echo "WARNING: grpc-java not found, it won't be mounted to the docker container."
+fi
+
+echo "GRPC_KOTLIN_ROOT: ${GRPC_KOTLIN_ROOT:=$(cd ../grpc-kotlin && pwd)}"
+if [ -n "$GRPC_KOTLIN_ROOT" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_KOTLIN_ROOT:/var/local/jenkins/grpc-kotlin:ro"
+else
+  echo "WARNING: grpc-kotlin not found, it won't be mounted to the docker container."
 fi
 
 echo "GRPC_GO_ROOT: ${GRPC_GO_ROOT:=$(cd ../grpc-go && pwd)}"
