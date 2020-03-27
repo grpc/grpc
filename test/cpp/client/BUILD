@@ -60,6 +60,7 @@ grpc_cc_test(
     name = "destroy_grpclb_channel_with_active_connect_stress_test",
     srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
     external_deps = ["gtest"],
+    rbe_linux_only_uses_blackhole_ipv6_address = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -68,5 +69,4 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    rbe_linux_only_uses_blackhole_ipv6_address = True,
 )
