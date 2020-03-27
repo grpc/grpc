@@ -90,14 +90,6 @@ message Component {
 
   // The kind which assigns the responsibilities of this container.
   Kind kind = 2;
-
-  // The number of identical components that should be created with these
-  // settings. For example, a "client" component can be configured once and
-  // specify "2" replicas. Two identical versions will be available to the test.
-  //
-  // This field is ignored for driver components. It may eventually be supported
-  // on server components, but this is not yet available.
-  int32 replicas = 3;
 }
 
 message StartTestSessionRequest {

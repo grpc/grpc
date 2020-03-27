@@ -21,39 +21,37 @@ import (
 	pb "github.com/grpc/grpc/testctrl/proto/scheduling/v1"
 )
 
-// Component represents a dependency for a session. Benchmarks tend to have three components: a
-// driver, server and client. Each component can have many identical replicas. Do not create
-// Components using a literal, use the NewComponent constructor.
+// Component represents a dependency that must be provisioned and managed during a session. For
+// example, benchmarks tend to have a driver, server and a set of client components.
+//
+// Do not create Components using a literal, use the NewComponent constructor.
 type Component struct {
 	name           string
 	containerImage string
 	kind           ComponentKind
-	replicas       int32
 	env            map[string]string
 }
 
-// NewComponent creates a Component instance, given a container image, kind and replicas.
+// NewComponent creates a Component instance, given a container image and kind.
 //
 // The container image string should contain the path to a docker image in a registry, versioned by
-// an explicit tag or hash. Replicas should be 1 for drivers and servers. For clients, they may be
-// any positive integer.
+// an explicit tag or hash.
 //
 // For example:
 //
 //     // Container uses "nginx" image with explicit tag "latest" from docker hub
-//     a := NewComponent("nginx:latest", ServerComponent, 1)
+//     a := NewComponent("nginx:latest", ServerComponent)
 //
-//     // Container uses "java_worker" image with explicit tag "v3.2.2" from GCR with 2 replicas
-//     b := NewComponent("gcr.io/grpc-testing/java_worker:v3.2.2", ClientComponent, 2)
+//     // Container uses "java_worker" image with explicit tag "v3.2.2" from GCR
+//     b := NewComponent("gcr.io/grpc-testing/java_worker:v3.2.2", ClientComponent)
 //
 //     // Container uses "driver" image with hash from GCR
-//     c := NewComponent("gcr.io/grpc-testing/driver@sha256:e4ff8efd7eb62d3a3bb0990f6ff1e9df20da24ebf908d08f49cb83422a232862", DriverComponent, 1)
-func NewComponent(containerImage string, kind ComponentKind, replicas int32) *Component {
+//     c := NewComponent("gcr.io/grpc-testing/driver@sha256:e4ff8efd7eb62d3a3bb0990f6ff1e9df20da24ebf908d08f49cb83422a232862", DriverComponent)
+func NewComponent(containerImage string, kind ComponentKind) *Component {
 	return &Component{
 		name:           uuid.New().String(),
 		containerImage: containerImage,
 		kind:           kind,
-		replicas:       replicas,
 		env:            make(map[string]string),
 	}
 }
@@ -79,11 +77,6 @@ func (c *Component) ContainerImage() string {
 // Kind returns the type of component.
 func (c *Component) Kind() ComponentKind {
 	return c.kind
-}
-
-// Replicas returns the number of replicas of this component.
-func (c *Component) Replicas() int32 {
-	return c.replicas
 }
 
 // SetEnv stores an environment variable that must be set on the component. Setting one after a
