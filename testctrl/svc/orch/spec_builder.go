@@ -17,12 +17,10 @@ package orch
 import (
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-
-	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc/grpc/testctrl/svc/types"
 )
 
@@ -77,33 +75,6 @@ func (sb *SpecBuilder) ContainerPorts() []apiv1.ContainerPort {
 	return ports
 }
 
-// Deployment builds a Kubernetes deployment object.
-func (sb *SpecBuilder) Deployment() *appsv1.Deployment {
-	return &appsv1.Deployment{
-		ObjectMeta: sb.ObjectMeta(),
-		Spec:       sb.DeploymentSpec(),
-	}
-}
-
-// DeploymentSpec builds a Kubernetes deployment spec object.
-func (sb *SpecBuilder) DeploymentSpec() appsv1.DeploymentSpec {
-	replicas := sb.component.Replicas()
-
-	return appsv1.DeploymentSpec{
-		Replicas: &replicas,
-		Selector: &metav1.LabelSelector{
-			MatchLabels: sb.Labels(),
-		},
-		Strategy: appsv1.DeploymentStrategy{
-			// disable rolling updates
-			Type:          "Recreate",
-			RollingUpdate: nil,
-		},
-		RevisionHistoryLimit: &zero, // disable rollbacks
-		Template:             sb.PodTemplateSpec(),
-	}
-}
-
 // ObjectMeta returns the metadata that should be set on all resources created for a specific
 // component. Most importantly, it includes the component's name and necessary labels.
 func (sb *SpecBuilder) ObjectMeta() metav1.ObjectMeta {
@@ -126,17 +97,6 @@ func (sb *SpecBuilder) Labels() map[string]string {
 		"session-name":   sb.session.Name(),
 		"component-name": sb.component.Name(),
 		"component-kind": strings.ToLower(sb.component.Kind().String()),
-	}
-}
-
-// PodTemplateSpec builds a Kubernetes podspec for the deployment to manage.
-func (sb *SpecBuilder) PodTemplateSpec() apiv1.PodTemplateSpec {
-	return apiv1.PodTemplateSpec{
-		ObjectMeta: sb.ObjectMeta(),
-		Spec: apiv1.PodSpec{
-			Containers:    sb.Containers(),
-			RestartPolicy: "Never",
-		},
 	}
 }
 

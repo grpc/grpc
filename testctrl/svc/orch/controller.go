@@ -31,7 +31,7 @@ import (
 )
 
 // executorCount specifies the maximum number of sessions that should be processed concurrently.
-const executorCount = 2
+const executorCount = 1
 
 // Controller manages active and idle sessions and their interactions with the Kubernetes API.
 type Controller struct {
