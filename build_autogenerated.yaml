@@ -5720,6 +5720,9 @@ targets:
   - gpr
   - address_sorting
   - upb
+  platforms:
+  - linux
+  - posix
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
