@@ -147,11 +147,9 @@ argp.add_argument(
     '--instance_group_size',
     default=2,
     type=int,
-    help=
-    'Number of VMs to create per instance group. Certain test cases (e.g., '
+    help='Number of VMs to create per instance group. Certain test cases (e.g., '
     'round_robin) may not give meaningful results if this is set to a value '
-    'less than 2.'
-)
+    'less than 2.')
 argp.add_argument(
     '--tolerate_gcp_errors',
     default=False,
