@@ -1063,6 +1063,7 @@ try:
                                qps=args.qps))
 
     test_results = {}
+    failed_tests = []
     for test_case in args.test_case:
         result = jobset.JobResult()
         log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
@@ -1107,7 +1108,8 @@ try:
             result.state = 'PASSED'
             result.returncode = 0
         except Exception as e:
-            logger.error('Test case %s failed: %s' % (test_case, e))
+            logger.error('Test case %s failed: %s', test_case, e)
+            failed_tests.append(test_case)
             result.state = 'FAILED'
             result.message = str(e)
         finally:
@@ -1124,6 +1126,9 @@ try:
                                                       _SPONGE_XML_NAME),
                                          suite_name='xds_tests',
                                          multi_target=True)
+    if failed_tests:
+        logger.error('Test case(s) %s failed', failed_tests)
+        sys.exit(1)
 finally:
     if not args.keep_gcp_resources:
         logger.info('Cleaning up GCP resources. This may take some time.')
