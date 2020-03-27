@@ -192,20 +192,28 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if uses_polling:
         if rbe_linux_only_uses_blackhole_ipv6_address:
             blackhole_address_setting = "can_create"
-            tags += ["no_windows", "no_mac"]
+            native.cc_test(
+                name = name,
+                testonly = True,
+                tags = (tags + [
+                    "no_linux",  # linux supports multiple pollers
+                    "no_windows",
+                    "no_mac",
+                ]),
+                **args
+            )
         else:
             blackhole_address_setting = "disallowed"
-
-        # the vanilla version of the test should run on platforms that only
-        # support a single poller
-        native.cc_test(
-            name = name,
-            testonly = True,
-            tags = (tags + [
-                "no_linux",  # linux supports multiple pollers
-            ]),
-            **args
-        )
+            # the vanilla version of the test should run on platforms that only
+            # support a single poller
+            native.cc_test(
+                name = name,
+                testonly = True,
+                tags = (tags + [
+                    "no_linux",  # linux supports multiple pollers
+                ]),
+                **args
+            )
 
         # on linux we run the same test multiple times, once for each poller
         for poller in POLLERS:
