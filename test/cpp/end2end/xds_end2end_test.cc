@@ -2339,14 +2339,40 @@ TEST_P(CdsTest, Timeout) {
 
 using EdsTest = BasicTest;
 
-// TODO(roth): Add tests showing that RPCs fail when EDS data is invalid.
-
 TEST_P(EdsTest, Timeout) {
   ResetStub(0, 0, "", 500);
   balancers_[0]->ads_service()->SetResourceIgnore(kEdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
+}
+
+// Tests that EDS client should send a NACK if the EDS update contains
+// no localities but does not say to drop all calls.
+TEST_P(EdsTest, NacksNoLocalitiesWithoutDropAll) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args;
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NACKED);
+}
+
+// Tests that EDS client should send a NACK if the EDS update contains
+// sparse priorities.
+TEST_P(EdsTest, NacksSparsePriorityList) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(), kDefaultLocalityWeight, 1},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  CheckRpcSendFailure();
+  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
+            AdsServiceImpl::NACKED);
 }
 
 using LocalityMapTest = BasicTest;
