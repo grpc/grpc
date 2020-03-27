@@ -57,9 +57,9 @@ func main() {
 
 	go func() {
 		for i := 0; i < *count; i++ {
-			driver := types.NewComponent(*driver, types.DriverComponent, 1)
-			server := types.NewComponent(*server, types.ServerComponent, 1)
-			client := types.NewComponent(*client, types.ClientComponent, 1)
+			driver := types.NewComponent(*driver, types.DriverComponent)
+			server := types.NewComponent(*server, types.ServerComponent)
+			client := types.NewComponent(*client, types.ClientComponent)
 			c.Schedule(types.NewSession(driver, []*types.Component{server, client}, scenario(*scenarioJSON)))
 		}
 	}()

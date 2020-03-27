@@ -23,7 +23,6 @@ import (
 type ComponentBuilder struct {
 	container string
 	kind      types.ComponentKind
-	replicas  int32
 	env       map[string]string
 }
 
@@ -31,13 +30,12 @@ func NewComponentBuilder() *ComponentBuilder {
 	return &ComponentBuilder{
 		container: "example:latest",
 		kind:      types.ClientComponent,
-		replicas:  1,
 		env:       make(map[string]string),
 	}
 }
 
 func (cb *ComponentBuilder) Build() *types.Component {
-	c := types.NewComponent(cb.container, cb.kind, cb.replicas)
+	c := types.NewComponent(cb.container, cb.kind)
 	for k, v := range cb.env {
 		c.SetEnv(k, v)
 	}
@@ -56,10 +54,5 @@ func (cb *ComponentBuilder) SetEnv(key, value string) *ComponentBuilder {
 
 func (cb *ComponentBuilder) SetKind(k types.ComponentKind) *ComponentBuilder {
 	cb.kind = k
-	return cb
-}
-
-func (cb *ComponentBuilder) SetReplicas(r int32) *ComponentBuilder {
-	cb.replicas = r
 	return cb
 }

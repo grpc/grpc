@@ -72,30 +72,6 @@ func TestSpecBuilderContainerPorts(t *testing.T) {
 	}
 }
 
-func TestSpecBuilderDeploymentSpec(t *testing.T) {
-	// Check that replicas are properly set
-	component := test.NewComponentBuilder().SetReplicas(3).Build()
-	session := test.NewSessionBuilder().SetComponents(component).Build()
-	sb := NewSpecBuilder(session, component)
-
-	replicaPtr := sb.DeploymentSpec().Replicas
-	if replicaPtr == nil {
-		t.Errorf("SpecBuilder DeploymentSpec did not specify a number of component replicas; expected '%v'", component.Replicas())
-	} else if *replicaPtr != component.Replicas() {
-		t.Errorf("SpecBuilder DeploymentSpec did not set the correct number of component replicas; expected '%v' but got '%v'", component.Replicas(), *replicaPtr)
-	}
-
-	// Check that the selector includes all labels
-	component = test.NewComponentBuilder().Build()
-	session = test.NewSessionBuilder().SetComponents(component).Build()
-	sb = NewSpecBuilder(session, component)
-	matchLabels := sb.DeploymentSpec().Selector.MatchLabels
-
-	if !reflect.DeepEqual(matchLabels, sb.Labels()) {
-		t.Errorf("SpecBuilder DeploymentSpec did not match correct pods on deployment; expected labels '%v' but got '%v'", sb.Labels(), matchLabels)
-	}
-}
-
 func TestSpecBuilderLabels(t *testing.T) {
 	// Check that spec contains a 'session-name' label
 	session := test.NewSessionBuilder().Build()
