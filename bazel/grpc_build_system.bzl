@@ -194,6 +194,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             blackhole_address_setting = "can_create"
         else:
             blackhole_address_setting = "disallowed"
+
         # the vanilla version of the test should run on platforms that only
         # support a single poller
         native.cc_test(
@@ -228,7 +229,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             )
     else:
         if rbe_linux_only_uses_blackhole_ipv6_address:
-            fail('rbe_linux_only_uses_blackhole_ipv6_address=True is only allowed on tests with uses_polling=True')
+            fail("rbe_linux_only_uses_blackhole_ipv6_address=True is only allowed on tests with uses_polling=True")
         # the test behavior doesn't depend on polling, just generate the test
         native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
     if not rbe_linux_only_uses_blackhole_ipv6_address:
