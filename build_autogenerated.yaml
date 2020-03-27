@@ -1153,6 +1153,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/util/blackhole_addresses.h
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/fuzzer_util.h
@@ -1172,6 +1173,8 @@ libs:
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
+  - test/core/util/blackhole_addresses_linux.cc
+  - test/core/util/blackhole_addresses_non_linux.cc
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/fuzzer_util.cc
@@ -1202,6 +1205,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/util/blackhole_addresses.h
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/fuzzer_util.h
@@ -1221,6 +1225,8 @@ libs:
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
+  - test/core/util/blackhole_addresses_linux.cc
+  - test/core/util/blackhole_addresses_non_linux.cc
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/fuzzer_util.cc
@@ -7476,6 +7482,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/blackhole_addresses.h
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/fuzzer_util.h
@@ -7498,6 +7505,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/util/blackhole_addresses_linux.cc
+  - test/core/util/blackhole_addresses_non_linux.cc
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/fuzzer_util.cc

@@ -853,6 +853,8 @@
         'upb',
       ],
       'sources': [
+        'test/core/util/blackhole_addresses_linux.cc',
+        'test/core/util/blackhole_addresses_non_linux.cc',
         'test/core/util/cmdline.cc',
         'test/core/util/debugger_macros.cc',
         'test/core/util/fuzzer_util.cc',
@@ -885,6 +887,8 @@
         'upb',
       ],
       'sources': [
+        'test/core/util/blackhole_addresses_linux.cc',
+        'test/core/util/blackhole_addresses_non_linux.cc',
         'test/core/util/cmdline.cc',
         'test/core/util/debugger_macros.cc',
         'test/core/util/fuzzer_util.cc',
