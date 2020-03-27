@@ -33,6 +33,7 @@ cdef class RPCState(GrpcCallWrapper):
     cdef tuple trailing_metadata
     cdef object compression_algorithm
     cdef bint disable_next_compression
+    cdef list done_callbacks  # List[Callable[[Any], None]]
 
     cdef bytes method(self)
     cdef tuple invocation_metadata(self)

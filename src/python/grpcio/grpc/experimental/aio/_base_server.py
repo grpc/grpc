@@ -18,7 +18,7 @@ from typing import Generic, Optional, Sequence
 
 import grpc
 
-from ._typing import MetadataType, RequestType, ResponseType
+from ._typing import DoneCallbackType, MetadataType, RequestType, ResponseType
 
 
 class Server(abc.ABC):
@@ -132,6 +132,15 @@ class Server(abc.ABC):
 
 class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     """A context object passed to method implementations."""
+
+    @abc.abstractmethod
+    def add_done_callback(self, callback: DoneCallbackType) -> None:
+        """Registers a callback to be called on RPC termination.
+
+        Args:
+          callback: A callable object will be called with the servicer context
+          object as its only argument.
+        """
 
     @abc.abstractmethod
     async def read(self) -> RequestType:

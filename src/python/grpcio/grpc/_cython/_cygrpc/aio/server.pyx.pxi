@@ -22,6 +22,7 @@ cdef int _EMPTY_FLAG = 0
 cdef str _RPC_FINISHED_DETAILS = 'RPC already finished.'
 cdef str _SERVER_STOPPED_DETAILS = 'Server already stopped.'
 
+
 cdef _augment_metadata(tuple metadata, object compression):
     if compression is None:
         return metadata
@@ -58,6 +59,7 @@ cdef class RPCState:
         self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
         self.compression_algorithm = None
         self.disable_next_compression = False
+        self.done_callbacks = []
 
     cdef bytes method(self):
         return _slice_bytes(self.details.method)
@@ -120,6 +122,9 @@ cdef class _ServicerContext:
         self._response_serializer = response_serializer
         self._loop = loop
 
+    def add_done_callback(self, callback):
+        self._rpc_state.done_callbacks.append(callback)
+
     async def read(self):
         cdef bytes raw_message
         self._rpc_state.raise_for_termination()
@@ -169,20 +174,18 @@ cdef class _ServicerContext:
             # could lead to undefined behavior.
             self._rpc_state.abort_exception = AbortError('Locally aborted.')
 
-            if trailing_metadata == _IMMUTABLE_EMPTY_METADATA and self._rpc_state.trailing_metadata:
-                trailing_metadata = self._rpc_state.trailing_metadata
-
-            if details == '' and self._rpc_state.status_details:
-                details = self._rpc_state.status_details
-
-            actual_code = get_status_code(code)
+            self._rpc_state.status_code = get_status_code(code)
+            if details != '':
+                self._rpc_state.status_details = details
+            if trailing_metadata != _IMMUTABLE_EMPTY_METADATA:
+                self._rpc_state.trailing_metadata = trailing_metadata
 
             self._rpc_state.status_sent = True
             await _send_error_status_from_server(
                 self._rpc_state,
-                actual_code,
-                details,
-                trailing_metadata,
+                self._rpc_state.status_code,
+                self._rpc_state.status_details,
+                self._rpc_state.trailing_metadata,
                 self._rpc_state.create_send_initial_metadata_op_if_not_sent(),
                 self._loop
             )
@@ -254,7 +257,6 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     stream-unary handlers.
     """
     # Executes application logic
-    
     cdef object response_message = await unary_handler(
         request,
         servicer_context,
@@ -367,15 +369,21 @@ async def _handle_unary_unary_rpc(object method_handler,
         loop,
     )
 
-    # Finishes the application handler
-    await _finish_handler_with_unary_response(
-        rpc_state,
-        method_handler.unary_unary,
-        request_message,
-        servicer_context,
-        method_handler.response_serializer,
-        loop
-    )
+    try:
+        # Finishes the application handler
+        await _finish_handler_with_unary_response(
+            rpc_state,
+            method_handler.unary_unary,
+            request_message,
+            servicer_context,
+            method_handler.response_serializer,
+            loop
+        )
+    finally:
+        # Executes done callbacks
+        if rpc_state.done_callbacks:
+            for callback in rpc_state.done_callbacks:
+                callback(servicer_context)
 
 
 async def _handle_unary_stream_rpc(object method_handler,
@@ -400,14 +408,20 @@ async def _handle_unary_stream_rpc(object method_handler,
         loop,
     )
 
-    # Finishes the application handler
-    await _finish_handler_with_stream_responses(
-        rpc_state,
-        method_handler.unary_stream,
-        request_message,
-        servicer_context,
-        loop,
-    )
+    try:
+        # Finishes the application handler
+        await _finish_handler_with_stream_responses(
+            rpc_state,
+            method_handler.unary_stream,
+            request_message,
+            servicer_context,
+            loop,
+        )
+    finally:
+        # Executes done callbacks
+        if rpc_state.done_callbacks:
+            for callback in rpc_state.done_callbacks:
+                callback(servicer_context)
 
 
 cdef class _MessageReceiver:
@@ -448,15 +462,21 @@ async def _handle_stream_unary_rpc(object method_handler,
     # Prepares the request generator
     cdef object request_async_iterator = _MessageReceiver(servicer_context)
 
-    # Finishes the application handler
-    await _finish_handler_with_unary_response(
-        rpc_state,
-        method_handler.stream_unary,
-        request_async_iterator,
-        servicer_context,
-        method_handler.response_serializer,
-        loop
-    )
+    try:
+        # Finishes the application handler
+        await _finish_handler_with_unary_response(
+            rpc_state,
+            method_handler.stream_unary,
+            request_async_iterator,
+            servicer_context,
+            method_handler.response_serializer,
+            loop
+        )
+    finally:
+        # Executes done callbacks
+        if rpc_state.done_callbacks:
+            for callback in rpc_state.done_callbacks:
+                callback(servicer_context)
 
 
 async def _handle_stream_stream_rpc(object method_handler,
@@ -473,14 +493,20 @@ async def _handle_stream_stream_rpc(object method_handler,
     # Prepares the request generator
     cdef object request_async_iterator = _MessageReceiver(servicer_context)
 
-    # Finishes the application handler
-    await _finish_handler_with_stream_responses(
-        rpc_state,
-        method_handler.stream_stream,
-        request_async_iterator,
-        servicer_context,
-        loop,
-    )
+    try:
+        # Finishes the application handler
+        await _finish_handler_with_stream_responses(
+            rpc_state,
+            method_handler.stream_stream,
+            request_async_iterator,
+            servicer_context,
+            loop,
+        )
+    finally:
+        # Executes done callbacks
+        if rpc_state.done_callbacks:
+            for callback in rpc_state.done_callbacks:
+                callback(servicer_context)
 
 
 async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
@@ -505,8 +531,8 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
     except _ServerStoppedError:
         _LOGGER.warning('Aborting method [%s] due to server stop.', _decode(rpc_state.method()))
     except ExecuteBatchError:
-        # If client closed (aka. cancelled), ignore the failed batch operations.
-        if rpc_state.client_closed:
+        # If RPC is cancelled, ignore the failed batch operations.
+        if rpc_state.client_closed or rpc_state.server_cancelled:
             return
         else:
             raise
@@ -518,14 +544,13 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
         if not rpc_state.status_sent and rpc_state.server._status != AIO_SERVER_STATUS_STOPPED:
             # Allows users to raise other types of exception with specified status code
             if rpc_state.status_code == StatusCode.ok:
-                status_code = StatusCode.unknown
-            else:
-                status_code = rpc_state.status_code
+                rpc_state.status_code = StatusCode.unknown
+            rpc_state.status_details = 'Unexpected %s: %s' % (type(e), e)
 
             await _send_error_status_from_server(
                 rpc_state,
-                status_code,
-                'Unexpected %s: %s' % (type(e), e),
+                rpc_state.status_code,
+                rpc_state.status_details,
                 rpc_state.trailing_metadata,
                 rpc_state.create_send_initial_metadata_op_if_not_sent(),
                 loop
@@ -570,11 +595,13 @@ async def _handle_rpc(list generic_handlers, tuple interceptors,
     )
     if method_handler is None:
         rpc_state.status_sent = True
+        rpc_state.status_code = StatusCode.unimplemented
+        rpc_state.status_details = 'Method not found!'
         await _send_error_status_from_server(
             rpc_state,
-            StatusCode.unimplemented,
-            'Method not found!',
-            _IMMUTABLE_EMPTY_METADATA,
+            rpc_state.status_code,
+            rpc_state.status_details,
+            rpc_state.trailing_metadata,
             rpc_state.create_send_initial_metadata_op_if_not_sent(),
             loop
         )
@@ -583,22 +610,22 @@ async def _handle_rpc(list generic_handlers, tuple interceptors,
     # Handles unary-unary case
     if not method_handler.request_streaming and not method_handler.response_streaming:
         await _handle_unary_unary_rpc(method_handler,
-                                        rpc_state,
-                                        loop)
+                                      rpc_state,
+                                      loop)
         return
 
     # Handles unary-stream case
     if not method_handler.request_streaming and method_handler.response_streaming:
         await _handle_unary_stream_rpc(method_handler,
-                                        rpc_state,
-                                        loop)
+                                       rpc_state,
+                                       loop)
         return
 
     # Handles stream-unary case
     if method_handler.request_streaming and not method_handler.response_streaming:
         await _handle_stream_unary_rpc(method_handler,
-                                        rpc_state,
-                                        loop)
+                                       rpc_state,
+                                       loop)
         return
 
     # Handles stream-stream case
