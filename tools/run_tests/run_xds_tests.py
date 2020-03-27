@@ -202,7 +202,7 @@ _TESTS_USING_SECONDARY_IG = [
     'secondary_locality_gets_requests_on_primary_failure'
 ]
 _USE_SECONDARY_IG = any(
-    [t in args.test_cases for t in _TESTS_USING_SECONDARY_IG])
+    [t in args.test_case for t in _TESTS_USING_SECONDARY_IG])
 _PATH_MATCHER_NAME = 'path-matcher'
 _BASE_TEMPLATE_NAME = 'test-template'
 _BASE_INSTANCE_GROUP_NAME = 'test-ig'
