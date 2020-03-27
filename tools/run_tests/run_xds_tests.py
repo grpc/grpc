@@ -144,6 +144,15 @@ argp.add_argument('--machine_type',
                   default='e2-standard-2',
                   help='Machine type for VMs created during the test')
 argp.add_argument(
+    '--instance_group_size',
+    default=2,
+    type=int,
+    help=
+    'Number of VMs to create per instance group. Certain test cases (e.g., '
+    'round_robin) may not give meaningful results if this is set to a value '
+    'less than 2.'
+)
+argp.add_argument(
     '--tolerate_gcp_errors',
     default=False,
     action='store_true',
@@ -163,7 +172,7 @@ if args.verbose:
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
 _WAIT_FOR_OPERATION_SEC = 300
-_INSTANCE_GROUP_SIZE = 2
+_INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
 _WAIT_FOR_STATS_SEC = 180
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
@@ -188,6 +197,12 @@ _BOOTSTRAP_TEMPLATE = """
     ]
   }}]
 }}""" % (args.network.split('/')[-1], args.zone, args.xds_server)
+_TESTS_USING_SECONDARY_IG = [
+    'secondary_locality_gets_no_requests_on_partial_primary_failure',
+    'secondary_locality_gets_requests_on_primary_failure'
+]
+_USE_SECONDARY_IG = any(
+    [t in args.test_cases for t in _TESTS_USING_SECONDARY_IG])
 _PATH_MATCHER_NAME = 'path-matcher'
 _BASE_TEMPLATE_NAME = 'test-template'
 _BASE_INSTANCE_GROUP_NAME = 'test-ig'
@@ -937,7 +952,8 @@ try:
     template_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + args.gcp_suffix
     same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + args.gcp_suffix
-    secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + args.gcp_suffix
+    if _USE_SECONDARY_IG:
+        secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + args.gcp_suffix
     try:
         create_health_check(gcp, health_check_name)
         create_health_check_firewall_rule(gcp, firewall_name)
@@ -977,9 +993,10 @@ try:
         patch_backend_instances(gcp, backend_service, [instance_group])
         same_zone_instance_group = add_instance_group(
             gcp, args.zone, same_zone_instance_group_name, _INSTANCE_GROUP_SIZE)
-        secondary_zone_instance_group = add_instance_group(
-            gcp, args.secondary_zone, secondary_zone_instance_group_name,
-            _INSTANCE_GROUP_SIZE)
+        if _USE_SECONDARY_IG:
+            secondary_zone_instance_group = add_instance_group(
+                gcp, args.secondary_zone, secondary_zone_instance_group_name,
+                _INSTANCE_GROUP_SIZE)
     except googleapiclient.errors.HttpError as http_error:
         if args.tolerate_gcp_errors:
             logger.warning(
@@ -1020,14 +1037,16 @@ try:
                     same_zone_instance_group_name, result['selfLink'],
                     args.zone)
                 gcp.instance_groups.append(same_zone_instance_group)
-                result = compute.instanceGroups().get(
-                    project=args.project_id,
-                    zone=args.secondary_zone,
-                    instanceGroup=secondary_zone_instance_group_name).execute()
-                secondary_zone_instance_group = InstanceGroup(
-                    secondary_zone_instance_group_name, result['selfLink'],
-                    args.secondary_zone)
-                gcp.instance_groups.append(secondary_zone_instance_group)
+                if _USE_SECONDARY_IG:
+                    result = compute.instanceGroups().get(
+                        project=args.project_id,
+                        zone=args.secondary_zone,
+                        instanceGroup=secondary_zone_instance_group_name
+                    ).execute()
+                    secondary_zone_instance_group = InstanceGroup(
+                        secondary_zone_instance_group_name, result['selfLink'],
+                        args.secondary_zone)
+                    gcp.instance_groups.append(secondary_zone_instance_group)
             if not gcp.health_check:
                 result = compute.healthChecks().get(
                     project=args.project_id,
