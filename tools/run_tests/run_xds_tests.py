@@ -97,7 +97,7 @@ argp.add_argument('--secondary_zone',
 argp.add_argument('--qps', default=10, type=int, help='Client QPS')
 argp.add_argument(
     '--wait_for_backend_sec',
-    default=600,
+    default=1200,
     type=int,
     help='Time limit for waiting for created backend services to report '
     'healthy when launching or updated GCP resources')
