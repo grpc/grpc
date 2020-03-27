@@ -192,6 +192,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if uses_polling:
         if rbe_linux_only_uses_blackhole_ipv6_address:
             blackhole_address_setting = "can_create"
+            tags += ["no_windows", "no_mac"]
         else:
             blackhole_address_setting = "disallowed"
 
