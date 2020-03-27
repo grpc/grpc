@@ -780,8 +780,8 @@ _LANGUAGES = {
 
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
-    'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'go',
-    'ruby', 'python', 'dart', 'pythonasyncio'
+    'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'kotlin', 
+    'go', 'ruby', 'python', 'dart', 'pythonasyncio'
 ]
 
 _TEST_CASES = [
