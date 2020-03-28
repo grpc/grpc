@@ -39,7 +39,9 @@ logger = logging.getLogger()
 console_handler = logging.StreamHandler()
 formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
 console_handler.setFormatter(formatter)
+logger.handlers = []
 logger.addHandler(console_handler)
+logger.setLevel(logging.WARNING)
 
 _TEST_CASES = [
     'backends_restart',
@@ -1080,12 +1082,14 @@ try:
                                qps=args.qps))
 
     test_results = {}
+    failed_tests = []
     for test_case in args.test_case:
         result = jobset.JobResult()
         log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         test_log_file = open(os.path.join(log_dir, _SPONGE_LOG_NAME), 'w+')
+        client_process = None
         try:
             client_process = subprocess.Popen(client_cmd,
                                               env=client_env,
@@ -1123,6 +1127,8 @@ try:
             result.state = 'PASSED'
             result.returncode = 0
         except Exception as e:
+            logger.error('Test case %s failed: %s', test_case, e)
+            failed_tests.append(test_case)
             result.state = 'FAILED'
             result.message = str(e)
         finally:
@@ -1139,6 +1145,9 @@ try:
                                                       _SPONGE_XML_NAME),
                                          suite_name='xds_tests',
                                          multi_target=True)
+    if failed_tests:
+        logger.error('Test case(s) %s failed', failed_tests)
+        sys.exit(1)
 finally:
     if not args.keep_gcp_resources:
         logger.info('Cleaning up GCP resources. This may take some time.')
