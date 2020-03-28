@@ -39,7 +39,9 @@ logger = logging.getLogger()
 console_handler = logging.StreamHandler()
 formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
 console_handler.setFormatter(formatter)
+logger.handlers = []
 logger.addHandler(console_handler)
+logger.setLevel(logging.WARNING)
 
 _TEST_CASES = [
     'backends_restart',
