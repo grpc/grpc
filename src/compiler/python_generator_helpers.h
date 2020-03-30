@@ -142,7 +142,14 @@ inline void Split(const grpc::string& s, char delim,
   while (current <= s.end()) {
     auto next = std::find(current, s.end(), delim);
     append_to->emplace_back(current, next);
+#if _ITERATOR_DEBUG_LEVEL >= 1
+    if (next == s.end()) {
+      break;
+    }
     current = next + 1;
+#else
+    current = next + 1;
+#endif
   }
 }
 
