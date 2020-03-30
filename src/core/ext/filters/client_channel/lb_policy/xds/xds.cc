@@ -496,6 +496,16 @@ XdsLb::PickResult XdsLb::LocalityPicker::Pick(PickArgs args) {
     result.type = PickResult::PICK_COMPLETE;
     return result;
   }
+  // If we didn't drop, we better have some localities to pick from.
+  if (pickers_.empty()) {  // Should never happen.
+    PickResult result;
+    result.type = PickResult::PICK_FAILED;
+    result.error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "xds picker not given any localities"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+    return result;
+  }
   // Generate a random number in [0, total weight).
   const uint32_t key = rand() % pickers_[pickers_.size() - 1].first;
   // Forward pick to whichever locality maps to the range in which the
@@ -570,7 +580,7 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
     }
     // If the balancer tells us to drop all the calls, we should exit fallback
     // mode immediately.
-    if (update.drop_all) xds_policy_->MaybeExitFallbackMode();
+    if (update.drop_config->drop_all()) xds_policy_->MaybeExitFallbackMode();
     // Update the drop config.
     const bool drop_config_changed =
         xds_policy_->drop_config_ == nullptr ||
@@ -919,6 +929,15 @@ void XdsLb::UpdatePrioritiesLocked(bool update_locality_stats) {
 void XdsLb::UpdateXdsPickerLocked() {
   // If we are in fallback mode, don't generate an xds picker from localities.
   if (fallback_policy_ != nullptr) return;
+  // If we're dropping all calls, report READY, even though we won't
+  // have a selected priority.
+  if (drop_config_ != nullptr && drop_config_->drop_all()) {
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY,
+        absl::make_unique<LocalityPicker>(this, LocalityPicker::PickerList{}));
+    return;
+  }
+  // If we don't have a selected priority, report TRANSIENT_FAILURE.
   if (current_priority_ == UINT32_MAX) {
     if (fallback_policy_ == nullptr) {
       grpc_error* error = grpc_error_set_int(
