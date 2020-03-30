@@ -123,10 +123,7 @@ class EdsLb : public LoadBalancingPolicy {
   // A picker that handles drops.
   class DropPicker : public SubchannelPicker {
    public:
-    explicit DropPicker(EdsLb* eds_policy)
-        : drop_config_(eds_policy->drop_config_),
-          drop_stats_(eds_policy->drop_stats_),
-          child_picker_(eds_policy->child_picker_) {}
+    explicit DropPicker(EdsLb* eds_policy);
 
     PickResult Pick(PickArgs args) override;
 
@@ -280,6 +277,16 @@ class EdsLb : public LoadBalancingPolicy {
 // EdsLb::DropPicker
 //
 
+EdsLb::DropPicker::DropPicker(EdsLb* eds_policy)
+    : drop_config_(eds_policy->drop_config_),
+      drop_stats_(eds_policy->drop_stats_),
+      child_picker_(eds_policy->child_picker_) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+    gpr_log(GPR_INFO, "[edslb %p] constructed new drop picker %p", eds_policy,
+            this);
+  }
+}
+
 EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
   // Handle drop.
   const std::string* drop_category;
@@ -287,6 +294,16 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
     if (drop_stats_ != nullptr) drop_stats_->AddCallDropped(*drop_category);
     PickResult result;
     result.type = PickResult::PICK_COMPLETE;
+    return result;
+  }
+  // If we're not dropping all calls, we should always have a child picker.
+  if (child_picker_ == nullptr) {  // Should never happen.
+    PickResult result;
+    result.type = PickResult::PICK_FAILED;
+    result.error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "eds drop picker not given any child picker"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     return result;
   }
   // Not dropping, so delegate to child's picker.
@@ -855,12 +872,20 @@ OrphanablePtr<LoadBalancingPolicy> EdsLb::CreateChildPolicyLocked(
 }
 
 void EdsLb::MaybeUpdateDropPickerLocked() {
-  if (child_picker_ == nullptr || fallback_policy_ != nullptr) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] constructing new drop picker", this);
+  // If we are in fallback mode, don't override the picker.
+  if (fallback_policy_ != nullptr) return;
+  // If we're dropping all calls, report READY, regardless of what (or
+  // whether) the child has reported.
+  if (drop_config_ != nullptr && drop_config_->drop_all()) {
+    channel_control_helper()->UpdateState(GRPC_CHANNEL_READY,
+                                          absl::make_unique<DropPicker>(this));
+    return;
   }
-  channel_control_helper()->UpdateState(child_state_,
-                                        absl::make_unique<DropPicker>(this));
+  // Update only if we have a child picker.
+  if (child_picker_ != nullptr) {
+    channel_control_helper()->UpdateState(child_state_,
+                                          absl::make_unique<DropPicker>(this));
+  }
 }
 
 //

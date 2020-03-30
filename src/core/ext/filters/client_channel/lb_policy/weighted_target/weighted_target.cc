@@ -175,7 +175,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
     RefCountedPtr<ChildPickerWrapper> picker_wrapper_;
-    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
+    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
     bool seen_failure_since_ready_ = false;
 
     // States for delayed removal.

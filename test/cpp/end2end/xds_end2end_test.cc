@@ -1513,7 +1513,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"eds_experimental\":{\n"
+      "    { \"xds_experimental\":{\n"
       "      \"lrsLoadReportingServerName\": \"\"\n"
       "    } }\n"
       "  ]\n"
@@ -1522,7 +1522,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"eds_experimental\":{\n"
+      "    { \"xds_experimental\":{\n"
       "    } }\n"
       "  ]\n"
       "}";
@@ -1557,7 +1557,7 @@ TEST_P(BasicTest, Vanilla) {
   }
   // Check LB policy name for the channel.
   EXPECT_EQ(
-      (GetParam().use_xds_resolver() ? "cds_experimental" : "eds_experimental"),
+      (GetParam().use_xds_resolver() ? "cds_experimental" : "xds_experimental"),
       channel_->GetLoadBalancingPolicyName());
 }
 

@@ -178,7 +178,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
-    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
+    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
     RefCountedPtr<RefCountedPicker> picker_wrapper_;
 
     // States for delayed removal.
@@ -329,13 +329,14 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
               "config update",
               this);
     }
-    if (child->connectivity_state() == GRPC_CHANNEL_READY) {
-      // If it's still READY, this is just a picker update, so pass it
-      // up to our parent.
-      channel_control_helper()->UpdateState(GRPC_CHANNEL_READY,
+    if (child->connectivity_state() == GRPC_CHANNEL_READY ||
+        child->connectivity_state() == GRPC_CHANNEL_IDLE) {
+      // If it's still READY or IDLE, we stick with this child, so pass
+      // the new picker up to our parent.
+      channel_control_helper()->UpdateState(child->connectivity_state(),
                                             child->GetPicker());
     } else {
-      // If it's no longer READY, we should stop using it.
+      // If it's no longer READY or IDLE, we should stop using it.
       // We already started trying other priorities as a result of the
       // update, but calling TryNextPriorityLocked() ensures that we will
       // properly select between CONNECTING and TRANSIENT_FAILURE as the
@@ -424,7 +425,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
       SelectPriorityLocked(priority);
       return;
     }
-    // Child is not READY.
+    // Child is not READY or IDLE.
     // If its failover timer is still pending, give it time to fire.
     if (child->failover_timer_callback_pending()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
@@ -571,7 +572,10 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(
 }
 
 void PriorityLb::ChildPriority::ExitIdleLocked() {
-  if (connectivity_state_ == GRPC_CHANNEL_IDLE) StartFailoverTimerLocked();
+  if (connectivity_state_ == GRPC_CHANNEL_IDLE &&
+      !failover_timer_callback_pending_) {
+    StartFailoverTimerLocked();
+  }
   child_policy_->ExitIdleLocked();
 }
 
