@@ -197,9 +197,9 @@ class EdsLb : public LoadBalancingPolicy {
       const grpc_channel_args* args);
   void MaybeExitFallbackMode();
 
+  // Caller must ensure that config_ is set before calling.
   const StringView GetEdsResourceName() const {
     if (xds_client_from_channel_ == nullptr) return server_name_;
-    if (config_ == nullptr) return "";
     if (!config_->eds_service_name().empty()) {
       return config_->eds_service_name();
     }
@@ -208,6 +208,7 @@ class EdsLb : public LoadBalancingPolicy {
 
   // Returns a pair containing the cluster and eds_service_name to use
   // for LRS load reporting.
+  // Caller must ensure that config_ is set before calling.
   std::pair<StringView, StringView> GetLrsClusterKey() const {
     if (xds_client_from_channel_ == nullptr) return {server_name_, nullptr};
     return {config_->cluster_name(), config_->eds_service_name()};
@@ -318,6 +319,10 @@ void EdsLb::Helper::UpdateState(grpc_connectivity_state state,
     eds_policy_->MaybeCancelFallbackAtStartupChecks();
     eds_policy_->MaybeExitFallbackMode();
   }
+  // TODO(roth): If the child reports TRANSIENT_FAILURE and the
+  // fallback-at-startup checks are pending, we should probably go into
+  // fallback mode immediately (cancelling the fallback-at-startup timer
+  // if needed).
   // Wrap the picker in a DropPicker and pass it up.
   eds_policy_->MaybeUpdateDropPickerLocked();
 }
@@ -490,16 +495,18 @@ void EdsLb::ShutdownLocked() {
   }
   drop_stats_.reset();
   // Cancel the endpoint watch here instead of in our dtor if we are using the
-  // XdsResolver, because the watcher holds a ref to us and we might not be
-  // destroying the Xds client leading to a situation where the Xds lb policy is
+  // xds resolver, because the watcher holds a ref to us and we might not be
+  // destroying the XdsClient, leading to a situation where this LB policy is
   // never destroyed.
   if (xds_client_from_channel_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-      gpr_log(GPR_INFO, "[edslb %p] cancelling xds watch for %s", this,
-              std::string(GetEdsResourceName()).c_str());
+    if (config_ != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+        gpr_log(GPR_INFO, "[edslb %p] cancelling xds watch for %s", this,
+                std::string(GetEdsResourceName()).c_str());
+      }
+      xds_client()->CancelEndpointDataWatch(GetEdsResourceName(),
+                                            endpoint_watcher_);
     }
-    xds_client()->CancelEndpointDataWatch(GetEdsResourceName(),
-                                          endpoint_watcher_);
     xds_client_from_channel_.reset();
   }
   xds_client_.reset();
@@ -714,7 +721,7 @@ EdsLb::CreateChildPolicyConfigLocked() {
         const auto key = GetLrsClusterKey();
         Json::Object lrs_config = {
             {"clusterName", std::string(key.first)},
-            {"locality", locality_name_json},
+            {"locality", std::move(locality_name_json)},
             {"lrsLoadReportingServerName",
              config_->lrs_load_reporting_server_name().value()},
             {"childPolicy", config_->endpoint_picking_policy()},
@@ -983,13 +990,14 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
     std::string cluster_name;
     if (name_ == kEds) {
       it = json.object_value().find("clusterName");
-      if (it != json.object_value().end()) {
-        if (it->second.type() != Json::Type::STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:clusterName error:type should be string"));
-        } else {
-          cluster_name = it->second.string_value();
-        }
+      if (it == json.object_value().end()) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:clusterName error:required field missing"));
+      } else if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:clusterName error:type should be string"));
+      } else {
+        cluster_name = it->second.string_value();
       }
     } else {
       // For xds policy, this field does not exist in the config, so it

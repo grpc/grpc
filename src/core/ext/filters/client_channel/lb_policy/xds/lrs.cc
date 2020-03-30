@@ -403,23 +403,21 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:clusterName error:required field missing"));
+    } else if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:clusterName error:type should be string"));
     } else {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:clusterName error:type should be string"));
-      } else {
-        cluster_name = it->second.string_value();
-      }
+      cluster_name = it->second.string_value();
     }
     // EDS service name.
-    const char* eds_service_name = nullptr;
+    std::string eds_service_name;
     it = json.object_value().find("edsServiceName");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:edsServiceName error:type should be string"));
       } else {
-        eds_service_name = it->second.string_value().c_str();
+        eds_service_name = it->second.string_value();
       }
     }
     // Locality.
@@ -442,13 +440,11 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:lrsLoadReportingServerName error:required field missing"));
+    } else if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:lrsLoadReportingServerName error:type should be string"));
     } else {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be string"));
-      } else {
-        lrs_load_reporting_server_name = it->second.string_value();
-      }
+      lrs_load_reporting_server_name = it->second.string_value();
     }
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -457,8 +453,8 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
     }
     return MakeRefCounted<LrsLbConfig>(
         std::move(child_policy), std::move(cluster_name),
-        eds_service_name == nullptr ? "" : eds_service_name,
-        std::move(lrs_load_reporting_server_name), std::move(locality_name));
+        std::move(eds_service_name), std::move(lrs_load_reporting_server_name),
+        std::move(locality_name));
   }
 
  private:
