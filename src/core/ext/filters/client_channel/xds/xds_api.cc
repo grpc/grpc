@@ -1310,7 +1310,7 @@ grpc_error* LocalityParse(
 
 grpc_error* DropParseAndAppend(
     const envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload* drop_overload,
-    XdsApi::DropConfig* drop_config, bool* drop_all) {
+    XdsApi::DropConfig* drop_config) {
   // Get the category.
   upb_strview category =
       envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_category(
@@ -1341,7 +1341,6 @@ grpc_error* DropParseAndAppend(
   }
   // Cap numerator to 1000000.
   numerator = GPR_MIN(numerator, 1000000);
-  if (numerator == 1000000) *drop_all = true;
   drop_config->AddCategory(std::string(category.data, category.size),
                            numerator);
   return GRPC_ERROR_NONE;
@@ -1417,13 +1416,13 @@ grpc_error* EdsResponseParse(
                   policy, &drop_size);
       for (size_t j = 0; j < drop_size; ++j) {
         grpc_error* error =
-            DropParseAndAppend(drop_overload[j], eds_update.drop_config.get(),
-                               &eds_update.drop_all);
+            DropParseAndAppend(drop_overload[j], eds_update.drop_config.get());
         if (error != GRPC_ERROR_NONE) return error;
       }
     }
     // Validate the update content.
-    if (eds_update.priority_list_update.empty() && !eds_update.drop_all) {
+    if (eds_update.priority_list_update.empty() &&
+        !eds_update.drop_config->drop_all()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "EDS response doesn't contain any valid "
           "locality but doesn't require to drop all calls.");

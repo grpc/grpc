@@ -3024,9 +3024,7 @@ TEST_P(DropTest, DropAll) {
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 1000000;
   // The ADS response contains two drop categories.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
-  });
+  AdsServiceImpl::EdsResourceArgs args;
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancers_[0]->ads_service()->SetEdsResource(
@@ -3035,8 +3033,8 @@ TEST_P(DropTest, DropAll) {
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
     const Status status = SendRpc(&response);
-    EXPECT_TRUE(!status.ok() && status.error_message() ==
-                                    "Call dropped by load balancing policy");
+    EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
   }
 }
 
