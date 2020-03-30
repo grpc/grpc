@@ -1074,7 +1074,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
               " drop categories received (drop_all=%d)",
               xds_client(), eds_update.priority_list_update.size(),
               eds_update.drop_config->drop_category_list().size(),
-              eds_update.drop_all);
+              eds_update.drop_config->drop_all());
       for (size_t priority = 0;
            priority < eds_update.priority_list_update.size(); ++priority) {
         const auto* locality_map_update = eds_update.priority_list_update.Find(

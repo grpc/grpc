@@ -77,7 +77,7 @@ cdef _actual_aio_initialization():
         _GRPC_ASYNCIO_ENGINE,
         _default_asyncio_engine(),
     )
-    _LOGGER.info('Using %s as I/O engine', _global_aio_state.engine)
+    _LOGGER.debug('Using %s as I/O engine', _global_aio_state.engine)
 
     # Initializes the process-level state accordingly
     if _global_aio_state.engine is AsyncIOEngine.CUSTOM_IO_MANAGER:

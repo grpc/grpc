@@ -372,7 +372,7 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
     }
     // If the balancer tells us to drop all the calls, we should exit fallback
     // mode immediately.
-    if (update.drop_all) eds_policy_->MaybeExitFallbackMode();
+    if (update.drop_config->drop_all()) eds_policy_->MaybeExitFallbackMode();
     // Update the drop config.
     const bool drop_config_changed =
         eds_policy_->drop_config_ == nullptr ||

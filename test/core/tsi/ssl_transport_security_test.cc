@@ -659,10 +659,14 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
 
 void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_odd_buffer_size");
-#ifndef MEMORY_SANITIZER
+#if !defined(MEMORY_SANITIZER) && !defined(GPR_ARCH_32) && !defined(__APPLE__)
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
 #else
-  // avoid test being extremely slow under MSAN
+  // 1. avoid test being extremely slow under MSAN
+  // 2. on 32-bit, the test is much slower (probably due to lack of boringssl
+  // asm optimizations) so we only run a subset of tests to avoid timeout
+  // 3. on Mac OS, we have slower testing machines so we only run a subset
+  // of tests to avoid timeout
   const size_t odd_sizes[] = {1025};
 #endif
   const size_t size = sizeof(odd_sizes) / sizeof(size_t);
