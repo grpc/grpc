@@ -62,16 +62,20 @@ namespace {
 // max-threads set) to the server builder.
 #define DEFAULT_MAX_SYNC_SERVER_THREADS INT_MAX
 
-// How many callback requests of each method should we pre-register at start
-#define DEFAULT_CALLBACK_REQS_PER_METHOD 512
-
 // What is the (soft) limit for outstanding requests in the server
 #define SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING 30000
+
+// How many callback requests of each method should we pre-register at start
+#define DEFAULT_CALLBACK_REQS_PER_METHOD 128
 
 // If the number of unmatched requests for a method drops below this amount, try
 // to allocate extra unless it pushes the total number of callbacks above the
 // soft maximum
-#define SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD 128
+#define SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD 32
+
+// Similar to the above, but only for unimplemented request RPCs
+#define DEFAULT_UNIMPLEMENTED_CALLBACK_REQS 2
+#define SOFT_MINIMUM_SPARE_UNIMPLEMENTED_CALLBACK_REQS 1
 
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
@@ -670,9 +674,11 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 
       // If this was the last request in the list or it is below the soft
       // minimum and there are spare requests available, set up a new one.
-      if (count == 0 || (count < SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD &&
-                         req_->server_->callback_reqs_outstanding_ <
-                             SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
+      if (count == 0 ||
+          (count < req_->server_->callback_unmatched_reqs_soft_minimum_
+                       [req_->method_index_] &&
+           req_->server_->callback_reqs_outstanding_ <
+               SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
         auto* new_req = new CallbackRequest<ServerContextType>(
             req_->server_, req_->method_index_, req_->method_,
             req_->method_tag_);
@@ -1141,6 +1147,8 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
     } else {
       // a callback method. Register at least some callback requests
       callback_unmatched_reqs_count_.push_back(0);
+      callback_unmatched_reqs_soft_minimum_.push_back(
+          SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD);
       auto method_index = callback_unmatched_reqs_count_.size() - 1;
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
@@ -1176,6 +1184,14 @@ void Server::RegisterAsyncGenericService(grpc::AsyncGenericService* service) {
 
 void Server::RegisterCallbackGenericService(
     grpc::CallbackGenericService* service) {
+  InternalRegisterCallbackGenericService(
+      service, DEFAULT_CALLBACK_REQS_PER_METHOD,
+      SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD);
+}
+
+void Server::InternalRegisterCallbackGenericService(
+    grpc::CallbackGenericService* service, int starting_request_count,
+    int soft_minimum_spare_request_count) {
   GPR_ASSERT(
       service->server_ == nullptr &&
       "Can only register a callback generic service against one server.");
@@ -1184,9 +1200,11 @@ void Server::RegisterCallbackGenericService(
   generic_handler_.reset(service->Handler());
 
   callback_unmatched_reqs_count_.push_back(0);
+  callback_unmatched_reqs_soft_minimum_.push_back(
+      soft_minimum_spare_request_count);
   auto method_index = callback_unmatched_reqs_count_.size() - 1;
   // TODO(vjpai): Register these dynamically based on need
-  for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
+  for (int i = 0; i < starting_request_count; i++) {
     callback_reqs_to_start_.push_back(
         new CallbackRequest<grpc::GenericCallbackServerContext>(
             this, method_index, nullptr, nullptr));
@@ -1238,7 +1256,9 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // creator
   if (!callback_reqs_to_start_.empty() && !has_callback_generic_service_) {
     unimplemented_service_.reset(new grpc::CallbackGenericService);
-    RegisterCallbackGenericService(unimplemented_service_.get());
+    InternalRegisterCallbackGenericService(
+        unimplemented_service_.get(), DEFAULT_UNIMPLEMENTED_CALLBACK_REQS,
+        SOFT_MINIMUM_SPARE_UNIMPLEMENTED_CALLBACK_REQS);
   }
 
 #ifndef NDEBUG

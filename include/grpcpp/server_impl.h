@@ -248,6 +248,16 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   /// Server instance.
   void RegisterCallbackGenericService(
       grpc::CallbackGenericService* service) override;
+
+  // A non-virtual version to support both explicitly-requested instantiations
+  // of CallbackGenericService that came from the ServerBuilder as well as
+  // implicit instantiations to support unimplemented requests and which are
+  // generated internally. The latter should have a smaller starting request
+  // count since they're not performance-critical.
+  void InternalRegisterCallbackGenericService(
+      grpc::CallbackGenericService* service, int starting_request_count,
+      int soft_minimum_spare_request_count);
+
 #else
   /// NOTE: class experimental_registration_type is not part of the public API
   /// of this class
@@ -269,6 +279,10 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   /// TODO(vjpai): Mark this override when experimental type above is deleted
   void RegisterCallbackGenericService(
       grpc::experimental::CallbackGenericService* service);
+
+  void InternalRegisterCallbackGenericService(
+      grpc::experimental::CallbackGenericService* service,
+      int starting_request_count, int soft_minimum_spare_request_count);
 
   /// NOTE: The function experimental_registration() is not stable public API.
   /// It is a view to the experimental components of this class. It may be
@@ -321,6 +335,10 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   //       actually only want to extend the vector before the threaded use
   //       starts, but this is still a limitation.
   std::vector<gpr_atm> callback_unmatched_reqs_count_;
+
+  // Soft minimum number of spare requests for each method type, set up when
+  // building server.
+  std::vector<int> callback_unmatched_reqs_soft_minimum_;
 
   // List of callback requests to start when server actually starts.
   std::list<CallbackRequestBase*> callback_reqs_to_start_;
