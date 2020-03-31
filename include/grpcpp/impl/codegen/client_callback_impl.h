@@ -267,6 +267,7 @@ class ClientBidiReactor {
   /// StartWritesDone that indicates that there will be no more write ops.
   /// The number of RemoveHold calls must match the total number of AddHold
   /// calls plus the number of holds added by AddMultipleHolds.
+  /// The argument to AddMultipleHolds must be positive.
   void AddHold() { AddMultipleHolds(1); }
   void AddMultipleHolds(int holds) { stream_->AddHold(holds); }
   void RemoveHold() { stream_->RemoveHold(); }
