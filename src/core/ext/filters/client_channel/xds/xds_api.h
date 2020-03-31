@@ -46,8 +46,7 @@ class XdsApi {
   struct RdsRoute {
     std::string service;
     std::string method;
-    std::string action_type;
-    std::string action_name;
+    std::string cluster_name;
   };
 
   struct RdsUpdate {

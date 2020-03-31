@@ -218,13 +218,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
-  char* CreateServiceConfigActionCluster(
-      const std::string& cluster_name, const bool without_comma = false) const;
-  char* CreateServiceConfigRoute(const std::string& prefix,
-                                 const std::string& service,
-                                 const std::string& method,
-                                 const bool without_comma = false) const;
-
   grpc_error* CreateServiceConfig(
       const XdsApi::RdsUpdate& rds_update,
       RefCountedPtr<ServiceConfig>* service_config) const;
@@ -254,7 +247,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   OrphanablePtr<ChannelState> chand_;
 
   std::string route_config_name_;
-  std::string cluster_name_;
   // One entry for each watched CDS resource.
   std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
   // One entry for each watched EDS resource.

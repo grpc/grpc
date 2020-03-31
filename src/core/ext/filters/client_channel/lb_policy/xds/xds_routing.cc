@@ -22,6 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 
@@ -52,24 +53,26 @@ class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
   struct ChildConfig {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
   };
-
-  using Matcher = std::pair<std::string, std::string>;
-  using RouteVector = std::vector<std::pair<Matcher, std::string>>;
+  struct Matcher {
+    std::string service;
+    std::string method;
+  };
+  using RouteTable = std::vector<std::pair<Matcher, std::string>>;
   using ActionMap = std::map<std::string, ChildConfig>;
 
-  explicit XdsRoutingLbConfig(ActionMap action_map, RouteVector route_vector)
+  XdsRoutingLbConfig(ActionMap action_map, RouteTable route_table)
       : action_map_(std::move(action_map)),
-        route_vector_(std::move(route_vector)) {}
+        route_table_(std::move(route_table)) {}
 
   const char* name() const override { return kXdsRouting; }
 
   const ActionMap& action_map() const { return action_map_; }
 
-  const RouteVector& route_vector() const { return route_vector_; }
+  const RouteTable& route_table() const { return route_table_; }
 
  private:
   ActionMap action_map_;
-  RouteVector route_vector_;
+  RouteTable route_table_;
 };
 
 // xds_routing LB policy.
@@ -87,39 +90,37 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   // A simple wrapper for ref-counting a picker from the child policy.
   class ChildPickerWrapper : public RefCounted<ChildPickerWrapper> {
    public:
-    explicit ChildPickerWrapper(const std::string& name,
-                                std::unique_ptr<SubchannelPicker> picker)
-        : name_(name), picker_(std::move(picker)) {}
+    ChildPickerWrapper(std::string name,
+                       std::unique_ptr<SubchannelPicker> picker)
+        : name_(std::move(name)), picker_(std::move(picker)) {}
     PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
 
-    std::string name() { return name_; }
+    const std::string& name() { return name_; }
 
    private:
     std::string name_;
     std::unique_ptr<SubchannelPicker> picker_;
   };
 
-  // Picks a child using stateless WRR and then delegates to that
+  // Picks a child using prefix or path matching and then delegates to that
   // child's picker.
-  class XdsRoutingPicker : public SubchannelPicker {
+  class RoutePicker : public SubchannelPicker {
    public:
-    // Maintains a xds_routing list of pickers from each child that is in
-    // ready state. The first element in the pair represents the end of a
-    // range proportional to the child's weight. The start of the range
-    // is the previous value in the vector and is 0 for the first element.
-    using PickerList = InlinedVector<RefCountedPtr<ChildPickerWrapper>, 1>;
+    struct Route {
+      XdsRoutingLbConfig::Matcher matcher;
+      RefCountedPtr<ChildPickerWrapper> picker;
+    };
 
-    using PickerMap = std::map<std::string, RefCountedPtr<ChildPickerWrapper>>;
+    // Maintains an ordered xds route table as provided by RDS response.
+    using RouteTable = std::vector<Route>;
 
-    XdsRoutingPicker(RefCountedPtr<XdsRoutingLb> parent, PickerMap pickers)
-        : parent_(std::move(parent)), pickers_(std::move(pickers)) {}
-    ~XdsRoutingPicker() { parent_.reset(DEBUG_LOCATION, "XdsRoutingPicker"); }
+    RoutePicker(RouteTable route_table)
+        : route_table_(std::move(route_table)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
-    RefCountedPtr<XdsRoutingLb> parent_;
-    PickerMap pickers_;
+    RouteTable route_table_;
   };
 
   // Each XdsRoutingChild holds a ref to its parent XdsRoutingLb.
@@ -144,8 +145,6 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     RefCountedPtr<ChildPickerWrapper> picker_wrapper() const {
       return picker_wrapper_;
     }
-
-    std::string name() const { return name_; }
 
    private:
     class Helper : public ChannelControlHelper {
@@ -211,35 +210,29 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 };
 
 //
-// XdsRoutingLb::XdsRoutingPicker
+// XdsRoutingLb::RoutePicker
 //
 
-XdsRoutingLb::PickResult XdsRoutingLb::XdsRoutingPicker::Pick(PickArgs args) {
-  std::string path;
+XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
+  absl::string_view path;
   for (const auto& p : *(args.initial_metadata)) {
-    if (memcmp(p.first.data(), ":path", static_cast<int>(p.first.size())) ==
-        0) {
-      path = std::string(p.second.data(), static_cast<int>(p.second.size()));
+    if (p.first == ":path") {
+      path = p.second;
       break;
     }
   }
-  std::vector<std::string> v = absl::StrSplit(path, '/');
-  GPR_DEBUG_ASSERT(v.size() == 3);
-  std::string service = v[1];
-  std::string method = v[2];
-  for (int i = 0; i < parent_->config_->route_vector().size(); ++i) {
-    if (service == parent_->config_->route_vector()[i].first.first &&
-        ("" == parent_->config_->route_vector()[i].first.second ||
-         method == parent_->config_->route_vector()[i].first.second)) {
-      auto picker = pickers_.find(parent_->config_->route_vector()[i].second);
-      if (picker != pickers_.end()) {
-        gpr_log(GPR_INFO, "XdsRouting Picked: %s for path %s",
-                picker->first.c_str(), path.c_str());
-        return picker->second.get()->Pick(args);
+  std::vector<absl::string_view> v = absl::StrSplit(path.substr(1), '/');
+  for (int i = 0; i < route_table_.size(); ++i) {
+    if (v[0] == route_table_[i].matcher.service &&
+        ("" == route_table_[i].matcher.method ||
+         v[1] == route_table_[i].matcher.method)) {
+      auto picker = route_table_[i].picker;
+      if (picker != nullptr) {
+        return picker.get()->Pick(args);
       }
     }
   }
-  return pickers_.begin()->second.get()->Pick(args);
+  return route_table_[route_table_.size() - 1].picker.get()->Pick(args);
 }
 
 //
@@ -313,11 +306,7 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
 }
 
 void XdsRoutingLb::UpdateStateLocked() {
-  // Construct a new picker which maintains a map of all child pickers
-  // that are ready. Each child is represented by a portion of the range
-  // proportional to its weight, such that the total range is the sum of the
-  // weights of all children.
-  XdsRoutingPicker::PickerMap picker_map;
+  std::map<std::string, RefCountedPtr<ChildPickerWrapper>> picker_map;
   // Also count the number of children in each state, to determine the
   // overall state.
   size_t num_connecting = 0;
@@ -367,10 +356,19 @@ void XdsRoutingLb::UpdateStateLocked() {
             ConnectivityStateName(connectivity_state));
   }
   std::unique_ptr<SubchannelPicker> picker;
+  RoutePicker::RouteTable route_table;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = absl::make_unique<XdsRoutingPicker>(
-          Ref(DEBUG_LOCATION, "XdsRoutingPicker"), std::move(picker_map));
+      for (int i = 0; i < config_->route_table().size(); ++i) {
+        RoutePicker::Route route;
+        route.matcher = config_->route_table()[i].first;
+        auto child_picker = picker_map.find(config_->route_table()[i].second);
+        if (child_picker != picker_map.end()) {
+          route.picker = child_picker->second;
+        }
+        route_table.push_back(std::move(route));
+      }
+      picker = absl::make_unique<RoutePicker>(std::move(route_table));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
@@ -460,6 +458,7 @@ void XdsRoutingLb::XdsRoutingChild::UpdateLocked(
   // Update child weight.
   // Reactivate if needed.
   if (delayed_removal_timer_callback_pending_) {
+    delayed_removal_timer_callback_pending_ = false;
     grpc_timer_cancel(&delayed_removal_timer_);
   }
   // Create child policy if needed.
@@ -530,7 +529,6 @@ void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimerLocked(
 RefCountedPtr<SubchannelInterface>
 XdsRoutingLb::XdsRoutingChild::Helper::CreateSubchannel(
     const grpc_channel_args& args) {
-  gpr_log(GPR_INFO, "XdsRoutingChild::Helper::CreateSubchannel");
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return nullptr;
   return xds_routing_child_->xds_routing_policy_->channel_control_helper()
       ->CreateSubchannel(args);
@@ -538,12 +536,15 @@ XdsRoutingLb::XdsRoutingChild::Helper::CreateSubchannel(
 
 void XdsRoutingLb::XdsRoutingChild::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
-  gpr_log(GPR_INFO, "XdsRoutingChild::Helper::UpdateState %s",
-          xds_routing_child_->name().c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "XdsRoutingChild::Helper::UpdateState child %s, state %d, piker %p",
+            xds_routing_child_->name_.c_str(), state, picker.get());
+  }
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
   // Cache the picker in the XdsRoutingChild.
   xds_routing_child_->picker_wrapper_ = MakeRefCounted<ChildPickerWrapper>(
-      xds_routing_child_->name(), std::move(picker));
+      xds_routing_child_->name_, std::move(picker));
   // Decide what state to report for aggregation purposes.
   // If we haven't seen a failure since the last time we were in state
   // READY, then we report the state change as-is.  However, once we do see
@@ -607,87 +608,67 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:actions error:required field not present"));
-    } else if (it->second.type() != Json::Type::ARRAY) {
+    } else if (it->second.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:actions error:type should be array"));
+          "field:actions error:type should be object"));
     } else {
-      for (const auto& p : it->second.array_value()) {
-        auto it_cds = p.object_value().find("cds");
-        auto it_weighted_target = p.object_value().find("weighted_target");
-        if (it_cds == p.object_value().end() &&
-            it_weighted_target == p.object_value().end()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:actions error: each action needs to be either cds or "
-              "weighted target"));
-        }
-        auto it_name =
-            (it_cds == p.object_value().end() ? it_weighted_target : it_cds);
-        auto it_child_policy = p.object_value().find("child_policy");
-        if (it_child_policy == p.object_value().end()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:actions error: each action needs child policies"));
-        }
+      for (const auto& p : it->second.object_value()) {
         XdsRoutingLbConfig::ChildConfig child_config;
         std::vector<grpc_error*> child_errors =
-            ParseChildConfig(it_child_policy->second, &child_config);
+            ParseChildConfig(p.second, &child_config);
         if (!child_errors.empty()) {
           // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
           // string is not static in this case.
           grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:actions name:",
-                           it_name->second.string_value())
-                  .c_str());
+              absl::StrCat("field:actions name:", p.first).c_str());
           for (grpc_error* child_error : child_errors) {
             error = grpc_error_add_child(error, child_error);
           }
           error_list.push_back(error);
         } else {
-          action_map[it_name->second.string_value()] = std::move(child_config);
+          action_map[p.first] = std::move(child_config);
         }
       }
     }
-    XdsRoutingLbConfig::RouteVector route_vector;
-    auto route_iter = json.object_value().find("routes");
-    if (route_iter == json.object_value().end()) {
-      gpr_log(GPR_INFO, "No routes specified");
-    } else if (route_iter->second.type() != Json::Type::ARRAY) {
+    XdsRoutingLbConfig::RouteTable route_table;
+    it = json.object_value().find("routes");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:routes error:required field not present"));
+    } else if (it->second.type() != Json::Type::ARRAY) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:routes error:type should be array"));
     } else {
-      for (const auto& p : route_iter->second.array_value()) {
-        auto method_name = p.object_value().find("methodName");
-        if (method_name == p.object_value().end()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:routes error:methodName is required"));
-        } else {
-          auto action_name = p.object_value().find("action");
-          if (action_name == p.object_value().end()) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "field:routes error:action is required"));
-          } else {
-            XdsRoutingLbConfig::Matcher matcher;
-            auto service = method_name->second.object_value().find("service");
-            auto method = method_name->second.object_value().find("method");
-            if (service == method_name->second.object_value().end() &&
-                method != method_name->second.object_value().end()) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:methodName error: service is empty when method is "
-                  "not"));
-            }
-            if (service != method_name->second.object_value().end()) {
-              matcher.first = service->second.string_value();
-            } else {
-              matcher.first = "";
-            }
-            if (method != method_name->second.object_value().end()) {
-              matcher.second = method->second.string_value();
-            } else {
-              matcher.first = "";
-            }
-            route_vector.emplace_back(matcher,
-                                      action_name->second.string_value());
+      for (const auto& route : it->second.array_value()) {
+        // Parse methodName.
+        XdsRoutingLbConfig::Matcher matcher;
+        std::vector<grpc_error*> route_errors =
+            ParseRouteConfig(route.object_value(), &matcher);
+        if (!route_errors.empty()) {
+          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
+          // string is not static in this case.
+          grpc_error* error =
+              GRPC_ERROR_CREATE_FROM_COPIED_STRING("field:routes error");
+          for (grpc_error* route_error : route_errors) {
+            error = grpc_error_add_child(error, route_error);
           }
+          error_list.push_back(error);
         }
+        // Parse action.
+        std::string cluster_name;
+        std::vector<grpc_error*> action_errors =
+            ParseActionConfig(route.object_value(), &cluster_name);
+        if (!action_errors.empty()) {
+          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
+          // string is not static in this case.
+          grpc_error* error =
+              GRPC_ERROR_CREATE_FROM_COPIED_STRING("field:actions error:");
+          for (grpc_error* action_error : action_errors) {
+            error = grpc_error_add_child(error, action_error);
+          }
+          error_list.push_back(error);
+        }
+        route_table.emplace_back(std::move(matcher), std::move(cluster_name));
       }
     }
     if (!error_list.empty()) {
@@ -696,28 +677,92 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     return MakeRefCounted<XdsRoutingLbConfig>(std::move(action_map),
-                                              std::move(route_vector));
+                                              std::move(route_table));
   }
 
  private:
   static std::vector<grpc_error*> ParseChildConfig(
       const Json& json, XdsRoutingLbConfig::ChildConfig* child_config) {
     std::vector<grpc_error*> error_list;
-    if (json.type() != Json::Type::ARRAY) {
+    if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "value should be of type array"));
+          "value should be of type object"));
       return error_list;
     }
-    grpc_error* parse_error = GRPC_ERROR_NONE;
-    child_config->config =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            json.array_value(), &parse_error);
-    if (child_config->config == nullptr) {
-      GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-      std::vector<grpc_error*> child_errors;
-      child_errors.push_back(parse_error);
+    auto it = json.object_value().find("child_policy");
+    if (it != json.object_value().end()) {
+      grpc_error* parse_error = GRPC_ERROR_NONE;
+      child_config->config =
+          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second,
+                                                                &parse_error);
+      if (child_config->config == nullptr) {
+        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        std::vector<grpc_error*> child_errors;
+        child_errors.push_back(parse_error);
+        error_list.push_back(
+            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
+      }
+    } else {
       error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("did not find childPolicy"));
+    }
+    return error_list;
+  }
+
+  static std::vector<grpc_error*> ParseRouteConfig(
+      const Json& json, XdsRoutingLbConfig::Matcher* route_config) {
+    std::vector<grpc_error*> error_list;
+    if (json.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "value should be of type object"));
+      return error_list;
+    }
+    auto method_name = json.object_value().find("methodName");
+    if (method_name == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:routes error:methodName is required"));
+    } else if (method_name->second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:routes error:methodName error: type should be object"));
+    } else {
+      auto service = method_name->second.object_value().find("service");
+      auto method = method_name->second.object_value().find("method");
+      if (service != method_name->second.object_value().end()) {
+        route_config->service = service->second.string_value();
+      } else {
+        route_config->service = "";
+      }
+      if (method != method_name->second.object_value().end()) {
+        route_config->method = method->second.string_value();
+      } else {
+        route_config->method = "";
+      }
+      if ((route_config->service == "") && (route_config->method != "")) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:methodName error: service is empty when method is "
+            "not"));
+      }
+    }
+    return error_list;
+  }
+
+  static std::vector<grpc_error*> ParseActionConfig(const Json& json,
+                                                    std::string* cluster_name) {
+    std::vector<grpc_error*> error_list;
+    if (json.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "value should be of type object"));
+      return error_list;
+    }
+    auto action_name = json.object_value().find("action");
+    if (action_name == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:routes error:action is required"));
+    } else if (action_name->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:methodName error:type should be string"));
+    } else {
+      *cluster_name = action_name->second.string_value();
     }
     return error_list;
   }

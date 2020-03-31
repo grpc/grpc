@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/byte_buffer_reader.h>
@@ -70,6 +71,35 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
 
+namespace {
+
+std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
+  std::string json = absl::StrFormat(
+      "      \"cds:%s\":{\n"
+      "        \"child_policy\":[\n"
+      "          { \"cds_experimental\":{\n"
+      "            \"cluster\": \"%s\"\n"
+      "          } }\n"
+      "        ]\n"
+      "       }",
+      cluster_name.c_str(), cluster_name.c_str());
+  return json;
+}
+
+std::string CreateServiceConfigRoute(const std::string& cluster_name,
+                                     const std::string& service,
+                                     const std::string& method) {
+  std::string json = absl::StrFormat(
+      "      { \"methodName\":\n"
+      "      { \"service\": \"%s\",\n"
+      "        \"method\": \"%s\"},\n"
+      "      \"action\": \"cds:%s\"\n"
+      "      }",
+      service.c_str(), method.c_str(), cluster_name.c_str());
+  return json;
+}
+
+}  // namespace
 //
 // Internal class declarations
 //
@@ -888,35 +918,23 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
             "LDS update does not include requested resource"));
     return;
   }
-  const std::string& cluster_name =
-      lds_update->rds_update.has_value()
-          ? lds_update->rds_update.value().routes[0].action_name
-          : "";
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_client %p] LDS update received: route_config_name=%s, "
-            "cluster_name=%s (empty if RDS is needed to obtain it)",
-            xds_client(), lds_update->route_config_name.c_str(),
-            cluster_name.c_str());
-    for (auto route : lds_update->rds_update.value().routes) {
-      gpr_log(GPR_INFO, "Create service config using %s %s %s %s",
-              route.service.c_str(), route.method.c_str(),
-              route.action_type.c_str(), route.action_name.c_str());
+            "[xds_client %p] LDS update received: route_config_name=%s",
+            xds_client(), lds_update->route_config_name.c_str());
+    if (lds_update->rds_update.has_value()) {
+      for (const auto& route : lds_update->rds_update.value().routes) {
+        gpr_log(GPR_INFO,
+                "Create service config using route: { service=\"%s\", "
+                "method=\"%s\" }, cluster=\"%s\" }",
+                route.service.c_str(), route.method.c_str(),
+                route.cluster_name.c_str());
+      }
     }
   }
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
   auto& state = lds_state.subscribed_resources[xds_client()->server_name_];
   if (state != nullptr) state->Finish();
-  // Ignore identical update.
-  if (xds_client()->route_config_name_ == lds_update->route_config_name &&
-      xds_client()->cluster_name_ == cluster_name) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] LDS update identical to current, ignoring.",
-              xds_client());
-    }
-    return;
-  }
   if (!xds_client()->route_config_name_.empty()) {
     Unsubscribe(
         XdsApi::kRdsTypeUrl, xds_client()->route_config_name_,
@@ -924,10 +942,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
   }
   xds_client()->route_config_name_ = lds_update->route_config_name;
   if (lds_update->rds_update.has_value()) {
-    // If cluster_name was found inlined in LDS response, notify the watcher
-    // immediately.
-    xds_client()->cluster_name_ =
-        lds_update->rds_update.value().routes[0].action_name;
+    // If the RouteConfiguration was found inlined in LDS response, notify the
+    // watcher immediately.
     RefCountedPtr<ServiceConfig> service_config;
     grpc_error* error = xds_client()->CreateServiceConfig(
         lds_update->rds_update.value(), &service_config);
@@ -954,24 +970,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
             "RDS update does not include requested resource"));
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] RDS update received: cluster_name=%s",
-            xds_client(), rds_update->routes[0].action_name.c_str());
-  }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   auto& state =
       rds_state.subscribed_resources[xds_client()->route_config_name_];
   if (state != nullptr) state->Finish();
-  // Ignore identical update.
-  if (xds_client()->cluster_name_ == rds_update->routes[0].action_name) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] RDS update identical to current, ignoring.",
-              xds_client());
-    }
-    return;
-  }
-  xds_client()->cluster_name_ = rds_update->routes[0].action_name;
   // Notify the watcher.
   RefCountedPtr<ServiceConfig> service_config;
   grpc_error* error =
@@ -2043,85 +2045,46 @@ void XdsClient::ResetBackoff() {
   }
 }
 
-char* XdsClient::CreateServiceConfigActionCluster(
-    const std::string& cluster_name, const bool without_comma) const {
-  const char* last_line = without_comma ? "}" : "},";
-  char* json;
-  gpr_asprintf(&json,
-               "      { \"cds\": \"%s\",\n"
-               "        \"child_policy\":[\n"
-               "          { \"cds_experimental\":{\n"
-               "            \"cluster\": \"%s\"\n"
-               "          } }\n"
-               "        ]\n"
-               "      %s\n",
-               cluster_name.c_str(), cluster_name.c_str(), last_line);
-  return json;
-}
-
-char* XdsClient::CreateServiceConfigRoute(const std::string& cluster_name,
-                                          const std::string& service,
-                                          const std::string& method,
-                                          const bool without_comma) const {
-  const char* last_line = without_comma ? "}" : "},";
-  char* json;
-  gpr_asprintf(&json,
-               "      { \"methodName\":\n"
-               "      { \"service\": \"%s\",\n"
-               "        \"method\": \"%s\"},\n"
-               "      \"action\": \"%s\"\n"
-               "      %s\n",
-               service.c_str(), method.c_str(), cluster_name.c_str(),
-               last_line);
-  return json;
-}
-
 grpc_error* XdsClient::CreateServiceConfig(
     const XdsApi::RdsUpdate& rds_update,
     RefCountedPtr<ServiceConfig>* service_config) const {
-  gpr_strvec v;
-  gpr_strvec_init(&v);
-  char* json_start;
-  gpr_asprintf(&json_start,
-               "{\n"
-               "  \"loadBalancingConfig\":[\n"
-               "    { \"xds_routing_experimental\":{\n"
-               "      \"actions\":[\n");
-  gpr_strvec_add(&v, json_start);
+  std::vector<std::string> v;
+  std::string json_start =
+      ("{\n"
+       "  \"loadBalancingConfig\":[\n"
+       "    { \"xds_routing_experimental\":{\n"
+       "      \"actions\":{\n");
+  v.push_back(std::move(json_start));
+  std::vector<std::string> actions_vector;
   for (size_t i = 0; i < rds_update.routes.size(); ++i) {
     auto route = rds_update.routes[i];
-    // TODO: (donnadionne) CreateServiceConfigActionWeightedTarget
-    char* action = CreateServiceConfigActionCluster(
-        route.action_name.c_str(), i == (rds_update.routes.size() - 1));
-    gpr_strvec_add(&v, action);
+    actions_vector.push_back(
+        CreateServiceConfigActionCluster(route.cluster_name.c_str()));
   }
-  char* json_transition;
-  gpr_asprintf(&json_transition,
-               "    ],\n"
-               "      \"routes\":[\n");
-  gpr_strvec_add(&v, json_transition);
+  v.push_back(absl::StrJoin(actions_vector, ","));
+  std::string json_transition =
+      ("    },\n"
+       "      \"routes\":[\n");
+  v.push_back(std::move(json_transition));
+  std::vector<std::string> routes_vector;
   for (size_t i = 0; i < rds_update.routes.size(); ++i) {
     auto route_info = rds_update.routes[i];
-    char* route = CreateServiceConfigRoute(
-        route_info.action_name.c_str(), route_info.service.c_str(),
-        route_info.method.c_str(), i == (rds_update.routes.size() - 1));
-    gpr_strvec_add(&v, route);
+    routes_vector.push_back(CreateServiceConfigRoute(
+        route_info.cluster_name.c_str(), route_info.service.c_str(),
+        route_info.method.c_str()));
   }
-  char* json_end;
-  gpr_asprintf(&json_end,
-               "    ]\n"
-               "    } }\n"
-               "  ]\n"
-               "}");
-  gpr_strvec_add(&v, json_end);
-  size_t len;
-  char* json = gpr_strvec_flatten(&v, &len);
-  gpr_strvec_destroy(&v);
+  v.push_back(absl::StrJoin(routes_vector, ","));
+  std::string json_end =
+      ("    ]\n"
+       "    } }\n"
+       "  ]\n"
+       "}");
+  v.push_back(std::move(json_end));
+  std::string json = absl::StrJoin(v, "");
   grpc_error* error = GRPC_ERROR_NONE;
-  *service_config = ServiceConfig::Create(json, &error);
+  *service_config = ServiceConfig::Create(json.c_str(), &error);
   gpr_log(GPR_INFO, "Built service config: \"%s\"",
           service_config->get()->json_string().c_str());
-  gpr_free(json);
   return error;
 }
 
