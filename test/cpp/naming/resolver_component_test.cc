@@ -39,6 +39,7 @@
 #include "test/cpp/util/test_config.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
@@ -463,19 +464,20 @@ class CheckingResultHandler : public ResultHandler {
 
   void CheckResult(const grpc_core::Resolver::Result& result) override {
     ArgsStruct* args = args_struct();
-    gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
-            result.addresses.size(), args->expected_addrs.size());
-    GPR_ASSERT(result.addresses.size() == args->expected_addrs.size());
     std::vector<GrpcLBAddress> found_lb_addrs;
-    for (size_t i = 0; i < result.addresses.size(); i++) {
-      const grpc_core::ServerAddress& addr = result.addresses[i];
-      char* str;
-      grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
-      gpr_log(GPR_INFO, "%s", str);
-      found_lb_addrs.emplace_back(
-          GrpcLBAddress(std::string(str), addr.IsBalancer()));
-      gpr_free(str);
+    AddActualAddresses(result.addresses, /*is_balancer=*/false,
+                       &found_lb_addrs);
+    const grpc_core::ServerAddressList* balancer_addresses =
+        grpc_core::FindGrpclbBalancerAddressesInChannelArgs(*result.args);
+    if (balancer_addresses != nullptr) {
+      AddActualAddresses(*balancer_addresses, /*is_balancer=*/true,
+                         &found_lb_addrs);
     }
+    gpr_log(GPR_INFO,
+            "found %" PRIdPTR " backend addresses and %" PRIdPTR
+            " balancer addresses",
+            result.addresses.size(),
+            balancer_addresses == nullptr ? 0L : balancer_addresses->size());
     if (args->expected_addrs.size() != found_lb_addrs.size()) {
       gpr_log(GPR_DEBUG,
               "found lb addrs size is: %" PRIdPTR
@@ -493,6 +495,20 @@ class CheckingResultHandler : public ResultHandler {
         service_config_json, GRPC_ERROR_REF(result.service_config_error), args);
     if (args->expected_service_config_string == "") {
       CheckLBPolicyResultLocked(result.args, args);
+    }
+  }
+
+ private:
+  static void AddActualAddresses(const grpc_core::ServerAddressList& addresses,
+                                 bool is_balancer,
+                                 std::vector<GrpcLBAddress>* out) {
+    for (size_t i = 0; i < addresses.size(); i++) {
+      const grpc_core::ServerAddress& addr = addresses[i];
+      char* str;
+      grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
+      gpr_log(GPR_INFO, "%s", str);
+      out->emplace_back(GrpcLBAddress(std::string(str), is_balancer));
+      gpr_free(str);
     }
   }
 };
