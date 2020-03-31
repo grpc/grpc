@@ -173,17 +173,17 @@ func (c *Controller) startExecutors() {
 				session := si.(*types.Session)
 				monitor := NewMonitor()
 				c.mux.Lock()
-				c.monitors[session.Name()] = monitor
+				c.monitors[session.Name] = monitor
 				c.mux.Unlock()
 
-				glog.Infof("executor[%v]: starting work on session %v", info.index, session.Name())
+				glog.Infof("executor[%v]: starting work on session %v", info.index, session.Name)
 				info.session = session
 				info.monitor = monitor
 				if err := c.execute(info); err != nil {
-					glog.Infof("executor[%v]: session %v terminated: %v", info.index, info.session.Name(), err)
+					glog.Infof("executor[%v]: session %v terminated: %v", info.index, info.session.Name, err)
 				}
 				c.queue.Done(session)
-				glog.Infof("executor[%v]: finished work on session %v", info.index, session.Name())
+				glog.Infof("executor[%v]: finished work on session %v", info.index, session.Name)
 			}
 		}()
 	}
@@ -215,13 +215,13 @@ func (c *Controller) execute(info *executorInfo) error {
 
 // deploy creates all kubernetes resources for a component by submitting a spec.
 func (c *Controller) deploy(info *executorInfo, co *types.Component) error {
-	kind := strings.ToLower(co.Kind().String())
+	kind := strings.ToLower(co.Kind.String())
 
-	glog.V(2).Infof("executor[%v]: deploying %v component %v", info.index, kind, co.Name())
+	glog.V(2).Infof("executor[%v]: deploying %v component %v", info.index, kind, co.Name)
 
 	pod := NewSpecBuilder(info.session, co).Pod()
 	if _, err := c.clientset.CoreV1().Pods(v1.NamespaceDefault).Create(pod); err != nil {
-		return fmt.Errorf("unable to deploy %v component %v: %v", kind, co.Name(), err)
+		return fmt.Errorf("unable to deploy %v component %v: %v", kind, co.Name, err)
 	}
 	return nil
 }
@@ -229,7 +229,7 @@ func (c *Controller) deploy(info *executorInfo, co *types.Component) error {
 // provision creates kubernetes objects for every component, ensuring that they are healthy or
 // returning an error.
 func (c *Controller) provision(info *executorInfo) error {
-	drivers := NewObjects(info.session.Driver())
+	drivers := NewObjects(info.session.Driver)
 	if count := len(drivers); count != 1 {
 		return fmt.Errorf("expected exactly 1 driver, but got %v drivers", count)
 	}
@@ -289,7 +289,7 @@ func (c *Controller) provision(info *executorInfo) error {
 		workerIPs[i] = ip + ":10000"
 	}
 	qpsWorkers := strings.Join(workerIPs, ",")
-	driver.Component().SetEnv("QPS_WORKERS", qpsWorkers)
+	driver.Component().Env["QPS_WORKERS"] = qpsWorkers
 
 	if err := c.deploy(info, driver.Component()); err != nil {
 		return fmt.Errorf("driver component %v could not be deployed: %v", driver.Name(), err)
@@ -319,7 +319,7 @@ func (c *Controller) provision(info *executorInfo) error {
 // finish gracefully, it returns nil.
 func (c *Controller) monitorRun(info *executorInfo) error {
 	glog.Infof("executor[%v]: monitoring components while session %v runs",
-		info.index, info.session.Name())
+		info.index, info.session.Name)
 
 	for {
 		if info.monitor.AnyFailed() {
@@ -337,18 +337,18 @@ func (c *Controller) monitorRun(info *executorInfo) error {
 // from kubernetes in the return value.
 func (c *Controller) teardown(info *executorInfo) error {
 	listOpts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("session-name=%v", info.session.Name()),
+		LabelSelector: fmt.Sprintf("session-name=%v", info.session.Name),
 	}
 
-	driverName := info.session.Driver().Name()
+	driverName := info.session.Driver.Name
 	req := c.clientset.CoreV1().Pods(v1.NamespaceDefault).GetLogs(driverName, &v1.PodLogOptions{})
 	logBytes, err := req.DoRaw()
 	if err == nil {
 		glog.Infof("executor[%v]: session %v had the following logs: %v",
-			info.index, info.session.Name(), string(logBytes))
+			info.index, info.session.Name, string(logBytes))
 	} else {
 		glog.Infof("executor[%v]: session %v logs are inaccessible: %v",
-			info.index, info.session.Name(), err)
+			info.index, info.session.Name, err)
 	}
 
 	err = c.clientset.CoreV1().Pods(v1.NamespaceDefault).DeleteCollection(&metav1.DeleteOptions{}, listOpts)

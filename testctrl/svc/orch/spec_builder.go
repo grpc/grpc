@@ -45,8 +45,8 @@ func NewSpecBuilder(s *types.Session, c *types.Component) *SpecBuilder {
 func (sb *SpecBuilder) Containers() []apiv1.Container {
 	return []apiv1.Container{
 		{
-			Name:  sb.component.Name(),
-			Image: sb.component.ContainerImage(),
+			Name:  sb.component.Name,
+			Image: sb.component.ContainerImage,
 			Ports: sb.ContainerPorts(),
 			Env:   sb.Env(),
 		},
@@ -64,7 +64,7 @@ func (sb *SpecBuilder) ContainerPorts() []apiv1.ContainerPort {
 		ContainerPort: driverPort,
 	})
 
-	if sb.component.Kind() == types.ServerComponent {
+	if sb.component.Kind == types.ServerComponent {
 		ports = append(ports, apiv1.ContainerPort{
 			Name:          "server-port",
 			Protocol:      apiv1.ProtocolTCP,
@@ -79,7 +79,7 @@ func (sb *SpecBuilder) ContainerPorts() []apiv1.ContainerPort {
 // component. Most importantly, it includes the component's name and necessary labels.
 func (sb *SpecBuilder) ObjectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:   sb.component.Name(),
+		Name:   sb.component.Name,
 		Labels: sb.Labels(),
 	}
 }
@@ -94,16 +94,16 @@ func (sb *SpecBuilder) ObjectMeta() metav1.ObjectMeta {
 func (sb *SpecBuilder) Labels() map[string]string {
 	return map[string]string{
 		"autogen":        "1",
-		"session-name":   sb.session.Name(),
-		"component-name": sb.component.Name(),
-		"component-kind": strings.ToLower(sb.component.Kind().String()),
+		"session-name":   sb.session.Name,
+		"component-name": sb.component.Name,
+		"component-kind": strings.ToLower(sb.component.Kind.String()),
 	}
 }
 
 // Pod returns a kubernetes pod object which meets the requirements of the component.
 func (sb *SpecBuilder) Pod() *apiv1.Pod {
 	var pool string
-	if sb.component.Kind() == types.DriverComponent {
+	if sb.component.Kind == types.DriverComponent {
 		pool = "drivers"
 	} else {
 		pool = "workers-8core"
@@ -126,14 +126,14 @@ func (sb *SpecBuilder) Pod() *apiv1.Pod {
 func (sb *SpecBuilder) Env() []apiv1.EnvVar {
 	var vars []apiv1.EnvVar
 
-	for k, v := range sb.component.Env() {
+	for k, v := range sb.component.Env {
 		vars = append(vars, apiv1.EnvVar{
 			Name:  k,
 			Value: v,
 		})
 	}
 
-	if sb.component.Kind() == types.DriverComponent {
+	if sb.component.Kind == types.DriverComponent {
 		vars = append(vars, apiv1.EnvVar{
 			Name:  "SCENARIO_JSON",
 			Value: sb.scenarioJson(),
@@ -172,7 +172,7 @@ func (sb *SpecBuilder) scenarioJson() string {
 		OrigName:    true,
 	}
 
-	json, err := marshaler.MarshalToString(sb.session.Scenario())
+	json, err := marshaler.MarshalToString(sb.session.Scenario)
 	if err != nil {
 		return ""
 	}

@@ -22,14 +22,24 @@ import (
 )
 
 // Component represents a dependency that must be provisioned and managed during a session. For
-// example, benchmarks tend to have a driver, server and a set of client components.
-//
-// Do not create Components using a literal, use the NewComponent constructor.
+// example, benchmarks tend to have a driver, server and a set of client components. Prefer creating
+// components with the NewComponent constructor, because it assigns a unique name.
 type Component struct {
-	name           string
-	containerImage string
-	kind           ComponentKind
-	env            map[string]string
+	// Name uniquely identifies a component.
+	Name string
+
+	// ContainerImage is the docker image name and tag of the component.
+	ContainerImage string
+
+	// Kind is the type of component.
+	Kind ComponentKind
+
+	// PoolName is the optional name of a node pool where the component should be scheduled. If
+	// no name is provided, the system will choose a pool.
+	PoolName string
+
+	// Env is the map of environment variables that should be set when the component is started.
+	Env map[string]string
 }
 
 // NewComponent creates a Component instance, given a container image and kind.
@@ -49,49 +59,17 @@ type Component struct {
 //     c := NewComponent("gcr.io/grpc-testing/driver@sha256:e4ff8efd7eb62d3a3bb0990f6ff1e9df20da24ebf908d08f49cb83422a232862", DriverComponent)
 func NewComponent(containerImage string, kind ComponentKind) *Component {
 	return &Component{
-		name:           uuid.New().String(),
-		containerImage: containerImage,
-		kind:           kind,
-		env:            make(map[string]string),
+		Name:           uuid.New().String(),
+		ContainerImage: containerImage,
+		Kind:           kind,
+		Env:            make(map[string]string),
 	}
-}
-
-// Name returns a string that uniquely identifies a component. This name is shared by all replicas,
-// but it is not shared by any other component in the same session or any identical component in
-// another session.
-func (c *Component) Name() string {
-	return c.name
 }
 
 // ResourceName returns the name the component prefixed with `components/`. This value should be
 // displayed to a consumer of the API.
 func (c *Component) ResourceName() string {
-	return fmt.Sprintf("components/%s", c.Name())
-}
-
-// ContainerImage returns the name of a docker image and tag which contains the required component.
-func (c *Component) ContainerImage() string {
-	return c.containerImage
-}
-
-// Kind returns the type of component.
-func (c *Component) Kind() ComponentKind {
-	return c.kind
-}
-
-// SetEnv stores an environment variable that must be set on the component. Setting one after a
-// component is running will have no effect.
-func (c *Component) SetEnv(key, value string) {
-	c.env[key] = value
-}
-
-// Env returns a copy of the environment variables set on the component.
-func (c *Component) Env() map[string]string {
-	clone := make(map[string]string)
-	for k, v := range c.env {
-		clone[k] = v
-	}
-	return clone
+	return fmt.Sprintf("components/%s", c.Name)
 }
 
 // ComponentKind specifies the type of component the test requires.

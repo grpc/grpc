@@ -51,7 +51,7 @@ func NewObjects(cs ...*types.Component) []*Object {
 
 // Name provides convenient access to the component name.
 func (o *Object) Name() string {
-	return o.component.Name()
+	return o.component.Name
 }
 
 // Component is the component instance that the object wraps.

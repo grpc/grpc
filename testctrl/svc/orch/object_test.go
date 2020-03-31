@@ -18,13 +18,12 @@ import (
 	"testing"
 
 	"github.com/grpc/grpc/testctrl/svc/types"
-	"github.com/grpc/grpc/testctrl/svc/types/test"
 )
 
 func TestNewObjects(t *testing.T) {
 	cs := []*types.Component{
-		test.NewComponentBuilder().Build(),
-		test.NewComponentBuilder().Build(),
+		&types.Component{},
+		&types.Component{},
 	}
 	objs := NewObjects(cs...)
 
@@ -34,12 +33,12 @@ func TestNewObjects(t *testing.T) {
 
 	set := make(map[string]*types.Component)
 	for _, o := range objs {
-		set[o.Component().Name()] = o.Component()
+		set[o.Component().Name] = o.Component()
 	}
 
 	for _, c := range cs {
-		if x := set[c.Name()]; x == nil {
-			t.Errorf("NewObjects did not create an object for component %v", c.Name())
+		if x := set[c.Name]; x == nil {
+			t.Errorf("NewObjects did not create an object for component %v", c.Name)
 		}
 	}
 }

@@ -18,11 +18,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/grpc/grpc/testctrl/svc/types/test"
+	"github.com/grpc/grpc/testctrl/svc/types"
 )
 
 func TestMonitorAdd(t *testing.T) {
-	obj := NewObjects(test.NewComponentBuilder().Build())[0]
+	obj := NewObjects(&types.Component{})[0]
 	monitor := NewMonitor()
 
 	monitor.Add(obj)
@@ -34,7 +34,7 @@ func TestMonitorAdd(t *testing.T) {
 }
 
 func TestMonitorRemove(t *testing.T) {
-	obj := NewObjects(test.NewComponentBuilder().Build())[0]
+	obj := NewObjects(&types.Component{})[0]
 	monitor := NewMonitor()
 
 	monitor.Add(obj)
