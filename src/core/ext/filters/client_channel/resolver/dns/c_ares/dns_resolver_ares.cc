@@ -30,6 +30,7 @@
 #include <address_sorting/address_sorting.h>
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
@@ -107,8 +108,10 @@ class AresDnsResolver : public Resolver {
   grpc_millis last_resolution_timestamp_ = -1;
   /// retry backoff state
   BackOff backoff_;
-  /// currently resolving addresses
+  /// currently resolving backend addresses
   std::unique_ptr<ServerAddressList> addresses_;
+  /// currently resolving balancer addresses
+  std::unique_ptr<ServerAddressList> balancer_addresses_;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
   // has shutdown been initiated
@@ -328,9 +331,11 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     r->Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
     return;
   }
-  if (r->addresses_ != nullptr) {
+  if (r->addresses_ != nullptr || r->balancer_addresses_ != nullptr) {
     Result result;
-    result.addresses = std::move(*r->addresses_);
+    if (r->addresses_ != nullptr) {
+      result.addresses = std::move(*r->addresses_);
+    }
     if (r->service_config_json_ != nullptr) {
       std::string service_config_string = ChooseServiceConfig(
           r->service_config_json_, &result.service_config_error);
@@ -343,9 +348,16 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
             service_config_string, &result.service_config_error);
       }
     }
-    result.args = grpc_channel_args_copy(r->channel_args_);
+    InlinedVector<grpc_arg, 1> new_args;
+    if (r->balancer_addresses_ != nullptr) {
+      new_args.push_back(
+          CreateGrpclbBalancerAddressesArg(r->balancer_addresses_.get()));
+    }
+    result.args = grpc_channel_args_copy_and_add(
+        r->channel_args_, new_args.data(), new_args.size());
     r->result_handler()->ReturnResult(std::move(result));
     r->addresses_.reset();
+    r->balancer_addresses_.reset();
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     r->backoff_.Reset();
@@ -424,7 +436,8 @@ void AresDnsResolver::StartResolvingLocked() {
   GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
   pending_request_ = grpc_dns_lookup_ares_locked(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
-      &on_resolved_, &addresses_, enable_srv_queries_ /* check_grpclb */,
+      &on_resolved_, &addresses_,
+      enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, combiner());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
