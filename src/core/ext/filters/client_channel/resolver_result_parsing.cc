@@ -317,7 +317,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
-  grpc_core::UniquePtr<char> lb_policy_name;
+  std::string lb_policy_name;
   Optional<ClientChannelGlobalParsedConfig::RetryThrottling> retry_throttling;
   const char* health_check_service_name = nullptr;
   // Parse LB config.
@@ -340,16 +340,13 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:loadBalancingPolicy error:type should be string"));
     } else {
-      lb_policy_name.reset(gpr_strdup(it->second.string_value().c_str()));
-      char* lb_policy = lb_policy_name.get();
-      if (lb_policy != nullptr) {
-        for (size_t i = 0; i < strlen(lb_policy); ++i) {
-          lb_policy[i] = tolower(lb_policy[i]);
-        }
+      lb_policy_name = it->second.string_value();
+      for (size_t i = 0; i < lb_policy_name.size(); ++i) {
+        lb_policy_name[i] = tolower(lb_policy_name[i]);
       }
       bool requires_config = false;
       if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-              lb_policy, &requires_config)) {
+              lb_policy_name.c_str(), &requires_config)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
@@ -357,7 +354,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
         gpr_asprintf(&error_msg,
                      "field:loadBalancingPolicy error:%s requires a config. "
                      "Please use loadBalancingConfig instead.",
-                     lb_policy);
+                     lb_policy_name.c_str());
         error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg));
         gpr_free(error_msg);
       }
