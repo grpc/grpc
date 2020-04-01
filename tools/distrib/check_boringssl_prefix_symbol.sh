@@ -20,20 +20,8 @@ cd "$(dirname $0)"
 cd ../../third_party/boringssl
 
 BORINGSSL_COMMIT=$(git rev-parse HEAD)
+PREFIX_SYMBOLS_COMMIT=$(cat ../../src/boringssl/boringssl_prefix_symbols.h | head -n1 | awk '{print $NF}')
 
-mkdir -p ./build
-cd build
-cmake ..
-make -j4
-go run ../util/read_symbols.go ssl/libssl.a > ./symbols.txt
-go run ../util/read_symbols.go crypto/libcrypto.a >> ./symbols.txt
+[ $BORINGSSL_COMMIT == $PREFIX_SYMBOLS_COMMIT ] || { echo "The BoringSSL commit does not match the commit of the prefix symbols (src/boringssl/boringssl_prefix_symbols.h). Run tools/distrib/regenerate_boringssl_prefix_symbols.sh to update the prefix symbols." ; exit 1 ; }
 
-cmake .. -DBORINGSSL_PREFIX=GRPC -DBORINGSSL_PREFIX_SYMBOLS=symbols.txt
-make boringssl_prefix_symbols
-gzip -c symbol_prefix_include/boringssl_prefix_symbols.h | base64 > boringssl_prefix_symbols.h.gz.b64
-
-diff ../../../src/boringssl/boringssl_prefix_symbols.h.gz.b64 boringssl_prefix_symbols.h.gz.b64
-
-result=$?
-
-exit $result
+exit 0

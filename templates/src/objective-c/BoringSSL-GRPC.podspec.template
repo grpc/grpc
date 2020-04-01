@@ -1,8 +1,14 @@
 %YAML 1.2
 --- |
   <%!
-    import subprocess
+    import subprocess, base64
+    import gzip
     boringssl_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd='third_party/boringssl').decode().strip()
+    prefix_f = open("src/boringssl/boringssl_prefix_symbols.h", "rb")
+    prefix = prefix_f.read()
+    prefix_gzip = gzip.compress(prefix)
+    prefix_gzip_b64 = base64.b64encode(prefix_gzip)
+    prefix_f.close()
   %>
 
   # This file has been automatically generated from a template file.
@@ -232,11 +238,9 @@
       # outputs a gzip+base64 encoded version of boringssl_prefix_symbols.h because of Cocoapods'
       # limit on the 'prepare_command' field length. The encoded header is put at
       # /src/boringssl/boringssl_prefix_symbols.h.gz.b64. Here we decode the content and inject
-      # the header to correcty location in BoringSSL.
+      # the header to the correct location in BoringSSL.
       base64 -D <<EOF | gunzip > include/openssl/boringssl_prefix_symbols.h
-      % for line in open("src/boringssl/boringssl_prefix_symbols.h.gz.b64", "r").readlines():
-        ${line}\
-      % endfor
+        ${prefix_gzip_b64}
       EOF
 
       # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists
