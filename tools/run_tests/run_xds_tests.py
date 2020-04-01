@@ -142,6 +142,11 @@ argp.add_argument('--xds_server',
 argp.add_argument('--source_image',
                   default='projects/debian-cloud/global/images/family/debian-9',
                   help='Source image for VMs created during the test')
+argp.add_argument('--path_to_server_binary',
+                  default=None,
+                  type=str,
+                  help='If set, the server binary must already be pre-built on '
+                  'the specified source image')
 argp.add_argument('--machine_type',
                   default='e2-standard-2',
                   help='Machine type for VMs created during the test')
@@ -473,7 +478,27 @@ def test_secondary_locality_gets_requests_on_primary_failure(
         patch_backend_instances(gcp, backend_service, [primary_instance_group])
 
 
-def create_instance_template(gcp, name, network, source_image, machine_type):
+def get_startup_script(path_to_server_binary, service_port):
+    if path_to_server_binary:
+        return "nohup %s --port=%d 1>/dev/null &" % (path_to_server_binary,
+                                                     service_port)
+    else:
+        return """#!/bin/bash
+sudo apt update
+sudo apt install -y git default-jdk
+mkdir java_server
+pushd java_server
+git clone https://github.com/grpc/grpc-java.git
+pushd grpc-java
+pushd interop-testing
+../gradlew installDist -x test -PskipCodegen=true -PskipAndroid=true
+
+nohup build/install/grpc-interop-testing/bin/xds-test-server \
+    --port=%d 1>/dev/null &""" % service_port
+
+
+def create_instance_template(gcp, name, network, source_image, machine_type,
+                             startup_script):
     config = {
         'name': name,
         'properties': {
@@ -499,21 +524,8 @@ def create_instance_template(gcp, name, network, source_image, machine_type):
             }],
             'metadata': {
                 'items': [{
-                    'key':
-                        'startup-script',
-                    'value':
-                        """#!/bin/bash
-sudo apt update
-sudo apt install -y git default-jdk
-mkdir java_server
-pushd java_server
-git clone https://github.com/grpc/grpc-java.git
-pushd grpc-java
-pushd interop-testing
-../gradlew installDist -x test -PskipCodegen=true -PskipAndroid=true
-
-nohup build/install/grpc-interop-testing/bin/xds-test-server --port=%d 1>/dev/null &"""
-                        % gcp.service_port
+                    'key': 'startup-script',
+                    'value': startup_script
                 }]
             }
         }
@@ -949,7 +961,7 @@ try:
     service_host_name = _BASE_SERVICE_HOST + args.gcp_suffix
     target_http_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
     forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + args.gcp_suffix
-    template_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
+    template_name = _BASE_TEMPLATE_NAME + args.gcp_suffix
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + args.gcp_suffix
     same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + args.gcp_suffix
     if _USE_SECONDARY_IG:
@@ -986,8 +998,11 @@ try:
         if not gcp.service_port:
             raise Exception(
                 'Failed to find a valid ip:port for the forwarding rule')
+        startup_script = get_startup_script(args.path_to_server_binary,
+                                            gcp.service_port)
         create_instance_template(gcp, template_name, args.network,
-                                 args.source_image, args.machine_type)
+                                 args.source_image, args.machine_type,
+                                 startup_script)
         instance_group = add_instance_group(gcp, args.zone, instance_group_name,
                                             _INSTANCE_GROUP_SIZE)
         patch_backend_instances(gcp, backend_service, [instance_group])
