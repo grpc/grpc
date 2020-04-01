@@ -21,7 +21,7 @@ cdef enum AioChannelStatus:
 cdef class AioChannel:
     cdef:
         grpc_channel * channel
-        BaseCompletionQueue cq
         object loop
         bytes _target
         AioChannelStatus _status
+        bint _is_secure

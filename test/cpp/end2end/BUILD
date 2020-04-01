@@ -275,6 +275,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "end2end_test",
     size = "large",
+    flaky = True,  # TODO(b/151704375)
     tags = ["no_test_ios"],
     deps = [
         ":end2end_test_lib",
@@ -438,6 +439,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,  # TODO(b/151315347)
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",

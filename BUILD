@@ -1237,6 +1237,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_grpclb_balancer_addresses",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
@@ -1256,6 +1271,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_grpclb_balancer_addresses",
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_transport_chttp2_client_insecure",
@@ -1282,6 +1298,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_grpclb_balancer_addresses",
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_secure",
@@ -1619,6 +1636,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
     ],
 )

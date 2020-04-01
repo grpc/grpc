@@ -109,10 +109,6 @@ cdef class RPCState:
 
 
 cdef class _ServicerContext:
-    cdef RPCState _rpc_state
-    cdef object _loop
-    cdef object _request_deserializer
-    cdef object _response_serializer
 
     def __cinit__(self,
                   RPCState rpc_state,
@@ -128,9 +124,9 @@ cdef class _ServicerContext:
         cdef bytes raw_message
         self._rpc_state.raise_for_termination()
 
-        if self._rpc_state.client_closed:
-            return EOF
         raw_message = await _receive_message(self._rpc_state, self._loop)
+        self._rpc_state.raise_for_termination()
+
         if raw_message is None:
             return EOF
         else:
@@ -414,15 +410,28 @@ async def _handle_unary_stream_rpc(object method_handler,
     )
 
 
-async def _message_receiver(_ServicerContext servicer_context):
+cdef class _MessageReceiver:
     """Bridge between the async generator API and the reader-writer API."""
-    cdef object message
-    while True:
-        message = await servicer_context.read()
-        if message is not EOF:
-            yield message
-        else:
-            break
+
+    def __cinit__(self, _ServicerContext servicer_context):
+        self._servicer_context = servicer_context
+        self._agen = None
+
+    async def _async_message_receiver(self):
+        """An async generator that receives messages."""
+        cdef object message
+        while True:
+            message = await self._servicer_context.read()
+            if message is not EOF:
+                yield message
+            else:
+                break
+
+    def __aiter__(self):
+        # Prevents never awaited warning if application never used the async generator
+        if self._agen is None:
+            self._agen = self._async_message_receiver()
+        return self._agen
 
 
 async def _handle_stream_unary_rpc(object method_handler,
@@ -437,7 +446,7 @@ async def _handle_stream_unary_rpc(object method_handler,
     )
 
     # Prepares the request generator
-    cdef object request_async_iterator = _message_receiver(servicer_context)
+    cdef object request_async_iterator = _MessageReceiver(servicer_context)
 
     # Finishes the application handler
     await _finish_handler_with_unary_response(
@@ -462,7 +471,7 @@ async def _handle_stream_stream_rpc(object method_handler,
     )
 
     # Prepares the request generator
-    cdef object request_async_iterator = _message_receiver(servicer_context)
+    cdef object request_async_iterator = _MessageReceiver(servicer_context)
 
     # Finishes the application handler
     await _finish_handler_with_stream_responses(
@@ -494,7 +503,13 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
     except asyncio.CancelledError:
         _LOGGER.debug('RPC cancelled for servicer method [%s]', _decode(rpc_state.method()))
     except _ServerStoppedError:
-        _LOGGER.info('Aborting RPC due to server stop.')
+        _LOGGER.warning('Aborting method [%s] due to server stop.', _decode(rpc_state.method()))
+    except ExecuteBatchError:
+        # If client closed (aka. cancelled), ignore the failed batch operations.
+        if rpc_state.client_closed:
+            return
+        else:
+            raise
     except Exception as e:
         _LOGGER.exception('Unexpected [%s] raised by servicer method [%s]' % (
             type(e).__name__,
@@ -610,13 +625,13 @@ cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
                  options, maximum_concurrent_rpcs):
+        init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
-        self._cq = create_completion_queue()
         grpc_server_register_completion_queue(
             self._server.c_server,
-            self._cq.c_ptr(),
+            global_completion_queue(),
             NULL
         )
 
@@ -631,6 +646,7 @@ cdef class AioServer:
         self._shutdown_completed = self._loop.create_future()
         self._shutdown_callback_wrapper = CallbackWrapper(
             self._shutdown_completed,
+            self._loop,
             SERVER_SHUTDOWN_FAILURE_HANDLER)
         self._crash_exception = None
 
@@ -659,11 +675,12 @@ cdef class AioServer:
         cdef object future = self._loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
+            self._loop,
             REQUEST_CALL_FAILURE_HANDLER)
         error = grpc_server_request_call(
             self._server.c_server, &rpc_state.call, &rpc_state.details,
             &rpc_state.request_metadata,
-            self._cq.c_ptr(), self._cq.c_ptr(),
+            global_completion_queue(), global_completion_queue(),
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
@@ -674,7 +691,7 @@ cdef class AioServer:
 
     async def _server_main_loop(self,
                                 object server_started):
-        self._server.start()
+        self._server.start(backup_queue=False)
         cdef RPCState rpc_state
         server_started.set_result(True)
 
@@ -736,7 +753,7 @@ cdef class AioServer:
         # The shutdown callback won't be called until there is no live RPC.
         grpc_server_shutdown_and_notify(
             self._server.c_server,
-            self._cq.c_ptr(),
+            global_completion_queue(),
             self._shutdown_callback_wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.
@@ -789,9 +806,6 @@ cdef class AioServer:
                 self._server.is_shutdown = True
                 self._status = AIO_SERVER_STATUS_STOPPED
 
-                # Shuts down the completion queue
-                await self._cq.shutdown()
-    
     async def wait_for_termination(self, object timeout):
         if timeout is None:
             await self._shutdown_completed
@@ -823,3 +837,4 @@ cdef class AioServer:
                 self,
                 self._status
             )
+        shutdown_grpc_aio()

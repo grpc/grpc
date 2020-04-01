@@ -564,14 +564,6 @@ def _generate_build_extra_metadata_for_tests(tests, bazel_rules):
                     % (test_name, long_name))
                 test_metadata[test_name]['_RENAME'] = long_name
 
-    # TODO(jtattermusch): in bazel, add "_test" suffix to the test names
-    # test does not have "_test" suffix: fling
-    # test does not have "_test" suffix: fling_stream
-    # test does not have "_test" suffix: client_ssl
-    # test does not have "_test" suffix: handshake_server_with_readahead_handshaker
-    # test does not have "_test" suffix: handshake_verify_peer_options
-    # test does not have "_test" suffix: server_ssl
-
     return test_metadata
 
 

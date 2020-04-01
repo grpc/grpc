@@ -23,7 +23,6 @@ from tests_aio.benchmark import worker_servicer
 
 
 async def run_worker_server(port: int) -> None:
-    aio.init_grpc_aio()
     server = aio.server()
 
     servicer = worker_servicer.WorkerServicer()
@@ -53,6 +52,8 @@ if __name__ == '__main__':
 
     if args.uvloop:
         import uvloop
-        uvloop.install()
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        loop = uvloop.new_event_loop()
+        asyncio.set_event_loop(loop)
 
     asyncio.get_event_loop().run_until_complete(run_worker_server(args.port))

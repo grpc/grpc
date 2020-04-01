@@ -25,12 +25,13 @@
 
 #include <set>
 
+#include "absl/types/optional.h"
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
-#include "src/core/lib/gprpp/optional.h"
 
 namespace grpc_core {
 
@@ -47,18 +48,35 @@ class XdsApi {
     std::string service;
     std::string method;
     std::string cluster_name;
+
+    bool operator==(const RdsRoute& other) const {
+      return (service == other.service &&
+              method == other.method &&
+              cluster_name == other.cluster_name);
+    }
   };
 
   struct RdsUpdate {
     std::vector<RdsRoute> routes;
+
+    bool operator==(const RdsUpdate& other) const {
+      return routes == other.routes;
+    }
   };
 
+  // TODO(roth): When we can use absl::variant<>, consider using that
+  // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
     // The name to use in the RDS request.
     std::string route_config_name;
     // The name to use in the CDS request. Present if the LDS response has it
     // inlined.
-    Optional<RdsUpdate> rds_update;
+    absl::optional<RdsUpdate> rds_update;
+
+    bool operator==(const LdsUpdate& other) const {
+      return route_config_name == other.route_config_name &&
+             rds_update == other.rds_update;
+    }
   };
 
   using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
@@ -73,7 +91,7 @@ class XdsApi {
     // If not set, load reporting will be disabled.
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
-    Optional<std::string> lrs_load_reporting_server_name;
+    absl::optional<std::string> lrs_load_reporting_server_name;
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
@@ -157,6 +175,7 @@ class XdsApi {
     void AddCategory(std::string name, uint32_t parts_per_million) {
       drop_category_list_.emplace_back(
           DropCategory{std::move(name), parts_per_million});
+      if (parts_per_million == 1000000) drop_all_ = true;
     }
 
     // The only method invoked from the data plane combiner.
@@ -166,6 +185,8 @@ class XdsApi {
       return drop_category_list_;
     }
 
+    bool drop_all() const { return drop_all_; }
+
     bool operator==(const DropConfig& other) const {
       return drop_category_list_ == other.drop_category_list_;
     }
@@ -173,19 +194,19 @@ class XdsApi {
 
    private:
     DropCategoryList drop_category_list_;
+    bool drop_all_ = false;
   };
 
   struct EdsUpdate {
     PriorityListUpdate priority_list_update;
     RefCountedPtr<DropConfig> drop_config;
-    bool drop_all = false;
   };
 
   using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 
   struct ClusterLoadReport {
     XdsClusterDropStats::DroppedRequestsMap dropped_requests;
-    std::map<XdsLocalityName*, XdsClusterLocalityStats::Snapshot,
+    std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
              XdsLocalityName::Less>
         locality_stats;
     grpc_millis load_report_interval;

@@ -42,7 +42,8 @@ static grpc_core::Combiner* g_combiner;
 static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner);
 
@@ -93,12 +94,14 @@ static grpc_address_resolver_vtable test_resolver = {
 static grpc_ares_request* test_dns_lookup_ares_locked(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
-      addresses, check_grpclb, service_config_json, query_timeout_ms, combiner);
+      addresses, balancer_addresses, service_config_json, query_timeout_ms,
+      combiner);
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
   grpc_millis now =
