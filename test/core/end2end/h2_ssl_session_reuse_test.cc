@@ -16,26 +16,29 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
-#include <stdio.h>
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#include <gtest/gtest.h>
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define CLIENT_CERT_PATH "src/core/tsi/test_creds/client.pem"
+#define CLIENT_KEY_PATH "src/core/tsi/test_creds/client.key"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 namespace grpc {
 namespace testing {
@@ -46,10 +49,22 @@ void* tag(intptr_t t) { return (void*)t; }
 gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 
 grpc_server* server_create(grpc_completion_queue* cq, char* server_addr) {
-  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
-                                                  test_server1_cert};
+  grpc_slice ca_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {server_key, server_cert};
   grpc_server_credentials* server_creds = grpc_ssl_server_credentials_create_ex(
-      test_root_cert, &pem_cert_key_pair, 1,
+      ca_cert, &pem_cert_key_pair, 1,
       GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, nullptr);
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
@@ -59,14 +74,30 @@ grpc_server* server_create(grpc_completion_queue* cq, char* server_addr) {
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
 
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
   return server;
 }
 
 grpc_channel* client_create(char* server_addr, grpc_ssl_session_cache* cache) {
-  grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {
-      test_signed_client_key, test_signed_client_cert};
+  grpc_slice ca_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(CLIENT_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CLIENT_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  const char* client_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* client_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {client_key,
+                                                            client_cert};
   grpc_channel_credentials* client_creds = grpc_ssl_credentials_create(
-      test_root_cert, &signed_client_key_cert_pair, nullptr, nullptr);
+      ca_cert, &signed_client_key_cert_pair, nullptr, nullptr);
 
   grpc_arg args[] = {
       grpc_channel_arg_string_create(
@@ -88,6 +119,9 @@ grpc_channel* client_create(char* server_addr, grpc_ssl_session_cache* cache) {
     grpc_channel_args_destroy(client_args);
   }
 
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
   return client;
 }
 
@@ -253,27 +287,13 @@ TEST(H2SessionReuseTest, SingleReuse) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  FILE* roots_file;
-  size_t roots_size = strlen(test_root_cert);
-  char* roots_filename;
-
   grpc::testing::TestEnvironment env(argc, argv);
-  /* Set the SSL roots env var. */
-  roots_file = gpr_tmpfile("chttp2_ssl_session_reuse_test", &roots_filename);
-  GPR_ASSERT(roots_filename != nullptr);
-  GPR_ASSERT(roots_file != nullptr);
-  GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
-  fclose(roots_file);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
 
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
-
-  /* Cleanup. */
-  remove(roots_filename);
-  gpr_free(roots_filename);
 
   return ret;
 }
