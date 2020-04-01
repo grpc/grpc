@@ -17,7 +17,7 @@ import asyncio
 from functools import partial
 import logging
 import enum
-from typing import AsyncIterable, Awaitable, Dict, Optional
+from typing import AsyncIterable, Awaitable, Optional
 
 import grpc
 from grpc import _common
