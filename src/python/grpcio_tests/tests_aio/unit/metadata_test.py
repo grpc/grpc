@@ -210,6 +210,20 @@ class TestMetadata(AioTestBase):
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
+    async def test_from_client_to_server_with_list(self):
+        multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
+        call = multicallable(
+            _REQUEST, metadata=list(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER))
+        self.assertEqual(_RESPONSE, await call)
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+    async def test_from_client_to_server_with_iterator(self):
+        multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
+        call = multicallable(
+            _REQUEST, metadata=iter(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER))
+        self.assertEqual(_RESPONSE, await call)
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
+
     @unittest.skipIf(platform.system() == 'Windows',
                      'https://github.com/grpc/grpc/issues/21943')
     async def test_invalid_metadata(self):
