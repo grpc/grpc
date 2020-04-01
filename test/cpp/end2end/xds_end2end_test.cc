@@ -1343,11 +1343,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
-                 bool wait_for_ready = false) {
+                 bool wait_for_ready = false, bool server_fail = false) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
+    if (server_fail) {
+      request.mutable_param()->mutable_expected_error()->set_code(
+          GRPC_STATUS_FAILED_PRECONDITION);
+    }
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     if (wait_for_ready) context.set_wait_for_ready(true);
@@ -1367,9 +1371,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  void CheckRpcSendFailure() {
-    const Status status = SendRpc();
-    EXPECT_FALSE(status.ok());
+  void CheckRpcSendFailure(const size_t times = 1, bool server_fail = false) {
+    for (size_t i = 0; i < times; ++i) {
+      const Status status = SendRpc(nullptr, 1000, false, server_fail);
+      EXPECT_FALSE(status.ok());
+    }
   }
 
  public:
@@ -3486,7 +3492,8 @@ class ClientLoadReportingTest : public XdsEnd2endTest {
 TEST_P(ClientLoadReportingTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
-  const size_t kNumRpcsPerAddress = 100;
+  const size_t kNumRpcsPerAddress = 10;
+  const size_t kNumFailuresPerAddress = 3;
   // TODO(juanlishen): Partition the backends after multiple localities is
   // tested.
   AdsServiceImpl::EdsResourceArgs args({
@@ -3501,9 +3508,11 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  // Each backend should have gotten 100 requests.
+  CheckRpcSendFailure(kNumFailuresPerAddress * num_backends_,
+                      /*server_fail=*/true);
+  // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
+    EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
               backends_[i]->backend_service()->request_count());
   }
   // The LRS service got a single request, and sent a single response.
@@ -3517,9 +3526,11 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
+  EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * num_backends_ +
+                num_ok + num_failure,
             client_stats.total_issued_requests());
-  EXPECT_EQ(0U, client_stats.total_error_requests());
+  EXPECT_EQ(kNumFailuresPerAddress * num_backends_ + num_failure,
+            client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
 }
 
