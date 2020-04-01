@@ -214,10 +214,13 @@ class grpc_ssl_server_security_connector
   grpc_ssl_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
-                                       std::move(server_creds)) {}
+                                       std::move(server_creds)) {
+    gpr_mu_init(&mu);
+  }
 
   ~grpc_ssl_server_security_connector() override {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
+    gpr_mu_destroy(&mu);
   }
 
   bool has_cert_config_fetcher() const {
@@ -273,10 +276,12 @@ class grpc_ssl_server_security_connector
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
+    gpr_mu_lock(&mu);
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, &tsi_hs);
+    gpr_mu_unlock(&mu);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -388,6 +393,7 @@ class grpc_ssl_server_security_connector
   }
 
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
+  gpr_mu mu;
 };
 }  // namespace
 
