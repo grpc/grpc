@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
   build-essential \
   bzip2 \
   ccache \
+  cmake \
   curl \
   dnsutils \
   gcc \
