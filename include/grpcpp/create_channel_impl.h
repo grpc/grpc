@@ -28,6 +28,35 @@
 #include <grpcpp/support/config.h>
 
 namespace grpc_impl {
+
+/// Prevents the user from linking with an incompatible gRPC library.
+///
+/// The definition of some gRPC types change depending on some compiler options
+/// (ASAN, TSAN). This can easily cause unexpected runtime issues if the client
+/// code does not use the same compiler flags than the library. This function
+/// helps detect and prevent such errors by causing linker errors instead.
+static inline int PreventOneDefinitionRuleViolation() {
+  int result = 0;
+
+#ifdef GRPC_ASAN_ENABLED
+  extern int grpc_must_be_compiled_with_asan;
+  result += grpc_must_be_compiled_with_asan;
+#else
+  extern int grpc_must_be_compiled_without_asan;
+  result += grpc_must_be_compiled_without_asan;
+#endif
+
+#ifdef GRPC_TSAN_ENABLED
+  extern int grpc_must_be_compiled_with_tsan;
+  result += grpc_must_be_compiled_with_tsan;
+#else
+  extern int grpc_must_be_compiled_without_tsan;
+  result += grpc_must_be_compiled_without_tsan;
+#endif
+
+  return result;
+}
+
 /// Create a new \a Channel pointing to \a target.
 ///
 /// \param target The URI of the endpoint to connect to.

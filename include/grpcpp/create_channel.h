@@ -27,6 +27,8 @@ namespace grpc {
 static inline std::shared_ptr<::grpc::Channel> CreateChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds) {
+  static const int client_code_compiler_options_check =
+      ::grpc_impl::PreventOneDefinitionRuleViolation();
   return ::grpc_impl::CreateChannelImpl(target, creds);
 }
 
@@ -34,6 +36,8 @@ static inline std::shared_ptr<::grpc::Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args) {
+  static const int client_code_compiler_options_check =
+      ::grpc_impl::PreventOneDefinitionRuleViolation();
   return ::grpc_impl::CreateCustomChannelImpl(target, creds, args);
 }
 
@@ -47,6 +51,8 @@ CreateCustomChannelWithInterceptors(
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
+  static const int client_code_compiler_options_check =
+      ::grpc_impl::PreventOneDefinitionRuleViolation();
   return ::grpc_impl::experimental::CreateCustomChannelWithInterceptors(
       target, creds, args, std::move(interceptor_creators));
 }

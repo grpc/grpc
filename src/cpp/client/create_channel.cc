@@ -27,6 +27,19 @@
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc_impl {
+    // list here the type definitions that are impacted by ASAN
+#ifdef GRPC_ASAN_ENABLED
+    int grpc_must_be_compiled_with_asan = GRPC_SYNC_POSIX_DEPENDS_ON_ASAN;
+#else
+    int grpc_must_be_compiled_without_asan;
+#endif
+    // list here the type definitions that are impacted by TSAN
+#ifdef GRPC_TSAN_ENABLED
+    int grpc_must_be_compiled_with_tsan = GRPC_CALL_COMBINER_DEPENDS_ON_TSAN;
+#else
+    int grpc_must_be_compiled_without_tsan;
+#endif
+
 std::shared_ptr<grpc::Channel> CreateChannelImpl(
     const grpc::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds) {

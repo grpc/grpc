@@ -115,6 +115,7 @@ class CallCombiner {
   // or a grpc_error* (if the lowest bit is 1).
   gpr_atm cancel_state_ = 0;
 #ifdef GRPC_TSAN_ENABLED
+#define GRPC_CALL_COMBINER_DEPENDS_ON_TSAN 1
   // A fake ref-counted lock that is kept alive after the destruction of
   // grpc_call_combiner, when we are running the original closure.
   //
