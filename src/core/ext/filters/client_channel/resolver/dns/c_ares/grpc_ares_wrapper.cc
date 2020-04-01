@@ -87,25 +87,32 @@ typedef struct grpc_ares_hostbyname_request {
   bool is_balancer;
 } grpc_ares_hostbyname_request;
 
-static void log_address_sorting_list(const ServerAddressList& addresses,
+static void log_address_sorting_list(const grpc_ares_request* r,
+                                     const ServerAddressList& addresses,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
     char* addr_str;
     if (grpc_sockaddr_to_string(&addr_str, &addresses[i].address(), true)) {
-      gpr_log(GPR_INFO, "c-ares address sorting: %s[%" PRIuPTR "]=%s",
-              input_output_str, i, addr_str);
+      gpr_log(
+          GPR_INFO,
+          "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
+          "]=%s",
+          r, input_output_str, i, addr_str);
       gpr_free(addr_str);
     } else {
-      gpr_log(GPR_INFO,
-              "c-ares address sorting: %s[%" PRIuPTR "]=<unprintable>",
-              input_output_str, i);
+      gpr_log(
+          GPR_INFO,
+          "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
+          "]=<unprintable>",
+          r, input_output_str, i);
     }
   }
 }
 
-void grpc_cares_wrapper_address_sorting_sort(ServerAddressList* addresses) {
+void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
+                                             ServerAddressList* addresses) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-    log_address_sorting_list(*addresses, "input");
+    log_address_sorting_list(r, *addresses, "input");
   }
   address_sorting_sortable* sortables = (address_sorting_sortable*)gpr_zalloc(
       sizeof(address_sorting_sortable) * addresses->size());
@@ -124,7 +131,7 @@ void grpc_cares_wrapper_address_sorting_sort(ServerAddressList* addresses) {
   gpr_free(sortables);
   *addresses = std::move(sorted);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-    log_address_sorting_list(*addresses, "output");
+    log_address_sorting_list(r, *addresses, "output");
   }
 }
 
@@ -145,7 +152,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
   r->ev_driver = nullptr;
   ServerAddressList* addresses = r->addresses_out->get();
   if (addresses != nullptr) {
-    grpc_cares_wrapper_address_sorting_sort(addresses);
+    grpc_cares_wrapper_address_sorting_sort(r, addresses);
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     // TODO(apolcyn): allow c-ares to return a service config
@@ -523,7 +530,7 @@ static bool target_matches_localhost(const char* name) {
 
 #ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY
 static bool inner_maybe_resolve_localhost_manually_locked(
-    const char* name, const char* default_port,
+    const grpc_ares_request* r, const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     grpc_core::UniquePtr<char>* host, grpc_core::UniquePtr<char>* port) {
   grpc_core::SplitHostPort(name, host, port);
@@ -566,23 +573,24 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     (*addrs)->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
                            nullptr /* args */);
     // Let the address sorter figure out which one should be tried first.
-    grpc_cares_wrapper_address_sorting_sort(addrs->get());
+    grpc_cares_wrapper_address_sorting_sort(r, addrs->get());
     return true;
   }
   return false;
 }
 
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const char* name, const char* default_port,
+    const grpc_ares_request* r, const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
   grpc_core::UniquePtr<char> host;
   grpc_core::UniquePtr<char> port;
-  return inner_maybe_resolve_localhost_manually_locked(name, default_port,
+  return inner_maybe_resolve_localhost_manually_locked(r, name, default_port,
                                                        addrs, &host, &port);
 }
 #else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const char* /*name*/, const char* /*default_port*/,
+    const grpc_ares_request* r, const char* /*name*/,
+    const char* /*default_port*/,
     std::unique_ptr<grpc_core::ServerAddressList>* /*addrs*/) {
   return false;
 }
@@ -614,7 +622,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     return r;
   }
   // Early out if the target is localhost and we're on Windows.
-  if (grpc_ares_maybe_resolve_localhost_manually_locked(name, default_port,
+  if (grpc_ares_maybe_resolve_localhost_manually_locked(r, name, default_port,
                                                         addrs)) {
     grpc_ares_complete_request_locked(r);
     return r;

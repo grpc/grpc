@@ -90,7 +90,7 @@ bool grpc_ares_query_ipv6();
 
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(
-    grpc_core::ServerAddressList* addresses);
+    const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */
