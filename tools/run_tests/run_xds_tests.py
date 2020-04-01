@@ -122,6 +122,13 @@ argp.add_argument(
     help=
     'If provided, uses this file instead of retrieving via the GCP discovery '
     'API')
+argp.add_argument(
+    '--alpha_compute_discovery_document',
+    default=None,
+    type=str,
+    help=
+    'If provided, uses this file instead of retrieving via the alpha GCP '
+    'discovery API')
 argp.add_argument('--network',
                   default='global/networks/default',
                   help='GCP network to use')
@@ -577,14 +584,14 @@ def add_instance_group(gcp, zone, name, size):
 def create_health_check(gcp, name):
     config = {
         'name': name,
-        'type': 'TCP',
-        'tcpHealthCheck': {
-            'portName': 'grpc'
+        'type': 'GRPC',
+        'grpcHealthCheck': {
+            'portSpecification': 'USE_SERVING_PORT'
         }
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.healthChecks().insert(project=gcp.project,
-                                               body=config).execute()
+    result = gcp.alpha_compute.healthChecks().insert(project=gcp.project,
+                                                     body=config).execute()
     wait_for_global_operation(gcp, result['name'])
     gcp.health_check = GcpResource(config['name'], result['targetLink'])
 
@@ -613,11 +620,11 @@ def add_backend_service(gcp, name):
         'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
         'healthChecks': [gcp.health_check.url],
         'portName': 'grpc',
-        'protocol': 'HTTP2'
+        'protocol': 'GRPC'
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.backendServices().insert(project=gcp.project,
-                                                  body=config).execute()
+    result = gcp.alpha_compute.backendServices().insert(project=gcp.project,
+                                                        body=config).execute()
     wait_for_global_operation(gcp, result['name'])
     backend_service = GcpResource(config['name'], result['targetLink'])
     gcp.backend_services.append(backend_service)
@@ -644,33 +651,45 @@ def create_url_map(gcp, name, backend_service, host_name):
     gcp.url_map = GcpResource(config['name'], result['targetLink'])
 
 
-def create_target_http_proxy(gcp, name):
+def create_target_grpc_proxy(gcp, name):
     config = {
         'name': name,
         'url_map': gcp.url_map.url,
+        #  TODO(ericgribkoff) This requires forwarding rule's ip=0.0.0.0
+        #  'validate_for_proxyless': True,
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.targetHttpProxies().insert(project=gcp.project,
-                                                    body=config).execute()
+    result = gcp.alpha_compute.targetGrpcProxies().insert(
+        project=gcp.project, body=config).execute()
     wait_for_global_operation(gcp, result['name'])
-    gcp.target_http_proxy = GcpResource(config['name'], result['targetLink'])
+    gcp.target_grpc_proxy = GcpResource(config['name'], result['targetLink'])
 
 
-def create_global_forwarding_rule(gcp, name, ip, port):
-    config = {
-        'name': name,
-        'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
-        'portRange': str(port),
-        'IPAddress': ip,
-        'network': args.network,
-        'target': gcp.target_http_proxy.url,
-    }
-    logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.globalForwardingRules().insert(project=gcp.project,
-                                                        body=config).execute()
-    wait_for_global_operation(gcp, result['name'])
-    gcp.global_forwarding_rule = GcpResource(config['name'],
-                                             result['targetLink'])
+def create_global_forwarding_rule(gcp, name, potential_ips, potential_ports):
+    for port in potential_ports:
+        for ip in potential_ips:
+            try:
+                config = {
+                    'name': name,
+                    'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
+                    'portRange': str(port),
+                    'IPAddress': ip,
+                    'network': args.network,
+                    'target': gcp.target_grpc_proxy.url,
+                }
+                logger.debug('Sending GCP request with body=%s', config)
+                result = gcp.alpha_compute.globalForwardingRules().insert(
+                    project=gcp.project, body=config).execute()
+                wait_for_global_operation(gcp, result['name'])
+                gcp.global_forwarding_rule = GcpResource(
+                    config['name'], result['targetLink'])
+                gcp.service_port = port
+                return
+            except googleapiclient.errors.HttpError as http_error:
+                logger.warning(
+                    'Got error %s when attempting to create forwarding rule to '
+                    '%s:%d. Retrying with another ip:port.' %
+                    (http_error, ip, port))
 
 
 def delete_global_forwarding_rule(gcp):
@@ -683,11 +702,11 @@ def delete_global_forwarding_rule(gcp):
         logger.info('Delete failed: %s', http_error)
 
 
-def delete_target_http_proxy(gcp):
+def delete_target_grpc_proxy(gcp):
     try:
-        result = gcp.compute.targetHttpProxies().delete(
+        result = gcp.alpha_compute.targetGrpcProxies().delete(
             project=gcp.project,
-            targetHttpProxy=gcp.target_http_proxy.name).execute()
+            targetGrpcProxy=gcp.target_grpc_proxy.name).execute()
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -769,7 +788,7 @@ def patch_backend_instances(gcp,
         } for instance_group in instance_groups],
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.backendServices().patch(
+    result = gcp.alpha_compute.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
         body=config).execute()
     wait_for_global_operation(gcp, result['name'])
@@ -910,8 +929,8 @@ def start_xds_client(cmd):
 def clean_up(gcp):
     if gcp.global_forwarding_rule:
         delete_global_forwarding_rule(gcp)
-    if gcp.target_http_proxy:
-        delete_target_http_proxy(gcp)
+    if gcp.target_grpc_proxy:
+        delete_target_grpc_proxy(gcp)
     if gcp.url_map:
         delete_url_map(gcp)
     delete_backend_services(gcp)
@@ -941,14 +960,15 @@ class GcpResource(object):
 
 class GcpState(object):
 
-    def __init__(self, compute, project):
+    def __init__(self, compute, alpha_compute, project):
         self.compute = compute
+        self.alpha_compute = alpha_compute
         self.project = project
         self.health_check = None
         self.health_check_firewall_rule = None
         self.backend_services = []
         self.url_map = None
-        self.target_http_proxy = None
+        self.target_grpc_proxy = None
         self.global_forwarding_rule = None
         self.service_port = None
         self.instance_template = None
@@ -959,18 +979,22 @@ if args.compute_discovery_document:
     with open(args.compute_discovery_document, 'r') as discovery_doc:
         compute = googleapiclient.discovery.build_from_document(
             discovery_doc.read())
+    with open(args.alpha_compute_discovery_document, 'r') as discovery_doc:
+        alpha_compute = googleapiclient.discovery.build_from_document(
+            discovery_doc.read())
 else:
     compute = googleapiclient.discovery.build('compute', 'v1')
+    alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
 try:
-    gcp = GcpState(compute, args.project_id)
+    gcp = GcpState(compute, alpha_compute, args.project_id)
     health_check_name = _BASE_HEALTH_CHECK_NAME + args.gcp_suffix
     firewall_name = _BASE_FIREWALL_RULE_NAME + args.gcp_suffix
     backend_service_name = _BASE_BACKEND_SERVICE_NAME + args.gcp_suffix
     alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + args.gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + args.gcp_suffix
     service_host_name = _BASE_SERVICE_HOST + args.gcp_suffix
-    target_http_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
+    target_grpc_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
     forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + args.gcp_suffix
     template_name = _BASE_TEMPLATE_NAME + args.gcp_suffix
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + args.gcp_suffix
@@ -984,7 +1008,7 @@ try:
         alternate_backend_service = add_backend_service(
             gcp, alternate_backend_service_name)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
-        create_target_http_proxy(gcp, target_http_proxy_name)
+        create_target_grpc_proxy(gcp, target_grpc_proxy_name)
         potential_service_ports = list(args.service_port_range)
         random.shuffle(potential_service_ports)
         if args.forwarding_rule_ip_prefix == '':
@@ -994,18 +1018,8 @@ try:
                 args.forwarding_rule_ip_prefix + str(x) for x in range(256)
             ]
         random.shuffle(potential_ips)
-        for port in potential_service_ports:
-            for ip in potential_ips:
-                try:
-                    create_global_forwarding_rule(gcp, forwarding_rule_name, ip,
-                                                  port)
-                    gcp.service_port = port
-                    break
-                except googleapiclient.errors.HttpError as http_error:
-                    logger.warning(
-                        'Got error %s when attempting to create forwarding rule to '
-                        '%s:%d. Retrying with another ip:port.' %
-                        (http_error, ip, port))
+        create_global_forwarding_rule(gcp, forwarding_rule_name, potential_ips,
+                                      potential_service_ports)
         if not gcp.service_port:
             raise Exception(
                 'Failed to find a valid ip:port for the forwarding rule')
