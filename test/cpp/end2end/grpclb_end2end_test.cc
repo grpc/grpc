@@ -1702,6 +1702,13 @@ class UpdatesWithClientLoadReportingTest : public GrpclbEnd2endTest {
 };
 
 TEST_F(UpdatesWithClientLoadReportingTest, ReresolveDeadBalancer) {
+  const std::vector<int> first_backend{GetBackendPorts()[0]};
+  const std::vector<int> second_backend{GetBackendPorts()[1]};
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
+  ScheduleResponseForBalancer(
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
+
   // Ask channel to connect to trigger resolver creation.
   channel_->GetState(true);
   std::vector<AddressData> addresses;
@@ -1710,13 +1717,6 @@ TEST_F(UpdatesWithClientLoadReportingTest, ReresolveDeadBalancer) {
   addresses.clear();
   addresses.emplace_back(AddressData{balancers_[1]->port_, ""});
   SetNextReresolutionResponse(addresses);
-  const std::vector<int> first_backend{GetBackendPorts()[0]};
-  const std::vector<int> second_backend{GetBackendPorts()[1]};
-
-  ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
-  ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
