@@ -216,8 +216,8 @@ class TestMetadata(AioTestBase):
         multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
         for exception_type, metadata in _INVALID_METADATA_TEST_CASES:
             with self.subTest(metadata=metadata):
-                call = multicallable(_REQUEST, metadata=metadata)
                 with self.assertRaises(exception_type):
+                    call = multicallable(_REQUEST, metadata=metadata)
                     await call
 
     async def test_generic_handler(self):

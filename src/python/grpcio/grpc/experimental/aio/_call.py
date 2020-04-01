@@ -105,7 +105,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._details
 
-    def initial_metadata(self) -> Optional[Dict]:
+    def initial_metadata(self) -> Optional[MetadataType]:
         """Accesses the initial metadata sent by the server.
 
         Returns:
@@ -113,7 +113,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._initial_metadata
 
-    def trailing_metadata(self) -> Optional[Dict]:
+    def trailing_metadata(self) -> Optional[MetadataType]:
         """Accesses the trailing metadata sent by the server.
 
         Returns:
@@ -171,7 +171,7 @@ class Call:
                  loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
         self._cython_call = cython_call
-        self._metadata = metadata
+        self._metadata = tuple(metadata)
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
