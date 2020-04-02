@@ -3094,6 +3094,7 @@ targets:
   - mac
 - name: completion_queue_threading_test
   build: test
+  run: false
   language: c
   headers: []
   src:
