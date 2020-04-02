@@ -1,0 +1,377 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>grpc.experimental.aio._base_server &#8212; gRPC Python 1.28.0 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">gRPC Python</a></h1>
+
+
+
+<p class="blurb">1.28.0</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_asyncio.html">gRPC AsyncIO API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_channelz.html">gRPC Channelz</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_health_checking.html">gRPC Health Checking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_status.html">gRPC Status</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_testing.html">gRPC Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../glossary.html">Glossary</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  <li><a href="../../../grpc.html">grpc</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for grpc.experimental.aio._base_server</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2020 The gRPC Authors</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;Abstract base classes for server-side classes.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">grpc</span>
+
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">MetadataType</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span>
+
+
+<div class="viewcode-block" id="Server"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serves RPCs.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Server.add_generic_rpc_handlers"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Server.add_generic_rpc_handlers">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_generic_rpc_handlers</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">generic_rpc_handlers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">GenericRpcHandler</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
+
+<span class="sd">        This method is only safe to call before the server is started.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          generic_rpc_handlers: A sequence of GenericRpcHandlers that will be</span>
+<span class="sd">          used to service RPCs.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Server.add_insecure_port"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Server.add_insecure_port">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Opens an insecure port for accepting RPCs.</span>
+
+<span class="sd">        A port is a communication endpoint that used by networking protocols,</span>
+<span class="sd">        like TCP and UDP. To date, we only support TCP.</span>
+
+<span class="sd">        This method may only be called before starting the server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          address: The address for which to open a port. If the port is 0,</span>
+<span class="sd">            or not specified in the address, then the gRPC runtime will choose a port.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          An integer port on which the server will accept RPC requests.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Server.add_secure_port"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Server.add_secure_port">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                        <span class="n">server_credentials</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ServerCredentials</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Opens a secure port for accepting RPCs.</span>
+
+<span class="sd">        A port is a communication endpoint that used by networking protocols,</span>
+<span class="sd">        like TCP and UDP. To date, we only support TCP.</span>
+
+<span class="sd">        This method may only be called before starting the server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          address: The address for which to open a port.</span>
+<span class="sd">            if the port is 0, or not specified in the address, then the gRPC</span>
+<span class="sd">            runtime will choose a port.</span>
+<span class="sd">          server_credentials: A ServerCredentials object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          An integer port on which the server will accept RPC requests.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Server.start"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Server.start">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Starts this Server.</span>
+
+<span class="sd">        This method may only be called once. (i.e. it is not idempotent).</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Server.stop"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Server.stop">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Stops this Server.</span>
+
+<span class="sd">        This method immediately stops the server from servicing new RPCs in</span>
+<span class="sd">        all cases.</span>
+
+<span class="sd">        If a grace period is specified, this method returns immediately and all</span>
+<span class="sd">        RPCs active at the end of the grace period are aborted. If a grace</span>
+<span class="sd">        period is not specified (by passing None for grace), all existing RPCs</span>
+<span class="sd">        are aborted immediately and this method blocks until the last RPC</span>
+<span class="sd">        handler terminates.</span>
+
+<span class="sd">        This method is idempotent and may be called at any time. Passing a</span>
+<span class="sd">        smaller grace value in a subsequent call will have the effect of</span>
+<span class="sd">        stopping the Server sooner (passing None will have the effect of</span>
+<span class="sd">        stopping the server immediately). Passing a larger grace value in a</span>
+<span class="sd">        subsequent call will not have the effect of stopping the server later</span>
+<span class="sd">        (i.e. the most restrictive grace value is used).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          grace: A duration of time in seconds or None.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Server.wait_for_termination"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Server.wait_for_termination">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_termination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                   <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Continues current coroutine once the server stops.</span>
+
+<span class="sd">        This is an EXPERIMENTAL API.</span>
+
+<span class="sd">        The wait will not consume computational resources during blocking, and</span>
+<span class="sd">        it will block until one of the two following conditions are met:</span>
+
+<span class="sd">        1) The server is stopped or terminated;</span>
+<span class="sd">        2) A timeout occurs if timeout is not `None`.</span>
+
+<span class="sd">        The timeout argument works in the same way as `threading.Event.wait()`.</span>
+<span class="sd">        https://docs.python.org/3/library/threading.html#threading.Event.wait</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          timeout: A floating point number specifying a timeout for the</span>
+<span class="sd">            operation in seconds.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A bool indicates if the operation times out.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="ServicerContext"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext">[docs]</a><span class="k">class</span> <span class="nc">ServicerContext</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A context object passed to method implementations.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ServicerContext.read"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.read">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RequestType</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Reads one message from the RPC.</span>
+
+<span class="sd">        Only one read operation is allowed simultaneously.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A response message of the RPC.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          An RpcError exception if the read failed.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.write"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.write">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ResponseType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Writes one message to the RPC.</span>
+
+<span class="sd">        Only one write operation is allowed simultaneously.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          An RpcError exception if the write failed.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.send_initial_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.send_initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                    <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Sends the initial metadata value to the client.</span>
+
+<span class="sd">        This method need not be called by implementations if they have no</span>
+<span class="sd">        metadata to add to what the gRPC runtime will transmit.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          initial_metadata: The initial :term:`metadata`.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.abort"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.abort">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">abort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                    <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Raises an exception to terminate the RPC with a non-OK status.</span>
+
+<span class="sd">        The code and details passed as arguments will supercede any existing</span>
+<span class="sd">        ones.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          code: A StatusCode object to be sent to the client.</span>
+<span class="sd">            It must not be StatusCode.OK.</span>
+<span class="sd">          details: A UTF-8-encodable string to be sent to the client upon</span>
+<span class="sd">            termination of the RPC.</span>
+<span class="sd">          trailing_metadata: A sequence of tuple represents the trailing</span>
+<span class="sd">            :term:`metadata`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          Exception: An exception is always raised to signal the abortion the</span>
+<span class="sd">            RPC to the gRPC runtime.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.set_trailing_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.set_trailing_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                    <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Sends the trailing metadata for the RPC.</span>
+
+<span class="sd">        This method need not be called by implementations if they have no</span>
+<span class="sd">        metadata to add to what the gRPC runtime will transmit.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          trailing_metadata: The trailing :term:`metadata`.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.invocation_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.invocation_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">invocation_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the metadata from the sent by the client.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          The invocation :term:`metadata`.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.set_code"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.set_code">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">set_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Sets the value to be used as status code upon RPC completion.</span>
+
+<span class="sd">        This method need not be called by method implementations if they wish</span>
+<span class="sd">        the gRPC runtime to determine the status code of the RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          code: A StatusCode object to be sent to the client.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.set_details"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.set_details">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">set_details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Sets the value to be used the as detail string upon RPC completion.</span>
+
+<span class="sd">        This method need not be called by method implementations if they have</span>
+<span class="sd">        no details to transmit.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          details: A UTF-8-encodable string to be sent to the client upon</span>
+<span class="sd">            termination of the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.set_compression"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.set_compression">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">set_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compression</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Set the compression algorithm to be used for the entire call.</span>
+
+<span class="sd">        This is an EXPERIMENTAL method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.disable_next_message_compression"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.disable_next_message_compression">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">disable_next_message_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Disables compression for the next response message.</span>
+
+<span class="sd">        This is an EXPERIMENTAL method.</span>
+
+<span class="sd">        This method will override any compression configuration set during</span>
+<span class="sd">        server creation or set on the call.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2018, The gRPC Authors.
+      
+    </div>
+
+    
+
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-60127042-1']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+    
+  </body>
+</html>

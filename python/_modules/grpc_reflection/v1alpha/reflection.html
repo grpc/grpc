@@ -1,19 +1,17 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc_reflection.v1alpha.reflection &#8212; gRPC Python 1.26.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>grpc_reflection.v1alpha.reflection &#8212; gRPC Python 1.28.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -31,7 +29,7 @@
 
 
 
-<p class="blurb">1.26.0</p>
+<p class="blurb">1.28.0</p>
 
 
 
@@ -42,6 +40,7 @@
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../grpc_asyncio.html">gRPC AsyncIO API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc_channelz.html">gRPC Channelz</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc_health_checking.html">gRPC Health Checking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc_reflection.html">gRPC Reflection</a></li>
@@ -60,17 +59,15 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -179,10 +176,8 @@
             <span class="n">message_descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindMessageTypeByName</span><span class="p">(</span>
                 <span class="n">containing_type</span><span class="p">)</span>
             <span class="n">extension_numbers</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-                <span class="nb">sorted</span><span class="p">(</span>
-                    <span class="n">extension</span><span class="o">.</span><span class="n">number</span>
-                    <span class="k">for</span> <span class="n">extension</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindAllExtensions</span><span class="p">(</span>
-                        <span class="n">message_descriptor</span><span class="p">)))</span>
+                <span class="nb">sorted</span><span class="p">(</span><span class="n">extension</span><span class="o">.</span><span class="n">number</span> <span class="k">for</span> <span class="n">extension</span> <span class="ow">in</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindAllExtensions</span><span class="p">(</span><span class="n">message_descriptor</span><span class="p">)))</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">_not_found_error</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -194,13 +189,12 @@
 
     <span class="k">def</span> <span class="nf">_list_services</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServerReflectionResponse</span><span class="p">(</span>
-            <span class="n">list_services_response</span><span class="o">=</span><span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ListServiceResponse</span><span class="p">(</span>
-                <span class="n">service</span><span class="o">=</span><span class="p">[</span>
-                    <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServiceResponse</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">service_name</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">service_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_names</span>
-                <span class="p">]))</span>
+            <span class="n">list_services_response</span><span class="o">=</span><span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ListServiceResponse</span><span class="p">(</span><span class="n">service</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServiceResponse</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">service_name</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">service_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_names</span>
+            <span class="p">]))</span>
 
-    <span class="k">def</span> <span class="nf">ServerReflectionInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<div class="viewcode-block" id="ReflectionServicer.ServerReflectionInfo"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo">[docs]</a>    <span class="k">def</span> <span class="nf">ServerReflectionInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="c1"># pylint: disable=unused-argument</span>
         <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s1">&#39;file_by_filename&#39;</span><span class="p">):</span>
@@ -221,9 +215,9 @@
                 <span class="k">yield</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServerReflectionResponse</span><span class="p">(</span>
                     <span class="n">error_response</span><span class="o">=</span><span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ErrorResponse</span><span class="p">(</span>
                         <span class="n">error_code</span><span class="o">=</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INVALID_ARGUMENT</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                        <span class="n">error_message</span><span class="o">=</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INVALID_ARGUMENT</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                        <span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
-                    <span class="p">))</span></div>
+                        <span class="n">error_message</span><span class="o">=</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INVALID_ARGUMENT</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span>
+                        <span class="n">encode</span><span class="p">(),</span>
+                    <span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="enable_server_reflection"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.enable_server_reflection">[docs]</a><span class="k">def</span> <span class="nf">enable_server_reflection</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

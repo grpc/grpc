@@ -1,0 +1,1624 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.28.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="gRPC Channelz" href="grpc_channelz.html" />
+    <link rel="prev" title="gRPC" href="grpc.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">gRPC Python</a></h1>
+
+
+
+<p class="blurb">1.28.0</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="grpc.html">gRPC</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC AsyncIO API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#caveats">Caveats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#enable-asyncio-in-grpc">Enable AsyncIO in gRPC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-channel">Create Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#channel-object">Channel Object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-server">Create Server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server-object">Server Object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grpc-exceptions">gRPC Exceptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#shared-context">Shared Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#client-side-context">Client-Side Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server-side-context">Server-Side Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#client-side-interceptor">Client-Side Interceptor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-callable-interfaces">Multi-Callable Interfaces</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_channelz.html">gRPC Channelz</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_health_checking.html">gRPC Health Checking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_status.html">gRPC Status</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_testing.html">gRPC Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="grpc.html" title="previous chapter">gRPC</a></li>
+      <li>Next: <a href="grpc_channelz.html" title="next chapter">gRPC Channelz</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-grpc.experimental.aio">
+<span id="grpc-asyncio-api"></span><h1>gRPC AsyncIO API<a class="headerlink" href="#module-grpc.experimental.aio" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>gRPC AsyncIO API is the <strong>new version</strong> of gRPC Python whose architecture is
+tailored to AsyncIO. Underlying, it utilizes the same C-extension, gRPC C-Core,
+as existing stack, and it replaces all gRPC IO operations with methods provided
+by the AsyncIO library.</p>
+<p>This stack currently is under active development. Feel free to offer
+suggestions by opening issues on our GitHub repo <a class="reference external" href="https://github.com/grpc/grpc">grpc/grpc</a>.</p>
+<p>The design doc can be found here as <a class="reference external" href="https://github.com/grpc/proposal/pull/155">gRFC</a>.</p>
+</div>
+<div class="section" id="caveats">
+<h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h2>
+<p>gRPC Async API objects may only be used on the thread on which they were
+created. AsyncIO doesn’t provide thread safety for most of its APIs.</p>
+</div>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="enable-asyncio-in-grpc">
+<h3>Enable AsyncIO in gRPC<a class="headerlink" href="#enable-asyncio-in-grpc" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="grpc.experimental.aio.init_grpc_aio">
+<code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">init_grpc_aio</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#grpc.experimental.aio.init_grpc_aio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable AsyncIO for gRPC Python.</p>
+<p>This function is idempotent and it should be invoked before creation of
+AsyncIO stack objects. Otherwise, the application might deadlock.</p>
+<p>This function configurates the gRPC C-Core to invoke AsyncIO methods for IO
+operations (e.g., socket read, write). The configuration applies to the
+entire process.</p>
+<p>After invoking this function, making blocking function calls in coroutines
+or in the thread running event loop will block the event loop, potentially
+starving all RPCs in the process. Refer to the Python language
+documentation on AsyncIO for more details (<a class="reference external" href="https://docs.python.org/3/library/asyncio-dev.html#running-blocking-code">running-blocking-code</a>).</p>
+</dd></dl>
+
+</div>
+<div class="section" id="create-channel">
+<h3>Create Channel<a class="headerlink" href="#create-channel" title="Permalink to this headline">¶</a></h3>
+<p>Channels are the abstraction of clients, where most of networking logic
+happens, for example, managing one or more underlying connections, name
+resolution, load balancing, flow control, etc.. If you are using ProtoBuf,
+Channel objects works best when further encapsulate into stub objects, then the
+application can invoke remote functions as if they are local functions.</p>
+<dl class="function">
+<dt id="grpc.experimental.aio.insecure_channel">
+<code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">insecure_channel</code><span class="sig-paren">(</span><em class="sig-param">target</em>, <em class="sig-param">options=None</em>, <em class="sig-param">compression=None</em>, <em class="sig-param">interceptors=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_channel.html#insecure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.insecure_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an insecure asynchronous Channel to a server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> (<em>str</em>) – The server address</p></li>
+<li><p><strong>options</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>]</em>) – An optional list of key-value pairs (channel args
+in gRPC Core runtime) to configure the channel.</p></li>
+<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An optional value indicating the compression method to be
+used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
+<li><p><strong>interceptors</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>grpc.experimental.aio._interceptor.UnaryUnaryClientInterceptor</em><em>]</em><em>]</em>) – An optional sequence of interceptors that will be executed for
+any call executed with this channel.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A Channel.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.experimental.aio.secure_channel">
+<code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">secure_channel</code><span class="sig-paren">(</span><em class="sig-param">target</em>, <em class="sig-param">credentials</em>, <em class="sig-param">options=None</em>, <em class="sig-param">compression=None</em>, <em class="sig-param">interceptors=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_channel.html#secure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.secure_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a secure asynchronous Channel to a server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> (<em>str</em>) – The server address.</p></li>
+<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.ChannelCredentials" title="grpc.ChannelCredentials"><em>grpc.ChannelCredentials</em></a>) – A ChannelCredentials instance.</p></li>
+<li><p><strong>options</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>]</em>) – An optional list of key-value pairs (channel args
+in gRPC Core runtime) to configure the channel.</p></li>
+<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An optional value indicating the compression method to be
+used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
+<li><p><strong>interceptors</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>grpc.experimental.aio._interceptor.UnaryUnaryClientInterceptor</em><em>]</em><em>]</em>) – An optional sequence of interceptors that will be executed for
+any call executed with this channel.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An aio.Channel.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="channel-object">
+<h3>Channel Object<a class="headerlink" href="#channel-object" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.experimental.aio.Channel">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">Channel</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables asynchronous RPC invocation as a client.</p>
+<p>Channel objects implement the Asynchronous Context Manager (aka. async
+with) type, although they are not supportted to be entered and exited
+multiple times.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.__aenter__">
+<em class="property">abstract async </em><code class="sig-name descname">__aenter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.__aenter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.__aenter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts an asynchronous context manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Channel the channel that was instantiated.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.__aexit__">
+<em class="property">abstract async </em><code class="sig-name descname">__aexit__</code><span class="sig-paren">(</span><em class="sig-param">exc_type</em>, <em class="sig-param">exc_val</em>, <em class="sig-param">exc_tb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.__aexit__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.__aexit__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finishes the asynchronous context manager by closing the channel.</p>
+<p>Still active RPCs will be cancelled.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.channel_ready">
+<em class="property">abstract async </em><code class="sig-name descname">channel_ready</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.channel_ready"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.channel_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a coroutine that blocks until the Channel is READY.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.close">
+<em class="property">abstract async </em><code class="sig-name descname">close</code><span class="sig-paren">(</span><em class="sig-param">grace=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes this Channel and releases all resources held by it.</p>
+<p>This method immediately stops the channel from executing new RPCs in
+all cases.</p>
+<p>If a grace period is specified, this method wait until all active
+RPCs are finshed, once the grace period is reached the ones that haven’t
+been terminated are cancelled. If a grace period is not specified
+(by passing None for grace), all existing RPCs are cancelled immediately.</p>
+<p>This method is idempotent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>grace</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.get_state">
+<em class="property">abstract </em><code class="sig-name descname">get_state</code><span class="sig-paren">(</span><em class="sig-param">try_to_connect=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.get_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.get_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the connectivity state of a channel.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<p>If the channel reaches a stable connectivity state, it is guaranteed
+that the return value of this function will eventually converge to that
+state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>try_to_connect</strong> (<em>bool</em>) – a bool indicate whether the Channel should try to
+connect to peer or not.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.ChannelConnectivity" title="grpc.ChannelConnectivity">grpc.ChannelConnectivity</a></p>
+</dd>
+</dl>
+<p>Returns: A ChannelConnectivity object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.stream_stream">
+<em class="property">abstract </em><code class="sig-name descname">stream_stream</code><span class="sig-paren">(</span><em class="sig-param">method</em>, <em class="sig-param">request_serializer=None</em>, <em class="sig-param">response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.stream_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a StreamStreamMultiCallable for a stream-stream method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
+<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – Optional behaviour for serializing the request
+message. Request goes unserialized in case None is passed.</p></li>
+<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional behaviour for deserializing the
+response message. Response goes undeserialized in case None
+is passed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A StreamStreamMultiCallable value for the named stream-stream method.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>grpc.experimental.aio._base_channel.StreamStreamMultiCallable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.stream_unary">
+<em class="property">abstract </em><code class="sig-name descname">stream_unary</code><span class="sig-paren">(</span><em class="sig-param">method</em>, <em class="sig-param">request_serializer=None</em>, <em class="sig-param">response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.stream_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a StreamUnaryMultiCallable for a stream-unary method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
+<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – Optional behaviour for serializing the request
+message. Request goes unserialized in case None is passed.</p></li>
+<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional behaviour for deserializing the
+response message. Response goes undeserialized in case None
+is passed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A StreamUnaryMultiCallable value for the named stream-unary method.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>grpc.experimental.aio._base_channel.StreamUnaryMultiCallable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.unary_stream">
+<em class="property">abstract </em><code class="sig-name descname">unary_stream</code><span class="sig-paren">(</span><em class="sig-param">method</em>, <em class="sig-param">request_serializer=None</em>, <em class="sig-param">response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.unary_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a UnaryStreamMultiCallable for a unary-stream method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
+<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – Optional behaviour for serializing the request
+message. Request goes unserialized in case None is passed.</p></li>
+<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional behaviour for deserializing the
+response message. Response goes undeserialized in case None
+is passed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A UnarySteramMultiCallable value for the named unary-stream method.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>grpc.experimental.aio._base_channel.UnaryStreamMultiCallable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.unary_unary">
+<em class="property">abstract </em><code class="sig-name descname">unary_unary</code><span class="sig-paren">(</span><em class="sig-param">method</em>, <em class="sig-param">request_serializer=None</em>, <em class="sig-param">response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.unary_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a UnaryUnaryMultiCallable for a unary-unary method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
+<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – Optional behaviour for serializing the request
+message. Request goes unserialized in case None is passed.</p></li>
+<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional behaviour for deserializing the
+response message. Response goes undeserialized in case None
+is passed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A UnaryUnaryMultiCallable value for the named unary-unary method.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>grpc.experimental.aio._base_channel.UnaryUnaryMultiCallable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Channel.wait_for_state_change">
+<em class="property">abstract async </em><code class="sig-name descname">wait_for_state_change</code><span class="sig-paren">(</span><em class="sig-param">last_observed_state</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#Channel.wait_for_state_change"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Channel.wait_for_state_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits for a change in connectivity state.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<p>The function blocks until there is a change in the channel connectivity
+state from the “last_observed_state”. If the state is already
+different, this function will return immediately.</p>
+<p>There is an inherent race between the invocation of
+“Channel.wait_for_state_change” and “Channel.get_state”. The state can
+change arbitrary many times during the race, so there is no way to
+observe every state transition.</p>
+<p>If there is a need to put a timeout for this function, please refer to
+“asyncio.wait_for”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>last_observed_state</strong> (<a class="reference internal" href="grpc.html#grpc.ChannelConnectivity" title="grpc.ChannelConnectivity"><em>grpc.ChannelConnectivity</em></a>) – A grpc.ChannelConnectivity object representing
+the last known state.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="create-server">
+<h3>Create Server<a class="headerlink" href="#create-server" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="grpc.experimental.aio.server">
+<code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">server</code><span class="sig-paren">(</span><em class="sig-param">migration_thread_pool=None</em>, <em class="sig-param">handlers=None</em>, <em class="sig-param">interceptors=None</em>, <em class="sig-param">options=None</em>, <em class="sig-param">maximum_concurrent_rpcs=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_server.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Server with which RPCs can be serviced.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>migration_thread_pool</strong> (<em>Optional</em><em>[</em><em>concurrent.futures._base.Executor</em><em>]</em>) – A futures.ThreadPoolExecutor to be used by the
+Server to execute non-AsyncIO RPC handlers for migration purpose.</p></li>
+<li><p><strong>handlers</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><a class="reference internal" href="grpc.html#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><em>grpc.GenericRpcHandler</em></a><em>]</em><em>]</em>) – An optional list of GenericRpcHandlers used for executing RPCs.
+More handlers may be added by calling add_generic_rpc_handlers any time
+before the server is started.</p></li>
+<li><p><strong>interceptors</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – An optional list of ServerInterceptor objects that observe
+and optionally manipulate the incoming RPCs before handing them over to
+handlers. The interceptors are given control in the order they are
+specified. This is an EXPERIMENTAL API.</p></li>
+<li><p><strong>options</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>]</em>) – An optional list of key-value pairs (channel args in gRPC runtime)
+to configure the channel.</p></li>
+<li><p><strong>maximum_concurrent_rpcs</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The maximum number of concurrent RPCs this server
+will service before returning RESOURCE_EXHAUSTED status, or None to
+indicate no limit.</p></li>
+<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This compression algorithm will be used for the
+lifetime of the server unless overridden by set_compression. This is an
+EXPERIMENTAL option.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A Server object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="server-object">
+<h3>Server Object<a class="headerlink" href="#server-object" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.experimental.aio.Server">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">Server</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serves RPCs.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.Server.add_generic_rpc_handlers">
+<em class="property">abstract </em><code class="sig-name descname">add_generic_rpc_handlers</code><span class="sig-paren">(</span><em class="sig-param">generic_rpc_handlers</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#Server.add_generic_rpc_handlers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Server.add_generic_rpc_handlers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers GenericRpcHandlers with this Server.</p>
+<p>This method is only safe to call before the server is started.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generic_rpc_handlers</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="grpc.html#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><em>grpc.GenericRpcHandler</em></a><em>]</em>) – A sequence of GenericRpcHandlers that will be</p></li>
+<li><p><strong>to service RPCs.</strong> (<em>used</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Server.add_insecure_port">
+<em class="property">abstract </em><code class="sig-name descname">add_insecure_port</code><span class="sig-paren">(</span><em class="sig-param">address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#Server.add_insecure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Server.add_insecure_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens an insecure port for accepting RPCs.</p>
+<p>A port is a communication endpoint that used by networking protocols,
+like TCP and UDP. To date, we only support TCP.</p>
+<p>This method may only be called before starting the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>address</strong> (<em>str</em>) – The address for which to open a port. If the port is 0,
+or not specified in the address, then the gRPC runtime will choose a port.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An integer port on which the server will accept RPC requests.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Server.add_secure_port">
+<em class="property">abstract </em><code class="sig-name descname">add_secure_port</code><span class="sig-paren">(</span><em class="sig-param">address</em>, <em class="sig-param">server_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#Server.add_secure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Server.add_secure_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens a secure port for accepting RPCs.</p>
+<p>A port is a communication endpoint that used by networking protocols,
+like TCP and UDP. To date, we only support TCP.</p>
+<p>This method may only be called before starting the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>address</strong> (<em>str</em>) – The address for which to open a port.
+if the port is 0, or not specified in the address, then the gRPC
+runtime will choose a port.</p></li>
+<li><p><strong>server_credentials</strong> (<a class="reference internal" href="grpc.html#grpc.ServerCredentials" title="grpc.ServerCredentials"><em>grpc.ServerCredentials</em></a>) – A ServerCredentials object.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An integer port on which the server will accept RPC requests.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Server.start">
+<em class="property">abstract async </em><code class="sig-name descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#Server.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Server.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts this Server.</p>
+<p>This method may only be called once. (i.e. it is not idempotent).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Server.stop">
+<em class="property">abstract async </em><code class="sig-name descname">stop</code><span class="sig-paren">(</span><em class="sig-param">grace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#Server.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Server.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops this Server.</p>
+<p>This method immediately stops the server from servicing new RPCs in
+all cases.</p>
+<p>If a grace period is specified, this method returns immediately and all
+RPCs active at the end of the grace period are aborted. If a grace
+period is not specified (by passing None for grace), all existing RPCs
+are aborted immediately and this method blocks until the last RPC
+handler terminates.</p>
+<p>This method is idempotent and may be called at any time. Passing a
+smaller grace value in a subsequent call will have the effect of
+stopping the Server sooner (passing None will have the effect of
+stopping the server immediately). Passing a larger grace value in a
+subsequent call will not have the effect of stopping the server later
+(i.e. the most restrictive grace value is used).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>grace</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – A duration of time in seconds or None.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Server.wait_for_termination">
+<em class="property">abstract async </em><code class="sig-name descname">wait_for_termination</code><span class="sig-paren">(</span><em class="sig-param">timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#Server.wait_for_termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Server.wait_for_termination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Continues current coroutine once the server stops.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<p>The wait will not consume computational resources during blocking, and
+it will block until one of the two following conditions are met:</p>
+<ol class="arabic simple">
+<li><p>The server is stopped or terminated;</p></li>
+<li><p>A timeout occurs if timeout is not <cite>None</cite>.</p></li>
+</ol>
+<p>The timeout argument works in the same way as <cite>threading.Event.wait()</cite>.
+<a class="reference external" href="https://docs.python.org/3/library/threading.html#threading.Event.wait">https://docs.python.org/3/library/threading.html#threading.Event.wait</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – A floating point number specifying a timeout for the
+operation in seconds.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicates if the operation times out.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="grpc-exceptions">
+<h3>gRPC Exceptions<a class="headerlink" href="#grpc-exceptions" title="Permalink to this headline">¶</a></h3>
+<dl class="exception">
+<dt id="grpc.experimental.aio.BaseError">
+<em class="property">exception </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">BaseError</code><a class="headerlink" href="#grpc.experimental.aio.BaseError" title="Permalink to this definition">¶</a></dt>
+<dd><p>The base class for exceptions generated by gRPC AsyncIO stack.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.experimental.aio.UsageError">
+<em class="property">exception </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">UsageError</code><a class="headerlink" href="#grpc.experimental.aio.UsageError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when the usage of API by applications is inappropriate.</p>
+<p>For example, trying to invoke RPC on a closed channel, mixing two styles
+of streaming API on the client side. This exception should not be
+suppressed.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.experimental.aio.AbortError">
+<em class="property">exception </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">AbortError</code><a class="headerlink" href="#grpc.experimental.aio.AbortError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when calling abort in servicer methods.</p>
+<p>This exception should not be suppressed. Applications may catch it to
+perform certain clean-up logic, and then re-raise it.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.experimental.aio.InternalError">
+<em class="property">exception </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">InternalError</code><a class="headerlink" href="#grpc.experimental.aio.InternalError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised upon unexpected errors in native code.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.experimental.aio.AioRpcError">
+<em class="property">exception </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">AioRpcError</code><span class="sig-paren">(</span><em class="sig-param">code</em>, <em class="sig-param">details=None</em>, <em class="sig-param">initial_metadata=None</em>, <em class="sig-param">trailing_metadata=None</em>, <em class="sig-param">debug_error_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_call.html#AioRpcError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.AioRpcError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An implementation of RpcError to be used by the asynchronous API.</p>
+<p>Raised RpcError is a snapshot of the final status of the RPC, values are
+determined. Hence, its methods no longer needs to be coroutines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>grpc.StatusCode</em></a>) – </p></li>
+<li><p><strong>details</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>AnyStr</strong><strong>]</strong><strong>]</strong><strong>] </strong><strong>initial_metadata</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>,</em>) – </p></li>
+<li><p><strong>AnyStr</strong><strong>]</strong><strong>]</strong><strong>] </strong><strong>trailing_metadata</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>,</em>) – </p></li>
+<li><p><strong>debug_error_string</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="grpc.experimental.aio.AioRpcError.code">
+<code class="sig-name descname">code</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_call.html#AioRpcError.code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.AioRpcError.code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the status code sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The <cite>grpc.StatusCode</cite> status code.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode">grpc.StatusCode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.AioRpcError.debug_error_string">
+<code class="sig-name descname">debug_error_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_call.html#AioRpcError.debug_error_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.AioRpcError.debug_error_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the debug error string sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The debug error string received.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.AioRpcError.details">
+<code class="sig-name descname">details</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_call.html#AioRpcError.details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.AioRpcError.details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the details sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The description of the error.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.AioRpcError.initial_metadata">
+<code class="sig-name descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_call.html#AioRpcError.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.AioRpcError.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the initial metadata sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The initial metadata received.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Optional[Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.AioRpcError.trailing_metadata">
+<code class="sig-name descname">trailing_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_call.html#AioRpcError.trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.AioRpcError.trailing_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the trailing metadata sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The trailing metadata received.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Optional[Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="shared-context">
+<h3>Shared Context<a class="headerlink" href="#shared-context" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.experimental.aio.RpcContext">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">RpcContext</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#RpcContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.RpcContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides RPC-related information and action.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.RpcContext.add_done_callback">
+<em class="property">abstract </em><code class="sig-name descname">add_done_callback</code><span class="sig-paren">(</span><em class="sig-param">callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#RpcContext.add_done_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.RpcContext.add_done_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a callback to be called on RPC termination.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callback</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable object will be called with the call object as</p></li>
+<li><p><strong>only argument.</strong> (<em>its</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.RpcContext.cancel">
+<em class="property">abstract </em><code class="sig-name descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#RpcContext.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.RpcContext.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels the RPC.</p>
+<p>Idempotent and has no effect if the RPC has already terminated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A bool indicates if the cancellation is performed or not.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.RpcContext.cancelled">
+<em class="property">abstract </em><code class="sig-name descname">cancelled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#RpcContext.cancelled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.RpcContext.cancelled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the RPC is cancelled.</p>
+<p>The RPC is cancelled when the cancellation was requested with cancel().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A bool indicates whether the RPC is cancelled or not.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.RpcContext.done">
+<em class="property">abstract </em><code class="sig-name descname">done</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#RpcContext.done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.RpcContext.done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the RPC is done.</p>
+<p>An RPC is done if the RPC is completed, cancelled or aborted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A bool indicates if the RPC is done.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.RpcContext.time_remaining">
+<em class="property">abstract </em><code class="sig-name descname">time_remaining</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#RpcContext.time_remaining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.RpcContext.time_remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the length of allowed time remaining for the RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A nonnegative float indicating the length of allowed time in seconds
+remaining for the RPC to complete before it is considered to have
+timed out, or None if no deadline was specified for the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Optional[float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="client-side-context">
+<h3>Client-Side Context<a class="headerlink" href="#client-side-context" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.experimental.aio.Call">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">Call</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#Call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Call" title="Permalink to this definition">¶</a></dt>
+<dd><p>The abstract base class of an RPC on the client-side.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.Call.code">
+<em class="property">abstract async </em><code class="sig-name descname">code</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#Call.code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Call.code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the status code sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The StatusCode value for the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode">grpc.StatusCode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Call.details">
+<em class="property">abstract async </em><code class="sig-name descname">details</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#Call.details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Call.details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the details sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The details string of the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Call.initial_metadata">
+<em class="property">abstract async </em><code class="sig-name descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#Call.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Call.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the initial metadata sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The initial <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Sequence[Tuple[str, AnyStr]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.Call.trailing_metadata">
+<em class="property">abstract async </em><code class="sig-name descname">trailing_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#Call.trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.Call.trailing_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the trailing metadata sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Sequence[Tuple[str, AnyStr]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.UnaryUnaryCall">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">UnaryUnaryCall</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#UnaryUnaryCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryUnaryCall" title="Permalink to this definition">¶</a></dt>
+<dd><p>The abstract base class of an unary-unary RPC on the client-side.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.UnaryUnaryCall.__await__">
+<em class="property">abstract </em><code class="sig-name descname">__await__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#UnaryUnaryCall.__await__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryUnaryCall.__await__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Await the response message to be ready.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The response message of the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Awaitable[ResponseType]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.UnaryStreamCall">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">UnaryStreamCall</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#UnaryStreamCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryStreamCall" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="grpc.experimental.aio.UnaryStreamCall.__aiter__">
+<em class="property">abstract </em><code class="sig-name descname">__aiter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#UnaryStreamCall.__aiter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryStreamCall.__aiter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the async iterable representation that yields messages.</p>
+<p>Under the hood, it is calling the “read” method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An async iterable object that yields messages.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>AsyncIterable[ResponseType]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.UnaryStreamCall.read">
+<em class="property">abstract async </em><code class="sig-name descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#UnaryStreamCall.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryStreamCall.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads one message from the stream.</p>
+<p>Read operations must be serialized when called from multiple
+coroutines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A response message, or an <cite>grpc.aio.EOF</cite> to indicate the end of the
+stream.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Union[grpc._cython.cygrpc._EOF, ResponseType]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.StreamUnaryCall">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">StreamUnaryCall</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamUnaryCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamUnaryCall" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="grpc.experimental.aio.StreamUnaryCall.__await__">
+<em class="property">abstract </em><code class="sig-name descname">__await__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamUnaryCall.__await__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamUnaryCall.__await__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Await the response message to be ready.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The response message of the stream.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Awaitable[ResponseType]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.StreamUnaryCall.done_writing">
+<em class="property">abstract async </em><code class="sig-name descname">done_writing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamUnaryCall.done_writing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamUnaryCall.done_writing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies server that the client is done sending messages.</p>
+<p>After done_writing is called, any additional invocation to the write
+function will fail. This function is idempotent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.StreamUnaryCall.write">
+<em class="property">abstract async </em><code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param">request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamUnaryCall.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamUnaryCall.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes one message to the stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>An RpcError exception if the write failed.</strong> – </p>
+</dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><p><strong>request</strong> (<em>RequestType</em>) – </p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.StreamStreamCall">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">StreamStreamCall</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamStreamCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamStreamCall" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="grpc.experimental.aio.StreamStreamCall.__aiter__">
+<em class="property">abstract </em><code class="sig-name descname">__aiter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamStreamCall.__aiter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamStreamCall.__aiter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the async iterable representation that yields messages.</p>
+<p>Under the hood, it is calling the “read” method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An async iterable object that yields messages.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>AsyncIterable[ResponseType]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.StreamStreamCall.done_writing">
+<em class="property">abstract async </em><code class="sig-name descname">done_writing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamStreamCall.done_writing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamStreamCall.done_writing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies server that the client is done sending messages.</p>
+<p>After done_writing is called, any additional invocation to the write
+function will fail. This function is idempotent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.StreamStreamCall.read">
+<em class="property">abstract async </em><code class="sig-name descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamStreamCall.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamStreamCall.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads one message from the stream.</p>
+<p>Read operations must be serialized when called from multiple
+coroutines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A response message, or an <cite>grpc.aio.EOF</cite> to indicate the end of the
+stream.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Union[grpc._cython.cygrpc._EOF, ResponseType]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.StreamStreamCall.write">
+<em class="property">abstract async </em><code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param">request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_call.html#StreamStreamCall.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamStreamCall.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes one message to the stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>An RpcError exception if the write failed.</strong> – </p>
+</dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><p><strong>request</strong> (<em>RequestType</em>) – </p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="server-side-context">
+<h3>Server-Side Context<a class="headerlink" href="#server-side-context" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.experimental.aio.ServicerContext">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">ServicerContext</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>A context object passed to method implementations.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.abort">
+<em class="property">abstract async </em><code class="sig-name descname">abort</code><span class="sig-paren">(</span><em class="sig-param">code</em>, <em class="sig-param">details</em>, <em class="sig-param">trailing_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.abort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.abort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
+<p>The code and details passed as arguments will supercede any existing
+ones.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>grpc.StatusCode</em></a>) – A StatusCode object to be sent to the client.
+It must not be StatusCode.OK.</p></li>
+<li><p><strong>details</strong> (<em>str</em>) – A UTF-8-encodable string to be sent to the client upon
+termination of the RPC.</p></li>
+<li><p><strong>trailing_metadata</strong> (<em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>AnyStr</em><em>]</em><em>]</em>) – A sequence of tuple represents the trailing
+<a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – An exception is always raised to signal the abortion the
+    RPC to the gRPC runtime.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.disable_next_message_compression">
+<em class="property">abstract </em><code class="sig-name descname">disable_next_message_compression</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.disable_next_message_compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.disable_next_message_compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables compression for the next response message.</p>
+<p>This is an EXPERIMENTAL method.</p>
+<p>This method will override any compression configuration set during
+server creation or set on the call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.invocation_metadata">
+<em class="property">abstract </em><code class="sig-name descname">invocation_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.invocation_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.invocation_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the metadata from the sent by the client.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The invocation <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Optional[Sequence[Tuple[str, AnyStr]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.read">
+<em class="property">abstract async </em><code class="sig-name descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads one message from the RPC.</p>
+<p>Only one read operation is allowed simultaneously.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A response message of the RPC.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>An RpcError exception if the read failed.</strong> – </p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>RequestType</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.send_initial_metadata">
+<em class="property">abstract async </em><code class="sig-name descname">send_initial_metadata</code><span class="sig-paren">(</span><em class="sig-param">initial_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.send_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends the initial metadata value to the client.</p>
+<p>This method need not be called by implementations if they have no
+metadata to add to what the gRPC runtime will transmit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>initial_metadata</strong> (<em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>AnyStr</em><em>]</em><em>]</em>) – The initial <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.set_code">
+<em class="property">abstract </em><code class="sig-name descname">set_code</code><span class="sig-paren">(</span><em class="sig-param">code</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.set_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.set_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the value to be used as status code upon RPC completion.</p>
+<p>This method need not be called by method implementations if they wish
+the gRPC runtime to determine the status code of the RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>grpc.StatusCode</em></a>) – A StatusCode object to be sent to the client.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.set_compression">
+<em class="property">abstract </em><code class="sig-name descname">set_compression</code><span class="sig-paren">(</span><em class="sig-param">compression</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.set_compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.set_compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the compression algorithm to be used for the entire call.</p>
+<p>This is an EXPERIMENTAL method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.set_details">
+<em class="property">abstract </em><code class="sig-name descname">set_details</code><span class="sig-paren">(</span><em class="sig-param">details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.set_details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.set_details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the value to be used the as detail string upon RPC completion.</p>
+<p>This method need not be called by method implementations if they have
+no details to transmit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>details</strong> (<em>str</em>) – A UTF-8-encodable string to be sent to the client upon
+termination of the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.set_trailing_metadata">
+<em class="property">abstract async </em><code class="sig-name descname">set_trailing_metadata</code><span class="sig-paren">(</span><em class="sig-param">trailing_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.set_trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.set_trailing_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends the trailing metadata for the RPC.</p>
+<p>This method need not be called by implementations if they have no
+metadata to add to what the gRPC runtime will transmit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>trailing_metadata</strong> (<em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>AnyStr</em><em>]</em><em>]</em>) – The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.ServicerContext.write">
+<em class="property">abstract async </em><code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param">message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_server.html#ServicerContext.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ServicerContext.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes one message to the RPC.</p>
+<p>Only one write operation is allowed simultaneously.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>An RpcError exception if the write failed.</strong> – </p>
+</dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><p><strong>message</strong> (<em>ResponseType</em>) – </p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="client-side-interceptor">
+<h3>Client-Side Interceptor<a class="headerlink" href="#client-side-interceptor" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.experimental.aio.ClientCallDetails">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">ClientCallDetails</code><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#ClientCallDetails"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.ClientCallDetails" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes an RPC to be invoked.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> – The method name of the RPC.</p></li>
+<li><p><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.</p></li>
+<li><p><strong>metadata</strong> – Optional metadata to be transmitted to the service-side of
+the RPC.</p></li>
+<li><p><strong>credentials</strong> – An optional CallCredentials for the RPC.</p></li>
+<li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional flag to
+enable wait for ready mechanism.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">InterceptedUnaryUnaryCall</code><span class="sig-paren">(</span><em class="sig-param">interceptors</em>, <em class="sig-param">request</em>, <em class="sig-param">timeout</em>, <em class="sig-param">metadata</em>, <em class="sig-param">credentials</em>, <em class="sig-param">wait_for_ready</em>, <em class="sig-param">channel</em>, <em class="sig-param">method</em>, <em class="sig-param">request_serializer</em>, <em class="sig-param">response_deserializer</em>, <em class="sig-param">loop</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used for running a <cite>UnaryUnaryCall</cite> wrapped by interceptors.</p>
+<p>Interceptors might have some work to do before the RPC invocation with
+the capacity of changing the invocation parameters, and some work to do
+after the RPC invocation with the capacity for accessing to the wrapped
+<cite>UnaryUnaryCall</cite>.</p>
+<p>It handles also early and later cancellations, when the RPC has not even
+started and the execution is still held by the interceptors or when the
+RPC has finished but again the execution is still held by the interceptors.</p>
+<p>Once the RPC is finally executed, all methods are finally done against the
+intercepted call, being at the same time the same call returned to the
+interceptors.</p>
+<p>For most of the methods, like <cite>initial_metadata()</cite> the caller does not need
+to wait until the interceptors task is finished, once the RPC is done the
+caller will have the freedom for accessing to the results.</p>
+<p>For the <cite>__await__</cite> method is it is proxied to the intercepted call only when
+the interceptor task is finished.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.add_done_callback">
+<code class="sig-name descname">add_done_callback</code><span class="sig-paren">(</span><em class="sig-param">callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.add_done_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.add_done_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a callback to be called on RPC termination.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callback</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable object will be called with the call object as</p></li>
+<li><p><strong>only argument.</strong> (<em>its</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.cancel">
+<code class="sig-name descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels the RPC.</p>
+<p>Idempotent and has no effect if the RPC has already terminated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A bool indicates if the cancellation is performed or not.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.cancelled">
+<code class="sig-name descname">cancelled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.cancelled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.cancelled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the RPC is cancelled.</p>
+<p>The RPC is cancelled when the cancellation was requested with cancel().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A bool indicates whether the RPC is cancelled or not.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.code">
+<em class="property">async </em><code class="sig-name descname">code</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the status code sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The StatusCode value for the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode">grpc.StatusCode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.details">
+<em class="property">async </em><code class="sig-name descname">details</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the details sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The details string of the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.done">
+<code class="sig-name descname">done</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the RPC is done.</p>
+<p>An RPC is done if the RPC is completed, cancelled or aborted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A bool indicates if the RPC is done.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.initial_metadata">
+<em class="property">async </em><code class="sig-name descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the initial metadata sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The initial <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Optional[Sequence[Tuple[str, AnyStr]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.time_remaining">
+<code class="sig-name descname">time_remaining</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.time_remaining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.time_remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the length of allowed time remaining for the RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A nonnegative float indicating the length of allowed time in seconds
+remaining for the RPC to complete before it is considered to have
+timed out, or None if no deadline was specified for the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Optional[float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.experimental.aio.InterceptedUnaryUnaryCall.trailing_metadata">
+<em class="property">async </em><code class="sig-name descname">trailing_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#InterceptedUnaryUnaryCall.trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.InterceptedUnaryUnaryCall.trailing_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the trailing metadata sent by the server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Optional[Sequence[Tuple[str, AnyStr]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.UnaryUnaryClientInterceptor">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">UnaryUnaryClientInterceptor</code><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#UnaryUnaryClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryUnaryClientInterceptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords intercepting unary-unary invocations.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.UnaryUnaryClientInterceptor.intercept_unary_unary">
+<em class="property">abstract async </em><code class="sig-name descname">intercept_unary_unary</code><span class="sig-paren">(</span><em class="sig-param">continuation</em>, <em class="sig-param">client_call_details</em>, <em class="sig-param">request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_interceptor.html#UnaryUnaryClientInterceptor.intercept_unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryUnaryClientInterceptor.intercept_unary_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intercepts a unary-unary invocation asynchronously.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><em>grpc.experimental.aio._interceptor.ClientCallDetails</em><em>, </em><em>RequestType</em><em>]</em><em>, </em><em>grpc.experimental.aio._call.UnaryUnaryCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+executing the next interceptor in chain or invoking the
+actual RPC on the underlying Channel. It is the interceptor’s
+responsibility to call it if it decides to move the RPC forward.
+The interceptor can use
+<cite>response_future = await continuation(client_call_details, request)</cite>
+to continue with the RPC. <cite>continuation</cite> returns the response of the
+RPC.</p></li>
+<li><p><strong>client_call_details</strong> (<em>grpc.experimental.aio._interceptor.ClientCallDetails</em>) – A ClientCallDetails object describing the
+outgoing RPC.</p></li>
+<li><p><strong>request</strong> (<em>RequestType</em>) – The request value for the RPC.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object with the RPC response.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#grpc.experimental.aio.AioRpcError" title="grpc.experimental.aio.AioRpcError"><strong>AioRpcError</strong></a> – Indicating that the RPC terminated with non-OK status.</p></li>
+<li><p><strong>asyncio.CancelledError</strong> – Indicating that the RPC was canceled.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Union[grpc.experimental.aio._call.UnaryUnaryCall, ResponseType]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="multi-callable-interfaces">
+<h3>Multi-Callable Interfaces<a class="headerlink" href="#multi-callable-interfaces" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.experimental.aio.UnaryUnaryMultiCallable">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">UnaryUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#UnaryUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables asynchronous invocation of a unary-call RPC.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.UnaryUnaryMultiCallable.__call__">
+<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">*</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=()</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>Any</em>) – The request value for the RPC.</p></li>
+<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow
+for the RPC.</p></li>
+<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>AnyStr</em><em>]</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+service-side of the RPC.</p></li>
+<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</p></li>
+<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A UnaryUnaryCall object.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcError" title="grpc.RpcError"><strong>RpcError</strong></a> – Indicates that the RPC terminated with non-OK status. The
+    raised RpcError will also be a Call for the RPC affording the RPC’s
+    metadata, status code, and details.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>grpc.experimental.aio._base_call.UnaryUnaryCall</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.UnaryStreamMultiCallable">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">UnaryStreamMultiCallable</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#UnaryStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables asynchronous invocation of a server-streaming RPC.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.UnaryStreamMultiCallable.__call__">
+<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">*</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=()</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>Any</em>) – The request value for the RPC.</p></li>
+<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow
+for the RPC.</p></li>
+<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>AnyStr</em><em>]</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+service-side of the RPC.</p></li>
+<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</p></li>
+<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A UnaryStreamCall object.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcError" title="grpc.RpcError"><strong>RpcError</strong></a> – Indicates that the RPC terminated with non-OK status. The
+    raised RpcError will also be a Call for the RPC affording the RPC’s
+    metadata, status code, and details.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>grpc.experimental.aio._base_call.UnaryStreamCall</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.StreamUnaryMultiCallable">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">StreamUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#StreamUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables asynchronous invocation of a client-streaming RPC.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.StreamUnaryMultiCallable.__call__">
+<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">request_async_iterator=None</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=()</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> – The request value for the RPC.</p></li>
+<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow
+for the RPC.</p></li>
+<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>AnyStr</em><em>]</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+service-side of the RPC.</p></li>
+<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</p></li>
+<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
+<li><p><strong>request_async_iterator</strong> (<em>Optional</em><em>[</em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A StreamUnaryCall object.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcError" title="grpc.RpcError"><strong>RpcError</strong></a> – Indicates that the RPC terminated with non-OK status. The
+    raised RpcError will also be a Call for the RPC affording the RPC’s
+    metadata, status code, and details.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>grpc.experimental.aio._base_call.StreamUnaryCall</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.experimental.aio.StreamStreamMultiCallable">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.experimental.aio.</code><code class="sig-name descname">StreamStreamMultiCallable</code><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#StreamStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables asynchronous invocation of a bidirectional-streaming RPC.</p>
+<dl class="method">
+<dt id="grpc.experimental.aio.StreamStreamMultiCallable.__call__">
+<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">request_async_iterator=None</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=()</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/experimental/aio/_base_channel.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.experimental.aio.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> – The request value for the RPC.</p></li>
+<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow
+for the RPC.</p></li>
+<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>AnyStr</em><em>]</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+service-side of the RPC.</p></li>
+<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</p></li>
+<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
+<li><p><strong>request_async_iterator</strong> (<em>Optional</em><em>[</em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A StreamStreamCall object.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcError" title="grpc.RpcError"><strong>RpcError</strong></a> – Indicates that the RPC terminated with non-OK status. The
+    raised RpcError will also be a Call for the RPC affording the RPC’s
+    metadata, status code, and details.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>grpc.experimental.aio._base_call.StreamStreamCall</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2018, The gRPC Authors.
+      
+      |
+      <a href="_sources/grpc_asyncio.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-60127042-1']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+    
+  </body>
+</html>
