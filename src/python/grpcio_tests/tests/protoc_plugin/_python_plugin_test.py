@@ -504,7 +504,8 @@ class PythonPluginTest(unittest.TestCase):
         service.server.stop(None)
 
 
-@unittest.skipIf(sys.version_info[0] < 3, "Unsupported on Python 2.")
+@unittest.skipIf(sys.version_info[0] < 3 or sys.version_info[1] < 6,
+                 "Unsupported on Python 2.")
 class SimpleStubsPluginTest(unittest.TestCase):
     servicer_methods = _ServicerMethods()
 
