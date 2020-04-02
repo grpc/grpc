@@ -50,15 +50,17 @@ constexpr char kXdsRouting[] = "xds_routing_experimental";
 // Config for xds_routing LB policy.
 class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
  public:
-  struct ChildConfig {
-    RefCountedPtr<LoadBalancingPolicy::Config> config;
-  };
   struct Matcher {
     std::string service;
     std::string method;
   };
-  using RouteTable = std::vector<std::pair<Matcher, std::string>>;
-  using ActionMap = std::map<std::string, ChildConfig>;
+  struct Route {
+    Matcher matcher;
+    std::string action;
+  };
+  using RouteTable = std::vector<Route>;
+  using ActionMap =
+      std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>>;
 
   XdsRoutingLbConfig(ActionMap action_map, RouteTable route_table)
       : action_map_(std::move(action_map)),
@@ -95,7 +97,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
         : name_(std::move(name)), picker_(std::move(picker)) {}
     PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
 
-    const std::string& name() { return name_; }
+    const std::string& name() const { return name_; }
 
    private:
     std::string name_;
@@ -114,7 +116,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    RoutePicker(RouteTable route_table)
+    explicit RoutePicker(RouteTable route_table)
         : route_table_(std::move(route_table)) {}
 
     PickResult Pick(PickArgs args) override;
@@ -132,7 +134,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
     void Orphan() override;
 
-    void UpdateLocked(const XdsRoutingLbConfig::ChildConfig& config,
+    void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
                       const ServerAddressList& addresses,
                       const grpc_channel_args* args);
     void ExitIdleLocked();
@@ -221,18 +223,24 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
       break;
     }
   }
-  std::vector<absl::string_view> v = absl::StrSplit(path.substr(1), '/');
-  for (int i = 0; i < route_table_.size(); ++i) {
-    if (v[0] == route_table_[i].matcher.service &&
-        ("" == route_table_[i].matcher.method ||
-         v[1] == route_table_[i].matcher.method)) {
-      auto picker = route_table_[i].picker;
-      if (picker != nullptr) {
-        return picker.get()->Pick(args);
-      }
+  std::vector<absl::string_view> path_elements =
+      absl::StrSplit(path.substr(1), '/');
+  for (const Route& route : route_table_) {
+    if ((path_elements[0] == route.matcher.service &&
+         (path_elements[1] == route.matcher.method ||
+          "" == route.matcher.method)) ||
+        ("" == route.matcher.service && "" == route.matcher.method)) {
+      return route.picker.get()->Pick(args);
     }
   }
-  return route_table_[route_table_.size() - 1].picker.get()->Pick(args);
+  PickResult result;
+  result.type = PickResult::PICK_FAILED;
+  result.error =
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                             "xds routing picker not given any picker; default "
+                             "route not configured"),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+  return result;
 }
 
 //
@@ -294,7 +302,7 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
   // Add or update the actions in the new config.
   for (const auto& p : config_->action_map()) {
     const std::string& name = p.first;
-    const XdsRoutingLbConfig::ChildConfig& config = p.second;
+    RefCountedPtr<LoadBalancingPolicy::Config> config = p.second;
     auto it = actions_.find(name);
     if (it == actions_.end()) {
       it = actions_.emplace(std::make_pair(name, nullptr)).first;
@@ -306,9 +314,9 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
 }
 
 void XdsRoutingLb::UpdateStateLocked() {
-  std::map<std::string, RefCountedPtr<ChildPickerWrapper>> picker_map;
   // Also count the number of children in each state, to determine the
   // overall state.
+  size_t num_ready = 0;
   size_t num_connecting = 0;
   size_t num_idle = 0;
   size_t num_transient_failures = 0;
@@ -321,7 +329,7 @@ void XdsRoutingLb::UpdateStateLocked() {
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
-        picker_map[child_name] = child->picker_wrapper();
+        ++num_ready;
         break;
       }
       case GRPC_CHANNEL_CONNECTING: {
@@ -342,7 +350,7 @@ void XdsRoutingLb::UpdateStateLocked() {
   }
   // Determine aggregated connectivity state.
   grpc_connectivity_state connectivity_state;
-  if (picker_map.size() > 0) {
+  if (num_ready > 0) {
     connectivity_state = GRPC_CHANNEL_READY;
   } else if (num_connecting > 0) {
     connectivity_state = GRPC_CHANNEL_CONNECTING;
@@ -356,20 +364,30 @@ void XdsRoutingLb::UpdateStateLocked() {
             ConnectivityStateName(connectivity_state));
   }
   std::unique_ptr<SubchannelPicker> picker;
-  RoutePicker::RouteTable route_table;
   switch (connectivity_state) {
-    case GRPC_CHANNEL_READY:
+    case GRPC_CHANNEL_READY: {
+      RoutePicker::RouteTable route_table;
       for (int i = 0; i < config_->route_table().size(); ++i) {
         RoutePicker::Route route;
-        route.matcher = config_->route_table()[i].first;
-        auto child_picker = picker_map.find(config_->route_table()[i].second);
-        if (child_picker != picker_map.end()) {
-          route.picker = child_picker->second;
+        route.matcher = config_->route_table()[i].matcher;
+        auto it = actions_.find(config_->route_table()[i].action);
+        if (it != actions_.end()) {
+          route.picker = it->second->picker_wrapper();
+        } else {
+          gpr_log(GPR_INFO,
+                  "[xds_routing_lb %p] child policy may have mis-behaved and "
+                  "did not return a picker, creating a QueuePicker for %s",
+                  this, config_->route_table()[i].action.c_str());
+          route.picker = MakeRefCounted<ChildPickerWrapper>(
+              config_->route_table()[i].action,
+              absl::make_unique<QueuePicker>(
+                  Ref(DEBUG_LOCATION, "QueuePicker")));
         }
         route_table.push_back(std::move(route));
       }
       picker = absl::make_unique<RoutePicker>(std::move(route_table));
       break;
+    }
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
       picker =
@@ -452,7 +470,7 @@ XdsRoutingLb::XdsRoutingChild::CreateChildPolicyLocked(
 }
 
 void XdsRoutingLb::XdsRoutingChild::UpdateLocked(
-    const XdsRoutingLbConfig::ChildConfig& config,
+    RefCountedPtr<LoadBalancingPolicy::Config> config,
     const ServerAddressList& addresses, const grpc_channel_args* args) {
   if (xds_routing_policy_->shutting_down_) return;
   // Update child weight.
@@ -467,7 +485,7 @@ void XdsRoutingLb::XdsRoutingChild::UpdateLocked(
   }
   // Construct update args.
   UpdateArgs update_args;
-  update_args.config = config.config;
+  update_args.config = config;
   update_args.addresses = addresses;
   update_args.args = grpc_channel_args_copy(args);
   // Update the policy.
@@ -538,8 +556,10 @@ void XdsRoutingLb::XdsRoutingChild::Helper::UpdateState(
     grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
     gpr_log(GPR_INFO,
-            "XdsRoutingChild::Helper::UpdateState child %s, state %d, piker %p",
-            xds_routing_child_->name_.c_str(), state, picker.get());
+            "[xds_routing_lb %p] child %s: received update: state=%s picker=%p",
+            xds_routing_child_->xds_routing_policy_.get(),
+            xds_routing_child_->name_.c_str(), ConnectivityStateName(state),
+            picker.get());
   }
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
   // Cache the picker in the XdsRoutingChild.
@@ -604,6 +624,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     std::vector<grpc_error*> error_list;
     // action map.
     XdsRoutingLbConfig::ActionMap action_map;
+    std::set<std::string /*action_name*/> action_in_use_set;
     auto it = json.object_value().find("actions");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -613,7 +634,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "field:actions error:type should be object"));
     } else {
       for (const auto& p : it->second.object_value()) {
-        XdsRoutingLbConfig::ChildConfig child_config;
+        RefCountedPtr<LoadBalancingPolicy::Config> child_config;
         std::vector<grpc_error*> child_errors =
             ParseChildConfig(p.second, &child_config);
         if (!child_errors.empty()) {
@@ -630,6 +651,10 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
         }
       }
     }
+    if (action_map.size() == 0) {
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING("no valid actions configured"));
+    }
     XdsRoutingLbConfig::RouteTable route_table;
     it = json.object_value().find("routes");
     if (it == json.object_value().end()) {
@@ -639,36 +664,76 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:routes error:type should be array"));
     } else {
-      for (const auto& route : it->second.array_value()) {
-        // Parse methodName.
-        XdsRoutingLbConfig::Matcher matcher;
-        std::vector<grpc_error*> route_errors =
-            ParseRouteConfig(route.object_value(), &matcher);
-        if (!route_errors.empty()) {
-          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-          // string is not static in this case.
-          grpc_error* error =
-              GRPC_ERROR_CREATE_FROM_COPIED_STRING("field:routes error");
-          for (grpc_error* route_error : route_errors) {
-            error = grpc_error_add_child(error, route_error);
+      const Json::Array& array = it->second.array_value();
+      for (size_t i = 0; i < array.size(); ++i) {
+        const Json& element = array[i];
+        if (element.type() != Json::Type::OBJECT) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              absl::StrCat("filed: routes element: ", i,
+                           " should be of type object")
+                  .c_str()));
+        } else {
+          XdsRoutingLbConfig::Route route;
+          // Parse MethodName.
+          auto it = element.object_value().find("methodName");
+          if (it == json.object_value().end()) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                absl::StrCat("field:routes element: ", i,
+                             " methodName is required")
+                    .c_str()));
+          } else if (it->second.type() != Json::Type::OBJECT) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                absl::StrCat("field:routes element: ", i,
+                             " methodName type should be object")
+                    .c_str()));
+          } else {
+            std::vector<grpc_error*> route_errors =
+                ParseRouteConfig(it->second, &route.matcher);
+            if (!route_errors.empty()) {
+              grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                  absl::StrCat("field:routes element: ", i, " error").c_str());
+              for (grpc_error* route_error : route_errors) {
+                error = grpc_error_add_child(error, route_error);
+              }
+              error_list.push_back(error);
+            }
           }
-          error_list.push_back(error);
-        }
-        // Parse action.
-        std::string cluster_name;
-        std::vector<grpc_error*> action_errors =
-            ParseActionConfig(route.object_value(), &cluster_name);
-        if (!action_errors.empty()) {
-          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-          // string is not static in this case.
-          grpc_error* error =
-              GRPC_ERROR_CREATE_FROM_COPIED_STRING("field:actions error:");
-          for (grpc_error* action_error : action_errors) {
-            error = grpc_error_add_child(error, action_error);
+          // Parse action.
+          it = element.object_value().find("action");
+          if (it == json.object_value().end()) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                absl::StrCat("field:routes element: ", i, " action is required")
+                    .c_str()));
+          } else if (it->second.type() != Json::Type::STRING) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                absl::StrCat("field:routes element: ", i,
+                             " action type should be string")
+                    .c_str()));
+          } else {
+            route.action = it->second.string_value();
           }
-          error_list.push_back(error);
+          // Validate action exists and mark it as used.
+          if (action_map.find(route.action) == action_map.end()) {
+            grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                absl::StrCat("action ", route.action, " does not exist")
+                    .c_str());
+            error_list.push_back(error);
+          } else {
+            action_in_use_set.insert(route.action);
+          }
+          route_table.emplace_back(std::move(route));
         }
-        route_table.emplace_back(std::move(matcher), std::move(cluster_name));
+      }
+    }
+    if (route_table.size() == 0) {
+      grpc_error* error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid routes configured");
+      error_list.push_back(error);
+    }
+    for (const auto& action : action_map) {
+      if (action_in_use_set.find(action.first) == action_in_use_set.end()) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            absl::StrCat("action ", action.first, " is never used").c_str()));
       }
     }
     if (!error_list.empty()) {
@@ -682,7 +747,8 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
 
  private:
   static std::vector<grpc_error*> ParseChildConfig(
-      const Json& json, XdsRoutingLbConfig::ChildConfig* child_config) {
+      const Json& json,
+      RefCountedPtr<LoadBalancingPolicy::Config>* child_config) {
     std::vector<grpc_error*> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -690,21 +756,20 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
       return error_list;
     }
     auto it = json.object_value().find("child_policy");
-    if (it != json.object_value().end()) {
+    if (it == json.object_value().end()) {
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("did not find childPolicy"));
+    } else {
       grpc_error* parse_error = GRPC_ERROR_NONE;
-      child_config->config =
-          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second,
-                                                                &parse_error);
-      if (child_config->config == nullptr) {
+      *child_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+          it->second, &parse_error);
+      if (*child_config == nullptr) {
         GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
         std::vector<grpc_error*> child_errors;
         child_errors.push_back(parse_error);
         error_list.push_back(
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
-    } else {
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("did not find childPolicy"));
     }
     return error_list;
   }
@@ -712,57 +777,32 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
   static std::vector<grpc_error*> ParseRouteConfig(
       const Json& json, XdsRoutingLbConfig::Matcher* route_config) {
     std::vector<grpc_error*> error_list;
-    if (json.type() != Json::Type::OBJECT) {
+    // Parse service
+    auto it = json.object_value().find("service");
+    if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "value should be of type object"));
-      return error_list;
-    }
-    auto method_name = json.object_value().find("methodName");
-    if (method_name == json.object_value().end()) {
+          "field:service error: required field not present"));
+    } else if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:routes error:methodName is required"));
-    } else if (method_name->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:routes error:methodName error: type should be object"));
+          "field:service error: should be string"));
     } else {
-      auto service = method_name->second.object_value().find("service");
-      auto method = method_name->second.object_value().find("method");
-      if (service != method_name->second.object_value().end()) {
-        route_config->service = service->second.string_value();
-      } else {
-        route_config->service = "";
-      }
-      if (method != method_name->second.object_value().end()) {
-        route_config->method = method->second.string_value();
-      } else {
-        route_config->method = "";
-      }
-      if ((route_config->service == "") && (route_config->method != "")) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:methodName error: service is empty when method is "
-            "not"));
-      }
+      route_config->service = it->second.string_value();
     }
-    return error_list;
-  }
-
-  static std::vector<grpc_error*> ParseActionConfig(const Json& json,
-                                                    std::string* cluster_name) {
-    std::vector<grpc_error*> error_list;
-    if (json.type() != Json::Type::OBJECT) {
+    // Parse method
+    it = json.object_value().find("method");
+    if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "value should be of type object"));
-      return error_list;
-    }
-    auto action_name = json.object_value().find("action");
-    if (action_name == json.object_value().end()) {
+          "field:method error: required field not present"));
+    } else if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:routes error:action is required"));
-    } else if (action_name->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:methodName error:type should be string"));
+          "field:method error: should be string"));
     } else {
-      *cluster_name = action_name->second.string_value();
+      route_config->method = it->second.string_value();
+    }
+    if (route_config->service == "" && route_config->method != "") {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:methodName error: service is empty when method is "
+          "not"));
     }
     return error_list;
   }

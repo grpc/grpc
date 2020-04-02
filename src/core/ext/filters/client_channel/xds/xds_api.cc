@@ -1020,26 +1020,26 @@ grpc_error* RouteConfigParse(
     const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
     const upb_strview path = envoy_api_v2_route_RouteMatch_path(match);
     if (prefix.size > 0) {
-      std::vector<absl::string_view> v = absl::StrSplit(
+      std::vector<absl::string_view> prefix_elements = absl::StrSplit(
           absl::string_view(prefix.data, prefix.size).substr(1), '/');
-      if (v.size() != 1) {
+      if (prefix_elements.size() != 1) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Prefix not in the required format of /service/");
       }
-      rds_route.service = std::string(v[0].data(), v[0].size());
+      rds_route.service = std::string(prefix_elements[0]);
       if (path.size > 0) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Prefix is not empty string, path cannot also be non-empty.");
       }
     } else if (path.size > 0) {
-      std::vector<absl::string_view> v = absl::StrSplit(
+      std::vector<absl::string_view> path_elements = absl::StrSplit(
           absl::string_view(path.data, path.size).substr(1), '/');
-      if (v.size() != 2) {
+      if (path_elements.size() != 2) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Path not in the required format of /service/method");
       }
-      rds_route.service = std::string(v[0].data(), v[0].size());
-      rds_route.method = std::string(v[1].data(), v[1].size());
+      rds_route.service = std::string(path_elements[0]);
+      rds_route.method = std::string(path_elements[1]);
       if (prefix.size > 0) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Path is not empty string, prefix cannot also be non-empty.");

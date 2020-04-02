@@ -50,8 +50,7 @@ class XdsApi {
     std::string cluster_name;
 
     bool operator==(const RdsRoute& other) const {
-      return (service == other.service &&
-              method == other.method &&
+      return (service == other.service && method == other.method &&
               cluster_name == other.cluster_name);
     }
   };
