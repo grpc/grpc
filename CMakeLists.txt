@@ -457,7 +457,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c compression_test)
   add_dependencies(buildtests_c concurrent_connectivity_test)
   add_dependencies(buildtests_c connection_refused_test)
-  add_dependencies(buildtests_c control_plane_credentials_test)
   add_dependencies(buildtests_c cpu_test)
   add_dependencies(buildtests_c dns_resolver_connectivity_using_ares_resolver_test)
   add_dependencies(buildtests_c dns_resolver_connectivity_using_native_resolver_test)
@@ -4816,40 +4815,6 @@ target_include_directories(connection_refused_test
 )
 
 target_link_libraries(connection_refused_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(control_plane_credentials_test
-  test/core/end2end/cq_verifier.cc
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
-  test/core/security/control_plane_credentials_test.cc
-)
-
-target_include_directories(control_plane_credentials_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(control_plane_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
