@@ -869,6 +869,7 @@ class PythonLanguage(object):
                 else:
                     return (
                         python27_config,
+                        python35_config,
                         python36_config,
                         python37_config,
                     )
