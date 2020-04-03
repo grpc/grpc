@@ -121,7 +121,7 @@ class TestTryConnect(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
     async def test_stream_unary_error(self):
-        call = self._dummy_channel.stream_unary(_TEST_METHOD)(_REQUEST)
+        call = self._dummy_channel.stream_unary(_TEST_METHOD)()
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.try_connect()
