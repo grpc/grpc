@@ -191,6 +191,12 @@ extern grpc_lame_client_channel_create_type grpc_lame_client_channel_create_impo
 typedef void(*grpc_channel_destroy_type)(grpc_channel* channel);
 extern grpc_channel_destroy_type grpc_channel_destroy_import;
 #define grpc_channel_destroy grpc_channel_destroy_import
+typedef grpc_channel_args*(*grpc_channel_args_copy_type)(const grpc_channel_args* src);
+extern grpc_channel_args_copy_type grpc_channel_args_copy_import;
+#define grpc_channel_args_copy grpc_channel_args_copy_import
+typedef void(*grpc_channel_args_destroy_type)(grpc_channel_args* a);
+extern grpc_channel_args_destroy_type grpc_channel_args_destroy_import;
+#define grpc_channel_args_destroy grpc_channel_args_destroy_import
 typedef grpc_call_error(*grpc_call_cancel_type)(grpc_call* call, void* reserved);
 extern grpc_call_cancel_type grpc_call_cancel_import;
 #define grpc_call_cancel grpc_call_cancel_import
@@ -338,6 +344,9 @@ extern grpc_ssl_session_cache_create_channel_arg_type grpc_ssl_session_cache_cre
 typedef void(*grpc_channel_credentials_release_type)(grpc_channel_credentials* creds);
 extern grpc_channel_credentials_release_type grpc_channel_credentials_release_import;
 #define grpc_channel_credentials_release grpc_channel_credentials_release_import
+typedef grpc_channel_credentials*(*grpc_channel_credentials_copy_type)(grpc_channel_credentials* creds);
+extern grpc_channel_credentials_copy_type grpc_channel_credentials_copy_import;
+#define grpc_channel_credentials_copy grpc_channel_credentials_copy_import
 typedef grpc_channel_credentials*(*grpc_google_default_credentials_create_type)(void);
 extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
 #define grpc_google_default_credentials_create grpc_google_default_credentials_create_import

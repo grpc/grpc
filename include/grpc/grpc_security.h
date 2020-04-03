@@ -130,6 +130,11 @@ typedef struct grpc_channel_credentials grpc_channel_credentials;
    The creator of the credentials object is responsible for its release. */
 GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
 
+/** Copy a channel credentials object.
+ */
+GRPCAPI grpc_channel_credentials* grpc_channel_credentials_copy(
+    grpc_channel_credentials* creds);
+
 /** Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. The security level of the
