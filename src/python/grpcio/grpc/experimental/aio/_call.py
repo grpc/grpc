@@ -400,11 +400,11 @@ class _StreamRequestMixin(Call):
             if inspect.isasyncgen(request_iterator):
                 async for request in request_iterator:
                     await self._write(request)
-                await self._done_writing()
             else:
                 for request in request_iterator:
                     await self._write(request)
-                await self._done_writing()
+
+            await self._done_writing()
         except AioRpcError as rpc_error:
             # Rpc status should be exposed through other API. Exceptions raised
             # within this Task won't be retrieved by another coroutine. It's
