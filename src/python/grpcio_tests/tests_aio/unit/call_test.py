@@ -16,22 +16,22 @@
 import asyncio
 import logging
 import unittest
+import datetime
 
 import grpc
 from grpc.experimental import aio
 
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
-from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
-from tests.unit import resources
-
 from tests_aio.unit._test_server import start_test_server
+
+_SHORT_TIMEOUT_S = datetime.timedelta(seconds=1).total_seconds()
 
 _NUM_STREAM_RESPONSES = 5
 _RESPONSE_PAYLOAD_SIZE = 42
 _REQUEST_PAYLOAD_SIZE = 7
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
-_RESPONSE_INTERVAL_US = test_constants.SHORT_TIMEOUT * 1000 * 1000
+_RESPONSE_INTERVAL_US = int(_SHORT_TIMEOUT_S * 1000 * 1000)
 _UNREACHABLE_TARGET = '0.1:1111'
 _INFINITE_INTERVAL_US = 2**31 - 1
 
@@ -434,24 +434,24 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
                 interval_us=_RESPONSE_INTERVAL_US,
             ))
 
-        call = self._stub.StreamingOutputCall(
-            request, timeout=test_constants.SHORT_TIMEOUT * 2)
+        call = self._stub.StreamingOutputCall(request,
+                                              timeout=_SHORT_TIMEOUT_S * 2)
 
         response = await call.read()
         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         # Should be around the same as the timeout
         remained_time = call.time_remaining()
-        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT * 3 / 2)
-        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 5 / 2)
+        self.assertGreater(remained_time, _SHORT_TIMEOUT_S * 3 / 2)
+        self.assertLess(remained_time, _SHORT_TIMEOUT_S * 5 / 2)
 
         response = await call.read()
         self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         # Should be around the timeout minus a unit of wait time
         remained_time = call.time_remaining()
-        self.assertGreater(remained_time, test_constants.SHORT_TIMEOUT / 2)
-        self.assertLess(remained_time, test_constants.SHORT_TIMEOUT * 3 / 2)
+        self.assertGreater(remained_time, _SHORT_TIMEOUT_S / 2)
+        self.assertLess(remained_time, _SHORT_TIMEOUT_S * 3 / 2)
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
@@ -538,14 +538,14 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
             with self.assertRaises(asyncio.CancelledError):
                 for _ in range(_NUM_STREAM_RESPONSES):
                     yield request
-                    await asyncio.sleep(test_constants.SHORT_TIMEOUT)
+                    await asyncio.sleep(_SHORT_TIMEOUT_S)
             request_iterator_received_the_exception.set()
 
         call = self._stub.StreamingInputCall(request_iterator())
 
         # Cancel the RPC after at least one response
         async def cancel_later():
-            await asyncio.sleep(test_constants.SHORT_TIMEOUT * 2)
+            await asyncio.sleep(_SHORT_TIMEOUT_S * 2)
             call.cancel()
 
         cancel_later_task = self.loop.create_task(cancel_later())
@@ -575,6 +575,33 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
                          response.aggregated_payload_size)
 
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_call_rpc_error(self):
+        async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+
+            # The error should be raised automatically without any traffic.
+            call = stub.StreamingInputCall()
+            with self.assertRaises(aio.AioRpcError) as exception_context:
+                await call
+
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE,
+                             exception_context.exception.code())
+
+            self.assertTrue(call.done())
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
+
+    async def test_timeout(self):
+        call = self._stub.StreamingInputCall(timeout=_SHORT_TIMEOUT_S)
+
+        # The error should be raised automatically without any traffic.
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, rpc_error.code())
+        self.assertTrue(call.done())
+        self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, await call.code())
 
 
 # Prepares the request that stream in a ping-pong manner.
@@ -733,14 +760,14 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
             with self.assertRaises(asyncio.CancelledError):
                 for _ in range(_NUM_STREAM_RESPONSES):
                     yield request
-                    await asyncio.sleep(test_constants.SHORT_TIMEOUT)
+                    await asyncio.sleep(_SHORT_TIMEOUT_S)
             request_iterator_received_the_exception.set()
 
         call = self._stub.FullDuplexCall(request_iterator())
 
         # Cancel the RPC after at least one response
         async def cancel_later():
-            await asyncio.sleep(test_constants.SHORT_TIMEOUT * 2)
+            await asyncio.sleep(_SHORT_TIMEOUT_S * 2)
             call.cancel()
 
         cancel_later_task = self.loop.create_task(cancel_later())

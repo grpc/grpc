@@ -158,6 +158,21 @@ class UnaryStreamCall(Generic[RequestType, ResponseType],
           stream.
         """
 
+    @abstractmethod
+    async def try_connect(self) -> None:
+        """Tries to connect to peer and raise aio.AioRpcError if failed.
+
+        This method is available for RPCs with streaming responses. This method
+        enables the application to ensure if the RPC has been successfully
+        connected. Otherwise, an AioRpcError will be raised to explain the
+        reason of the connection failure.
+
+        For RPCs with unary response, the connectivity issue will be raised
+        once the application awaits the call.
+
+        This method is recommended for building retry mechanisms.
+        """
+
 
 class StreamUnaryCall(Generic[RequestType, ResponseType],
                       Call,
@@ -228,4 +243,19 @@ class StreamStreamCall(Generic[RequestType, ResponseType],
 
         After done_writing is called, any additional invocation to the write
         function will fail. This function is idempotent.
+        """
+
+    @abstractmethod
+    async def try_connect(self) -> None:
+        """Tries to connect to peer and raise aio.AioRpcError if failed.
+
+        This method is available for RPCs with streaming responses. This method
+        enables the application to ensure if the RPC has been successfully
+        connected. Otherwise, an AioRpcError will be raised to explain the
+        reason of the connection failure.
+
+        For RPCs with unary response, the connectivity issue will be raised
+        once the application awaits the call.
+
+        This method is recommended for building retry mechanisms.
         """

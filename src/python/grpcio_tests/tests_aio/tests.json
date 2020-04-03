@@ -28,5 +28,6 @@
   "unit.server_interceptor_test.TestServerInterceptor",
   "unit.server_test.TestServer",
   "unit.timeout_test.TestTimeout",
+  "unit.try_connect_test.TestTryConnect",
   "unit.wait_for_ready_test.TestWaitForReady"
 ]

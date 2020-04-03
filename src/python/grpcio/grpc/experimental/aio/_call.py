@@ -536,6 +536,11 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
                 self.cancel()
             raise
 
+    async def try_connect(self) -> None:
+        await self._send_unary_request_task
+        if self.done():
+            await self._raise_for_status()
+
 
 class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
                       _base_call.StreamUnaryCall):
@@ -610,3 +615,8 @@ class StreamStreamCall(_StreamRequestMixin, _StreamResponseMixin, Call,
             if not self.cancelled():
                 self.cancel()
             # No need to raise RpcError here, because no one will `await` this task.
+
+    async def try_connect(self) -> None:
+        await self._metadata_sent.wait()
+        if self.done():
+            await self._raise_for_status()
