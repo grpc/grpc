@@ -87,11 +87,16 @@ argp.add_argument(
     help='Comma-separated list of test cases to run, or \'all\' to run every '
     'test. Available tests: %s' % ' '.join(_TEST_CASES))
 argp.add_argument(
+    '--bootstrap_file',
+    default='',
+    help='File to reference via GRPC_XDS_BOOTSTRAP. Disables built-in '
+    'bootstrap generation')
+argp.add_argument(
     '--client_cmd',
     default=None,
-    help='Command to launch xDS test client. This script will fill in '
-    '{server_uri}, {stats_port} and {qps} parameters using str.format(), and '
-    'generate the GRPC_XDS_BOOTSTRAP file.')
+    help='Command to launch xDS test client. {server_uri}, {stats_port} and '
+    '{qps} references will be replaced using str.format(). GRPC_XDS_BOOTSTRAP '
+    'will be set for the command')
 argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
@@ -1070,11 +1075,14 @@ try:
         server_uri = service_host_name
     else:
         server_uri = service_host_name + ':' + str(gcp.service_port)
-    with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
-        bootstrap_file.write(
-            _BOOTSTRAP_TEMPLATE.format(
-                node_id=socket.gethostname()).encode('utf-8'))
-        bootstrap_path = bootstrap_file.name
+    if args.bootstrap_file:
+        bootstrap_path = os.path.abspath(args.bootstrap_file)
+    else:
+        with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
+            bootstrap_file.write(
+                _BOOTSTRAP_TEMPLATE.format(
+                    node_id=socket.gethostname()).encode('utf-8'))
+            bootstrap_path = bootstrap_file.name
     client_env = dict(os.environ, GRPC_XDS_BOOTSTRAP=bootstrap_path)
     client_cmd = shlex.split(
         args.client_cmd.format(server_uri=server_uri,
