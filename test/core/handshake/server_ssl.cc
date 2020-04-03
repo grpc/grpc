@@ -36,7 +36,7 @@
 
 #include "test/core/handshake/server_ssl_common.h"
 
-int main(int /*argc*/, char* /*argv*/ []) {
+int main(int /*argc*/, char* /*argv*/[]) {
   // Handshake succeeeds when the client supplies the standard ALPN list.
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));

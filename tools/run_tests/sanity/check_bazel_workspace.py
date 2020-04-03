@@ -27,11 +27,10 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 git_hash_pattern = re.compile('[0-9a-f]{40}')
 
 # Parse git hashes from submodules
-git_submodules = subprocess.check_output(
-    'git submodule', shell=True).strip().split('\n')
+git_submodules = subprocess.check_output('git submodule',
+                                         shell=True).strip().split('\n')
 git_submodule_hashes = {
-    re.search(git_hash_pattern, s).group()
-    for s in git_submodules
+    re.search(git_hash_pattern, s).group() for s in git_submodules
 }
 
 _BAZEL_SKYLIB_DEP_NAME = 'bazel_skylib'
@@ -65,6 +64,7 @@ _GRPC_DEP_NAMES = [
     'io_bazel_rules_go',
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
+    'libuv',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -151,8 +151,7 @@ for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
 workspace_git_hashes = {
-    re.search(git_hash_pattern, url).group()
-    for url in archive_urls
+    re.search(git_hash_pattern, url).group() for url in archive_urls
 }
 if len(workspace_git_hashes) == 0:
     print("(Likely) parse error, did not find any bazel git dependencies.")
@@ -170,8 +169,8 @@ if len(workspace_git_hashes - git_submodule_hashes) > 0:
 # Also check that we can override each dependency
 for name in _GRPC_DEP_NAMES:
     names_and_urls_with_overridden_name = {}
-    state = BazelEvalState(
-        names_and_urls_with_overridden_name, overridden_name=name)
+    state = BazelEvalState(names_and_urls_with_overridden_name,
+                           overridden_name=name)
     rules = {
         'native': state,
         'http_archive': lambda **args: state.http_archive(**args),

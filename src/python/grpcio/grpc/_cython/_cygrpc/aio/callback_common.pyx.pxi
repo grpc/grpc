@@ -14,7 +14,7 @@
 
 
 cdef class CallbackFailureHandler:
-    
+
     def __cinit__(self,
                   str core_function_name,
                   object error_details,
@@ -32,25 +32,33 @@ cdef class CallbackFailureHandler:
 
 cdef class CallbackWrapper:
 
-    def __cinit__(self, object future, CallbackFailureHandler failure_handler):
+    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
+        self.context.loop = <cpython.PyObject*>loop
         self.context.failure_handler = <cpython.PyObject*>failure_handler
+        self.context.callback_wrapper = <cpython.PyObject*>self
         # NOTE(lidiz) Not using a list here, because this class is critical in
         # data path. We should make it as efficient as possible.
         self._reference_of_future = future
         self._reference_of_failure_handler = failure_handler
+        # NOTE(lidiz) We need to ensure when Core invokes our callback, the
+        # callback function itself is not deallocated. Othersise, we will get
+        # a segfault. We can view this as Core holding a ref.
+        cpython.Py_INCREF(self)
 
     @staticmethod
     cdef void functor_run(
             grpc_experimental_completion_queue_functor* functor,
             int success):
         cdef CallbackContext *context = <CallbackContext *>functor
-        if success == 0:
-            (<CallbackFailureHandler>context.failure_handler).handle(
-                <object>context.waiter)
-        else:
-            (<object>context.waiter).set_result(None)
+        cdef object waiter = <object>context.waiter
+        if not waiter.cancelled():
+            if success == 0:
+                (<CallbackFailureHandler>context.failure_handler).handle(waiter)
+            else:
+                waiter.set_result(None)
+        cpython.Py_DECREF(<object>context.callback_wrapper)
 
     cdef grpc_experimental_completion_queue_functor *c_functor(self):
         return &self.context.functor
@@ -59,31 +67,14 @@ cdef class CallbackWrapper:
 cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_completion_queue_shutdown',
     'Unknown',
-    RuntimeError)
+    InternalError)
 
 
-cdef class CallbackCompletionQueue:
-
-    def __cinit__(self):
-        self._shutdown_completed = asyncio.get_event_loop().create_future()
-        self._wrapper = CallbackWrapper(
-            self._shutdown_completed,
-            CQ_SHUTDOWN_FAILURE_HANDLER)
-        self._cq = grpc_completion_queue_create_for_callback(
-            self._wrapper.c_functor(),
-            NULL
-        )
-
-    cdef grpc_completion_queue* c_ptr(self):
-        return self._cq
-    
-    async def shutdown(self):
-        grpc_completion_queue_shutdown(self._cq)
-        await self._shutdown_completed
-        grpc_completion_queue_destroy(self._cq)
+class ExecuteBatchError(InternalError):
+    """Raised when execute batch returns a failure from Core."""
 
 
-async def callback_start_batch(GrpcCallWrapper grpc_call_wrapper,
+async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
                                tuple operations,
                                object loop):
     """The callback version of start batch operations."""
@@ -93,10 +84,8 @@ async def callback_start_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef object future = loop.create_future()
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
-        CallbackFailureHandler('callback_start_batch', operations, RuntimeError))
-    # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
-    # when calling "await". This is an over-optimization by Cython.
-    cpython.Py_INCREF(wrapper)
+        loop,
+        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
         batch_operation_tag.c_ops,
@@ -104,10 +93,90 @@ async def callback_start_batch(GrpcCallWrapper grpc_call_wrapper,
         wrapper.c_functor(), NULL)
 
     if error != GRPC_CALL_OK:
-        raise RuntimeError("Failed grpc_call_start_batch: {}".format(error))
+        raise ExecuteBatchError("Failed grpc_call_start_batch: {}".format(error))
 
     await future
-    cpython.Py_DECREF(wrapper)
+
     cdef grpc_event c_event
     # Tag.event must be called, otherwise messages won't be parsed from C
     batch_operation_tag.event(c_event)
+
+
+cdef prepend_send_initial_metadata_op(tuple ops, tuple metadata):
+    # Eventually, this function should be the only function that produces
+    # SendInitialMetadataOperation. So we have more control over the flag.
+    return (SendInitialMetadataOperation(
+        metadata,
+        _EMPTY_FLAG
+    ),) + ops
+
+
+async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
+                           object loop):
+    """Retrives parsed messages from Core.
+
+    The messages maybe already in Core's buffer, so there isn't a 1-to-1
+    mapping between this and the underlying "socket.read()". Also, eventually,
+    this function will end with an EOF, which reads empty message.
+    """
+    cdef ReceiveMessageOperation receive_op = ReceiveMessageOperation(_EMPTY_FLAG)
+    cdef tuple ops = (receive_op,)
+    try:
+        await execute_batch(grpc_call_wrapper, ops, loop)
+    except ExecuteBatchError as e:
+        # NOTE(lidiz) The receive message operation has two ways to indicate
+        # finish state : 1) returns empty message due to EOF; 2) fails inside
+        # the callback (e.g. cancelled).
+        #
+        # Since they all indicates finish, they are better be merged.
+        _LOGGER.debug('Failed to receive any message from Core')
+    return receive_op.message()
+
+
+async def _send_message(GrpcCallWrapper grpc_call_wrapper,
+                        bytes message,
+                        Operation send_initial_metadata_op,
+                        int write_flag,
+                        object loop):
+    cdef SendMessageOperation op = SendMessageOperation(message, write_flag)
+    cdef tuple ops = (op,)
+    if send_initial_metadata_op is not None:
+        ops = (send_initial_metadata_op,) + ops
+    await execute_batch(grpc_call_wrapper, ops, loop)
+
+
+async def _send_initial_metadata(GrpcCallWrapper grpc_call_wrapper,
+                                 tuple metadata,
+                                 int flags,
+                                 object loop):
+    cdef SendInitialMetadataOperation op = SendInitialMetadataOperation(
+        metadata,
+        flags)
+    cdef tuple ops = (op,)
+    await execute_batch(grpc_call_wrapper, ops, loop)
+
+
+async def _receive_initial_metadata(GrpcCallWrapper grpc_call_wrapper,
+                                    object loop):
+    cdef ReceiveInitialMetadataOperation op = ReceiveInitialMetadataOperation(_EMPTY_FLAGS)
+    cdef tuple ops = (op,)
+    await execute_batch(grpc_call_wrapper, ops, loop)
+    return op.initial_metadata()
+
+async def _send_error_status_from_server(GrpcCallWrapper grpc_call_wrapper,
+                                         grpc_status_code code,
+                                         str details,
+                                         tuple trailing_metadata,
+                                         Operation send_initial_metadata_op,
+                                         object loop):
+    assert code != StatusCode.ok, 'Expecting non-ok status code.'
+    cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
+        trailing_metadata,
+        code,
+        details,
+        _EMPTY_FLAGS,
+    )
+    cdef tuple ops = (op,)
+    if send_initial_metadata_op is not None:
+        ops = (send_initial_metadata_op,) + ops
+    await execute_batch(grpc_call_wrapper, ops, loop)

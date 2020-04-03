@@ -5,8 +5,7 @@ package(default_visibility = ["//visibility:public"])
 
 py2and3_test(
     name = "_reflection_servicer_test",
-    size = "small",
-    timeout = "moderate",
+    size = "medium",
     srcs = ["_reflection_servicer_test.py"],
     imports = ["../../"],
     main = "_reflection_servicer_test.py",

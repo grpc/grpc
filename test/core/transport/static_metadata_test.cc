@@ -42,9 +42,9 @@ TEST(StaticMetadataTest, ReadAllStaticElements) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
   int retval = RUN_ALL_TESTS();
   grpc_shutdown();
   return retval;

@@ -44,7 +44,7 @@ LoadBalancingPolicy::~LoadBalancingPolicy() {
 
 void LoadBalancingPolicy::Orphan() {
   ShutdownLocked();
-  Unref();
+  Unref(DEBUG_LOCATION, "Orphan");
 }
 
 //
@@ -57,7 +57,7 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
   args = grpc_channel_args_copy(other.args);
 }
 
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
   // TODO(roth): Use std::move() once channel args is converted to C++.
@@ -75,7 +75,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 }
 
 LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
-    UpdateArgs&& other) {
+    UpdateArgs&& other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
   // TODO(roth): Use std::move() once channel args is converted to C++.
@@ -104,7 +104,8 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    ExitIdleLocked().
   if (!exit_idle_called_) {
     exit_idle_called_ = true;
-    parent_->Ref().release();  // ref held by closure.
+    // Ref held by closure.
+    parent_->Ref(DEBUG_LOCATION, "QueuePicker::CallExitIdle").release();
     parent_->combiner()->Run(
         GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(), nullptr),
         GRPC_ERROR_NONE);
@@ -118,7 +119,7 @@ void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
                                                     grpc_error* /*error*/) {
   LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
   parent->ExitIdleLocked();
-  parent->Unref();
+  parent->Unref(DEBUG_LOCATION, "QueuePicker::CallExitIdle");
 }
 
 //

@@ -26,17 +26,22 @@ if(gRPC_CARES_PROVIDER STREQUAL "module")
 
   if(TARGET c-ares)
     set(_gRPC_CARES_LIBRARIES c-ares)
+    if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+      install(TARGETS c-ares EXPORT gRPCTargets
+        RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR})
+    endif()
   endif()
 
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_CARES_PROVIDER is \"module\"")
+  if(gRPC_INSTALL AND NOT _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_CARES_PROVIDER is \"module\" and CMake version (${CMAKE_VERSION}) is less than 3.13.")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_CARES_PROVIDER STREQUAL "package")
-  # Use "CONFIG" as there is no built-in cmake module for c-ares.
-  find_package(c-ares REQUIRED CONFIG)
+  find_package(c-ares 1.13.0 REQUIRED)
   if(TARGET c-ares::cares)
     set(_gRPC_CARES_LIBRARIES c-ares::cares)
   endif()
-  set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares CONFIG)\nendif()")
+  set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares)\nendif()")
 endif()

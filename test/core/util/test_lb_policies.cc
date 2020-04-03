@@ -209,6 +209,13 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
   }
 };
 
+class InterceptTrailingConfig : public LoadBalancingPolicy::Config {
+ public:
+  const char* name() const override {
+    return kInterceptRecvTrailingMetadataLbPolicyName;
+  }
+};
+
 class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
  public:
   explicit InterceptTrailingFactory(InterceptRecvTrailingMetadataCallback cb,
@@ -226,8 +233,8 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
   }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* /*json*/, grpc_error** /*error*/) const override {
-    return nullptr;
+      const Json& /*json*/, grpc_error** /*error*/) const override {
+    return MakeRefCounted<InterceptTrailingConfig>();
   }
 
  private:

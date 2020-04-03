@@ -1,5 +1,3 @@
-#!/usr/bin/env python2.7
-
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +20,8 @@ import sys
 import tempfile
 import multiprocessing
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', 'run_tests', 'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests',
+                 'python_utils'))
 
 assert sys.argv[1:], 'run generate_projects.sh instead of this directly'
 
@@ -41,7 +39,7 @@ args = argp.parse_args()
 
 json = args.build_files
 
-test = {} if 'TEST' in os.environ else None
+test = {} if os.environ.get('TEST', 'false') == 'true' else None
 
 plugins = sorted(glob.glob('tools/buildgen/plugins/*.py'))
 

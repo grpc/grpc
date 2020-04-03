@@ -26,6 +26,7 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "test/core/util/test_config.h"
 
 /* TODO: tests zero_copy_grpc_protector under TSI test library, which
  * has more comprehensive tests.  */
@@ -116,14 +117,14 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
                  enable_extra_copy, &max_protected_frame_size,
                  &fixture->client) == TSI_OK);
   GPR_ASSERT(tsi_zero_copy_grpc_protector_max_frame_size(
-                 fixture->client, actual_max_protected_frame_size) == TSI_OK);
+                 fixture->client, &actual_max_protected_frame_size) == TSI_OK);
   GPR_ASSERT(actual_max_protected_frame_size == max_protected_frame_size);
   GPR_ASSERT(alts_zero_copy_grpc_protector_create(
                  key, key_length, rekey, /*is_client=*/false, integrity_only,
                  enable_extra_copy, &max_protected_frame_size,
                  &fixture->server) == TSI_OK);
   GPR_ASSERT(tsi_zero_copy_grpc_protector_max_frame_size(
-                 fixture->server, actual_max_protected_frame_size) == TSI_OK);
+                 fixture->server, &actual_max_protected_frame_size) == TSI_OK);
   GPR_ASSERT(actual_max_protected_frame_size == max_protected_frame_size);
   gpr_free(key);
   grpc_core::ExecCtx::Get()->Flush();
@@ -295,7 +296,9 @@ static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(
       /*enable_extra_copy=*/false);
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(
@@ -304,5 +307,6 @@ int main(int /*argc*/, char** /*argv*/) {
       /*enable_extra_copy=*/false);
   alts_zero_copy_protector_seal_unseal_large_buffer_tests(
       /*enable_extra_copy=*/true);
+  grpc_shutdown();
   return 0;
 }

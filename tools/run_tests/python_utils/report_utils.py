@@ -31,9 +31,9 @@ def _filter_msg(msg, output_format):
     if output_format in ['XML', 'HTML']:
         # keep whitespaces but remove formfeed and vertical tab characters
         # that make XML report unparsable.
-        filtered_msg = filter(
-            lambda x: x in string.printable and x != '\f' and x != '\v',
-            msg.decode('UTF-8', 'ignore'))
+        filtered_msg = ''.join(
+            filter(lambda x: x in string.printable and x != '\f' and x != '\v',
+                   msg.decode('UTF-8', 'ignore')))
         if output_format == 'HTML':
             filtered_msg = filtered_msg.replace('"', '&quot;')
         return filtered_msg
@@ -63,13 +63,13 @@ def render_junit_xml_report(resultset,
         for shortname, results in six.iteritems(resultset):
             one_result = {shortname: results}
             tree = new_junit_xml_tree()
-            append_junit_xml_results(tree, one_result, '%s_%s' % (suite_package,
-                                                                  shortname),
-                                     '%s_%s' % (suite_name,
-                                                shortname), '1', replace_dots)
-            per_suite_report_file = os.path.join(
-                os.path.dirname(report_file), shortname,
-                os.path.basename(report_file))
+            append_junit_xml_results(tree, one_result,
+                                     '%s_%s' % (suite_package, shortname),
+                                     '%s_%s' % (suite_name, shortname), '1',
+                                     replace_dots)
+            per_suite_report_file = os.path.join(os.path.dirname(report_file),
+                                                 shortname,
+                                                 os.path.basename(report_file))
             create_xml_report_file(tree, per_suite_report_file)
 
 
@@ -94,13 +94,12 @@ def append_junit_xml_results(tree,
         # after the last dot, which results bad info being displayed in the UI.
         # We replace dots by another character to avoid this problem.
         suite_name = suite_name.replace('.', '_')
-    testsuite = ET.SubElement(
-        tree.getroot(),
-        'testsuite',
-        id=id,
-        package=suite_package,
-        name=suite_name,
-        timestamp=datetime.datetime.now().isoformat())
+    testsuite = ET.SubElement(tree.getroot(),
+                              'testsuite',
+                              id=id,
+                              package=suite_package,
+                              name=suite_name,
+                              timestamp=datetime.datetime.now().isoformat())
     failure_count = 0
     error_count = 0
     for shortname, results in six.iteritems(resultset):
@@ -110,12 +109,12 @@ def append_junit_xml_results(tree,
                 xml_test.set('time', str(result.elapsed_time))
             filtered_msg = _filter_msg(result.message, 'XML')
             if result.state == 'FAILED':
-                ET.SubElement(
-                    xml_test, 'failure', message='Failure').text = filtered_msg
+                ET.SubElement(xml_test, 'failure',
+                              message='Failure').text = filtered_msg
                 failure_count += 1
             elif result.state == 'TIMEOUT':
-                ET.SubElement(
-                    xml_test, 'error', message='Timeout').text = filtered_msg
+                ET.SubElement(xml_test, 'error',
+                              message='Timeout').text = filtered_msg
                 error_count += 1
             elif result.state == 'SKIPPED':
                 ET.SubElement(xml_test, 'skipped', message='Skipped')

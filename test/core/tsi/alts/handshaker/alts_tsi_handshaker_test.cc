@@ -29,12 +29,14 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+#include "test/core/util/test_config.h"
 
 #define ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES "Hello World"
 #define ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME "Hello Google"
 #define ALTS_TSI_HANDSHAKER_TEST_CONSUMED_BYTES "Hello "
 #define ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES "Google"
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY "chapi@service.google.com"
+#define ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL "TSI_PRIVACY_AND_INTEGRITY"
 #define ALTS_TSI_HANDSHAKER_TEST_KEY_DATA \
   "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOPABCDEFGHIJKL"
 #define ALTS_TSI_HANDSHAKER_TEST_BUFFER_SIZE 100
@@ -309,6 +311,10 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  /* Validate security level. */
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+                    peer.properties[4].value.data,
+                    peer.properties[4].value.length) == 0);
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
@@ -365,6 +371,11 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  /* Check security level. */
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+                    peer.properties[4].value.data,
+                    peer.properties[4].value.length) == 0);
+
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
@@ -650,8 +661,11 @@ static void check_handle_response_nullptr_handshaker() {
    * because this test mocks out the grpc call in such a way that the code
    * path that would usually take this ref is skipped. */
   alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  }
   /* Cleanup. */
   grpc_slice_unref(slice);
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
@@ -680,8 +694,11 @@ static void check_handle_response_nullptr_recv_bytes() {
                                                 nullptr, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  }
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
@@ -711,8 +728,11 @@ static void check_handle_response_failed_grpc_call_to_handshaker_service() {
       GRPC_STATUS_UNKNOWN);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(
-      client, GRPC_STATUS_UNKNOWN, GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        client, GRPC_STATUS_UNKNOWN, GRPC_ERROR_NONE);
+  }
   /* Cleanup. */
   grpc_slice_unref(slice);
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
@@ -744,8 +764,11 @@ check_handle_response_failed_recv_message_from_handshaker_service() {
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, false);
   alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  }
   /* Cleanup. */
   grpc_slice_unref(slice);
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
@@ -786,8 +809,11 @@ static void check_handle_response_invalid_resp() {
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  }
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
@@ -802,8 +828,11 @@ static void check_handle_response_success(void* /*unused*/) {
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   alts_handshaker_client_ref_for_testing(cb_event);
-  alts_handshaker_client_on_status_received_for_testing(
-      cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  }
   /* Server start. */
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
@@ -811,8 +840,11 @@ static void check_handle_response_success(void* /*unused*/) {
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   alts_handshaker_client_ref_for_testing(cb_event);
-  alts_handshaker_client_on_status_received_for_testing(
-      cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  }
 }
 
 static void on_failed_resp_cb(tsi_result status, void* user_data,
@@ -848,8 +880,11 @@ static void check_handle_response_failure() {
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true /* is_ok*/);
   alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  }
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
@@ -890,8 +925,11 @@ static void check_handle_response_after_shutdown() {
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  }
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
@@ -929,7 +967,8 @@ void check_handshaker_success() {
   notification_destroy(&tsi_to_caller_notification);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();

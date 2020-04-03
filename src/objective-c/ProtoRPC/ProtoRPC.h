@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class GPBMessage;
 
 /** An object can implement this protocol to receive responses from server from a call. */
-@protocol GRPCProtoResponseHandler<NSObject>
+@protocol GRPCProtoResponseHandler <NSObject>
 
 @required
 
@@ -73,8 +73,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * A convenience class of objects that act as response handlers of calls. Issues
  * response to a single handler when the response is completed.
+ *
+ * The object is stateful and should not be reused for multiple calls. If multiple calls share the
+ * same response handling logic, create separate GRPCUnaryResponseHandler objects for each call.
  */
-@interface GRPCUnaryResponseHandler : NSObject<GRPCProtoResponseHandler>
+@interface GRPCUnaryResponseHandler<ResponseType> : NSObject <GRPCProtoResponseHandler>
 
 /**
  * Creates a responsehandler object with a unary call handler.
@@ -83,7 +86,7 @@ NS_ASSUME_NONNULL_BEGIN
  * responseDispatchQueue: the dispatch queue on which the response handler
  * should be issued. If it's nil, the handler will use the main queue.
  */
-- (nullable instancetype)initWithResponseHandler:(void (^)(GPBMessage *, NSError *))handler
+- (nullable instancetype)initWithResponseHandler:(void (^)(ResponseType, NSError *))handler
                            responseDispatchQueue:(nullable dispatch_queue_t)dispatchQueue;
 
 /** Response headers received during the call. */
@@ -99,7 +102,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and
@@ -130,7 +133,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and

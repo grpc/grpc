@@ -26,6 +26,7 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "test/core/util/test_config.h"
 
 constexpr size_t kMaxSliceLength = 256;
 constexpr size_t kMaxSlices = 10;
@@ -444,7 +445,9 @@ static void alts_grpc_record_protocol_tests(
   alts_grpc_record_protocol_test_fixture_destroy(fixture_5);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
   alts_grpc_record_protocol_tests(
       &test_fixture_integrity_only_no_rekey_no_extra_copy_create);
   alts_grpc_record_protocol_tests(&test_fixture_integrity_only_rekey_create);
@@ -453,6 +456,6 @@ int main(int /*argc*/, char** /*argv*/) {
   alts_grpc_record_protocol_tests(
       &test_fixture_privacy_integrity_no_rekey_create);
   alts_grpc_record_protocol_tests(&test_fixture_privacy_integrity_rekey_create);
-
+  grpc_shutdown();
   return 0;
 }

@@ -60,21 +60,22 @@ endif()
 
 enable_testing()
 
+add_library(port
+  upb/port.c)
 add_library(upb
   upb/decode.c
   upb/encode.c
   upb/generated_util.h
   upb/msg.c
   upb/msg.h
-  upb/port.c
-  upb/port_def.inc
-  upb/port_undef.inc
   upb/table.c
   upb/table.int.h
   upb/upb.c
   upb/decode.h
   upb/encode.h
   upb/upb.h)
+target_link_libraries(upb
+  port)
 add_library(generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE)
 target_link_libraries(generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
   upb)
@@ -85,15 +86,19 @@ add_library(reflection
   upb/msgfactory.h)
 target_link_libraries(reflection
   descriptor_upbproto
+  port
   table
   upb)
 add_library(table INTERFACE)
 target_link_libraries(table INTERFACE
+  port
   upb)
 add_library(legacy_msg_reflection
+  upb/msg.h
   upb/legacy_msg_reflection.c
   upb/legacy_msg_reflection.h)
 target_link_libraries(legacy_msg_reflection
+  port
   table
   upb)
 add_library(handlers
@@ -104,6 +109,7 @@ add_library(handlers
   upb/sink.h)
 target_link_libraries(handlers
   reflection
+  port
   table
   upb)
 add_library(upb_pb
@@ -121,6 +127,7 @@ target_link_libraries(upb_pb
   descriptor_upbproto
   handlers
   reflection
+  port
   table
   upb)
 add_library(upb_json
@@ -135,6 +142,7 @@ add_library(upb_cc_bindings INTERFACE)
 target_link_libraries(upb_cc_bindings INTERFACE
   descriptor_upbproto
   handlers
+  port
   upb)
 add_library(upb_test
   tests/testmain.cc
@@ -142,6 +150,7 @@ add_library(upb_test
   tests/upb_test.h)
 target_link_libraries(upb_test
   handlers
+  port
   upb)
 
 

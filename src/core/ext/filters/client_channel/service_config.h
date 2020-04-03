@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <unordered_map>
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/string_util.h>
 
@@ -27,7 +29,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/slice/slice_hash_table.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -70,7 +72,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
     virtual ~Parser() = default;
 
     virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(
-        const grpc_json* /* json */, grpc_error** error) {
+        const Json& /* json */, grpc_error** error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -78,7 +80,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
     }
 
     virtual std::unique_ptr<ParsedConfig> ParsePerMethodParams(
-        const grpc_json* /* json */, grpc_error** error) {
+        const Json& /* json */, grpc_error** error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -125,16 +127,13 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const char* json,
+  static RefCountedPtr<ServiceConfig> Create(StringView json_string,
                                              grpc_error** error);
 
-  // Takes ownership of \a json_tree.
-  ServiceConfig(grpc_core::UniquePtr<char> service_config_json,
-                grpc_core::UniquePtr<char> json_string, grpc_json* json_tree,
-                grpc_error** error);
+  ServiceConfig(std::string json_string, Json json, grpc_error** error);
   ~ServiceConfig();
 
-  const char* service_config_json() const { return service_config_json_.get(); }
+  const std::string& json_string() const { return json_string_; }
 
   /// Retrieves the global parsed config at index \a index. The
   /// lifetime of the returned object is tied to the lifetime of the
@@ -147,7 +146,8 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// Retrieves the vector of parsed configs for the method identified
   /// by \a path.  The lifetime of the returned vector and contained objects
   /// is tied to the lifetime of the ServiceConfig object.
-  const ParsedConfigVector* GetMethodParsedConfigVector(const grpc_slice& path);
+  const ParsedConfigVector* GetMethodParsedConfigVector(
+      const grpc_slice& path) const;
 
   /// Globally register a service config parser. On successful registration, it
   /// returns the index at which the parser was registered. On failure, -1 is
@@ -163,32 +163,27 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
  private:
   // Helper functions to parse the service config
-  grpc_error* ParseGlobalParams(const grpc_json* json_tree);
-  grpc_error* ParsePerMethodParams(const grpc_json* json_tree);
+  grpc_error* ParseGlobalParams();
+  grpc_error* ParsePerMethodParams();
 
-  // Returns the number of names specified in the method config \a json.
-  static int CountNamesInMethodConfig(grpc_json* json);
+  // Returns a path string for the JSON name object specified by json.
+  // Sets *error on error.
+  static std::string ParseJsonMethodName(const Json& json, grpc_error** error);
 
-  // Returns a path string for the JSON name object specified by \a json.
-  // Returns null on error, and stores error in \a error.
-  static grpc_core::UniquePtr<char> ParseJsonMethodName(grpc_json* json,
-                                                        grpc_error** error);
+  grpc_error* ParseJsonMethodConfig(const Json& json);
 
-  grpc_error* ParseJsonMethodConfigToServiceConfigVectorTable(
-      const grpc_json* json,
-      SliceHashTable<const ParsedConfigVector*>::Entry* entries, size_t* idx);
-
-  grpc_core::UniquePtr<char> service_config_json_;
-  grpc_core::UniquePtr<char> json_string_;  // Underlying storage for json_tree.
-  grpc_json* json_tree_;
+  std::string json_string_;
+  Json json_;
 
   InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
       parsed_global_configs_;
   // A map from the method name to the parsed config vector. Note that we are
   // using a raw pointer and not a unique pointer so that we can use the same
   // vector for multiple names.
-  RefCountedPtr<SliceHashTable<const ParsedConfigVector*>>
-      parsed_method_configs_table_;
+  std::unordered_map<grpc_slice, const ParsedConfigVector*, SliceHash>
+      parsed_method_configs_map_;
+  // Default method config.
+  const ParsedConfigVector* default_method_config_vector_ = nullptr;
   // Storage for all the vectors that are being used in
   // parsed_method_configs_table_.
   InlinedVector<std::unique_ptr<ParsedConfigVector>, 32>

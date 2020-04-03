@@ -31,9 +31,21 @@
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
+#ifdef GRPC_LINUX_ERRQUEUE
+#ifndef SO_ZEROCOPY
+#define SO_ZEROCOPY 60
+#endif
+#ifndef SO_EE_ORIGIN_ZEROCOPY
+#define SO_EE_ORIGIN_ZEROCOPY 5
+#endif
+#endif /* ifdef GRPC_LINUX_ERRQUEUE */
+
 /* a wrapper for accept or accept4 */
 int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
                  int cloexec);
+
+/* set a socket to use zerocopy */
+grpc_error* grpc_set_socket_zerocopy(int fd);
 
 /* set a socket to non blocking mode */
 grpc_error* grpc_set_socket_nonblocking(int fd, int non_blocking);
@@ -113,6 +125,9 @@ typedef enum grpc_dualstack_mode {
 
 /* Only tests should use this flag. */
 extern int grpc_forbid_dualstack_sockets_for_testing;
+
+/* Tries to set the socket to dualstack. Returns 1 on success. */
+int grpc_set_socket_dualstack(int fd);
 
 /* Creates a new socket for connecting to (or listening on) an address.
 

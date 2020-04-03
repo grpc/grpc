@@ -57,7 +57,6 @@ bool grpc_ssl_check_call_host(grpc_core::StringView host,
                               grpc_core::StringView target_name,
                               grpc_core::StringView overridden_target_name,
                               grpc_auth_context* auth_context,
-                              grpc_closure* on_call_host_checked,
                               grpc_error** error);
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
@@ -68,12 +67,24 @@ tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type);
 
+/* Map tsi_security_level string to grpc_security_level enum. */
+grpc_security_level grpc_tsi_security_level_string_to_enum(
+    const char* security_level);
+
+/* Map grpc_security_level enum to a string. */
+const char* grpc_security_level_to_string(grpc_security_level security_level);
+
+/* Check security level of channel and call credential.*/
+bool grpc_check_security_level(grpc_security_level channel_level,
+                               grpc_security_level call_cred_level);
+
 /* Return an array of strings containing alpn protocols. */
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 
 /* Initialize TSI SSL server/client handshaker factory. */
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
+    bool skip_server_certificate_verification,
     tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 

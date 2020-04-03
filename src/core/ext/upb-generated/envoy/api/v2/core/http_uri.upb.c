@@ -10,6 +10,7 @@
 #include "upb/msg.h"
 #include "envoy/api/v2/core/http_uri.upb.h"
 #include "google/protobuf/duration.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"

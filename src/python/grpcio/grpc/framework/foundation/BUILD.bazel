@@ -22,7 +22,7 @@ py_library(
     name = "callable_util",
     srcs = ["callable_util.py"],
     deps = [
-        "//external:six",
+        "@six//:six",
     ] + select({
         "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],
@@ -33,7 +33,7 @@ py_library(
     name = "future",
     srcs = ["future.py"],
     deps = [
-        "//external:six",
+        "@six",
     ],
 )
 
@@ -58,6 +58,6 @@ py_library(
     name = "stream",
     srcs = ["stream.py"],
     deps = [
-        "//external:six",
+        "@six",
     ],
 )

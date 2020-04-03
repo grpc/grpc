@@ -63,7 +63,8 @@ extern void (*grpc_resolve_address_ares)(const char* name,
 extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner);
 
@@ -89,7 +90,7 @@ bool grpc_ares_query_ipv6();
 
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(
-    grpc_core::ServerAddressList* addresses);
+    const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */

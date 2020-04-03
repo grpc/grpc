@@ -219,9 +219,9 @@ static void fake_check_peer(
   const char* prop_name;
   grpc_error* error = GRPC_ERROR_NONE;
   *auth_context = nullptr;
-  if (peer.property_count != 1) {
+  if (peer.property_count != 2) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Fake peers should only have 1 property.");
+        "Fake peers should only have 2 properties.");
     goto end;
   }
   prop_name = peer.properties[0].name;
@@ -240,10 +240,30 @@ static void fake_check_peer(
         "Invalid value for cert type property.");
     goto end;
   }
+  prop_name = peer.properties[1].name;
+  if (prop_name == nullptr ||
+      strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
+    char* msg;
+    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
+                 prop_name == nullptr ? "<EMPTY>" : prop_name);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    gpr_free(msg);
+    goto end;
+  }
+  if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
+              peer.properties[1].value.length) != 0) {
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid value for security level property.");
+    goto end;
+  }
+
   *auth_context = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
       auth_context->get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
+  grpc_auth_context_add_cstring_property(
+      auth_context->get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+      TSI_FAKE_SECURITY_LEVEL);
 end:
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   tsi_peer_destruct(&peer);

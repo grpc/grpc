@@ -69,7 +69,7 @@ class grpc_alts_channel_security_connector final
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name)
-      : grpc_channel_security_connector(/*url_scheme=*/nullptr,
+      : grpc_channel_security_connector(GRPC_ALTS_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
         target_name_(gpr_strdup(target_name)) {}
@@ -129,7 +129,7 @@ class grpc_alts_server_security_connector final
  public:
   grpc_alts_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(/*url_scheme=*/nullptr,
+      : grpc_server_security_connector(GRPC_ALTS_URL_SCHEME,
                                        std::move(server_creds)) {}
 
   ~grpc_alts_server_security_connector() override = default;
@@ -176,6 +176,13 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
       strncmp(cert_type_prop->value.data, TSI_ALTS_CERTIFICATE_TYPE,
               cert_type_prop->value.length) != 0) {
     gpr_log(GPR_ERROR, "Invalid or missing certificate type property.");
+    return nullptr;
+  }
+  /* Check if security level exists. */
+  const tsi_peer_property* security_level_prop =
+      tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  if (security_level_prop == nullptr) {
+    gpr_log(GPR_ERROR, "Missing security level property.");
     return nullptr;
   }
   /* Validate RPC protocol versions. */
@@ -231,6 +238,12 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
       grpc_auth_context_add_property(ctx.get(), TSI_ALTS_CONTEXT,
                                      tsi_prop->value.data,
                                      tsi_prop->value.length);
+    }
+    /* Add security level to auth context. */
+    if (strcmp(tsi_prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+          tsi_prop->value.data, tsi_prop->value.length);
     }
   }
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {

@@ -18,13 +18,17 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
+export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # install cython for all python versions
-python2.7 -m pip install cython setuptools wheel
-python3.5 -m pip install cython setuptools wheel
-python3.6 -m pip install cython setuptools wheel
-python3.7 -m pip install cython setuptools wheel
+python2.7 -m pip install -U cython setuptools wheel --user
+python3.5 -m pip install -U cython setuptools wheel --user
+python3.6 -m pip install -U cython setuptools wheel --user
+python3.7 -m pip install -U cython setuptools wheel --user
+python3.8 -m pip install -U cython setuptools wheel --user
 
 # needed to build ruby artifacts
 time bash tools/distrib/build_ruby_environment_macos.sh

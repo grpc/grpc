@@ -4,6 +4,7 @@ This is an internal rule used by cc_grpc_library, and shouldn't be used
 directly.
 """
 
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
     "get_include_directory",

@@ -28,25 +28,33 @@ logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 
-def serve():
+def parse_interop_server_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--port', type=int, required=True, help='the port on which to serve')
-    parser.add_argument(
-        '--use_tls',
-        default=False,
-        type=resources.parse_bool,
-        help='require a secure connection')
-    args = parser.parse_args()
+    parser.add_argument('--port',
+                        type=int,
+                        required=True,
+                        help='the port on which to serve')
+    parser.add_argument('--use_tls',
+                        default=False,
+                        type=resources.parse_bool,
+                        help='require a secure connection')
+    return parser.parse_args()
+
+
+def get_server_credentials():
+    private_key = resources.private_key()
+    certificate_chain = resources.certificate_chain()
+    return grpc.ssl_server_credentials(((private_key, certificate_chain),))
+
+
+def serve():
+    args = parse_interop_server_arguments()
 
     server = test_common.test_server()
     test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(),
                                                     server)
     if args.use_tls:
-        private_key = resources.private_key()
-        certificate_chain = resources.certificate_chain()
-        credentials = grpc.ssl_server_credentials(((private_key,
-                                                    certificate_chain),))
+        credentials = get_server_credentials()
         server.add_secure_port('[::]:{}'.format(args.port), credentials)
     else:
         server.add_insecure_port('[::]:{}'.format(args.port))

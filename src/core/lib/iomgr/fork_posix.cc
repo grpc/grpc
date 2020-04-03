@@ -22,6 +22,10 @@
 
 #ifdef GRPC_POSIX_FORK
 
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+#include <pthread.h>
+#endif
+
 #include <string.h>
 
 #include <grpc/fork.h>

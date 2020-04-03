@@ -37,8 +37,9 @@
     [NSException raise:NSInvalidArgumentException format:@"testname must be provided."];
   }
   NSError *error = nil;
-  NSString *certs =
-      [NSString stringWithContentsOfFile:certsPath encoding:NSUTF8StringEncoding error:&error];
+  NSString *certs = [NSString stringWithContentsOfFile:certsPath
+                                              encoding:NSUTF8StringEncoding
+                                                 error:&error];
   if (error != nil) {
     [NSException raise:[error localizedDescription] format:@"failed to load certs"];
   }

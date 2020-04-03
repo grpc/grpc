@@ -34,13 +34,13 @@ namespace {
 void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 }  // namespace
 
-Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
+Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
                      const grpc::string& method, const grpc::string& request,
                      grpc::string* response,
                      const OutgoingMetadataContainer& metadata,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata) {
-  CliCall call(std::move(channel), method, metadata);
+  CliCall call(channel, method, metadata);
   call.Write(request);
   call.WritesDone();
   if (!call.Read(response, server_initial_metadata)) {

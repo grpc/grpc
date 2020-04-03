@@ -32,7 +32,8 @@ def _fixture_options(
         supports_proxy_auth = False,
         supports_write_buffering = True,
         client_channel = True,
-        supports_msvc = True):
+        supports_msvc = True,
+        flaky_tests = []):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -47,6 +48,7 @@ def _fixture_options(
         client_channel = client_channel,
         supports_msvc = supports_msvc,
         _platforms = _platforms,
+        flaky_tests = flaky_tests,
     )
 
 # maps fixture name to whether it requires the security library
@@ -62,6 +64,7 @@ END2END_FIXTURES = {
         fullstack = False,
         client_channel = False,
         _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_full": _fixture_options(),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
@@ -88,14 +91,20 @@ END2END_FIXTURES = {
     ),
     "h2_ssl": _fixture_options(secure = True),
     "h2_ssl_cred_reload": _fixture_options(secure = True),
-    "h2_spiffe": _fixture_options(secure = True),
-    "h2_local_uds": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_tls": _fixture_options(secure = True),
+    "h2_local_uds": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
+    ),
     "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "inproc": _fixture_options(
         secure = True,
@@ -124,6 +133,7 @@ END2END_NOSEC_FIXTURES = {
         secure = False,
         _platforms = ["linux", "mac", "posix"],
         supports_msvc = False,
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_full": _fixture_options(secure = False),
     "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
@@ -158,6 +168,7 @@ END2END_NOSEC_FIXTURES = {
         _platforms = ["linux", "mac", "posix"],
         secure = False,
         supports_msvc = False,
+        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
 }
 
@@ -172,7 +183,8 @@ def _test_options(
         needs_http2 = False,
         needs_proxy_auth = False,
         needs_write_buffering = False,
-        needs_client_channel = False):
+        needs_client_channel = False,
+        short_name = None):
     return struct(
         needs_fullstack = needs_fullstack,
         needs_dns = needs_dns,
@@ -185,6 +197,7 @@ def _test_options(
         needs_proxy_auth = needs_proxy_auth,
         needs_write_buffering = needs_write_buffering,
         needs_client_channel = needs_client_channel,
+        short_name = short_name,
     )
 
 # maps test names to options
@@ -273,12 +286,21 @@ END2END_TESTS = {
     "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
         needs_client_channel = True,
         proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
     "retry_non_retriable_status": _test_options(
         needs_client_channel = True,
         proxyable = False,
     ),
-    "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(needs_client_channel = True, proxyable = False),
+    "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_non_retriable_status2",
+    ),
     "retry_recv_initial_metadata": _test_options(
         needs_client_channel = True,
         proxyable = False,
@@ -303,6 +325,9 @@ END2END_TESTS = {
     "retry_streaming_succeeds_before_replay_finished": _test_options(
         needs_client_channel = True,
         proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_streaming2",
     ),
     "retry_throttled": _test_options(
         needs_client_channel = True,
@@ -418,8 +443,9 @@ def grpc_end2end_tests():
             if not _compatible(fopt, topt):
                 continue
 
+            test_short_name = str(t) if not topt.short_name else topt.short_name
             native.sh_test(
-                name = "%s_test@%s" % (f, t),
+                name = "%s_test@%s" % (f, test_short_name),
                 data = [":%s_test" % f],
                 srcs = ["end2end_test.sh"],
                 args = [
@@ -427,11 +453,12 @@ def grpc_end2end_tests():
                     t,
                 ],
                 tags = ["no_linux"] + _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
             )
 
             for poller in POLLERS:
                 native.sh_test(
-                    name = "%s_test@%s@poller=%s" % (f, t, poller),
+                    name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [
@@ -440,6 +467,7 @@ def grpc_end2end_tests():
                         poller,
                     ],
                     tags = ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
                 )
 
 def grpc_end2end_nosec_tests():
@@ -486,8 +514,9 @@ def grpc_end2end_nosec_tests():
             if topt.secure:
                 continue
 
+            test_short_name = str(t) if not topt.short_name else topt.short_name
             native.sh_test(
-                name = "%s_nosec_test@%s" % (f, t),
+                name = "%s_nosec_test@%s" % (f, test_short_name),
                 data = [":%s_nosec_test" % f],
                 srcs = ["end2end_test.sh"],
                 args = [
@@ -495,11 +524,12 @@ def grpc_end2end_nosec_tests():
                     t,
                 ],
                 tags = ["no_linux"] + _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
             )
 
             for poller in POLLERS:
                 native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s" % (f, t, poller),
+                    name = "%s_nosec_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_nosec_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [
@@ -508,4 +538,5 @@ def grpc_end2end_nosec_tests():
                         poller,
                     ],
                     tags = ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
                 )

@@ -18,11 +18,11 @@ Here's how to build and run the Objective-C implementation of the [Hello World](
 example used in [Getting started](https://github.com/grpc/grpc/tree/master/examples).
 
 The example code for this and our other examples lives in the `examples` directory. Clone
-this repository to your local machine by running the following commands:
+this repository at the [latest stable release tag](https://github.com/grpc/grpc/releases) to your local machine by running the following commands:
 
 
 ```sh
-$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 $ cd grpc
 $ git submodule update --init
 ```

@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -86,12 +88,17 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) override;
 
+  grpc_security_level min_security_level() const override {
+    return min_security_level_;
+  }
+
   const CallCredentialsList& inner() const { return inner_; }
+  std::string debug_string() override;
 
  private:
   void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
                      bool is_composite);
-
+  grpc_security_level min_security_level_;
   CallCredentialsList inner_;
 };
 

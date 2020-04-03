@@ -24,6 +24,9 @@
     import re
     import os
 
+    def is_absl_lib(target_name):
+      return target_name.startswith("absl/");
+
     proto_re = re.compile('(.*)\\.proto')
 
     def proto_to_cc(filename):
@@ -271,7 +274,7 @@
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m pthread ws2_32
+  LIBS = m pthread ws2_32 dbghelp
   LDFLAGS += -pthread
   endif
 
@@ -534,9 +537,7 @@
   # Note that for testing purposes, one can do:
   #   make HAS_EMBEDDED_OPENSSL_ALPN=false
   # to emulate the fact we do not have OpenSSL in the third_party folder.
-  ifneq ($(wildcard third_party/${openssl_fallback.extraction_dir}/libssl.a),)
-  HAS_EMBEDDED_OPENSSL_ALPN = third_party/${openssl_fallback.extraction_dir}
-  else ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
+  ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
   HAS_EMBEDDED_OPENSSL_ALPN = false
   else
   CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -613,6 +614,9 @@
   ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
   CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
+  GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+  GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+
   UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
   UPB_MERGE_OBJS = $(LIBUPB_OBJS)
   UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
@@ -659,7 +663,7 @@
   OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
   OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
   # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)
   else ifneq ($(EMBED_OPENSSL),false)
   OPENSSL_DEP += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
   OPENSSL_MERGE_LIBS += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
@@ -1466,6 +1470,33 @@
   % endif
   % endfor
 
+  # Add private ABSEIL target which contains all sources used by all baselib libraries.
+  <%
+    # Collect all abseil source and header files used by gpr, grpc, so on.
+    used_abseil_rules = set()
+    for lib in libs:
+      if lib.get("baselib"):
+        for dep in lib.transitive_deps:
+          if is_absl_lib(dep):
+            used_abseil_rules.add(dep)
+    used_abseil_srcs = []
+    used_abseil_hdrs = []
+    for lib in libs:
+      if lib.name in used_abseil_rules:
+        used_abseil_srcs.extend(lib.get("src", []))
+        used_abseil_hdrs.extend(lib.get("hdr", []))
+    # Create `grpc_abseil` rule with collected files.
+    lib_type = type(libs[0])
+    grpc_abseil_lib = lib_type({
+      "name": "grpc_abseil",
+      "build": "private",
+      "language": "c",
+      "src": sorted(used_abseil_srcs),
+      "hdr": sorted(used_abseil_hdrs),
+      "secure": False,
+    })
+  %>
+  ${makelib(grpc_abseil_lib)}
 
   # All of the test targets, and protoc plugins
 
@@ -1531,7 +1562,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) \
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1549,11 +1580,12 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting', 'upb']:
+  % if lib.name not in ['z', 'ares', 'address_sorting', 'upb', 'grpc_abseil']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
   $(UPB_DEP) \
+  $(GRPC_ABSEIL_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
@@ -1562,6 +1594,7 @@
    $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
+   $(LIBGRPC_ABSEIL_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
@@ -1577,6 +1610,7 @@
   	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
+   $(LIBGRPC_ABSEIL_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
@@ -1603,20 +1637,22 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
     if lib.get('deps_linkage', None) == 'static':
       for dep in lib.get('deps', []):
+        if is_absl_lib(dep): continue
         lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
         common = common + ' ' + lib_archive
         lib_deps = lib_deps + ' ' + lib_archive
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
     else:
       for dep in lib.get('deps', []):
+        if is_absl_lib(dep): continue
         dep_lib = None
         for dl in libs:
           if dl.name == dep:
@@ -1630,7 +1666,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1728,8 +1764,8 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CXXFLAGS)
   $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
   % else:
   % endif
@@ -1764,7 +1800,9 @@
   % endif
   % endif
   % for dep in tgt.deps:
+  %  if not is_absl_lib(dep):
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
+  %  endif
   % endfor
 
   % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':

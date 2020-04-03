@@ -38,6 +38,7 @@ egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
+ABSL_INCLUDE = (os.path.join('third_party', 'abseil-cpp'),)
 ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting', 'include'),)
 CARES_INCLUDE = (
     os.path.join('third_party', 'cares'),
@@ -50,7 +51,7 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
-SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
+SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src', 'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext', 'upb-generated'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
@@ -191,11 +192,9 @@ if EXTRA_ENV_LINK_ARGS is None:
       EXTRA_ENV_LINK_ARGS += ' -latomic'
   elif "win32" in sys.platform and sys.version_info < (3, 5):
     msvcr = cygwinccompiler.get_msvcr()[0]
-    # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
-    # influence on the linkage outcome on MinGW for non-C++ programs.
     EXTRA_ENV_LINK_ARGS += (
         ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
-        ' -static'.format(msvcr=msvcr))
+        ' -static -lshlwapi'.format(msvcr=msvcr))
   if "linux" in sys.platform:
     EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy -static-libgcc'
 
@@ -228,6 +227,7 @@ if BUILD_WITH_SYSTEM_CARES:
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) +
     CORE_INCLUDE +
+    ABSL_INCLUDE +
     ADDRESS_SORTING_INCLUDE +
     CARES_INCLUDE +
     SSL_INCLUDE +
@@ -241,7 +241,7 @@ if "linux" in sys.platform:
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 if "win32" in sys.platform:
-  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32',)
+  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32', 'dbghelp',)
 if BUILD_WITH_SYSTEM_OPENSSL:
   EXTENSION_LIBRARIES += ('ssl', 'crypto',)
 if BUILD_WITH_SYSTEM_ZLIB:

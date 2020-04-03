@@ -64,8 +64,9 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    bool /*check_grpclb*/, char** /*service_config_json*/,
-    int /*query_timeout_ms*/, grpc_core::Combiner* /*combiner*/) {
+    std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
+    char** /*service_config_json*/, int /*query_timeout_ms*/,
+    grpc_core::Combiner* /*combiner*/) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error* error = GRPC_ERROR_NONE;
@@ -75,7 +76,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
-    *addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
+    *addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address dummy_resolved_address;
     memset(&dummy_resolved_address, 0, sizeof(dummy_resolved_address));
     dummy_resolved_address.len = 123;

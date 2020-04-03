@@ -77,6 +77,16 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   /// has already fired has no effect.
   void Cancel();
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  /// Set an alarm to invoke callback \a f. The argument to the callback
+  /// states whether the alarm expired at \a deadline (true) or was cancelled
+  /// (false)
+  template <typename T>
+  void Set(const T& deadline, std::function<void(bool)> f) {
+    SetInternal(::grpc::TimePoint<T>(deadline).raw_time(), std::move(f));
+  }
+#endif
+
   /// NOTE: class experimental_type is not part of the public API of this class
   /// TODO(vjpai): Move these contents to the public API of Alarm when
   ///              they are no longer experimental

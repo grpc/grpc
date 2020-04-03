@@ -23,9 +23,9 @@ end
 module Grpc
   module Health
     module V1
-      HealthCheckRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.health.v1.HealthCheckRequest").msgclass
-      HealthCheckResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.health.v1.HealthCheckResponse").msgclass
-      HealthCheckResponse::ServingStatus = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.health.v1.HealthCheckResponse.ServingStatus").enummodule
+      HealthCheckRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.health.v1.HealthCheckRequest").msgclass
+      HealthCheckResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.health.v1.HealthCheckResponse").msgclass
+      HealthCheckResponse::ServingStatus = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.health.v1.HealthCheckResponse.ServingStatus").enummodule
     end
   end
 end

@@ -323,6 +323,20 @@ typedef struct {
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/* TCP TX Zerocopy enable state: zero is disabled, non-zero is enabled. By
+   default, it is disabled. */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED \
+  "grpc.experimental.tcp_tx_zerocopy_enabled"
+/* TCP TX Zerocopy send threshold: only zerocopy if >= this many bytes sent. By
+   default, this is set to 16KB. */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD \
+  "grpc.experimental.tcp_tx_zerocopy_send_bytes_threshold"
+/* TCP TX Zerocopy max simultaneous sends: limit for maximum number of pending
+   calls to tcp_write() using zerocopy. A tcp_write() is considered pending
+   until the kernel performs the zerocopy-done callback for all sendmsg() calls
+   issued by the tcp_write(). By default, this is set to 4. */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS \
+  "grpc.experimental.tcp_tx_zerocopy_max_simultaneous_sends"
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
@@ -346,6 +360,11 @@ typedef struct {
    of that priority fail to connect. If 0, failover happens immediately. Default
    value is 10 seconds. */
 #define GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS "grpc.xds_failover_timeout_ms"
+/* Timeout in milliseconds to wait for a resource to be returned from
+ * the xds server before assuming that it does not exist.
+ * The default is 15 seconds. */
+#define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
+  "grpc.xds_resource_does_not_exist_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
@@ -725,6 +744,10 @@ typedef struct grpc_experimental_completion_queue_functor {
       pointer to this functor and a boolean that indicates whether the
       operation succeeded (non-zero) or failed (zero) */
   void (*functor_run)(struct grpc_experimental_completion_queue_functor*, int);
+
+  /** The inlineable member specifies whether this functor can be run inline.
+      This should only be used for trivial internally-defined functors. */
+  int inlineable;
 
   /** The following fields are not API. They are meant for internal use. */
   int internal_success;

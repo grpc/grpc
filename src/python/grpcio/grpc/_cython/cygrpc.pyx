@@ -15,8 +15,14 @@
 
 cimport cpython
 
-import os.path
+import logging
+import os
 import sys
+import threading
+import time
+
+import grpc
+
 try:
     import asyncio
 except ImportError:
@@ -24,6 +30,9 @@ except ImportError:
     # distributed without breaking none compatible Python versions. For now, if
     # Asyncio package is not available we just skip it.
     pass
+
+# The only copy of Python logger for the Cython extension
+_LOGGER = logging.getLogger(__name__)
 
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.
@@ -60,12 +69,13 @@ include "_cygrpc/aio/iomgr/iomgr.pyx.pxi"
 include "_cygrpc/aio/iomgr/socket.pyx.pxi"
 include "_cygrpc/aio/iomgr/timer.pyx.pxi"
 include "_cygrpc/aio/iomgr/resolver.pyx.pxi"
+include "_cygrpc/aio/common.pyx.pxi"
+include "_cygrpc/aio/rpc_status.pyx.pxi"
+include "_cygrpc/aio/completion_queue.pyx.pxi"
+include "_cygrpc/aio/callback_common.pyx.pxi"
 include "_cygrpc/aio/grpc_aio.pyx.pxi"
 include "_cygrpc/aio/call.pyx.pxi"
-include "_cygrpc/aio/callback_common.pyx.pxi"
-include "_cygrpc/aio/cancel_status.pyx.pxi"
 include "_cygrpc/aio/channel.pyx.pxi"
-include "_cygrpc/aio/rpc_error.pyx.pxi"
 include "_cygrpc/aio/server.pyx.pxi"
 
 

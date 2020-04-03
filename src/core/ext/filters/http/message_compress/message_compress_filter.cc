@@ -321,6 +321,11 @@ static grpc_error* pull_slice_from_send_message(call_data* calld) {
 // eventually result in calling on_send_message_next_done().
 static void continue_reading_send_message(grpc_call_element* elem) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (calld->slices.length ==
+      calld->send_message_batch->payload->send_message.send_message->length()) {
+    finish_send_message(elem);
+    return;
+  }
   while (calld->send_message_batch->payload->send_message.send_message->Next(
       ~static_cast<size_t>(0), &calld->on_send_message_next_done)) {
     grpc_error* error = pull_slice_from_send_message(calld);

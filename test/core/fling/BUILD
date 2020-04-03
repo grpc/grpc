@@ -47,7 +47,7 @@ grpc_cc_binary(
 )
 
 grpc_cc_test(
-    name = "fling",
+    name = "fling_test",
     srcs = ["fling_test.cc"],
     data = [
         ":fling_client",
@@ -63,7 +63,7 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "fling_stream",
+    name = "fling_stream_test",
     srcs = ["fling_stream_test.cc"],
     data = [
         ":fling_client",

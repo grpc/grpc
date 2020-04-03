@@ -145,7 +145,7 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv
+  $PYTHON -m pip install --user virtualenv==16.7.9
   $PYTHON -m virtualenv "$VENV"
   VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 fi
@@ -175,10 +175,10 @@ case "$VENV" in
   ;;
 esac
 
-$VENV_PYTHON -m pip install --upgrade pip==10.0.1
-$VENV_PYTHON -m pip install setuptools
-$VENV_PYTHON -m pip install cython
-$VENV_PYTHON -m pip install six enum34 protobuf
+$VENV_PYTHON -m pip install --upgrade pip==19.3.1
+$VENV_PYTHON -m pip install --upgrade setuptools
+$VENV_PYTHON -m pip install --upgrade cython
+$VENV_PYTHON -m pip install --upgrade six enum34 protobuf
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then

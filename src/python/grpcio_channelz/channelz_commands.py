@@ -39,9 +39,9 @@ class Preprocess(setuptools.Command):
 
     def run(self):
         if os.path.isfile(CHANNELZ_PROTO):
-            shutil.copyfile(CHANNELZ_PROTO,
-                            os.path.join(ROOT_DIR,
-                                         'grpc_channelz/v1/channelz.proto'))
+            shutil.copyfile(
+                CHANNELZ_PROTO,
+                os.path.join(ROOT_DIR, 'grpc_channelz/v1/channelz.proto'))
         if os.path.isfile(LICENSE):
             shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))
 

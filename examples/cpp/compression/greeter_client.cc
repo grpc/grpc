@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
   args.SetCompressionAlgorithm(GRPC_COMPRESS_GZIP);
   GreeterClient greeter(grpc::CreateCustomChannel(
       "localhost:50051", grpc::InsecureChannelCredentials(), args));
-  std::string user("world");
+  std::string user("world world world world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
 
