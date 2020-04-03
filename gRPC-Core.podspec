@@ -172,11 +172,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-<<<<<<< HEAD
-    ss.dependency 'BoringSSL-GRPC', '0.0.6'
-    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
-=======
-    ss.dependency 'BoringSSL-GRPC', '0.0.7'
+    ss.dependency 'BoringSSL-GRPC', '0.0.8'
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
@@ -184,8 +180,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
-    ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
->>>>>>> upstream/master
+    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/client_channel/backend_metric.cc',
