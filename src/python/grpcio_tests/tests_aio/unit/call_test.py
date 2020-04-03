@@ -559,6 +559,23 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
         # No failures in the cancel later task!
         await cancel_later_task
 
+    async def test_normal_iterable_requests(self):
+        # Prepares the request
+        payload = messages_pb2.Payload(body=b'\0' * _REQUEST_PAYLOAD_SIZE)
+        request = messages_pb2.StreamingInputCallRequest(payload=payload)
+        requests = [request] * _NUM_STREAM_RESPONSES
+
+        # Sends out requests
+        call = self._stub.StreamingInputCall(requests)
+
+        # RPC should succeed
+        response = await call
+        self.assertIsInstance(response, messages_pb2.StreamingInputCallResponse)
+        self.assertEqual(_NUM_STREAM_RESPONSES * _REQUEST_PAYLOAD_SIZE,
+                         response.aggregated_payload_size)
+
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
 
 # Prepares the request that stream in a ping-pong manner.
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE = messages_pb2.StreamingOutputCallRequest()
@@ -737,6 +754,15 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
         self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
         # No failures in the cancel later task!
         await cancel_later_task
+
+    async def test_normal_iterable_requests(self):
+        requests = [_STREAM_OUTPUT_REQUEST_ONE_RESPONSE] * _NUM_STREAM_RESPONSES
+
+        call = self._stub.FullDuplexCall(iter(requests))
+        async for response in call:
+            self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
 
 if __name__ == '__main__':
