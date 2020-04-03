@@ -1,19 +1,17 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc &#8212; gRPC Python 1.26.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>grpc &#8212; gRPC Python 1.28.1 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
    
@@ -31,7 +29,7 @@
 
 
 
-<p class="blurb">1.26.0</p>
+<p class="blurb">1.28.1</p>
 
 
 
@@ -42,6 +40,7 @@
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grpc_asyncio.html">gRPC AsyncIO API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_channelz.html">gRPC Channelz</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_health_checking.html">gRPC Health Checking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_reflection.html">gRPC Reflection</a></li>
@@ -60,17 +59,15 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -1252,7 +1249,13 @@
 
 <div class="viewcode-block" id="ServicerContext.set_trailing_metadata"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_trailing_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">set_trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trailing_metadata</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sends the trailing metadata for the RPC.</span>
+        <span class="sd">&quot;&quot;&quot;Sets the trailing metadata for the RPC.</span>
+
+<span class="sd">        Sets the trailing metadata to be sent upon completion of the RPC.</span>
+
+<span class="sd">        If this method is invoked multiple times throughout the lifetime of an</span>
+<span class="sd">        RPC, the value supplied in the final invocation will be the value sent</span>
+<span class="sd">        over the wire.</span>
 
 <span class="sd">        This method need not be called by implementations if they have no</span>
 <span class="sd">        metadata to add to what the gRPC runtime will transmit.</span>
@@ -1673,7 +1676,7 @@
 <span class="sd">      private_key: The PEM-encoded private key as a byte string, or None if no</span>
 <span class="sd">        private key should be used.</span>
 <span class="sd">      certificate_chain: The PEM-encoded certificate chain as a byte string</span>
-<span class="sd">        to use or or None if no certificate chain should be used.</span>
+<span class="sd">        to use or None if no certificate chain should be used.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A ChannelCredentials for use with an SSL-enabled Channel.</span>
@@ -1942,8 +1945,8 @@
 <span class="sd">      A Channel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_channel</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span>
-                            <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                            <span class="n">compression</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../grpc.html#grpc.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1963,6 +1966,11 @@
 <span class="sd">      A Channel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_channel</span>  <span class="c1"># pylint: disable=cyclic-import</span>
+    <span class="kn">from</span> <span class="nn">grpc.experimental</span> <span class="kn">import</span> <span class="n">_insecure_channel_credentials</span>
+    <span class="k">if</span> <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span> <span class="ow">is</span> <span class="n">_insecure_channel_credentials</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;secure_channel cannot be called with insecure credentials.&quot;</span> <span class="o">+</span>
+            <span class="s2">&quot; Call insecure_channel instead.&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
                             <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span></div>
 
@@ -2026,10 +2034,10 @@
 <span class="sd">      A Server object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_server</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_server</span><span class="o">.</span><span class="n">create_server</span><span class="p">(</span><span class="n">thread_pool</span><span class="p">,</span> <span class="p">()</span>
-                                 <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">,</span> <span class="p">()</span>
-                                 <span class="k">if</span> <span class="n">interceptors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">interceptors</span><span class="p">,</span> <span class="p">()</span>
-                                 <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
+    <span class="k">return</span> <span class="n">_server</span><span class="o">.</span><span class="n">create_server</span><span class="p">(</span><span class="n">thread_pool</span><span class="p">,</span>
+                                 <span class="p">()</span> <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">,</span>
+                                 <span class="p">()</span> <span class="k">if</span> <span class="n">interceptors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">interceptors</span><span class="p">,</span>
+                                 <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
                                  <span class="n">maximum_concurrent_rpcs</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span></div>
 
 

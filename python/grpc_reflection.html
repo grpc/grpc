@@ -1,19 +1,17 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC Reflection &#8212; gRPC Python 1.26.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>gRPC Reflection &#8212; gRPC Python 1.28.1 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC Status" href="grpc_status.html" />
@@ -33,7 +31,7 @@
 
 
 
-<p class="blurb">1.26.0</p>
+<p class="blurb">1.28.1</p>
 
 
 
@@ -44,6 +42,7 @@
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_asyncio.html">gRPC AsyncIO API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_channelz.html">gRPC Channelz</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_health_checking.html">gRPC Health Checking</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC Reflection</a><ul>
@@ -67,17 +66,15 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -109,27 +106,30 @@
 <p>Reference implementation for reflection in gRPC Python.</p>
 <dl class="class">
 <dt id="grpc_reflection.v1alpha.reflection.ReflectionServicer">
-<em class="property">class </em><code class="descclassname">grpc_reflection.v1alpha.reflection.</code><code class="descname">ReflectionServicer</code><span class="sig-paren">(</span><em>service_names</em>, <em>pool=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc_reflection.v1alpha.reflection.</code><code class="sig-name descname">ReflectionServicer</code><span class="sig-paren">(</span><em class="sig-param">service_names</em>, <em class="sig-param">pool=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Servicer handling RPCs for service statuses.</p>
+<dl class="method">
+<dt id="grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo">
+<code class="sig-name descname">ServerReflectionInfo</code><span class="sig-paren">(</span><em class="sig-param">request_iterator</em>, <em class="sig-param">context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer.ServerReflectionInfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>The reflection service is structured as a bidirectional stream, ensuring
+all related requests go to a single server.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="function">
 <dt id="grpc_reflection.v1alpha.reflection.enable_server_reflection">
-<code class="descclassname">grpc_reflection.v1alpha.reflection.</code><code class="descname">enable_server_reflection</code><span class="sig-paren">(</span><em>service_names</em>, <em>server</em>, <em>pool=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#enable_server_reflection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.enable_server_reflection" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc_reflection.v1alpha.reflection.</code><code class="sig-name descname">enable_server_reflection</code><span class="sig-paren">(</span><em class="sig-param">service_names</em>, <em class="sig-param">server</em>, <em class="sig-param">pool=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#enable_server_reflection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.enable_server_reflection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Enables server reflection on a server.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>service_names</strong> – Iterable of fully-qualified service names available.</li>
-<li><strong>server</strong> – grpc.Server to which reflection service will be added.</li>
-<li><strong>pool</strong> – DescriptorPool object to use (descriptor_pool.Default() if None).</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>service_names</strong> – Iterable of fully-qualified service names available.</p></li>
+<li><p><strong>server</strong> – grpc.Server to which reflection service will be added.</p></li>
+<li><p><strong>pool</strong> – DescriptorPool object to use (descriptor_pool.Default() if None).</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
