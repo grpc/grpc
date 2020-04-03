@@ -162,6 +162,8 @@ class UnaryStreamCall(Generic[RequestType, ResponseType],
     async def try_connect(self) -> None:
         """Tries to connect to peer and raise aio.AioRpcError if failed.
 
+        This is an EXPERIMENTAL method.
+
         This method is available for RPCs with streaming responses. This method
         enables the application to ensure if the RPC has been successfully
         connected. Otherwise, an AioRpcError will be raised to explain the
@@ -248,6 +250,8 @@ class StreamStreamCall(Generic[RequestType, ResponseType],
     @abstractmethod
     async def try_connect(self) -> None:
         """Tries to connect to peer and raise aio.AioRpcError if failed.
+
+        This is an EXPERIMENTAL method.
 
         This method is available for RPCs with streaming responses. This method
         enables the application to ensure if the RPC has been successfully
