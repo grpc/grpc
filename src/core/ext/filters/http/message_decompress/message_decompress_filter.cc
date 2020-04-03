@@ -25,6 +25,7 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/http/message_decompress/message_decompress_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -220,18 +221,23 @@ void CallData::FinishRecvMessage() {
   grpc_slice_buffer decompressed_slices;
   if (grpc_msg_decompress(algorithm_, &recv_slices_, &decompressed_slices) ==
       0) {
-    gpr_log(
-        GPR_ERROR,
+    char* msg;
+    gpr_asprintf(
+        &msg,
         "Unexpected error decompressing data for algorithm with enum value %d",
         algorithm_);
+    GPR_DEBUG_ASSERT(error_ == GRPC_ERROR_NONE);
+    error_ = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    gpr_free(msg);
+  } else {
+    uint32_t recv_flags = (*recv_message_)->flags();
+    // Swap out the original receive byte stream with our new one and send the
+    // batch down.
+    recv_replacement_stream_.Init(&recv_slices_, recv_flags);
+    recv_message_->reset(recv_replacement_stream_.get());
+    recv_message_ = nullptr;
   }
-  uint32_t recv_flags = (*recv_message_)->flags();
-  // Swap out the original receive byte stream with our new one and send the
-  // batch down.
-  recv_replacement_stream_.Init(&recv_slices_, recv_flags);
-  recv_message_->reset(recv_replacement_stream_.get());
-  recv_message_ = nullptr;
-  ContinueRecvMessageReadyCallback(GRPC_ERROR_NONE);
+  ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
 }
 
 void CallData::ContinueRecvMessageReadyCallback(grpc_error* error) {
