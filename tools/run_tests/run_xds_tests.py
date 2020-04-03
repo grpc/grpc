@@ -169,6 +169,12 @@ argp.add_argument('--verbose',
                   help='verbose log output',
                   default=False,
                   action='store_true')
+# TODO(ericgribkoff) Remove this param once the sponge-formatted log files are
+# visible in all test environments.
+argp.add_argument('--log_client_output',
+                  help='Log captured client output',
+                  default=False,
+                  action='store_true')
 args = argp.parse_args()
 
 if args.verbose:
@@ -1096,7 +1102,8 @@ try:
         log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-        test_log_file = open(os.path.join(log_dir, _SPONGE_LOG_NAME), 'w+')
+        test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
+        test_log_file = open(test_log_filename, 'w+')
         client_process = None
         try:
             client_process = subprocess.Popen(client_cmd,
@@ -1142,10 +1149,15 @@ try:
         finally:
             if client_process:
                 client_process.terminate()
+            test_log_file.close()
             # Workaround for Python 3, as report_utils will invoke decode() on
             # result.message, which has a default value of ''.
             result.message = result.message.encode('UTF-8')
             test_results[test_case] = [result]
+            if args.log_client_output:
+                logger.info('Client output:')
+                with open(test_log_filename, 'r') as client_output:
+                    logger.info(client_output.read())
     if not os.path.exists(_TEST_LOG_BASE_DIR):
         os.makedirs(_TEST_LOG_BASE_DIR)
     report_utils.render_junit_xml_report(test_results,
