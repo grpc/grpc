@@ -164,13 +164,13 @@ class UnaryStreamCall(Generic[RequestType, ResponseType],
 
         This is an EXPERIMENTAL method.
 
-        This method is available for RPCs with streaming responses. This method
-        enables the application to ensure if the RPC has been successfully
-        connected. Otherwise, an AioRpcError will be raised to explain the
-        reason of the connection failure.
+        This method is available for streaming RPCs. This method enables the
+        application to ensure if the RPC has been successfully connected.
+        Otherwise, an AioRpcError will be raised to explain the reason of the
+        connection failure.
 
-        For RPCs with unary response, the connectivity issue will be raised
-        once the application awaits the call.
+        For unary-unary RPCs, the connectivity issue will be raised once the
+        application awaits the call.
 
         This method is recommended for building retry mechanisms.
         """
@@ -202,6 +202,23 @@ class StreamUnaryCall(Generic[RequestType, ResponseType],
 
         Returns:
           The response message of the stream.
+        """
+
+    @abstractmethod
+    async def try_connect(self) -> None:
+        """Tries to connect to peer and raise aio.AioRpcError if failed.
+
+        This is an EXPERIMENTAL method.
+
+        This method is available for streaming RPCs. This method enables the
+        application to ensure if the RPC has been successfully connected.
+        Otherwise, an AioRpcError will be raised to explain the reason of the
+        connection failure.
+
+        For unary-unary RPCs, the connectivity issue will be raised once the
+        application awaits the call.
+
+        This method is recommended for building retry mechanisms.
         """
 
 
@@ -253,13 +270,13 @@ class StreamStreamCall(Generic[RequestType, ResponseType],
 
         This is an EXPERIMENTAL method.
 
-        This method is available for RPCs with streaming responses. This method
-        enables the application to ensure if the RPC has been successfully
-        connected. Otherwise, an AioRpcError will be raised to explain the
-        reason of the connection failure.
+        This method is available for streaming RPCs. This method enables the
+        application to ensure if the RPC has been successfully connected.
+        Otherwise, an AioRpcError will be raised to explain the reason of the
+        connection failure.
 
-        For RPCs with unary response, the connectivity issue will be raised
-        once the application awaits the call.
+        For unary-unary RPCs, the connectivity issue will be raised once the
+        application awaits the call.
 
         This method is recommended for building retry mechanisms.
         """

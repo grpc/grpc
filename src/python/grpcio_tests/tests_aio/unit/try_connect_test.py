@@ -71,6 +71,26 @@ class TestTryConnect(AioTestBase):
         self.assertEqual(_NUM_STREAM_RESPONSES, response_cnt)
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
+    async def test_stream_unary_ok(self):
+        call = self._stub.StreamingInputCall()
+
+        # No exception raised and no message swallowed.
+        await call.try_connect()
+
+        payload = messages_pb2.Payload(body=b'\0' * _REQUEST_PAYLOAD_SIZE)
+        request = messages_pb2.StreamingInputCallRequest(payload=payload)
+
+        for _ in range(_NUM_STREAM_RESPONSES):
+            await call.write(request)
+        await call.done_writing()
+
+        response = await call
+        self.assertIsInstance(response, messages_pb2.StreamingInputCallResponse)
+        self.assertEqual(_NUM_STREAM_RESPONSES * _REQUEST_PAYLOAD_SIZE,
+                         response.aggregated_payload_size)
+
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
     async def test_stream_stream_ok(self):
         call = self._stub.FullDuplexCall()
 
@@ -94,6 +114,14 @@ class TestTryConnect(AioTestBase):
 
     async def test_unary_stream_error(self):
         call = self._dummy_channel.unary_stream(_TEST_METHOD)(_REQUEST)
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call.try_connect()
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
+
+    async def test_stream_unary_error(self):
+        call = self._dummy_channel.stream_unary(_TEST_METHOD)(_REQUEST)
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.try_connect()

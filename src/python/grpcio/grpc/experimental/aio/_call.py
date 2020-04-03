@@ -458,6 +458,11 @@ class _StreamRequestMixin(Call):
         self._raise_for_different_style(_APIStyle.READER_WRITER)
         await self._done_writing()
 
+    async def try_connect(self) -> None:
+        await self._metadata_sent.wait()
+        if self.done():
+            await self._raise_for_status()
+
 
 class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
     """Object for managing unary-unary RPC calls.
@@ -615,8 +620,3 @@ class StreamStreamCall(_StreamRequestMixin, _StreamResponseMixin, Call,
             if not self.cancelled():
                 self.cancel()
             # No need to raise RpcError here, because no one will `await` this task.
-
-    async def try_connect(self) -> None:
-        await self._metadata_sent.wait()
-        if self.done():
-            await self._raise_for_status()
