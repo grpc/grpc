@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, AsyncIterable, Iterable, Optional, Sequence
+from typing import Any, Iterable, Optional, Sequence
 
 import grpc
 from grpc import _common, _compression, _grpcio_metadata

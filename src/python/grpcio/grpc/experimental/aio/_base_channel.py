@@ -14,7 +14,7 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 
 import abc
-from typing import Any, AsyncIterable, Iterable, Optional
+from typing import Any, Optional
 
 import grpc
 
