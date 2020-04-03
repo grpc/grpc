@@ -1916,8 +1916,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/cmdline_test || ( echo test cmdline_test failed ; exit 1 )
 	$(E) "[RUN]     Testing combiner_test"
 	$(Q) $(BINDIR)/$(CONFIG)/combiner_test || ( echo test combiner_test failed ; exit 1 )
-	$(E) "[RUN]     Testing completion_queue_threading_test"
-	$(Q) $(BINDIR)/$(CONFIG)/completion_queue_threading_test || ( echo test completion_queue_threading_test failed ; exit 1 )
 	$(E) "[RUN]     Testing compression_test"
 	$(Q) $(BINDIR)/$(CONFIG)/compression_test || ( echo test compression_test failed ; exit 1 )
 	$(E) "[RUN]     Testing concurrent_connectivity_test"
