@@ -2049,26 +2049,6 @@ TEST_P(LdsTest, ChooseMatchedDomain) {
             AdsServiceImpl::ACKED);
 }
 
-// Tests that LDS client should choose the last route in the virtual host if
-// multiple routes exist in the LDS response.
-TEST_P(LdsTest, ChooseLastRoute) {
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
-      route_config.virtual_hosts(0).routes(0);
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::ACKED);
-}
-
 // Tests that LDS client should send a ACK if route match has non-empty prefix
 // in the LDS response.
 TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
@@ -2252,6 +2232,75 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   }
 }
 
+// Tests that LDS client should choose the default route (with no matching
+// specified) after unable to find a match with previous routes.
+TEST_P(LdsTest, XdsRoutingDefaultRoute) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const size_t kNumRpcs = 10;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(0, 2);
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(3, 4)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name),
+      kNewCluster1Name);
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name),
+      kNewCluster2Name);
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1, kNewCluster1Name);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
+  // Change RDS resource to set up prefix matching to direct traffic to the
+  // second new cluster.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* mismatched_route1 =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  mismatched_route1->mutable_match()->set_prefix(
+      "/grpc.testing.EchoTestService0");
+  mismatched_route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* mismatched_route2 =
+      new_route_config.mutable_virtual_hosts(0)->add_routes();
+  mismatched_route2->mutable_match()->set_path(
+      "/grpc.testing.EchoTestService/EchoMismatch");
+  mismatched_route2->mutable_route()->set_cluster(kNewCluster2Name);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_match()->set_path("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  Listener listener =
+      balancers_[0]->ads_service()->BuildListener(new_route_config);
+  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  // Wait for the new backend to come up.
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(kNumRpcs);
+  // Make sure RPCs all go to the correct backend.
+  for (size_t i = 0; i < 4; ++i) {
+    if (i < 2) {
+      EXPECT_EQ(kNumRpcs / 2, backends_[i]->backend_service()->request_count());
+    } else {
+      EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+    }
+  }
+}
+
 using RdsTest = BasicTest;
 
 // Tests that RDS client should send an ACK upon correct RDS response.
@@ -2290,27 +2339,6 @@ TEST_P(RdsTest, ChooseMatchedDomain) {
   *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetRdsResource(route_config,
-                                               kDefaultResourceName);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::ACKED);
-}
-
-// Tests that RDS client should choose the last route in the virtual host if
-// multiple routes exist in the RDS response.
-TEST_P(RdsTest, ChooseLastRoute) {
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
-      route_config.virtual_hosts(0).routes(0);
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
