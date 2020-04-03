@@ -18,11 +18,20 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
+#include <gflags/gflags.h>
+
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
 #include "test/cpp/util/test_credentials_provider.h"
+
+DEFINE_string(
+    grpc_test_use_grpclb_with_child_policy, "",
+    "If non-empty, set a static service config on channels created by "
+    "grpc::CreateTestChannel, that configures the grpclb LB policy "
+    "with a child policy being the value of this flag (e.g. round_robin "
+    "or pick_first).");
 
 namespace grpc {
 
@@ -47,6 +56,16 @@ void AddProdSslType() {
   testing::GetCredentialsProvider()->AddSecureType(
       kProdTlsCredentialsType, std::unique_ptr<testing::CredentialTypeProvider>(
                                    new SslCredentialProvider));
+}
+
+void MaybeSetCustomChannelArgs(grpc::ChannelArguments* args) {
+  if (FLAGS_grpc_test_use_grpclb_with_child_policy.size() > 0) {
+    args->SetString("grpc.service_config",
+                    "{\"loadBalancingConfig\":[{\"grpclb\":{\"childPolicy\":[{"
+                    "\"" +
+                        FLAGS_grpc_test_use_grpclb_with_child_policy +
+                        "\":{}}]}}]}");
+  }
 }
 
 }  // namespace
@@ -111,6 +130,7 @@ std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& credential_type,
     const std::shared_ptr<CallCredentials>& creds) {
   ChannelArguments channel_args;
+  MaybeSetCustomChannelArgs(&channel_args);
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
@@ -129,14 +149,15 @@ std::shared_ptr<Channel> CreateTestChannel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
   ChannelArguments channel_args(args);
+  MaybeSetCustomChannelArgs(&channel_args);
   std::shared_ptr<ChannelCredentials> channel_creds;
   if (cred_type.empty()) {
     if (interceptor_creators.empty()) {
       return ::grpc::CreateCustomChannel(server, InsecureChannelCredentials(),
-                                         args);
+                                         channel_args);
     } else {
       return experimental::CreateCustomChannelWithInterceptors(
-          server, InsecureChannelCredentials(), args,
+          server, InsecureChannelCredentials(), channel_args,
           std::move(interceptor_creators));
     }
   } else if (cred_type == testing::kTlsCredentialsType) {  // cred_type == "ssl"
@@ -173,10 +194,10 @@ std::shared_ptr<Channel> CreateTestChannel(
     GPR_ASSERT(channel_creds != nullptr);
 
     if (interceptor_creators.empty()) {
-      return ::grpc::CreateCustomChannel(server, channel_creds, args);
+      return ::grpc::CreateCustomChannel(server, channel_creds, channel_args);
     } else {
       return experimental::CreateCustomChannelWithInterceptors(
-          server, channel_creds, args, std::move(interceptor_creators));
+          server, channel_creds, channel_args, std::move(interceptor_creators));
     }
   }
 }
@@ -217,6 +238,7 @@ std::shared_ptr<Channel> CreateTestChannel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
   ChannelArguments channel_args;
+  MaybeSetCustomChannelArgs(&channel_args);
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
