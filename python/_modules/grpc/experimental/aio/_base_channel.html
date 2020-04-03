@@ -1,0 +1,468 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>grpc.experimental.aio._base_channel &#8212; gRPC Python 1.28.1 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">gRPC Python</a></h1>
+
+
+
+<p class="blurb">1.28.1</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_asyncio.html">gRPC AsyncIO API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_channelz.html">gRPC Channelz</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_health_checking.html">gRPC Health Checking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_status.html">gRPC Status</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_testing.html">gRPC Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../glossary.html">Glossary</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  <li><a href="../../../grpc.html">grpc</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for grpc.experimental.aio._base_channel</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2020 The gRPC Authors</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;Abstract base classes for Channel objects and Multicallable objects.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">AsyncIterable</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">grpc</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_base_call</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">DeserializingFunction</span><span class="p">,</span> <span class="n">MetadataType</span><span class="p">,</span> <span class="n">SerializingFunction</span>
+
+<span class="n">_IMMUTABLE_EMPTY_TUPLE</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="UnaryUnaryMultiCallable"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.UnaryUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enables asynchronous invocation of a unary-call RPC.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.UnaryUnaryMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">request</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+                 <span class="o">*</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
+                 <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryUnaryCall</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          request: The request value for the RPC.</span>
+<span class="sd">          timeout: An optional duration of time in seconds to allow</span>
+<span class="sd">            for the RPC.</span>
+<span class="sd">          metadata: Optional :term:`metadata` to be transmitted to the</span>
+<span class="sd">            service-side of the RPC.</span>
+<span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
+<span class="sd">            secure Channel.</span>
+<span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
+<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A UnaryUnaryCall object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          RpcError: Indicates that the RPC terminated with non-OK status. The</span>
+<span class="sd">            raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
+<span class="sd">            metadata, status code, and details.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="UnaryStreamMultiCallable"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.UnaryStreamMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enables asynchronous invocation of a server-streaming RPC.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UnaryStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.UnaryStreamMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">request</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+                 <span class="o">*</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
+                 <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryStreamCall</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          request: The request value for the RPC.</span>
+<span class="sd">          timeout: An optional duration of time in seconds to allow</span>
+<span class="sd">            for the RPC.</span>
+<span class="sd">          metadata: Optional :term:`metadata` to be transmitted to the</span>
+<span class="sd">            service-side of the RPC.</span>
+<span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
+<span class="sd">            secure Channel.</span>
+<span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
+<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A UnaryStreamCall object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          RpcError: Indicates that the RPC terminated with non-OK status. The</span>
+<span class="sd">            raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
+<span class="sd">            metadata, status code, and details.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="StreamUnaryMultiCallable"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.StreamUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enables asynchronous invocation of a client-streaming RPC.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StreamUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.StreamUnaryMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">request_async_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncIterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
+                 <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          request: The request value for the RPC.</span>
+<span class="sd">          timeout: An optional duration of time in seconds to allow</span>
+<span class="sd">            for the RPC.</span>
+<span class="sd">          metadata: Optional :term:`metadata` to be transmitted to the</span>
+<span class="sd">            service-side of the RPC.</span>
+<span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
+<span class="sd">            secure Channel.</span>
+<span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
+<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A StreamUnaryCall object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          RpcError: Indicates that the RPC terminated with non-OK status. The</span>
+<span class="sd">            raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
+<span class="sd">            metadata, status code, and details.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="StreamStreamMultiCallable"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.StreamStreamMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enables asynchronous invocation of a bidirectional-streaming RPC.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StreamStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.StreamStreamMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">request_async_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncIterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
+                 <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          request: The request value for the RPC.</span>
+<span class="sd">          timeout: An optional duration of time in seconds to allow</span>
+<span class="sd">            for the RPC.</span>
+<span class="sd">          metadata: Optional :term:`metadata` to be transmitted to the</span>
+<span class="sd">            service-side of the RPC.</span>
+<span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
+<span class="sd">            secure Channel.</span>
+<span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
+<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A StreamStreamCall object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          RpcError: Indicates that the RPC terminated with non-OK status. The</span>
+<span class="sd">            raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
+<span class="sd">            metadata, status code, and details.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel">[docs]</a><span class="k">class</span> <span class="nc">Channel</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enables asynchronous RPC invocation as a client.</span>
+
+<span class="sd">    Channel objects implement the Asynchronous Context Manager (aka. async</span>
+<span class="sd">    with) type, although they are not supportted to be entered and exited</span>
+<span class="sd">    multiple times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Channel.__aenter__"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.__aenter__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Starts an asynchronous context manager.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          Channel the channel that was instantiated.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.__aexit__"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.__aexit__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="fm">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finishes the asynchronous context manager by closing the channel.</span>
+
+<span class="sd">        Still active RPCs will be cancelled.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.close"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.close">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Closes this Channel and releases all resources held by it.</span>
+
+<span class="sd">        This method immediately stops the channel from executing new RPCs in</span>
+<span class="sd">        all cases.</span>
+
+<span class="sd">        If a grace period is specified, this method wait until all active</span>
+<span class="sd">        RPCs are finshed, once the grace period is reached the ones that haven&#39;t</span>
+<span class="sd">        been terminated are cancelled. If a grace period is not specified</span>
+<span class="sd">        (by passing None for grace), all existing RPCs are cancelled immediately.</span>
+
+<span class="sd">        This method is idempotent.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.get_state"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.get_state">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">try_to_connect</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Checks the connectivity state of a channel.</span>
+
+<span class="sd">        This is an EXPERIMENTAL API.</span>
+
+<span class="sd">        If the channel reaches a stable connectivity state, it is guaranteed</span>
+<span class="sd">        that the return value of this function will eventually converge to that</span>
+<span class="sd">        state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          try_to_connect: a bool indicate whether the Channel should try to</span>
+<span class="sd">            connect to peer or not.</span>
+
+<span class="sd">        Returns: A ChannelConnectivity object.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.wait_for_state_change"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.wait_for_state_change">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_state_change</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">last_observed_state</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Waits for a change in connectivity state.</span>
+
+<span class="sd">        This is an EXPERIMENTAL API.</span>
+
+<span class="sd">        The function blocks until there is a change in the channel connectivity</span>
+<span class="sd">        state from the &quot;last_observed_state&quot;. If the state is already</span>
+<span class="sd">        different, this function will return immediately.</span>
+
+<span class="sd">        There is an inherent race between the invocation of</span>
+<span class="sd">        &quot;Channel.wait_for_state_change&quot; and &quot;Channel.get_state&quot;. The state can</span>
+<span class="sd">        change arbitrary many times during the race, so there is no way to</span>
+<span class="sd">        observe every state transition.</span>
+
+<span class="sd">        If there is a need to put a timeout for this function, please refer to</span>
+<span class="sd">        &quot;asyncio.wait_for&quot;.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          last_observed_state: A grpc.ChannelConnectivity object representing</span>
+<span class="sd">            the last known state.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.channel_ready"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.channel_ready">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">channel_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a coroutine that blocks until the Channel is READY.&quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.unary_unary"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">unary_unary</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a UnaryUnaryMultiCallable for a unary-unary method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method: The name of the RPC method.</span>
+<span class="sd">          request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">            message. Request goes unserialized in case None is passed.</span>
+<span class="sd">          response_deserializer: Optional behaviour for deserializing the</span>
+<span class="sd">            response message. Response goes undeserialized in case None</span>
+<span class="sd">            is passed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A UnaryUnaryMultiCallable value for the named unary-unary method.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.unary_stream"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a UnaryStreamMultiCallable for a unary-stream method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method: The name of the RPC method.</span>
+<span class="sd">          request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">            message. Request goes unserialized in case None is passed.</span>
+<span class="sd">          response_deserializer: Optional behaviour for deserializing the</span>
+<span class="sd">            response message. Response goes undeserialized in case None</span>
+<span class="sd">            is passed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A UnarySteramMultiCallable value for the named unary-stream method.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.stream_unary"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a StreamUnaryMultiCallable for a stream-unary method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method: The name of the RPC method.</span>
+<span class="sd">          request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">            message. Request goes unserialized in case None is passed.</span>
+<span class="sd">          response_deserializer: Optional behaviour for deserializing the</span>
+<span class="sd">            response message. Response goes undeserialized in case None</span>
+<span class="sd">            is passed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A StreamUnaryMultiCallable value for the named stream-unary method.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Channel.stream_stream"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Channel.stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamStreamMultiCallable</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a StreamStreamMultiCallable for a stream-stream method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method: The name of the RPC method.</span>
+<span class="sd">          request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">            message. Request goes unserialized in case None is passed.</span>
+<span class="sd">          response_deserializer: Optional behaviour for deserializing the</span>
+<span class="sd">            response message. Response goes undeserialized in case None</span>
+<span class="sd">            is passed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A StreamStreamMultiCallable value for the named stream-stream method.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2018, The gRPC Authors.
+      
+    </div>
+
+    
+
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-60127042-1']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+    
+  </body>
+</html>

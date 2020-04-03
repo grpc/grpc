@@ -4,7 +4,7 @@
  *
  * Sphinx JavaScript utilities for all documentation.
  *
- * :copyright: Copyright 2007-2019 by the Sphinx team, see AUTHORS.
+ * :copyright: Copyright 2007-2020 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -87,14 +87,13 @@ jQuery.fn.highlightText = function(text, className) {
           node.nextSibling));
         node.nodeValue = val.substr(0, pos);
         if (isInSVG) {
-          var bbox = span.getBBox();
           var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-       	  rect.x.baseVal.value = bbox.x;
+          var bbox = node.parentElement.getBBox();
+          rect.x.baseVal.value = bbox.x;
           rect.y.baseVal.value = bbox.y;
           rect.width.baseVal.value = bbox.width;
           rect.height.baseVal.value = bbox.height;
           rect.setAttribute('class', className);
-          var parentOfText = node.parentNode.parentNode;
           addItems.push({
               "parent": node.parentNode,
               "target": rect});
@@ -284,10 +283,11 @@ var Documentation = {
   },
 
   initOnKeyListeners: function() {
-    $(document).keyup(function(event) {
+    $(document).keydown(function(event) {
       var activeElementType = document.activeElement.tagName;
       // don't navigate when in search box or textarea
-      if (activeElementType !== 'TEXTAREA' && activeElementType !== 'INPUT' && activeElementType !== 'SELECT') {
+      if (activeElementType !== 'TEXTAREA' && activeElementType !== 'INPUT' && activeElementType !== 'SELECT'
+          && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
         switch (event.keyCode) {
           case 37: // left
             var prevHref = $('link[rel="prev"]').prop('href');

@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>grpc.experimental.aio._server &#8212; gRPC Python 1.28.1 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">gRPC Python</a></h1>
+
+
+
+<p class="blurb">1.28.1</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_asyncio.html">gRPC AsyncIO API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_channelz.html">gRPC Channelz</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_health_checking.html">gRPC Health Checking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_status.html">gRPC Status</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc_testing.html">gRPC Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../glossary.html">Glossary</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  <li><a href="../../../grpc.html">grpc</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for grpc.experimental.aio._server</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2019 The gRPC Authors</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;Server-side implementation of gRPC Asyncio Python.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">Executor</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">grpc</span>
+<span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_common</span><span class="p">,</span> <span class="n">_compression</span>
+<span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="kn">import</span> <span class="n">cygrpc</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_base_server</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">ChannelArgumentType</span>
+
+
+<span class="k">def</span> <span class="nf">_augment_channel_arguments</span><span class="p">(</span><span class="n">base_options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span>
+                               <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]):</span>
+    <span class="n">compression_option</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">create_channel_option</span><span class="p">(</span><span class="n">compression</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">base_options</span><span class="p">)</span> <span class="o">+</span> <span class="n">compression_option</span>
+
+
+<span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">_base_server</span><span class="o">.</span><span class="n">Server</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serves RPCs.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Executor</span><span class="p">],</span>
+                 <span class="n">generic_handlers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">GenericRpcHandler</span><span class="p">]],</span>
+                 <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span>
+                 <span class="n">options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span>
+                 <span class="n">maximum_concurrent_rpcs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+                 <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_server</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioServer</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">generic_handlers</span><span class="p">,</span> <span class="n">interceptors</span><span class="p">,</span>
+            <span class="n">_augment_channel_arguments</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">compression</span><span class="p">),</span>
+            <span class="n">maximum_concurrent_rpcs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_generic_rpc_handlers</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">generic_rpc_handlers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">GenericRpcHandler</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
+
+<span class="sd">        This method is only safe to call before the server is started.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          generic_rpc_handlers: A sequence of GenericRpcHandlers that will be</span>
+<span class="sd">          used to service RPCs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">add_generic_rpc_handlers</span><span class="p">(</span><span class="n">generic_rpc_handlers</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Opens an insecure port for accepting RPCs.</span>
+
+<span class="sd">        This method may only be called before starting the server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          address: The address for which to open a port. If the port is 0,</span>
+<span class="sd">            or not specified in the address, then the gRPC runtime will choose a port.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          An integer port on which the server will accept RPC requests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">add_insecure_port</span><span class="p">(</span><span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">address</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                        <span class="n">server_credentials</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ServerCredentials</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Opens a secure port for accepting RPCs.</span>
+
+<span class="sd">        This method may only be called before starting the server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          address: The address for which to open a port.</span>
+<span class="sd">            if the port is 0, or not specified in the address, then the gRPC</span>
+<span class="sd">            runtime will choose a port.</span>
+<span class="sd">          server_credentials: A ServerCredentials object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          An integer port on which the server will accept RPC requests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">add_secure_port</span><span class="p">(</span><span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">address</span><span class="p">),</span>
+                                            <span class="n">server_credentials</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Starts this Server.</span>
+
+<span class="sd">        This method may only be called once. (i.e. it is not idempotent).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Stops this Server.</span>
+
+<span class="sd">        This method immediately stops the server from servicing new RPCs in</span>
+<span class="sd">        all cases.</span>
+
+<span class="sd">        If a grace period is specified, this method returns immediately and all</span>
+<span class="sd">        RPCs active at the end of the grace period are aborted. If a grace</span>
+<span class="sd">        period is not specified (by passing None for grace), all existing RPCs</span>
+<span class="sd">        are aborted immediately and this method blocks until the last RPC</span>
+<span class="sd">        handler terminates.</span>
+
+<span class="sd">        This method is idempotent and may be called at any time. Passing a</span>
+<span class="sd">        smaller grace value in a subsequent call will have the effect of</span>
+<span class="sd">        stopping the Server sooner (passing None will have the effect of</span>
+<span class="sd">        stopping the server immediately). Passing a larger grace value in a</span>
+<span class="sd">        subsequent call will not have the effect of stopping the server later</span>
+<span class="sd">        (i.e. the most restrictive grace value is used).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          grace: A duration of time in seconds or None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">grace</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_termination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                   <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Block current coroutine until the server stops.</span>
+
+<span class="sd">        This is an EXPERIMENTAL API.</span>
+
+<span class="sd">        The wait will not consume computational resources during blocking, and</span>
+<span class="sd">        it will block until one of the two following conditions are met:</span>
+
+<span class="sd">        1) The server is stopped or terminated;</span>
+<span class="sd">        2) A timeout occurs if timeout is not `None`.</span>
+
+<span class="sd">        The timeout argument works in the same way as `threading.Event.wait()`.</span>
+<span class="sd">        https://docs.python.org/3/library/threading.html#threading.Event.wait</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          timeout: A floating point number specifying a timeout for the</span>
+<span class="sd">            operation in seconds.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A bool indicates if the operation times out.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">wait_for_termination</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedules a graceful shutdown in current event loop.</span>
+
+<span class="sd">        The Cython AioServer doesn&#39;t hold a ref-count to this class. It should</span>
+<span class="sd">        be safe to slightly extend the underlying Cython object&#39;s life span.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="server"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">migration_thread_pool</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Executor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">handlers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">GenericRpcHandler</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelArgumentType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">maximum_concurrent_rpcs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a Server with which RPCs can be serviced.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      migration_thread_pool: A futures.ThreadPoolExecutor to be used by the</span>
+<span class="sd">        Server to execute non-AsyncIO RPC handlers for migration purpose.</span>
+<span class="sd">      handlers: An optional list of GenericRpcHandlers used for executing RPCs.</span>
+<span class="sd">        More handlers may be added by calling add_generic_rpc_handlers any time</span>
+<span class="sd">        before the server is started.</span>
+<span class="sd">      interceptors: An optional list of ServerInterceptor objects that observe</span>
+<span class="sd">        and optionally manipulate the incoming RPCs before handing them over to</span>
+<span class="sd">        handlers. The interceptors are given control in the order they are</span>
+<span class="sd">        specified. This is an EXPERIMENTAL API.</span>
+<span class="sd">      options: An optional list of key-value pairs (channel args in gRPC runtime)</span>
+<span class="sd">        to configure the channel.</span>
+<span class="sd">      maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server</span>
+<span class="sd">        will service before returning RESOURCE_EXHAUSTED status, or None to</span>
+<span class="sd">        indicate no limit.</span>
+<span class="sd">      compression: An element of grpc.compression, e.g.</span>
+<span class="sd">        grpc.compression.Gzip. This compression algorithm will be used for the</span>
+<span class="sd">        lifetime of the server unless overridden by set_compression. This is an</span>
+<span class="sd">        EXPERIMENTAL option.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Server object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Server</span><span class="p">(</span><span class="n">migration_thread_pool</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">,</span>
+                  <span class="p">()</span> <span class="k">if</span> <span class="n">interceptors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">interceptors</span><span class="p">,</span>
+                  <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="n">maximum_concurrent_rpcs</span><span class="p">,</span>
+                  <span class="n">compression</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2018, The gRPC Authors.
+      
+    </div>
+
+    
+
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-60127042-1']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+    
+  </body>
+</html>
