@@ -74,7 +74,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
@@ -1242,11 +1241,25 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-ServerAddressList ExtractBalancerAddresses(const grpc_channel_args& args) {
-  const ServerAddressList* addresses =
-      FindGrpclbBalancerAddressesInChannelArgs(args);
-  if (addresses != nullptr) return *addresses;
-  return ServerAddressList();
+ServerAddressList ExtractBalancerAddresses(const ServerAddressList& addresses) {
+  ServerAddressList balancer_addresses;
+  for (size_t i = 0; i < addresses.size(); ++i) {
+    if (addresses[i].IsBalancer()) {
+      // Strip out the is_balancer channel arg, since we don't want to
+      // recursively use the grpclb policy in the channel used to talk to
+      // the balancers.  Note that we do NOT strip out the balancer_name
+      // channel arg, since we need that to set the authority correctly
+      // to talk to the balancers.
+      static const char* args_to_remove[] = {
+          GRPC_ARG_ADDRESS_IS_BALANCER,
+      };
+      balancer_addresses.emplace_back(
+          addresses[i].address(),
+          grpc_channel_args_copy_and_remove(addresses[i].args(), args_to_remove,
+                                            GPR_ARRAY_SIZE(args_to_remove)));
+    }
+  }
+  return balancer_addresses;
 }
 
 /* Returns the channel args for the LB channel, used to create a bidirectional
@@ -1439,25 +1452,27 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 // helpers for UpdateLocked()
 //
 
-ServerAddressList AddNullLbTokenToAddresses(
-    const ServerAddressList& addresses) {
+// Returns the backend addresses extracted from the given addresses.
+ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
   static const char* lb_token = "";
   grpc_arg arg = grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
       const_cast<char*>(lb_token), &lb_token_arg_vtable);
-  ServerAddressList addresses_out;
+  ServerAddressList backend_addresses;
   for (size_t i = 0; i < addresses.size(); ++i) {
-    addresses_out.emplace_back(
-        addresses[i].address(),
-        grpc_channel_args_copy_and_add(addresses[i].args(), &arg, 1));
+    if (!addresses[i].IsBalancer()) {
+      backend_addresses.emplace_back(
+          addresses[i].address(),
+          grpc_channel_args_copy_and_add(addresses[i].args(), &arg, 1));
+    }
   }
-  return addresses_out;
+  return backend_addresses;
 }
 
 void GrpcLb::ProcessAddressesAndChannelArgsLocked(
     const ServerAddressList& addresses, const grpc_channel_args& args) {
   // Update fallback address list.
-  fallback_backend_addresses_ = AddNullLbTokenToAddresses(addresses);
+  fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
@@ -1467,7 +1482,7 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   args_ = grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
-  ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
+  ServerAddressList balancer_addresses = ExtractBalancerAddresses(addresses);
   grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
       balancer_addresses, response_generator_.get(), &args);
   // Create balancer channel if needed.

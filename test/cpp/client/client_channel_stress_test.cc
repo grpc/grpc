@@ -35,7 +35,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -152,7 +151,7 @@ class ClientChannelStressTest {
       for (const auto& balancer_server : balancer_servers_) {
         // Select each address with probability of 0.8.
         if (std::rand() % 10 < 8) {
-          addresses.emplace_back(AddressData{balancer_server.port_, ""});
+          addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
         }
       }
       std::shuffle(addresses.begin(), addresses.end(),
@@ -214,12 +213,13 @@ class ClientChannelStressTest {
 
   struct AddressData {
     int port;
+    bool is_balancer;
     grpc::string balancer_name;
   };
 
-  static grpc_core::ServerAddressList CreateAddressListFromAddressDataList(
-      const std::vector<AddressData>& address_data) {
-    grpc_core::ServerAddressList addresses;
+  void SetNextResolution(const std::vector<AddressData>& address_data) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
     for (const auto& addr : address_data) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", addr.port);
@@ -227,34 +227,20 @@ class ClientChannelStressTest {
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
-      grpc_arg arg =
-          grpc_core::CreateGrpclbBalancerNameArg(addr.balancer_name.c_str());
-      grpc_channel_args* args =
-          grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-      addresses.emplace_back(address.addr, address.len, args);
+      std::vector<grpc_arg> args_to_add;
+      if (addr.is_balancer) {
+        args_to_add.emplace_back(grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1));
+        args_to_add.emplace_back(grpc_channel_arg_string_create(
+            const_cast<char*>(GRPC_ARG_ADDRESS_BALANCER_NAME),
+            const_cast<char*>(addr.balancer_name.c_str())));
+      }
+      grpc_channel_args* args = grpc_channel_args_copy_and_add(
+          nullptr, args_to_add.data(), args_to_add.size());
+      result.addresses.emplace_back(address.addr, address.len, args);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    return addresses;
-  }
-
-  static grpc_core::Resolver::Result MakeResolverResult(
-      const std::vector<AddressData>& balancer_address_data) {
-    grpc_core::Resolver::Result result;
-    grpc_error* error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfig::Create(
-        "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
-    grpc_core::ServerAddressList balancer_addresses =
-        CreateAddressListFromAddressDataList(balancer_address_data);
-    grpc_arg arg = CreateGrpclbBalancerAddressesArg(&balancer_addresses);
-    result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-    return result;
-  }
-
-  void SetNextResolution(const std::vector<AddressData>& address_data) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::Resolver::Result result = MakeResolverResult(address_data);
     response_generator_->SetResponse(std::move(result));
   }
 
