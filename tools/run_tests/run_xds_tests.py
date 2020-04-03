@@ -1091,13 +1091,13 @@ try:
     else:
         server_uri = service_host_name + ':' + str(gcp.service_port)
     if args.bootstrap_file:
-      bootstrap_path = os.path.abspath(args.bootstrap_file)
+        bootstrap_path = os.path.abspath(args.bootstrap_file)
     else:
-      with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
-          bootstrap_file.write(
-              _BOOTSTRAP_TEMPLATE.format(
-                  node_id=socket.gethostname()).encode('utf-8'))
-          bootstrap_path = bootstrap_file.name
+        with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
+            bootstrap_file.write(
+                _BOOTSTRAP_TEMPLATE.format(
+                    node_id=socket.gethostname()).encode('utf-8'))
+            bootstrap_path = bootstrap_file.name
     client_env = dict(os.environ, GRPC_XDS_BOOTSTRAP=bootstrap_path)
     client_cmd = shlex.split(
         args.client_cmd.format(server_uri=server_uri,
