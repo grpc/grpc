@@ -200,6 +200,8 @@ struct grpc_call {
   /* Stream compression algorithm for *incoming* data */
   grpc_stream_compression_algorithm incoming_stream_compression_algorithm =
       GRPC_STREAM_COMPRESS_NONE;
+  /* Maximum size for uncompressed receive message in bytes. -1 for unlimited */
+  int max_uncompressed_receive_message_length = -1;
   /* Supported encodings (compression algorithms), a bitset.
    * Always support no compression. */
   uint32_t encodings_accepted_by_peer = 1 << GRPC_MESSAGE_COMPRESS_NONE;
@@ -495,6 +497,11 @@ void grpc_call_set_completion_queue(grpc_call* call,
   call->pollent = grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
   grpc_call_stack_set_pollset_or_pollset_set(CALL_STACK_FROM_CALL(call),
                                              &call->pollent);
+}
+
+void grpc_call_set_max_uncompressed_receive_message_length(grpc_call* call,
+                                                           int limit) {
+  call->max_uncompressed_receive_message_length = limit;
 }
 
 #ifndef NDEBUG

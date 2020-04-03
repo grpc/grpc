@@ -216,6 +216,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/http/http_filters_plugin.cc )
   s.files += %w( src/core/ext/filters/http/message_compress/message_compress_filter.cc )
   s.files += %w( src/core/ext/filters/http/message_compress/message_compress_filter.h )
+  s.files += %w( src/core/ext/filters/http/message_decompress/message_decompress_filter.cc )
+  s.files += %w( src/core/ext/filters/http/message_decompress/message_decompress_filter.h )
   s.files += %w( src/core/ext/filters/http/server/http_server_filter.cc )
   s.files += %w( src/core/ext/filters/http/server/http_server_filter.h )
   s.files += %w( src/core/ext/filters/max_age/max_age_filter.cc )
