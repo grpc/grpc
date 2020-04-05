@@ -156,7 +156,7 @@ namespace Grpc.IntegrationTesting
                 clientAddKeyCertPair: false,
                 clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireButDontVerify);
 
-            CheckRejected(StatusCode.Unknown);
+            CheckRejected();
         }
 
         [Test]
@@ -166,7 +166,7 @@ namespace Grpc.IntegrationTesting
                 clientAddKeyCertPair: false,
                 clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireAndVerify);
 
-            CheckRejected(StatusCode.Unknown);
+            CheckRejected();
         }
 
         [Test]
@@ -219,7 +219,7 @@ namespace Grpc.IntegrationTesting
                 {
                     throw new Exception("VerifyPeerCallback has thrown on purpose.");
                 });
-            CheckRejected(StatusCode.Unavailable);
+            CheckRejected();
         }
 
         [Test]
@@ -232,7 +232,7 @@ namespace Grpc.IntegrationTesting
                 {
                     return false;
                 });
-            CheckRejected(StatusCode.Unavailable);
+            CheckRejected();
         }
 
         private async Task CheckAccepted(bool expectPeerAuthenticated)
@@ -243,10 +243,12 @@ namespace Grpc.IntegrationTesting
             Assert.AreEqual(expectPeerAuthenticated.ToString(), call.GetTrailers().First((entry) => entry.Key == IsPeerAuthenticatedMetadataKey).Value);
         }
 
-        private void CheckRejected(StatusCode statusCode)
+        private void CheckRejected()
         {
             var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { ResponseSize = 10 }));
-            Assert.AreEqual(statusCode, ex.Status.StatusCode);
+            if (ex.Status.StatusCode != StatusCode.Unavailable & ex.Status.StatusCode != StatusCode.Unknown) {
+                Fail("Expect status to be either Unavailable or Unknown");
+            }
         }
 
         private async Task CheckAuthContextIsPopulated()
