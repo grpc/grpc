@@ -385,6 +385,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -742,6 +743,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
@@ -1279,6 +1281,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -1571,6 +1574,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
@@ -3090,6 +3094,7 @@ targets:
   - mac
 - name: completion_queue_threading_test
   build: test
+  run: false
   language: c
   headers: []
   src:
@@ -3133,25 +3138,6 @@ targets:
   src:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-- name: control_plane_credentials_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/security/control_plane_credentials_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -5441,6 +5427,7 @@ targets:
 - name: channelz_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/util/channel_trace_proto_helper.h

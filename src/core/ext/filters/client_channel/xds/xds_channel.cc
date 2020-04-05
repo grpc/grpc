@@ -30,8 +30,12 @@ grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
 
 grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
                                const grpc_channel_args& args,
-                               grpc_error** /*error*/) {
-  if (!bootstrap.server().channel_creds.empty()) return nullptr;
+                               grpc_error** error) {
+  if (!bootstrap.server().channel_creds.empty()) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "credential specified but gRPC not built with security");
+    return nullptr;
+  }
   return grpc_insecure_channel_create(bootstrap.server().server_uri.c_str(),
                                       &args, nullptr);
 }

@@ -704,7 +704,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
   call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
@@ -715,6 +716,11 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                     grpc_schedule_on_exec_ctx);
   if (xds_client()->service_config_watcher_ != nullptr) {
     Subscribe(XdsApi::kLdsTypeUrl, xds_client()->server_name_);
+    if (xds_client()->lds_result_.has_value() &&
+        !xds_client()->lds_result_->route_config_name.empty()) {
+      Subscribe(XdsApi::kRdsTypeUrl,
+                xds_client()->lds_result_->route_config_name);
+    }
   }
   for (const auto& p : xds_client()->cluster_map_) {
     Subscribe(XdsApi::kCdsTypeUrl, std::string(p.first));
@@ -893,7 +899,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
             "[xds_client %p] LDS update received: route_config_name=%s, "
             "cluster_name=%s",
             xds_client(),
-            (lds_update->route_config_name.empty()
+            (!lds_update->route_config_name.empty()
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"),
             (lds_update->rds_update.has_value()
@@ -1068,7 +1074,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
               " drop categories received (drop_all=%d)",
               xds_client(), eds_update.priority_list_update.size(),
               eds_update.drop_config->drop_category_list().size(),
-              eds_update.drop_all);
+              eds_update.drop_config->drop_all());
       for (size_t priority = 0;
            priority < eds_update.priority_list_update.size(); ++priority) {
         const auto* locality_map_update = eds_update.priority_list_update.Find(
@@ -1520,7 +1526,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
   // Op: send request message.

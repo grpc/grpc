@@ -41,6 +41,18 @@ cdef class RPCState(GrpcCallWrapper):
     cdef Operation create_send_initial_metadata_op_if_not_sent(self)
 
 
+cdef class _ServicerContext:
+    cdef RPCState _rpc_state
+    cdef object _loop  # asyncio.AbstractEventLoop
+    cdef object _request_deserializer  # Callable[[bytes], Any]
+    cdef object _response_serializer  # Callable[[Any], bytes]
+
+
+cdef class _MessageReceiver:
+    cdef _ServicerContext _servicer_context
+    cdef object _agen
+
+
 cdef enum AioServerStatus:
     AIO_SERVER_STATUS_UNKNOWN
     AIO_SERVER_STATUS_READY

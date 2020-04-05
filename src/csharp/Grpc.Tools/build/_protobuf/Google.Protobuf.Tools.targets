@@ -137,7 +137,7 @@
         <ProtoRoot>%(RelativeDir)</ProtoRoot>
       </Protobuf_Compile>
       <!-- Remove files not for compile. -->
-      <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" !%(ProtoCompile) " />
+      <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" '%(ProtoCompile)' != 'true' " />
       <!-- Ensure invariant Source=%(Identity). -->
       <Protobuf_Compile>
         <Source>%(Identity)</Source>

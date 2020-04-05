@@ -17,6 +17,7 @@ import datetime
 
 import grpc
 from grpc.experimental import aio
+from tests.unit import resources
 
 from src.proto.grpc.testing import empty_pb2, messages_pb2, test_pb2_grpc
 from tests_aio.unit import _constants
@@ -129,8 +130,9 @@ async def start_test_server(port=0,
 
     if secure:
         if server_credentials is None:
-            server_credentials = grpc.local_server_credentials(
-                grpc.LocalConnectionType.LOCAL_TCP)
+            server_credentials = grpc.ssl_server_credentials([
+                (resources.private_key(), resources.certificate_chain())
+            ])
         port = server.add_secure_port('[::]:%d' % port, server_credentials)
     else:
         port = server.add_insecure_port('[::]:%d' % port)

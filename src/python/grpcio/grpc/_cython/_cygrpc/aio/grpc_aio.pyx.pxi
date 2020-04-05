@@ -14,18 +14,17 @@
 
 import enum
 
-cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'default').upper()
+cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'poller').upper()
 cdef _AioState _global_aio_state = _AioState()
 
 
 class AsyncIOEngine(enum.Enum):
-    DEFAULT = 'default'
     CUSTOM_IO_MANAGER = 'custom_io_manager'
     POLLER = 'poller'
 
 
 cdef _default_asyncio_engine():
-    return AsyncIOEngine.CUSTOM_IO_MANAGER
+    return AsyncIOEngine.POLLER
 
 
 cdef grpc_completion_queue *global_completion_queue():
@@ -76,11 +75,9 @@ cdef _actual_aio_initialization():
     # Picks the engine for gRPC AsyncIO Stack
     _global_aio_state.engine = AsyncIOEngine.__members__.get(
         _GRPC_ASYNCIO_ENGINE,
-        AsyncIOEngine.DEFAULT,
+        _default_asyncio_engine(),
     )
-    if _global_aio_state.engine is AsyncIOEngine.DEFAULT:
-        _global_aio_state.engine = _default_asyncio_engine()
-    _LOGGER.info('Using %s as I/O engine', _global_aio_state.engine)
+    _LOGGER.debug('Using %s as I/O engine', _global_aio_state.engine)
 
     # Initializes the process-level state accordingly
     if _global_aio_state.engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
@@ -108,15 +105,15 @@ cdef _actual_aio_shutdown():
         )
         future.add_done_callback(_grpc_shutdown_wrapper)
     elif _global_aio_state.engine is AsyncIOEngine.POLLER:
-        _global_aio_state.cq.shutdown()
+        (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
         grpc_shutdown_blocking()
     else:
         raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
 
 
-cdef init_grpc_aio():
-    """Initialis the gRPC AsyncIO module.
-    
+cpdef init_grpc_aio():
+    """Initializes the gRPC AsyncIO module.
+
     Expected to be invoked on critical class constructors.
     E.g., AioChannel, AioServer.
     """
@@ -126,7 +123,7 @@ cdef init_grpc_aio():
             _actual_aio_initialization()
 
 
-cdef shutdown_grpc_aio():
+cpdef shutdown_grpc_aio():
     """Shuts down the gRPC AsyncIO module.
 
     Expected to be invoked on critical class destructors.

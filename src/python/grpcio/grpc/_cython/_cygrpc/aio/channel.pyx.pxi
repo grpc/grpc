@@ -36,11 +36,13 @@ cdef class AioChannel:
         self._status = AIO_CHANNEL_STATUS_READY
 
         if credentials is None:
+            self._is_secure = False
             self.channel = grpc_insecure_channel_create(
                 <char *>target,
                 channel_args.c_args(),
                 NULL)
         else:
+            self._is_secure = True
             self.channel = grpc_secure_channel_create(
                 <grpc_channel_credentials *> credentials.c(),
                 <char *>target,
@@ -122,6 +124,9 @@ cdef class AioChannel:
 
         cdef CallCredentials cython_call_credentials
         if python_call_credentials is not None:
+            if not self._is_secure:
+                raise UsageError("Call credentials are only valid on secure channels")
+
             cython_call_credentials = python_call_credentials._credentials
         else:
             cython_call_credentials = None

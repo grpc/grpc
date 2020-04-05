@@ -1630,31 +1630,12 @@ void ChannelData::ProcessLbPolicy(
   // If not, try the setting from channel args.
   const char* policy_name = nullptr;
   if (parsed_service_config != nullptr &&
-      parsed_service_config->parsed_deprecated_lb_policy() != nullptr) {
-    policy_name = parsed_service_config->parsed_deprecated_lb_policy();
+      !parsed_service_config->parsed_deprecated_lb_policy().empty()) {
+    policy_name = parsed_service_config->parsed_deprecated_lb_policy().c_str();
   } else {
     const grpc_arg* channel_arg =
         grpc_channel_args_find(resolver_result.args, GRPC_ARG_LB_POLICY_NAME);
     policy_name = grpc_channel_arg_get_string(channel_arg);
-  }
-  // Special case: If at least one balancer address is present, we use
-  // the grpclb policy, regardless of what the resolver has returned.
-  bool found_balancer_address = false;
-  for (size_t i = 0; i < resolver_result.addresses.size(); ++i) {
-    const ServerAddress& address = resolver_result.addresses[i];
-    if (address.IsBalancer()) {
-      found_balancer_address = true;
-      break;
-    }
-  }
-  if (found_balancer_address) {
-    if (policy_name != nullptr && strcmp(policy_name, "grpclb") != 0) {
-      gpr_log(GPR_INFO,
-              "resolver requested LB policy %s but provided at least one "
-              "balancer address -- forcing use of grpclb LB policy",
-              policy_name);
-    }
-    policy_name = "grpclb";
   }
   // Use pick_first if nothing was specified and we didn't select grpclb
   // above.
@@ -2283,10 +2264,32 @@ void CallData::FreeCachedSendOpDataForCompletedBatch(
 void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
     void* arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(arg);
+  // Set error if call did not succeed.
+  grpc_error* error_for_lb = GRPC_ERROR_NONE;
+  if (error != GRPC_ERROR_NONE) {
+    error_for_lb = error;
+  } else {
+    const auto& fields = calld->recv_trailing_metadata_->idx.named;
+    GPR_ASSERT(fields.grpc_status != nullptr);
+    grpc_status_code status =
+        grpc_get_status_code_from_metadata(fields.grpc_status->md);
+    std::string msg;
+    if (status != GRPC_STATUS_OK) {
+      error_for_lb = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("call failed"),
+          GRPC_ERROR_INT_GRPC_STATUS, status);
+      if (fields.grpc_message != nullptr) {
+        error_for_lb = grpc_error_set_str(
+            error_for_lb, GRPC_ERROR_STR_GRPC_MESSAGE,
+            grpc_slice_ref_internal(GRPC_MDVALUE(fields.grpc_message->md)));
+      }
+    }
+  }
   // Invoke callback to LB policy.
   Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
-  calld->lb_recv_trailing_metadata_ready_(error, &trailing_metadata,
+  calld->lb_recv_trailing_metadata_ready_(error_for_lb, &trailing_metadata,
                                           &calld->lb_call_state_);
+  if (error == GRPC_ERROR_NONE) GRPC_ERROR_UNREF(error_for_lb);
   // Chain to original callback.
   Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
                GRPC_ERROR_REF(error));
@@ -3975,8 +3978,10 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
       if (pick_queued_) RemoveCallFromQueuedPicksLocked(elem);
       // Handle drops.
       if (GPR_UNLIKELY(result.subchannel == nullptr)) {
-        result.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Call dropped by load balancing policy");
+        result.error = grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Call dropped by load balancing policy"),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       } else {
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane mutex.

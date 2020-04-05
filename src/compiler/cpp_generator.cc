@@ -1343,11 +1343,14 @@ void PrintHeaderServerMethodStreamedUnary(
     printer->Print(*vars,
                    "WithStreamedUnaryMethod_$Method$() {\n"
                    "  ::grpc::Service::MarkMethodStreamed($Idx$,\n"
-                   "    new ::grpc::internal::StreamedUnaryHandler< $Request$, "
-                   "$Response$>(std::bind"
-                   "(&WithStreamedUnaryMethod_$Method$<BaseClass>::"
-                   "Streamed$Method$, this, std::placeholders::_1, "
-                   "std::placeholders::_2)));\n"
+                   "    new ::grpc::internal::StreamedUnaryHandler<\n"
+                   "      $Request$, $Response$>(\n"
+                   "        [this](::grpc_impl::ServerContext* context,\n"
+                   "               ::grpc_impl::ServerUnaryStreamer<\n"
+                   "                 $Request$, $Response$>* streamer) {\n"
+                   "                   return this->Streamed$Method$(context,\n"
+                   "                     streamer);\n"
+                   "              }));\n"
                    "}\n");
     printer->Print(*vars,
                    "~WithStreamedUnaryMethod_$Method$() override {\n"
@@ -1391,16 +1394,18 @@ void PrintHeaderServerMethodSplitStreaming(
         "{}\n");
     printer->Print(" public:\n");
     printer->Indent();
-    printer->Print(
-        *vars,
-        "WithSplitStreamingMethod_$Method$() {\n"
-        "  ::grpc::Service::MarkMethodStreamed($Idx$,\n"
-        "    new ::grpc::internal::SplitServerStreamingHandler< $Request$, "
-        "$Response$>(std::bind"
-        "(&WithSplitStreamingMethod_$Method$<BaseClass>::"
-        "Streamed$Method$, this, std::placeholders::_1, "
-        "std::placeholders::_2)));\n"
-        "}\n");
+    printer->Print(*vars,
+                   "WithSplitStreamingMethod_$Method$() {\n"
+                   "  ::grpc::Service::MarkMethodStreamed($Idx$,\n"
+                   "    new ::grpc::internal::SplitServerStreamingHandler<\n"
+                   "      $Request$, $Response$>(\n"
+                   "        [this](::grpc_impl::ServerContext* context,\n"
+                   "               ::grpc_impl::ServerSplitStreamer<\n"
+                   "                 $Request$, $Response$>* streamer) {\n"
+                   "                   return this->Streamed$Method$(context,\n"
+                   "                     streamer);\n"
+                   "              }));\n"
+                   "}\n");
     printer->Print(*vars,
                    "~WithSplitStreamingMethod_$Method$() override {\n"
                    "  BaseClassMustBeDerivedFromService(this);\n"
@@ -2251,7 +2256,12 @@ void PrintSourceService(grpc_generator::Printer* printer,
           "    new ::grpc::internal::RpcMethodHandler< $ns$$Service$::Service, "
           "$Request$, "
           "$Response$>(\n"
-          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
+          "        []($ns$$Service$::Service* service,\n"
+          "           ::grpc_impl::ServerContext* ctx,\n"
+          "           const $Request$* req,\n"
+          "           $Response$* resp) {\n"
+          "             return service->$Method$(ctx, req, resp);\n"
+          "           }, this)));\n");
     } else if (ClientOnlyStreaming(method.get())) {
       printer->Print(
           *vars,
@@ -2260,7 +2270,12 @@ void PrintSourceService(grpc_generator::Printer* printer,
           "    ::grpc::internal::RpcMethod::CLIENT_STREAMING,\n"
           "    new ::grpc::internal::ClientStreamingHandler< "
           "$ns$$Service$::Service, $Request$, $Response$>(\n"
-          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
+          "        []($ns$$Service$::Service* service,\n"
+          "           ::grpc_impl::ServerContext* ctx,\n"
+          "           ::grpc_impl::ServerReader<$Request$>* reader,\n"
+          "           $Response$* resp) {\n"
+          "             return service->$Method$(ctx, reader, resp);\n"
+          "           }, this)));\n");
     } else if (ServerOnlyStreaming(method.get())) {
       printer->Print(
           *vars,
@@ -2269,16 +2284,25 @@ void PrintSourceService(grpc_generator::Printer* printer,
           "    ::grpc::internal::RpcMethod::SERVER_STREAMING,\n"
           "    new ::grpc::internal::ServerStreamingHandler< "
           "$ns$$Service$::Service, $Request$, $Response$>(\n"
-          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
+          "        []($ns$$Service$::Service* service,\n"
+          "           ::grpc_impl::ServerContext* ctx,\n"
+          "           const $Request$* req,\n"
+          "           ::grpc_impl::ServerWriter<$Response$>* writer) {\n"
+          "             return service->$Method$(ctx, req, writer);\n"
+          "           }, this)));\n");
     } else if (method->BidiStreaming()) {
-      printer->Print(
-          *vars,
-          "AddMethod(new ::grpc::internal::RpcServiceMethod(\n"
-          "    $prefix$$Service$_method_names[$Idx$],\n"
-          "    ::grpc::internal::RpcMethod::BIDI_STREAMING,\n"
-          "    new ::grpc::internal::BidiStreamingHandler< "
-          "$ns$$Service$::Service, $Request$, $Response$>(\n"
-          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
+      printer->Print(*vars,
+                     "AddMethod(new ::grpc::internal::RpcServiceMethod(\n"
+                     "    $prefix$$Service$_method_names[$Idx$],\n"
+                     "    ::grpc::internal::RpcMethod::BIDI_STREAMING,\n"
+                     "    new ::grpc::internal::BidiStreamingHandler< "
+                     "$ns$$Service$::Service, $Request$, $Response$>(\n"
+                     "        []($ns$$Service$::Service* service,\n"
+                     "           ::grpc_impl::ServerContext* ctx,\n"
+                     "           ::grpc_impl::ServerReaderWriter<$Response$,\n"
+                     "           $Request$>* stream) {\n"
+                     "             return service->$Method$(ctx, stream);\n"
+                     "           }, this)));\n");
     }
   }
   printer->Outdent();

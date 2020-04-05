@@ -1047,7 +1047,6 @@ completion_queue_threading_test: $(BINDIR)/$(CONFIG)/completion_queue_threading_
 compression_test: $(BINDIR)/$(CONFIG)/compression_test
 concurrent_connectivity_test: $(BINDIR)/$(CONFIG)/concurrent_connectivity_test
 connection_refused_test: $(BINDIR)/$(CONFIG)/connection_refused_test
-control_plane_credentials_test: $(BINDIR)/$(CONFIG)/control_plane_credentials_test
 cpu_test: $(BINDIR)/$(CONFIG)/cpu_test
 dns_resolver_connectivity_using_ares_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_using_ares_resolver_test
 dns_resolver_connectivity_using_native_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_using_native_resolver_test
@@ -1424,7 +1423,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/compression_test \
   $(BINDIR)/$(CONFIG)/concurrent_connectivity_test \
   $(BINDIR)/$(CONFIG)/connection_refused_test \
-  $(BINDIR)/$(CONFIG)/control_plane_credentials_test \
   $(BINDIR)/$(CONFIG)/cpu_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_using_ares_resolver_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_using_native_resolver_test \
@@ -1916,16 +1914,12 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/cmdline_test || ( echo test cmdline_test failed ; exit 1 )
 	$(E) "[RUN]     Testing combiner_test"
 	$(Q) $(BINDIR)/$(CONFIG)/combiner_test || ( echo test combiner_test failed ; exit 1 )
-	$(E) "[RUN]     Testing completion_queue_threading_test"
-	$(Q) $(BINDIR)/$(CONFIG)/completion_queue_threading_test || ( echo test completion_queue_threading_test failed ; exit 1 )
 	$(E) "[RUN]     Testing compression_test"
 	$(Q) $(BINDIR)/$(CONFIG)/compression_test || ( echo test compression_test failed ; exit 1 )
 	$(E) "[RUN]     Testing concurrent_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/concurrent_connectivity_test || ( echo test concurrent_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing connection_refused_test"
 	$(Q) $(BINDIR)/$(CONFIG)/connection_refused_test || ( echo test connection_refused_test failed ; exit 1 )
-	$(E) "[RUN]     Testing control_plane_credentials_test"
-	$(Q) $(BINDIR)/$(CONFIG)/control_plane_credentials_test || ( echo test control_plane_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cpu_test"
 	$(Q) $(BINDIR)/$(CONFIG)/cpu_test || ( echo test cpu_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_connectivity_using_ares_resolver_test"
@@ -2206,8 +2200,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/channelz_registry_test || ( echo test channelz_registry_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channelz_service_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channelz_service_test || ( echo test channelz_service_test failed ; exit 1 )
-	$(E) "[RUN]     Testing channelz_test"
-	$(Q) $(BINDIR)/$(CONFIG)/channelz_test || ( echo test channelz_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/cli_call_test || ( echo test cli_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_callback_end2end_test"
@@ -3651,6 +3643,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
@@ -4279,6 +4272,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
@@ -7838,53 +7832,6 @@ deps_connection_refused_test: $(CONNECTION_REFUSED_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CONNECTION_REFUSED_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-CONTROL_PLANE_CREDENTIALS_TEST_SRC = \
-    test/core/end2end/cq_verifier.cc \
-    test/core/end2end/data/client_certs.cc \
-    test/core/end2end/data/server1_cert.cc \
-    test/core/end2end/data/server1_key.cc \
-    test/core/end2end/data/test_root_cert.cc \
-    test/core/security/control_plane_credentials_test.cc \
-
-CONTROL_PLANE_CREDENTIALS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONTROL_PLANE_CREDENTIALS_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/control_plane_credentials_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/control_plane_credentials_test: $(CONTROL_PLANE_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CONTROL_PLANE_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/control_plane_credentials_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/cq_verifier.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/security/control_plane_credentials_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_control_plane_credentials_test: $(CONTROL_PLANE_CREDENTIALS_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CONTROL_PLANE_CREDENTIALS_TEST_OBJS:.o=.dep)
 endif
 endif
 

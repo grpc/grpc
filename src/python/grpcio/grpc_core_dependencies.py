@@ -31,6 +31,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc',
+    'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc',

@@ -88,6 +88,7 @@ grpc_status_code TlsFetchKeyMaterials(
   if (credential_reload_config != nullptr) {
     grpc_tls_credential_reload_arg* arg = new grpc_tls_credential_reload_arg();
     arg->key_materials_config = key_materials_config.get();
+    arg->error_details = new grpc_tls_error_details();
     int result = credential_reload_config->Schedule(arg);
     if (result) {
       /** Credential reloading is performed async. This is not yet supported.
@@ -105,13 +106,13 @@ grpc_status_code TlsFetchKeyMaterials(
       } else if (arg->status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL) {
         gpr_log(GPR_ERROR, "Credential reload failed with an error:");
         if (arg->error_details != nullptr) {
-          gpr_log(GPR_ERROR, "%s", arg->error_details);
+          gpr_log(GPR_ERROR, "%s", arg->error_details->error_details().c_str());
         }
         reload_status =
             is_key_materials_empty ? GRPC_STATUS_INTERNAL : GRPC_STATUS_OK;
       }
     }
-    gpr_free((void*)arg->error_details);
+    delete arg->error_details;
     /** If the credential reload config was constructed via a wrapped language,
      *  then |arg->context| and |arg->destroy_context| will not be nullptr. In
      *  this case, we must destroy |arg->context|, which stores the wrapped
@@ -406,14 +407,14 @@ grpc_error* TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
     gpr_asprintf(&msg,
                  "Server authorization check is cancelled by the caller with "
                  "error: %s",
-                 arg->error_details);
+                 arg->error_details->error_details().c_str());
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
   } else if (arg->status == GRPC_STATUS_OK) {
     /* Server authorization check completed successfully but returned check
      * failure. */
     if (!arg->success) {
       gpr_asprintf(&msg, "Server authorization check failed with error: %s",
-                   arg->error_details);
+                   arg->error_details->error_details().c_str());
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     }
     /* Server authorization check did not complete correctly. */
@@ -421,7 +422,7 @@ grpc_error* TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
     gpr_asprintf(
         &msg,
         "Server authorization check did not finish correctly with error: %s",
-        arg->error_details);
+        arg->error_details->error_details().c_str());
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
   }
   gpr_free(msg);
@@ -433,6 +434,7 @@ TlsChannelSecurityConnector::ServerAuthorizationCheckArgCreate(
     void* user_data) {
   grpc_tls_server_authorization_check_arg* arg =
       new grpc_tls_server_authorization_check_arg();
+  arg->error_details = new grpc_tls_error_details();
   arg->cb = ServerAuthorizationCheckDone;
   arg->cb_user_data = user_data;
   arg->status = GRPC_STATUS_OK;
@@ -447,7 +449,7 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
   gpr_free((void*)arg->target_name);
   gpr_free((void*)arg->peer_cert);
   if (arg->peer_cert_full_chain) gpr_free((void*)arg->peer_cert_full_chain);
-  gpr_free((void*)arg->error_details);
+  delete arg->error_details;
   if (arg->destroy_context != nullptr) {
     arg->destroy_context(arg->context);
   }

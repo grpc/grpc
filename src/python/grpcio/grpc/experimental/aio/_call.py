@@ -14,10 +14,10 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-from functools import partial
-import logging
 import enum
-from typing import AsyncIterable, Awaitable, Dict, Optional
+import logging
+from functools import partial
+from typing import AsyncIterable, Awaitable, Optional, Tuple
 
 import grpc
 from grpc import _common
@@ -25,7 +25,8 @@ from grpc._cython import cygrpc
 
 from . import _base_call
 from ._typing import (DeserializingFunction, DoneCallbackType, MetadataType,
-                      RequestType, ResponseType, SerializingFunction)
+                      MetadatumType, RequestType, ResponseType,
+                      SerializingFunction)
 
 __all__ = 'AioRpcError', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
@@ -105,7 +106,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._details
 
-    def initial_metadata(self) -> Optional[Dict]:
+    def initial_metadata(self) -> Optional[MetadataType]:
         """Accesses the initial metadata sent by the server.
 
         Returns:
@@ -113,7 +114,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._initial_metadata
 
-    def trailing_metadata(self) -> Optional[Dict]:
+    def trailing_metadata(self) -> Optional[MetadataType]:
         """Accesses the trailing metadata sent by the server.
 
         Returns:
@@ -161,7 +162,7 @@ class Call:
     _loop: asyncio.AbstractEventLoop
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
-    _metadata: MetadataType
+    _metadata: Tuple[MetadatumType]
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
 
@@ -171,7 +172,7 @@ class Call:
                  loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
         self._cython_call = cython_call
-        self._metadata = metadata
+        self._metadata = tuple(metadata)
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
