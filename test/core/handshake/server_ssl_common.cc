@@ -19,18 +19,17 @@
 #include "test/core/handshake/server_ssl_common.h"
 
 #include <arpa/inet.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -203,8 +202,9 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   // Set the cipher list to match the one expressed in
   // src/core/tsi/ssl_transport_security.c.
   const char* cipher_list =
-      "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
-      "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
+      "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_"
+      "SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-"
+      "AES256-SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
     gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
