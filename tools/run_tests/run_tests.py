@@ -866,6 +866,15 @@ class PythonLanguage(object):
             else:
                 if args.iomgr_platform == 'asyncio':
                     return (python36_config,)
+                else if os.uname()[0] == 'Darwin':
+                    # NOTE(rbellevi): Testing takes significantly longer on
+                    # MacOS, so we restrict the number of interpreter versions
+                    # tested.
+                    return (
+                        python27_config,
+                        python36_config,
+                        python37_config,
+                    )
                 else:
                     return (
                         python27_config,
