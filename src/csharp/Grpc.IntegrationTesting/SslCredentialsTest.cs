@@ -247,7 +247,7 @@ namespace Grpc.IntegrationTesting
         {
             var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { ResponseSize = 10 }));
             if (ex.Status.StatusCode != StatusCode.Unavailable & ex.Status.StatusCode != StatusCode.Unknown) {
-                Fail("Expect status to be either Unavailable or Unknown");
+                Assert.Fail("Expect status to be either Unavailable or Unknown");
             }
         }
 
