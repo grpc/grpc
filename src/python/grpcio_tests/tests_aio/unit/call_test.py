@@ -24,6 +24,7 @@ from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
+from tests_aio.unit._constants import UNREACHABLE_TARGET
 
 _SHORT_TIMEOUT_S = datetime.timedelta(seconds=1).total_seconds()
 
@@ -32,7 +33,6 @@ _RESPONSE_PAYLOAD_SIZE = 42
 _REQUEST_PAYLOAD_SIZE = 7
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 _RESPONSE_INTERVAL_US = int(_SHORT_TIMEOUT_S * 1000 * 1000)
-_UNREACHABLE_TARGET = '0.1:1111'
 _INFINITE_INTERVAL_US = 2**31 - 1
 
 
@@ -78,7 +78,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertIs(response, response_retry)
 
     async def test_call_rpc_error(self):
-        async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
+        async with aio.insecure_channel(UNREACHABLE_TARGET) as channel:
             stub = test_pb2_grpc.TestServiceStub(channel)
 
             call = stub.UnaryCall(messages_pb2.SimpleRequest())
@@ -577,7 +577,7 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
     async def test_call_rpc_error(self):
-        async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
+        async with aio.insecure_channel(UNREACHABLE_TARGET) as channel:
             stub = test_pb2_grpc.TestServiceStub(channel)
 
             # The error should be raised automatically without any traffic.
