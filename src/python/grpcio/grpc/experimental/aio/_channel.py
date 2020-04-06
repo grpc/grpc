@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, AsyncIterable, Iterable, Optional, Sequence
+from typing import Any, Iterable, Optional, Sequence
 
 import grpc
 from grpc import _common, _compression, _grpcio_metadata
@@ -27,7 +27,7 @@ from ._call import (StreamStreamCall, StreamUnaryCall, UnaryStreamCall,
 from ._interceptor import (InterceptedUnaryUnaryCall,
                            UnaryUnaryClientInterceptor)
 from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
-                      SerializingFunction)
+                      SerializingFunction, RequestIterableType)
 from ._utils import _timeout_to_deadline
 
 _IMMUTABLE_EMPTY_TUPLE = tuple()
@@ -146,7 +146,7 @@ class StreamUnaryMultiCallable(_BaseMultiCallable,
                                _base_channel.StreamUnaryMultiCallable):
 
     def __call__(self,
-                 request_async_iterator: Optional[AsyncIterable[Any]] = None,
+                 request_iterator: Optional[RequestIterableType] = None,
                  timeout: Optional[float] = None,
                  metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
                  credentials: Optional[grpc.CallCredentials] = None,
@@ -158,7 +158,7 @@ class StreamUnaryMultiCallable(_BaseMultiCallable,
 
         deadline = _timeout_to_deadline(timeout)
 
-        call = StreamUnaryCall(request_async_iterator, deadline, metadata,
+        call = StreamUnaryCall(request_iterator, deadline, metadata,
                                credentials, wait_for_ready, self._channel,
                                self._method, self._request_serializer,
                                self._response_deserializer, self._loop)
@@ -170,7 +170,7 @@ class StreamStreamMultiCallable(_BaseMultiCallable,
                                 _base_channel.StreamStreamMultiCallable):
 
     def __call__(self,
-                 request_async_iterator: Optional[AsyncIterable[Any]] = None,
+                 request_iterator: Optional[RequestIterableType] = None,
                  timeout: Optional[float] = None,
                  metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
                  credentials: Optional[grpc.CallCredentials] = None,
@@ -182,7 +182,7 @@ class StreamStreamMultiCallable(_BaseMultiCallable,
 
         deadline = _timeout_to_deadline(timeout)
 
-        call = StreamStreamCall(request_async_iterator, deadline, metadata,
+        call = StreamStreamCall(request_iterator, deadline, metadata,
                                 credentials, wait_for_ready, self._channel,
                                 self._method, self._request_serializer,
                                 self._response_deserializer, self._loop)
