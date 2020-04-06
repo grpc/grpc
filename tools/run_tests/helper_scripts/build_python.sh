@@ -165,13 +165,13 @@ pip_install_dir() {
   cd "$PWD"
 }
 
-# On library/version/platforms combos that do not have a binary
+# On library/version/platforms combo that do not have a binary
 # published, we may end up building a dependency from source. In that
 # case, several of our build environment variables may disrupt the
 # third-party build process. This function pipes through only the
 # minimal environment necessary.
 pip_install() {
-  /usr/bin/env -i PATH="$PATH" $VENV_PYTHON -m pip install $@
+  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install $@
 }
 
 case "$VENV" in
