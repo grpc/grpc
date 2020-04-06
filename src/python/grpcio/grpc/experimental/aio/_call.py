@@ -572,13 +572,8 @@ class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
             channel.call(method, deadline, credentials, wait_for_ready),
             metadata, request_serializer, response_deserializer, loop)
 
-<<<<<<< HEAD
         self._init_stream_request_mixin(request_iterator)
-        self._init_unary_response_mixin(self._conduct_rpc())
-=======
-        self._init_stream_request_mixin(request_async_iterator)
         self._init_unary_response_mixin(loop.create_task(self._conduct_rpc()))
->>>>>>> Rename to wait_for_conneciton && Add to unary-unary RPC
 
     async def _conduct_rpc(self) -> ResponseType:
         try:
