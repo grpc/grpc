@@ -95,7 +95,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     ChildPickerWrapper(std::string name,
                        std::unique_ptr<SubchannelPicker> picker)
         : name_(std::move(name)), picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(std::move(args)); }
+    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
 
     const std::string& name() const { return name_; }
 
@@ -239,7 +239,7 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                              "xds routing picker not given any picker; default "
                              "route not configured"),
-                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   return result;
 }
 
@@ -417,8 +417,8 @@ XdsRoutingLb::XdsRoutingChild::XdsRoutingChild(
 XdsRoutingLb::XdsRoutingChild::~XdsRoutingChild() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_routing_lb %p] XdsRoutingChild %p %s: destroying child",
-            xds_routing_policy_.get(), this, name_.c_str());
+            "[xds_routing_lb %p] XdsRoutingChild %p: destroying child",
+            xds_routing_policy_.get(), this);
   }
   xds_routing_policy_.reset(DEBUG_LOCATION, "XdsRoutingChild");
 }
@@ -485,7 +485,7 @@ void XdsRoutingLb::XdsRoutingChild::UpdateLocked(
   }
   // Construct update args.
   UpdateArgs update_args;
-  update_args.config = config;
+  update_args.config = std::move(config);
   update_args.addresses = addresses;
   update_args.args = grpc_channel_args_copy(args);
   // Update the policy.
@@ -509,6 +509,7 @@ void XdsRoutingLb::XdsRoutingChild::ResetBackoffLocked() {
 
 void XdsRoutingLb::XdsRoutingChild::DeactivateLocked() {
   // If already deactivated, don't do that again.
+  if (delayed_removal_timer_callback_pending_ == true) return;
   // Set the child weight to 0 so that future picker won't contain this child.
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "XdsRoutingChild+timer").release();

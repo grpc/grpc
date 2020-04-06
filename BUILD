@@ -321,6 +321,7 @@ grpc_cc_library(
         "grpc_lb_policy_cds",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_xds",
+        "grpc_lb_policy_xds_routing",
         "grpc_resolver_xds",
     ],
 )
