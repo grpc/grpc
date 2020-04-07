@@ -229,7 +229,7 @@
       # limit on the 'prepare_command' field length. The encoded header is generated from
       # /src/boringssl/boringssl_prefix_symbols.h. Here we decode the content and inject the header to
       # the correct location in BoringSSL.
-      base64 -D <<EOF | gunzip > include/openssl/boringssl_prefix_symbols.h
+      base64 -D <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
         ${prefix_gz_b64}
       EOF
 
