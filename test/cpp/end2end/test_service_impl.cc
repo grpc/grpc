@@ -234,6 +234,18 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   return Status::OK;
 }
 
+Status TestServiceImpl::Echo1(ServerContext* context,
+                              const EchoRequest* request,
+                              EchoResponse* response) {
+  return Echo(context, request, response);
+}
+
+Status TestServiceImpl::Echo2(ServerContext* context,
+                              const EchoRequest* request,
+                              EchoResponse* response) {
+  return Echo(context, request, response);
+}
+
 Status TestServiceImpl::CheckClientInitialMetadata(
     ServerContext* context, const SimpleRequest* /*request*/,
     SimpleResponse* /*response*/) {

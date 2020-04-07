@@ -259,6 +259,36 @@ class BackendServiceImpl : public BackendService {
     return status;
   }
 
+  Status Echo1(ServerContext* context, const EchoRequest* request,
+               EchoResponse* response) override {
+    // Backend should receive the call credentials metadata.
+    auto call_credentials_entry =
+        context->client_metadata().find(g_kCallCredsMdKey);
+    EXPECT_NE(call_credentials_entry, context->client_metadata().end());
+    if (call_credentials_entry != context->client_metadata().end()) {
+      EXPECT_EQ(call_credentials_entry->second, g_kCallCredsMdValue);
+    }
+    echo1_request_count_++;
+    const auto status = TestServiceImpl::Echo1(context, request, response);
+    AddClient(context->peer());
+    return status;
+  }
+
+  Status Echo2(ServerContext* context, const EchoRequest* request,
+               EchoResponse* response) override {
+    // Backend should receive the call credentials metadata.
+    auto call_credentials_entry =
+        context->client_metadata().find(g_kCallCredsMdKey);
+    EXPECT_NE(call_credentials_entry, context->client_metadata().end());
+    if (call_credentials_entry != context->client_metadata().end()) {
+      EXPECT_EQ(call_credentials_entry->second, g_kCallCredsMdValue);
+    }
+    echo2_request_count_++;
+    const auto status = TestServiceImpl::Echo2(context, request, response);
+    AddClient(context->peer());
+    return status;
+  }
+
   void Start() {}
   void Shutdown() {}
 
@@ -266,6 +296,10 @@ class BackendServiceImpl : public BackendService {
     grpc_core::MutexLock lock(&clients_mu_);
     return clients_;
   }
+
+  size_t Echo1RequestCount() { return echo1_request_count_; }
+
+  size_t Echo2RequestCount() { return echo2_request_count_; }
 
  private:
   void AddClient(const grpc::string& client) {
@@ -276,6 +310,8 @@ class BackendServiceImpl : public BackendService {
   grpc_core::Mutex mu_;
   grpc_core::Mutex clients_mu_;
   std::set<grpc::string> clients_;
+  size_t echo1_request_count_ = 0;
+  size_t echo2_request_count_ = 0;
 };
 
 class ClientStats {
@@ -1356,6 +1392,34 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return status;
   }
 
+  Status SendEcho1Rpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
+                      bool wait_for_ready = false) {
+    const bool local_response = (response == nullptr);
+    if (local_response) response = new EchoResponse;
+    EchoRequest request;
+    request.set_message(kRequestMessage_);
+    ClientContext context;
+    context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
+    if (wait_for_ready) context.set_wait_for_ready(true);
+    Status status = stub_->Echo1(&context, request, response);
+    if (local_response) delete response;
+    return status;
+  }
+
+  Status SendEcho2Rpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
+                      bool wait_for_ready = false) {
+    const bool local_response = (response == nullptr);
+    if (local_response) response = new EchoResponse;
+    EchoRequest request;
+    request.set_message(kRequestMessage_);
+    ClientContext context;
+    context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
+    if (wait_for_ready) context.set_wait_for_ready(true);
+    Status status = stub_->Echo2(&context, request, response);
+    if (local_response) delete response;
+    return status;
+  }
+
   void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
                       bool wait_for_ready = false) {
     for (size_t i = 0; i < times; ++i) {
@@ -1370,6 +1434,28 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void CheckRpcSendFailure() {
     const Status status = SendRpc();
     EXPECT_FALSE(status.ok());
+  }
+
+  void CheckEcho1RpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
+                           bool wait_for_ready = false) {
+    for (size_t i = 0; i < times; ++i) {
+      EchoResponse response;
+      const Status status = SendEcho1Rpc(&response, timeout_ms, wait_for_ready);
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+  }
+
+  void CheckEcho2RpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
+                           bool wait_for_ready = false) {
+    for (size_t i = 0; i < times; ++i) {
+      EchoResponse response;
+      const Status status = SendEcho2Rpc(&response, timeout_ms, wait_for_ready);
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
   }
 
  public:
@@ -2129,26 +2215,26 @@ TEST_P(LdsTest, Timeout) {
   CheckRpcSendFailure();
 }
 
+// Tests that LDS client should choose the default route (with no matching
+// specified) after unable to find a match with previous routes.
 TEST_P(LdsTest, XdsRoutingPathMatching) {
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumRpcs = 10;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts(0, 2)},
   });
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(0, 2);
-  // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args1({
       {"locality0", GetBackendPorts(2, 3)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
       {"locality0", GetBackendPorts(3, 4)},
   });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name),
       kNewCluster1Name);
@@ -2163,28 +2249,34 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
   new_cluster2.set_name(kNewCluster2Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
   // Change RDS resource to set up prefix matching to direct traffic to the
-  // first new cluster.
+  // second new cluster.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
-  auto* mismatched_route =
+  auto* mismatched_route1 =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  mismatched_route->mutable_match()->set_path(
-      "/grpc.testing.EchoTestService/Echo");
-  mismatched_route->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* matched_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  matched_route->mutable_match()->set_path(
-      "/grpc.testing.EchoTestService/NewMethod");
-  matched_route->mutable_route()->set_cluster(kNewCluster2Name);
+  mismatched_route1->mutable_match()->set_path(
+      "/grpc.testing.EchoTestService/Echo1");
+  mismatched_route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* mismatched_route2 =
+      new_route_config.mutable_virtual_hosts(0)->add_routes();
+  mismatched_route2->mutable_match()->set_path(
+      "/grpc.testing.EchoTestService/Echo2");
+  mismatched_route2->mutable_route()->set_cluster(kNewCluster2Name);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_match()->set_path("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
-  // Wait for the new backend to come up.
-  WaitForAllBackends(2, 3);
-  CheckRpcSendOk(kNumRpcs);
+  CheckEcho1RpcSendOk(kNumRpcs, 1000, true);
+  CheckEcho2RpcSendOk(kNumRpcs, 1000, true);
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 4; ++i) {
     if (i == 2) {
-      EXPECT_EQ(kNumRpcs, backends_[i]->backend_service()->request_count());
+      EXPECT_EQ(kNumRpcs, backends_[i]->backend_service()->Echo1RequestCount());
+    } else if (i == 3) {
+      EXPECT_EQ(kNumRpcs, backends_[i]->backend_service()->Echo2RequestCount());
     } else {
       EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
     }
@@ -2197,13 +2289,6 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   const size_t kNumRpcs = 10;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 2)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(0, 2);
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args1({
       {"locality0", GetBackendPorts(2, 3)},
@@ -2239,15 +2324,13 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
-  // Wait for the new backend to come up.
-  WaitForAllBackends(3, 4);
-  CheckRpcSendOk(kNumRpcs);
+  CheckEcho1RpcSendOk(kNumRpcs, 1000, true);
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 4; ++i) {
     if (i == 3) {
-      EXPECT_EQ(kNumRpcs, backends_[i]->backend_service()->request_count());
+      EXPECT_EQ(kNumRpcs, backends_[i]->backend_service()->Echo1RequestCount());
     } else {
-      EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+      EXPECT_EQ(0, backends_[i]->backend_service()->Echo1RequestCount());
     }
   }
 }
@@ -2260,20 +2343,18 @@ TEST_P(LdsTest, XdsRoutingDefaultRoute) {
   const size_t kNumRpcs = 10;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts(0, 2)},
   });
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(0, 2);
-  // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args1({
       {"locality0", GetBackendPorts(2, 3)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
       {"locality0", GetBackendPorts(3, 4)},
   });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name),
       kNewCluster1Name);
@@ -2287,8 +2368,8 @@ TEST_P(LdsTest, XdsRoutingDefaultRoute) {
   Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
   new_cluster2.set_name(kNewCluster2Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
-  // Change RDS resource to set up prefix matching to direct traffic to the
-  // second new cluster.
+  // Change RDS resource to set up prefix matching and path matching that do
+  // match the traffic, so traffic goes to the default cluster.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* mismatched_route1 =
@@ -2299,7 +2380,7 @@ TEST_P(LdsTest, XdsRoutingDefaultRoute) {
   auto* mismatched_route2 =
       new_route_config.mutable_virtual_hosts(0)->add_routes();
   mismatched_route2->mutable_match()->set_path(
-      "/grpc.testing.EchoTestService/EchoMismatch");
+      "/grpc.testing.EchoTestService/Echo1");
   mismatched_route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
@@ -2308,7 +2389,6 @@ TEST_P(LdsTest, XdsRoutingDefaultRoute) {
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
-  // Wait for the new backend to come up.
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs);
   // Make sure RPCs all go to the correct backend.

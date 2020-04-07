@@ -22,6 +22,8 @@ package grpc.testing;
 
 service EchoTestService {
   rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc Echo1(EchoRequest) returns (EchoResponse);
+  rpc Echo2(EchoRequest) returns (EchoResponse);
   // A service which checks that the initial metadata sent over contains some
   // expected key value pair
   rpc CheckClientInitialMetadata(SimpleRequest) returns (SimpleResponse);

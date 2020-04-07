@@ -84,6 +84,12 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override;
 
+  Status Echo1(ServerContext* context, const EchoRequest* request,
+               EchoResponse* response) override;
+
+  Status Echo2(ServerContext* context, const EchoRequest* request,
+               EchoResponse* response) override;
+
   Status CheckClientInitialMetadata(ServerContext* context,
                                     const SimpleRequest* request,
                                     SimpleResponse* response) override;
