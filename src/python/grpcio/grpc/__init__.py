@@ -1839,7 +1839,7 @@ def alts_channel_credentials():
     This is an EXPERIMENTAL API.
 
     Returns:
-      A ChannelCredentials for use with a ALTS-enabled Channel
+      A ChannelCredentials for use with an ALTS-enabled Channel
     """
     return ChannelCredentials(_cygrpc.channel_credentials_alts())
 
@@ -1850,7 +1850,7 @@ def alts_server_credentials():
     This is an EXPERIMENTAL API.
 
     Returns:
-      A ServerCredentials for use with a local Server
+      A ServerCredentials for use with an ALTS-enabled Server
     """
     return ServerCredentials(_cygrpc.server_credentials_alts())
 
