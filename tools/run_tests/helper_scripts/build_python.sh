@@ -171,7 +171,7 @@ pip_install_dir() {
 # third-party build process. This function pipes through only the
 # minimal environment necessary.
 pip_install() {
-  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install $@
+  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
 }
 
 case "$VENV" in
