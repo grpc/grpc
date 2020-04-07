@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -44,7 +44,7 @@ class ChannelData {};
 
 class CallData {
  public:
-  CallData(const grpc_call_element_args& args)
+  explicit CallData(const grpc_call_element_args& args)
       : call_combiner_(args.call_combiner) {
     // Initialize state for recv_initial_metadata_ready callback
     GRPC_CLOSURE_INIT(&on_recv_initial_metadata_ready_,
@@ -64,9 +64,11 @@ class CallData {
 
   ~CallData() { grpc_slice_buffer_destroy_internal(&recv_slices_); }
 
-  static void DecompressStartTransportStreamOpBatch(
+ public:
+  void DecompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
+ private:
   static void OnRecvInitialMetadataReady(void* arg, grpc_error* error);
 
   // Methods for processing a receive message event
@@ -82,8 +84,7 @@ class CallData {
   void MaybeResumeOnRecvTrailingMetadataReady();
   static void OnRecvTrailingMetadataReady(void* arg, grpc_error* error);
 
- private:
-  grpc_core::CallCombiner* call_combiner_ = nullptr;
+  grpc_core::CallCombiner* call_combiner_;
   // Overall error for the call
   grpc_error* error_ = GRPC_ERROR_NONE;
   // Fields for handling recv_initial_metadata_ready callback
@@ -285,34 +286,38 @@ void CallData::OnRecvTrailingMetadataReady(void* arg, grpc_error* error) {
 
 void CallData::DecompressStartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_SCOPE("compress_start_transport_stream_op_batch", 0);
-  CallData* calld = static_cast<CallData*>(elem->call_data);
   // Handle recv_initial_metadata.
   if (batch->recv_initial_metadata) {
-    calld->recv_initial_metadata_ =
+    recv_initial_metadata_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata;
-    calld->original_recv_initial_metadata_ready_ =
+    original_recv_initial_metadata_ready_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &calld->on_recv_initial_metadata_ready_;
+        &on_recv_initial_metadata_ready_;
   }
   // Handle recv_message
   if (batch->recv_message) {
-    calld->recv_message_ = batch->payload->recv_message.recv_message;
-    calld->original_recv_message_ready_ =
+    recv_message_ = batch->payload->recv_message.recv_message;
+    original_recv_message_ready_ =
         batch->payload->recv_message.recv_message_ready;
-    batch->payload->recv_message.recv_message_ready =
-        &calld->on_recv_message_ready_;
+    batch->payload->recv_message.recv_message_ready = &on_recv_message_ready_;
   }
   // Handle recv_trailing_metadata
   if (batch->recv_trailing_metadata) {
-    calld->original_recv_trailing_metadata_ready_ =
+    original_recv_trailing_metadata_ready_ =
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
     batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        &calld->on_recv_trailing_metadata_ready_;
+        &on_recv_trailing_metadata_ready_;
   }
   // Pass control down the stack.
   grpc_call_next_op(elem, batch);
+}
+
+void DecompressStartTransportStreamOpBatch(
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+  GPR_TIMER_SCOPE("decompress_start_transport_stream_op_batch", 0);
+  CallData* calld = static_cast<CallData*>(elem->call_data);
+  calld->DecompressStartTransportStreamOpBatch(elem, batch);
 }
 
 static grpc_error* DecompressInitCallElem(grpc_call_element* elem,
@@ -333,12 +338,12 @@ static grpc_error* DecompressInitChannelElem(
   return GRPC_ERROR_NONE;
 }
 
-void DecompressDestroyChannelElem(grpc_channel_element* /*elem*/) { return; }
+void DecompressDestroyChannelElem(grpc_channel_element* /*elem*/) {}
 
 }  // namespace
 
 const grpc_channel_filter grpc_message_decompress_filter = {
-    CallData::DecompressStartTransportStreamOpBatch,
+    DecompressStartTransportStreamOpBatch,
     grpc_channel_next_op,
     sizeof(CallData),
     DecompressInitCallElem,
