@@ -51,6 +51,7 @@ class CallData {
                       OnRecvInitialMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
     // Initialize state for recv_message_ready callback
+    grpc_slice_buffer_init(&recv_slices_);
     GRPC_CLOSURE_INIT(&on_recv_message_next_done_, OnRecvMessageNextDone, this,
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_recv_message_ready_, OnRecvMessageReady, this,
@@ -60,6 +61,8 @@ class CallData {
                       OnRecvTrailingMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
   }
+
+  ~CallData() { grpc_slice_buffer_destroy_internal(&recv_slices_); }
 
   static void DecompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
@@ -167,6 +170,7 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error* error) {
               0) {
         return calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_NONE);
       }
+      grpc_slice_buffer_destroy_internal(&calld->recv_slices_);
       grpc_slice_buffer_init(&calld->recv_slices_);
       return calld->ContinueReadingRecvMessage();
     }
@@ -239,7 +243,6 @@ void CallData::FinishRecvMessage() {
     recv_message_->reset(recv_replacement_stream_.get());
     recv_message_ = nullptr;
   }
-  grpc_slice_buffer_destroy_internal(&recv_slices_);
   ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
 }
 
