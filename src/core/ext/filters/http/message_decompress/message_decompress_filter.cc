@@ -35,11 +35,8 @@
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace {
 
@@ -229,15 +226,20 @@ void CallData::FinishRecvMessage() {
     GPR_DEBUG_ASSERT(error_ == GRPC_ERROR_NONE);
     error_ = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
+    grpc_slice_buffer_destroy_internal(&decompressed_slices);
   } else {
     uint32_t recv_flags =
-        (*recv_message_)->flags() & (~GRPC_WRITE_INTERNAL_COMPRESS);
+        ((*recv_message_)->flags() & (~GRPC_WRITE_INTERNAL_COMPRESS)) |
+        GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
     // Swap out the original receive byte stream with our new one and send the
     // batch down.
+    // Initializing recv_replacement_stream_ with decompressed_slices removes
+    // all the slices from decompressed_slices leaving it empty.
     recv_replacement_stream_.Init(&decompressed_slices, recv_flags);
     recv_message_->reset(recv_replacement_stream_.get());
     recv_message_ = nullptr;
   }
+  grpc_slice_buffer_destroy_internal(&recv_slices_);
   ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
 }
 
