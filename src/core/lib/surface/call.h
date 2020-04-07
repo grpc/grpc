@@ -59,10 +59,6 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
 
 void grpc_call_set_completion_queue(grpc_call* call, grpc_completion_queue* cq);
 
-/* Sets the max uncompressed receive message length for the call. */
-void grpc_call_set_max_uncompressed_receive_message_length(grpc_call* call,
-                                                           int limit);
-
 #ifndef NDEBUG
 void grpc_call_internal_ref(grpc_call* call, const char* reason);
 void grpc_call_internal_unref(grpc_call* call, const char* reason);
