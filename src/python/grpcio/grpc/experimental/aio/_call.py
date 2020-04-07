@@ -18,7 +18,7 @@ import enum
 import inspect
 import logging
 from functools import partial
-from typing import AsyncIterable, Awaitable, Optional, Tuple
+from typing import AsyncIterable, Optional, Tuple
 
 import grpc
 from grpc import _common
@@ -250,9 +250,8 @@ class _APIStyle(enum.IntEnum):
 class _UnaryResponseMixin(Call):
     _call_response: asyncio.Task
 
-    def _init_unary_response_mixin(self,
-                                   response_coro: Awaitable[ResponseType]):
-        self._call_response = self._loop.create_task(response_coro)
+    def _init_unary_response_mixin(self, response_task: asyncio.Task):
+        self._call_response = response_task
 
     def cancel(self) -> bool:
         if super().cancel():
@@ -458,6 +457,11 @@ class _StreamRequestMixin(Call):
         self._raise_for_different_style(_APIStyle.READER_WRITER)
         await self._done_writing()
 
+    async def wait_for_connection(self) -> None:
+        await self._metadata_sent.wait()
+        if self.done():
+            await self._raise_for_status()
+
 
 class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
     """Object for managing unary-unary RPC calls.
@@ -465,6 +469,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
     """
     _request: RequestType
+    _invocation_task: asyncio.Task
 
     # pylint: disable=too-many-arguments
     def __init__(self, request: RequestType, deadline: Optional[float],
@@ -478,7 +483,8 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
             channel.call(method, deadline, credentials, wait_for_ready),
             metadata, request_serializer, response_deserializer, loop)
         self._request = request
-        self._init_unary_response_mixin(self._invoke())
+        self._invocation_task = loop.create_task(self._invoke())
+        self._init_unary_response_mixin(self._invocation_task)
 
     async def _invoke(self) -> ResponseType:
         serialized_request = _common.serialize(self._request,
@@ -499,6 +505,11 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
                                        self._response_deserializer)
         else:
             return cygrpc.EOF
+
+    async def wait_for_connection(self) -> None:
+        await self._invocation_task
+        if self.done():
+            await self._raise_for_status()
 
 
 class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
@@ -536,6 +547,11 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
                 self.cancel()
             raise
 
+    async def wait_for_connection(self) -> None:
+        await self._send_unary_request_task
+        if self.done():
+            await self._raise_for_status()
+
 
 class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
                       _base_call.StreamUnaryCall):
@@ -557,7 +573,7 @@ class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
             metadata, request_serializer, response_deserializer, loop)
 
         self._init_stream_request_mixin(request_iterator)
-        self._init_unary_response_mixin(self._conduct_rpc())
+        self._init_unary_response_mixin(loop.create_task(self._conduct_rpc()))
 
     async def _conduct_rpc(self) -> ResponseType:
         try:
