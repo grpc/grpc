@@ -54,7 +54,6 @@ class CallData {
                       OnRecvInitialMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
     // Initialize state for recv_message_ready callback
-    grpc_slice_buffer_init(&recv_slices_);
     GRPC_CLOSURE_INIT(&on_recv_message_next_done_, OnRecvMessageNextDone, this,
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_recv_message_ready_, OnRecvMessageReady, this,
@@ -134,8 +133,6 @@ void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error* error) {
         calld->recv_initial_metadata_->idx.named.grpc_encoding;
     if (grpc_encoding != nullptr) {
       calld->algorithm_ = DecodeMessageCompressionAlgorithm(grpc_encoding->md);
-      grpc_metadata_batch_remove(calld->recv_initial_metadata_,
-                                 GRPC_BATCH_GRPC_ENCODING);
     }
   }
   calld->MaybeResumeOnRecvMessageReady();
@@ -156,15 +153,7 @@ void CallData::MaybeResumeOnRecvMessageReady() {
 
 void CallData::OnRecvMessageReady(void* arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(arg);
-  if (error == GRPC_ERROR_NONE &&
-      calld->algorithm_ != GRPC_MESSAGE_COMPRESS_NONE) {
-    // recv_message can be NULL if trailing metadata is received instead of
-    // message.
-    if (*calld->recv_message_ == nullptr ||
-        (*calld->recv_message_)->length() == 0) {
-      calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_NONE);
-      return;
-    }
+  if (error == GRPC_ERROR_NONE) {
     if (calld->original_recv_initial_metadata_ready_ != nullptr) {
       calld->seen_recv_message_ready_ = true;
       GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
@@ -172,10 +161,20 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error* error) {
                               "OnRecvInitialMetadataReady");
       return;
     }
-    calld->ContinueReadingRecvMessage();
-  } else {
-    calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error));
+    if (calld->algorithm_ != GRPC_MESSAGE_COMPRESS_NONE) {
+      // recv_message can be NULL if trailing metadata is received instead of
+      // message, or it's possible that the message was not compressed.
+      if (*calld->recv_message_ == nullptr ||
+          (*calld->recv_message_)->length() == 0 ||
+          ((*calld->recv_message_)->flags() & GRPC_WRITE_INTERNAL_COMPRESS) ==
+              0) {
+        return calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_NONE);
+      }
+      grpc_slice_buffer_init(&calld->recv_slices_);
+      return calld->ContinueReadingRecvMessage();
+    }
   }
+  calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error));
 }
 
 void CallData::ContinueReadingRecvMessage() {
@@ -219,6 +218,7 @@ void CallData::OnRecvMessageNextDone(void* arg, grpc_error* error) {
 
 void CallData::FinishRecvMessage() {
   grpc_slice_buffer decompressed_slices;
+  grpc_slice_buffer_init(&decompressed_slices);
   if (grpc_msg_decompress(algorithm_, &recv_slices_, &decompressed_slices) ==
       0) {
     char* msg;
@@ -230,10 +230,11 @@ void CallData::FinishRecvMessage() {
     error_ = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
   } else {
-    uint32_t recv_flags = (*recv_message_)->flags();
+    uint32_t recv_flags =
+        (*recv_message_)->flags() & (~GRPC_WRITE_INTERNAL_COMPRESS);
     // Swap out the original receive byte stream with our new one and send the
     // batch down.
-    recv_replacement_stream_.Init(&recv_slices_, recv_flags);
+    recv_replacement_stream_.Init(&decompressed_slices, recv_flags);
     recv_message_->reset(recv_replacement_stream_.get());
     recv_message_ = nullptr;
   }
