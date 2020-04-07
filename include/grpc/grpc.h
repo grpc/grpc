@@ -319,12 +319,6 @@ GRPCAPI grpc_channel* grpc_lame_client_channel_create(
 /** Close and destroy a grpc channel */
 GRPCAPI void grpc_channel_destroy(grpc_channel* channel);
 
-/** Copy the arguments in \a src into a new instance */
-GRPCAPI grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src);
-
-/** Destroy arguments created by \a grpc_channel_args_copy */
-GRPCAPI void grpc_channel_args_destroy(grpc_channel_args* a);
-
 /** Error handling for grpc_call
    Most grpc_call functions return a grpc_error. If the error is not GRPC_OK
    then the operation failed due to some unsatisfied precondition.

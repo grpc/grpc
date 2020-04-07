@@ -49,8 +49,6 @@ EXPORTS
     grpc_insecure_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
-    grpc_channel_args_copy
-    grpc_channel_args_destroy
     grpc_call_cancel
     grpc_call_cancel_with_status
     grpc_call_ref
