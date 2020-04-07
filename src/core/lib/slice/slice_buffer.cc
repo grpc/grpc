@@ -89,12 +89,7 @@ void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_slice_buffer_destroy_internal(sb);
-  } else {
-    grpc_slice_buffer_destroy_internal(sb);
-  }
+  grpc_slice_buffer_destroy_internal(sb);
 }
 
 uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
