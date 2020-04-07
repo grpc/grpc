@@ -123,9 +123,9 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         This is an EXPERIMENTAL method.
 
-        This method makes ensure if the RPC has been successfully connected.
-        Otherwise, an AioRpcError will be raised to explain the reason of the
-        connection failure.
+        This method ensures the RPC has been successfully connected. Otherwise,
+        an AioRpcError will be raised to explain the reason of the connection
+        failure.
 
         This method is recommended for building retry mechanisms.
         """
