@@ -17,7 +17,7 @@
 set -e
 
 cd "$(dirname $0)"
-cd ../../third_party/boringssl
+cd ../../third_party/boringssl-with-bazel
 
 BORINGSSL_COMMIT=$(git rev-parse HEAD)
 PREFIX_SYMBOLS_COMMIT=$(cat ../../src/boringssl/boringssl_prefix_symbols.h | head -n1 | awk '{print $NF}')
