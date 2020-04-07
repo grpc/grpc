@@ -1072,15 +1072,11 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              op_can_be_run(stream_op, s, &oas->state, OP_SEND_MESSAGE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_SEND_MESSAGE", oas);
     stream_state->pending_send_message = false;
-    if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
+    if (stream_state->state_op_done[OP_CANCEL_ERROR] ||
+        stream_state->state_callback_received[OP_FAILED] ||
+        stream_state->state_callback_received[OP_SUCCEEDED]) {
       result = NO_ACTION_POSSIBLE;
-      CRONET_LOG(GPR_DEBUG, "Stream is cancelled.");
-    } else if (stream_state->state_callback_received[OP_FAILED]) {
-      result = NO_ACTION_POSSIBLE;
-      CRONET_LOG(GPR_DEBUG, "Stream failed.");
-    } else if (stream_state->state_callback_received[OP_SUCCEEDED]) {
-      result = NO_ACTION_POSSIBLE;
-      CRONET_LOG(GPR_DEBUG, "Stream is already finished.");
+      CRONET_LOG(GPR_DEBUG, "Stream is either cancelled, failed or finished");
     } else {
       grpc_slice_buffer write_slice_buffer;
       grpc_slice slice;
@@ -1137,15 +1133,11 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              op_can_be_run(stream_op, s, &oas->state,
                            OP_SEND_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_SEND_TRAILING_METADATA", oas);
-    if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
+    if (stream_state->state_op_done[OP_CANCEL_ERROR] ||
+        stream_state->state_callback_received[OP_FAILED] ||
+        stream_state->state_callback_received[OP_SUCCEEDED]) {
       result = NO_ACTION_POSSIBLE;
-      CRONET_LOG(GPR_DEBUG, "Stream is cancelled.");
-    } else if (stream_state->state_callback_received[OP_FAILED]) {
-      result = NO_ACTION_POSSIBLE;
-      CRONET_LOG(GPR_DEBUG, "Stream failed.");
-    } else if (stream_state->state_callback_received[OP_SUCCEEDED]) {
-      result = NO_ACTION_POSSIBLE;
-      CRONET_LOG(GPR_DEBUG, "Stream is already done.");
+      CRONET_LOG(GPR_DEBUG, "Stream is either cancelled, failed or finished");
     } else {
       CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, 0)", s->cbs);
       stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
