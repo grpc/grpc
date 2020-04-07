@@ -1832,6 +1832,28 @@ def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     return ServerCredentials(
         _cygrpc.server_credentials_local(local_connect_type.value))
 
+    
+def alts_channel_credentials():
+    """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
+
+    This is an EXPERIMENTAL API.
+
+    Returns:
+      A ChannelCredentials for use with a ALTS-enabled Channel
+    """
+    return ChannelCredentials(_cygrpc.channel_credentials_alts())
+
+
+def alts_server_credentials():
+    """Creates a ServerCredentials for use with an ALTS-enabled connections.
+
+    This is an EXPERIMENTAL API.
+
+    Returns:
+      A ServerCredentials for use with a local Server
+    """
+    return ServerCredentials(_cygrpc.server_credentials_alts())
+
 
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
@@ -2036,6 +2058,8 @@ __all__ = (
     'composite_channel_credentials',
     'local_channel_credentials',
     'local_server_credentials',
+    'alts_channel_credentials',
+    'alts_server_credentials',
     'ssl_server_credentials',
     'ssl_server_certificate_configuration',
     'dynamic_ssl_server_credentials',

@@ -606,6 +606,20 @@ cdef extern from "grpc/grpc_security.h":
   grpc_server_credentials *grpc_local_server_credentials_create(
     grpc_local_connect_type type)
 
+  ctypedef struct grpc_alts_credentials_options:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+ 
+  grpc_channel_credentials *grpc_alts_credentials_create(
+    const grpc_alts_credentials_options *options)
+  grpc_server_credentials *grpc_alts_server_credentials_create(
+    const grpc_alts_credentials_options *options)
+
+  grpc_alts_credentials_options* grpc_alts_credentials_client_options_create()
+  grpc_alts_credentials_options* grpc_alts_credentials_server_options_create()
+  void grpc_alts_credentials_options_destroy(grpc_alts_credentials_options *options)
+
+
 
 cdef extern from "grpc/compression.h":
 

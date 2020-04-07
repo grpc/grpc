@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 cdef class CallCredentials:
 
   cdef grpc_call_credentials *c(self) except *
@@ -102,3 +101,9 @@ cdef class ServerCredentials:
 cdef class LocalChannelCredentials(ChannelCredentials):
 
   cdef grpc_local_connect_type _local_connect_type
+
+
+cdef class ALTSChannelCredentials(ChannelCredentials):
+  cdef grpc_alts_credentials_options *c_options
+
+  cdef grpc_channel_credentials *c(self) except *

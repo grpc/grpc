@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 def _spawn_callback_in_thread(cb_func, args):
   t = ForkManagedThread(target=cb_func, args=args)
   t.setDaemon(True)
@@ -350,4 +349,30 @@ def channel_credentials_local(grpc_local_connect_type local_connect_type):
 def server_credentials_local(grpc_local_connect_type local_connect_type):
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.c_credentials = grpc_local_server_credentials_create(local_connect_type)
+  return credentials
+
+
+cdef class ALTSChannelCredentials(ChannelCredentials):
+
+  def __cinit__(self):
+    self.c_options = grpc_alts_credentials_client_options_create()
+ 
+  def __dealloc__(self):
+    if self.c_options != NULL:
+      grpc_alts_credentials_options_destroy(self.c_options)
+
+  cdef grpc_channel_credentials *c(self) except *:
+    return grpc_alts_credentials_create(self.c_options)
+    
+
+def channel_credentials_alts():
+  return ALTSChannelCredentials()
+
+
+def server_credentials_alts():
+  cdef ServerCredentials credentials = ServerCredentials()
+  cdef grpc_alts_credentials_options* c_options = grpc_alts_credentials_server_options_create()
+  credentials.c_credentials = grpc_alts_server_credentials_create(c_options)
+  # Options can be destroyed as deep copy was performed.
+  grpc_alts_credentials_options_destroy(c_options)
   return credentials

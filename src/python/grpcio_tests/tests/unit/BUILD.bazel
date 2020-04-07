@@ -4,6 +4,7 @@ package(default_visibility = ["//visibility:public"])
 
 GRPCIO_TESTS_UNIT = [
     "_abort_test.py",
+    "_alts_credentials_test.py",
     "_api_test.py",
     "_auth_context_test.py",
     "_auth_test.py",
