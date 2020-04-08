@@ -1045,6 +1045,12 @@ grpc_error* RouteConfigParse(
             "Path is not empty string, prefix cannot also be non-empty.");
       }
     }
+    if (i == (size - 1)) {
+      if (!(rds_route.service.empty() && rds_route.method.empty())) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Default route must have empty service and method");
+      }
+    }
     if (!envoy_api_v2_route_Route_has_route(route)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No RouteAction found in route.");

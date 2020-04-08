@@ -2155,8 +2155,8 @@ TEST_P(LdsTest, DefaultRouteInvalid) {
             AdsServiceImpl::NACKED);
 }
 
-// Tests that LDS client should send a ACK if route match has non-empty prefix
-// in the LDS response.
+// Tests that LDS client should send a NACK if route match has non-empty prefix
+// as the only route (default) in the LDS response.
 TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2170,7 +2170,7 @@ TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::ACKED);
+            AdsServiceImpl::NACKED);
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
@@ -2321,6 +2321,10 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   auto* matched_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   matched_route->mutable_match()->set_prefix("/grpc.testing.EchoTestService");
   matched_route->mutable_route()->set_cluster(kNewCluster2Name);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_match()->set_path("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
@@ -2471,8 +2475,8 @@ TEST_P(RdsTest, DefaultRouteInvalid) {
             AdsServiceImpl::NACKED);
 }
 
-// Tests that RDS client should send a ACK if route match has non-empty prefix
-// in the RDS response.
+// Tests that RDS client should send a NACK if route match has non-empty prefix
+// as the only route (default) in the RDS response.
 TEST_P(RdsTest, RouteMatchHasNonemptyPrefix) {
   balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
   RouteConfiguration route_config =
@@ -2487,7 +2491,7 @@ TEST_P(RdsTest, RouteMatchHasNonemptyPrefix) {
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::ACKED);
+            AdsServiceImpl::NACKED);
 }
 
 // Tests that RDS client should send a NACK if route has an action other than

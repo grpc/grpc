@@ -228,8 +228,8 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   for (const Route& route : route_table_) {
     if ((path_elements[0] == route.matcher.service &&
          (path_elements[1] == route.matcher.method ||
-          "" == route.matcher.method)) ||
-        ("" == route.matcher.service && "" == route.matcher.method)) {
+          route.matcher.method.empty())) ||
+        (route.matcher.service.empty() && route.matcher.method.empty())) {
       return route.picker.get()->Pick(args);
     }
   }
@@ -237,8 +237,7 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   result.type = PickResult::PICK_FAILED;
   result.error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                             "xds routing picker not given any picker; default "
-                             "route not configured"),
+                             "xds routing picker: no matching route"),
                          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   return result;
 }
@@ -302,7 +301,7 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
   // Add or update the actions in the new config.
   for (const auto& p : config_->action_map()) {
     const std::string& name = p.first;
-    RefCountedPtr<LoadBalancingPolicy::Config> config = p.second;
+    const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
     auto it = actions_.find(name);
     if (it == actions_.end()) {
       it = actions_.emplace(std::make_pair(name, nullptr)).first;
@@ -367,21 +366,20 @@ void XdsRoutingLb::UpdateStateLocked() {
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
       RoutePicker::RouteTable route_table;
-      for (int i = 0; i < config_->route_table().size(); ++i) {
+      for (const auto& config_route : config_->route_table()) {
         RoutePicker::Route route;
-        route.matcher = config_->route_table()[i].matcher;
-        auto it = actions_.find(config_->route_table()[i].action);
-        if (it != actions_.end()) {
-          route.picker = it->second->picker_wrapper();
-        } else {
-          gpr_log(GPR_INFO,
-                  "[xds_routing_lb %p] child policy may have mis-behaved and "
-                  "did not return a picker, creating a QueuePicker for %s",
-                  this, config_->route_table()[i].action.c_str());
+        route.matcher = config_route.matcher;
+        route.picker = actions_[config_route.action]->picker_wrapper();
+        if (route.picker == nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
+            gpr_log(GPR_INFO,
+                    "[xds_routing_lb %p] child %s has not yet returned a "
+                    "picker; creating a QueuePicker.",
+                    this, config_route.action.c_str());
+          }
           route.picker = MakeRefCounted<ChildPickerWrapper>(
-              config_->route_table()[i].action,
-              absl::make_unique<QueuePicker>(
-                  Ref(DEBUG_LOCATION, "QueuePicker")));
+              config_route.action, absl::make_unique<QueuePicker>(
+                                       Ref(DEBUG_LOCATION, "QueuePicker")));
         }
         route_table.push_back(std::move(route));
       }
@@ -625,7 +623,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     std::vector<grpc_error*> error_list;
     // action map.
     XdsRoutingLbConfig::ActionMap action_map;
-    std::set<std::string /*action_name*/> action_in_use_set;
+    std::set<std::string /*action_name*/> action_in_use;
     auto it = json.object_value().find("actions");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -649,6 +647,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           error_list.push_back(error);
         } else {
           action_map[p.first] = std::move(child_config);
+          action_in_use.insert(p.first);
         }
       }
     }
@@ -667,63 +666,26 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     } else {
       const Json::Array& array = it->second.array_value();
       for (size_t i = 0; i < array.size(); ++i) {
-        const Json& element = array[i];
-        if (element.type() != Json::Type::OBJECT) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              absl::StrCat("filed: routes element: ", i,
-                           " should be of type object")
-                  .c_str()));
-        } else {
-          XdsRoutingLbConfig::Route route;
-          // Parse MethodName.
-          auto it = element.object_value().find("methodName");
-          if (it == json.object_value().end()) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                absl::StrCat("field:routes element: ", i,
-                             " methodName is required")
-                    .c_str()));
-          } else if (it->second.type() != Json::Type::OBJECT) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                absl::StrCat("field:routes element: ", i,
-                             " methodName type should be object")
-                    .c_str()));
-          } else {
-            std::vector<grpc_error*> route_errors =
-                ParseRouteConfig(it->second, &route.matcher);
-            if (!route_errors.empty()) {
-              grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                  absl::StrCat("field:routes element: ", i, " error").c_str());
-              for (grpc_error* route_error : route_errors) {
-                error = grpc_error_add_child(error, route_error);
-              }
-              error_list.push_back(error);
-            }
+        XdsRoutingLbConfig::Route route;
+        std::vector<grpc_error*> route_errors = ParseRoute(array[i], &route);
+        if (!route_errors.empty()) {
+          grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("field:routes element: ", i, " error").c_str());
+          for (grpc_error* route_error : route_errors) {
+            error = grpc_error_add_child(error, route_error);
           }
-          // Parse action.
-          it = element.object_value().find("action");
-          if (it == json.object_value().end()) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                absl::StrCat("field:routes element: ", i, " action is required")
-                    .c_str()));
-          } else if (it->second.type() != Json::Type::STRING) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                absl::StrCat("field:routes element: ", i,
-                             " action type should be string")
-                    .c_str()));
-          } else {
-            route.action = it->second.string_value();
-          }
-          // Validate action exists and mark it as used.
-          if (action_map.find(route.action) == action_map.end()) {
-            grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                absl::StrCat("action ", route.action, " does not exist")
-                    .c_str());
-            error_list.push_back(error);
-          } else {
-            action_in_use_set.insert(route.action);
-          }
-          route_table.emplace_back(std::move(route));
+          error_list.push_back(error);
         }
+        // Validate action exists and mark it as used.
+        if (action_map.find(route.action) == action_map.end()) {
+          grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              absl::StrCat("field: routes element: ", i, " error: action ",
+                           route.action, " does not exist")
+                  .c_str());
+          error_list.push_back(error);
+        }
+        action_in_use.erase(route.action);
+        route_table.emplace_back(std::move(route));
       }
     }
     if (route_table.size() == 0) {
@@ -731,11 +693,15 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid routes configured");
       error_list.push_back(error);
     }
-    for (const auto& action : action_map) {
-      if (action_in_use_set.find(action.first) == action_in_use_set.end()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            absl::StrCat("action ", action.first, " is never used").c_str()));
-      }
+    if (!(route_table[route_table.size() - 1].matcher.service.empty() &&
+          route_table[route_table.size() - 1].matcher.method.empty())) {
+      grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "default route must not contain service or method");
+      error_list.push_back(error);
+    }
+    if (!action_in_use.empty()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "some actions were not referenced by any route"));
     }
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -775,35 +741,77 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     return error_list;
   }
 
-  static std::vector<grpc_error*> ParseRouteConfig(
+  static std::vector<grpc_error*> ParseMethodName(
       const Json& json, XdsRoutingLbConfig::Matcher* route_config) {
     std::vector<grpc_error*> error_list;
+    if (json.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:methodName should be of type object"));
+      return error_list;
+    }
     // Parse service
     auto it = json.object_value().find("service");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:service error: required field not present"));
-    } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:service error: should be string"));
-    } else {
-      route_config->service = it->second.string_value();
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:service error: should be string"));
+      } else {
+        route_config->service = it->second.string_value();
+      }
     }
     // Parse method
     it = json.object_value().find("method");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:method error: required field not present"));
-    } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:method error: should be string"));
-    } else {
-      route_config->method = it->second.string_value();
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:method error: should be string"));
+      } else {
+        route_config->method = it->second.string_value();
+      }
     }
-    if (route_config->service == "" && route_config->method != "") {
+    if (route_config->service.empty() && !route_config->method.empty()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:methodName error: service is empty when method is "
           "not"));
+    }
+    return error_list;
+  }
+
+  static std::vector<grpc_error*> ParseRoute(const Json& json,
+                                             XdsRoutingLbConfig::Route* route) {
+    std::vector<grpc_error*> error_list;
+    if (json.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:route element should be of type object"));
+      return error_list;
+    }
+    // Parse MethodName.
+    auto it = json.object_value().find("methodName");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:routes element: methodName is required"));
+    } else {
+      std::vector<grpc_error*> route_errors =
+          ParseMethodName(it->second, &route->matcher);
+      if (!route_errors.empty()) {
+        grpc_error* error =
+            GRPC_ERROR_CREATE_FROM_COPIED_STRING("field:route element error");
+        for (grpc_error* route_error : route_errors) {
+          error = grpc_error_add_child(error, route_error);
+        }
+        error_list.push_back(error);
+      }
+    }
+    // Parse action.
+    it = json.object_value().find("action");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:route element: action is required"));
+    } else if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:route element error action should be of type string"));
+    } else {
+      route->action = it->second.string_value();
     }
     return error_list;
   }
