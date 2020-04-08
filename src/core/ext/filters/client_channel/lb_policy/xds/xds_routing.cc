@@ -393,8 +393,8 @@ void XdsRoutingLb::UpdateStateLocked() {
       break;
     default:
       picker = absl::make_unique<TransientFailurePicker>(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "xds_routing: all children report state TRANSIENT_FAILURE"));
+          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("TRANSIENT_FAILURE from XdsRoutingLb"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
   }
   channel_control_helper()->UpdateState(connectivity_state, std::move(picker));
 }

@@ -1748,9 +1748,7 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
       AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   const Status status = SendRpc();
   // The error shouldn't be DEADLINE_EXCEEDED.
-  gpr_log(GPR_INFO, "error code %d message received %s", status.error_code(),
-          status.error_message().c_str());
-  EXPECT_NE(StatusCode::DEADLINE_EXCEEDED, status.error_code());
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
 }
 
 // Tests that RPCs fail when the backends are down, and will succeed again after
