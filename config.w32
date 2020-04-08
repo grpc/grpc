@@ -19,6 +19,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\http_connect_handshaker.cc " +
     "src\\core\\ext\\filters\\client_channel\\http_proxy.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\address_filtering.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\child_policy_handler.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\client_load_reporting_filter.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb.cc " +
@@ -27,9 +28,12 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_client_stats.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\load_balancer_api.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first\\pick_first.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\priority\\priority.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin\\round_robin.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\weighted_target\\weighted_target.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\cds.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\eds.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\lrs.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy_registry.cc " +
     "src\\core\\ext\\filters\\client_channel\\local_subchannel_pool.cc " +
     "src\\core\\ext\\filters\\client_channel\\parse_address.cc " +
@@ -821,7 +825,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\priority");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\weighted_target");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\dns");

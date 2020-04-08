@@ -348,18 +348,11 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS "grpc.xds_fallback_timeout_ms"
-/* Time in milliseconds to wait before a locality is deleted after it's removed
-   from the received EDS update. If 0, delete the locality immediately. Default
-   value is 15 minutes. */
-#define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
-  "grpc.xds_locality_retention_interval_ms"
-/* Timeout in milliseconds to wait for the localities of a specific priority to
-   complete their initial connection attempt before xDS fails over to the next
-   priority. Specifically, the connection attempt of a priority is considered
-   completed when any locality of that priority is ready or all the localities
-   of that priority fail to connect. If 0, failover happens immediately. Default
-   value is 10 seconds. */
-#define GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS "grpc.xds_failover_timeout_ms"
+/* Timeout in milliseconds to wait for the child of a specific priority to
+   complete its initial connection attempt before the priority LB policy fails
+   over to the next priority. Default value is 10 seconds. */
+#define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS \
+  "grpc.priority_failover_timeout_ms"
 /* Timeout in milliseconds to wait for a resource to be returned from
  * the xds server before assuming that it does not exist.
  * The default is 15 seconds. */

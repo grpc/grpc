@@ -57,6 +57,7 @@ some configuration as environment variables that can be set.
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
+  - eds_lb - traces eds LB policy
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
@@ -66,12 +67,14 @@ some configuration as environment variables that can be set.
   - http1 - traces HTTP/1.x operations performed by gRPC
   - inproc - traces the in-process transport
   - flowctl - traces http2 flow control
+  - lrs_lb - traces lrs LB policy
   - op_failure - traces error information when failure is pushed onto a
     completion queue
   - pick_first - traces the pick first load balancing policy
   - plugin_credentials - traces plugin credentials
   - pollable_refcount - traces reference counting of 'pollable' objects (only 
     in DEBUG)
+  - priority_lb - traces priority LB policy
   - resource_quota - trace resource quota objects internals
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
@@ -84,8 +87,8 @@ some configuration as environment variables that can be set.
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
   - tsi - traces tsi transport security
+  - weighted_target_lb - traces weighted_target LB policy
   - xds_client - traces xds client
-  - xds_lb - traces xds LB policy
   - xds_resolver - traces xds resolver
 
   The following tracers will only run in binaries built in DEBUG mode. This is
