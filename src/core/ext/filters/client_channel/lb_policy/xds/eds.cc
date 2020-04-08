@@ -405,19 +405,22 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
       }
       eds_policy_->drop_config_ = std::move(update.drop_config);
       eds_policy_->MaybeUpdateDropPickerLocked();
+    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+      gpr_log(GPR_INFO, "[edslb %p] Drop config unchanged, ignoring",
+              eds_policy_.get());
     }
     // Update priority and locality info.
-    if (eds_policy_->priority_list_update_ == update.priority_list_update) {
+    if (eds_policy_->child_policy_ == nullptr ||
+        eds_policy_->priority_list_update_ != update.priority_list_update) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-        gpr_log(GPR_INFO,
-                "[edslb %p] Incoming locality update identical to current, "
-                "ignoring. (drop_config_changed=%d)",
-                eds_policy_.get(), drop_config_changed);
+        gpr_log(GPR_INFO, "[edslb %p] Updating priority list",
+                eds_policy_.get());
       }
-      return;
+      eds_policy_->UpdatePriorityList(std::move(update.priority_list_update));
+    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+      gpr_log(GPR_INFO, "[edslb %p] Priority list unchanged, ignoring",
+              eds_policy_.get());
     }
-    // Update the child policy with the new priority and endpoint data.
-    eds_policy_->UpdatePriorityList(std::move(update.priority_list_update));
   }
 
   void OnError(grpc_error* error) override {

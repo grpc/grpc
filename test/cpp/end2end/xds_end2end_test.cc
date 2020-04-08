@@ -2356,19 +2356,6 @@ TEST_P(EdsTest, Timeout) {
 }
 
 // Tests that EDS client should send a NACK if the EDS update contains
-// no localities but does not say to drop all calls.
-TEST_P(EdsTest, NacksNoLocalitiesWithoutDropAll) {
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args;
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
-}
-
-// Tests that EDS client should send a NACK if the EDS update contains
 // sparse priorities.
 TEST_P(EdsTest, NacksSparsePriorityList) {
   SetNextResolution({});
@@ -2452,6 +2439,18 @@ TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
             kNumRpcs / backends_.size());
   EXPECT_EQ(backends_[3]->backend_service()->request_count(),
             kNumRpcs / backends_.size());
+}
+
+// EDS update with no localities.
+TEST_P(LocalityMapTest, NoLocalities) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // EDS response contains 2 localities, one with no endpoints.
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource({}), kDefaultResourceName);
+  Status status = SendRpc();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
 }
 
 // Tests that the locality map can work properly even when it contains a large
