@@ -296,7 +296,7 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   size_t actual_max_frame_size;
   tsi_zero_copy_grpc_protector_max_frame_size(zero_copy_protector,
                                               &actual_max_frame_size);
-  GPR_ASSERT(actual_max_frame_size == kMaxFrameSize);
+  GPR_ASSERT(actual_max_frame_size == kTsiAltsMaxFrameSize);
   tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
   /* Validate peer identity. */
   tsi_peer peer;
@@ -370,7 +370,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   size_t actual_max_frame_size;
   tsi_zero_copy_grpc_protector_max_frame_size(zero_copy_protector,
                                               &actual_max_frame_size);
-  GPR_ASSERT(actual_max_frame_size == kMinFrameSize);
+  GPR_ASSERT(actual_max_frame_size == kTsiAltsMinFrameSize);
   tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
   /* Validate peer identity. */
   tsi_peer peer;

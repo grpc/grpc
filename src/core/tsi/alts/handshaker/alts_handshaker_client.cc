@@ -508,8 +508,8 @@ static grpc_byte_buffer* get_serialized_start_client(
                                           upb_strview_makez(ptr->data));
     ptr = ptr->next;
   }
-  grpc_gcp_StartClientHandshakeReq_set_max_frame_size(start_client,
-                                                      client->max_frame_size);
+  grpc_gcp_StartClientHandshakeReq_set_max_frame_size(
+      start_client, static_cast<uint32_t>(client->max_frame_size));
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
@@ -569,8 +569,8 @@ static grpc_byte_buffer* get_serialized_start_server(
                                                             arena.ptr());
   grpc_gcp_RpcProtocolVersions_assign_from_struct(
       server_version, arena.ptr(), &client->options->rpc_versions);
-  grpc_gcp_StartServerHandshakeReq_set_max_frame_size(start_server,
-                                                      client->max_frame_size);
+  grpc_gcp_StartServerHandshakeReq_set_max_frame_size(
+      start_server, static_cast<uint32_t>(client->max_frame_size));
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 

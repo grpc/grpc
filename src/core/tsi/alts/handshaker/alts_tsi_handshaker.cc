@@ -41,9 +41,6 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
-const size_t kMinFrameSize = 16 * 1024;
-const size_t kMaxFrameSize = 128 * 1024;
-
 /* Main struct for ALTS TSI handshaker. */
 struct alts_tsi_handshaker {
   tsi_handshaker base;
@@ -166,17 +163,17 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
 
   // In case the peer does not send max frame size (e.g. peer is gRPC Go or
   // peer uses an old binary), the negotiated frame size is set to
-  // kMinFrameSize (ignoring max_output_protected_frame_size value if
+  // kTsiAltsMinFrameSize (ignoring max_output_protected_frame_size value if
   // present). Otherwise, it is based on peer and user specified max frame
   // size (if present).
-  size_t max_frame_size = kMinFrameSize;
+  size_t max_frame_size = kTsiAltsMinFrameSize;
   if (result->max_frame_size) {
     size_t peer_max_frame_size = result->max_frame_size;
     max_frame_size = std::min<size_t>(peer_max_frame_size,
                                       max_output_protected_frame_size == nullptr
-                                          ? kMaxFrameSize
+                                          ? kTsiAltsMaxFrameSize
                                           : *max_output_protected_frame_size);
-    max_frame_size = std::max<size_t>(max_frame_size, kMinFrameSize);
+    max_frame_size = std::max<size_t>(max_frame_size, kTsiAltsMinFrameSize);
   }
   max_output_protected_frame_size = &max_frame_size;
   gpr_log(GPR_DEBUG,
@@ -622,7 +619,7 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->options = grpc_alts_credentials_options_copy(options);
   handshaker->max_frame_size = user_specified_max_frame_size != 0
                                    ? user_specified_max_frame_size
-                                   : kMaxFrameSize;
+                                   : kTsiAltsMaxFrameSize;
   handshaker->base.vtable = handshaker->use_dedicated_cq
                                 ? &handshaker_vtable_dedicated
                                 : &handshaker_vtable;
