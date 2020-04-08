@@ -429,6 +429,13 @@ def grpc_end2end_tests():
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:client.key",
+                "//src/core/tsi/test_creds:client.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
@@ -499,6 +506,13 @@ def grpc_end2end_nosec_tests():
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:client.key",
+                "//src/core/tsi/test_creds:client.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_nosec_tests",
                 "//test/core/util:grpc_test_util_unsecure",
