@@ -1420,13 +1420,6 @@ grpc_error* EdsResponseParse(
         if (error != GRPC_ERROR_NONE) return error;
       }
     }
-    // Validate the update content.
-    if (eds_update.priority_list_update.empty() &&
-        !eds_update.drop_config->drop_all()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "EDS response doesn't contain any valid "
-          "locality but doesn't require to drop all calls.");
-    }
     eds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),
                             std::move(eds_update));
   }
