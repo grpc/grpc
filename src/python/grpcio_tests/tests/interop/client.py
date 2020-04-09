@@ -43,6 +43,10 @@ def parse_interop_client_args():
                         default=False,
                         type=resources.parse_bool,
                         help='require a secure connection')
+    parser.add_argument('--use_alts',
+                        default=False,
+                        type=resources.parse_bool,
+                        help='require an ALTS secure connection')
     parser.add_argument('--use_test_ca',
                         default=False,
                         type=resources.parse_bool,
@@ -85,22 +89,25 @@ def _create_call_credentials(args):
 def get_secure_channel_parameters(args):
     call_credentials = _create_call_credentials(args)
 
-    if args.use_test_ca:
-        root_certificates = resources.test_root_certificates()
-    else:
-        root_certificates = None  # will load default roots.
-
-    channel_credentials = grpc.ssl_channel_credentials(root_certificates)
-    if call_credentials is not None:
-        channel_credentials = grpc.composite_channel_credentials(
-            channel_credentials, call_credentials)
-
     channel_opts = None
-    if args.server_host_override:
-        channel_opts = ((
-            'grpc.ssl_target_name_override',
-            args.server_host_override,
-        ),)
+    if args.use_tls:
+        if args.use_test_ca:
+            root_certificates = resources.test_root_certificates()
+        else:
+            root_certificates = None  # will load default roots.
+
+        channel_credentials = grpc.ssl_channel_credentials(root_certificates)
+        if call_credentials is not None:
+            channel_credentials = grpc.composite_channel_credentials(
+                channel_credentials, call_credentials)
+
+        if args.server_host_override:
+            channel_opts = ((
+                'grpc.ssl_target_name_override',
+                args.server_host_override,
+            ),)
+    else args.use_alts:
+        channel_credentials = grpc.alts_channel_credentials()
 
     return channel_credentials, channel_opts
 
@@ -108,7 +115,7 @@ def get_secure_channel_parameters(args):
 def _create_channel(args):
     target = '{}:{}'.format(args.server_host, args.server_port)
 
-    if args.use_tls:
+    if args.use_tls or args.use_alts:
         channel_credentials, options = get_secure_channel_parameters(args)
         return grpc.secure_channel(target, channel_credentials, options)
     else:

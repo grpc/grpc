@@ -38,6 +38,10 @@ def parse_interop_server_arguments():
                         default=False,
                         type=resources.parse_bool,
                         help='require a secure connection')
+    parser.add_argument('--use_alts',
+                        default=False,
+                        type=resources.parse_bool,
+                        help='require an ALTS connection')
     return parser.parse_args()
 
 
@@ -45,6 +49,10 @@ def get_server_credentials():
     private_key = resources.private_key()
     certificate_chain = resources.certificate_chain()
     return grpc.ssl_server_credentials(((private_key, certificate_chain),))
+
+
+def get_alts_server_credentials():
+    return grpc.alts_server_credentials()
 
 
 def serve():
@@ -55,6 +63,9 @@ def serve():
                                                     server)
     if args.use_tls:
         credentials = get_server_credentials()
+        server.add_secure_port('[::]:{}'.format(args.port), credentials)
+    elif args.use_alts:
+        credentials = get_alts_server_credentials()
         server.add_secure_port('[::]:{}'.format(args.port), credentials)
     else:
         server.add_insecure_port('[::]:{}'.format(args.port))
