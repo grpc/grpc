@@ -22,12 +22,30 @@
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 
+#include <google/protobuf/compiler/csharp/csharp_names.h>
+
+using google::protobuf::compiler::csharp::GetOutputFile;
+
 namespace grpc_csharp_generator {
 
 inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
+                             const bool generate_directories,
+                             const std::string base_namespace, 
                              grpc::string* file_name_or_error) {
-  *file_name_or_error =
-      grpc_generator::FileNameInUpperCamel(file, false) + "Grpc.cs";
+
+  grpc::string filename_error = "";
+  std::string filename = GetOutputFile(file,
+      "Grpc.cs",
+      generate_directories,
+      base_namespace,
+      &filename_error);
+
+  if (filename.empty()) {
+    *file_name_or_error = filename_error;
+    return false;
+  }
+  
+  *file_name_or_error = filename;
   return true;
 }
 

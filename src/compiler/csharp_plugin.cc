@@ -39,11 +39,16 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     bool generate_client = true;
     bool generate_server = true;
     bool internal_access = false;
+	std::string base_namespace;
+    bool base_namespace_specified = false;
     for (size_t i = 0; i < options.size(); i++) {
       if (options[i].first == "no_client") {
         generate_client = false;
       } else if (options[i].first == "no_server") {
         generate_server = false;
+      } else if (options[i].first == "base_namespace") {
+        base_namespace = options[i].second;
+        base_namespace_specified = true;
       } else if (options[i].first == "internal_access") {
         internal_access = true;
       } else {
@@ -59,12 +64,13 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     // Get output file name.
-    grpc::string file_name;
-    if (!grpc_csharp_generator::ServicesFilename(file, &file_name)) {
+    grpc::string file_name_or_error;
+    if (!grpc_csharp_generator::ServicesFilename(file, base_namespace_specified, base_namespace, &file_name_or_error)) {
+      *error = file_name_or_error;
       return false;
     }
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
-        context->Open(file_name));
+        context->Open(file_name_or_error));
     grpc::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
     return true;
