@@ -5511,6 +5511,7 @@ targets:
 - name: client_channel_stress_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
