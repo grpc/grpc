@@ -115,33 +115,6 @@ inline grpc::string LowercaseFirstLetter(grpc::string s) {
   return s;
 }
 
-inline grpc::string LowerUnderscoreToUpperCamel(grpc::string str) {
-  std::vector<grpc::string> tokens = tokenize(str, "_");
-  grpc::string result = "";
-  for (unsigned int i = 0; i < tokens.size(); i++) {
-    result += CapitalizeFirstLetter(tokens[i]);
-  }
-  return result;
-}
-
-inline grpc::string FileNameInUpperCamel(
-    const grpc::protobuf::FileDescriptor* file, bool include_package_path) {
-  std::vector<grpc::string> tokens = tokenize(StripProto(file->name()), "/");
-  grpc::string result = "";
-  if (include_package_path) {
-    for (unsigned int i = 0; i < tokens.size() - 1; i++) {
-      result += tokens[i] + "/";
-    }
-  }
-  result += LowerUnderscoreToUpperCamel(tokens.back());
-  return result;
-}
-
-inline grpc::string FileNameInUpperCamel(
-    const grpc::protobuf::FileDescriptor* file) {
-  return FileNameInUpperCamel(file, true);
-}
-
 enum MethodType {
   METHODTYPE_NO_STREAMING,
   METHODTYPE_CLIENT_STREAMING,
