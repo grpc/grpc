@@ -35,6 +35,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "client_channel_stress_test",
     srcs = ["client_channel_stress_test.cc"],
+    flaky = True,  # TODO(b/153136407)
     # TODO(jtattermusch): test fails frequently on Win RBE, but passes locally
     # reenable the tests once it works reliably on Win RBE.
     # TODO(roth): Test disabled on msan and tsan due to variable
