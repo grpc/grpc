@@ -282,6 +282,9 @@ END2END_TESTS = {
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
         proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_exceeds_buffer_size_in_init",
     ),
     "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
         needs_client_channel = True,
@@ -429,6 +432,13 @@ def grpc_end2end_tests():
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:client.key",
+                "//src/core/tsi/test_creds:client.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
@@ -499,6 +509,13 @@ def grpc_end2end_nosec_tests():
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:client.key",
+                "//src/core/tsi/test_creds:client.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_nosec_tests",
                 "//test/core/util:grpc_test_util_unsecure",

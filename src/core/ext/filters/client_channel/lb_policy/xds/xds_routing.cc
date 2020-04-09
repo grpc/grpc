@@ -199,8 +199,6 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
   void UpdateStateLocked();
 
-  const grpc_millis child_retention_interval_ms_;
-
   // Current config from the resolver.
   RefCountedPtr<XdsRoutingLbConfig> config_;
 
@@ -247,11 +245,7 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
 //
 
 XdsRoutingLb::XdsRoutingLb(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      // FIXME: new channel arg
-      child_retention_interval_ms_(grpc_channel_args_find_integer(
-          args.args, GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS,
-          {GRPC_XDS_ROUTING_CHILD_RETENTION_INTERVAL_MS, 0, INT_MAX})) {}
+    : LoadBalancingPolicy(std::move(args)) {}
 
 XdsRoutingLb::~XdsRoutingLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
@@ -284,18 +278,11 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the actions not in the new config.
-  for (auto it = actions_.begin(); it != actions_.end();) {
-    const std::string& name = it->first;
-    XdsRoutingChild* child = it->second.get();
-    if (config_->action_map().find(name) != config_->action_map().end()) {
-      ++it;
-      continue;
-    }
-    if (child_retention_interval_ms_ == 0) {
-      it = actions_.erase(it);
-    } else {
+  for (const auto& p : actions_) {
+    const std::string& name = p.first;
+    XdsRoutingChild* child = p.second.get();
+    if (config_->action_map().find(name) == config_->action_map().end()) {
       child->DeactivateLocked();
-      ++it;
     }
   }
   // Add or update the actions in the new config.
@@ -515,7 +502,7 @@ void XdsRoutingLb::XdsRoutingChild::DeactivateLocked() {
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(
       &delayed_removal_timer_,
-      ExecCtx::Get()->Now() + xds_routing_policy_->child_retention_interval_ms_,
+      ExecCtx::Get()->Now() + GRPC_XDS_ROUTING_CHILD_RETENTION_INTERVAL_MS,
       &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }

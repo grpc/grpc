@@ -1189,7 +1189,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       args.SetInt(GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS, fallback_timeout);
     }
     if (failover_timeout > 0) {
-      args.SetInt(GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS, failover_timeout);
+      args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
     if (xds_resource_does_not_exist_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
@@ -1321,7 +1321,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             : kDefaultServiceConfigWithoutLoadReporting_;
     result.service_config =
         grpc_core::ServiceConfig::Create(service_config_json, &error);
-    GRPC_ERROR_UNREF(error);
+    ASSERT_NE(result.service_config.get(), nullptr);
+    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
         lb_channel_response_generator == nullptr
             ? lb_channel_response_generator_.get()
@@ -1353,7 +1354,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
           grpc_core::ServiceConfig::Create(service_config_json, &error);
-      GRPC_ERROR_UNREF(error);
+      ASSERT_NE(result.service_config.get(), nullptr);
+      ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     }
     if (lb_channel_response_generator == nullptr) {
       lb_channel_response_generator = lb_channel_response_generator_.get();
@@ -1379,11 +1381,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
-                 bool wait_for_ready = false) {
+                 bool wait_for_ready = false, bool server_fail = false) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
+    if (server_fail) {
+      request.mutable_param()->mutable_expected_error()->set_code(
+          GRPC_STATUS_FAILED_PRECONDITION);
+    }
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     if (wait_for_ready) context.set_wait_for_ready(true);
@@ -1431,9 +1437,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  void CheckRpcSendFailure() {
-    const Status status = SendRpc();
-    EXPECT_FALSE(status.ok());
+  void CheckRpcSendFailure(const size_t times = 1, bool server_fail = false) {
+    for (size_t i = 0; i < times; ++i) {
+      const Status status = SendRpc(nullptr, 1000, false, server_fail);
+      EXPECT_FALSE(status.ok());
+    }
   }
 
   void CheckEcho1RpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
@@ -2620,19 +2628,6 @@ TEST_P(EdsTest, Timeout) {
 }
 
 // Tests that EDS client should send a NACK if the EDS update contains
-// no localities but does not say to drop all calls.
-TEST_P(EdsTest, NacksNoLocalitiesWithoutDropAll) {
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args;
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
-}
-
-// Tests that EDS client should send a NACK if the EDS update contains
 // sparse priorities.
 TEST_P(EdsTest, NacksSparsePriorityList) {
   SetNextResolution({});
@@ -2716,6 +2711,18 @@ TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
             kNumRpcs / backends_.size());
   EXPECT_EQ(backends_[3]->backend_service()->request_count(),
             kNumRpcs / backends_.size());
+}
+
+// EDS update with no localities.
+TEST_P(LocalityMapTest, NoLocalities) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // EDS response contains 2 localities, one with no endpoints.
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource({}), kDefaultResourceName);
+  Status status = SendRpc();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
 }
 
 // Tests that the locality map can work properly even when it contains a large
@@ -3758,7 +3765,8 @@ class ClientLoadReportingTest : public XdsEnd2endTest {
 TEST_P(ClientLoadReportingTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
-  const size_t kNumRpcsPerAddress = 100;
+  const size_t kNumRpcsPerAddress = 10;
+  const size_t kNumFailuresPerAddress = 3;
   // TODO(juanlishen): Partition the backends after multiple localities is
   // tested.
   AdsServiceImpl::EdsResourceArgs args({
@@ -3773,9 +3781,11 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  // Each backend should have gotten 100 requests.
+  CheckRpcSendFailure(kNumFailuresPerAddress * num_backends_,
+                      /*server_fail=*/true);
+  // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
+    EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
               backends_[i]->backend_service()->request_count());
   }
   // The LRS service got a single request, and sent a single response.
@@ -3789,9 +3799,11 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
+  EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * num_backends_ +
+                num_ok + num_failure,
             client_stats.total_issued_requests());
-  EXPECT_EQ(0U, client_stats.total_error_requests());
+  EXPECT_EQ(kNumFailuresPerAddress * num_backends_ + num_failure,
+            client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
 }
 
