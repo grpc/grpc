@@ -35,6 +35,7 @@
         <GrpcPluginExe Condition=" '%(Protobuf_Compile.GrpcPluginExe)' == '' ">$(gRPC_PluginFullPath)</GrpcPluginExe>
         <GrpcOutputDir Condition=" '%(Protobuf_Compile.GrpcOutputDir)' == '' " >%(Protobuf_Compile.OutputDir)</GrpcOutputDir>
         <_GrpcOutputOptions Condition=" '%(Protobuf_Compile.Access)' == 'Internal' ">%(Protobuf_Compile._GrpcOutputOptions);internal_access</_GrpcOutputOptions>
+        <_GrpcOutputOptions Condition=" '%(Protobuf_Compile.BaseNamespaceEnabled)' == 'true' ">%(Protobuf_Compile._GrpcOutputOptions);base_namespace=%(Protobuf_Compile.BaseNamespace)</_GrpcOutputOptions>
       </Protobuf_Compile>
       <Protobuf_Compile Condition=" '%(Protobuf_Compile.GrpcServices)' == 'Client' ">
         <_GrpcOutputOptions>%(Protobuf_Compile._GrpcOutputOptions);no_server</_GrpcOutputOptions>

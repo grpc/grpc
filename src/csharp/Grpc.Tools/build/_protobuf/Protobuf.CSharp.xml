@@ -23,6 +23,7 @@
       <Category Name="Advanced" DisplayName="Advanced" />
       <Category Name="Protobuf" DisplayName="Protobuf" />
       <Category Name="Misc" DisplayName="Misc" />
+      <Category Name="BaseNamespace" DisplayName="Base Namespace" />
     </Rule.Categories>
 
     <DynamicEnumProperty Name="{}{ItemType}" DisplayName="Build Action"  Category="Advanced"
@@ -94,6 +95,24 @@
                     PersistenceStyle="Attribute" HasConfigurationCondition="false" />
       </BoolProperty.DataSource>
     </BoolProperty>
+
+    <BoolProperty Name="BaseNamespaceEnabled" DisplayName="Generate directory hierarchy"
+                  Category="BaseNamespace" Default="true"
+                  Description="If enabled, a directory hierarchy will be generated based on the namespace.">
+      <BoolProperty.DataSource>
+        <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
+                    PersistenceStyle="Attribute" HasConfigurationCondition="false" />
+      </BoolProperty.DataSource>
+    </BoolProperty>
+
+    <StringProperty Name="BaseNamespace" DisplayName="Base Namespace"
+                  Category="BaseNamespace"
+                  Description="Defines which part of the namespace should be considered as the base for the output directory.">
+      <StringProperty.DataSource>
+        <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
+                    PersistenceStyle="Attribute" HasConfigurationCondition="false" />
+      </StringProperty.DataSource>
+    </StringProperty>
 
   </Rule>
 </ProjectSchemaDefinitions>

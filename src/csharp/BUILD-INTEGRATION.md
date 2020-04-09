@@ -307,6 +307,34 @@ Also make sure *not* to include any file names to the `Protobuf` item
 collection, otherwise they will be compiled by default. If, by any chance, you
 used that name for your build scripting, you must rename it.
 
+##### I have multiple protos with the same name in different directories
+
+As protoc by default creates all files without hierarchy in the `OutputDir`, 
+there might happen naming collisions. To avoid this, you can enable the 
+`base_namespace` flag in the generator. You can either do this for the whole project 
+or just for the affected protos.
+
+To enable it for the whole project, set the property `Protobuf_BaseNamespaceEnabledDefault`
+to `true`:
+
+```xml
+  <PropertyGroup>
+    <Protobuf_BaseNamespaceEnabledDefault>true</Protobuf_BaseNamespaceEnabledDefault>
+  </PropertyGroup>
+```
+
+To enable it only for specific files, set the `BaseNamespaceEnabled` attribute to `true`:
+
+```xml
+  <ItemGroup>
+    <Protobuf Include="**/*.proto" OutputDir="%(RelativePath)" />
+    <Protobuf Update="**/hello/*.proto;**/bye/*.proto" BaseNamespaceEnabled="True" />
+  </ItemGroup>
+```
+
+If you have no collisions, leave the `base_namespace` flag disabled to improve building performance, 
+as resolving the namespace involves partially parsing the proto file mutliple times.
+
 ### What about C++ projects?
 
 This is in the works. Currently, the same variables as above are set to point to
@@ -321,16 +349,18 @@ Reference
 
 The following metadata are recognized on the `<Protobuf>` items.
 
-| Name           | Default   | Value                | Synopsis                         |
-|----------------|-----------|----------------------|----------------------------------|
-| Access         | `public`  | `public`, `internal` | Generated class access           |
-| ProtoCompile   | `true`    | `true`, `false`      | Pass files to protoc?            |
-| ProtoRoot      | See notes | A directory          | Common root for set of files     |
-| CompileOutputs | `true`    | `true`, `false`      | C#-compile generated files?      |
-| OutputDir      | See notes | A directory          | Directory for generated C# files |
-| GrpcOutputDir  | See notes | A directory          | Directory for generated stubs    |
-| GrpcServices   | `both`    | `none`, `client`,    | Generated gRPC stubs             |
-|                |           | `server`, `both`     |                                  |
+| Name                 | Default   | Value                 | Synopsis                         |
+|----------------------|-----------|-----------------------|----------------------------------|
+| Access               | `public`  | `public`, `internal`  | Generated class access           |
+| ProtoCompile         | `true`    | `true`, `false`       | Pass files to protoc?            |
+| ProtoRoot            | See notes | A directory           | Common root for set of files     |
+| CompileOutputs       | `true`    | `true`, `false`       | C#-compile generated files?      |
+| OutputDir            | See notes | A directory           | Directory for generated C# files |
+| GrpcOutputDir        | See notes | A directory           | Directory for generated stubs    |
+| GrpcServices         | `both`    | `none`, `client`,     | Generated gRPC stubs             |
+|                      |           | `server`, `both`      |                                  |
+| BaseNamespaceEnabled | `false`   | `true`, `false`       | Enable hierarchic folders        |
+| BaseNamespace        | ``        | A (partial) namespace | Base namespace for hierarchy     |
 
 __Notes__
 
@@ -348,7 +378,8 @@ The default value for this metadatum is the value of the property
 project, will be set to the value of the standard MSBuild property
 `IntermediateOutputPath`, which points to the location of compilation object
 outputs, such as "obj/Release/netstandard1.5/". The path in this property is
-considered relative to the project directory.
+considered relative to the project directory. If `BaseNamespaceEnabled` is enabled, 
+this will be the root directory for the hierarchy.
 
 * __GrpcOutputDir__  
 Unless explicitly set, will follow `OutputDir` for any given file.
@@ -356,23 +387,37 @@ Unless explicitly set, will follow `OutputDir` for any given file.
 * __Access__  
 Sets generated class access on _both_ generated message and gRPC stub classes.
 
+* __BaseNamespaceEnabled__  
+If enabled, a hierarchy based on the namespace will be created below `(Grpc)OutputDir`. 
+This allows the use of multiple protos with the same name in different source folders. 
+If disabled, all files will be put directly into the output directory.
+It can be enabled as default by setting the property `Protobuf_BaseNamespaceEnabledDefault`.
+
+* __BaseNamespace__  
+Sets the base namespace to not create folders for in the hierarchy. If the proto has the 
+package `helloworld.myprotos` and `BaseNamespace` is set to `Helloworld` (C# notation), 
+the files will be placed at "obj/Release/netstandard1.5/Myprotos" instead of 
+"obj/Release/netstandard1.5/Helloworld/Myprotos". Default is empty which will generate the 
+full namespace hierarchy.
+
 `grpc_csharp_plugin` command line options
 ---------
 
 Under the hood, the `Grpc.Tools` build integration invokes the `protoc` and `grpc_csharp_plugin` binaries
 to perform code generation. Here is an overview of the available `grpc_csharp_plugin` options:
 
-| Name            | Default   | Synopsis                                                 |
-|---------------- |-----------|----------------------------------------------------------|
-| no_client       | off       | Don't generate the client stub                           |
-| no_server       | off       | Don't generate the server-side stub                      |
-| internal_access | off       | Generate classes with "internal" visibility              |
-| lite_client     | off       | Generate client stubs that inherit from "LiteClientBase" |
+| Name            | Default   | Synopsis                                                   |
+|---------------- |-----------|------------------------------------------------------------|
+| no_client       | off       | Don't generate the client stub                             |
+| no_server       | off       | Don't generate the server-side stub                        |
+| internal_access | off       | Generate classes with "internal" visibility                |
+| lite_client     | off       | Generate client stubs that inherit from "LiteClientBase"   |
+| base_namespace  | off       | Generate a hierarchy for the namespace to avoid collisions |
 
 Note that the protocol buffer compiler has a special commandline syntax for plugin options.
 Example:
 ```
 protoc --plugin=protoc-gen-grpc=grpc_csharp_plugin --csharp_out=OUT_DIR \
-    --grpc_out=OUT_DIR --grpc_opt=lite_client,no_server \
+    --grpc_out=OUT_DIR --grpc_opt=lite_client,no_server,base_namespace="Helloworld" \
     -I INCLUDE_DIR foo.proto
 ```

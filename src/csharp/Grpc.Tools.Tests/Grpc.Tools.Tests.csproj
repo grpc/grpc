@@ -55,6 +55,19 @@
                    $(_MSBuildAssemblyPath)/Microsoft.Build.Utilities.Core.dll"
           CopyToOutputDirectory="Always" Visible="false" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Testfiles.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Testfiles.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Testfiles.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Testfiles.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' and '$(OS)' != 'Windows_NT' ">
     <!-- The None items are included into assembly candidate resolution by default, and
          we do not want that, as they are not valid as reference assemblies (the version of

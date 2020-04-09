@@ -16,6 +16,9 @@
 
 #endregion
 
+using System;
+using System.IO;
+using System.Text;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests
@@ -34,20 +37,67 @@ namespace Grpc.Tools.Tests
         [TestCase("sub/foo.proto", "Foo.cs", "FooGrpc.cs")]
         [TestCase("one_two.proto", "OneTwo.cs", "OneTwoGrpc.cs")]
         [TestCase("ONE_TWO.proto", "ONETWO.cs", "ONETWOGrpc.cs")]
-        [TestCase("one.two.proto", "OneTwo.cs", "One.twoGrpc.cs")]
-        [TestCase("one123two.proto", "One123Two.cs", "One123twoGrpc.cs")]
-        [TestCase("__one_two!.proto", "OneTwo.cs", "OneTwo!Grpc.cs")]
-        [TestCase("one(two).proto", "OneTwo.cs", "One(two)Grpc.cs")]
-        [TestCase("one_(two).proto", "OneTwo.cs", "One(two)Grpc.cs")]
-        [TestCase("one two.proto", "OneTwo.cs", "One twoGrpc.cs")]
-        [TestCase("one_ two.proto", "OneTwo.cs", "One twoGrpc.cs")]
-        [TestCase("one .proto", "One.cs", "One Grpc.cs")]
+        [TestCase("one.two.proto", "OneTwo.cs", "OneTwoGrpc.cs")]
+        [TestCase("one123two.proto", "One123Two.cs", "One123TwoGrpc.cs")]
+        [TestCase("__one_two!.proto", "OneTwo.cs", "OneTwoGrpc.cs")]
+        [TestCase("one(two).proto", "OneTwo.cs", "OneTwoGrpc.cs")]
+        [TestCase("one_(two).proto", "OneTwo.cs", "OneTwoGrpc.cs")]
+        [TestCase("one two.proto", "OneTwo.cs", "OneTwoGrpc.cs")]
+        [TestCase("one_ two.proto", "OneTwo.cs", "OneTwoGrpc.cs")]
+        [TestCase("one .proto", "One.cs", "OneGrpc.cs")]
         public void NameMangling(string proto, string expectCs, string expectGrpcCs)
         {
             var poss = _generator.GetPossibleOutputs(Utils.MakeItem(proto, "grpcservices", "both"));
             Assert.AreEqual(2, poss.Length);
             Assert.Contains(expectCs, poss);
             Assert.Contains(expectGrpcCs, poss);
+        }
+
+        private static object[] s_namespaceManglingTests = {
+            new object[] {"none.proto", "None", "None.cs"},
+            new object[] {"package.proto", "Package", "Helloworld" + Path.DirectorySeparatorChar + "Package.cs"},
+            new object[] {"namespace.proto", "Namespace", "Google" + Path.DirectorySeparatorChar + "Protobuf" + Path.DirectorySeparatorChar + "TestProtos" + Path.DirectorySeparatorChar + "Namespace.cs"},
+            new object[] {"namespace_package.proto", "NamespacePackage", "Google" + Path.DirectorySeparatorChar + "Protobuf" + Path.DirectorySeparatorChar + "TestProtos" + Path.DirectorySeparatorChar + "NamespacePackage.cs"}
+        };
+        [TestCaseSource(nameof(s_namespaceManglingTests))]
+        public void NamespaceMangling(string proto, string context, string expectNamespace)
+        {
+            StringBuilder content = new StringBuilder();
+            content.Append(Testfiles.Header);
+            content.Append(Environment.NewLine);
+            content.Append(Testfiles.ResourceManager.GetString(context));
+            content.Append(Environment.NewLine);
+            content.Append(Testfiles.Content);
+
+            File.WriteAllText(proto, content.ToString());
+            var poss = _generator.GetPossibleOutputs(Utils.MakeItem(proto, "basenamespaceenabled", "true"));
+            Assert.AreEqual(1, poss.Length);
+            Assert.Contains(expectNamespace, poss);
+        }
+
+        private static object[] s_baseNamespaceManglingTests = {
+            new object[] {"none.proto", "None", "", "None.cs"},
+            new object[] {"package.proto", "Package", "Helloworld", "Package.cs"},
+            new object[] {"package.proto", "Package", "", "Helloworld" + Path.DirectorySeparatorChar + "Package.cs"},
+            new object[] {"namespace.proto", "Namespace", "Google.Protobuf.TestProtos", "Namespace.cs"},
+            new object[] {"namespace.proto", "Namespace", "Google", "Protobuf" + Path.DirectorySeparatorChar + "TestProtos" + Path.DirectorySeparatorChar + "Namespace.cs"},
+            new object[] {"namespace_package.proto", "NamespacePackage", "Google.Protobuf.TestProtos", "NamespacePackage.cs"},
+            new object[] {"namespace_package.proto", "NamespacePackage", "Google.Protobuf", "TestProtos" + Path.DirectorySeparatorChar + "NamespacePackage.cs"}
+        };
+        [TestCaseSource(nameof(s_baseNamespaceManglingTests))]
+        public void BaseNamespaceMangling(string proto, string context, string baseNamespace, string expectNamespace)
+        {
+            StringBuilder content = new StringBuilder();
+            content.Append(Testfiles.Header);
+            content.Append(Environment.NewLine);
+            content.Append(Testfiles.ResourceManager.GetString(context));
+            content.Append(Environment.NewLine);
+            content.Append(Testfiles.Content);
+
+            File.WriteAllText(proto, content.ToString());
+            var poss = _generator.GetPossibleOutputs(Utils.MakeItem(proto, "basenamespaceenabled", "true", "basenamespace", baseNamespace));
+            Assert.AreEqual(1, poss.Length);
+            Assert.Contains(expectNamespace, poss);
         }
 
         [Test]

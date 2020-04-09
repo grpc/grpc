@@ -36,6 +36,8 @@ namespace Grpc.Tools
         public static string OutputDir = "OutputDir";
         public static string GrpcServices = "GrpcServices";
         public static string GrpcOutputDir = "GrpcOutputDir";
+        public static string BaseNamespaceEnabled = "BaseNamespaceEnabled";
+        public static string BaseNamespace = "BaseNamespace";
     };
 
     // A few flags used to control the behavior under various platforms.

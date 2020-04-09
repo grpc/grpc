@@ -29,6 +29,8 @@
       <CompileOutputs Condition="'%(Protobuf.CompileOutputs)' == ''">True</CompileOutputs>
       <OutputDir Condition="'%(Protobuf.OutputDir)' == '' ">$(Protobuf_OutputPath)</OutputDir>
       <Generator Condition="'%(Protobuf.Generator)' == '' and '$(DisableProtobufDesignTimeBuild)' != 'true' " >MSBuild:Compile</Generator>
+	  <BaseNamespaceEnabled Condition="'%(Protobuf.BaseNamespaceEnabled)' == '' " >$(Protobuf_BaseNamespaceEnabledDefault)</BaseNamespaceEnabled>
+	  <BaseNamespace Condition="'%(Protobuf.BaseNamespace)' == '' " />
     </Protobuf>
   </ItemDefinitionGroup>
 
@@ -242,6 +244,7 @@
     <ItemGroup>
       <Protobuf_Compile>
         <_OutputOptions Condition=" '%(Protobuf_Compile.Access)' == 'Internal' ">%(Protobuf_Compile._OutputOptions);internal_access</_OutputOptions>
+        <_OutputOptions Condition=" '%(Protobuf_Compile.BaseNamespaceEnabled)' == 'true' ">%(Protobuf_Compile._OutputOptions);base_namespace=%(Protobuf_Compile.BaseNamespace)</_OutputOptions>
       </Protobuf_Compile>
     </ItemGroup>
   </Target>

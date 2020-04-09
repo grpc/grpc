@@ -10,6 +10,7 @@
     <!-- TODO(kkm): Do not place non-tools under tools/, use build/native/bin/. -->
     <Protobuf_PackagedToolsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../../tools) )</Protobuf_PackagedToolsPath>
     <Protobuf_StandardImportsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../native/include) )</Protobuf_StandardImportsPath>
+    <Protobuf_BaseNamespaceEnabledDefault>False</Protobuf_BaseNamespaceEnabledDefault>
   </PropertyGroup>
 
   <!-- NET SDK projects only: include proto files by default. Other project

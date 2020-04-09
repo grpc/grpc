@@ -19,6 +19,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -61,71 +62,114 @@ namespace Grpc.Tools
     // C# generator services.
     internal class CSharpGeneratorServices : GeneratorServices
     {
+        private static readonly Regex s_namespaceRegex = new Regex("option csharp_namespace = \"(\\S+)\";", RegexOptions.Compiled);
+        private static readonly Regex s_packageRegex = new Regex("package (\\S+);", RegexOptions.Compiled);
+
         public CSharpGeneratorServices(TaskLoggingHelper log) : base(log) { }
 
         public override string[] GetPossibleOutputs(ITaskItem protoItem)
         {
             bool doGrpc = GrpcOutputPossible(protoItem);
             var outputs = new string[doGrpc ? 2 : 1];
-            string basename = Path.GetFileNameWithoutExtension(protoItem.ItemSpec);
-
+            var itemSpec = protoItem.ItemSpec;
             string outdir = protoItem.GetMetadata(Metadata.OutputDir);
-            string filename = LowerUnderscoreToUpperCamelProtocWay(basename);
+            string basename = Path.GetFileNameWithoutExtension(itemSpec);
+            string filename = UnderscoresToPascalCase(basename);
+
+            if ("true".EqualNoCase(protoItem.GetMetadata(Metadata.BaseNamespaceEnabled)))
+            {
+                string baseNamespace = protoItem.GetMetadata(Metadata.BaseNamespace);
+                string baseNamespaceDir = GetNamespaceDir(itemSpec, baseNamespace);
+                if (baseNamespaceDir != null)
+                {
+                    filename = Path.Combine(baseNamespaceDir, filename);
+                }
+            }
+
             outputs[0] = Path.Combine(outdir, filename) + ".cs";
 
             if (doGrpc)
             {
                 // Override outdir if kGrpcOutputDir present, default to proto output.
                 string grpcdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
-                filename = LowerUnderscoreToUpperCamelGrpcWay(basename);
-                outputs[1] = Path.Combine(
-                    grpcdir != "" ? grpcdir : outdir, filename) + "Grpc.cs";
+                outdir = grpcdir != "" ? grpcdir : outdir;
+                outputs[1] = Path.Combine(outdir, filename) + "Grpc.cs";
             }
             return outputs;
         }
 
-        // This is how the gRPC codegen currently construct its output filename.
-        // See src/compiler/generator_helpers.h:118.
-        string LowerUnderscoreToUpperCamelGrpcWay(string str)
+        string GetNamespaceDir(string filename, string baseNamespace)
         {
-            var result = new StringBuilder(str.Length, str.Length);
-            bool cap = true;
-            foreach (char c in str)
-            {
-                if (c == '_')
-                {
-                    cap = true;
+            if (!File.Exists(filename)) return null;
+
+            string ns = GetFileNamespace(filename);
+            if (ns == null) return null;
+
+            string namespace_suffix = ns;
+            if (!string.IsNullOrEmpty(baseNamespace)) {
+                // Check that the base_namespace is either equal to or a leading part of
+                // the file namespace. This isn't just a simple prefix; "Foo.B" shouldn't
+                // be regarded as a prefix of "Foo.Bar". The simplest option is to add "."
+                // to both.
+                string extended_ns = ns + ".";
+                if (extended_ns.IndexOf(baseNamespace + ".", StringComparison.Ordinal) != 0) {
+                    return null; // This will be ignored, because we've set an error.
                 }
-                else if (cap)
-                {
-                    result.Append(char.ToUpperInvariant(c));
-                    cap = false;
-                }
-                else
-                {
-                    result.Append(c);
+
+                namespace_suffix = ns.Substring(baseNamespace.Length);
+                if (namespace_suffix.IndexOf(".", StringComparison.Ordinal) == 0) {
+                    namespace_suffix = namespace_suffix.Substring(1);
                 }
             }
-            return result.ToString();
+
+            return namespace_suffix.Replace('.', Path.DirectorySeparatorChar);
+        }
+
+        private string GetFileNamespace(string filename)
+        {
+            string data = File.ReadAllText(filename);
+
+            // First try to match the namespace from file options.
+            Match match = s_namespaceRegex.Match(data);
+            if (match.Success) return match.Groups[1].Value;
+
+            // After that, match the package.
+            match = s_packageRegex.Match(data);
+            if (!match.Success) return null;
+
+            // Convert the package name to C# notation.
+            return UnderscoresToCamelCase(match.Groups[1].Value, true, true);
+        }
+
+        private string UnderscoresToPascalCase(string input) {
+            return UnderscoresToCamelCase(input, true);
         }
 
         // This is how the protoc codegen constructs its output filename.
-        // See protobuf/compiler/csharp/csharp_helpers.cc:137.
+        // See protobuf/compiler/csharp/csharp_helpers.cc:143.
         // Note that protoc explicitly discards non-ASCII letters.
-        string LowerUnderscoreToUpperCamelProtocWay(string str)
+        private string UnderscoresToCamelCase(
+            string input,
+            bool capNextLetter = false,
+            bool preservePeriod = false)
         {
-            var result = new StringBuilder(str.Length, str.Length);
-            bool cap = true;
-            foreach (char c in str)
+            var result = new StringBuilder(input.Length, input.Length);
+            foreach (char c in input)
             {
                 char upperC = char.ToUpperInvariant(c);
                 bool isAsciiLetter = 'A' <= upperC && upperC <= 'Z';
                 if (isAsciiLetter || ('0' <= c && c <= '9'))
                 {
-                    result.Append(cap ? upperC : c);
+                    result.Append(capNextLetter ? upperC : c);
                 }
-                cap = !isAsciiLetter;
+                else if (c == '.' && preservePeriod)
+                {
+                    result.Append(c);
+                }
+
+                capNextLetter = !isAsciiLetter;
             }
+
             return result.ToString();
         }
     };
