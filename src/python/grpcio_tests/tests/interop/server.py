@@ -46,13 +46,14 @@ def parse_interop_server_arguments():
 
 
 def get_server_credentials():
-    private_key = resources.private_key()
-    certificate_chain = resources.certificate_chain()
-    return grpc.ssl_server_credentials(((private_key, certificate_chain),))
+    if args.use_tls:
+        private_key = resources.private_key()
+        certificate_chain = resources.certificate_chain()
+        return grpc.ssl_server_credentials(((private_key, certificate_chain),))
+    else:
+        return grpc.alts_server_credentials()
 
 
-def get_alts_server_credentials():
-    return grpc.alts_server_credentials()
 
 
 def serve():
@@ -61,11 +62,8 @@ def serve():
     server = test_common.test_server()
     test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(),
                                                     server)
-    if args.use_tls:
+    if args.use_tls or args.use_alts:
         credentials = get_server_credentials()
-        server.add_secure_port('[::]:{}'.format(args.port), credentials)
-    elif args.use_alts:
-        credentials = get_alts_server_credentials()
         server.add_secure_port('[::]:{}'.format(args.port), credentials)
     else:
         server.add_insecure_port('[::]:{}'.format(args.port))
