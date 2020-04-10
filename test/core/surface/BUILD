@@ -55,6 +55,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "completion_queue_threading_test",
     srcs = ["completion_queue_threading_test.cc"],
+    flaky = True,  # TODO(b/153064668)
     language = "C++",
     deps = [
         "//:gpr",

@@ -330,6 +330,10 @@ class InterceptedUnaryUnaryCall(_base_call.UnaryUnaryCall):
         response = yield from call.__await__()
         return response
 
+    async def wait_for_connection(self) -> None:
+        call = await self._interceptors_task
+        return await call.wait_for_connection()
+
 
 class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
     """Final UnaryUnaryCall class finished with a response."""
@@ -374,3 +378,6 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
             # for telling the interpreter that __await__ is a generator.
             yield None
         return self._response
+
+    async def wait_for_connection(self) -> None:
+        pass

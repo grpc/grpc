@@ -1,7 +1,4 @@
 # bazelrc file
-# bazel >= 0.18 looks for %workspace%/.bazelrc (which redirects here)
-# Older bazel versions look for %workspace%/tools/bazel.rc (this file)
-# See https://github.com/bazelbuild/bazel/issues/6319
 
 build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD

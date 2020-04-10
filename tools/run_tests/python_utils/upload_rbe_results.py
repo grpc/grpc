@@ -37,6 +37,7 @@ _RESULTS_SCHEMA = [
     ('build_id', 'INTEGER', 'Build ID of Kokoro job'),
     ('build_url', 'STRING', 'URL of Kokoro build'),
     ('test_target', 'STRING', 'Bazel target path'),
+    ('test_class_name', 'STRING', 'Name of test class'),
     ('test_case', 'STRING', 'Name of test case'),
     ('result', 'STRING', 'Test or build result'),
     ('timestamp', 'TIMESTAMP', 'Timestamp of test run'),
@@ -241,6 +242,8 @@ if __name__ == "__main__":
                             % invocation_id,
                         'test_target':
                             action['id']['targetId'],
+                        'test_class_name':
+                            test_case['testCase'].get('className', ''),
                         'test_case':
                             test_case['testCase']['caseName'],
                         'result':
@@ -266,6 +269,8 @@ if __name__ == "__main__":
                             % invocation_id,
                         'test_target':
                             action['id']['targetId'],
+                        'test_class_name':
+                            'N/A',
                         'test_case':
                             'N/A',
                         'result':

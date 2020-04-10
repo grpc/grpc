@@ -267,8 +267,12 @@ class ClientBidiReactor {
   /// StartWritesDone that indicates that there will be no more write ops.
   /// The number of RemoveHold calls must match the total number of AddHold
   /// calls plus the number of holds added by AddMultipleHolds.
+  /// The argument to AddMultipleHolds must be positive.
   void AddHold() { AddMultipleHolds(1); }
-  void AddMultipleHolds(int holds) { stream_->AddHold(holds); }
+  void AddMultipleHolds(int holds) {
+    GPR_CODEGEN_DEBUG_ASSERT(holds > 0);
+    stream_->AddHold(holds);
+  }
   void RemoveHold() { stream_->RemoveHold(); }
 
   /// Notifies the application that all operations associated with this RPC
@@ -331,7 +335,10 @@ class ClientReadReactor {
   void StartRead(Response* resp) { reader_->Read(resp); }
 
   void AddHold() { AddMultipleHolds(1); }
-  void AddMultipleHolds(int holds) { reader_->AddHold(holds); }
+  void AddMultipleHolds(int holds) {
+    GPR_CODEGEN_DEBUG_ASSERT(holds > 0);
+    reader_->AddHold(holds);
+  }
   void RemoveHold() { reader_->RemoveHold(); }
 
   virtual void OnDone(const ::grpc::Status& /*s*/) {}
@@ -364,7 +371,10 @@ class ClientWriteReactor {
   void StartWritesDone() { writer_->WritesDone(); }
 
   void AddHold() { AddMultipleHolds(1); }
-  void AddMultipleHolds(int holds) { writer_->AddHold(holds); }
+  void AddMultipleHolds(int holds) {
+    GPR_CODEGEN_DEBUG_ASSERT(holds > 0);
+    writer_->AddHold(holds);
+  }
   void RemoveHold() { writer_->RemoveHold(); }
 
   virtual void OnDone(const ::grpc::Status& /*s*/) {}

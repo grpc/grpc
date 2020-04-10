@@ -313,11 +313,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
     if (!run_inproc) {
-      servers[i].stub = WorkerService::NewStub(grpc::CreateChannel(
-          workers[i], GetCredentialsProvider()->GetChannelCredentials(
-                          GetCredType(workers[i], per_worker_credential_types,
-                                      credential_type),
-                          &channel_args)));
+      servers[i].stub = WorkerService::NewStub(grpc::CreateTestChannel(
+          workers[i],
+          GetCredType(workers[i], per_worker_credential_types, credential_type),
+          nullptr /* call creds */, {} /* interceptor creators */));
     } else {
       servers[i].stub = WorkerService::NewStub(
           local_workers[i]->InProcessChannel(channel_args));
@@ -373,11 +372,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
             worker.c_str(), i + num_servers);
     if (!run_inproc) {
-      clients[i].stub = WorkerService::NewStub(grpc::CreateChannel(
+      clients[i].stub = WorkerService::NewStub(grpc::CreateTestChannel(
           worker,
-          GetCredentialsProvider()->GetChannelCredentials(
-              GetCredType(worker, per_worker_credential_types, credential_type),
-              &channel_args)));
+          GetCredType(worker, per_worker_credential_types, credential_type),
+          nullptr /* call creds */, {} /* interceptor creators */));
     } else {
       clients[i].stub = WorkerService::NewStub(
           local_workers[i + num_servers]->InProcessChannel(channel_args));
@@ -588,13 +586,11 @@ bool RunQuit(
     return false;
   }
 
-  ChannelArguments channel_args;
   for (size_t i = 0; i < workers.size(); i++) {
-    auto stub = WorkerService::NewStub(grpc::CreateChannel(
-        workers[i], GetCredentialsProvider()->GetChannelCredentials(
-                        GetCredType(workers[i], per_worker_credential_types,
-                                    credential_type),
-                        &channel_args)));
+    auto stub = WorkerService::NewStub(grpc::CreateTestChannel(
+        workers[i],
+        GetCredType(workers[i], per_worker_credential_types, credential_type),
+        nullptr /* call creds */, {} /* interceptor creators */));
     Void dummy;
     grpc::ClientContext ctx;
     ctx.set_wait_for_ready(true);

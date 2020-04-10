@@ -16,21 +16,25 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
-#include <stdio.h>
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define CLIENT_CERT_PATH "src/core/tsi/test_creds/client.pem"
+#define CLIENT_KEY_PATH "src/core/tsi/test_creds/client.key"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 static const char oauth2_md[] = "Bearer aaslkfjs424535asdf";
 static const char* client_identity_property_name = "smurf_name";
@@ -139,6 +143,11 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
   grpc_core::ExecCtx exec_ctx;
+  grpc_slice ca_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  const char* test_root_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr, nullptr);
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
@@ -156,6 +165,7 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_channel_args_destroy(new_client_args);
   grpc_channel_credentials_release(ssl_creds);
   grpc_call_credentials_release(oauth2_creds);
+  grpc_slice_unref(ca_slice);
 }
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {
@@ -193,13 +203,23 @@ static grpc_auth_metadata_processor test_processor_create(int failing) {
 
 static void chttp2_init_server_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
-                                                  test_server1_cert};
+  grpc_slice cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
   grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
       nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   grpc_server_credentials_set_auth_metadata_processor(
       ssl_creds, test_processor_create(fail_server_auth_check(server_args)));
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
 }
 
 /* All test configurations */
