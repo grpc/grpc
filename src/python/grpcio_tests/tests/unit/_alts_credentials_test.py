@@ -37,7 +37,7 @@ class ALTSCredentialsTest(unittest.TestCase):
                      'TODO(https://github.com/grpc/grpc/issues/20078)')
     def test_alts(self):
         server_addr = 'localhost:{}'
-        channel_creds = grpc.alts_channel_credentials()
+        channel_creds = grpc.alts_channel_credentials(['svcacct@server.com'])
         server_creds = grpc.alts_server_credentials()
 
         server = self._create_server()

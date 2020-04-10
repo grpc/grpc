@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 def _spawn_callback_in_thread(cb_func, args):
   t = ForkManagedThread(target=cb_func, args=args)
   t.setDaemon(True)

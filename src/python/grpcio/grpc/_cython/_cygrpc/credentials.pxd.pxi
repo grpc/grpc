@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 cdef class CallCredentials:
 
   cdef grpc_call_credentials *c(self) except *
