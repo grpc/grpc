@@ -646,7 +646,7 @@ def create_url_map(gcp, name, backend_service, host_name):
     gcp.url_map = GcpResource(config['name'], result['targetLink'])
 
 
-def patch_url_map_host_rule(gcp, name, backend_service, host_name):
+def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
     config = {
         'hostRules': [{
             'hosts': ['%s:%d' % (host_name, gcp.service_port)],
@@ -1007,8 +1007,10 @@ try:
         if not gcp.service_port:
             raise Exception(
                 'Failed to find a valid ip:port for the forwarding rule')
-        patch_url_map_host_rule(gcp, url_map_name, backend_service,
-                                service_host_name)
+        if gcp.service_port != _DEFAULT_SERVICE_PORT:
+            patch_url_map_host_rule_with_port(gcp, url_map_name,
+                                              backend_service,
+                                              service_host_name)
         startup_script = get_startup_script(args.path_to_server_binary,
                                             gcp.service_port)
         create_instance_template(gcp, template_name, args.network,
