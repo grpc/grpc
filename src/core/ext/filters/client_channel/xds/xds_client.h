@@ -241,6 +241,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   const grpc_millis request_timeout_;
 
+  const bool xds_routing_enabled_;
+
   Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
 

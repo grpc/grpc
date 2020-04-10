@@ -1245,7 +1245,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
       (xds_client->lds_result_.has_value()
            ? xds_client->lds_result_->route_config_name
            : ""),
-      ads_calld->ClusterNamesForRequest(),
+      xds_client->xds_routing_enabled_, ads_calld->ClusterNamesForRequest(),
       ads_calld->EdsServiceNamesForRequest(), &lds_update, &rds_update,
       &cds_update_map, &eds_update_map, &version, &nonce, &type_url);
   grpc_slice_unref_internal(response_slice);
@@ -1820,6 +1820,11 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
       {15000, 0, INT_MAX});
 }
 
+bool GetXdsRoutingEnabled(const grpc_channel_args& args) {
+  return grpc_channel_args_find_integer(&args, GRPC_ARG_XDS_ROUTING_ENABLED,
+                                        {0, 0, 1});
+}
+
 }  // namespace
 
 XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
@@ -1828,6 +1833,7 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
       request_timeout_(GetRequestTimeout(channel_args)),
+      xds_routing_enabled_(GetXdsRoutingEnabled(channel_args)),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(

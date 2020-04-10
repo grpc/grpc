@@ -358,6 +358,8 @@ typedef struct {
  * The default is 15 seconds. */
 #define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
   "grpc.xds_resource_does_not_exist_timeout_ms"
+/* if set, enable xds routing policy */
+#define GRPC_ARG_XDS_ROUTING_ENABLED "grpc.xds_routing_enabled"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"

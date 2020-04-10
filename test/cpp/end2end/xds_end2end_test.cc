@@ -1187,7 +1187,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void ResetStub(int fallback_timeout = 0, int failover_timeout = 0,
                  const grpc::string& expected_targets = "",
-                 int xds_resource_does_not_exist_timeout = 0) {
+                 int xds_resource_does_not_exist_timeout = 0,
+                 int xds_routing_enabled = false) {
     ChannelArguments args;
     // TODO(juanlishen): Add setter to ChannelArguments.
     if (fallback_timeout > 0) {
@@ -1199,6 +1200,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (xds_resource_does_not_exist_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
                   xds_resource_does_not_exist_timeout);
+    }
+    if (xds_routing_enabled) {
+      args.SetInt(GRPC_ARG_XDS_ROUTING_ENABLED, 1);
     }
     // If the parent channel is using the fake resolver, we inject the
     // response generator for the parent here, and then SetNextResolution()
@@ -2178,11 +2182,13 @@ TEST_P(LdsTest, ChooseMatchedDomain) {
             AdsServiceImpl::ACKED);
 }
 
-// Tests that the LDS client should NACK when the last route is not a default
-// route.
-TEST_P(LdsTest, DefaultRouteInvalid) {
+// Tests that LDS client should choose the last route in the virtual host if
+// multiple routes exist in the LDS response.
+TEST_P(LdsTest, ChooseLastRoute) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
+  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
+      route_config.virtual_hosts(0).routes(0);
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
@@ -2193,7 +2199,7 @@ TEST_P(LdsTest, DefaultRouteInvalid) {
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+            AdsServiceImpl::ACKED);
 }
 
 // Tests that LDS client should send a NACK if route match has non-empty prefix
@@ -2259,6 +2265,7 @@ TEST_P(LdsTest, Timeout) {
 // Tests that LDS client should choose the default route (with no matching
 // specified) after unable to find a match with previous routes.
 TEST_P(LdsTest, XdsRoutingPathMatching) {
+  ResetStub(0, 0, "", 0, 1);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumRpcs = 10;
@@ -2331,6 +2338,7 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
 }
 
 TEST_P(LdsTest, XdsRoutingPrefixMatching) {
+  ResetStub(0, 0, "", 0, 1);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumRpcs = 10;
@@ -2393,6 +2401,7 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
 // Tests that LDS client should choose the default route (with no matching
 // specified) after unable to find a match with previous routes.
 TEST_P(LdsTest, XdsRoutingDefaultRoute) {
+  ResetStub(0, 0, "", 0, 1);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumRpcs = 10;
@@ -2507,12 +2516,14 @@ TEST_P(RdsTest, ChooseMatchedDomain) {
             AdsServiceImpl::ACKED);
 }
 
-// Tests that the RDS client should NACK when the last route is not a default
-// route.
-TEST_P(RdsTest, DefaultRouteInvalid) {
+// Tests that RDS client should choose the last route in the virtual host if
+// multiple routes exist in the RDS response.
+TEST_P(RdsTest, ChooseLastRoute) {
   balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
+  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
+      route_config.virtual_hosts(0).routes(0);
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
@@ -2523,7 +2534,7 @@ TEST_P(RdsTest, DefaultRouteInvalid) {
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::NACKED);
+            AdsServiceImpl::ACKED);
 }
 
 // Tests that RDS client should send a NACK if route match has non-empty prefix

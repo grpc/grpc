@@ -141,13 +141,6 @@ void ServerTryCancel(ServerContext* context) {
   }
 }
 
-void ServerTryCancelNonblocking(experimental::CallbackServerContext* context) {
-  EXPECT_FALSE(context->IsCancelled());
-  context->TryCancel();
-  gpr_log(GPR_INFO,
-          "Server called TryCancelNonblocking() to cancel the request");
-}
-
 }  // namespace
 
 class TestMultipleServiceSignaller {

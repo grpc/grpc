@@ -257,6 +257,7 @@ class XdsApi {
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
       const std::string& expected_route_config_name,
+      const bool xds_routing_enabled,
       const std::set<StringView>& expected_cluster_names,
       const std::set<StringView>& expected_eds_service_names,
       absl::optional<LdsUpdate>* lds_update,
