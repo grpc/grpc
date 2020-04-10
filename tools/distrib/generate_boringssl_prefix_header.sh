@@ -32,10 +32,10 @@ BORINGSSL_COMMIT=$(git rev-parse HEAD)
 BORINGSSL_PREFIX_HEADERS_DIR=src/boringssl
 
 # generate the prefix header
+rm -rf build
 mkdir -p build
 cd build
 cmake ..
-make clean
 make -j
 
 [ -f ssl/libssl.a ] || { echo "Failed to build libssl.a" ; exit 1 ; }
