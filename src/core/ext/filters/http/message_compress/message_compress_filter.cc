@@ -220,8 +220,7 @@ class CallData {
   // It is initialized during construction and reset when a new stream is
   // created using it.
   grpc_slice_buffer recv_slices_;
-  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream>
-      recv_replacement_stream_;
+  absl::optional<grpc_core::SliceBufferByteStream> recv_replacement_stream_;
   // Fields for handling recv_trailing_metadata_ready callback
   bool seen_recv_trailing_metadata_ready_ = false;
   grpc_closure on_recv_trailing_metadata_ready_;
@@ -558,7 +557,8 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error* error) {
 
 void CallData::ContinueReadingRecvMessage() {
   while ((*recv_message_)
-             ->Next(~static_cast<size_t>(0), &on_recv_message_next_done_)) {
+             ->Next((*recv_message_)->length() - recv_slices_.length,
+                    &on_recv_message_next_done_)) {
     grpc_error* error = PullSliceFromRecvMessage();
     if (error != GRPC_ERROR_NONE) {
       return ContinueRecvMessageReadyCallback(error);
@@ -617,8 +617,8 @@ void CallData::FinishRecvMessage() {
     // batch down.
     // Initializing recv_replacement_stream_ with decompressed_slices removes
     // all the slices from decompressed_slices leaving it empty.
-    recv_replacement_stream_.Init(&decompressed_slices, recv_flags);
-    recv_message_->reset(recv_replacement_stream_.get());
+    recv_replacement_stream_.emplace(&decompressed_slices, recv_flags);
+    recv_message_->reset(&recv_replacement_stream_.value());
     recv_message_ = nullptr;
   }
   ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
