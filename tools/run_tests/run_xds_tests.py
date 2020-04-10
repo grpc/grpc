@@ -749,7 +749,7 @@ def delete_target_proxy(gcp):
                 project=gcp.project,
                 targetGrpcProxy=gcp.target_proxy.name).execute()
         else:
-            result = gcp.alpha_compute.targetHttpProxies().delete(
+            result = gcp.compute.targetHttpProxies().delete(
                 project=gcp.project,
                 targetHttpProxy=gcp.target_proxy.name).execute()
         wait_for_global_operation(gcp, result['name'])
