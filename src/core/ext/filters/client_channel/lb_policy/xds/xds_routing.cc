@@ -244,8 +244,7 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
 // XdsRoutingLb
 //
 
-XdsRoutingLb::XdsRoutingLb(Args args)
-    : LoadBalancingPolicy(std::move(args)) {}
+XdsRoutingLb::XdsRoutingLb(Args args) : LoadBalancingPolicy(std::move(args)) {}
 
 XdsRoutingLb::~XdsRoutingLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
@@ -379,9 +378,10 @@ void XdsRoutingLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      picker = absl::make_unique<TransientFailurePicker>(
-          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("TRANSIENT_FAILURE from XdsRoutingLb"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+      picker = absl::make_unique<TransientFailurePicker>(grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "TRANSIENT_FAILURE from XdsRoutingLb"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
   }
   channel_control_helper()->UpdateState(connectivity_state, std::move(picker));
 }
