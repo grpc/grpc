@@ -182,6 +182,10 @@ argp.add_argument('--log_client_output',
                   help='Log captured client output',
                   default=False,
                   action='store_true')
+argp.add_argument('--only_stable_gcp_apis',
+                  help='Do not use alpha compute APIs',
+                  default=False,
+                  action='store_true')
 args = argp.parse_args()
 
 if args.verbose:
@@ -577,16 +581,27 @@ def add_instance_group(gcp, zone, name, size):
 
 
 def create_health_check(gcp, name):
-    config = {
-        'name': name,
-        'type': 'GRPC',
-        'grpcHealthCheck': {
-            'portSpecification': 'USE_SERVING_PORT'
+    if gcp.alpha_compute:
+        config = {
+            'name': name,
+            'type': 'GRPC',
+            'grpcHealthCheck': {
+                'portSpecification': 'USE_SERVING_PORT'
+            }
         }
-    }
+        compute_to_use = gcp.alpha_compute
+    else:
+        config = {
+            'name': name,
+            'type': 'TCP',
+            'tcpHealthCheck': {
+                'portName': 'grpc'
+            }
+        }
+        compute_to_use = gcp.compute
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.alpha_compute.healthChecks().insert(project=gcp.project,
-                                                     body=config).execute()
+    result = compute_to_use.healthChecks().insert(project=gcp.project,
+                                                  body=config).execute()
     wait_for_global_operation(gcp, result['name'])
     gcp.health_check = GcpResource(config['name'], result['targetLink'])
 
@@ -610,15 +625,21 @@ def create_health_check_firewall_rule(gcp, name):
 
 
 def add_backend_service(gcp, name):
+    if gcp.alpha_compute:
+        protocol = 'GRPC'
+        compute_to_use = gcp.alpha_compute
+    else:
+        protocol = 'HTTP2'
+        compute_to_use = gcp.compute
     config = {
         'name': name,
         'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
         'healthChecks': [gcp.health_check.url],
         'portName': 'grpc',
-        'protocol': 'GRPC'
+        'protocol': protocol
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.alpha_compute.backendServices().insert(project=gcp.project,
+    result = compute_to_use.backendServices().insert(project=gcp.project,
                                                         body=config).execute()
     wait_for_global_operation(gcp, result['name'])
     backend_service = GcpResource(config['name'], result['targetLink'])
@@ -660,20 +681,33 @@ def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
     wait_for_global_operation(gcp, result['name'])
 
 
-def create_target_grpc_proxy(gcp, name):
-    config = {
-        'name': name,
-        'url_map': gcp.url_map.url,
-        'validate_for_proxyless': True,
-    }
-    logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.alpha_compute.targetGrpcProxies().insert(
-        project=gcp.project, body=config).execute()
+def create_target_proxy(gcp, name):
+    if gcp.alpha_compute:
+        config = {
+            'name': name,
+            'url_map': gcp.url_map.url,
+            'validate_for_proxyless': True,
+        }
+        logger.debug('Sending GCP request with body=%s', config)
+        result = gcp.alpha_compute.targetGrpcProxies().insert(
+            project=gcp.project, body=config).execute()
+    else:
+        config = {
+            'name': name,
+            'url_map': gcp.url_map.url,
+        }
+        logger.debug('Sending GCP request with body=%s', config)
+        result = gcp.compute.targetHttpProxies().insert(project=gcp.project,
+                                                        body=config).execute()
     wait_for_global_operation(gcp, result['name'])
-    gcp.target_grpc_proxy = GcpResource(config['name'], result['targetLink'])
+    gcp.target_proxy = GcpResource(config['name'], result['targetLink'])
 
 
 def create_global_forwarding_rule(gcp, name, potential_ports):
+    if gcp.alpha_compute:
+        compute_to_use = gcp.alpha_compute
+    else:
+        compute_to_use = gcp.compute
     for port in potential_ports:
         try:
             config = {
@@ -682,10 +716,10 @@ def create_global_forwarding_rule(gcp, name, potential_ports):
                 'portRange': str(port),
                 'IPAddress': '0.0.0.0',
                 'network': args.network,
-                'target': gcp.target_grpc_proxy.url,
+                'target': gcp.target_proxy.url,
             }
             logger.debug('Sending GCP request with body=%s', config)
-            result = gcp.alpha_compute.globalForwardingRules().insert(
+            result = compute_to_use.globalForwardingRules().insert(
                 project=gcp.project, body=config).execute()
             wait_for_global_operation(gcp, result['name'])
             gcp.global_forwarding_rule = GcpResource(config['name'],
@@ -708,11 +742,16 @@ def delete_global_forwarding_rule(gcp):
         logger.info('Delete failed: %s', http_error)
 
 
-def delete_target_grpc_proxy(gcp):
+def delete_target_proxy(gcp):
     try:
-        result = gcp.alpha_compute.targetGrpcProxies().delete(
-            project=gcp.project,
-            targetGrpcProxy=gcp.target_grpc_proxy.name).execute()
+        if gcp.alpha_compute:
+            result = gcp.alpha_compute.targetGrpcProxies().delete(
+                project=gcp.project,
+                targetGrpcProxy=gcp.target_proxy.name).execute()
+        else:
+            result = gcp.alpha_compute.targetHttpProxies().delete(
+                project=gcp.project,
+                targetHttpProxy=gcp.target_proxy.name).execute()
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -786,6 +825,10 @@ def patch_backend_instances(gcp,
                             backend_service,
                             instance_groups,
                             balancing_mode='UTILIZATION'):
+    if gcp.alpha_compute:
+        compute_to_use = gcp.alpha_compute
+    else:
+        compute_to_use = gcp.compute
     config = {
         'backends': [{
             'group': instance_group.url,
@@ -794,7 +837,7 @@ def patch_backend_instances(gcp,
         } for instance_group in instance_groups],
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.alpha_compute.backendServices().patch(
+    result = compute_to_use.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
         body=config).execute()
     wait_for_global_operation(gcp,
@@ -922,8 +965,8 @@ def get_instance_names(gcp, instance_group):
 def clean_up(gcp):
     if gcp.global_forwarding_rule:
         delete_global_forwarding_rule(gcp)
-    if gcp.target_grpc_proxy:
-        delete_target_grpc_proxy(gcp)
+    if gcp.target_proxy:
+        delete_target_proxy(gcp)
     if gcp.url_map:
         delete_url_map(gcp)
     delete_backend_services(gcp)
@@ -961,23 +1004,25 @@ class GcpState(object):
         self.health_check_firewall_rule = None
         self.backend_services = []
         self.url_map = None
-        self.target_grpc_proxy = None
+        self.target_proxy = None
         self.global_forwarding_rule = None
         self.service_port = None
         self.instance_template = None
         self.instance_groups = []
 
-
+alpha_compute = None
 if args.compute_discovery_document:
     with open(args.compute_discovery_document, 'r') as discovery_doc:
         compute = googleapiclient.discovery.build_from_document(
             discovery_doc.read())
-    with open(args.alpha_compute_discovery_document, 'r') as discovery_doc:
-        alpha_compute = googleapiclient.discovery.build_from_document(
-            discovery_doc.read())
+    if not args.only_stable_gcp_apis and args.alpha_compute_discovery_document:
+        with open(args.alpha_compute_discovery_document, 'r') as discovery_doc:
+            alpha_compute = googleapiclient.discovery.build_from_document(
+                discovery_doc.read())
 else:
     compute = googleapiclient.discovery.build('compute', 'v1')
-    alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
+    if not args.only_stable_gcp_apis:
+        alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
 try:
     gcp = GcpState(compute, alpha_compute, args.project_id)
@@ -987,7 +1032,7 @@ try:
     alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + args.gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + args.gcp_suffix
     service_host_name = _BASE_SERVICE_HOST + args.gcp_suffix
-    target_grpc_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
+    target_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
     forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + args.gcp_suffix
     template_name = _BASE_TEMPLATE_NAME + args.gcp_suffix
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + args.gcp_suffix
@@ -1001,7 +1046,7 @@ try:
         alternate_backend_service = add_backend_service(
             gcp, alternate_backend_service_name)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
-        create_target_grpc_proxy(gcp, target_grpc_proxy_name)
+        create_target_proxy(gcp, target_proxy_name)
         potential_service_ports = list(args.service_port_range)
         random.shuffle(potential_service_ports)
         create_global_forwarding_rule(gcp, forwarding_rule_name,
