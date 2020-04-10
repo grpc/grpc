@@ -9,7 +9,7 @@
 
     import gzip, shutil, os, base64
     # TODO(mxyan): move to python3 style gzip compression when possible
-    with open('src/boringssl/boringssl_prefix_symbols.h', 'rb') as f_in, gzip.open('src/boringssl/boringssl_prefix_symbols.h.gz', 'wb') as f_out:
+    with open('src/boringssl/boringssl_prefix_symbols.h', 'rb') as f_in, gzip.GzipFile('src/boringssl/boringssl_prefix_symbols.h.gz', 'w', mtime=0.0) as f_out:
       shutil.copyfileobj(f_in, f_out)
     with open('src/boringssl/boringssl_prefix_symbols.h.gz', 'rb') as f_in:
       prefix_gz = f_in.read()
