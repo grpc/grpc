@@ -255,6 +255,7 @@ py_binary(
         "python/data_transmission/alts_server.py",
         "python/data_transmission/demo_pb2.py",
         "python/data_transmission/demo_pb2_grpc.py",
+        "python/data_transmission/server.py",
     ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
@@ -268,6 +269,7 @@ py_binary(
     main = "alts_client.py",
     srcs = [
         "python/data_transmission/alts_client.py",
+        "python/data_transmission/client.py",
         "python/data_transmission/demo_pb2.py",
         "python/data_transmission/demo_pb2_grpc.py",
     ],
