@@ -171,8 +171,13 @@ typedef struct {
  * channel goes back into IDLE state. Int valued, milliseconds. INT_MAX means
  * unlimited. The default value is 30 minutes and the min value is 1 second. */
 #define GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS "grpc.client_idle_timeout_ms"
-/** Enable/disable support for per-message compression. Defaults to 1, unless
-    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
+/** Enable/disable support for per-message compression/decompression. Defaults
+   to 1, unless GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to
+   0. If disabled, decompression will be performed lazily by
+    grpc_byte_buffer_reader. This arg also determines whether max message limits
+    will be applied to the decompressed buffer or the non-decompressed buffer.
+   It is recommended to keep this enabled to protect against zip bomb attacks.
+ */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
 /** Experimental Arg. Enable/disable support for per-message decompression.
    Defaults to 1, unless GRPC_ARG_MINIMAL_STACK is enabled, in which case it
