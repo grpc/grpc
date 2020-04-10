@@ -797,7 +797,9 @@ def patch_backend_instances(gcp,
     result = gcp.alpha_compute.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
         body=config).execute()
-    wait_for_global_operation(gcp, result['name'])
+    wait_for_global_operation(gcp,
+                              result['name'],
+                              timeout_sec=_WAIT_FOR_BACKEND_SEC)
 
 
 def resize_instance_group(gcp,
