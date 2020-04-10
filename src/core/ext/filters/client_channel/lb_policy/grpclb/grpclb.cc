@@ -788,8 +788,10 @@ void GrpcLb::BalancerCallState::Orphan() {
 void GrpcLb::BalancerCallState::StartQuery() {
   GPR_ASSERT(lb_call_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-    gpr_log(GPR_INFO, "[grpclb %p] lb_calld=%p: Starting LB call %p",
-            grpclb_policy_.get(), this, lb_call_);
+    char* peer_string = grpc_call_get_peer(lb_call_);
+    gpr_log(GPR_INFO, "[grpclb %p] peer=%s lb_calld=%p: Starting LB call %p",
+            grpclb_policy_.get(), peer_string, this, lb_call_);
+    gpr_free(peer_string);
   }
   // Create the ops.
   grpc_call_error call_error;
