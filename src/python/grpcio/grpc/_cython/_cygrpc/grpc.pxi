@@ -618,6 +618,7 @@ cdef extern from "grpc/grpc_security.h":
   grpc_alts_credentials_options* grpc_alts_credentials_client_options_create()
   grpc_alts_credentials_options* grpc_alts_credentials_server_options_create()
   void grpc_alts_credentials_options_destroy(grpc_alts_credentials_options *options)
+  void grpc_alts_credentials_client_options_add_target_service_account(grpc_alts_credentials_options *options, const char *service_account)
 
 
 

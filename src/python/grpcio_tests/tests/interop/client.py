@@ -107,7 +107,7 @@ def get_secure_channel_parameters(args):
                 args.server_host_override,
             ),)
     else args.use_alts:
-        channel_credentials = grpc.alts_channel_credentials()
+        channel_credentials = grpc.alts_channel_credentials(['svc_account1@gmail.com'])
 
     return channel_credentials, channel_opts
 

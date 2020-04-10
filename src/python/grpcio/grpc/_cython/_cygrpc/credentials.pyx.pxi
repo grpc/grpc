@@ -354,8 +354,10 @@ def server_credentials_local(grpc_local_connect_type local_connect_type):
 
 cdef class ALTSChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self):
+  def __cinit__(self, service_accounts):
     self.c_options = grpc_alts_credentials_client_options_create()
+    for account in service_accounts:
+      grpc_alts_credentials_client_options_add_target_service_account(self.c_options, account)
  
   def __dealloc__(self):
     if self.c_options != NULL:
@@ -365,8 +367,8 @@ cdef class ALTSChannelCredentials(ChannelCredentials):
     return grpc_alts_credentials_create(self.c_options)
     
 
-def channel_credentials_alts():
-  return ALTSChannelCredentials()
+def channel_credentials_alts(service_accounts):
+  return ALTSChannelCredentials(service_accounts)
 
 
 def server_credentials_alts():
