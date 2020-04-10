@@ -2772,7 +2772,6 @@ static void init_keepalive_ping(void* arg, grpc_error* error) {
 
 static void init_keepalive_ping_locked(void* arg, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
-
   GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
   if (t->destroying || t->closed_with_error != GRPC_ERROR_NONE) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
