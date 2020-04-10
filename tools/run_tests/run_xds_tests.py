@@ -640,7 +640,7 @@ def add_backend_service(gcp, name):
     }
     logger.debug('Sending GCP request with body=%s', config)
     result = compute_to_use.backendServices().insert(project=gcp.project,
-                                                        body=config).execute()
+                                                     body=config).execute()
     wait_for_global_operation(gcp, result['name'])
     backend_service = GcpResource(config['name'], result['targetLink'])
     gcp.backend_services.append(backend_service)
@@ -1009,6 +1009,7 @@ class GcpState(object):
         self.service_port = None
         self.instance_template = None
         self.instance_groups = []
+
 
 alpha_compute = None
 if args.compute_discovery_document:
