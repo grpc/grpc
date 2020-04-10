@@ -2312,11 +2312,11 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
   mismatched_route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
-  default_route->mutable_match()->set_path("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  CheckRpcSendOk(kNumRpcs, 1000, true);
   CheckEcho1RpcSendOk(kNumRpcs, 1000, true);
   CheckEcho2RpcSendOk(kNumRpcs, 1000, true);
   // Make sure RPCs all go to the correct backend.
@@ -2330,7 +2330,7 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
       EXPECT_EQ(0, backends_[i]->backend1_service()->request_count());
       EXPECT_EQ(kNumRpcs, backends_[i]->backend2_service()->request_count());
     } else {
-      EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+      EXPECT_EQ(kNumRpcs / 2, backends_[i]->backend_service()->request_count());
       EXPECT_EQ(0, backends_[i]->backend1_service()->request_count());
       EXPECT_EQ(0, backends_[i]->backend2_service()->request_count());
     }
@@ -2378,7 +2378,6 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   matched_route->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
-  default_route->mutable_match()->set_path("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
@@ -2394,73 +2393,6 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
       EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
       EXPECT_EQ(0, backends_[i]->backend1_service()->request_count());
       EXPECT_EQ(0, backends_[i]->backend2_service()->request_count());
-    }
-  }
-}
-
-// Tests that LDS client should choose the default route (with no matching
-// specified) after unable to find a match with previous routes.
-TEST_P(LdsTest, XdsRoutingDefaultRoute) {
-  ResetStub(0, 0, "", 0, 1);
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const size_t kNumRpcs = 10;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 2)},
-  });
-  AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(2, 3)},
-  });
-  AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(3, 4)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name),
-      kNewCluster1Name);
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name),
-      kNewCluster2Name);
-  // Populate new CDS resources.
-  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
-  new_cluster1.set_name(kNewCluster1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1, kNewCluster1Name);
-  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
-  new_cluster2.set_name(kNewCluster2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
-  // Change RDS resource to set up prefix matching and path matching that do
-  // match the traffic, so traffic goes to the default cluster.
-  RouteConfiguration new_route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* mismatched_route1 =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  mismatched_route1->mutable_match()->set_prefix(
-      "/grpc.testing.EchoTestService0");
-  mismatched_route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* mismatched_route2 =
-      new_route_config.mutable_virtual_hosts(0)->add_routes();
-  mismatched_route2->mutable_match()->set_path(
-      "/grpc.testing.EchoTestService/Echo1");
-  mismatched_route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_match()->set_path("");
-  default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  Listener listener =
-      balancers_[0]->ads_service()->BuildListener(new_route_config);
-  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
-  WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumRpcs);
-  // Make sure RPCs all go to the correct backend.
-  for (size_t i = 0; i < 4; ++i) {
-    if (i < 2) {
-      EXPECT_EQ(kNumRpcs / 2, backends_[i]->backend_service()->request_count());
-    } else {
-      EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
     }
   }
 }
@@ -2783,7 +2715,7 @@ TEST_P(LocalityMapTest, NoLocalities) {
 
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
-/*TEST_P(LocalityMapTest, StressTest) {
+TEST_P(LocalityMapTest, StressTest) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumLocalities = 100;
@@ -2807,13 +2739,13 @@ TEST_P(LocalityMapTest, NoLocalities) {
       AdsServiceImpl::BuildEdsResource(args), 60 * 1000, kDefaultResourceName));
   // Wait until backend 0 is ready, before which kNumLocalities localities are
   // received and handled by the xds policy.
-  WaitForBackend(0, /*reset_counters=*false);
+  WaitForBackend(0, /*reset_counters=*/false);
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // Wait until backend 1 is ready, before which kNumLocalities localities are
   // removed by the xds policy.
   WaitForBackend(1);
   delayed_resource_setter.join();
-}*/
+}
 
 // Tests that the localities in a locality map are picked correctly after update
 // (addition, modification, deletion).

@@ -903,10 +903,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"));
     if (lds_update->rds_update.has_value()) {
-      gpr_log(GPR_INFO,
-              " [xds_client %p] LDS update received; LDS RouteConfiguration "
-              "contains %lu routes",
-              this, lds_update->rds_update.value().routes.size());
+      gpr_log(GPR_INFO, "  RouteConfiguration contains %lu routes", this,
+              lds_update->rds_update.value().routes.size());
       for (const auto& route : lds_update->rds_update.value().routes) {
         gpr_log(GPR_INFO,
                 "  route: { service=\"%s\", "
@@ -2061,29 +2059,29 @@ void XdsClient::ResetBackoff() {
 
 namespace {
 std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
-  return (
-      absl::StrFormat("      \"cds:%s\":{\n"
-                      "        \"child_policy\":[ {\n"
-                      "          \"cds_experimental\":{\n"
-                      "            \"cluster\": \"%s\"\n"
-                      "          }\n"
-                      "        } ]\n"
-                      "       }",
-                      cluster_name.c_str(), cluster_name.c_str()));
+  return absl::StrFormat(
+      "      \"cds:%s\":{\n"
+      "        \"child_policy\":[ {\n"
+      "          \"cds_experimental\":{\n"
+      "            \"cluster\": \"%s\"\n"
+      "          }\n"
+      "        } ]\n"
+      "       }",
+      cluster_name.c_str(), cluster_name.c_str());
 }
 
 std::string CreateServiceConfigRoute(const std::string& cluster_name,
                                      const std::string& service,
                                      const std::string& method) {
-  return (
-      absl::StrFormat("      { \n"
-                      "         \"methodName\": {\n"
-                      "           \"service\": \"%s\",\n"
-                      "           \"method\": \"%s\"\n"
-                      "        },\n"
-                      "        \"action\": \"cds:%s\"\n"
-                      "      }",
-                      service.c_str(), method.c_str(), cluster_name.c_str()));
+  return absl::StrFormat(
+      "      { \n"
+      "         \"methodName\": {\n"
+      "           \"service\": \"%s\",\n"
+      "           \"method\": \"%s\"\n"
+      "        },\n"
+      "        \"action\": \"cds:%s\"\n"
+      "      }",
+      service.c_str(), method.c_str(), cluster_name.c_str());
 }
 }  // namespace
 
