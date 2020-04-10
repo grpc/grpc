@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Iterable, Optional, Sequence, Union
 
 import grpc
 from grpc import _common, _compression, _grpcio_metadata
@@ -25,13 +25,19 @@ from . import _base_call, _base_channel
 from ._call import (StreamStreamCall, StreamUnaryCall, UnaryStreamCall,
                     UnaryUnaryCall)
 from ._interceptor import (InterceptedUnaryUnaryCall,
-                           UnaryUnaryClientInterceptor)
+                           InterceptedUnaryStreamCall,
+                           ClientInterceptor,
+                           UnaryUnaryClientInterceptor,
+                           UnaryStreamClientInterceptor,
+                           StreamUnaryClientInterceptor,
+                           StreamStreamClientInterceptor)
 from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
                       SerializingFunction, RequestIterableType)
 from ._utils import _timeout_to_deadline
 
 _IMMUTABLE_EMPTY_TUPLE = tuple()
 _USER_AGENT = 'grpc-python-asyncio/{}'.format(_grpcio_metadata.__version__)
+
 
 if sys.version_info[1] < 7:
 
@@ -65,7 +71,7 @@ class _BaseMultiCallable:
     _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
-    _interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
+    _interceptors: Sequence[ClientInterceptor]
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -75,7 +81,7 @@ class _BaseMultiCallable:
             method: bytes,
             request_serializer: SerializingFunction,
             response_deserializer: DeserializingFunction,
-            interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]],
+            interceptors: Sequence[ClientInterceptor],
             loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -134,11 +140,18 @@ class UnaryStreamMultiCallable(_BaseMultiCallable,
 
         deadline = _timeout_to_deadline(timeout)
 
-        call = UnaryStreamCall(request, deadline, metadata, credentials,
-                               wait_for_ready, self._channel, self._method,
-                               self._request_serializer,
-                               self._response_deserializer, self._loop)
-
+        if not self._interceptors:
+            call = UnaryStreamCall(request, deadline, metadata, credentials,
+                                   wait_for_ready, self._channel, self._method,
+                                   self._request_serializer,
+                                   self._response_deserializer, self._loop)
+        else:
+            call = InterceptedUnaryStreamCall(
+                self._interceptors, request, deadline, metadata, credentials,
+                wait_for_ready, self._channel, self._method,
+                self._request_serializer,
+                self._response_deserializer, self._loop)
+ 
         return call
 
 
@@ -193,12 +206,15 @@ class StreamStreamMultiCallable(_BaseMultiCallable,
 class Channel(_base_channel.Channel):
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _unary_unary_interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
+    _unary_unary_interceptors: Sequence[UnaryUnaryClientInterceptor]
+    _unary_stream_interceptors: Sequence[UnaryStreamClientInterceptor]
+    _stream_unary_interceptors: Sequence[StreamUnaryClientInterceptor]
+    _stream_stream_interceptors: Sequence[StreamStreamClientInterceptor]
 
     def __init__(self, target: str, options: ChannelArgumentType,
                  credentials: Optional[grpc.ChannelCredentials],
                  compression: Optional[grpc.Compression],
-                 interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]):
+                 interceptors: Optional[Sequence[ClientInterceptor]]):
         """Constructor.
 
         Args:
@@ -210,22 +226,39 @@ class Channel(_base_channel.Channel):
           interceptors: An optional list of interceptors that would be used for
             intercepting any RPC executed with that channel.
         """
-        if interceptors is None:
-            self._unary_unary_interceptors = None
-        else:
-            self._unary_unary_interceptors = list(
-                filter(
-                    lambda interceptor: isinstance(interceptor,
-                                                   UnaryUnaryClientInterceptor),
-                    interceptors))
+        self._unary_unary_interceptors = []
+        self._unary_stream_interceptors = []
+        self._stream_unary_interceptors = []
+        self._stream_stream_interceptors = []
+
+        if interceptors:
+            attrs_and_interceptor_classes = [
+                (self._unary_unary_interceptors, UnaryUnaryClientInterceptor),
+                (self._unary_stream_interceptors, UnaryStreamClientInterceptor),
+                (self._stream_unary_interceptors, StreamUnaryClientInterceptor),
+                (self._stream_stream_interceptors, StreamStreamClientInterceptor)
+            ]
+
+            for attr, interceptor_class in attrs_and_interceptor_classes:
+                attr.extend(list(
+                    filter(
+                        lambda interceptor: isinstance(interceptor,
+                                                       interceptor_class),
+                        interceptors)))
 
             invalid_interceptors = set(interceptors) - set(
-                self._unary_unary_interceptors)
+                self._unary_unary_interceptors) - set(
+                self._unary_stream_interceptors) - set(
+                self._stream_unary_interceptors) - set(
+                self._stream_stream_interceptors)
 
             if invalid_interceptors:
                 raise ValueError(
                     "Interceptor must be "+\
-                    "UnaryUnaryClientInterceptors, the following are invalid: {}"\
+                    "UnaryUnaryClientInterceptors or "+\
+                    "UnaryStreamClientInterceptors or "+\
+                    "StreamUnaryClientInterceptors or "+\
+                    "StreamStreamClientInterceptors, the following are invalid: {}"\
                     .format(invalid_interceptors))
 
         self._loop = asyncio.get_event_loop()
@@ -352,7 +385,9 @@ class Channel(_base_channel.Channel):
     ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
-                                        response_deserializer, None, self._loop)
+                                        response_deserializer,
+                                        self._unary_stream_interceptors,
+                                        self._loop)
 
     def stream_unary(
             self,
@@ -404,7 +439,7 @@ def secure_channel(
         credentials: grpc.ChannelCredentials,
         options: Optional[ChannelArgumentType] = None,
         compression: Optional[grpc.Compression] = None,
-        interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]] = None):
+        interceptors: Optional[Sequence[ClientInterceptor]] = None):
     """Creates a secure asynchronous Channel to a server.
 
     Args:
