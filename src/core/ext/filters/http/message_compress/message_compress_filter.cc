@@ -163,7 +163,10 @@ class CallData {
   grpc_linked_mdelem accept_encoding_storage_;
   grpc_linked_mdelem accept_stream_encoding_storage_;
   grpc_slice_buffer slices_; /**< Buffers up input slices to be compressed */
-  absl::optional<grpc_core::SliceBufferByteStream> replacement_stream_;
+  // Allocate space for the replacement stream
+  std::aligned_storage<sizeof(grpc_core::SliceBufferByteStream),
+                       alignof(grpc_core::SliceBufferByteStream)>::type
+      replacement_stream_;
   grpc_closure* original_send_message_on_complete_ = nullptr;
   grpc_closure send_message_on_complete_;
   grpc_closure on_send_message_next_done_;
@@ -334,9 +337,11 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   grpc_slice_buffer_destroy_internal(&tmp);
   // Swap out the original byte stream with our new one and send the
   // batch down.
-  replacement_stream_.emplace(&slices_, send_flags);
+  new (&replacement_stream_)
+      grpc_core::SliceBufferByteStream(&slices_, send_flags);
   send_message_batch_->payload->send_message.send_message.reset(
-      &replacement_stream_.value());
+      reinterpret_cast<grpc_core::SliceBufferByteStream*>(
+          &replacement_stream_));
   original_send_message_on_complete_ = send_message_batch_->on_complete;
   send_message_batch_->on_complete = &send_message_on_complete_;
   SendMessageBatchContinue(elem);

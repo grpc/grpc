@@ -72,7 +72,7 @@ class ByteStream : public Orphanable {
       : length_(length), flags_(flags) {}
 
  private:
-  uint32_t length_;
+  const uint32_t length_;
   uint32_t flags_;
 };
 
