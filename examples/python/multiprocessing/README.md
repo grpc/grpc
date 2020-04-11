@@ -13,8 +13,8 @@ process. See this [excellent research
 paper](https://www.microsoft.com/en-us/research/uploads/prod/2019/04/fork-hotos19.pdf)
 for a thorough discussion of the topic.
 
-Ccalling `fork` without `exec` in your process *is* supported
-*before* any gRPC servers have been instantiated. Application developers can
+Calling `fork` without `exec` in your process *is* supported
+before any gRPC servers have been instantiated. Application developers can
 take advantage of this to parallelize their CPU-intensive operations.
 
 ## Calculating Prime Numbers with Multiple Processes
