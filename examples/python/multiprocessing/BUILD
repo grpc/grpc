@@ -44,6 +44,7 @@ py_binary(
         ":prime_proto_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
     ],
+    imports = ["."],
 )
 
 py_binary(
@@ -60,6 +61,7 @@ py_binary(
         "//conditions:default": ["@futures//:futures"],
         "//:python3": [],
     }),
+    imports = ["."],
 )
 
 py_test(

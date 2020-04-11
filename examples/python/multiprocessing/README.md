@@ -64,3 +64,11 @@ For example,
 ```
 bazel run //examples/python/multiprocessing:client -- [::]:33915
 ```
+
+Alternatively, generate code using the following and then run the client and server
+directly:
+
+```python
+cd examples/python/helloworld
+python -m grpc_tools.protoc -I . prime.proto  --python_out=. --grpc_python_out=.
+```

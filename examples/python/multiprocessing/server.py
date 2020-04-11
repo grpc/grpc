@@ -29,8 +29,8 @@ import sys
 
 import grpc
 
-from examples.python.multiprocessing import prime_pb2
-from examples.python.multiprocessing import prime_pb2_grpc
+import prime_pb2
+import prime_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 
