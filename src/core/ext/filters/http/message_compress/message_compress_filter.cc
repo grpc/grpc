@@ -21,8 +21,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "absl/types/optional.h"
-
 #include <grpc/compression.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -179,26 +177,26 @@ class CallData {
   void MaybeResumeOnRecvTrailingMetadataReady();
   static void OnRecvTrailingMetadataReady(void* arg, grpc_error* error);
 
-  grpc_core::CallCombiner* call_combiner_;
+  CallCombiner* call_combiner_;
   grpc_message_compression_algorithm message_compression_algorithm_ =
       GRPC_MESSAGE_COMPRESS_NONE;
   grpc_error* cancel_error_ = GRPC_ERROR_NONE;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
-  /* Set to true, if the fields below are initialized. */
+  // Set to true, if the fields below are initialized.
   bool state_initialized_ = false;
   grpc_closure start_send_message_batch_in_call_combiner_;
-  /* The fields below are only initialized when we compress the payload.
-   * Keep them at the bottom of the struct, so they don't pollute the
-   * cache-lines. */
+  // The fields below are only initialized when we compress the payload.
+  // Keep them at the bottom of the struct, so they don't pollute the
+  // cache-lines.
   grpc_linked_mdelem message_compression_algorithm_storage_;
   grpc_linked_mdelem stream_compression_algorithm_storage_;
   grpc_linked_mdelem accept_encoding_storage_;
   grpc_linked_mdelem accept_stream_encoding_storage_;
-  grpc_slice_buffer slices_; /**< Buffers up input slices to be compressed */
-  // Allocate space for the replacement stream
-  std::aligned_storage<sizeof(grpc_core::SliceBufferByteStream),
-                       alignof(grpc_core::SliceBufferByteStream)>::type
+  grpc_slice_buffer slices_;  // Buffers up input slices to be compressed
+  // Allocate space for the replacement stream for the outgoing message.
+  std::aligned_storage<sizeof(SliceBufferByteStream),
+                       alignof(SliceBufferByteStream)>::type
       replacement_stream_;
   grpc_closure* original_send_message_on_complete_ = nullptr;
   grpc_closure send_message_on_complete_;
@@ -215,12 +213,15 @@ class CallData {
   grpc_closure on_recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
   grpc_closure on_recv_message_next_done_;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_ = nullptr;
+  OrphanablePtr<ByteStream>* recv_message_ = nullptr;
   // recv_slices_ holds the slices read from the original recv_message stream.
   // It is initialized during construction and reset when a new stream is
   // created using it.
   grpc_slice_buffer recv_slices_;
-  absl::optional<grpc_core::SliceBufferByteStream> recv_replacement_stream_;
+  // Allocate space for the replacement stream for the incoming message.
+  std::aligned_storage<sizeof(SliceBufferByteStream),
+                       alignof(SliceBufferByteStream)>::type
+      recv_replacement_stream_;
   // Fields for handling recv_trailing_metadata_ready callback
   bool seen_recv_trailing_metadata_ready_ = false;
   grpc_closure on_recv_trailing_metadata_ready_;
@@ -340,9 +341,8 @@ grpc_error* CallData::ProcessSendInitialMetadata(
 void CallData::SendMessageOnComplete(void* calld_arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(calld_arg);
   grpc_slice_buffer_reset_and_unref_internal(&calld->slices_);
-  grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_send_message_on_complete_,
-                          GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, calld->original_send_message_on_complete_,
+               GRPC_ERROR_REF(error));
 }
 
 void CallData::SendMessageBatchContinue(grpc_call_element* elem) {
@@ -393,11 +393,9 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   grpc_slice_buffer_destroy_internal(&tmp);
   // Swap out the original byte stream with our new one and send the
   // batch down.
-  new (&replacement_stream_)
-      grpc_core::SliceBufferByteStream(&slices_, send_flags);
+  new (&replacement_stream_) SliceBufferByteStream(&slices_, send_flags);
   send_message_batch_->payload->send_message.send_message.reset(
-      reinterpret_cast<grpc_core::SliceBufferByteStream*>(
-          &replacement_stream_));
+      reinterpret_cast<SliceBufferByteStream*>(&replacement_stream_));
   original_send_message_on_complete_ = send_message_batch_->on_complete;
   send_message_batch_->on_complete = &send_message_on_complete_;
   SendMessageBatchContinue(elem);
@@ -516,7 +514,7 @@ void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error* error) {
   calld->MaybeResumeOnRecvTrailingMetadataReady();
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
   calld->original_recv_initial_metadata_ready_ = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
 }
 
 void CallData::MaybeResumeOnRecvMessageReady() {
@@ -617,8 +615,10 @@ void CallData::FinishRecvMessage() {
     // batch down.
     // Initializing recv_replacement_stream_ with decompressed_slices removes
     // all the slices from decompressed_slices leaving it empty.
-    recv_replacement_stream_.emplace(&decompressed_slices, recv_flags);
-    recv_message_->reset(&recv_replacement_stream_.value());
+    new (&recv_replacement_stream_)
+        SliceBufferByteStream(&decompressed_slices, recv_flags);
+    recv_message_->reset(
+        reinterpret_cast<SliceBufferByteStream*>(&recv_replacement_stream_));
     recv_message_ = nullptr;
   }
   ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
@@ -629,7 +629,7 @@ void CallData::ContinueRecvMessageReadyCallback(grpc_error* error) {
   // The surface will clean up the receiving stream if there is an error.
   grpc_closure* closure = original_recv_message_ready_;
   original_recv_message_ready_ = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
+  Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 void CallData::MaybeResumeOnRecvTrailingMetadataReady() {
@@ -658,7 +658,7 @@ void CallData::OnRecvTrailingMetadataReady(void* arg, grpc_error* error) {
   calld->error_ = GRPC_ERROR_NONE;
   grpc_closure* closure = calld->original_recv_trailing_metadata_ready_;
   calld->original_recv_trailing_metadata_ready_ = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
+  Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 void CallData::CompressStartTransportStreamOpBatch(

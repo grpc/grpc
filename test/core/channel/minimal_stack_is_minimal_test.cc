@@ -91,17 +91,15 @@ int main(int argc, char** argv) {
                         "message_size", "connected", NULL);
   errors += CHECK_STACK("unknown", nullptr, GRPC_SERVER_CHANNEL, "server",
                         "message_size", "deadline", "connected", NULL);
-  errors +=
-      CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "authority",
-                  "message_size", "deadline", "http-client",
-                  "message_decompress", "message_compress", "connected", NULL);
-  errors += CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
-                        "message_size", "http-client", "message_decompress",
+  errors += CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_DIRECT_CHANNEL,
+                        "authority", "message_size", "deadline", "http-client",
                         "message_compress", "connected", NULL);
-  errors +=
-      CHECK_STACK("chttp2", nullptr, GRPC_SERVER_CHANNEL, "server",
-                  "message_size", "deadline", "http-server",
-                  "message_decompress", "message_compress", "connected", NULL);
+  errors += CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
+                        "message_size", "http-client", "message_compress",
+                        "connected", NULL);
+  errors += CHECK_STACK("chttp2", nullptr, GRPC_SERVER_CHANNEL, "server",
+                        "message_size", "deadline", "http-server",
+                        "message_compress", "connected", NULL);
   errors += CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL, "client-channel",
                         NULL);
 

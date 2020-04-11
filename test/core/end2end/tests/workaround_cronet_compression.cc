@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/surface/call.h"
@@ -126,6 +127,12 @@ static void request_with_payload_template(
   char request_str[1024];
   char response_str[1024];
 
+  if (!decompress_in_core) {
+    grpc_core::TestOnlyDisableDecompression();
+  } else {
+    grpc_core::TestOnlyEnableDecompression();
+  }
+
   memset(request_str, 'x', 1023);
   request_str[1023] = '\0';
 
@@ -140,22 +147,6 @@ static void request_with_payload_template(
       nullptr, default_client_channel_compression_algorithm);
   server_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, default_server_channel_compression_algorithm);
-  if (!decompress_in_core) {
-    grpc_arg disable_decompression_in_core_arg =
-        grpc_channel_arg_integer_create(
-            const_cast<char*>(
-                GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION_INSIDE_CORE),
-            0);
-    grpc_channel_args* old_client_args = client_args;
-    grpc_channel_args* old_server_args = server_args;
-    client_args = grpc_channel_args_copy_and_add(
-        client_args, &disable_decompression_in_core_arg, 1);
-    server_args = grpc_channel_args_copy_and_add(
-        server_args, &disable_decompression_in_core_arg, 1);
-    grpc_channel_args_destroy(old_client_args);
-    grpc_channel_args_destroy(old_server_args);
-  }
-
   if (user_agent_override) {
     grpc_channel_args* client_args_old = client_args;
     grpc_arg arg;
