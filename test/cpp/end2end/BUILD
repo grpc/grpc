@@ -38,7 +38,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "test_multiple_service_impl",
     testonly = True,
-    hdrs = ["test_multiple_service_impl.h"],
+    hdrs = ["test_service_impl.h"],
     external_deps = [
         "gtest",
     ],

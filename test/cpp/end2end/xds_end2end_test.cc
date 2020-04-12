@@ -57,7 +57,7 @@
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/end2end/test_multiple_service_impl.h"
+#include "test/cpp/end2end/test_service_impl.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
@@ -2316,6 +2316,7 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs, 1000, true);
   CheckEcho1RpcSendOk(kNumRpcs, 1000, true);
   CheckEcho2RpcSendOk(kNumRpcs, 1000, true);

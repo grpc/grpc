@@ -610,7 +610,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     std::vector<grpc_error*> error_list;
     // action map.
     XdsRoutingLbConfig::ActionMap action_map;
-    std::set<std::string /*action_name*/> action_to_be_used;
+    std::set<std::string /*action_name*/> actions_to_be_used;
     auto it = json.object_value().find("actions");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -620,6 +620,11 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "field:actions error:type should be object"));
     } else {
       for (const auto& p : it->second.object_value()) {
+        if (p.first.empty()) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:actions element error: name cannot be empty"));
+          continue;
+        }
         RefCountedPtr<LoadBalancingPolicy::Config> child_config;
         std::vector<grpc_error*> child_errors =
             ParseChildConfig(p.second, &child_config);
@@ -634,7 +639,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           error_list.push_back(error);
         } else {
           action_map[p.first] = std::move(child_config);
-          action_to_be_used.insert(p.first);
+          actions_to_be_used.insert(p.first);
         }
       }
     }
@@ -655,7 +660,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
       for (size_t i = 0; i < array.size(); ++i) {
         XdsRoutingLbConfig::Route route;
         std::vector<grpc_error*> route_errors =
-            ParseRoute(array[i], action_map, &route, &action_to_be_used);
+            ParseRoute(array[i], action_map, &route, &actions_to_be_used);
         if (!route_errors.empty()) {
           // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
           // string is not static in this case.
@@ -680,7 +685,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "default route must not contain service or method");
       error_list.push_back(error);
     }
-    if (!action_to_be_used.empty()) {
+    if (!actions_to_be_used.empty()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "some actions were not referenced by any route"));
     }
@@ -760,7 +765,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
   static std::vector<grpc_error*> ParseRoute(
       const Json& json, const XdsRoutingLbConfig::ActionMap& action_map,
       XdsRoutingLbConfig::Route* route,
-      std::set<std::string /*action_name*/>* action_to_be_used) {
+      std::set<std::string /*action_name*/>* actions_to_be_used) {
     std::vector<grpc_error*> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -790,15 +795,19 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "field:action error:should be of type string"));
     } else {
       route->action = it->second.string_value();
-      // Validate action exists and mark it as used.
-      if (!route->action.empty() &&
-          action_map.find(route->action) == action_map.end()) {
+      if (route->action.empty()) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            absl::StrCat("field:action error:", route->action,
-                         " does not exist")
-                .c_str()));
+            "field:action error:cannot be empty"));
+      } else {
+        // Validate action exists and mark it as used.
+        if (action_map.find(route->action) == action_map.end()) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              absl::StrCat("field:action error:", route->action,
+                           " does not exist")
+                  .c_str()));
+        }
+        actions_to_be_used->erase(route->action);
       }
-      action_to_be_used->erase(route->action);
     }
     return error_list;
   }

@@ -903,7 +903,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"));
     if (lds_update->rds_update.has_value()) {
-      gpr_log(GPR_INFO, "  RouteConfiguration contains %lu routes", this,
+      gpr_log(GPR_INFO, "  RouteConfiguration contains %lu routes",
               lds_update->rds_update.value().routes.size());
       for (const auto& route : lds_update->rds_update.value().routes) {
         gpr_log(GPR_INFO,
@@ -1819,8 +1819,8 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
 }
 
 bool GetXdsRoutingEnabled(const grpc_channel_args& args) {
-  return grpc_channel_args_find_integer(&args, GRPC_ARG_XDS_ROUTING_ENABLED,
-                                        {0, 0, 1});
+  return grpc_channel_args_find_bool(&args, GRPC_ARG_XDS_ROUTING_ENABLED,
+                                     false);
 }
 
 }  // namespace

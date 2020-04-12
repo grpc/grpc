@@ -1013,11 +1013,9 @@ grpc_error* RouteConfigParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No route found in the virtual host.");
   }
-
   // If xds_routing is not configured, only look at the last one in the route
   // list (the default route)
-  size_t start_index = size - 1;
-  if (xds_routing_enabled) start_index = 0;
+  size_t start_index = xds_routing_enabled ? 0 : size - 1;
   for (size_t i = start_index; i < size; ++i) {
     const envoy_api_v2_route_Route* route = routes[i];
     const envoy_api_v2_route_RouteMatch* match =
@@ -1064,6 +1062,10 @@ grpc_error* RouteConfigParse(
     }
     const upb_strview action =
         envoy_api_v2_route_RouteAction_cluster(route_action);
+    if (action.size == 0) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction has empty cluster.");
+    }
     rds_route.cluster_name = std::string(action.data, action.size);
     rds_update->routes.emplace_back(std::move(rds_route));
   }
