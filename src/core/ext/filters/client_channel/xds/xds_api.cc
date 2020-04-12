@@ -1021,21 +1021,25 @@ grpc_error* RouteConfigParse(
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
     XdsApi::RdsRoute rds_route;
-    const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
-    const upb_strview path = envoy_api_v2_route_RouteMatch_path(match);
-    if (prefix.size > 0) {
-      std::vector<absl::string_view> prefix_elements = absl::StrSplit(
-          absl::string_view(prefix.data, prefix.size).substr(1), '/');
-      if (prefix_elements.size() != 1) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Prefix not in the required format of /service/");
+    upb_strview prefix;
+    upb_strview path;
+    if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
+      upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
+      if (prefix.size > 0) {
+        std::vector<absl::string_view> prefix_elements = absl::StrSplit(
+            absl::string_view(prefix.data, prefix.size).substr(1), '/');
+        if (prefix_elements.size() != 1) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Prefix not in the required format of /service/");
+        }
+        rds_route.service = std::string(prefix_elements[0]);
       }
-      rds_route.service = std::string(prefix_elements[0]);
-      if (path.size > 0) {
+    } else if (envoy_api_v2_route_RouteMatch_has_path(match)) {
+      upb_strview path = envoy_api_v2_route_RouteMatch_path(match);
+      if (path.size == 0) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Prefix is not empty string, path cannot also be non-empty.");
+            "Path if set cannot be empty");
       }
-    } else if (path.size > 0) {
       std::vector<absl::string_view> path_elements = absl::StrSplit(
           absl::string_view(path.data, path.size).substr(1), '/');
       if (path_elements.size() != 2) {
@@ -1044,10 +1048,6 @@ grpc_error* RouteConfigParse(
       }
       rds_route.service = std::string(path_elements[0]);
       rds_route.method = std::string(path_elements[1]);
-      if (prefix.size > 0) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path is not empty string, prefix cannot also be non-empty.");
-      }
     }
     if (!envoy_api_v2_route_Route_has_route(route)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
