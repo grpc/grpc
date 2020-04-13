@@ -37,6 +37,7 @@ py_binary(
     name = "client",
     testonly = 1,
     srcs = ["client.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
@@ -44,13 +45,13 @@ py_binary(
         ":prime_proto_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
     ],
-    imports = ["."],
 )
 
 py_binary(
     name = "server",
     testonly = 1,
     srcs = ["server.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
@@ -61,7 +62,6 @@ py_binary(
         "//conditions:default": ["@futures//:futures"],
         "//:python3": [],
     }),
-    imports = ["."],
 )
 
 py_test(
