@@ -1021,8 +1021,6 @@ grpc_error* RouteConfigParse(
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
     XdsApi::RdsRoute rds_route;
-    upb_strview prefix;
-    upb_strview path;
     if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
       upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
       if (prefix.size > 0) {
