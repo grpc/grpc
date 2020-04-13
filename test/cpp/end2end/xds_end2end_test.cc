@@ -2450,7 +2450,7 @@ TEST_P(LocalityMapTest, NoLocalities) {
       AdsServiceImpl::BuildEdsResource({}), kDefaultResourceName);
   Status status = SendRpc();
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
 }
 
 // Tests that the locality map can work properly even when it contains a large
