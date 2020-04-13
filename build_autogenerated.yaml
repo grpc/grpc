@@ -5133,7 +5133,6 @@ targets:
   - posix
 - name: bm_fullstack_streaming_pump
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/fullstack_streaming_pump.h
