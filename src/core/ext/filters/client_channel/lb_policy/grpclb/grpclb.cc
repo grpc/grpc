@@ -788,10 +788,8 @@ void GrpcLb::BalancerCallState::Orphan() {
 void GrpcLb::BalancerCallState::StartQuery() {
   GPR_ASSERT(lb_call_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-    char* peer_string = grpc_call_get_peer(lb_call_);
-    gpr_log(GPR_INFO, "[grpclb %p] peer=%s lb_calld=%p: Starting LB call %p",
-            grpclb_policy_.get(), peer_string, this, lb_call_);
-    gpr_free(peer_string);
+    gpr_log(GPR_INFO, "[grpclb %p] lb_calld=%p: Starting LB call %p",
+            grpclb_policy_.get(), this, lb_call_);
   }
   // Create the ops.
   grpc_call_error call_error;
@@ -990,6 +988,13 @@ void GrpcLb::BalancerCallState::OnInitialRequestSent(void* arg,
 void GrpcLb::BalancerCallState::OnInitialRequestSentLocked(
     void* arg, grpc_error* /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    char* peer_string = grpc_call_get_peer(lb_calld->lb_call_);
+    gpr_log(GPR_INFO, "[grpclb %p] peer=%s lb_calld=%p: Starting LB call %p",
+            lb_calld->grpclb_policy_.get(), peer_string, lb_calld,
+            lb_calld->lb_call_);
+    gpr_free(peer_string);
+  }
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
   // If we attempted to send a client load report before the initial request was
