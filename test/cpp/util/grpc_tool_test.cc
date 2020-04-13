@@ -48,35 +48,35 @@ using grpc::testing::EchoResponse;
 
 #define ECHO_TEST_SERVICE_SUMMARY \
   "Echo\n"                        \
-  "Echo1\n"                        \
-  "Echo2\n"                        \
+  "Echo1\n"                       \
+  "Echo2\n"                       \
   "CheckClientInitialMetadata\n"  \
   "RequestStream\n"               \
   "ResponseStream\n"              \
   "BidiStream\n"                  \
   "Unimplemented\n"
 
-#define ECHO_TEST_SERVICE_DESCRIPTION                                         \
-  "filename: src/proto/grpc/testing/echo.proto\n"                             \
-  "package: grpc.testing;\n"                                                  \
-  "service EchoTestService {\n"                                               \
-  "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
-  "{}\n"                                                                      \
+#define ECHO_TEST_SERVICE_DESCRIPTION                                          \
+  "filename: src/proto/grpc/testing/echo.proto\n"                              \
+  "package: grpc.testing;\n"                                                   \
+  "service EchoTestService {\n"                                                \
+  "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) "  \
+  "{}\n"                                                                       \
   "  rpc Echo1(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
-  "{}\n"                                                                      \
+  "{}\n"                                                                       \
   "  rpc Echo2(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
-  "{}\n"                                                                      \
-  "  rpc CheckClientInitialMetadata(grpc.testing.SimpleRequest) returns "     \
-  "(grpc.testing.SimpleResponse) {}\n"                                        \
-  "  rpc RequestStream(stream grpc.testing.EchoRequest) returns "             \
-  "(grpc.testing.EchoResponse) {}\n"                                          \
-  "  rpc ResponseStream(grpc.testing.EchoRequest) returns (stream "           \
-  "grpc.testing.EchoResponse) {}\n"                                           \
-  "  rpc BidiStream(stream grpc.testing.EchoRequest) returns (stream "        \
-  "grpc.testing.EchoResponse) {}\n"                                           \
-  "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                    \
-  "(grpc.testing.EchoResponse) {}\n"                                          \
-  "}\n"                                                                       \
+  "{}\n"                                                                       \
+  "  rpc CheckClientInitialMetadata(grpc.testing.SimpleRequest) returns "      \
+  "(grpc.testing.SimpleResponse) {}\n"                                         \
+  "  rpc RequestStream(stream grpc.testing.EchoRequest) returns "              \
+  "(grpc.testing.EchoResponse) {}\n"                                           \
+  "  rpc ResponseStream(grpc.testing.EchoRequest) returns (stream "            \
+  "grpc.testing.EchoResponse) {}\n"                                            \
+  "  rpc BidiStream(stream grpc.testing.EchoRequest) returns (stream "         \
+  "grpc.testing.EchoResponse) {}\n"                                            \
+  "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                     \
+  "(grpc.testing.EchoResponse) {}\n"                                           \
+  "}\n"                                                                        \
   "\n"
 
 #define ECHO_METHOD_DESCRIPTION                                               \

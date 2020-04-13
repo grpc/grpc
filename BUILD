@@ -1458,7 +1458,7 @@ grpc_cc_library(
     name = "grpc_lb_policy_xds_routing",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
-        ],
+    ],
     language = "c++",
     deps = [
         "grpc_base",
