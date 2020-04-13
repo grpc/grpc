@@ -95,13 +95,13 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
 #define GRPC_HAVE_TCP_USER_TIMEOUT
 #ifdef __GLIBC_PREREQ
-#if !(__GLIBC_PREREQ(2, 17))
+#if !(__GLIBC_PREREQ(2, 18))
 /*
- * TCP_USER_TIMEOUT wasn't imported to glibc until 2.17. Use Linux system
+ * TCP_USER_TIMEOUT wasn't imported to glibc until 2.18. Use Linux system
  * header instead.
  */
 #define GRPC_LINUX_TCP_H 1
-#endif /* __GLIBC_PREREQ(2, 17) */
+#endif /* __GLIBC_PREREQ(2, 18) */
 #endif /* ifdef __GLIBC_PREREQ */
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37) */
 #endif /* LINUX_VERSION_CODE */
