@@ -186,9 +186,6 @@ class CallData {
   // Set to true, if the fields below are initialized.
   bool state_initialized_ = false;
   grpc_closure start_send_message_batch_in_call_combiner_;
-  // The fields below are only initialized when we compress the payload.
-  // Keep them at the bottom of the struct, so they don't pollute the
-  // cache-lines.
   grpc_linked_mdelem message_compression_algorithm_storage_;
   grpc_linked_mdelem stream_compression_algorithm_storage_;
   grpc_linked_mdelem accept_encoding_storage_;
