@@ -99,6 +99,7 @@ static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_core::TraceFlag grpc_http_trace(false, "http");
+grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
 grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
                                                          "chttp2_refcount");
 
@@ -2817,7 +2818,8 @@ static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
   if (t->channelz_socket != nullptr) {
     t->channelz_socket->RecordKeepaliveSent();
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+      GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
     gpr_log(GPR_INFO, "%s: Start keepalive ping", t->peer_string);
   }
   GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
@@ -2840,7 +2842,8 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error == GRPC_ERROR_NONE) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+          GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
         gpr_log(GPR_INFO, "%s: Finish keepalive ping", t->peer_string);
       }
       if (!t->keepalive_ping_started) {
