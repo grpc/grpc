@@ -2176,6 +2176,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_error || ( echo test bm_error failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_streaming_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong || ( echo test bm_fullstack_streaming_ping_pong failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_fullstack_streaming_pump"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump || ( echo test bm_fullstack_streaming_pump failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_unary_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong || ( echo test bm_fullstack_unary_ping_pong failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_metadata"
@@ -2204,8 +2206,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/cli_call_test || ( echo test cli_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_callback_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_callback_end2end_test || ( echo test client_callback_end2end_test failed ; exit 1 )
-	$(E) "[RUN]     Testing client_channel_stress_test"
-	$(Q) $(BINDIR)/$(CONFIG)/client_channel_stress_test || ( echo test client_channel_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_interceptors_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test || ( echo test client_interceptors_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing codegen_test_full"
@@ -3640,6 +3640,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
@@ -3648,9 +3649,12 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
+    src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+    src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
@@ -4269,6 +4273,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
@@ -4277,9 +4282,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
+    src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+    src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/parse_address.cc \

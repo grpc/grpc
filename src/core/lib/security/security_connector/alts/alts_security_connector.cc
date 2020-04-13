@@ -82,10 +82,17 @@ class grpc_alts_channel_security_connector final
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_credentials* creds =
         static_cast<const grpc_alts_credentials*>(channel_creds());
-    GPR_ASSERT(alts_tsi_handshaker_create(creds->options(), target_name_,
-                                          creds->handshaker_service_url(), true,
-                                          interested_parties,
-                                          &handshaker) == TSI_OK);
+    size_t user_specified_max_frame_size = 0;
+    const grpc_arg* arg =
+        grpc_channel_args_find(args, GRPC_ARG_TSI_MAX_FRAME_SIZE);
+    if (arg != nullptr && arg->type == GRPC_ARG_INTEGER) {
+      user_specified_max_frame_size = grpc_channel_arg_get_integer(
+          arg, {0, 0, std::numeric_limits<int>::max()});
+    }
+    GPR_ASSERT(alts_tsi_handshaker_create(
+                   creds->options(), target_name_,
+                   creds->handshaker_service_url(), true, interested_parties,
+                   &handshaker, user_specified_max_frame_size) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -140,9 +147,17 @@ class grpc_alts_server_security_connector final
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_server_credentials* creds =
         static_cast<const grpc_alts_server_credentials*>(server_creds());
+    size_t user_specified_max_frame_size = 0;
+    const grpc_arg* arg =
+        grpc_channel_args_find(args, GRPC_ARG_TSI_MAX_FRAME_SIZE);
+    if (arg != nullptr && arg->type == GRPC_ARG_INTEGER) {
+      user_specified_max_frame_size = grpc_channel_arg_get_integer(
+          arg, {0, 0, std::numeric_limits<int>::max()});
+    }
     GPR_ASSERT(alts_tsi_handshaker_create(
                    creds->options(), nullptr, creds->handshaker_service_url(),
-                   false, interested_parties, &handshaker) == TSI_OK);
+                   false, interested_parties, &handshaker,
+                   user_specified_max_frame_size) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }

@@ -58,7 +58,7 @@ $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 ```sh
 $ cd grpc
 $ git submodule update --init
-$ make
+$ EXTRA_DEFINES=GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK make
 $ [sudo] make install
 ```
 
