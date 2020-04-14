@@ -879,7 +879,7 @@ def resize_instance_group(gcp,
             break
         if time.time() - start_time > timeout_sec:
             raise Exception('Failed to resize primary instance group')
-        time.sleep(1)
+        time.sleep(2)
 
 
 def patch_url_map_backend_service(gcp, backend_service):
@@ -910,7 +910,7 @@ def wait_for_global_operation(gcp,
             if 'error' in result:
                 raise Exception(result['error'])
             return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Operation %s did not complete within %d', operation,
                     timeout_sec)
 
@@ -928,7 +928,7 @@ def wait_for_zone_operation(gcp,
             if 'error' in result:
                 raise Exception(result['error'])
             return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Operation %s did not complete within %d', operation,
                     timeout_sec)
 
@@ -952,7 +952,7 @@ def wait_for_healthy_backends(gcp,
                     break
             if healthy:
                 return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Not all backends became healthy within %d seconds: %s' %
                     (timeout_sec, result))
 
