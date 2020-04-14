@@ -15,6 +15,7 @@
 
 import sys
 import grpc
+from grpc.experimental import aio as grpc_aio
 
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
@@ -66,7 +67,7 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
             server: grpc.Server to which reflection service will be added.
             pool: DescriptorPool object to use (descriptor_pool.Default() if None).
         """
-        if isinstance(server, grpc.experimental.aio.Server):
+        if isinstance(server, grpc_aio.Server):
             _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
                 aio.ReflectionServicer(service_names, pool=pool), server)
         else:
