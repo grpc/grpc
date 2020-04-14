@@ -491,6 +491,7 @@ static void request_with_payload_template_inner(
     cq_verify(cqv);
 
     GPR_ASSERT(response_payload_recv->type == GRPC_BB_RAW);
+    gpr_log(GPR_ERROR, "%d", decompress_in_core);
     GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, response_str));
     if (server_compression_level > GRPC_COMPRESS_LEVEL_NONE) {
       const grpc_compression_algorithm algo_for_server_level =

@@ -68,11 +68,11 @@ int main(int argc, char** argv) {
   grpc_channel_args minimal_stack_args = {1, &minimal_stack_arg};
   errors +=
       CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                  "authority", "connected", NULL);
+                  "authority", "message_decompress", "connected", NULL);
   errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
-                        "authority", "connected", NULL);
+                        "authority", "message_decompress", "connected", NULL);
   errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_SERVER_CHANNEL,
-                        "server", "connected", NULL);
+                        "server", "message_decompress", "connected", NULL);
   errors +=
       CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
                   "authority", "http-client", "connected", NULL);

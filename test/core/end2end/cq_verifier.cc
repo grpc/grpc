@@ -29,6 +29,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/event_string.h"
 
@@ -145,33 +147,25 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer* rbb, grpc_slice b) {
 }
 
 int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
-  grpc_byte_buffer_reader reader;
-  grpc_byte_buffer* rbb;
-  int res;
-
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
-             "Couldn't init byte buffer reader");
-  rbb = grpc_raw_byte_buffer_from_reader(&reader);
-  res = raw_byte_buffer_eq_slice(rbb, b);
-  grpc_byte_buffer_reader_destroy(&reader);
-  grpc_byte_buffer_destroy(rbb);
-
-  return res;
+  if (bb->data.raw.compression > GRPC_COMPRESS_NONE) {
+    grpc_slice_buffer decompressed_buffer;
+    grpc_slice_buffer_init(&decompressed_buffer);
+    GPR_ASSERT(grpc_msg_decompress(
+        grpc_compression_algorithm_to_message_compression_algorithm(
+            bb->data.raw.compression),
+        &bb->data.raw.slice_buffer, &decompressed_buffer));
+    grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
+        decompressed_buffer.slices, decompressed_buffer.count);
+    int ret_val = raw_byte_buffer_eq_slice(rbb, b);
+    grpc_byte_buffer_destroy(rbb);
+    grpc_slice_buffer_destroy(&decompressed_buffer);
+    return ret_val;
+  }
+  return raw_byte_buffer_eq_slice(bb, b);
 }
 
 int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str) {
-  grpc_byte_buffer_reader reader;
-  grpc_byte_buffer* rbb;
-  int res;
-
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
-             "Couldn't init byte buffer reader");
-  rbb = grpc_raw_byte_buffer_from_reader(&reader);
-  res = raw_byte_buffer_eq_slice(rbb, grpc_slice_from_copied_string(str));
-  grpc_byte_buffer_reader_destroy(&reader);
-  grpc_byte_buffer_destroy(rbb);
-
-  return res;
+  return byte_buffer_eq_slice(bb, grpc_slice_from_copied_string(str));
 }
 
 static bool is_probably_integer(void* p) { return ((uintptr_t)p) < 1000000; }

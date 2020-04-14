@@ -175,11 +175,8 @@ typedef struct {
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
 /** Experimental Arg. Enable/disable support for per-message decompression.
-   Defaults to 1, unless GRPC_ARG_MINIMAL_STACK is enabled, in which case it
-   defaults to 0. If disabled, decompression will be performed lazily by
-   grpc_byte_buffer_reader. This arg also determines whether max message limits
-   will be applied to the decompressed buffer or the non-decompressed buffer. It
-   is recommended to keep this enabled to protect against zip bomb attacks. */
+   Defaults to 1. If disabled, decompression will not be performed and the
+   application will see the compressed message in the byte buffer. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION_INSIDE_CORE \
   "grpc.per_message_decompression_inside_core"
 /** Enable/disable support for deadline checking. Defaults to 1, unless
