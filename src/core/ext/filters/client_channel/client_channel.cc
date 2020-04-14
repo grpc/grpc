@@ -251,7 +251,7 @@ class ChannelData {
 
   grpc_error* DoPingLocked(grpc_transport_op* op);
 
-  static void StartTransportOpLocked(grpc_transport_op* op);
+  void StartTransportOpLocked(grpc_transport_op* op);
 
   void TryToConnectLocked();
 
@@ -1012,7 +1012,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           last_seen_state_(initial_state) {}
 
     ~WatcherWrapper() {
-      auto* parent = parent_.release(); /* ref owned by lambda */
+      auto* parent = parent_.release();  // ref owned by lambda
       parent->chand_->work_serializer_->Run(
           [parent]() { parent->Unref(DEBUG_LOCATION, "WatcherWrapper"); },
           DEBUG_LOCATION);
@@ -1025,8 +1025,13 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 "subchannel %p; hopping into work_serializer",
                 parent_->chand_, parent_.get(), parent_->subchannel_);
       }
-      // Will delete itself.
-      new Updater(Ref());
+      Ref();  // ref owned by lambda
+      parent_->chand_->work_serializer_->Run(
+          [this]() {
+            ApplyUpdateInControlPlaneWorkSerializer();
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
 
     grpc_pollset_set* interested_parties() override {
@@ -1046,45 +1051,25 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
 
    private:
-    class Updater {
-     public:
-      Updater(RefCountedPtr<WatcherWrapper> parent)
-          : parent_(std::move(parent)) {
-        parent_->parent_->chand_->work_serializer_->Run(
-            [this]() { ApplyUpdateInControlPlaneWorkSerializer(); },
-            DEBUG_LOCATION);
+    void ApplyUpdateInControlPlaneWorkSerializer() {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p: processing connectivity change in work serializer "
+                "for subchannel wrapper %p subchannel %p "
+                "watcher=%p",
+                parent_->chand_, parent_.get(), parent_->subchannel_,
+                watcher_.get());
       }
-
-     private:
-      void ApplyUpdateInControlPlaneWorkSerializer() {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-          gpr_log(GPR_INFO,
-                  "chand=%p: processing connectivity change in work serializer "
-                  "for subchannel wrapper %p subchannel %p "
-                  "watcher=%p",
-                  parent_->parent_->chand_, parent_->parent_.get(),
-                  parent_->parent_->subchannel_, parent_->watcher_.get());
-        }
-        grpc_connectivity_state state;
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-        if (!parent_->PopConnectivityStateChange(&state,
-                                                 &connected_subchannel)) {
-          // There should be atleast one connectivity change in the queue.
-          GPR_DEBUG_ASSERT(false);
-        }
-        // Ignore update if the parent WatcherWrapper has been replaced
-        // since this callback was scheduled.
-        if (parent_->watcher_ != nullptr) {
-          parent_->last_seen_state_ = state;
-          parent_->parent_->MaybeUpdateConnectedSubchannel(
-              std::move(connected_subchannel));
-          parent_->watcher_->OnConnectivityStateChange(state);
-        }
-        delete this;
+      ConnectivityStateChange state_change = PopConnectivityStateChange();
+      // Ignore update if the parent WatcherWrapper has been replaced
+      // since this callback was scheduled.
+      if (watcher_ != nullptr) {
+        last_seen_state_ = state_change.state;
+        parent_->MaybeUpdateConnectedSubchannel(
+            std::move(state_change.connected_subchannel));
+        watcher_->OnConnectivityStateChange(state_change.state);
       }
-
-      RefCountedPtr<WatcherWrapper> parent_;
-    };
+    }
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher_;
@@ -1616,25 +1601,6 @@ void ChannelData::ProcessLbPolicy(
         grpc_channel_args_find(resolver_result.args, GRPC_ARG_LB_POLICY_NAME);
     policy_name = grpc_channel_arg_get_string(channel_arg);
   }
-  // Special case: If at least one balancer address is present, we use
-  // the grpclb policy, regardless of what the resolver has returned.
-  bool found_balancer_address = false;
-  for (size_t i = 0; i < resolver_result.addresses.size(); ++i) {
-    const ServerAddress& address = resolver_result.addresses[i];
-    if (address.IsBalancer()) {
-      found_balancer_address = true;
-      break;
-    }
-  }
-  if (found_balancer_address) {
-    if (policy_name != nullptr && strcmp(policy_name, "grpclb") != 0) {
-      gpr_log(GPR_INFO,
-              "resolver requested LB policy %s but provided at least one "
-              "balancer address -- forcing use of grpclb LB policy",
-              policy_name);
-    }
-    policy_name = "grpclb";
-  }
   // Use pick_first if nothing was specified and we didn't select grpclb
   // above.
   if (policy_name == nullptr) policy_name = "pick_first";
@@ -1812,20 +1778,17 @@ grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
 }
 
 void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
-  grpc_channel_element* elem =
-      static_cast<grpc_channel_element*>(op->handler_private.extra_arg);
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   // Connectivity watch.
   if (op->start_connectivity_watch != nullptr) {
-    chand->state_tracker_.AddWatcher(op->start_connectivity_watch_state,
-                                     std::move(op->start_connectivity_watch));
+    state_tracker_.AddWatcher(op->start_connectivity_watch_state,
+                              std::move(op->start_connectivity_watch));
   }
   if (op->stop_connectivity_watch != nullptr) {
-    chand->state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
+    state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
   }
   // Ping.
   if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
-    grpc_error* error = chand->DoPingLocked(op);
+    grpc_error* error = DoPingLocked(op);
     if (error != GRPC_ERROR_NONE) {
       ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_initiate,
                    GRPC_ERROR_REF(error));
@@ -1837,40 +1800,39 @@ void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
   }
   // Reset backoff.
   if (op->reset_connect_backoff) {
-    if (chand->resolving_lb_policy_ != nullptr) {
-      chand->resolving_lb_policy_->ResetBackoffLocked();
+    if (resolving_lb_policy_ != nullptr) {
+      resolving_lb_policy_->ResetBackoffLocked();
     }
   }
   // Disconnect or enter IDLE.
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p: disconnect_with_error: %s", chand,
+      gpr_log(GPR_INFO, "chand=%p: disconnect_with_error: %s", this,
               grpc_error_string(op->disconnect_with_error));
     }
-    chand->DestroyResolvingLoadBalancingPolicyLocked();
+    DestroyResolvingLoadBalancingPolicyLocked();
     intptr_t value;
     if (grpc_error_get_int(op->disconnect_with_error,
                            GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, &value) &&
         static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
-      if (chand->disconnect_error() == GRPC_ERROR_NONE) {
+      if (disconnect_error() == GRPC_ERROR_NONE) {
         // Enter IDLE state.
-        chand->UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE,
-                                          "channel entering IDLE", nullptr);
+        UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, "channel entering IDLE",
+                                   nullptr);
       }
       GRPC_ERROR_UNREF(op->disconnect_with_error);
     } else {
       // Disconnect.
-      GPR_ASSERT(chand->disconnect_error_.Load(MemoryOrder::RELAXED) ==
+      GPR_ASSERT(disconnect_error_.Load(MemoryOrder::RELAXED) ==
                  GRPC_ERROR_NONE);
-      chand->disconnect_error_.Store(op->disconnect_with_error,
-                                     MemoryOrder::RELEASE);
-      chand->UpdateStateAndPickerLocked(
+      disconnect_error_.Store(op->disconnect_with_error, MemoryOrder::RELEASE);
+      UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
           absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
               GRPC_ERROR_REF(op->disconnect_with_error)));
     }
   }
-  GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "start_transport_op");
+  GRPC_CHANNEL_STACK_UNREF(owning_stack_, "start_transport_op");
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 }
 
@@ -1883,10 +1845,9 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
     grpc_pollset_set_add_pollset(chand->interested_parties_, op->bind_pollset);
   }
   // Pop into control plane work_serializer for remaining ops.
-  op->handler_private.extra_arg = elem;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "start_transport_op");
   chand->work_serializer_->Run(
-      [op]() { ChannelData::StartTransportOpLocked(op); }, DEBUG_LOCATION);
+      [chand, op]() { chand->StartTransportOpLocked(op); }, DEBUG_LOCATION);
 }
 
 void ChannelData::GetChannelInfo(grpc_channel_element* elem,
@@ -2257,10 +2218,32 @@ void CallData::FreeCachedSendOpDataForCompletedBatch(
 void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
     void* arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(arg);
+  // Set error if call did not succeed.
+  grpc_error* error_for_lb = GRPC_ERROR_NONE;
+  if (error != GRPC_ERROR_NONE) {
+    error_for_lb = error;
+  } else {
+    const auto& fields = calld->recv_trailing_metadata_->idx.named;
+    GPR_ASSERT(fields.grpc_status != nullptr);
+    grpc_status_code status =
+        grpc_get_status_code_from_metadata(fields.grpc_status->md);
+    std::string msg;
+    if (status != GRPC_STATUS_OK) {
+      error_for_lb = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("call failed"),
+          GRPC_ERROR_INT_GRPC_STATUS, status);
+      if (fields.grpc_message != nullptr) {
+        error_for_lb = grpc_error_set_str(
+            error_for_lb, GRPC_ERROR_STR_GRPC_MESSAGE,
+            grpc_slice_ref_internal(GRPC_MDVALUE(fields.grpc_message->md)));
+      }
+    }
+  }
   // Invoke callback to LB policy.
   Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
-  calld->lb_recv_trailing_metadata_ready_(error, &trailing_metadata,
+  calld->lb_recv_trailing_metadata_ready_(error_for_lb, &trailing_metadata,
                                           &calld->lb_call_state_);
+  if (error == GRPC_ERROR_NONE) GRPC_ERROR_UNREF(error_for_lb);
   // Chain to original callback.
   Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
                GRPC_ERROR_REF(error));
@@ -3864,7 +3847,9 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
   // The incoming call will make the channel exit IDLE.
   if (chand->picker() == nullptr) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack(), "PickSubchannelLocked");
-    // Bounce into the control plane work serializer to exit IDLE.
+    // Bounce into the control plane work serializer to exit IDLE. Since we are
+    // holding on to the data plane mutex here, we offload it on the ExecCtx so
+    // that we don't deadlock with ourselves.
     ExecCtx::Run(
         DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(
@@ -3964,8 +3949,10 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
       if (pick_queued_) RemoveCallFromQueuedPicksLocked(elem);
       // Handle drops.
       if (GPR_UNLIKELY(result.subchannel == nullptr)) {
-        result.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Call dropped by load balancing policy");
+        result.error = grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Call dropped by load balancing policy"),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       } else {
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane mutex.

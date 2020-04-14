@@ -374,8 +374,8 @@ class Subchannel::AsyncWatcherNotifierLocked {
     if (state == GRPC_CHANNEL_READY) {
       connected_subchannel = subchannel->connected_subchannel_;
     }
-    watcher_->PushConnectivityStateChange(state,
-                                          std::move(connected_subchannel));
+    watcher_->PushConnectivityStateChange(
+        {state, std::move(connected_subchannel)});
     ExecCtx::Run(
         DEBUG_LOCATION,
         GRPC_CLOSURE_INIT(&closure_,
@@ -627,6 +627,21 @@ BackOff::Options ParseArgsForBackoffValues(
 }
 
 }  // namespace
+
+void Subchannel::ConnectivityStateWatcherInterface::PushConnectivityStateChange(
+    ConnectivityStateChange state_change) {
+  MutexLock lock(&mu_);
+  connectivity_state_queue_.push_back(std::move(state_change));
+}
+
+Subchannel::ConnectivityStateWatcherInterface::ConnectivityStateChange
+Subchannel::ConnectivityStateWatcherInterface::PopConnectivityStateChange() {
+  MutexLock lock(&mu_);
+  GPR_ASSERT(!connectivity_state_queue_.empty());
+  ConnectivityStateChange state_change = connectivity_state_queue_.front();
+  connectivity_state_queue_.pop_front();
+  return state_change;
+}
 
 Subchannel::Subchannel(SubchannelKey* key,
                        OrphanablePtr<SubchannelConnector> connector,

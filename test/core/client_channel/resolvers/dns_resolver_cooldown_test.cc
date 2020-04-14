@@ -42,7 +42,8 @@ static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
@@ -93,12 +94,13 @@ static grpc_address_resolver_vtable test_resolver = {
 static grpc_ares_request* test_dns_lookup_ares_locked(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
-      addresses, check_grpclb, service_config_json, query_timeout_ms,
+      addresses, balancer_addresses, service_config_json, query_timeout_ms,
       std::move(work_serializer));
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;

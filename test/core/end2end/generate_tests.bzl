@@ -183,7 +183,8 @@ def _test_options(
         needs_http2 = False,
         needs_proxy_auth = False,
         needs_write_buffering = False,
-        needs_client_channel = False):
+        needs_client_channel = False,
+        short_name = None):
     return struct(
         needs_fullstack = needs_fullstack,
         needs_dns = needs_dns,
@@ -196,6 +197,7 @@ def _test_options(
         needs_proxy_auth = needs_proxy_auth,
         needs_write_buffering = needs_write_buffering,
         needs_client_channel = needs_client_channel,
+        short_name = short_name,
     )
 
 # maps test names to options
@@ -280,16 +282,28 @@ END2END_TESTS = {
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
         proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_exceeds_buffer_size_in_init",
     ),
     "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
         needs_client_channel = True,
         proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
     "retry_non_retriable_status": _test_options(
         needs_client_channel = True,
         proxyable = False,
     ),
-    "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(needs_client_channel = True, proxyable = False),
+    "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_non_retriable_status2",
+    ),
     "retry_recv_initial_metadata": _test_options(
         needs_client_channel = True,
         proxyable = False,
@@ -314,6 +328,9 @@ END2END_TESTS = {
     "retry_streaming_succeeds_before_replay_finished": _test_options(
         needs_client_channel = True,
         proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_streaming2",
     ),
     "retry_throttled": _test_options(
         needs_client_channel = True,
@@ -415,6 +432,13 @@ def grpc_end2end_tests():
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:client.key",
+                "//src/core/tsi/test_creds:client.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
@@ -429,8 +453,9 @@ def grpc_end2end_tests():
             if not _compatible(fopt, topt):
                 continue
 
+            test_short_name = str(t) if not topt.short_name else topt.short_name
             native.sh_test(
-                name = "%s_test@%s" % (f, t),
+                name = "%s_test@%s" % (f, test_short_name),
                 data = [":%s_test" % f],
                 srcs = ["end2end_test.sh"],
                 args = [
@@ -443,7 +468,7 @@ def grpc_end2end_tests():
 
             for poller in POLLERS:
                 native.sh_test(
-                    name = "%s_test@%s@poller=%s" % (f, t, poller),
+                    name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [
@@ -484,6 +509,13 @@ def grpc_end2end_nosec_tests():
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:client.key",
+                "//src/core/tsi/test_creds:client.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_nosec_tests",
                 "//test/core/util:grpc_test_util_unsecure",
@@ -499,8 +531,9 @@ def grpc_end2end_nosec_tests():
             if topt.secure:
                 continue
 
+            test_short_name = str(t) if not topt.short_name else topt.short_name
             native.sh_test(
-                name = "%s_nosec_test@%s" % (f, t),
+                name = "%s_nosec_test@%s" % (f, test_short_name),
                 data = [":%s_nosec_test" % f],
                 srcs = ["end2end_test.sh"],
                 args = [
@@ -513,7 +546,7 @@ def grpc_end2end_nosec_tests():
 
             for poller in POLLERS:
                 native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s" % (f, t, poller),
+                    name = "%s_nosec_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_nosec_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [

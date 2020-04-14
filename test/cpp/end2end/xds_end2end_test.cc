@@ -400,40 +400,6 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
 
   using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
 
-  // A queue of resource type/name pairs that have changed since the client
-  // subscribed to them.
-  using UpdateQueue = std::deque<
-      std::pair<std::string /* type url */, std::string /* resource name */>>;
-
-  // A struct representing a client's subscription to a particular resource.
-  struct SubscriptionState {
-    // Version that the client currently knows about.
-    int current_version = 0;
-    // The queue upon which to place updates when the resource is updated.
-    UpdateQueue* update_queue;
-  };
-
-  // A struct representing the a client's subscription to all the resources.
-  using SubscriptionNameMap =
-      std::map<std::string /* resource_name */, SubscriptionState>;
-  using SubscriptionMap =
-      std::map<std::string /* type_url */, SubscriptionNameMap>;
-
-  // A struct representing the current state for a resource:
-  // - the version of the resource that is set by the SetResource() methods.
-  // - a list of subscriptions interested in this resource.
-  struct ResourceState {
-    int version = 0;
-    absl::optional<google::protobuf::Any> resource;
-    std::set<SubscriptionState*> subscriptions;
-  };
-
-  // A struct representing the current state for all resources:
-  // LDS, CDS, EDS, and RDS for the class as a whole.
-  using ResourceNameMap =
-      std::map<std::string /* resource_name */, ResourceState>;
-  using ResourceMap = std::map<std::string /* type_url */, ResourceNameMap>;
-
   AdsServiceImpl(bool enable_load_reporting) {
     // Construct RDS response data.
     default_route_config_.set_name(kDefaultResourceName);
@@ -457,118 +423,6 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       default_cluster_.mutable_lrs_server()->mutable_self();
     }
     SetCdsResource(default_cluster_, kDefaultResourceName);
-  }
-
-  // Starting a thread to do blocking read on the stream until cancel.
-  void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
-                    bool* stream_closed) {
-    DiscoveryRequest request;
-    bool seen_first_request = false;
-    while (stream->Read(&request)) {
-      if (!seen_first_request) {
-        EXPECT_TRUE(request.has_node());
-        ASSERT_FALSE(request.node().client_features().empty());
-        EXPECT_EQ(request.node().client_features(0),
-                  "envoy.lb.does_not_support_overprovisioning");
-        seen_first_request = true;
-      }
-      {
-        grpc_core::MutexLock lock(&ads_mu_);
-        requests->emplace_back(std::move(request));
-      }
-    }
-    gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
-    grpc_core::MutexLock lock(&ads_mu_);
-    *stream_closed = true;
-  }
-
-  // Checks whether the client needs to receive a newer version of
-  // the resource.  If so, updates subscription_state->current_version and
-  // returns true.
-  bool ClientNeedsResourceUpdate(const ResourceState& resource_state,
-                                 SubscriptionState* subscription_state) {
-    if (subscription_state->current_version < resource_state.version) {
-      subscription_state->current_version = resource_state.version;
-      return true;
-    }
-    return false;
-  }
-
-  // Subscribes to a resource if not already subscribed:
-  // 1. Sets the update_queue field in subscription_state.
-  // 2. Adds subscription_state to resource_state->subscriptions.
-  void MaybeSubscribe(const std::string& resource_type,
-                      const std::string& resource_name,
-                      SubscriptionState* subscription_state,
-                      ResourceState* resource_state,
-                      UpdateQueue* update_queue) {
-    // The update_queue will be null if we were not previously subscribed.
-    if (subscription_state->update_queue != nullptr) return;
-    subscription_state->update_queue = update_queue;
-    resource_state->subscriptions.emplace(subscription_state);
-    gpr_log(GPR_INFO, "ADS[%p]: subscribe to resource type %s name %s state %p",
-            this, resource_type.c_str(), resource_name.c_str(),
-            &subscription_state);
-  }
-
-  // Removes subscriptions for resources no longer present in the
-  // current request.
-  void ProcessUnsubscriptions(
-      const std::string& resource_type,
-      const std::set<std::string>& resources_in_current_request,
-      SubscriptionNameMap* subscription_name_map,
-      ResourceNameMap* resource_name_map) {
-    for (auto it = subscription_name_map->begin();
-         it != subscription_name_map->end();) {
-      const std::string& resource_name = it->first;
-      SubscriptionState& subscription_state = it->second;
-      if (resources_in_current_request.find(resource_name) !=
-          resources_in_current_request.end()) {
-        ++it;
-        continue;
-      }
-      gpr_log(GPR_INFO, "ADS[%p]: Unsubscribe to type=%s name=%s state=%p",
-              this, resource_type.c_str(), resource_name.c_str(),
-              &subscription_state);
-      auto resource_it = resource_name_map->find(resource_name);
-      GPR_ASSERT(resource_it != resource_name_map->end());
-      auto& resource_state = resource_it->second;
-      resource_state.subscriptions.erase(&subscription_state);
-      if (resource_state.subscriptions.empty() &&
-          !resource_state.resource.has_value()) {
-        resource_name_map->erase(resource_it);
-      }
-      it = subscription_name_map->erase(it);
-    }
-  }
-
-  // Completing the building a DiscoveryResponse by adding common information
-  // for all resources and by adding all subscribed resources for LDS and CDS.
-  void CompleteBuildingDiscoveryResponse(
-      const std::string& resource_type, const int version,
-      const SubscriptionNameMap& subscription_name_map,
-      const std::set<std::string>& resources_added_to_response,
-      DiscoveryResponse* response) {
-    resource_type_response_state_[resource_type] = SENT;
-    response->set_type_url(resource_type);
-    response->set_version_info(absl::StrCat(version));
-    response->set_nonce(absl::StrCat(version));
-    if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
-      // For LDS and CDS we must send back all subscribed resources
-      // (even the unchanged ones)
-      for (const auto& p : subscription_name_map) {
-        const std::string& resource_name = p.first;
-        if (resources_added_to_response.find(resource_name) ==
-            resources_added_to_response.end()) {
-          const ResourceState& resource_state =
-              resource_map_[resource_type][resource_name];
-          if (resource_state.resource.has_value()) {
-            response->add_resources()->CopyFrom(
-                resource_state.resource.value());
-          }
-        }
-      }
-    }
   }
 
   Status StreamAggregatedResources(ServerContext* context,
@@ -929,6 +783,152 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   }
 
  private:
+  // A queue of resource type/name pairs that have changed since the client
+  // subscribed to them.
+  using UpdateQueue = std::deque<
+      std::pair<std::string /* type url */, std::string /* resource name */>>;
+
+  // A struct representing a client's subscription to a particular resource.
+  struct SubscriptionState {
+    // Version that the client currently knows about.
+    int current_version = 0;
+    // The queue upon which to place updates when the resource is updated.
+    UpdateQueue* update_queue;
+  };
+
+  // A struct representing the a client's subscription to all the resources.
+  using SubscriptionNameMap =
+      std::map<std::string /* resource_name */, SubscriptionState>;
+  using SubscriptionMap =
+      std::map<std::string /* type_url */, SubscriptionNameMap>;
+
+  // A struct representing the current state for a resource:
+  // - the version of the resource that is set by the SetResource() methods.
+  // - a list of subscriptions interested in this resource.
+  struct ResourceState {
+    int version = 0;
+    absl::optional<google::protobuf::Any> resource;
+    std::set<SubscriptionState*> subscriptions;
+  };
+
+  // A struct representing the current state for all resources:
+  // LDS, CDS, EDS, and RDS for the class as a whole.
+  using ResourceNameMap =
+      std::map<std::string /* resource_name */, ResourceState>;
+  using ResourceMap = std::map<std::string /* type_url */, ResourceNameMap>;
+
+  // Starting a thread to do blocking read on the stream until cancel.
+  void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
+                    bool* stream_closed) {
+    DiscoveryRequest request;
+    bool seen_first_request = false;
+    while (stream->Read(&request)) {
+      if (!seen_first_request) {
+        EXPECT_TRUE(request.has_node());
+        ASSERT_FALSE(request.node().client_features().empty());
+        EXPECT_EQ(request.node().client_features(0),
+                  "envoy.lb.does_not_support_overprovisioning");
+        seen_first_request = true;
+      }
+      {
+        grpc_core::MutexLock lock(&ads_mu_);
+        requests->emplace_back(std::move(request));
+      }
+    }
+    gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
+    grpc_core::MutexLock lock(&ads_mu_);
+    *stream_closed = true;
+  }
+
+  // Checks whether the client needs to receive a newer version of
+  // the resource.  If so, updates subscription_state->current_version and
+  // returns true.
+  bool ClientNeedsResourceUpdate(const ResourceState& resource_state,
+                                 SubscriptionState* subscription_state) {
+    if (subscription_state->current_version < resource_state.version) {
+      subscription_state->current_version = resource_state.version;
+      return true;
+    }
+    return false;
+  }
+
+  // Subscribes to a resource if not already subscribed:
+  // 1. Sets the update_queue field in subscription_state.
+  // 2. Adds subscription_state to resource_state->subscriptions.
+  void MaybeSubscribe(const std::string& resource_type,
+                      const std::string& resource_name,
+                      SubscriptionState* subscription_state,
+                      ResourceState* resource_state,
+                      UpdateQueue* update_queue) {
+    // The update_queue will be null if we were not previously subscribed.
+    if (subscription_state->update_queue != nullptr) return;
+    subscription_state->update_queue = update_queue;
+    resource_state->subscriptions.emplace(subscription_state);
+    gpr_log(GPR_INFO, "ADS[%p]: subscribe to resource type %s name %s state %p",
+            this, resource_type.c_str(), resource_name.c_str(),
+            &subscription_state);
+  }
+
+  // Removes subscriptions for resources no longer present in the
+  // current request.
+  void ProcessUnsubscriptions(
+      const std::string& resource_type,
+      const std::set<std::string>& resources_in_current_request,
+      SubscriptionNameMap* subscription_name_map,
+      ResourceNameMap* resource_name_map) {
+    for (auto it = subscription_name_map->begin();
+         it != subscription_name_map->end();) {
+      const std::string& resource_name = it->first;
+      SubscriptionState& subscription_state = it->second;
+      if (resources_in_current_request.find(resource_name) !=
+          resources_in_current_request.end()) {
+        ++it;
+        continue;
+      }
+      gpr_log(GPR_INFO, "ADS[%p]: Unsubscribe to type=%s name=%s state=%p",
+              this, resource_type.c_str(), resource_name.c_str(),
+              &subscription_state);
+      auto resource_it = resource_name_map->find(resource_name);
+      GPR_ASSERT(resource_it != resource_name_map->end());
+      auto& resource_state = resource_it->second;
+      resource_state.subscriptions.erase(&subscription_state);
+      if (resource_state.subscriptions.empty() &&
+          !resource_state.resource.has_value()) {
+        resource_name_map->erase(resource_it);
+      }
+      it = subscription_name_map->erase(it);
+    }
+  }
+
+  // Completing the building a DiscoveryResponse by adding common information
+  // for all resources and by adding all subscribed resources for LDS and CDS.
+  void CompleteBuildingDiscoveryResponse(
+      const std::string& resource_type, const int version,
+      const SubscriptionNameMap& subscription_name_map,
+      const std::set<std::string>& resources_added_to_response,
+      DiscoveryResponse* response) {
+    resource_type_response_state_[resource_type] = SENT;
+    response->set_type_url(resource_type);
+    response->set_version_info(absl::StrCat(version));
+    response->set_nonce(absl::StrCat(version));
+    if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
+      // For LDS and CDS we must send back all subscribed resources
+      // (even the unchanged ones)
+      for (const auto& p : subscription_name_map) {
+        const std::string& resource_name = p.first;
+        if (resources_added_to_response.find(resource_name) ==
+            resources_added_to_response.end()) {
+          const ResourceState& resource_state =
+              resource_map_[resource_type][resource_name];
+          if (resource_state.resource.has_value()) {
+            response->add_resources()->CopyFrom(
+                resource_state.resource.value());
+          }
+        }
+      }
+    }
+  }
+
   grpc_core::CondVar ads_cond_;
   // Protect the members below.
   grpc_core::Mutex ads_mu_;
@@ -1150,7 +1150,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       args.SetInt(GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS, fallback_timeout);
     }
     if (failover_timeout > 0) {
-      args.SetInt(GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS, failover_timeout);
+      args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
     if (xds_resource_does_not_exist_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
@@ -1282,7 +1282,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             : kDefaultServiceConfigWithoutLoadReporting_;
     result.service_config =
         grpc_core::ServiceConfig::Create(service_config_json, &error);
-    GRPC_ERROR_UNREF(error);
+    ASSERT_NE(result.service_config.get(), nullptr);
+    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
         lb_channel_response_generator == nullptr
             ? lb_channel_response_generator_.get()
@@ -1314,7 +1315,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
           grpc_core::ServiceConfig::Create(service_config_json, &error);
-      GRPC_ERROR_UNREF(error);
+      ASSERT_NE(result.service_config.get(), nullptr);
+      ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     }
     if (lb_channel_response_generator == nullptr) {
       lb_channel_response_generator = lb_channel_response_generator_.get();
@@ -1340,11 +1342,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
-                 bool wait_for_ready = false) {
+                 bool wait_for_ready = false, bool server_fail = false) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
+    if (server_fail) {
+      request.mutable_param()->mutable_expected_error()->set_code(
+          GRPC_STATUS_FAILED_PRECONDITION);
+    }
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     if (wait_for_ready) context.set_wait_for_ready(true);
@@ -1364,9 +1370,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  void CheckRpcSendFailure() {
-    const Status status = SendRpc();
-    EXPECT_FALSE(status.ok());
+  void CheckRpcSendFailure(const size_t times = 1, bool server_fail = false) {
+    for (size_t i = 0; i < times; ++i) {
+      const Status status = SendRpc(nullptr, 1000, false, server_fail);
+      EXPECT_FALSE(status.ok());
+    }
   }
 
  public:
@@ -2345,19 +2353,6 @@ TEST_P(EdsTest, Timeout) {
 }
 
 // Tests that EDS client should send a NACK if the EDS update contains
-// no localities but does not say to drop all calls.
-TEST_P(EdsTest, NacksNoLocalitiesWithoutDropAll) {
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args;
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
-}
-
-// Tests that EDS client should send a NACK if the EDS update contains
 // sparse priorities.
 TEST_P(EdsTest, NacksSparsePriorityList) {
   SetNextResolution({});
@@ -2414,6 +2409,45 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
               ::testing::AllOf(
                   ::testing::Ge(kLocalityWeightRate1 * (1 - kErrorTolerance)),
                   ::testing::Le(kLocalityWeightRate1 * (1 + kErrorTolerance))));
+}
+
+// Tests that we correctly handle a locality containing no endpoints.
+TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 5000;
+  // EDS response contains 2 localities, one with no endpoints.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+      {"locality1", {}},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // Wait for both backends to be ready.
+  WaitForAllBackends();
+  // Send kNumRpcs RPCs.
+  CheckRpcSendOk(kNumRpcs);
+  // All traffic should go to the reachable locality.
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(),
+            kNumRpcs / backends_.size());
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(),
+            kNumRpcs / backends_.size());
+  EXPECT_EQ(backends_[2]->backend_service()->request_count(),
+            kNumRpcs / backends_.size());
+  EXPECT_EQ(backends_[3]->backend_service()->request_count(),
+            kNumRpcs / backends_.size());
+}
+
+// EDS update with no localities.
+TEST_P(LocalityMapTest, NoLocalities) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // EDS response contains 2 localities, one with no endpoints.
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource({}), kDefaultResourceName);
+  Status status = SendRpc();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
 }
 
 // Tests that the locality map can work properly even when it contains a large
@@ -2589,6 +2623,24 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
       AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   WaitForBackend(3, false);
   for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
+  }
+}
+
+// Does not choose priority with no endpoints.
+TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", {}, kDefaultLocalityWeight, 0},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  WaitForBackend(0, false);
+  for (size_t i = 1; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
 }
@@ -2976,9 +3028,7 @@ TEST_P(DropTest, DropAll) {
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 1000000;
   // The ADS response contains two drop categories.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
-  });
+  AdsServiceImpl::EdsResourceArgs args;
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancers_[0]->ads_service()->SetEdsResource(
@@ -2987,8 +3037,8 @@ TEST_P(DropTest, DropAll) {
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
     const Status status = SendRpc(&response);
-    EXPECT_TRUE(!status.ok() && status.error_message() ==
-                                    "Call dropped by load balancing policy");
+    EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
   }
 }
 
@@ -3440,7 +3490,8 @@ class ClientLoadReportingTest : public XdsEnd2endTest {
 TEST_P(ClientLoadReportingTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
-  const size_t kNumRpcsPerAddress = 100;
+  const size_t kNumRpcsPerAddress = 10;
+  const size_t kNumFailuresPerAddress = 3;
   // TODO(juanlishen): Partition the backends after multiple localities is
   // tested.
   AdsServiceImpl::EdsResourceArgs args({
@@ -3455,9 +3506,11 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  // Each backend should have gotten 100 requests.
+  CheckRpcSendFailure(kNumFailuresPerAddress * num_backends_,
+                      /*server_fail=*/true);
+  // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
+    EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
               backends_[i]->backend_service()->request_count());
   }
   // The LRS service got a single request, and sent a single response.
@@ -3471,9 +3524,11 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
+  EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * num_backends_ +
+                num_ok + num_failure,
             client_stats.total_issued_requests());
-  EXPECT_EQ(0U, client_stats.total_error_requests());
+  EXPECT_EQ(kNumFailuresPerAddress * num_backends_ + num_failure,
+            client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
 }
 

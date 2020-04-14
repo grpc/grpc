@@ -14,12 +14,13 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 
 import abc
-from typing import Any, AsyncIterable, Optional
+from typing import Any, Optional
 
 import grpc
 
 from . import _base_call
-from ._typing import DeserializingFunction, MetadataType, SerializingFunction
+from ._typing import (DeserializingFunction, MetadataType, RequestIterableType,
+                      SerializingFunction)
 
 _IMMUTABLE_EMPTY_TUPLE = tuple()
 
@@ -105,7 +106,7 @@ class StreamUnaryMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def __call__(self,
-                 request_async_iterator: Optional[AsyncIterable[Any]] = None,
+                 request_iterator: Optional[RequestIterableType] = None,
                  timeout: Optional[float] = None,
                  metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
                  credentials: Optional[grpc.CallCredentials] = None,
@@ -115,7 +116,8 @@ class StreamUnaryMultiCallable(abc.ABC):
         """Asynchronously invokes the underlying RPC.
 
         Args:
-          request: The request value for the RPC.
+          request_iterator: An optional async iterable or iterable of request
+            messages for the RPC.
           timeout: An optional duration of time in seconds to allow
             for the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the
@@ -142,7 +144,7 @@ class StreamStreamMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def __call__(self,
-                 request_async_iterator: Optional[AsyncIterable[Any]] = None,
+                 request_iterator: Optional[RequestIterableType] = None,
                  timeout: Optional[float] = None,
                  metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
                  credentials: Optional[grpc.CallCredentials] = None,
@@ -152,7 +154,8 @@ class StreamStreamMultiCallable(abc.ABC):
         """Asynchronously invokes the underlying RPC.
 
         Args:
-          request: The request value for the RPC.
+          request_iterator: An optional async iterable or iterable of request
+            messages for the RPC.
           timeout: An optional duration of time in seconds to allow
             for the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the

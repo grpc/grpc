@@ -699,7 +699,7 @@ struct SockToPolledFdEntry {
  * with a GrpcPolledFdWindows factory and event driver */
 class SockToPolledFdMap {
  public:
-  SockToPolledFdMap(std::shared_ptr<WorkSerializer> work_serializer)
+  explicit SockToPolledFdMap(std::shared_ptr<WorkSerializer> work_serializer)
       : work_serializer_(std::move(work_serializer)) {}
 
   ~SockToPolledFdMap() { GPR_ASSERT(head_ == nullptr); }
@@ -830,7 +830,7 @@ const struct ares_socket_functions custom_ares_sock_funcs = {
    so that c-ares can close it via usual socket teardown. */
 class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
  public:
-  GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows* wrapped)
+  explicit GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows* wrapped)
       : wrapped_(wrapped) {}
 
   ~GrpcPolledFdWindowsWrapper() {}
@@ -863,8 +863,9 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
-  GrpcPolledFdFactoryWindows(std::shared_ptr<WorkSerializer> work_serializer)
-      : sock_to_polled_fd_map_(work_serializer) {}
+  explicit GrpcPolledFdFactoryWindows(
+      std::shared_ptr<WorkSerializer> work_serializer)
+      : sock_to_polled_fd_map_(std::move(work_serializer)) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,

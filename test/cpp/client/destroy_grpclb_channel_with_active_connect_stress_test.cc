@@ -37,6 +37,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -59,24 +60,21 @@ void TryConnectAndDestroy() {
   // The precise behavior is dependant on the test runtime environment though,
   // since connect() attempts on this address may unfortunately result in
   // "network unreachable" errors in some test runtime environments.
-  char* uri_str;
-  gpr_asprintf(&uri_str, "ipv6:[0100::1234]:443");
+  const char* uri_str = "ipv6:[0100::1234]:443";
   grpc_uri* lb_uri = grpc_uri_parse(uri_str, true);
-  gpr_free(uri_str);
-  GPR_ASSERT(lb_uri != nullptr);
+  ASSERT_NE(lb_uri, nullptr);
   grpc_resolved_address address;
-  GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
-  std::vector<grpc_arg> address_args_to_add = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1),
-  };
-  grpc_core::ServerAddressList addresses;
-  grpc_channel_args* address_args = grpc_channel_args_copy_and_add(
-      nullptr, address_args_to_add.data(), address_args_to_add.size());
-  addresses.emplace_back(address.addr, address.len, address_args);
-  grpc_core::Resolver::Result lb_address_result;
-  lb_address_result.addresses = addresses;
+  ASSERT_TRUE(grpc_parse_uri(lb_uri, &address));
   grpc_uri_destroy(lb_uri);
+  grpc_core::ServerAddressList addresses;
+  addresses.emplace_back(address.addr, address.len, nullptr);
+  grpc_core::Resolver::Result lb_address_result;
+  grpc_error* error = GRPC_ERROR_NONE;
+  lb_address_result.service_config = grpc_core::ServiceConfig::Create(
+      "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  grpc_arg arg = grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);
+  lb_address_result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   response_generator->SetResponse(lb_address_result);
   grpc::ChannelArguments args;
   args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -95,9 +93,9 @@ void TryConnectAndDestroy() {
   // unreachable balancer to begin. The connection should never become ready
   // because the LB we're trying to connect to is unreachable.
   channel->GetState(true /* try_to_connect */);
-  GPR_ASSERT(
-      !channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  GPR_ASSERT("grpclb" == channel->GetLoadBalancingPolicyName());
+  ASSERT_FALSE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_EQ("grpclb", channel->GetLoadBalancingPolicyName());
   channel.reset();
 };
 

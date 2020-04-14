@@ -164,6 +164,7 @@ class XdsApi {
     void AddCategory(std::string name, uint32_t parts_per_million) {
       drop_category_list_.emplace_back(
           DropCategory{std::move(name), parts_per_million});
+      if (parts_per_million == 1000000) drop_all_ = true;
     }
 
     // The only method invoked from the data plane combiner.
@@ -173,6 +174,8 @@ class XdsApi {
       return drop_category_list_;
     }
 
+    bool drop_all() const { return drop_all_; }
+
     bool operator==(const DropConfig& other) const {
       return drop_category_list_ == other.drop_category_list_;
     }
@@ -180,12 +183,12 @@ class XdsApi {
 
    private:
     DropCategoryList drop_category_list_;
+    bool drop_all_ = false;
   };
 
   struct EdsUpdate {
     PriorityListUpdate priority_list_update;
     RefCountedPtr<DropConfig> drop_config;
-    bool drop_all = false;
   };
 
   using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;

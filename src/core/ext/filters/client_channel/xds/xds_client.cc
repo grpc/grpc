@@ -1076,7 +1076,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
               " drop categories received (drop_all=%d)",
               xds_client(), eds_update.priority_list_update.size(),
               eds_update.drop_config->drop_category_list().size(),
-              eds_update.drop_all);
+              eds_update.drop_config->drop_all());
       for (size_t priority = 0;
            priority < eds_update.priority_list_update.size(); ++priority) {
         const auto* locality_map_update = eds_update.priority_list_update.Find(
@@ -1381,10 +1381,9 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimerLocked(
   next_report_timer_callback_pending_ = false;
   if (error != GRPC_ERROR_NONE || !IsCurrentReporterOnCall()) {
     Unref(DEBUG_LOCATION, "Reporter+timer");
-    GRPC_ERROR_UNREF(error);
-    return;
+  } else {
+    SendReportLocked();
   }
-  SendReportLocked();
   GRPC_ERROR_UNREF(error);
 }
 
@@ -1464,10 +1463,9 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
       parent_->MaybeStartReportingLocked();
     }
     Unref(DEBUG_LOCATION, "Reporter+report_done");
-    GRPC_ERROR_UNREF(error);
-    return;
+  } else {
+    ScheduleNextReportLocked();
   }
-  ScheduleNextReportLocked();
   GRPC_ERROR_UNREF(error);
 }
 

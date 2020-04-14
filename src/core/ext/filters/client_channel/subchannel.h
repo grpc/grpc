@@ -180,6 +180,11 @@ class Subchannel {
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
    public:
+    struct ConnectivityStateChange {
+      grpc_connectivity_state state;
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    };
+
     virtual ~ConnectivityStateWatcherInterface() = default;
 
     // Will be invoked whenever the subchannel's connectivity state
@@ -199,40 +204,17 @@ class Subchannel {
     // TODO(yashkt): This is currently needed to send the state updates in the
     // right order when asynchronously notifying. This will no longer be
     // necessary when we have access to EventManager.
-    void PushConnectivityStateChange(
-        grpc_connectivity_state state,
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
-      MutexLock lock(&mu_);
-      connectivity_state_queue_.push_back(
-          std::make_pair(state, std::move(connected_subchannel)));
-    }
+    void PushConnectivityStateChange(ConnectivityStateChange state_change);
 
-    // Dequeues connectivity state change notifications. If the queue is empty,
-    // it returns false, otherwise returns true and sets \a state and \a
-    // connected_subchannel to the popped state change and connected subchannel.
-    bool PopConnectivityStateChange(
-        grpc_connectivity_state* state,
-        RefCountedPtr<ConnectedSubchannel>* connected_subchannel) {
-      MutexLock lock(&mu_);
-      if (connectivity_state_queue_.empty()) {
-        return false;
-      } else {
-        *state = connectivity_state_queue_.front().first;
-        *connected_subchannel =
-            std::move(connectivity_state_queue_.front().second);
-        connectivity_state_queue_.pop_front();
-        return true;
-      }
-    }
+    // Dequeues connectivity state change notifications.
+    ConnectivityStateChange PopConnectivityStateChange();
 
    private:
     // Keeps track of the updates that the watcher instance must be notified of.
     // TODO(yashkt): This is currently needed to send the state updates in the
     // right order when asynchronously notifying. This will no longer be
     // necessary when we have access to EventManager.
-    std::deque<
-        std::pair<grpc_connectivity_state, RefCountedPtr<ConnectedSubchannel>>>
-        connectivity_state_queue_;
+    std::deque<ConnectivityStateChange> connectivity_state_queue_;
     Mutex mu_;  // protects the queue
   };
 

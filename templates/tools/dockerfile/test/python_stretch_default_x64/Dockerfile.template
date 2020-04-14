@@ -16,7 +16,11 @@
 
   <%include file="../../python_stretch.include"/>
   <%include file="../../compile_python_36.include"/>
-  
+  <%include file="../../compile_python_38.include"/>
+
+  RUN apt-get update && apt-get install -y python3.5 python3.5-dev
+  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.5
+
   RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
   RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 

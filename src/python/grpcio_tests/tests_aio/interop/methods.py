@@ -15,8 +15,9 @@
 
 import argparse
 import asyncio
-import enum
 import collections
+import datetime
+import enum
 import inspect
 import json
 import os
@@ -220,12 +221,15 @@ async def _cancel_after_first_response(stub: test_pb2_grpc.TestServiceStub):
 
 async def _timeout_on_sleeping_server(stub: test_pb2_grpc.TestServiceStub):
     request_payload_size = 27182
+    time_limit = datetime.timedelta(seconds=1)
 
-    call = stub.FullDuplexCall(timeout=0.001)
+    call = stub.FullDuplexCall(timeout=time_limit.total_seconds())
 
     request = messages_pb2.StreamingOutputCallRequest(
         response_type=messages_pb2.COMPRESSABLE,
-        payload=messages_pb2.Payload(body=b'\x00' * request_payload_size))
+        payload=messages_pb2.Payload(body=b'\x00' * request_payload_size),
+        response_parameters=(messages_pb2.ResponseParameters(
+            interval_us=int(time_limit.total_seconds() * 2 * 10**6)),))
     await call.write(request)
     await call.done_writing()
     try:

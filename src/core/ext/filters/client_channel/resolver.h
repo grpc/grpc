@@ -135,8 +135,8 @@ class Resolver : public InternallyRefCounted<Resolver> {
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
-  std::unique_ptr<ResultHandler> result_handler_;
   std::shared_ptr<WorkSerializer> work_serializer_;
+  std::unique_ptr<ResultHandler> result_handler_;
 };
 
 }  // namespace grpc_core
