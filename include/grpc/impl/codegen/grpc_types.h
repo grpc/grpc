@@ -344,10 +344,6 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
-/* Timeout in milliseconds to wait for the serverlist from the xDS load
-   balancer before using fallback backend addresses from the resolver.
-   If 0, enter fallback mode immediately. Default value is 10000. */
-#define GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS "grpc.xds_fallback_timeout_ms"
 /* Timeout in milliseconds to wait for the child of a specific priority to
    complete its initial connection attempt before the priority LB policy fails
    over to the next priority. Default value is 10 seconds. */

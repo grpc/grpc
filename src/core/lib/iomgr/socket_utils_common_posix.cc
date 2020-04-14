@@ -210,7 +210,6 @@ static gpr_once g_probe_so_reuesport_once = GPR_ONCE_INIT;
 static int g_support_so_reuseport = false;
 
 void probe_so_reuseport_once(void) {
-#ifndef GPR_MANYLINUX1
   int s = socket(AF_INET, SOCK_STREAM, 0);
   if (s < 0) {
     /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
@@ -222,7 +221,6 @@ void probe_so_reuseport_once(void) {
         "check for SO_REUSEPORT", grpc_set_socket_reuse_port(s, 1));
     close(s);
   }
-#endif
 }
 
 bool grpc_is_socket_reuse_port_supported() {

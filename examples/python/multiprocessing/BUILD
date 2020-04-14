@@ -37,6 +37,7 @@ py_binary(
     name = "client",
     testonly = 1,
     srcs = ["client.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
@@ -50,6 +51,7 @@ py_binary(
     name = "server",
     testonly = 1,
     srcs = ["server.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
