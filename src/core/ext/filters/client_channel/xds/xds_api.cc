@@ -1046,6 +1046,10 @@ grpc_error* RouteConfigParse(
       }
       rds_route.service = std::string(path_elements[0]);
       rds_route.method = std::string(path_elements[1]);
+    } else {
+      // TODO(donnadionne): We may change this behavior once we decide how to
+      // handle unsupported fields.
+      continue;
     }
     if (!envoy_api_v2_route_Route_has_route(route)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(

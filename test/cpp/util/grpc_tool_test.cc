@@ -1107,9 +1107,10 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
   ShutdownServer();
 }
 
-/*TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
+TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'"
-  const char* argv[] = {"grpc_cli", "call", "localhost:10000", "Echo",
+  const char* argv[] = {"grpc_cli", "call", "localhost:10000",
+                        "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
   FLAGS_protofiles = "src/proto/grpc/testing/echo.proto";
   char* test_srcdir = gpr_getenv("TEST_SRCDIR");
@@ -1143,7 +1144,7 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
   FLAGS_protofiles = "";
 
   gpr_free(test_srcdir);
-}*/
+}
 
 TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
   const grpc::string server_address = SetUpServer(true);

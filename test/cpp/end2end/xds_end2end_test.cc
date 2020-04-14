@@ -264,12 +264,12 @@ class BackendServiceImpl
 
   Status Echo1(ServerContext* context, const EchoRequest* request,
                EchoResponse* response) override {
-    return (Echo(context, request, response));
+    return Echo(context, request, response);
   }
 
   Status Echo2(ServerContext* context, const EchoRequest* request,
                EchoResponse* response) override {
-    return (Echo(context, request, response));
+    return Echo(context, request, response);
   }
 
   void Start() {}
@@ -2197,10 +2197,10 @@ TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
 TEST_P(LdsTest, RouteMatchHasEmptyPath) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_match()
-      ->set_path("");
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_path("");
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
   SetNextResolution({});
@@ -2291,20 +2291,15 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
   Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
   new_cluster2.set_name(kNewCluster2Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
-  // Change RDS resource to set up prefix matching to direct traffic to the
-  // second new cluster.
+  // Populating Route Configurations for LDS.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
-  auto* mismatched_route1 =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  mismatched_route1->mutable_match()->set_path(
-      "/grpc.testing.EchoTest1Service/Echo1");
-  mismatched_route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* mismatched_route2 =
-      new_route_config.mutable_virtual_hosts(0)->add_routes();
-  mismatched_route2->mutable_match()->set_path(
-      "/grpc.testing.EchoTest2Service/Echo2");
-  mismatched_route2->mutable_route()->set_cluster(kNewCluster2Name);
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
+  route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
@@ -2367,18 +2362,15 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
   new_cluster2.set_name(kNewCluster2Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
-  // Change RDS resource to set up prefix matching to direct traffic to the
-  // second new cluster.
+  // Populating Route Configurations for LDS.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
-  auto* mismatched_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  mismatched_route->mutable_match()->set_prefix(
-      "/grpc.testing.EchoTest1Service");
-  mismatched_route->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* matched_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  matched_route->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service");
-  matched_route->mutable_route()->set_cluster(kNewCluster2Name);
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route2->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service");
+  route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
