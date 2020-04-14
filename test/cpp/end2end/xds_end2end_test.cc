@@ -1700,7 +1700,7 @@ TEST_P(BasicTest, Vanilla) {
   }
   // Check LB policy name for the channel.
   EXPECT_EQ(
-      (GetParam().use_xds_resolver() ? "cds_experimental" : "eds_experimental"),
+      (GetParam().use_xds_resolver() ? "xds_routing_experimental" : "eds_experimental"),
       channel_->GetLoadBalancingPolicyName());
 }
 
