@@ -57,6 +57,7 @@ typedef enum {
   CANCEL_AFTER_PROCESSING
 } ServerTryCancelRequestPhase;
 
+namespace {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
 void MaybeEchoDeadline(experimental::ServerContextBase* context,
@@ -136,6 +137,7 @@ void ServerTryCancel(ServerContext* context) {
                                  gpr_time_from_micros(1000, GPR_TIMESPAN)));
   }
 }
+} // namespace
 
 class TestServiceSignaller {
  public:
