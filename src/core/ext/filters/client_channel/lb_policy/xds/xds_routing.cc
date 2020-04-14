@@ -215,7 +215,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   absl::string_view path;
-  for (const auto& p : *(args.initial_metadata)) {
+  for (const auto p : *(args.initial_metadata)) {
     if (p.first == ":path") {
       path = p.second;
       break;
