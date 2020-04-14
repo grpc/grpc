@@ -1363,6 +1363,87 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return backend_ports;
   }
 
+  enum RpcServiceMethod {
+    TEST_ECHO,
+    TEST_ECHO1,
+    TEST_ECHO2,
+    TEST1_ECHO,
+    TEST1_ECHO1,
+    TEST1_ECHO2,
+    TEST2_ECHO,
+    TEST2_ECHO1,
+    TEST2_ECHO2,
+  };
+
+  struct RpcOptions {
+    RpcServiceMethod service_method = TEST_ECHO;
+    EchoResponse* response = nullptr;
+    int timeout_ms = 1000;
+    bool wait_for_ready = false;
+    bool server_fail = false;
+    int times = 1;
+  };
+
+  // TODO@donnadionne: Will replace SendRpc in all tests.
+  Status SendRpcNew(const RpcOptions& rpc_options,
+                    EchoResponse* response = nullptr) {
+    const bool local_response = (response == nullptr);
+    if (local_response) response = new EchoResponse;
+    EchoRequest request;
+    request.set_message(kRequestMessage_);
+    if (rpc_options.server_fail) {
+      request.mutable_param()->mutable_expected_error()->set_code(
+          GRPC_STATUS_FAILED_PRECONDITION);
+    }
+    ClientContext context;
+    context.set_deadline(
+        grpc_timeout_milliseconds_to_deadline(rpc_options.timeout_ms));
+    if (rpc_options.wait_for_ready) context.set_wait_for_ready(true);
+    Status status;
+    switch (rpc_options.service_method) {
+      case TEST_ECHO:
+        status = stub_->Echo(&context, request, response);
+        break;
+      case TEST_ECHO1:
+        status = stub_->Echo1(&context, request, response);
+        break;
+      case TEST_ECHO2:
+        status = stub_->Echo2(&context, request, response);
+        break;
+      case TEST1_ECHO:
+        status = stub1_->Echo(&context, request, response);
+        break;
+      case TEST1_ECHO1:
+        status = stub1_->Echo1(&context, request, response);
+        break;
+      case TEST1_ECHO2:
+        status = stub1_->Echo2(&context, request, response);
+        break;
+      case TEST2_ECHO:
+        status = stub2_->Echo(&context, request, response);
+        break;
+      case TEST2_ECHO1:
+        status = stub2_->Echo1(&context, request, response);
+        break;
+      case TEST2_ECHO2:
+        status = stub2_->Echo2(&context, request, response);
+        break;
+    }
+    if (local_response) delete response;
+    return status;
+  }
+
+  // TODO@donnadionne: Will replace ChedkRpcSendOk in all tests.
+  void CheckRpcSendOkNew(const RpcOptions& rpc_options) {
+    for (size_t i = 0; i < rpc_options.times; ++i) {
+      EchoResponse response;
+      const Status status = SendRpcNew(rpc_options, &response);
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+  }
+
   Status SendRpc(const string& method_name = "Echo",
                  EchoResponse* response = nullptr, int timeout_ms = 1000,
                  bool wait_for_ready = false, bool server_fail = false) {
@@ -2186,6 +2267,9 @@ TEST_P(LdsTest, RouteHasNoRouteAction) {
             AdsServiceImpl::NACKED);
 }
 
+// TODO@donnadionne: Add more invalid config tests to cover all errors in
+// xds_api.cc
+
 // Tests that LDS client should send a NACK if RouteAction has a
 // cluster_specifier other than cluster in the LDS response.
 TEST_P(LdsTest, RouteActionHasNoCluster) {
@@ -2268,9 +2352,17 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
   WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumEchoRpcs, "Echo", 1000, true);
-  CheckRpcSendOk(kNumEcho1Rpcs, "Echo1", 1000, true);
-  CheckRpcSendOk(kNumEcho2Rpcs, "Echo2", 1000, true);
+  RpcOptions rpc_options;
+  rpc_options.times = kNumEchoRpcs;
+  rpc_options.service_method = TEST_ECHO;
+  rpc_options.wait_for_ready = true;
+  CheckRpcSendOkNew(rpc_options);
+  rpc_options.times = kNumEcho1Rpcs;
+  rpc_options.service_method = TEST1_ECHO1;
+  CheckRpcSendOkNew(rpc_options);
+  rpc_options.times = kNumEcho2Rpcs;
+  rpc_options.service_method = TEST2_ECHO2;
+  CheckRpcSendOkNew(rpc_options);
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_EQ(kNumEchoRpcs / 2,
@@ -2327,10 +2419,10 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service");
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  route2->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service");
+  route2->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
@@ -2339,9 +2431,17 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
   WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumEchoRpcs, "Echo", 1000, true);
-  CheckRpcSendOk(kNumEcho1Rpcs, "Echo1", 1000, true);
-  CheckRpcSendOk(kNumEcho2Rpcs, "Echo2", 1000, true);
+  RpcOptions rpc_options;
+  rpc_options.times = kNumEchoRpcs;
+  rpc_options.service_method = TEST_ECHO;
+  rpc_options.wait_for_ready = true;
+  CheckRpcSendOkNew(rpc_options);
+  rpc_options.times = kNumEcho1Rpcs;
+  rpc_options.service_method = TEST1_ECHO1;
+  CheckRpcSendOkNew(rpc_options);
+  rpc_options.times = kNumEcho2Rpcs;
+  rpc_options.service_method = TEST2_ECHO2;
+  CheckRpcSendOkNew(rpc_options);
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_EQ(kNumEchoRpcs / 2,
@@ -2438,7 +2538,7 @@ TEST_P(RdsTest, RouteMatchHasNonemptyPrefix) {
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_match()
-      ->set_prefix("nonempty_prefix");
+      ->set_prefix("/nonempty_prefix/");
   balancers_[0]->ads_service()->SetRdsResource(route_config,
                                                kDefaultResourceName);
   SetNextResolution({});

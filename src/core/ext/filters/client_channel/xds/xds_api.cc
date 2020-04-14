@@ -1026,7 +1026,7 @@ grpc_error* RouteConfigParse(
       if (prefix.size > 0) {
         std::vector<absl::string_view> prefix_elements = absl::StrSplit(
             absl::string_view(prefix.data, prefix.size).substr(1), '/');
-        if (prefix_elements.size() != 1) {
+        if (prefix_elements.size() != 2) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Prefix not in the required format of /service/");
         }

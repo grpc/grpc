@@ -307,6 +307,7 @@ class TestMultipleServiceImpl : public RpcService {
   }
 
   // Unimplemented is left unimplemented to test the returned error.
+
   Status RequestStream(ServerContext* context,
                        ServerReader<EchoRequest>* reader,
                        EchoResponse* response) {
