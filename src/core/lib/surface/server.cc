@@ -577,7 +577,6 @@ static void publish_new_rpc(void* arg, grpc_error* error) {
     rm->pending_tail->pending_next = calld;
     rm->pending_tail = calld;
   }
-  calld->pending_next = nullptr;
   gpr_mu_unlock(&server->mu_call);
 }
 
