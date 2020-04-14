@@ -25,4 +25,5 @@
 
 extern const grpc_channel_filter grpc_message_decompress_filter;
 
-#endif  // GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_DECOMPRESS_MESSAGE_DECOMPRESS_FILTER_H
+#endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_DECOMPRESS_MESSAGE_DECOMPRESS_FILTER_H \
+        */
