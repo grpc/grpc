@@ -127,7 +127,11 @@ typedef enum {
 #define GRPC_ERROR_OOM ((grpc_error*)2)
 #define GRPC_ERROR_RESERVED_2 ((grpc_error*)3)
 #define GRPC_ERROR_CANCELLED ((grpc_error*)4)
-#define GRPC_ERROR_SPECIAL_MAX GRPC_ERROR_CANCELLED
+#define GRPC_ERROR_RESERVED_3 ((grpc_error*)5)
+// GRPC_ERROR_EOS is used only by transports for send ops that failed because
+// the stream was closed for writes.
+#define GRPC_ERROR_EOS ((grpc_error*)6)
+#define GRPC_ERROR_SPECIAL_MAX GRPC_ERROR_EOS
 
 inline bool grpc_error_is_special(struct grpc_error* err) {
   return err <= GRPC_ERROR_SPECIAL_MAX;

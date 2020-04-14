@@ -1178,12 +1178,6 @@ static void post_batch_completion(batch_control* bctl) {
         &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
   }
   if (bctl->op.send_message) {
-    if (bctl->op.payload->send_message.stream_write_closed &&
-        error == GRPC_ERROR_NONE) {
-      error = grpc_error_add_child(
-          error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                     "Attempt to send message after stream was closed."));
-    }
     call->sending_message = false;
   }
   if (bctl->op.send_trailing_metadata) {
@@ -1538,7 +1532,12 @@ static void finish_batch(void* bctlp, grpc_error* error) {
     gpr_atm_rel_store(&bctl->batch_error,
                       reinterpret_cast<gpr_atm>(GRPC_ERROR_REF(error)));
   }
-  if (error != GRPC_ERROR_NONE) {
+  // If the batch had an error, we should normally fail the call. If the batch
+  // ended with GRPC_ERROR_EOS instead, we should not cancel the call because we
+  // do not want to overwrite the status that will propagated through the
+  // recv_trailing_metadata filter.
+  if (error != GRPC_ERROR_NONE && error != GRPC_ERROR_EOS) {
+    gpr_log(GPR_ERROR, "got an error %s. cancelling", grpc_error_string(error));
     cancel_with_error(call, GRPC_ERROR_REF(error));
   }
   finish_batch_step(bctl);
