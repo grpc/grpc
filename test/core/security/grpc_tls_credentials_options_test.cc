@@ -17,7 +17,6 @@
  */
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 
 #include <gmock/gmock.h>
 #include <grpc/support/alloc.h>
@@ -25,28 +24,61 @@
 #include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 
+#include "src/core/lib/iomgr/load_file.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+
 namespace testing {
 
 static void SetKeyMaterials(grpc_tls_key_materials_config* config) {
-  const grpc_ssl_pem_key_cert_pair pem_key_pair = {
-      test_server1_key,
-      test_server1_cert,
-  };
-  const auto* pem_key_pair_ptr = &pem_key_pair;
-  grpc_tls_key_materials_config_set_key_materials(config, test_root_cert,
-                                                  &pem_key_pair_ptr, 1);
+  grpc_slice ca_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+  const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
+  grpc_tls_key_materials_config_set_key_materials(config, ca_cert,
+                                                  &pem_key_cert_pair_ptr, 1);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
 }
 
 TEST(GrpcTlsCredentialsOptionsTest, SetKeyMaterials) {
   grpc_tls_key_materials_config* config =
       grpc_tls_key_materials_config_create();
   SetKeyMaterials(config);
-  EXPECT_STREQ(config->pem_root_certs(), test_root_cert);
+  grpc_slice ca_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  EXPECT_STREQ(config->pem_root_certs(), ca_cert);
   EXPECT_EQ(config->pem_key_cert_pair_list().size(), 1);
-  EXPECT_STREQ(config->pem_key_cert_pair_list()[0].private_key(),
-               test_server1_key);
-  EXPECT_STREQ(config->pem_key_cert_pair_list()[0].cert_chain(),
-               test_server1_cert);
+  EXPECT_STREQ(config->pem_key_cert_pair_list()[0].private_key(), server_key);
+  EXPECT_STREQ(config->pem_key_cert_pair_list()[0].cert_chain(), server_cert);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
   delete config;
 }
 
