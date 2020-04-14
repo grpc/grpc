@@ -1025,7 +1025,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 "subchannel %p; hopping into work_serializer",
                 parent_->chand_, parent_.get(), parent_->subchannel_);
       }
-      Ref();  // ref owned by lambda
+      Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
           [this]() {
             ApplyUpdateInControlPlaneWorkSerializer();
