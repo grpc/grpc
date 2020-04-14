@@ -546,7 +546,10 @@ async def _handle_cancellation_from_core(object rpc_task,
     # Awaits cancellation from peer.
     await execute_batch(rpc_state, ops, loop)
     rpc_state.client_closed = True
-    if op.cancelled() and not rpc_task.done():
+    # If 1) received cancel signal; 2) the Task is not finished; 3) the server
+    # wasn't replying final status. For condition 3, it might cause inaccurate
+    # log that an RPC is both aborted and cancelled.
+    if op.cancelled() and not rpc_task.done() and not rpc_state.status_sent:
         # Injects `CancelledError` to halt the RPC coroutine
         rpc_task.cancel()
 
