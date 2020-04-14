@@ -1363,7 +1363,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return backend_ports;
   }
 
-  Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
+  Status SendRpc(const string& method_name = "Echo",
+                 EchoResponse* response = nullptr, int timeout_ms = 1000,
                  bool wait_for_ready = false, bool server_fail = false) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
@@ -1376,44 +1377,26 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     if (wait_for_ready) context.set_wait_for_ready(true);
-    Status status = stub_->Echo(&context, request, response);
+    Status status;
+    if (method_name == "Echo") {
+      status = stub_->Echo(&context, request, response);
+    } else if (method_name == "Echo1") {
+      status = stub1_->Echo1(&context, request, response);
+    } else if (method_name == "Echo2") {
+      status = stub2_->Echo2(&context, request, response);
+    }
     if (local_response) delete response;
     return status;
   }
 
-  Status SendEcho1Rpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
-                      bool wait_for_ready = false) {
-    const bool local_response = (response == nullptr);
-    if (local_response) response = new EchoResponse;
-    EchoRequest request;
-    request.set_message(kRequestMessage_);
-    ClientContext context;
-    context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
-    if (wait_for_ready) context.set_wait_for_ready(true);
-    Status status = stub1_->Echo1(&context, request, response);
-    if (local_response) delete response;
-    return status;
-  }
-
-  Status SendEcho2Rpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
-                      bool wait_for_ready = false) {
-    const bool local_response = (response == nullptr);
-    if (local_response) response = new EchoResponse;
-    EchoRequest request;
-    request.set_message(kRequestMessage_);
-    ClientContext context;
-    context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
-    if (wait_for_ready) context.set_wait_for_ready(true);
-    Status status = stub2_->Echo2(&context, request, response);
-    if (local_response) delete response;
-    return status;
-  }
-
-  void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
+  void CheckRpcSendOk(const size_t times = 1,
+                      const string& method_name = "Echo",
+                      const int timeout_ms = 1000,
                       bool wait_for_ready = false) {
     for (size_t i = 0; i < times; ++i) {
       EchoResponse response;
-      const Status status = SendRpc(&response, timeout_ms, wait_for_ready);
+      const Status status =
+          SendRpc(method_name, &response, timeout_ms, wait_for_ready);
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                << " message=" << status.error_message();
       EXPECT_EQ(response.message(), kRequestMessage_);
@@ -1422,30 +1405,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void CheckRpcSendFailure(const size_t times = 1, bool server_fail = false) {
     for (size_t i = 0; i < times; ++i) {
-      const Status status = SendRpc(nullptr, 1000, false, server_fail);
+      const Status status = SendRpc("Echo", nullptr, 1000, false, server_fail);
       EXPECT_FALSE(status.ok());
-    }
-  }
-
-  void CheckEcho1RpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
-                           bool wait_for_ready = false) {
-    for (size_t i = 0; i < times; ++i) {
-      EchoResponse response;
-      const Status status = SendEcho1Rpc(&response, timeout_ms, wait_for_ready);
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kRequestMessage_);
-    }
-  }
-
-  void CheckEcho2RpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
-                           bool wait_for_ready = false) {
-    for (size_t i = 0; i < times; ++i) {
-      EchoResponse response;
-      const Status status = SendEcho2Rpc(&response, timeout_ms, wait_for_ready);
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kRequestMessage_);
     }
   }
 
@@ -1738,7 +1699,7 @@ TEST_P(BasicTest, InitiallyEmptyServerlist) {
                 kDefaultResourceName));
   const auto t0 = system_clock::now();
   // Client will block: LB will initially send empty serverlist.
-  CheckRpcSendOk(1, kCallDeadlineMs, true /* wait_for_ready */);
+  CheckRpcSendOk(1, "Echo", kCallDeadlineMs, true /* wait_for_ready */);
   const auto ellapsed_ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(
           system_clock::now() - t0);
@@ -1786,7 +1747,7 @@ TEST_P(BasicTest, BackendsRestart) {
   CheckRpcSendFailure();
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
-  CheckRpcSendOk(1 /* times */, 2000 /* timeout_ms */,
+  CheckRpcSendOk(1 /* times */, "Echo", 2000 /* timeout_ms */,
                  true /* wait_for_ready */);
 }
 
@@ -2307,9 +2268,9 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
   WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumEchoRpcs, 1000, true);
-  CheckEcho1RpcSendOk(kNumEcho1Rpcs, 1000, true);
-  CheckEcho2RpcSendOk(kNumEcho2Rpcs, 1000, true);
+  CheckRpcSendOk(kNumEchoRpcs, "Echo", 1000, true);
+  CheckRpcSendOk(kNumEcho1Rpcs, "Echo1", 1000, true);
+  CheckRpcSendOk(kNumEcho2Rpcs, "Echo2", 1000, true);
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_EQ(kNumEchoRpcs / 2,
@@ -2378,9 +2339,9 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
   WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumEchoRpcs, 1000, true);
-  CheckEcho1RpcSendOk(kNumEcho1Rpcs, 1000, true);
-  CheckEcho2RpcSendOk(kNumEcho2Rpcs, 1000, true);
+  CheckRpcSendOk(kNumEchoRpcs, "Echo", 1000, true);
+  CheckRpcSendOk(kNumEcho1Rpcs, "Echo1", 1000, true);
+  CheckRpcSendOk(kNumEcho2Rpcs, "Echo2", 1000, true);
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_EQ(kNumEchoRpcs / 2,
@@ -3090,7 +3051,7 @@ TEST_P(DropTest, Vanilla) {
   size_t num_drops = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
-    const Status status = SendRpc(&response);
+    const Status status = SendRpc("Echo", &response);
     if (!status.ok() &&
         status.error_message() == "Call dropped by load balancing policy") {
       ++num_drops;
@@ -3130,7 +3091,7 @@ TEST_P(DropTest, DropPerHundred) {
   size_t num_drops = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
-    const Status status = SendRpc(&response);
+    const Status status = SendRpc("Echo", &response);
     if (!status.ok() &&
         status.error_message() == "Call dropped by load balancing policy") {
       ++num_drops;
@@ -3169,7 +3130,7 @@ TEST_P(DropTest, DropPerTenThousand) {
   size_t num_drops = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
-    const Status status = SendRpc(&response);
+    const Status status = SendRpc("Echo", &response);
     if (!status.ok() &&
         status.error_message() == "Call dropped by load balancing policy") {
       ++num_drops;
@@ -3212,7 +3173,7 @@ TEST_P(DropTest, Update) {
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
-    const Status status = SendRpc(&response);
+    const Status status = SendRpc("Echo", &response);
     if (!status.ok() &&
         status.error_message() == "Call dropped by load balancing policy") {
       ++num_drops;
@@ -3244,7 +3205,7 @@ TEST_P(DropTest, Update) {
   size_t num_rpcs = kNumRpcs;
   while (seen_drop_rate < kDropRateThreshold) {
     EchoResponse response;
-    const Status status = SendRpc(&response);
+    const Status status = SendRpc("Echo", &response);
     ++num_rpcs;
     if (!status.ok() &&
         status.error_message() == "Call dropped by load balancing policy") {
@@ -3261,7 +3222,7 @@ TEST_P(DropTest, Update) {
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
-    const Status status = SendRpc(&response);
+    const Status status = SendRpc("Echo", &response);
     if (!status.ok() &&
         status.error_message() == "Call dropped by load balancing policy") {
       ++num_drops;
@@ -3298,7 +3259,7 @@ TEST_P(DropTest, DropAll) {
   // Send kNumRpcs RPCs and all of them are dropped.
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
-    const Status status = SendRpc(&response);
+    const Status status = SendRpc("Echo", &response);
     EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
     EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
   }
@@ -3441,7 +3402,7 @@ TEST_P(FallbackTest, FallbackEarlyWhenBalancerChannelFails) {
   SetNextResolutionForLbChannel({g_port_saver->GetPort()});
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
-  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+  CheckRpcSendOk(/* times */ 1, "Echo", /* timeout_ms */ 1000,
                  /* wait_for_ready */ false);
 }
 
@@ -3456,7 +3417,7 @@ TEST_P(FallbackTest, FallbackEarlyWhenBalancerCallFails) {
   balancers_[0]->ads_service()->NotifyDoneWithAdsCall();
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
-  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+  CheckRpcSendOk(/* times */ 1, "Echo", /* timeout_ms */ 1000,
                  /* wait_for_ready */ false);
 }
 
@@ -3928,7 +3889,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   // Send kNumRpcs RPCs and count the drops.
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
-    const Status status = SendRpc(&response);
+    const Status status = SendRpc("Echo", &response);
     if (!status.ok() &&
         status.error_message() == "Call dropped by load balancing policy") {
       ++num_drops;
