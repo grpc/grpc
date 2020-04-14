@@ -748,6 +748,8 @@ static void test_refresh_token_creds_success(void) {
                             httpcli_post_should_not_be_called);
   run_request_metadata_test(creds, auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
+  GPR_ASSERT(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string) == 0);
 
   creds->Unref();
   grpc_httpcli_set_override(nullptr, nullptr);
@@ -758,6 +760,9 @@ static void test_refresh_token_with_quota_project_id_creds_success(void) {
   expected_md emd[] = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"},
       {"x-goog-user-project", "my-quota-project-id"}};
+  const char expected_creds_debug_string[] =
+      "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
+      "OAuth2TokenFetcherCredentials}";
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(

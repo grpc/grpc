@@ -256,9 +256,11 @@ static void send_security_metadata(grpc_call_element* elem,
   }
 
   if (channel_call_creds != nullptr && call_creds_has_md) {
+    // When compositing credentials, use the call credenttials first and then
+    // the channel call credentials.
     calld->creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
-        grpc_composite_call_credentials_create(channel_call_creds,
-                                               ctx->creds.get(), nullptr));
+        grpc_composite_call_credentials_create(ctx->creds.get(),
+                                               channel_call_creds, nullptr));
     if (calld->creds == nullptr) {
       grpc_transport_stream_op_batch_finish_with_failure(
           batch,
