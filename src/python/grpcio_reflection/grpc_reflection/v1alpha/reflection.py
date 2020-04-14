@@ -15,7 +15,6 @@
 
 import sys
 import grpc
-from grpc.experimental import aio as grpc_aio
 
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
@@ -57,7 +56,8 @@ class ReflectionServicer(BaseReflectionServicer):
 
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # Exposes AsyncReflectionServicer as public API.
-    from . import _async as aio  # pylint: disable=unused-import
+    from . import _async as aio
+    from grpc.experimental import aio as grpc_aio
 
     def enable_server_reflection(service_names, server, pool=None):
         """Enables server reflection on a server.
