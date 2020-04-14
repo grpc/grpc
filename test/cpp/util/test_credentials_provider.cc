@@ -19,19 +19,21 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-
-#include <mutex>
-#include <unordered_map>
-
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/security/server_credentials.h>
+#include "src/core/lib/iomgr/load_file.h"
 
-#include "test/core/end2end/data/ssl_test_data.h"
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <unordered_map>
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 DEFINE_string(tls_cert_file, "", "The TLS cert file used when --use_tls=true");
 DEFINE_string(tls_key_file, "", "The TLS key file used when --use_tls=true");
@@ -90,8 +92,14 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       grpc::experimental::AltsCredentialsOptions alts_opts;
       return grpc::experimental::AltsCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
+      grpc_slice ca_slice;
+      GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                                   grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+      const char* test_root_cert =
+          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
       SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
       args->SetSslTargetNameOverride("foo.test.google.fr");
+      grpc_slice_unref(ca_slice);
       return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
       return grpc::GoogleDefaultCredentials();
@@ -123,9 +131,20 @@ class DefaultCredentialsProvider : public CredentialsProvider {
             custom_server_key_, custom_server_cert_};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       } else {
-        SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                            test_server1_cert};
+        grpc_slice cert_slice, key_slice;
+        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+            "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+            "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+        const char* server_cert =
+            reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+        const char* server_key =
+            reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {server_key,
+                                                            server_cert};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+        grpc_slice_unref(cert_slice);
+        grpc_slice_unref(key_slice);
       }
       return SslServerCredentials(ssl_opts);
     } else {
