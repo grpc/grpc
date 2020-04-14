@@ -137,7 +137,7 @@ void ServerTryCancel(ServerContext* context) {
                                  gpr_time_from_micros(1000, GPR_TIMESPAN)));
   }
 }
-} // namespace
+}  // namespace
 
 class TestServiceSignaller {
  public:
