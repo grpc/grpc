@@ -68,18 +68,20 @@ int main(int argc, char** argv) {
   grpc_channel_args minimal_stack_args = {1, &minimal_stack_arg};
   errors +=
       CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                  "authority", "message_decompress", "connected", NULL);
+                  "authority", "connected", NULL);
   errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
-                        "authority", "message_decompress", "connected", NULL);
+                        "authority", "connected", NULL);
   errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_SERVER_CHANNEL,
-                        "server", "message_decompress", "connected", NULL);
-  errors +=
-      CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                  "authority", "http-client", "connected", NULL);
+                        "server", "connected", NULL);
+  errors += CHECK_STACK("chttp2", &minimal_stack_args,
+                        GRPC_CLIENT_DIRECT_CHANNEL, "authority", "http-client",
+                        "message_decompress", "connected", NULL);
   errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
-                        "authority", "http-client", "connected", NULL);
-  errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_SERVER_CHANNEL,
-                        "server", "http-server", "connected", NULL);
+                        "authority", "http-client", "message_decompress",
+                        "connected", NULL);
+  errors +=
+      CHECK_STACK("chttp2", &minimal_stack_args, GRPC_SERVER_CHANNEL, "server",
+                  "http-server", "message_decompress", "connected", NULL);
   errors += CHECK_STACK(nullptr, &minimal_stack_args, GRPC_CLIENT_CHANNEL,
                         "client-channel", NULL);
 
