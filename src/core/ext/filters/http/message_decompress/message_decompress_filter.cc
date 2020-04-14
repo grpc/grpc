@@ -34,7 +34,6 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
