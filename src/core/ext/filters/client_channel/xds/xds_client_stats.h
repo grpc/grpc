@@ -42,11 +42,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   struct Less {
     bool operator()(const XdsLocalityName* lhs,
                     const XdsLocalityName* rhs) const {
-      int cmp_result = lhs->region_.compare(rhs->region_);
-      if (cmp_result != 0) return cmp_result < 0;
-      cmp_result = lhs->zone_.compare(rhs->zone_);
-      if (cmp_result != 0) return cmp_result < 0;
-      return lhs->sub_zone_.compare(rhs->sub_zone_) < 0;
+      return lhs->Compare(*rhs) < 0;
     }
 
     bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
@@ -63,6 +59,18 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   bool operator==(const XdsLocalityName& other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&
            sub_zone_ == other.sub_zone_;
+  }
+
+  bool operator!=(const XdsLocalityName& other) const {
+    return !(*this == other);
+  }
+
+  int Compare(const XdsLocalityName& other) const {
+    int cmp_result = region_.compare(other.region_);
+    if (cmp_result != 0) return cmp_result;
+    cmp_result = zone_.compare(other.zone_);
+    if (cmp_result != 0) return cmp_result;
+    return sub_zone_.compare(other.sub_zone_);
   }
 
   const std::string& region() const { return region_; }

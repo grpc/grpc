@@ -31,7 +31,18 @@
    chains are linear, then channel stacks provide a mechanism to minimize
    allocations for that chain.
    Call stacks are created by channel stacks and represent the per-call data
-   for that stack. */
+   for that stack.
+
+   Implementations should take care of the following details for a batch -
+   1. Synchronization is achieved with a CallCombiner. View
+   src/core/lib/iomgr/call_combiner.h for more details.
+   2. If the filter wants to inject an error on the way down, it needs to call
+   grpc_transport_stream_op_batch_finish_with_failure from within the call
+   combiner. This will cause any batch callbacks to be called with that error.
+   3. If the filter wants to inject an error on the way up (from a callback), it
+   should also inject that error in the recv_trailing_metadata callback so that
+   it can have an effect on the call status.
+*/
 
 #include <grpc/support/port_platform.h>
 

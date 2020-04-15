@@ -122,20 +122,22 @@ argp.add_argument(
     help=
     'If provided, uses this file instead of retrieving via the GCP discovery '
     'API')
+argp.add_argument(
+    '--alpha_compute_discovery_document',
+    default=None,
+    type=str,
+    help='If provided, uses this file instead of retrieving via the alpha GCP '
+    'discovery API')
 argp.add_argument('--network',
                   default='global/networks/default',
                   help='GCP network to use')
 argp.add_argument('--service_port_range',
-                  default='80',
+                  default='8080:8110',
                   type=parse_port_range,
                   help='Listening port for created gRPC backends. Specified as '
                   'either a single int or as a range in the format min:max, in '
                   'which case an available port p will be chosen s.t. min <= p '
                   '<= max')
-argp.add_argument('--forwarding_rule_ip_prefix',
-                  default='172.16.0.',
-                  help='If set, an available IP with this prefix followed by '
-                  '0-255 will be used for the generated forwarding rule.')
 argp.add_argument(
     '--stats_port',
     default=8079,
@@ -180,6 +182,10 @@ argp.add_argument('--log_client_output',
                   help='Log captured client output',
                   default=False,
                   action='store_true')
+argp.add_argument('--only_stable_gcp_apis',
+                  help='Do not use alpha compute APIs',
+                  default=False,
+                  action='store_true')
 args = argp.parse_args()
 
 if args.verbose:
@@ -192,6 +198,7 @@ _INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
 _WAIT_FOR_STATS_SEC = 180
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
+_GCP_API_RETRIES = 5
 _BOOTSTRAP_TEMPLATE = """
 {{
   "node": {{
@@ -543,8 +550,8 @@ def create_instance_template(gcp, name, network, source_image, machine_type,
     }
 
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.instanceTemplates().insert(project=gcp.project,
-                                                    body=config).execute()
+    result = gcp.compute.instanceTemplates().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.instance_template = GcpResource(config['name'], result['targetLink'])
 
@@ -561,13 +568,14 @@ def add_instance_group(gcp, zone, name, size):
     }
 
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.instanceGroupManagers().insert(project=gcp.project,
-                                                        zone=zone,
-                                                        body=config).execute()
+    result = gcp.compute.instanceGroupManagers().insert(
+        project=gcp.project, zone=zone,
+        body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_zone_operation(gcp, zone, result['name'])
     result = gcp.compute.instanceGroupManagers().get(
         project=gcp.project, zone=zone,
-        instanceGroupManager=config['name']).execute()
+        instanceGroupManager=config['name']).execute(
+            num_retries=_GCP_API_RETRIES)
     instance_group = InstanceGroup(config['name'], result['instanceGroup'],
                                    zone)
     gcp.instance_groups.append(instance_group)
@@ -575,16 +583,27 @@ def add_instance_group(gcp, zone, name, size):
 
 
 def create_health_check(gcp, name):
-    config = {
-        'name': name,
-        'type': 'TCP',
-        'tcpHealthCheck': {
-            'portName': 'grpc'
+    if gcp.alpha_compute:
+        config = {
+            'name': name,
+            'type': 'GRPC',
+            'grpcHealthCheck': {
+                'portSpecification': 'USE_SERVING_PORT'
+            }
         }
-    }
+        compute_to_use = gcp.alpha_compute
+    else:
+        config = {
+            'name': name,
+            'type': 'TCP',
+            'tcpHealthCheck': {
+                'portName': 'grpc'
+            }
+        }
+        compute_to_use = gcp.compute
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.healthChecks().insert(project=gcp.project,
-                                               body=config).execute()
+    result = compute_to_use.healthChecks().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.health_check = GcpResource(config['name'], result['targetLink'])
 
@@ -600,24 +619,30 @@ def create_health_check_firewall_rule(gcp, name):
         'targetTags': ['allow-health-checks'],
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.firewalls().insert(project=gcp.project,
-                                            body=config).execute()
+    result = gcp.compute.firewalls().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.health_check_firewall_rule = GcpResource(config['name'],
                                                  result['targetLink'])
 
 
 def add_backend_service(gcp, name):
+    if gcp.alpha_compute:
+        protocol = 'GRPC'
+        compute_to_use = gcp.alpha_compute
+    else:
+        protocol = 'HTTP2'
+        compute_to_use = gcp.compute
     config = {
         'name': name,
         'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
         'healthChecks': [gcp.health_check.url],
         'portName': 'grpc',
-        'protocol': 'HTTP2'
+        'protocol': protocol
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.backendServices().insert(project=gcp.project,
-                                                  body=config).execute()
+    result = compute_to_use.backendServices().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     backend_service = GcpResource(config['name'], result['targetLink'])
     gcp.backend_services.append(backend_service)
@@ -638,56 +663,103 @@ def create_url_map(gcp, name, backend_service, host_name):
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().insert(project=gcp.project,
-                                          body=config).execute()
+    result = gcp.compute.urlMaps().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.url_map = GcpResource(config['name'], result['targetLink'])
 
 
-def create_target_http_proxy(gcp, name):
+def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
     config = {
-        'name': name,
-        'url_map': gcp.url_map.url,
+        'hostRules': [{
+            'hosts': ['%s:%d' % (host_name, gcp.service_port)],
+            'pathMatcher': _PATH_MATCHER_NAME
+        }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.targetHttpProxies().insert(project=gcp.project,
-                                                    body=config).execute()
+    result = gcp.compute.urlMaps().patch(
+        project=gcp.project, urlMap=name,
+        body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
-    gcp.target_http_proxy = GcpResource(config['name'], result['targetLink'])
 
 
-def create_global_forwarding_rule(gcp, name, ip, port):
-    config = {
-        'name': name,
-        'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
-        'portRange': str(port),
-        'IPAddress': ip,
-        'network': args.network,
-        'target': gcp.target_http_proxy.url,
-    }
-    logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.globalForwardingRules().insert(project=gcp.project,
-                                                        body=config).execute()
+def create_target_proxy(gcp, name):
+    if gcp.alpha_compute:
+        config = {
+            'name': name,
+            'url_map': gcp.url_map.url,
+            'validate_for_proxyless': True,
+        }
+        logger.debug('Sending GCP request with body=%s', config)
+        result = gcp.alpha_compute.targetGrpcProxies().insert(
+            project=gcp.project,
+            body=config).execute(num_retries=_GCP_API_RETRIES)
+    else:
+        config = {
+            'name': name,
+            'url_map': gcp.url_map.url,
+        }
+        logger.debug('Sending GCP request with body=%s', config)
+        result = gcp.compute.targetHttpProxies().insert(
+            project=gcp.project,
+            body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
-    gcp.global_forwarding_rule = GcpResource(config['name'],
-                                             result['targetLink'])
+    gcp.target_proxy = GcpResource(config['name'], result['targetLink'])
+
+
+def create_global_forwarding_rule(gcp, name, potential_ports):
+    if gcp.alpha_compute:
+        compute_to_use = gcp.alpha_compute
+    else:
+        compute_to_use = gcp.compute
+    for port in potential_ports:
+        try:
+            config = {
+                'name': name,
+                'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',
+                'portRange': str(port),
+                'IPAddress': '0.0.0.0',
+                'network': args.network,
+                'target': gcp.target_proxy.url,
+            }
+            logger.debug('Sending GCP request with body=%s', config)
+            result = compute_to_use.globalForwardingRules().insert(
+                project=gcp.project,
+                body=config).execute(num_retries=_GCP_API_RETRIES)
+            wait_for_global_operation(gcp, result['name'])
+            gcp.global_forwarding_rule = GcpResource(config['name'],
+                                                     result['targetLink'])
+            gcp.service_port = port
+            return
+        except googleapiclient.errors.HttpError as http_error:
+            logger.warning(
+                'Got error %s when attempting to create forwarding rule to '
+                '0.0.0.0:%d. Retrying with another port.' % (http_error, port))
 
 
 def delete_global_forwarding_rule(gcp):
     try:
         result = gcp.compute.globalForwardingRules().delete(
             project=gcp.project,
-            forwardingRule=gcp.global_forwarding_rule.name).execute()
+            forwardingRule=gcp.global_forwarding_rule.name).execute(
+                num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
 
 
-def delete_target_http_proxy(gcp):
+def delete_target_proxy(gcp):
     try:
-        result = gcp.compute.targetHttpProxies().delete(
-            project=gcp.project,
-            targetHttpProxy=gcp.target_http_proxy.name).execute()
+        if gcp.alpha_compute:
+            result = gcp.alpha_compute.targetGrpcProxies().delete(
+                project=gcp.project,
+                targetGrpcProxy=gcp.target_proxy.name).execute(
+                    num_retries=_GCP_API_RETRIES)
+        else:
+            result = gcp.compute.targetHttpProxies().delete(
+                project=gcp.project,
+                targetHttpProxy=gcp.target_proxy.name).execute(
+                    num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -696,7 +768,8 @@ def delete_target_http_proxy(gcp):
 def delete_url_map(gcp):
     try:
         result = gcp.compute.urlMaps().delete(
-            project=gcp.project, urlMap=gcp.url_map.name).execute()
+            project=gcp.project,
+            urlMap=gcp.url_map.name).execute(num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -707,7 +780,8 @@ def delete_backend_services(gcp):
         try:
             result = gcp.compute.backendServices().delete(
                 project=gcp.project,
-                backendService=backend_service.name).execute()
+                backendService=backend_service.name).execute(
+                    num_retries=_GCP_API_RETRIES)
             wait_for_global_operation(gcp, result['name'])
         except googleapiclient.errors.HttpError as http_error:
             logger.info('Delete failed: %s', http_error)
@@ -717,7 +791,8 @@ def delete_firewall(gcp):
     try:
         result = gcp.compute.firewalls().delete(
             project=gcp.project,
-            firewall=gcp.health_check_firewall_rule.name).execute()
+            firewall=gcp.health_check_firewall_rule.name).execute(
+                num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -726,7 +801,8 @@ def delete_firewall(gcp):
 def delete_health_check(gcp):
     try:
         result = gcp.compute.healthChecks().delete(
-            project=gcp.project, healthCheck=gcp.health_check.name).execute()
+            project=gcp.project, healthCheck=gcp.health_check.name).execute(
+                num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -738,7 +814,8 @@ def delete_instance_groups(gcp):
             result = gcp.compute.instanceGroupManagers().delete(
                 project=gcp.project,
                 zone=instance_group.zone,
-                instanceGroupManager=instance_group.name).execute()
+                instanceGroupManager=instance_group.name).execute(
+                    num_retries=_GCP_API_RETRIES)
             wait_for_zone_operation(gcp,
                                     instance_group.zone,
                                     result['name'],
@@ -751,7 +828,8 @@ def delete_instance_template(gcp):
     try:
         result = gcp.compute.instanceTemplates().delete(
             project=gcp.project,
-            instanceTemplate=gcp.instance_template.name).execute()
+            instanceTemplate=gcp.instance_template.name).execute(
+                num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -761,6 +839,10 @@ def patch_backend_instances(gcp,
                             backend_service,
                             instance_groups,
                             balancing_mode='UTILIZATION'):
+    if gcp.alpha_compute:
+        compute_to_use = gcp.alpha_compute
+    else:
+        compute_to_use = gcp.compute
     config = {
         'backends': [{
             'group': instance_group.url,
@@ -769,10 +851,12 @@ def patch_backend_instances(gcp,
         } for instance_group in instance_groups],
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.backendServices().patch(
+    result = compute_to_use.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
-        body=config).execute()
-    wait_for_global_operation(gcp, result['name'])
+        body=config).execute(num_retries=_GCP_API_RETRIES)
+    wait_for_global_operation(gcp,
+                              result['name'],
+                              timeout_sec=_WAIT_FOR_BACKEND_SEC)
 
 
 def resize_instance_group(gcp,
@@ -783,7 +867,7 @@ def resize_instance_group(gcp,
         project=gcp.project,
         zone=instance_group.zone,
         instanceGroupManager=instance_group.name,
-        size=new_size).execute()
+        size=new_size).execute(num_retries=_GCP_API_RETRIES)
     wait_for_zone_operation(gcp,
                             instance_group.zone,
                             result['name'],
@@ -795,7 +879,7 @@ def resize_instance_group(gcp,
             break
         if time.time() - start_time > timeout_sec:
             raise Exception('Failed to resize primary instance group')
-        time.sleep(1)
+        time.sleep(2)
 
 
 def patch_url_map_backend_service(gcp, backend_service):
@@ -808,9 +892,9 @@ def patch_url_map_backend_service(gcp, backend_service):
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().patch(project=gcp.project,
-                                         urlMap=gcp.url_map.name,
-                                         body=config).execute()
+    result = gcp.compute.urlMaps().patch(
+        project=gcp.project, urlMap=gcp.url_map.name,
+        body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
 
 
@@ -820,12 +904,13 @@ def wait_for_global_operation(gcp,
     start_time = time.time()
     while time.time() - start_time <= timeout_sec:
         result = gcp.compute.globalOperations().get(
-            project=gcp.project, operation=operation).execute()
+            project=gcp.project,
+            operation=operation).execute(num_retries=_GCP_API_RETRIES)
         if result['status'] == 'DONE':
             if 'error' in result:
                 raise Exception(result['error'])
             return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Operation %s did not complete within %d', operation,
                     timeout_sec)
 
@@ -837,12 +922,13 @@ def wait_for_zone_operation(gcp,
     start_time = time.time()
     while time.time() - start_time <= timeout_sec:
         result = gcp.compute.zoneOperations().get(
-            project=gcp.project, zone=zone, operation=operation).execute()
+            project=gcp.project, zone=zone,
+            operation=operation).execute(num_retries=_GCP_API_RETRIES)
         if result['status'] == 'DONE':
             if 'error' in result:
                 raise Exception(result['error'])
             return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Operation %s did not complete within %d', operation,
                     timeout_sec)
 
@@ -857,7 +943,7 @@ def wait_for_healthy_backends(gcp,
         result = gcp.compute.backendServices().getHealth(
             project=gcp.project,
             backendService=backend_service.name,
-            body=config).execute()
+            body=config).execute(num_retries=_GCP_API_RETRIES)
         if 'healthStatus' in result:
             healthy = True
             for instance in result['healthStatus']:
@@ -866,7 +952,7 @@ def wait_for_healthy_backends(gcp,
                     break
             if healthy:
                 return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Not all backends became healthy within %d seconds: %s' %
                     (timeout_sec, result))
 
@@ -879,7 +965,7 @@ def get_instance_names(gcp, instance_group):
         instanceGroup=instance_group.name,
         body={
             'instanceState': 'ALL'
-        }).execute()
+        }).execute(num_retries=_GCP_API_RETRIES)
     if 'items' not in result:
         return []
     for item in result['items']:
@@ -892,26 +978,11 @@ def get_instance_names(gcp, instance_group):
     return instance_names
 
 
-def start_xds_client(cmd):
-    bootstrap_path = None
-    with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
-        bootstrap_file.write(
-            _BOOTSTRAP_TEMPLATE.format(
-                node_id=socket.gethostname()).encode('utf-8'))
-        bootstrap_path = bootstrap_file.name
-
-    client_process = subprocess.Popen(shlex.split(cmd),
-                                      env=dict(
-                                          os.environ,
-                                          GRPC_XDS_BOOTSTRAP=bootstrap_path))
-    return client_process
-
-
 def clean_up(gcp):
     if gcp.global_forwarding_rule:
         delete_global_forwarding_rule(gcp)
-    if gcp.target_http_proxy:
-        delete_target_http_proxy(gcp)
+    if gcp.target_proxy:
+        delete_target_proxy(gcp)
     if gcp.url_map:
         delete_url_map(gcp)
     delete_backend_services(gcp)
@@ -941,36 +1012,44 @@ class GcpResource(object):
 
 class GcpState(object):
 
-    def __init__(self, compute, project):
+    def __init__(self, compute, alpha_compute, project):
         self.compute = compute
+        self.alpha_compute = alpha_compute
         self.project = project
         self.health_check = None
         self.health_check_firewall_rule = None
         self.backend_services = []
         self.url_map = None
-        self.target_http_proxy = None
+        self.target_proxy = None
         self.global_forwarding_rule = None
         self.service_port = None
         self.instance_template = None
         self.instance_groups = []
 
 
+alpha_compute = None
 if args.compute_discovery_document:
     with open(args.compute_discovery_document, 'r') as discovery_doc:
         compute = googleapiclient.discovery.build_from_document(
             discovery_doc.read())
+    if not args.only_stable_gcp_apis and args.alpha_compute_discovery_document:
+        with open(args.alpha_compute_discovery_document, 'r') as discovery_doc:
+            alpha_compute = googleapiclient.discovery.build_from_document(
+                discovery_doc.read())
 else:
     compute = googleapiclient.discovery.build('compute', 'v1')
+    if not args.only_stable_gcp_apis:
+        alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
 try:
-    gcp = GcpState(compute, args.project_id)
+    gcp = GcpState(compute, alpha_compute, args.project_id)
     health_check_name = _BASE_HEALTH_CHECK_NAME + args.gcp_suffix
     firewall_name = _BASE_FIREWALL_RULE_NAME + args.gcp_suffix
     backend_service_name = _BASE_BACKEND_SERVICE_NAME + args.gcp_suffix
     alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + args.gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + args.gcp_suffix
     service_host_name = _BASE_SERVICE_HOST + args.gcp_suffix
-    target_http_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
+    target_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
     forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + args.gcp_suffix
     template_name = _BASE_TEMPLATE_NAME + args.gcp_suffix
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + args.gcp_suffix
@@ -984,31 +1063,18 @@ try:
         alternate_backend_service = add_backend_service(
             gcp, alternate_backend_service_name)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
-        create_target_http_proxy(gcp, target_http_proxy_name)
+        create_target_proxy(gcp, target_proxy_name)
         potential_service_ports = list(args.service_port_range)
         random.shuffle(potential_service_ports)
-        if args.forwarding_rule_ip_prefix == '':
-            potential_ips = ['0.0.0.0']
-        else:
-            potential_ips = [
-                args.forwarding_rule_ip_prefix + str(x) for x in range(256)
-            ]
-        random.shuffle(potential_ips)
-        for port in potential_service_ports:
-            for ip in potential_ips:
-                try:
-                    create_global_forwarding_rule(gcp, forwarding_rule_name, ip,
-                                                  port)
-                    gcp.service_port = port
-                    break
-                except googleapiclient.errors.HttpError as http_error:
-                    logger.warning(
-                        'Got error %s when attempting to create forwarding rule to '
-                        '%s:%d. Retrying with another ip:port.' %
-                        (http_error, ip, port))
+        create_global_forwarding_rule(gcp, forwarding_rule_name,
+                                      potential_service_ports)
         if not gcp.service_port:
             raise Exception(
                 'Failed to find a valid ip:port for the forwarding rule')
+        if gcp.service_port != _DEFAULT_SERVICE_PORT:
+            patch_url_map_host_rule_with_port(gcp, url_map_name,
+                                              backend_service,
+                                              service_host_name)
         startup_script = get_startup_script(args.path_to_server_binary,
                                             gcp.service_port)
         create_instance_template(gcp, template_name, args.network,
@@ -1031,19 +1097,22 @@ try:
             if not gcp.instance_template:
                 result = compute.instanceTemplates().get(
                     project=args.project_id,
-                    instanceTemplate=template_name).execute()
+                    instanceTemplate=template_name).execute(
+                        num_retries=_GCP_API_RETRIES)
                 gcp.instance_template = GcpResource(template_name,
                                                     result['selfLink'])
             if not gcp.backend_services:
                 result = compute.backendServices().get(
                     project=args.project_id,
-                    backendService=backend_service_name).execute()
+                    backendService=backend_service_name).execute(
+                        num_retries=_GCP_API_RETRIES)
                 backend_service = GcpResource(backend_service_name,
                                               result['selfLink'])
                 gcp.backend_services.append(backend_service)
                 result = compute.backendServices().get(
                     project=args.project_id,
-                    backendService=alternate_backend_service_name).execute()
+                    backendService=alternate_backend_service_name).execute(
+                        num_retries=_GCP_API_RETRIES)
                 alternate_backend_service = GcpResource(
                     alternate_backend_service_name, result['selfLink'])
                 gcp.backend_services.append(alternate_backend_service)
@@ -1051,14 +1120,16 @@ try:
                 result = compute.instanceGroups().get(
                     project=args.project_id,
                     zone=args.zone,
-                    instanceGroup=instance_group_name).execute()
+                    instanceGroup=instance_group_name).execute(
+                        num_retries=_GCP_API_RETRIES)
                 instance_group = InstanceGroup(instance_group_name,
                                                result['selfLink'], args.zone)
                 gcp.instance_groups.append(instance_group)
                 result = compute.instanceGroups().get(
                     project=args.project_id,
                     zone=args.zone,
-                    instanceGroup=same_zone_instance_group_name).execute()
+                    instanceGroup=same_zone_instance_group_name).execute(
+                        num_retries=_GCP_API_RETRIES)
                 same_zone_instance_group = InstanceGroup(
                     same_zone_instance_group_name, result['selfLink'],
                     args.zone)
@@ -1068,7 +1139,7 @@ try:
                         project=args.project_id,
                         zone=args.secondary_zone,
                         instanceGroup=secondary_zone_instance_group_name
-                    ).execute()
+                    ).execute(num_retries=_GCP_API_RETRIES)
                     secondary_zone_instance_group = InstanceGroup(
                         secondary_zone_instance_group_name, result['selfLink'],
                         args.secondary_zone)
@@ -1076,12 +1147,14 @@ try:
             if not gcp.health_check:
                 result = compute.healthChecks().get(
                     project=args.project_id,
-                    healthCheck=health_check_name).execute()
+                    healthCheck=health_check_name).execute(
+                        num_retries=_GCP_API_RETRIES)
                 gcp.health_check = GcpResource(health_check_name,
                                                result['selfLink'])
             if not gcp.url_map:
-                result = compute.urlMaps().get(project=args.project_id,
-                                               urlMap=url_map_name).execute()
+                result = compute.urlMaps().get(
+                    project=args.project_id,
+                    urlMap=url_map_name).execute(num_retries=_GCP_API_RETRIES)
                 gcp.url_map = GcpResource(url_map_name, result['selfLink'])
             if not gcp.service_port:
                 gcp.service_port = args.service_port_range[0]

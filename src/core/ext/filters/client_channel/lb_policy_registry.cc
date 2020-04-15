@@ -35,6 +35,8 @@ class RegistryState {
 
   void RegisterLoadBalancingPolicyFactory(
       std::unique_ptr<LoadBalancingPolicyFactory> factory) {
+    gpr_log(GPR_DEBUG, "registering LB policy factory for \"%s\"",
+            factory->name());
     for (size_t i = 0; i < factories_.size(); ++i) {
       GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
     }
