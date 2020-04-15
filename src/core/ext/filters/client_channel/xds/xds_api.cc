@@ -125,6 +125,7 @@ const char* XdsApi::kRdsTypeUrl =
 const char* XdsApi::kCdsTypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
 const char* XdsApi::kEdsTypeUrl =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+const char* XdsApi::kSdsTypeUrl = "type.googleapis.com/envoy.api.v2.Secret";
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node)
@@ -1235,6 +1236,84 @@ grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
   return GRPC_ERROR_NONE;
 }
 
+absl::optional<std::string> ExtractInlineStringDataSource(envoy_api_v2_DataSource* data_source) {
+  if (envoy_api_v2_DataSource_has_inline_string(data_source)) {
+    upb_strview data_str = envoy_api_v2_DataSource_inline_string(data_source);
+
+    // Extract the value
+    return absl::optional<std::string>(std::string(data_str.data, data_str.size));
+  }
+  // No value extracted
+  return absl::optional<std::string>();
+}
+
+grpc_error* SdsResponseParse(XdsClient* client, TraceFlag* tracer,
+                             const envoy_api_v2_DiscoveryResponse* response,
+                             const std::set<StringView>& expected_secret_names,
+                             XdsApi::SdsUpdateMap* sds_update_map,
+                             upb_arena* arena) {
+  size_t size;
+  const google_protobuf_Any* const* resources =
+      envoy_api_v2_DiscoveryResponse_resources(response, &size);
+
+  for (size_t i = 0; i < size; ++i) {
+    XdsApi::SdsUpdate sds_update;
+    // Check type_url of the resource.
+    const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
+    if (!upb_strview_eql(type_url, upb_strview_makez(XdsApi::kCdsTypeUrl))) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not SDS.");
+    }
+    // Decode the secret.
+    const upb_strview encoded_secret = google_protobuf_Any_value(resources[i]);
+    const envoy_api_v2_Secret* secret = envoy_api_v2_Secret_parse(
+        encoded_secret.data, encoded_secret.size, arena);
+    if (secret == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode secret.");
+    }
+    // Ignore unexpected secret name.
+    upb_strview secret_name = envoy_api_v2_Secret_name(secret);
+    StringView secret_name_strview(secret_name.data, secret_name.size);
+    if (expected_secret_names.find(secret_name_strview) ==
+        expected_secret_names.end()) {
+      continue;
+    }
+    // Extract TLS credentials.
+    if (envoy_api_v2_Secret_has_tls_certificate(secret)) {
+      const envoy_api_v2_Tls_Certificate* tls_certificate = envoy_api_v2_Secret_tls_certificate(secret);
+      // Extract certificate chain.
+      if (envoy_api_v2_Tls_Certificate_has_certificate_chain(tls_certificate)) {
+        const envoy_api_v2_DataSource* certificate_chain_data = envoy_api_v2_Tls_Certificate_certificate_chain(tls_certificate);
+        sds_update.certificate_chain = ExtractInlineStringDataSource(certificate_chain_data);
+      }
+      // Extract private key.
+      if (envoy_api_v2_Tls_Certificate_has_private_key(tls_certificate)) {
+        const envoy_api_v2_DataSource* private_key_data = envoy_api_v2_Tls_Certificate_private_key(tls_certificate);
+        sds_update.private_key = ExtractInlineStringDataSource(private_key_data);
+      }
+    }
+    if (envoy_api_v2_Secret_has_validation_context(secret)) {
+      const envoy_api_v2_CertificateValidationContext* validation_context = envoy_api_v2_Secret_validation_context(secret);
+      // Extract trusted CA.
+      if (envoy_api_v2_CertificateValidationContext_has_trusted_ca(validation_context)) {
+        const envoy_api_v2_DataSource* trusted_ca_data = envoy_api_v2_CertificateValidationContext_trusted_ca(validation_context);
+        sds_update.trusted_ca = ExtractInlineStringDataSource(trusted_ca_data);
+      }
+      // Extract verified subject names.
+      if (envoy_api_v2_CertificateValidationContext_has_verify_subject_alt_name(validation_context)) {
+        size_t sn_size;
+        const upb_strview* const* subject_names = envoy_api_v2_CertificateValidationContext_verify_subject_alt_name(validation_context, &sn_size);
+        std::vector<std::string> subject_alt_names(sn_size);
+        for (size_t i = 0; i < size; ++i) {
+          subject_alt_names[i] = std::string(subject_names[i]->data, subject_names[i]->size);
+        }
+        sds_update.subject_alt_names = std::move(subject_alt_names);
+      }
+    }
+    sds_update_map->emplace(std::string(secret_name.data, secret_name.size), std::move(sds_update));
+  }
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* ServerAddressParseAndAppend(
     const envoy_api_v2_endpoint_LbEndpoint* lb_endpoint,
     ServerAddressList* list) {
@@ -1433,9 +1512,10 @@ grpc_error* XdsApi::ParseAdsResponse(
     const std::string& expected_route_config_name,
     const std::set<StringView>& expected_cluster_names,
     const std::set<StringView>& expected_eds_service_names,
+    const std::set<StringView>& expected_secret_names,
     absl::optional<LdsUpdate>* lds_update,
     absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
-    EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
+    EdsUpdateMap* eds_update_map, SdsUpdateMap* sds_update_map, std::string* version, std::string* nonce,
     std::string* type_url) {
   upb::Arena arena;
   // Decode the response.
@@ -1473,6 +1553,10 @@ grpc_error* XdsApi::ParseAdsResponse(
   } else if (*type_url == kEdsTypeUrl) {
     return EdsResponseParse(client_, tracer_, response,
                             expected_eds_service_names, eds_update_map,
+                            arena.ptr());
+  } else if (*type_url == kSdsTypeUrl) {
+    return SdsResponseParse(client_, tracer_, response,
+                            expected_secret_names, sds_update_map,
                             arena.ptr());
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(

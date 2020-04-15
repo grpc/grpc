@@ -39,6 +39,9 @@ namespace grpc_core {
 
 extern TraceFlag xds_client_trace;
 
+struct grpc_channel_credentials;
+struct grpc_call_credentials;
+
 class XdsClient : public InternallyRefCounted<XdsClient> {
  public:
   // Service config watcher interface.  Implemented by callers.
@@ -68,6 +71,16 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual ~EndpointWatcherInterface() = default;
 
     virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
+
+    virtual void OnError(grpc_error* error) = 0;
+  };
+
+  // Secret data watcher interface.  Implemented by callers.
+  class SecretWatcherInterface {
+   public:
+    virtual ~SecretWatcherInterface() = default;
+
+    virtual void OnSecretChanged(XdsApi::SdsUpdate update) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
   };
@@ -107,6 +120,22 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   void CancelEndpointDataWatch(StringView eds_service_name,
                                EndpointWatcherInterface* watcher,
                                bool delay_unsubscription = false);
+
+  struct ApiConfigs {
+    StringView server_uri;
+    const grpc_channel_args* channel_args;
+    grpc_channel_credentials* channel_credentials;
+    grpc_call_credentials* call_credentials;
+  };
+
+  void WatchSecretData(StringView secret_name,
+                       const ApiConfigs& api_configs,
+                       std::unique_ptr<SecretWatcherInterface> watcher);
+
+  void CancelSecretDataWatch(StringView secret_name,
+                             SecretWatcherInterface* watcher,
+                             bool delay_unsubscription = false);
+
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
   RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
@@ -191,6 +220,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     // The retryable XDS calls.
     OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
+    OrphanablePtr<RetryableCall<AdsCallState>> sds_calld_;
   };
 
   struct ClusterState {
@@ -220,6 +250,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
              XdsLocalityName::Less>
         locality_stats;
     grpc_millis last_report_time = ExecCtx::Get()->Now();
+  };
+
+  struct SecretState {
+    std::map<SecretWatcherInterface*, std::unique_ptr<SecretWatcherInterface>> watchers;
+    // The latest data seen from SDS.
+    absl::optional<XdsApi::SdsUpdate> update;
   };
 
   // Sends an error notification to all watchers.
@@ -252,7 +288,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
 
   // The channel for communicating with the xds server.
-  OrphanablePtr<ChannelState> chand_;
+  OrphanablePtr<ChannelState> ads_chand_;
+
+  // The channel for communicating with the sds server.
+  OrphanablePtr<ChannelState> sds_chand_;
+  // The API configurations for the sds channel.
+  ApiConfigs sds_api_configs_;
 
   absl::optional<XdsApi::LdsUpdate> lds_result_;
   absl::optional<XdsApi::RdsUpdate> rds_result_;
@@ -265,6 +306,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       LoadReportState>
       load_report_map_;
+  std::map<std::string, SecretState> secret_map_;
 
   bool shutting_down_ = false;
 };

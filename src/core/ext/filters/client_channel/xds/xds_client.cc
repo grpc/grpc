@@ -80,7 +80,7 @@ template <typename T>
 class XdsClient::ChannelState::RetryableCall
     : public InternallyRefCounted<RetryableCall<T>> {
  public:
-  explicit RetryableCall(RefCountedPtr<ChannelState> chand);
+  explicit RetryableCall(RefCountedPtr<ChannelState> chand, typename T::Options options = {});
 
   void Orphan() override;
 
@@ -100,6 +100,10 @@ class XdsClient::ChannelState::RetryableCall
   // The wrapped xds call that talks to the xds server. It's instantiated
   // every time we start a new call. It's null during call retry backoff.
   OrphanablePtr<T> calld_;
+
+  // Options for the call.
+  typename T::Options calld_options_;
+
   // The owning xds channel.
   RefCountedPtr<ChannelState> chand_;
 
@@ -116,8 +120,13 @@ class XdsClient::ChannelState::RetryableCall
 class XdsClient::ChannelState::AdsCallState
     : public InternallyRefCounted<AdsCallState> {
  public:
+  struct Options {
+    const grpc_slice* method = nullptr;
+    absl::optional<ApiConfigs> api_configs;
+  };
+
   // The ctor and dtor should not be used directly.
-  explicit AdsCallState(RefCountedPtr<RetryableCall<AdsCallState>> parent);
+  AdsCallState(RefCountedPtr<RetryableCall<AdsCallState>> parent, Options options);
   ~AdsCallState() override;
 
   void Orphan() override;
@@ -245,6 +254,7 @@ class XdsClient::ChannelState::AdsCallState
   void AcceptRdsUpdate(absl::optional<XdsApi::RdsUpdate> rds_update);
   void AcceptCdsUpdate(XdsApi::CdsUpdateMap cds_update_map);
   void AcceptEdsUpdate(XdsApi::EdsUpdateMap eds_update_map);
+  void AcceptSdsUpdate(XdsApi::SdsUpdateMap sds_update_map);
 
   static void OnRequestSent(void* arg, grpc_error* error);
   static void OnRequestSentLocked(void* arg, grpc_error* error);
@@ -295,8 +305,10 @@ class XdsClient::ChannelState::AdsCallState
 class XdsClient::ChannelState::LrsCallState
     : public InternallyRefCounted<LrsCallState> {
  public:
+  using Options = std::nullptr_t;
+
   // The ctor and dtor should not be used directly.
-  explicit LrsCallState(RefCountedPtr<RetryableCall<LrsCallState>> parent);
+  LrsCallState(RefCountedPtr<RetryableCall<LrsCallState>> parent, Options options);
   ~LrsCallState() override;
 
   void Orphan() override;
@@ -538,22 +550,36 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
   grpc_client_channel_stop_connectivity_watch(client_channel_elem, watcher_);
 }
 
+OrphanablePtr<XdsClient::ChannelState::RetryableCall<XdsClient::ChannelState::AdsCallState>>*
+XdsClient::ChannelState::ParseXdsCallType(const std::string& type_url,
+                                               AdsCallState::Options* options) {
+  if (type_url == XdsApi::kSdsTypeUrl) {
+    options->method = &GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_SECRETDISCOVERYSERVICE_SLASH_STREAMSECRETS;
+    return &sds_calld_;
+  } else {
+    options->method = &GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES;
+    return &ads_calld_;
+  }
+}
+
 void XdsClient::ChannelState::Subscribe(const std::string& type_url,
                                         const std::string& name) {
-  if (ads_calld_ == nullptr) {
-    // Start the ADS call if this is the first request.
-    ads_calld_.reset(new RetryableCall<AdsCallState>(
-        Ref(DEBUG_LOCATION, "ChannelState+ads")));
+  AdsCallState::Options options;
+  OrphanablePtr<RetryableCall<AdsCallState>>* parsed_call_type = ParseXdsCallType(type_url, &options);
+  if (*parsed_call_type == nullptr) {
+    // Start the xDS call if this is the first request.
+    parsed_call_type->reset(new RetryableCall<AdsCallState>(
+        Ref(DEBUG_LOCATION, "ChannelState+xds"), options));
     // Note: AdsCallState's ctor will automatically subscribe to all
     // resources that the XdsClient already has watchers for, so we can
     // return here.
     return;
   }
-  // If the ADS call is in backoff state, we don't need to do anything now
+  // If the xDS call is in backoff state, we don't need to do anything now
   // because when the call is restarted it will resend all necessary requests.
-  if (ads_calld() == nullptr) return;
+  if ((*parsed_call_type)->calld() == nullptr) return;
   // Subscribe to this resource if the ADS call is active.
-  ads_calld()->Subscribe(type_url, name);
+  (*parsed_call_type)->calld()->Subscribe(type_url, name);
 }
 
 void XdsClient::ChannelState::Unsubscribe(const std::string& type_url,
@@ -571,8 +597,9 @@ void XdsClient::ChannelState::Unsubscribe(const std::string& type_url,
 
 template <typename T>
 XdsClient::ChannelState::RetryableCall<T>::RetryableCall(
-    RefCountedPtr<ChannelState> chand)
+    RefCountedPtr<ChannelState> chand, typename T::Options options)
     : chand_(std::move(chand)),
+      calld_options_(std::move(options)),
       backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS *
@@ -618,7 +645,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartNewCallLocked() {
             chand()->xds_client(), chand(), this);
   }
   calld_ = MakeOrphanable<T>(
-      this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
+      this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"), calld_options_);
 }
 
 template <typename T>
@@ -671,7 +698,8 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
 //
 
 XdsClient::ChannelState::AdsCallState::AdsCallState(
-    RefCountedPtr<RetryableCall<AdsCallState>> parent)
+    RefCountedPtr<RetryableCall<AdsCallState>> parent,
+    Options options)
     : InternallyRefCounted<AdsCallState>(&grpc_xds_client_trace),
       parent_(std::move(parent)) {
   // Init the ADS call. Note that the call will progress every time there's
@@ -683,7 +711,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xds_client()->interested_parties_,
-      GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES,
+      *options.method,
       nullptr, GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init data associated with the call.
@@ -1144,6 +1172,45 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
   }
 }
 
+void XdsClient::ChannelState::AdsCallState::AcceptSdsUpdate(
+    XdsApi::SdsUpdateMap sds_update_map) {
+  auto& sds_state = state_map_[XdsApi::kSdsTypeUrl];
+  for (auto& p : sds_update_map) {
+    const char* secret_name = p.first.c_str();
+    XdsApi::SdsUpdate sds_update = p.second;
+    auto& state = sds_state.subscribed_resources[secret_name];
+    if (state != nullptr) state->Finish();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] SDS update received: secret_name=%s,"
+              "certificate_chain=%d, private_key=%d, trusted_ca=%d, subject_alt_names=%d",
+              xds_client(), secret_name, sds_update.certificate_chain.has_value(),
+              sds_update.private_key.has_value(), sds_update.trusted_ca.has_value(),
+              sds_update.subject_alt_names.has_value());
+    }
+    // Ignore identical update.
+    SecretState& secret_state = xds_client()->secret_map_[secret_name];
+    if (secret_state.update.has_value() &&
+        sds_update.certificate_chain == secret_state.update->certificate_chain &&
+        sds_update.private_key == secret_state.update->private_key &&
+        sds_update.trusted_ca == secret_state.update->trusted_ca &&
+        sds_update.subject_alt_names == secret_state.update->subject_alt_names) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] SDS update identical to current, ignoring.",
+                xds_client());
+      }
+      continue;
+    }
+    // Update the secret state.
+    secret_state.update = std::move(sds_update);
+    // Notify all watchers.
+    for (auto& p : secret_state.watchers) {
+      p.first->OnSecretChanged(secret_state.update.value());
+    }
+  }
+}
+
 void XdsClient::ChannelState::AdsCallState::OnRequestSent(void* arg,
                                                           grpc_error* error) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
@@ -1217,6 +1284,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   absl::optional<XdsApi::RdsUpdate> rds_update;
   XdsApi::CdsUpdateMap cds_update_map;
   XdsApi::EdsUpdateMap eds_update_map;
+  XdsApi::SdsUpdateMap sds_update_map;
   std::string version;
   std::string nonce;
   std::string type_url;
@@ -1227,8 +1295,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
            ? xds_client->lds_result_->route_config_name
            : ""),
       ads_calld->ClusterNamesForRequest(),
-      ads_calld->EdsServiceNamesForRequest(), &lds_update, &rds_update,
-      &cds_update_map, &eds_update_map, &version, &nonce, &type_url);
+      ads_calld->EdsServiceNamesForRequest(), ads_calld->SecretNamesForRequest(), &lds_update, &rds_update,
+      &cds_update_map, &eds_update_map, &sds_update_map, &version, &nonce, &type_url);
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
     // Ignore unparsable response.
@@ -1262,6 +1330,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
         ads_calld->AcceptCdsUpdate(std::move(cds_update_map));
       } else if (type_url == XdsApi::kEdsTypeUrl) {
         ads_calld->AcceptEdsUpdate(std::move(eds_update_map));
+      } else if (type_url == XdsApi::kSdsTypeUrl) {
+        ads_calld->AcceptSdsUpdate(std::move(sds_update_map));
       }
       state.version = std::move(version);
       // ACK the update.
@@ -1488,7 +1558,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
 //
 
 XdsClient::ChannelState::LrsCallState::LrsCallState(
-    RefCountedPtr<RetryableCall<LrsCallState>> parent)
+    RefCountedPtr<RetryableCall<LrsCallState>> parent, Options options)
     : InternallyRefCounted<LrsCallState>(&grpc_xds_client_trace),
       parent_(std::move(parent)) {
   // Init the LRS call. Note that the call will progress every time there's
@@ -1670,6 +1740,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked(
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(lrs_calld->recv_message_payload_);
   lrs_calld->recv_message_payload_ = nullptr;
+      GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES,
   // This anonymous lambda is a hack to avoid the usage of goto.
   [&]() {
     // Parse the response.
@@ -1937,6 +2008,54 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
       endpoint_map_.erase(eds_service_name_str);
       chand_->Unsubscribe(XdsApi::kEdsTypeUrl, eds_service_name_str,
                           delay_unsubscription);
+    }
+  }
+}
+
+void XdsClient::WatchSecretData(StringView secret_name,
+                                const ApiConfigs& api_configs,
+                                std::unique_ptr<SecretWatcherInterface> watcher) {
+  // Create SDS channel if necessary
+  if (sds_chand_ == nullptr) {
+    grpc_error *error;
+    grpc_channel* channel = CreateSdsChannel(api_configs, &error);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "[xds_client %p] failed to create sds channel: %s", this,
+              grpc_error_string(error));
+      // Do not start watch on error.
+      return;
+    }
+    sds_chand_ = MakeOrphanable<ChannelState>(Ref(DEBUG_LOCATION, "XdsClient+SDS ChannelState"), channel);
+    sds_api_configs_ = api_configs
+  } else {
+    GPR_ASSERT(sds_api_configs_ == api_configs);
+  }
+  std::string secret_name_str = std::string(secret_name);
+  SecretState& secret_state = secret_map_[secret_name_str];
+  SecretWatcheInterface* w = watcher.get();
+  secret_state.watchers[w] = std::move(watcher);
+  if (secret_state.update.has_value()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "[xds_client %p] returning cached secret data for %s",
+              this, StringViewToCString(secret_name).get());
+    }
+    w->OnSecretChanged(secret_state.update.value());
+  }
+  sds_chand_->Subscribe(XdsApi::kSdsTypeUrl, secret_name_str);
+}
+
+void XdsClient::CancelSecretDataWatch(StringView secret_name,
+                                      SecretWatcherInterface* watcher,
+                                      bool delay_unsubscription) {
+  if (shutting_down_) return;
+  std::string secret_name_str = std::string(secret_name);
+  SecretState& secret_state = secret_map_[secret_name_str];
+  auto it = secret_state.watchers.find(watcher);
+  if (it != secret_state.watchers.end()) {
+    secret_state.watchers.erase(it);
+    if (secret_state.watchers.empty()) {
+      secret_map_.erase(secret_name_str);
+      sds_chand_->Unsubscribe(XdsApi::kSdsTypeUrl, secret_name_str, delay_unsubscription);
     }
   }
 }

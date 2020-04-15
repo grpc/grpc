@@ -43,6 +43,7 @@ class XdsApi {
   static const char* kRdsTypeUrl;
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
+  static const char* kSdsTypeUrl;
 
   struct RdsUpdate {
     // The name to use in the CDS request.
@@ -84,6 +85,26 @@ class XdsApi {
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
+
+  struct SdsUpdate {
+    // Resource name
+    std::string name;
+
+    // Local TLS certificate chain in PEM format.
+    absl::optional<std::string> certificate_chain;
+
+    // Local TLS certificate private key in PEM format.
+    absl::optional<std::string> private_key;
+
+    // Trusted root CAs in PEM format.
+    absl::optional<std::string> trusted_ca;
+
+    // A list of valid subject names for ACL validation.
+    absl::optional<std::vector<std::string>> subject_alt_names;
+
+  };
+
+  using SdsUpdateMap = std::map<std::string /*secret_name*/, SdsUpdate>;
 
   class PriorityListUpdate {
    public:
@@ -249,9 +270,10 @@ class XdsApi {
       const std::string& expected_route_config_name,
       const std::set<StringView>& expected_cluster_names,
       const std::set<StringView>& expected_eds_service_names,
+      const std::set<StringView>& expected_secret_names,
       absl::optional<LdsUpdate>* lds_update,
       absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
-      EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
+      EdsUpdateMap* eds_update_map, SdsUpdateMap* sds_update_map, std::string* version, std::string* nonce,
       std::string* type_url);
 
   // Creates an LRS request querying \a server_name.
