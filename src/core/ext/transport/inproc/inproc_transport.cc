@@ -496,7 +496,6 @@ void fail_helper_locked(inproc_stream* s, grpc_error* error) {
   }
   if (s->send_message_op) {
     s->send_message_op->payload->send_message.send_message.reset();
-    gpr_log(GPR_ERROR, "here");
     complete_if_batch_end_locked(
         s, error, s->send_message_op,
         "fail_helper scheduling send-message-on-complete");
@@ -616,7 +615,6 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
     } else if (!s->t->is_client && s->trailing_md_sent) {
       // A server send will never be matched if the server already sent status
       s->send_message_op->payload->send_message.send_message.reset();
-      gpr_log(GPR_ERROR, "here");
       complete_if_batch_end_locked(
           s, GRPC_ERROR_NONE, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete");
