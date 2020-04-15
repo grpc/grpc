@@ -102,9 +102,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "num_external_connectivity_watchers_test",
     srcs = ["num_external_connectivity_watchers_test.cc"],
-    data = [
-        "//src/core/tsi/test_creds:ca.pem",
-    ],
     language = "C++",
     deps = [
         "//:gpr",
