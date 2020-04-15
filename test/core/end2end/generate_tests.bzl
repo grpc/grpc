@@ -219,6 +219,7 @@ END2END_TESTS = {
     "cancel_before_invoke": _test_options(),
     "cancel_in_a_vacuum": _test_options(),
     "cancel_with_status": _test_options(),
+    "client_streaming": _test_options(),
     "compressed_payload": _test_options(proxyable = False, exclude_inproc = True),
     "connectivity": _test_options(
         needs_fullstack = True,
@@ -226,7 +227,6 @@ END2END_TESTS = {
         proxyable = False,
     ),
     "channelz": _test_options(),
-    "client_streaming": _test_options(),
     "default_host": _test_options(
         needs_fullstack = True,
         needs_dns = True,
@@ -454,7 +454,7 @@ def grpc_end2end_tests():
 
             test_short_name = str(t) if not topt.short_name else topt.short_name
             native.sh_test(
-                name = "%s_test_%s" % (f, test_short_name),
+                name = "%s_test@%s" % (f, test_short_name),
                 data = [":%s_test" % f],
                 srcs = ["end2end_test.sh"],
                 args = [
@@ -467,7 +467,7 @@ def grpc_end2end_tests():
 
             for poller in POLLERS:
                 native.sh_test(
-                    name = "%s_test_gc%s@poller=%s" % (f, test_short_name, poller),
+                    name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [
@@ -530,7 +530,7 @@ def grpc_end2end_nosec_tests():
 
             test_short_name = str(t) if not topt.short_name else topt.short_name
             native.sh_test(
-                name = "%s_nosec_test_%s" % (f, test_short_name),
+                name = "%s_nosec_test@%s" % (f, test_short_name),
                 data = [":%s_nosec_test" % f],
                 srcs = ["end2end_test.sh"],
                 args = [
@@ -543,7 +543,7 @@ def grpc_end2end_nosec_tests():
 
             for poller in POLLERS:
                 native.sh_test(
-                    name = "%s_nosec_test_%s_poller=%s" % (f, test_short_name, poller),
+                    name = "%s_nosec_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_nosec_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [
