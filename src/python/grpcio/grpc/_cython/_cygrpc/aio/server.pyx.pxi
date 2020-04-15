@@ -265,17 +265,18 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
 
     # Serializes the response message
     cdef bytes response_raw
-    cdef SendMessageOperation send_message_op
     if rpc_state.status_code == StatusCode.ok:
         response_raw = serialize(
             response_serializer,
             response_message,
         )
-        send_message_op = SendMessageOperation(response_raw, rpc_state.get_write_flag())
+    else:
+        response_raw = b''
 
     # Assembles the batch operations
     cdef tuple finish_ops
     finish_ops = (
+        SendMessageOperation(response_raw, rpc_state.get_write_flag()),
         SendStatusFromServerOperation(
             rpc_state.trailing_metadata,
             rpc_state.status_code,
@@ -283,8 +284,6 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
             _EMPTY_FLAGS,
         ),
     )
-    if rpc_state.status_code == StatusCode.ok:
-        finish_ops += (send_message_op,)
     if not rpc_state.metadata_sent:
         finish_ops = prepend_send_initial_metadata_op(
             finish_ops,
