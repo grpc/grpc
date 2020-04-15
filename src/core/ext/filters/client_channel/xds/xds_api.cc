@@ -1024,11 +1024,20 @@ grpc_error* RouteConfigParse(
     if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
       upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
       if (prefix.size > 0) {
+        if (prefix.data[0] != '/') {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Prefix is not starting with a /");
+        }
         std::vector<absl::string_view> prefix_elements = absl::StrSplit(
             absl::string_view(prefix.data, prefix.size).substr(1), '/');
         if (prefix_elements.size() != 2) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Prefix not in the required format of /service/");
+        } else if (!prefix_elements[1].empty()) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Prefix is not ending with a /");
+        } else if (prefix_elements[0].empty()) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Prefix cannot be empty");
         }
         rds_route.service = std::string(prefix_elements[0]);
       }
@@ -1038,11 +1047,21 @@ grpc_error* RouteConfigParse(
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Path if set cannot be empty");
       }
+      if (path.data[0] != '/') {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Path is not starting with a /");
+      }
       std::vector<absl::string_view> path_elements = absl::StrSplit(
           absl::string_view(path.data, path.size).substr(1), '/');
       if (path_elements.size() != 2) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Path not in the required format of /service/method");
+      } else if (path_elements[0].empty()) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Path service name cannot be empty");
+      } else if (path_elements[1].empty()) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Path method name cannot be empty");
       }
       rds_route.service = std::string(path_elements[0]);
       rds_route.method = std::string(path_elements[1]);

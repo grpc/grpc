@@ -215,6 +215,9 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   absl::string_view path;
+  // TODO(roth): Using const auto& here trigger a warning in a macos or windows
+  // build:
+  //*(args.initial_metadata) is returning values not references.
   for (const auto p : *(args.initial_metadata)) {
     if (p.first == ":path") {
       path = p.second;

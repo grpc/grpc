@@ -57,7 +57,7 @@ typedef enum {
   CANCEL_AFTER_PROCESSING
 } ServerTryCancelRequestPhase;
 
-namespace {
+namespace internal {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
 void MaybeEchoDeadline(experimental::ServerContextBase* context,
@@ -137,7 +137,7 @@ void ServerTryCancel(ServerContext* context) {
                                  gpr_time_from_micros(1000, GPR_TIMESPAN)));
   }
 }
-}  // namespace
+}  // namespace internal
 
 class TestServiceSignaller {
  public:
@@ -200,19 +200,19 @@ class TestMultipleServiceImpl : public RpcService {
       return Status(static_cast<StatusCode>(error.code()),
                     error.error_message(), error.binary_error_details());
     }
-    int server_try_cancel = GetIntValueFromMetadata(
+    int server_try_cancel = internal::GetIntValueFromMetadata(
         kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
     if (server_try_cancel > DO_NOT_CANCEL) {
       // Since this is a unary RPC, by the time this server handler is called,
       // the 'request' message is already read from the client. So the scenarios
       // in server_try_cancel don't make much sense. Just cancel the RPC as long
       // as server_try_cancel is not DO_NOT_CANCEL
-      ServerTryCancel(context);
+      internal::ServerTryCancel(context);
       return Status::CANCELLED;
     }
 
     response->set_message(request->message());
-    MaybeEchoDeadline(context, request, response);
+    internal::MaybeEchoDeadline(context, request, response);
     if (host_) {
       response->mutable_param()->set_host(*host_);
     }
@@ -269,7 +269,7 @@ class TestMultipleServiceImpl : public RpcService {
     if (request->has_param() &&
         (request->param().expected_client_identity().length() > 0 ||
          request->param().check_auth_context())) {
-      CheckServerAuthContext(
+      internal::CheckServerAuthContext(
           context, request->param().expected_transport_security_type(),
           request->param().expected_client_identity());
     }
@@ -297,9 +297,9 @@ class TestMultipleServiceImpl : public RpcService {
   Status CheckClientInitialMetadata(ServerContext* context,
                                     const SimpleRequest* /*request*/,
                                     SimpleResponse* /*response*/) {
-    EXPECT_EQ(MetadataMatchCount(context->client_metadata(),
-                                 kCheckClientInitialMetadataKey,
-                                 kCheckClientInitialMetadataVal),
+    EXPECT_EQ(internal::MetadataMatchCount(context->client_metadata(),
+                                           kCheckClientInitialMetadataKey,
+                                           kCheckClientInitialMetadataVal),
               1);
     EXPECT_EQ(1u,
               context->client_metadata().count(kCheckClientInitialMetadataKey));
@@ -319,21 +319,21 @@ class TestMultipleServiceImpl : public RpcService {
     //   reading messages from the client
     //   CANCEL_AFTER_PROCESSING: The RPC is cancelled after the server reads
     //   all the messages from the client
-    int server_try_cancel = GetIntValueFromMetadata(
+    int server_try_cancel = internal::GetIntValueFromMetadata(
         kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
 
     EchoRequest request;
     response->set_message("");
 
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
-      ServerTryCancel(context);
+      internal::ServerTryCancel(context);
       return Status::CANCELLED;
     }
 
     std::thread* server_try_cancel_thd = nullptr;
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread([context] { ServerTryCancel(context); });
+          new std::thread([context] { internal::ServerTryCancel(context); });
     }
 
     int num_msgs_read = 0;
@@ -349,7 +349,7 @@ class TestMultipleServiceImpl : public RpcService {
     }
 
     if (server_try_cancel == CANCEL_AFTER_PROCESSING) {
-      ServerTryCancel(context);
+      internal::ServerTryCancel(context);
       return Status::CANCELLED;
     }
 
@@ -368,18 +368,18 @@ class TestMultipleServiceImpl : public RpcService {
     //   writing messages to the client
     //   CANCEL_AFTER_PROCESSING: The RPC is cancelled after the server writes
     //   all the messages to the client
-    int server_try_cancel = GetIntValueFromMetadata(
+    int server_try_cancel = internal::GetIntValueFromMetadata(
         kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
 
-    int server_coalescing_api = GetIntValueFromMetadata(
+    int server_coalescing_api = internal::GetIntValueFromMetadata(
         kServerUseCoalescingApi, context->client_metadata(), 0);
 
-    int server_responses_to_send = GetIntValueFromMetadata(
+    int server_responses_to_send = internal::GetIntValueFromMetadata(
         kServerResponseStreamsToSend, context->client_metadata(),
         kServerDefaultResponseStreamsToSend);
 
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
-      ServerTryCancel(context);
+      internal::ServerTryCancel(context);
       return Status::CANCELLED;
     }
 
@@ -387,7 +387,7 @@ class TestMultipleServiceImpl : public RpcService {
     std::thread* server_try_cancel_thd = nullptr;
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread([context] { ServerTryCancel(context); });
+          new std::thread([context] { internal::ServerTryCancel(context); });
     }
 
     for (int i = 0; i < server_responses_to_send; i++) {
@@ -406,7 +406,7 @@ class TestMultipleServiceImpl : public RpcService {
     }
 
     if (server_try_cancel == CANCEL_AFTER_PROCESSING) {
-      ServerTryCancel(context);
+      internal::ServerTryCancel(context);
       return Status::CANCELLED;
     }
 
@@ -423,26 +423,26 @@ class TestMultipleServiceImpl : public RpcService {
     //   reading/writing messages from/to the client
     //   CANCEL_AFTER_PROCESSING: The RPC is cancelled after the server
     //   reads/writes all messages from/to the client
-    int server_try_cancel = GetIntValueFromMetadata(
+    int server_try_cancel = internal::GetIntValueFromMetadata(
         kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
 
     EchoRequest request;
     EchoResponse response;
 
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
-      ServerTryCancel(context);
+      internal::ServerTryCancel(context);
       return Status::CANCELLED;
     }
 
     std::thread* server_try_cancel_thd = nullptr;
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread([context] { ServerTryCancel(context); });
+          new std::thread([context] { internal::ServerTryCancel(context); });
     }
 
     // kServerFinishAfterNReads suggests after how many reads, the server should
     // write the last message and send status (coalesced using WriteLast)
-    int server_write_last = GetIntValueFromMetadata(
+    int server_write_last = internal::GetIntValueFromMetadata(
         kServerFinishAfterNReads, context->client_metadata(), 0);
 
     int read_counts = 0;
@@ -464,7 +464,7 @@ class TestMultipleServiceImpl : public RpcService {
     }
 
     if (server_try_cancel == CANCEL_AFTER_PROCESSING) {
-      ServerTryCancel(context);
+      internal::ServerTryCancel(context);
       return Status::CANCELLED;
     }
 
