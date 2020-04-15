@@ -1533,9 +1533,9 @@ static void finish_batch(void* bctlp, grpc_error* error) {
                       reinterpret_cast<gpr_atm>(GRPC_ERROR_REF(error)));
   }
   // If the batch had an error, we should normally fail the call. If the batch
-  // ended with GRPC_ERROR_EOS instead, we should not cancel the call because we
-  // do not want to overwrite the status that will propagated through the
-  // recv_trailing_metadata filter.
+  // ended with GRPC_ERROR_EOS, we should not cancel the call because we
+  // do not want to overwrite the status that will be propagated through the
+  // recv_trailing_metadata callback.
   if (error != GRPC_ERROR_NONE && error != GRPC_ERROR_EOS) {
     gpr_log(GPR_ERROR, "got an error %s. cancelling", grpc_error_string(error));
     cancel_with_error(call, GRPC_ERROR_REF(error));
