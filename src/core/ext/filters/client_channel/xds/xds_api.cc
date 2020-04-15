@@ -1022,8 +1022,9 @@ grpc_error* RouteConfigParse(
         "No prefix field found in RouteMatch.");
   }
   const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
-  if (!upb_strview_eql(prefix, upb_strview_makez(""))) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Prefix is not empty string.");
+  if (!upb_strview_eql(prefix, upb_strview_makez("")) &&
+      !upb_strview_eql(prefix, upb_strview_makez("/"))) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Prefix is not \"\" or \"/\".");
   }
   if (!envoy_api_v2_route_Route_has_route(route)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
