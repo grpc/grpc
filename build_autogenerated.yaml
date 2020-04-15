@@ -2298,17 +2298,12 @@ libs:
   language: c++
   public_headers: []
   headers:
-  - test/core/end2end/data/ssl_test_data.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
@@ -6687,6 +6682,7 @@ targets:
   language: c++
   headers:
   - src/cpp/util/core_stats.h
+  - test/core/end2end/data/ssl_test_data.h
   - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
   - test/cpp/qps/driver.h
@@ -6709,6 +6705,10 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
   - src/cpp/util/core_stats.cc
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -6738,6 +6738,7 @@ targets:
   language: c++
   headers:
   - src/cpp/util/core_stats.h
+  - test/core/end2end/data/ssl_test_data.h
   - test/cpp/qps/client.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
@@ -6755,6 +6756,10 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
   - src/cpp/util/core_stats.cc
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc

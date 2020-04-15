@@ -1416,10 +1416,6 @@
         'upb',
       ],
       'sources': [
-        'test/core/end2end/data/client_certs.cc',
-        'test/core/end2end/data/server1_cert.cc',
-        'test/core/end2end/data/server1_key.cc',
-        'test/core/end2end/data/test_root_cert.cc',
         'test/cpp/util/byte_buffer_proto_helper.cc',
         'test/cpp/util/create_test_channel.cc',
         'test/cpp/util/string_ref_helper.cc',
