@@ -461,8 +461,9 @@ const special_error_status_map error_status_map[] = {
     {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory",
      strlen("Out of memory")},              // GRPC_ERROR_OOM
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_2
-    {GRPC_STATUS_CANCELLED, "Cancelled", strlen("Cancelled")},
-    {GRPC_STATUS_INVALID_ARGUMENT, "", 0},
+    {GRPC_STATUS_CANCELLED, "Cancelled",
+     strlen("Cancelled")},                  // GRPC_ERROR_CANCELLED
+    {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_3
     {GRPC_STATUS_UNAVAILABLE, "End of stream",
      strlen("End of stream")}  // GRPC_ERROR_EOS
 };

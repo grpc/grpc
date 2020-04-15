@@ -83,10 +83,10 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-/* Client streaming test where the client sends a bunch of messages and the
- * server reads them. After reading some messages, the server sends the status.
- * Client writes fail after that due to the end of stream and the client
- * subsequently requests and receives the status. */
+// Client streaming test where the client sends a bunch of messages and the
+// server reads them. After reading some messages, the server sends the status.
+// Client writes fail after that due to the end of stream and the client
+// subsequently requests and receives the status.
 static void test_client_streaming(grpc_end2end_test_config config,
                                   int messages) {
   grpc_end2end_test_fixture f =
