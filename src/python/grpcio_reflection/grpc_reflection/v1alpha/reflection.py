@@ -54,25 +54,28 @@ class ReflectionServicer(BaseReflectionServicer):
                     ))
 
 
+_enable_server_reflection_doc = """Enables server reflection on a server.
+
+Args:
+    service_names: Iterable of fully-qualified service names available.
+    server: grpc.Server to which reflection service will be added.
+    pool: DescriptorPool object to use (descriptor_pool.Default() if None).
+"""
+
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # Exposes AsyncReflectionServicer as public API.
     from . import _async as aio
-    from grpc.experimental import aio as grpc_aio
+    from grpc.experimental import aio as grpc_aio  # pylint: disable=ungrouped-imports
 
     def enable_server_reflection(service_names, server, pool=None):
-        """Enables server reflection on a server.
-
-        Args:
-            service_names: Iterable of fully-qualified service names available.
-            server: grpc.Server to which reflection service will be added.
-            pool: DescriptorPool object to use (descriptor_pool.Default() if None).
-        """
         if isinstance(server, grpc_aio.Server):
             _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
                 aio.ReflectionServicer(service_names, pool=pool), server)
         else:
             _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
                 ReflectionServicer(service_names, pool=pool), server)
+
+    enable_server_reflection.__doc__ = _enable_server_reflection_doc
 
     __all__ = [
         "SERVICE_NAME",
@@ -83,15 +86,10 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
 else:
 
     def enable_server_reflection(service_names, server, pool=None):
-        """Enables server reflection on a server.
-
-        Args:
-            service_names: Iterable of fully-qualified service names available.
-            server: grpc.Server to which reflection service will be added.
-            pool: DescriptorPool object to use (descriptor_pool.Default() if None).
-        """
         _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
             ReflectionServicer(service_names, pool=pool), server)
+
+    enable_server_reflection.__doc__ = _enable_server_reflection_doc
 
     __all__ = [
         "SERVICE_NAME",
