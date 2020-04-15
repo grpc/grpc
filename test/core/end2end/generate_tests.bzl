@@ -435,8 +435,6 @@ def grpc_end2end_tests():
             language = "C++",
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
-                "//src/core/tsi/test_creds:client.key",
-                "//src/core/tsi/test_creds:client.pem",
                 "//src/core/tsi/test_creds:server1.key",
                 "//src/core/tsi/test_creds:server1.pem",
             ],
@@ -512,8 +510,6 @@ def grpc_end2end_nosec_tests():
             language = "C++",
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
-                "//src/core/tsi/test_creds:client.key",
-                "//src/core/tsi/test_creds:client.pem",
                 "//src/core/tsi/test_creds:server1.key",
                 "//src/core/tsi/test_creds:server1.pem",
             ],
