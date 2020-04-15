@@ -274,9 +274,9 @@ class Channel(abc.ABC):
 
         Args:
           method: The name of the RPC method.
-          request_serializer: Optional behaviour for serializing the request
+          request_serializer: Optional :term:`serializer` for serializing the request
             message. Request goes unserialized in case None is passed.
-          response_deserializer: Optional behaviour for deserializing the
+          response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
 
@@ -295,9 +295,9 @@ class Channel(abc.ABC):
 
         Args:
           method: The name of the RPC method.
-          request_serializer: Optional behaviour for serializing the request
+          request_serializer: Optional :term:`serializer` for serializing the request
             message. Request goes unserialized in case None is passed.
-          response_deserializer: Optional behaviour for deserializing the
+          response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
 
@@ -316,9 +316,9 @@ class Channel(abc.ABC):
 
         Args:
           method: The name of the RPC method.
-          request_serializer: Optional behaviour for serializing the request
+          request_serializer: Optional :term:`serializer` for serializing the request
             message. Request goes unserialized in case None is passed.
-          response_deserializer: Optional behaviour for deserializing the
+          response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
 
@@ -337,9 +337,9 @@ class Channel(abc.ABC):
 
         Args:
           method: The name of the RPC method.
-          request_serializer: Optional behaviour for serializing the request
+          request_serializer: Optional :term:`serializer` for serializing the request
             message. Request goes unserialized in case None is passed.
-          response_deserializer: Optional behaviour for deserializing the
+          response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
 
