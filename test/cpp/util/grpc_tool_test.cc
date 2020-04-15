@@ -18,6 +18,8 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
+#include <sstream>
+
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -29,8 +31,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <gtest/gtest.h>
-
-#include <sstream>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"

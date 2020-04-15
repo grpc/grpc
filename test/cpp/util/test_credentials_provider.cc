@@ -19,17 +19,18 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+
+#include <mutex>
+#include <unordered_map>
+
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/security/server_credentials.h>
 #include "src/core/lib/iomgr/load_file.h"
-
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-#include <mutex>
-#include <unordered_map>
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
