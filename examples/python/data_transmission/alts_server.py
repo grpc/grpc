@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The example of using ALTS credentials to setup gRPC server in python."""
+"""The example of using ALTS credentials to setup gRPC server in python.
+
+The example would only successfully run in GCP environment."""
 
 from concurrent import futures
 

@@ -1837,9 +1837,16 @@ def alts_channel_credentials(service_accounts=[]):
     """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
 
     This is an EXPERIMENTAL API.
+    ALTS credentials API can only be used in GCP environment as it relies on
+    handshaker service being available. For more info about ALTS see
+    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
 
     Args:
-      service_accounts: list of strings, target service accounts
+      service_accounts: A list of server identities accepted by the client.
+        If target service accounts are provided and none of them matches the
+        peer identity of the server, handshake will fail. The arg can be empty
+        if the client does not have any information about trusted server
+        identity.
     Returns:
       A ChannelCredentials for use with an ALTS-enabled Channel
     """
@@ -1847,9 +1854,12 @@ def alts_channel_credentials(service_accounts=[]):
 
 
 def alts_server_credentials():
-    """Creates a ServerCredentials for use with an ALTS-enabled connections.
+    """Creates a ServerCredentials for use with an ALTS-enabled connection.
 
     This is an EXPERIMENTAL API.
+    ALTS credentials API can only be used in GCP environment as it relies on
+    handshaker service being available. For more info about ALTS see
+    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
  
     Returns:
       A ServerCredentials for use with an ALTS-enabled Server
