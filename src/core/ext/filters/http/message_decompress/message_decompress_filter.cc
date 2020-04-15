@@ -63,7 +63,6 @@ class CallData {
 
   ~CallData() { grpc_slice_buffer_destroy_internal(&recv_slices_); }
 
- public:
   void DecompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
