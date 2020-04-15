@@ -6344,10 +6344,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(num_external_connectivity_watchers_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/surface/num_external_connectivity_watchers_test.cc
 )
 
