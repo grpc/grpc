@@ -264,10 +264,15 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     rpc_state.raise_for_termination()
 
     # Serializes the response message
-    cdef bytes response_raw = serialize(
-        response_serializer,
-        response_message,
-    )
+    cdef bytes response_raw
+    if rpc_state.status_code == StatusCode.ok:
+        response_raw = serialize(
+            response_serializer,
+            response_message,
+        )
+    else:
+        # Discards the response message if the status code is non-OK.
+        response_raw = b''
 
     # Assembles the batch operations
     cdef tuple finish_ops
