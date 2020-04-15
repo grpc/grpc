@@ -13,12 +13,10 @@
 # limitations under the License.
 """The example of using ALTS credentials to setup gRPC client."""
 
-import time
 import grpc
 
 import client
 import demo_pb2_grpc
-import demo_pb2
 
 SERVER_ADDRESS = "localhost:23333"
 

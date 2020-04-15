@@ -245,35 +245,3 @@ proto_library(
     name = "route_guide_proto",
     srcs = ["protos/route_guide.proto"],
 )
-
-py_binary(
-    name = "data_transmission_server",
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
-    main = "alts_server.py",
-    srcs = [
-        "python/data_transmission/alts_server.py",
-        "python/data_transmission/demo_pb2.py",
-        "python/data_transmission/demo_pb2_grpc.py",
-        "python/data_transmission/server.py",
-    ],
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-    ],
-)
-
-py_binary(
-    name = "data_transmission_client",
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
-    main = "alts_client.py",
-    srcs = [
-        "python/data_transmission/alts_client.py",
-        "python/data_transmission/client.py",
-        "python/data_transmission/demo_pb2.py",
-        "python/data_transmission/demo_pb2_grpc.py",
-    ],
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-    ],
-)

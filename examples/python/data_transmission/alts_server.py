@@ -13,12 +13,10 @@
 # limitations under the License.
 """The example of using ALTS credentials to setup gRPC server in python."""
 
-from threading import Thread
 from concurrent import futures
 
 import grpc
 import demo_pb2_grpc
-import demo_pb2
 import server
 
 SERVER_ADDRESS = 'localhost:23333'

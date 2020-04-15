@@ -19,6 +19,9 @@ from concurrent.futures import ThreadPoolExecutor
 import grpc
 
 
+REQUEST = b'abc'
+
+
 class _GenericHandler(grpc.GenericRpcHandler):
 
     def service(self, handler_call_details):
@@ -33,11 +36,9 @@ class ALTSCredentialsTest(unittest.TestCase):
         server.add_generic_rpc_handlers((_GenericHandler(),))
         return server
 
-    @unittest.skipIf(os.name == 'nt',
-                     'TODO(https://github.com/grpc/grpc/issues/20078)')
     def test_alts(self):
         server_addr = 'localhost:{}'
-        channel_creds = grpc.alts_channel_credentials(['svcacct@server.com'])
+        channel_creds = grpc.alts_channel_credentials([])
         server_creds = grpc.alts_server_credentials()
 
         server = self._create_server()
@@ -46,8 +47,8 @@ class ALTSCredentialsTest(unittest.TestCase):
         with grpc.secure_channel(server_addr.format(port),
                                  channel_creds) as channel:
             self.assertEqual(
-                b'abc',
-                channel.unary_unary('/test/method')(b'abc',
+                REQUEST,
+                channel.unary_unary('/test/method')(REQUEST,
                                                     wait_for_ready=True))
         server.stop(None)
 
