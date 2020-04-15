@@ -31,9 +31,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define CLIENT_CERT_PATH "src/core/tsi/test_creds/client.pem"
-#define CLIENT_KEY_PATH "src/core/tsi/test_creds/client.key"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 

@@ -35,18 +35,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "client_channel_stress_test",
     srcs = ["client_channel_stress_test.cc"],
-    flaky = True,  # TODO(b/153136407)
     # TODO(jtattermusch): test fails frequently on Win RBE, but passes locally
     # reenable the tests once it works reliably on Win RBE.
-    # TODO(roth): Test disabled on msan and tsan due to variable
-    # duration problem triggered by https://github.com/grpc/grpc/pull/22481.
-    # Re-enable once the problem is diagnosed and fixed.  Tracked
-    # internally in b/153136407.
+    # TODO(roth): Test marked as manual for now due to variable duration
+    # problem triggered by https://github.com/grpc/grpc/pull/22481.
+    # Once we figure out the problem, either re-enable or just decide to
+    # remove this test.  Tracked internally in b/153136407.
     tags = [
+        "manual",
         "no_test_android",  # fails on android due to "Too many open files".
         "no_windows",
-        "nomsan",
-        "notsan",
     ],
     deps = [
         "//:gpr",
