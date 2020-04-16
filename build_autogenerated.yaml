@@ -7558,6 +7558,7 @@ targets:
   - src/proto/grpc/testing/xds/eds_for_test.proto
   - src/proto/grpc/testing/xds/lds_rds_for_test.proto
   - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util
