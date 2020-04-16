@@ -1025,7 +1025,7 @@ grpc_error* RouteConfigParse(
       upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
       // Empty prefix "" is accepted.
       if (prefix.size == 1) {
-        //Prefix "/" is accepted.
+        // Prefix "/" is accepted.
         if (prefix.data[0] != '/') {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Prefix is not empty and does starting with a /");
