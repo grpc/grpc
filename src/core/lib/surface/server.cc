@@ -136,16 +136,50 @@ enum call_state {
 
 struct call_data;
 
+// RPCs that come in from the transport must be matched against RPC requests
+// from the application. An incoming request from the application can be matched
+// to an RPC that has already arrived or can be queued up for later use.
+// Likewise, an RPC coming in from the transport can either be matched to a
+// request that already arrived from the application or can be queued up for
+// later use (marked pending). If there is a match, the request's tag is posted
+// on the request's notification CQ.
+//
+// RequestMatcherInterface is the base class to provide this functionality.
 class RequestMatcherInterface {
  public:
   virtual ~RequestMatcherInterface() {}
+
+  // Unref the calls associated with any incoming RPCs in the pending queue (not
+  // yet matched to an application-requested RPC).
   virtual void ZombifyPending() = 0;
+
+  // Mark all application-requested RPCs failed if they have not been matched to
+  // an incoming RPC. The error parameter indicates why the RPCs are being
+  // failed (always server shutdown in all current implementations).
   virtual void KillRequests(grpc_error* error) = 0;
+
+  // How many request queues are supported by this matcher. This is an abstract
+  // concept that essentially mapps to gRPC completion queues.
   virtual size_t request_queue_count() const = 0;
+
+  // This function is invoked when the application requests a new RPC whose
+  // information is in the call parameter. The request_queue_index marks the
+  // queue onto which to place this RPC, and is typically associated with a gRPC
+  // CQ. If there are pending RPCs waiting to be matched, publish one (match it
+  // and notify the CQ).
   virtual void RequestCallWithPossiblePublish(size_t request_queue_index,
                                               requested_call* call) = 0;
+
+  // This function is invoked on an incoming RPC, represented by the calld
+  // object. The RequestMatcher will try to match it against an
+  // application-requested RPC if possible or will place it in the pending queue
+  // otherwise. To enable some measure of fairness between server CQs, the match
+  // is done starting at the start_request_queue_index parameter in a cyclic
+  // order rather than always starting at 0.
   virtual void MatchOrQueue(size_t start_request_queue_index,
                             call_data* calld) = 0;
+
+  // Returns the server associated with this request matcher
   virtual grpc_server* server() const = 0;
 };
 
@@ -365,15 +399,22 @@ void channel_broadcaster_shutdown(channel_broadcaster* cb, bool send_goaway,
  * request_matcher
  */
 
+// The RealRequestMatcher is an implementation of RequestMatcherInterface that
+// actually uses all the features of RequestMatcherInterface: expecting the
+// application to explicitly request RPCs and then matching those to incoming
+// RPCs, along with a slow path by which incoming RPCs are put on a locked
+// pending list if they aren't able to be matched to an application request.
 class RealRequestMatcher : public RequestMatcherInterface {
  public:
   explicit RealRequestMatcher(grpc_server* server)
       : server_(server), requests_per_cq_(server->cq_count) {}
+
   ~RealRequestMatcher() override {
     for (LockedMultiProducerSingleConsumerQueue& queue : requests_per_cq_) {
       GPR_ASSERT(queue.Pop() == nullptr);
     }
   }
+
   void ZombifyPending() override {
     while (pending_head_ != nullptr) {
       call_data* calld = pending_head_;
@@ -387,6 +428,7 @@ class RealRequestMatcher : public RequestMatcherInterface {
                               GRPC_ERROR_NONE);
     }
   }
+
   void KillRequests(grpc_error* error) override {
     for (size_t i = 0; i < requests_per_cq_.size(); i++) {
       requested_call* rc;
@@ -397,9 +439,11 @@ class RealRequestMatcher : public RequestMatcherInterface {
     }
     GRPC_ERROR_UNREF(error);
   }
+
   size_t request_queue_count() const override {
     return requests_per_cq_.size();
   }
+
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       requested_call* call) override {
     if (requests_per_cq_[request_queue_index].Push(call->mpscq_node.get())) {
@@ -429,6 +473,7 @@ class RealRequestMatcher : public RequestMatcherInterface {
       gpr_mu_unlock(&server_->mu_call);
     }
   }
+
   void MatchOrQueue(size_t start_request_queue_index,
                     call_data* calld) override {
     for (size_t i = 0; i < requests_per_cq_.size(); i++) {
