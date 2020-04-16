@@ -3838,6 +3838,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
     src/core/lib/iomgr/error_cfstream.cc \
+    src/core/lib/iomgr/ev_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
@@ -4466,6 +4467,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
     src/core/lib/iomgr/error_cfstream.cc \
+    src/core/lib/iomgr/ev_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
@@ -9540,10 +9542,6 @@ endif
 
 
 NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_SRC = \
-    test/core/end2end/data/client_certs.cc \
-    test/core/end2end/data/server1_cert.cc \
-    test/core/end2end/data/server1_key.cc \
-    test/core/end2end/data/test_root_cert.cc \
     test/core/surface/num_external_connectivity_watchers_test.cc \
 
 NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_SRC))))
@@ -9563,14 +9561,6 @@ $(BINDIR)/$(CONFIG)/num_external_connectivity_watchers_test: $(NUM_EXTERNAL_CONN
 	$(Q) $(LDXX) $(LDFLAGS) $(NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/num_external_connectivity_watchers_test
 
 endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/core/surface/num_external_connectivity_watchers_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 

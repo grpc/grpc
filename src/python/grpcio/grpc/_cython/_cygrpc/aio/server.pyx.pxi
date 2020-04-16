@@ -264,10 +264,15 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     rpc_state.raise_for_termination()
 
     # Serializes the response message
-    cdef bytes response_raw = serialize(
-        response_serializer,
-        response_message,
-    )
+    cdef bytes response_raw
+    if rpc_state.status_code == StatusCode.ok:
+        response_raw = serialize(
+            response_serializer,
+            response_message,
+        )
+    else:
+        # Discards the response message if the status code is non-OK.
+        response_raw = b''
 
     # Assembles the batch operations
     cdef tuple finish_ops
@@ -541,7 +546,10 @@ async def _handle_cancellation_from_core(object rpc_task,
     # Awaits cancellation from peer.
     await execute_batch(rpc_state, ops, loop)
     rpc_state.client_closed = True
-    if op.cancelled() and not rpc_task.done():
+    # If 1) received cancel signal; 2) the Task is not finished; 3) the server
+    # wasn't replying final status. For condition 3, it might cause inaccurate
+    # log that an RPC is both aborted and cancelled.
+    if op.cancelled() and not rpc_task.done() and not rpc_state.status_sent:
         # Injects `CancelledError` to halt the RPC coroutine
         rpc_task.cancel()
 

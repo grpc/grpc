@@ -11,19 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
-
-def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", **kwargs):
-    grpc_cc_test(
-        name = name,
-        srcs = srcs,
-        deps = deps + ["//test/core/util:fuzzer_corpus_test"],
-        data = data + native.glob([corpus + "/**"]),
-        external_deps = [
-            "gtest",
-        ],
-        size = size,
-        args = ["--directory=" + native.package_name() + "/" + corpus],
-        **kwargs
-    )

@@ -1023,7 +1023,14 @@ grpc_error* RouteConfigParse(
     XdsApi::RdsRoute rds_route;
     if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
       upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
-      if (prefix.size > 0) {
+      // Empty prefix "" is accepted.
+      if (prefix.size == 1) {
+        //Prefix "/" is accepted.
+        if (prefix.data[0] != '/') {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Prefix is not empty and does starting with a /");
+        }
+      } else if (prefix.size > 1) {
         if (prefix.data[0] != '/') {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Prefix is not starting with a /");

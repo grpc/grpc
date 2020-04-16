@@ -23,8 +23,11 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/mock_endpoint.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 bool squelch = true;
 // ssl has an array of global gpr_mu's that are never released.
@@ -66,18 +69,25 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
 
     // Load key pair and establish server SSL credentials.
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
     grpc_slice ca_slice, cert_slice, key_slice;
-    ca_slice = grpc_slice_from_static_string(test_root_cert);
-    cert_slice = grpc_slice_from_static_string(test_server1_cert);
-    key_slice = grpc_slice_from_static_string(test_server1_key);
-    const char* ca_cert = (const char*)GRPC_SLICE_START_PTR(ca_slice);
-    pem_key_cert_pair.private_key =
-        (const char*)GRPC_SLICE_START_PTR(key_slice);
-    pem_key_cert_pair.cert_chain =
-        (const char*)GRPC_SLICE_START_PTR(cert_slice);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                                 grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+    const char* ca_cert =
+        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+    const char* server_cert =
+        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+    const char* server_key =
+        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
     grpc_server_credentials* creds = grpc_ssl_server_credentials_create(
         ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
+    grpc_slice_unref(cert_slice);
+    grpc_slice_unref(key_slice);
+    grpc_slice_unref(ca_slice);
 
     // Create security connector
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
@@ -109,9 +119,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     sc.reset(DEBUG_LOCATION, "test");
     grpc_server_credentials_release(creds);
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
-    grpc_slice_unref(ca_slice);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
