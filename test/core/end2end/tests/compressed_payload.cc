@@ -44,8 +44,8 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args* server_args,
                                             bool decompress_in_core) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s%s/%s",
-          decompress_in_core ? "" : "_with_decompression_disabled", test_name,
+  gpr_log(GPR_INFO, "Running test: %s%s/%s", test_name,
+          decompress_in_core ? "" : "_with_decompression_disabled",
           config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
