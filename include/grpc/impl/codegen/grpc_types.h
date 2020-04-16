@@ -177,8 +177,8 @@ typedef struct {
 /** Experimental Arg. Enable/disable support for per-message decompression.
    Defaults to 1. If disabled, decompression will not be performed and the
    application will see the compressed message in the byte buffer. */
-#define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION_INSIDE_CORE \
-  "grpc.per_message_decompression_inside_core"
+#define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION \
+  "grpc.per_message_decompression"
 /** Enable/disable support for deadline checking. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
 #define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"

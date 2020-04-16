@@ -41,9 +41,12 @@ static void* tag(intptr_t t) { return (void*)t; }
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
                                             grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+                                            grpc_channel_args* server_args,
+                                            bool decompress_in_core) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s%s/%s",
+          decompress_in_core ? "" : "_with_decompression_disabled", test_name,
+          config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -134,9 +137,7 @@ static void request_for_disabled_algorithm(
   if (!decompress_in_core) {
     grpc_arg disable_decompression_in_core_arg =
         grpc_channel_arg_integer_create(
-            const_cast<char*>(
-                GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION_INSIDE_CORE),
-            0);
+            const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
     grpc_channel_args* old_client_args = client_args;
     grpc_channel_args* old_server_args = server_args;
     client_args = grpc_channel_args_copy_and_add(
@@ -147,7 +148,8 @@ static void request_for_disabled_algorithm(
     grpc_channel_args_destroy(old_server_args);
   }
 
-  f = begin_test(config, test_name, client_args, server_args);
+  f = begin_test(config, test_name, client_args, server_args,
+                 decompress_in_core);
   cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
@@ -323,9 +325,7 @@ static void request_with_payload_template_inner(
   if (!decompress_in_core) {
     grpc_arg disable_decompression_in_core_arg =
         grpc_channel_arg_integer_create(
-            const_cast<char*>(
-                GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION_INSIDE_CORE),
-            0);
+            const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
     grpc_channel_args* old_client_args = client_args;
     grpc_channel_args* old_server_args = server_args;
     client_args = grpc_channel_args_copy_and_add(
@@ -335,7 +335,8 @@ static void request_with_payload_template_inner(
     grpc_channel_args_destroy(old_client_args);
     grpc_channel_args_destroy(old_server_args);
   }
-  f = begin_test(config, test_name, client_args, server_args);
+  f = begin_test(config, test_name, client_args, server_args,
+                 decompress_in_core);
   cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
@@ -491,7 +492,6 @@ static void request_with_payload_template_inner(
     cq_verify(cqv);
 
     GPR_ASSERT(response_payload_recv->type == GRPC_BB_RAW);
-    gpr_log(GPR_ERROR, "%d", decompress_in_core);
     GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, response_str));
     if (server_compression_level > GRPC_COMPRESS_LEVEL_NONE) {
       const grpc_compression_algorithm algo_for_server_level =

@@ -143,9 +143,7 @@ static void request_with_payload_template(
   if (!decompress_in_core) {
     grpc_arg disable_decompression_in_core_arg =
         grpc_channel_arg_integer_create(
-            const_cast<char*>(
-                GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION_INSIDE_CORE),
-            0);
+            const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
     grpc_channel_args* old_client_args = client_args;
     grpc_channel_args* old_server_args = server_args;
     client_args = grpc_channel_args_copy_and_add(
@@ -401,8 +399,9 @@ static void test_workaround_cronet_compression(
         /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
         workaround_configs[i].user_agent_override, true);
     request_with_payload_template(
-        config, "test_invoke_request_with_compressed_payload", 0,
-        GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
+        config,
+        "test_invoke_request_with_compressed_payload_with_compression_disabled",
+        0, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
         workaround_configs[i].expected_algorithm_from_server, nullptr, false,
         /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
         workaround_configs[i].user_agent_override, false);
