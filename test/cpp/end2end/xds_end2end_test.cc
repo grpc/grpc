@@ -2219,7 +2219,7 @@ TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
 TEST_P(LdsTest, RouteMatchHasInvalidPrefix) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_resource_does_not_exist_timeout*/ 30000,
             /*xds_routing_enabled=*/true);
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2279,7 +2279,7 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefix) {
 TEST_P(LdsTest, RouteMatchHasInvalidPath) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_resource_does_not_exist_timeout*/ 30000,
             /*xds_routing_enabled=*/true);
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2862,7 +2862,7 @@ TEST_P(LocalityMapTest, NoLocalities) {
 
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
-/*TEST_P(LocalityMapTest, StressTest) {
+TEST_P(LocalityMapTest, StressTest) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumLocalities = 100;
@@ -2886,13 +2886,13 @@ TEST_P(LocalityMapTest, NoLocalities) {
       AdsServiceImpl::BuildEdsResource(args), 60 * 1000, kDefaultResourceName));
   // Wait until backend 0 is ready, before which kNumLocalities localities are
   // received and handled by the xds policy.
-  WaitForBackend(0, /*reset_counters=*false);
+  WaitForBackend(0, /*reset_counters=*/false);
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // Wait until backend 1 is ready, before which kNumLocalities localities are
   // removed by the xds policy.
   WaitForBackend(1);
   delayed_resource_setter.join();
-}*/
+}
 
 // Tests that the localities in a locality map are picked correctly after update
 // (addition, modification, deletion).
