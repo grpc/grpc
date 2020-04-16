@@ -1406,21 +1406,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   };
 
-  // TODO@donnadionne: Will replace SendRpc in all tests.
   template <typename Stub>
   Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
-                       EchoRequest& request, EchoResponse* response) {
-    ClientContext context;
-    context.set_deadline(
+                       ClientContext* context, EchoRequest& request,
+                       EchoResponse* response) {
+    context->set_deadline(
         grpc_timeout_milliseconds_to_deadline(rpc_options.timeout_ms));
-    if (rpc_options.wait_for_ready) context.set_wait_for_ready(true);
+    if (rpc_options.wait_for_ready) context->set_wait_for_ready(true);
     switch (rpc_options.method) {
       case METHOD_ECHO:
-        return (*stub)->Echo(&context, request, response);
+        return (*stub)->Echo(context, request, response);
       case METHOD_ECHO1:
-        return (*stub)->Echo1(&context, request, response);
+        return (*stub)->Echo1(context, request, response);
       case METHOD_ECHO2:
-        return (*stub)->Echo2(&context, request, response);
+        return (*stub)->Echo2(context, request, response);
     }
   }
 
@@ -1429,6 +1428,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
+    ClientContext* context = new ClientContext;
     request.set_message(kRequestMessage_);
     if (rpc_options.server_fail) {
       request.mutable_param()->mutable_expected_error()->set_code(
@@ -1437,20 +1437,22 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     Status status;
     switch (rpc_options.service) {
       case SERVICE_ECHO:
-        status = SendRpcMethod(&stub_, rpc_options, request, response);
+        status = SendRpcMethod(&stub_, rpc_options, context, request, response);
         break;
       case SERVICE_ECHO1:
-        status = SendRpcMethod(&stub1_, rpc_options, request, response);
+        status =
+            SendRpcMethod(&stub1_, rpc_options, context, request, response);
         break;
       case SERVICE_ECHO2:
-        status = SendRpcMethod(&stub2_, rpc_options, request, response);
+        status =
+            SendRpcMethod(&stub2_, rpc_options, context, request, response);
         break;
     }
+    delete context;
     if (local_response) delete response;
     return status;
   }
 
-  // TODO@donnadionne: Will replace ChedkRpcSendOk in all tests.
   void CheckRpcSendOk(const size_t times = 1,
                       const RpcOptions& rpc_options = RpcOptions()) {
     for (size_t i = 0; i < times; ++i) {
@@ -2235,16 +2237,15 @@ TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
-// not in the format "/service/": missing / or did not end with /.
-TEST_P(LdsTest, RouteMatchHasInvalidPrefix) {
+// string with no "/".
+TEST_P(LdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 30000,
+            /*xds_resource_does_not_exist_timeout*/ 0,
             /*xds_routing_enabled=*/true);
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  // Invalid case 1: no /
   route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service");
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
@@ -2256,7 +2257,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefix) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 2: missing / at the end
+}
+
+// Tests that LDS client should send a NACK if route match has a prefix
+// string does not end with "/".
+TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoEndingSlash) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2265,7 +2277,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefix) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 3: missing / at the beginning
+}
+
+// Tests that LDS client should send a NACK if route match has a prefix
+// string does not start with "/".
+TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service/");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2274,7 +2297,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefix) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 4: extra content outside of "/service/"
+}
+
+// Tests that LDS client should send a NACK if route match has a prefix
+// string with extra content outside of "/service/".
+TEST_P(LdsTest, RouteMatchHasInvalidPrefixExtraContent) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/Echo1");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2283,7 +2317,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefix) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 5: empty prefix "//"
+}
+
+// Tests that LDS client should send a NACK if route match has a prefix
+// string "//".
+TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoContent) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("//");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2295,11 +2340,11 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefix) {
 }
 
 // Tests that LDS client should send a NACK if route match has path
-// not in the format of "/service/method"
-TEST_P(LdsTest, RouteMatchHasInvalidPath) {
+// but it's empty.
+TEST_P(LdsTest, RouteMatchHasInvalidPathEmptyPath) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 30000,
+            /*xds_resource_does_not_exist_timeout*/ 0,
             /*xds_routing_enabled=*/true);
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2307,7 +2352,6 @@ TEST_P(LdsTest, RouteMatchHasInvalidPath) {
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  // Invalid case 1: empty path
   route1->mutable_match()->set_path("");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2316,7 +2360,21 @@ TEST_P(LdsTest, RouteMatchHasInvalidPath) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 2: missing / at the beginning
+}
+
+// Tests that LDS client should send a NACK if route match has path
+// string does not start with "/".
+TEST_P(LdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("grpc.testing.EchoTest1Service/Echo1");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2325,7 +2383,21 @@ TEST_P(LdsTest, RouteMatchHasInvalidPath) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 3: extra / at the end
+}
+
+// Tests that LDS client should send a NACK if route match has path
+// string that ends with "/".
+TEST_P(LdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1/");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2334,7 +2406,21 @@ TEST_P(LdsTest, RouteMatchHasInvalidPath) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 4: missinga / in the middle
+}
+
+// Tests that LDS client should send a NACK if route match has path
+// string that misses "/" between service and method.
+TEST_P(LdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service.Echo1");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2343,7 +2429,21 @@ TEST_P(LdsTest, RouteMatchHasInvalidPath) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 5: empty service "//Echo1"
+}
+
+// Tests that LDS client should send a NACK if route match has path
+// string that is missing service.
+TEST_P(LdsTest, RouteMatchHasInvalidPathMissingService) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("//Echo1");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2352,7 +2452,21 @@ TEST_P(LdsTest, RouteMatchHasInvalidPath) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  // Invalid case 5: empty method "/grpc.testing.EchoTest1Service/"
+}
+
+// Tests that LDS client should send a NACK if route match has path
+// string that is missing method.
+TEST_P(LdsTest, RouteMatchHasInvalidPathMissingMethod) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
@@ -2541,14 +2655,12 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_wait_for_ready(true));
-  CheckRpcSendOk(kNumEcho2Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO2)
-                                    .set_rpc_method(METHOD_ECHO2)
-                                    .set_wait_for_ready(true));
+  CheckRpcSendOk(
+      kNumEcho1Rpcs,
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  CheckRpcSendOk(
+      kNumEcho2Rpcs,
+      RpcOptions().set_rpc_service(SERVICE_ECHO2).set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_EQ(kNumEchoRpcs / 2,
