@@ -1144,14 +1144,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
-  void ResetStub(int fallback_timeout = 0, int failover_timeout = 0,
+  void ResetStub(int failover_timeout = 0,
                  const grpc::string& expected_targets = "",
                  int xds_resource_does_not_exist_timeout = 0) {
     ChannelArguments args;
-    // TODO(juanlishen): Add setter to ChannelArguments.
-    if (fallback_timeout > 0) {
-      args.SetInt(GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS, fallback_timeout);
-    }
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
@@ -1285,8 +1281,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             : kDefaultServiceConfigWithoutLoadReporting_;
     result.service_config =
         grpc_core::ServiceConfig::Create(service_config_json, &error);
-    ASSERT_NE(result.service_config.get(), nullptr);
     ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+    ASSERT_NE(result.service_config.get(), nullptr);
     grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
         lb_channel_response_generator == nullptr
             ? lb_channel_response_generator_.get()
@@ -1519,7 +1515,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{\n"
+      "    { \"eds_experimental\":{\n"
+      "      \"clusterName\": \"application_target_name\",\n"
       "      \"lrsLoadReportingServerName\": \"\"\n"
       "    } }\n"
       "  ]\n"
@@ -1528,7 +1525,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{\n"
+      "    { \"eds_experimental\":{\n"
+      "      \"clusterName\": \"application_target_name\"\n"
       "    } }\n"
       "  ]\n"
       "}";
@@ -1563,7 +1561,7 @@ TEST_P(BasicTest, Vanilla) {
   }
   // Check LB policy name for the channel.
   EXPECT_EQ(
-      (GetParam().use_xds_resolver() ? "cds_experimental" : "xds_experimental"),
+      (GetParam().use_xds_resolver() ? "cds_experimental" : "eds_experimental"),
       channel_->GetLoadBalancingPolicyName());
 }
 
@@ -1941,7 +1939,7 @@ using SecureNamingTest = BasicTest;
 // Tests that secure naming check passes if target name is expected.
 TEST_P(SecureNamingTest, TargetNameIsExpected) {
   // TODO(juanlishen): Use separate fake creds for the balancer channel.
-  ResetStub(0, 0, kApplicationTargetName_ + ";lb");
+  ResetStub(0, kApplicationTargetName_ + ";lb");
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 100;
@@ -1971,7 +1969,7 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED(
       {
-        ResetStub(0, 0, kApplicationTargetName_ + ";lb");
+        ResetStub(0, kApplicationTargetName_ + ";lb");
         SetNextResolution({});
         SetNextResolutionForLbChannel({balancers_[0]->port()});
         channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
@@ -2130,7 +2128,7 @@ TEST_P(LdsTest, RouteActionHasNoCluster) {
 
 // Tests that LDS client times out when no response received.
 TEST_P(LdsTest, Timeout) {
-  ResetStub(0, 0, "", 500);
+  ResetStub(0, "", 500);
   balancers_[0]->ads_service()->SetResourceIgnore(kLdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2265,7 +2263,7 @@ TEST_P(RdsTest, RouteActionHasNoCluster) {
 
 // Tests that RDS client times out when no response received.
 TEST_P(RdsTest, Timeout) {
-  ResetStub(0, 0, "", 500);
+  ResetStub(0, "", 500);
   balancers_[0]->ads_service()->SetResourceIgnore(kRdsTypeUrl);
   balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
   SetNextResolution({});
@@ -2338,7 +2336,7 @@ TEST_P(CdsTest, WrongLrsServer) {
 
 // Tests that CDS client times out when no response received.
 TEST_P(CdsTest, Timeout) {
-  ResetStub(0, 0, "", 500);
+  ResetStub(0, "", 500);
   balancers_[0]->ads_service()->SetResourceIgnore(kCdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2348,7 +2346,7 @@ TEST_P(CdsTest, Timeout) {
 using EdsTest = BasicTest;
 
 TEST_P(EdsTest, Timeout) {
-  ResetStub(0, 0, "", 500);
+  ResetStub(0, "", 500);
   balancers_[0]->ads_service()->SetResourceIgnore(kEdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2450,7 +2448,7 @@ TEST_P(LocalityMapTest, NoLocalities) {
       AdsServiceImpl::BuildEdsResource({}), kDefaultResourceName);
   Status status = SendRpc();
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
 }
 
 // Tests that the locality map can work properly even when it contains a large
@@ -2608,7 +2606,7 @@ class FailoverTest : public BasicTest {
  public:
   void SetUp() override {
     BasicTest::SetUp();
-    ResetStub(0, 100, "");
+    ResetStub(100, "");
   }
 };
 
@@ -3043,241 +3041,6 @@ TEST_P(DropTest, DropAll) {
     EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
     EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
   }
-}
-
-using FallbackTest = BasicTest;
-
-// Tests that RPCs are handled by the fallback backends before the serverlist is
-// received, but will be handled by the serverlist after it's received.
-TEST_P(FallbackTest, Vanilla) {
-  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
-  const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
-  const size_t kNumBackendsInResolution = backends_.size() / 2;
-  ResetStub(kFallbackTimeoutMs);
-  SetNextResolution(GetBackendPorts(0, kNumBackendsInResolution));
-  SetNextResolutionForLbChannelAllBalancers();
-  // Send non-empty serverlist only after kServerlistDelayMs.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(kNumBackendsInResolution)},
-  });
-  std::thread delayed_resource_setter(
-      std::bind(&BasicTest::SetEdsResourceWithDelay, this, 0,
-                AdsServiceImpl::BuildEdsResource(args), kServerlistDelayMs,
-                kDefaultResourceName));
-  // Wait until all the fallback backends are reachable.
-  WaitForAllBackends(0 /* start_index */,
-                     kNumBackendsInResolution /* stop_index */);
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
-  CheckRpcSendOk(kNumBackendsInResolution);
-  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
-  // Fallback is used: each backend returned by the resolver should have
-  // gotten one request.
-  for (size_t i = 0; i < kNumBackendsInResolution; ++i) {
-    EXPECT_EQ(1U, backends_[i]->backend_service()->request_count());
-  }
-  for (size_t i = kNumBackendsInResolution; i < backends_.size(); ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
-  // Wait until the serverlist reception has been processed and all backends
-  // in the serverlist are reachable.
-  WaitForAllBackends(kNumBackendsInResolution /* start_index */);
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  CheckRpcSendOk(backends_.size() - kNumBackendsInResolution);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-  // Serverlist is used: each backend returned by the balancer should
-  // have gotten one request.
-  for (size_t i = 0; i < kNumBackendsInResolution; ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
-  for (size_t i = kNumBackendsInResolution; i < backends_.size(); ++i) {
-    EXPECT_EQ(1U, backends_[i]->backend_service()->request_count());
-  }
-  delayed_resource_setter.join();
-}
-
-// Tests that RPCs are handled by the updated fallback backends before
-// serverlist is received,
-TEST_P(FallbackTest, Update) {
-  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
-  const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
-  const size_t kNumBackendsInResolution = backends_.size() / 3;
-  const size_t kNumBackendsInResolutionUpdate = backends_.size() / 3;
-  ResetStub(kFallbackTimeoutMs);
-  SetNextResolution(GetBackendPorts(0, kNumBackendsInResolution));
-  SetNextResolutionForLbChannelAllBalancers();
-  // Send non-empty serverlist only after kServerlistDelayMs.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(kNumBackendsInResolution +
-                                    kNumBackendsInResolutionUpdate)},
-  });
-  std::thread delayed_resource_setter(
-      std::bind(&BasicTest::SetEdsResourceWithDelay, this, 0,
-                AdsServiceImpl::BuildEdsResource(args), kServerlistDelayMs,
-                kDefaultResourceName));
-  // Wait until all the fallback backends are reachable.
-  WaitForAllBackends(0 /* start_index */,
-                     kNumBackendsInResolution /* stop_index */);
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
-  CheckRpcSendOk(kNumBackendsInResolution);
-  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
-  // Fallback is used: each backend returned by the resolver should have
-  // gotten one request.
-  for (size_t i = 0; i < kNumBackendsInResolution; ++i) {
-    EXPECT_EQ(1U, backends_[i]->backend_service()->request_count());
-  }
-  for (size_t i = kNumBackendsInResolution; i < backends_.size(); ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
-  SetNextResolution(GetBackendPorts(
-      kNumBackendsInResolution,
-      kNumBackendsInResolution + kNumBackendsInResolutionUpdate));
-  // Wait until the resolution update has been processed and all the new
-  // fallback backends are reachable.
-  WaitForAllBackends(kNumBackendsInResolution /* start_index */,
-                     kNumBackendsInResolution +
-                         kNumBackendsInResolutionUpdate /* stop_index */);
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  CheckRpcSendOk(kNumBackendsInResolutionUpdate);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-  // The resolution update is used: each backend in the resolution update should
-  // have gotten one request.
-  for (size_t i = 0; i < kNumBackendsInResolution; ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
-  for (size_t i = kNumBackendsInResolution;
-       i < kNumBackendsInResolution + kNumBackendsInResolutionUpdate; ++i) {
-    EXPECT_EQ(1U, backends_[i]->backend_service()->request_count());
-  }
-  for (size_t i = kNumBackendsInResolution + kNumBackendsInResolutionUpdate;
-       i < backends_.size(); ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
-  // Wait until the serverlist reception has been processed and all backends
-  // in the serverlist are reachable.
-  WaitForAllBackends(kNumBackendsInResolution +
-                     kNumBackendsInResolutionUpdate /* start_index */);
-  gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
-  CheckRpcSendOk(backends_.size() - kNumBackendsInResolution -
-                 kNumBackendsInResolutionUpdate);
-  gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
-  // Serverlist is used: each backend returned by the balancer should
-  // have gotten one request.
-  for (size_t i = 0;
-       i < kNumBackendsInResolution + kNumBackendsInResolutionUpdate; ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
-  for (size_t i = kNumBackendsInResolution + kNumBackendsInResolutionUpdate;
-       i < backends_.size(); ++i) {
-    EXPECT_EQ(1U, backends_[i]->backend_service()->request_count());
-  }
-  delayed_resource_setter.join();
-}
-
-// Tests that fallback will kick in immediately if the balancer channel fails.
-TEST_P(FallbackTest, FallbackEarlyWhenBalancerChannelFails) {
-  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
-  ResetStub(kFallbackTimeoutMs);
-  // Return an unreachable balancer and one fallback backend.
-  SetNextResolution({backends_[0]->port()});
-  SetNextResolutionForLbChannel({g_port_saver->GetPort()});
-  // Send RPC with deadline less than the fallback timeout and make sure it
-  // succeeds.
-  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
-                 /* wait_for_ready */ false);
-}
-
-// Tests that fallback will kick in immediately if the balancer call fails.
-TEST_P(FallbackTest, FallbackEarlyWhenBalancerCallFails) {
-  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
-  ResetStub(kFallbackTimeoutMs);
-  // Return one balancer and one fallback backend.
-  SetNextResolution({backends_[0]->port()});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Balancer drops call without sending a serverlist.
-  balancers_[0]->ads_service()->NotifyDoneWithAdsCall();
-  // Send RPC with deadline less than the fallback timeout and make sure it
-  // succeeds.
-  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
-                 /* wait_for_ready */ false);
-}
-
-// Tests that fallback mode is entered if balancer response is received but the
-// backends can't be reached.
-TEST_P(FallbackTest, FallbackIfResponseReceivedButChildNotReady) {
-  const int kFallbackTimeoutMs = 500 * grpc_test_slowdown_factor();
-  ResetStub(kFallbackTimeoutMs);
-  SetNextResolution({backends_[0]->port()});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Send a serverlist that only contains an unreachable backend before fallback
-  // timeout.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  // Because no child policy is ready before fallback timeout, we enter fallback
-  // mode.
-  WaitForBackend(0);
-}
-
-// Tests that fallback mode is exited if the balancer tells the client to drop
-// all the calls.
-TEST_P(FallbackTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
-  // Return an unreachable balancer and one fallback backend.
-  SetNextResolution({backends_[0]->port()});
-  SetNextResolutionForLbChannel({g_port_saver->GetPort()});
-  // Enter fallback mode because the LB channel fails to connect.
-  WaitForBackend(0);
-  // Return a new balancer that sends a response to drop all calls.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
-  });
-  args.drop_categories = {{kLbDropType, 1000000}};
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  SetNextResolutionForLbChannelAllBalancers();
-  // Send RPCs until failure.
-  gpr_timespec deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(5000, GPR_TIMESPAN));
-  do {
-    auto status = SendRpc();
-    if (!status.ok()) break;
-  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
-  CheckRpcSendFailure();
-}
-
-// Tests that fallback mode is exited if the child policy becomes ready.
-TEST_P(FallbackTest, FallbackModeIsExitedAfterChildReady) {
-  // Return an unreachable balancer and one fallback backend.
-  SetNextResolution({backends_[0]->port()});
-  SetNextResolutionForLbChannel({g_port_saver->GetPort()});
-  // Enter fallback mode because the LB channel fails to connect.
-  WaitForBackend(0);
-  // Return a new balancer that sends a dead backend.
-  ShutdownBackend(1);
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {backends_[1]->port()}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
-  SetNextResolutionForLbChannelAllBalancers();
-  // The state (TRANSIENT_FAILURE) update from the child policy will be ignored
-  // because we are still in fallback mode.
-  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                       gpr_time_from_millis(500, GPR_TIMESPAN));
-  // Send 0.5 second worth of RPCs.
-  do {
-    CheckRpcSendOk();
-  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
-  // After the backend is restarted, the child policy will eventually be READY,
-  // and we will exit fallback mode.
-  StartBackend(1);
-  WaitForBackend(1);
-  // We have exited fallback mode, so calls will go to the child policy
-  // exclusively.
-  CheckRpcSendOk(100);
-  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(100U, backends_[1]->backend_service()->request_count());
 }
 
 class BalancerUpdateTest : public XdsEnd2endTest {
@@ -3780,12 +3543,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, DropTest,
                                            TestType(false, false),
                                            TestType(true, false),
                                            TestType(true, true)),
-                         &TestTypeName);
-
-// Fallback does not work with xds resolver.
-INSTANTIATE_TEST_SUITE_P(XdsTest, FallbackTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(false, false)),
                          &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, BalancerUpdateTest,

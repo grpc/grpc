@@ -192,9 +192,9 @@ def unary_unary(
       request: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
       options: An optional list of key-value pairs (channel args in gRPC Core
         runtime) to configure the channel.
@@ -263,9 +263,9 @@ def unary_stream(
       request: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
       options: An optional list of key-value pairs (channel args in gRPC Core
         runtime) to configure the channel.
@@ -333,9 +333,9 @@ def stream_unary(
       request_iterator: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
       options: An optional list of key-value pairs (channel args in gRPC Core
         runtime) to configure the channel.
@@ -403,9 +403,9 @@ def stream_stream(
       request_iterator: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
       options: An optional list of key-value pairs (channel args in gRPC Core
         runtime) to configure the channel.
