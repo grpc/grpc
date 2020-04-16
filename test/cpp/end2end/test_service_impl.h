@@ -61,82 +61,30 @@ namespace internal {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
 void MaybeEchoDeadline(experimental::ServerContextBase* context,
-                       const EchoRequest* request, EchoResponse* response) {
-  if (request->has_param() && request->param().echo_deadline()) {
-    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-    if (context->deadline() != system_clock::time_point::max()) {
-      Timepoint2Timespec(context->deadline(), &deadline);
-    }
-    response->mutable_param()->set_request_deadline(deadline.tv_sec);
-  }
-}
+                       const EchoRequest* request, EchoResponse* response);
 
 void CheckServerAuthContext(
     const experimental::ServerContextBase* context,
     const grpc::string& expected_transport_security_type,
-    const grpc::string& expected_client_identity) {
-  std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
-  std::vector<grpc::string_ref> tst =
-      auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, tst.size());
-  EXPECT_EQ(expected_transport_security_type, ToString(tst[0]));
-  if (expected_client_identity.empty()) {
-    EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
-    EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
-    EXPECT_FALSE(auth_ctx->IsPeerAuthenticated());
-  } else {
-    auto identity = auth_ctx->GetPeerIdentity();
-    EXPECT_TRUE(auth_ctx->IsPeerAuthenticated());
-    EXPECT_EQ(1u, identity.size());
-    EXPECT_EQ(expected_client_identity, identity[0]);
-  }
-}
+    const grpc::string& expected_client_identity);
 
 // Returns the number of pairs in metadata that exactly match the given
 // key-value pair. Returns -1 if the pair wasn't found.
 int MetadataMatchCount(
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const grpc::string& key, const grpc::string& value) {
-  int count = 0;
-  for (const auto& metadatum : metadata) {
-    if (ToString(metadatum.first) == key &&
-        ToString(metadatum.second) == value) {
-      count++;
-    }
-  }
-  return count;
-}
+    const grpc::string& key, const grpc::string& value);
 
 int GetIntValueFromMetadataHelper(
     const char* key,
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    int default_value) {
-  if (metadata.find(key) != metadata.end()) {
-    std::istringstream iss(ToString(metadata.find(key)->second));
-    iss >> default_value;
-    gpr_log(GPR_INFO, "%s : %d", key, default_value);
-  }
-
-  return default_value;
-}
+    int default_value);
 
 int GetIntValueFromMetadata(
     const char* key,
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    int default_value) {
-  return GetIntValueFromMetadataHelper(key, metadata, default_value);
-}
+    int default_value);
 
-void ServerTryCancel(ServerContext* context) {
-  EXPECT_FALSE(context->IsCancelled());
-  context->TryCancel();
-  gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
-  // Now wait until it's really canceled
-  while (!context->IsCancelled()) {
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_micros(1000, GPR_TIMESPAN)));
-  }
-}
+void ServerTryCancel(ServerContext* context);
 }  // namespace internal
 
 class TestServiceSignaller {

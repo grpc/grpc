@@ -36,19 +36,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "test_multiple_service_impl",
-    testonly = True,
-    hdrs = ["test_service_impl.h"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_library(
     name = "test_health_check_service_impl",
     testonly = True,
     srcs = ["test_health_check_service_impl.cc"],
@@ -525,7 +512,7 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":test_multiple_service_impl",
+        ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
