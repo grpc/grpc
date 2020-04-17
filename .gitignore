@@ -136,7 +136,7 @@ bm_diff_old/
 bm_*.json
 
 # cmake build files
-/cmake/build
+**/cmake/build/
 
 # Visual Studio Code artifacts
 .vscode/*
