@@ -76,9 +76,7 @@ struct requested_call {
       grpc_core::MultiProducerSingleConsumerQueue::Node>
       mpscq_node;
   requested_call_type type;
-  size_t cq_idx;
   void* tag;
-  grpc_server* server;
   grpc_completion_queue* cq_bound_to_call;
   grpc_call** call;
   grpc_cq_completion completion;
@@ -1559,9 +1557,7 @@ grpc_call_error grpc_server_request_call(
     goto done;
   }
   details->reserved = nullptr;
-  rc->cq_idx = cq_idx;
   rc->type = BATCH_CALL;
-  rc->server = server;
   rc->tag = tag;
   rc->cq_bound_to_call = cq_bound_to_call;
   rc->call = call;
@@ -1612,9 +1608,7 @@ grpc_call_error grpc_server_request_registered_call(
     gpr_free(rc);
     return GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
   }
-  rc->cq_idx = cq_idx;
   rc->type = REGISTERED_CALL;
-  rc->server = server;
   rc->tag = tag;
   rc->cq_bound_to_call = cq_bound_to_call;
   rc->call = call;
