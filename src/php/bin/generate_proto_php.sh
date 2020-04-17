@@ -29,6 +29,7 @@ $PROTOC --proto_path=src/proto/math \
 
 # replace the Empty message with EmptyMessage
 # because Empty is a PHP reserved word
+# See https://github.com/protocolbuffers/protobuf/issues/2124
 output_file=$(mktemp)
 sed 's/message Empty/message EmptyMessage/g' \
   src/proto/grpc/testing/empty.proto > $output_file
