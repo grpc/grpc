@@ -3655,6 +3655,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
@@ -4289,6 +4290,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/parse_address.cc \

@@ -231,6 +231,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/xds/eds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
                       'src/core/ext/filters/client_channel/lb_policy_registry.cc',
                       'src/core/ext/filters/client_channel/lb_policy_registry.h',
