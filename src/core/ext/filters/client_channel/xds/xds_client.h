@@ -226,7 +226,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   void NotifyOnError(grpc_error* error);
 
   grpc_error* CreateServiceConfig(
-      const std::string& cluster_name,
+      const XdsApi::RdsUpdate& rds_update,
       RefCountedPtr<ServiceConfig>* service_config) const;
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot(
@@ -240,6 +240,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
   const grpc_millis request_timeout_;
+
+  const bool xds_routing_enabled_;
 
   Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
