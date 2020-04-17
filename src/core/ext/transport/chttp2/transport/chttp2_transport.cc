@@ -1207,12 +1207,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         desc, errstr, write_state_name(t->write_state));
   }
   if (error != GRPC_ERROR_NONE) {
-    // The surface layer treats GRPC_ERROR_EOS specially and does not cancel
-    // calls with batches that failed with GRPC_ERROR_EOS. The transport layer
-    // uses GRPC_ERROR_EOS specifically for send ops that failed due to the
-    // stream being closed for writes.
-    if (closure->error_data.error == GRPC_ERROR_NONE &&
-        error != GRPC_ERROR_EOS) {
+    if (closure->error_data.error == GRPC_ERROR_NONE) {
       closure->error_data.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error in HTTP transport completing operation");
       closure->error_data.error = grpc_error_set_str(
@@ -1489,9 +1484,13 @@ static void perform_stream_op_locked(void* stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
+      op->payload->send_message.stream_write_closed = true;
+      // We should NOT return an error here, so as to avoid a cancel OP being
+      // started. The surface layer will notice that the stream has been closed
+      // for writes and fail the send message op.
       op->payload->send_message.send_message.reset();
       grpc_chttp2_complete_closure_step(
-          t, s, &s->fetching_send_message_finished, GRPC_ERROR_EOS,
+          t, s, &s->fetching_send_message_finished, GRPC_ERROR_NONE,
           "fetching_send_message_finished");
     } else {
       GPR_ASSERT(s->fetching_send_message == nullptr);

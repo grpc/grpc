@@ -405,9 +405,6 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
       internal_set_str(&out, GRPC_ERROR_STR_DESCRIPTION,
                        grpc_slice_from_static_string("cancelled"));
       internal_set_int(&out, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
-    } else if (in == GRPC_ERROR_EOS) {
-      internal_set_str(&out, GRPC_ERROR_STR_DESCRIPTION,
-                       grpc_slice_from_static_string("end of stream"));
     }
   } else if (gpr_ref_is_unique(&in->atomics.refs)) {
     out = in;
@@ -462,10 +459,7 @@ const special_error_status_map error_status_map[] = {
      strlen("Out of memory")},              // GRPC_ERROR_OOM
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_2
     {GRPC_STATUS_CANCELLED, "Cancelled",
-     strlen("Cancelled")},                  // GRPC_ERROR_CANCELLED
-    {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_3
-    {GRPC_STATUS_UNAVAILABLE, "End of stream",
-     strlen("End of stream")}  // GRPC_ERROR_EOS
+     strlen("Cancelled")},  // GRPC_ERROR_CANCELLED
 };
 
 bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
@@ -537,7 +531,6 @@ grpc_error* grpc_error_add_child(grpc_error* src, grpc_error* child) {
 static const char* no_error_string = "\"No Error\"";
 static const char* oom_error_string = "\"Out of memory\"";
 static const char* cancelled_error_string = "\"Cancelled\"";
-static const char* eos_error_string = "\"End of stream\"";
 
 typedef struct {
   char* key;
@@ -752,7 +745,6 @@ const char* grpc_error_string(grpc_error* err) {
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
-  if (err == GRPC_ERROR_EOS) return eos_error_string;
 
   void* p = (void*)gpr_atm_acq_load(&err->atomics.error_string);
   if (p != nullptr) {
