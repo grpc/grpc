@@ -391,34 +391,12 @@ class InterceptedUnaryUnaryCall(InterceptedCall, _base_call.UnaryUnaryCall):
         return response
 
 
-class CallResponseIterator:
-
-    _intercepted_call: UnaryStreamCall
-
-    def __init__(self) -> None:
-        self._intercepted_call = None
-
-    def set_call(self, call: UnaryStreamCall) -> None:
-        self._intercepted_call = call
-
-    async def _forward_responses(self) -> ResponseType:
-        assert self._intercepted_call, "Before start iterating set_call must be called"
-
-        async for response in self._intercepted_call:
-            yield response
-
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
-        return self._forward_responses()
-
-
 class InterceptedUnaryStreamCall(InterceptedCall, _base_call.UnaryStreamCall):
     """Used for running a `UnaryStreamCall` wrapped by interceptors."""
 
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _call_response_iterator: CallResponseIterator
     _response_aiter: AsyncIterable[ResponseType]
-    _intercepted_response_iterator: Optional[AsyncIterable[ResponseType]]
 
     # pylint: disable=too-many-arguments
     def __init__(self, interceptors: Sequence[UnaryStreamClientInterceptor],
@@ -432,8 +410,6 @@ class InterceptedUnaryStreamCall(InterceptedCall, _base_call.UnaryStreamCall):
         self._loop = loop
         self._channel = channel
         self._response_aiter = self._wait_for_interceptor_task_response_iterator()
-        self._call_response_iterator = CallResponseIterator()
-        self._intercepted_response_iterator = None
         interceptors_task = loop.create_task(
             self._invoke(interceptors, method, timeout, metadata,
                          credentials, wait_for_ready, request,
@@ -453,11 +429,12 @@ class InterceptedUnaryStreamCall(InterceptedCall, _base_call.UnaryStreamCall):
                      ) -> UnaryStreamCall:
         """Run the RPC call wrapped in interceptors"""
 
+        last_returned_call_from_interceptors = [None]
+
         async def _run_interceptor(
                 interceptors: Iterator[UnaryStreamClientInterceptor],
                 client_call_details: ClientCallDetails,
                 request: RequestType,
-                response_iterator: AsyncIterable[ResponseType]
                ) -> _base_call.UnaryUnaryCall:
 
             interceptor = next(interceptors, None)
@@ -465,10 +442,19 @@ class InterceptedUnaryStreamCall(InterceptedCall, _base_call.UnaryStreamCall):
             if interceptor:
                 continuation = functools.partial(_run_interceptor, interceptors)
 
-                return await interceptor.intercept_unary_stream(
-                    continuation, client_call_details, request, response_iterator)
+                call_or_response_iterator = await interceptor.intercept_unary_stream(
+                    continuation, client_call_details, request)
+
+                if call_or_response_iterator is last_returned_call_from_interceptors[0]:
+                    return call_or_response_iterator
+                else:
+                    last_returned_call_from_interceptors[0] = UnaryStreamCallResponseIterator(
+                        last_returned_call_from_interceptors[0],
+                        call_or_response_iterator
+                    )
+                    return last_returned_call_from_interceptors[0]
             else:
-                call = UnaryStreamCall(
+                last_returned_call_from_interceptors[0] = UnaryStreamCall(
                     request, _timeout_to_deadline(client_call_details.timeout),
                     client_call_details.metadata,
                     client_call_details.credentials,
@@ -476,18 +462,16 @@ class InterceptedUnaryStreamCall(InterceptedCall, _base_call.UnaryStreamCall):
                     client_call_details.method, request_serializer,
                     response_deserializer, self._loop)
 
-                self._call_response_iterator.set_call(call)
-                self._intercepted_response_iterator = response_iterator
-                return call
+                return last_returned_call_from_interceptors[0]
 
         client_call_details = ClientCallDetails(method, timeout, metadata,
                                                 credentials, wait_for_ready)
         return await _run_interceptor(iter(interceptors), client_call_details,
-                                      request, self._call_response_iterator)
+                                      request)
 
     async def _wait_for_interceptor_task_response_iterator(self) -> ResponseType:
-        await self._interceptors_task
-        async for response in self._intercepted_response_iterator:
+        call = await self._interceptors_task
+        async for response in call:
             yield response
 
     def __aiter__(self) -> AsyncIterable[ResponseType]:
@@ -545,4 +529,51 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
         pass
 
 
+class UnaryStreamCallResponseIterator(_base_call.UnaryStreamCall):
+    """UnaryStreamCall class wich uses an alternative response iterator."""
+    _call: _base_call.UnaryStreamCall
+    _response_iterator: AsyncIterable[ResponseType]
 
+    def __init__(self, call: _base_call.UnaryStreamCall,
+                 response_iterator: AsyncIterable[ResponseType]) -> None:
+        self._response_iterator = response_iterator
+        self._call = call
+
+    def cancel(self) -> bool:
+        return self._call.cancel()
+
+    def cancelled(self) -> bool:
+        return self._call.cancelled()
+
+    def done(self) -> bool:
+        return self._call.done()
+
+    def add_done_callback(self, callback) -> None:
+        self._call.add_done_callback(callback)
+
+    def time_remaining(self) -> Optional[float]:
+        return self._call.time_remaining()
+
+    async def initial_metadata(self) -> Optional[MetadataType]:
+        return await self._call.initial_metadata()
+
+    async def trailing_metadata(self) -> Optional[MetadataType]:
+        return await self._call.trailing_metadata()
+
+    async def code(self) -> grpc.StatusCode:
+        return await self._call.code()
+
+    async def details(self) -> str:
+        return await self._call.details()
+
+    async def debug_error_string(self) -> Optional[str]:
+        return await self._call.debug_error_string()
+
+    def __aiter__(self):
+        return self._response_iterator.__aiter__()
+
+    async def wait_for_connection(self) -> None:
+        return await self._call.wait_for_connection()
+
+    async def read(self) -> ResponseType:
+        return await self._call.read()
