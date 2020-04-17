@@ -16,10 +16,15 @@
 set +e
 cd $(dirname $0)/../../..
 
-protoc --proto_path=src/proto/math \
+# protoc and grpc_*_plugin binaries can be obtained by running
+# $ bazel build @com_google_protobuf//:protoc //src/compiler:all
+PROTOC=bazel-bin/external/com_google_protobuf/protoc
+PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_php_plugin
+
+$PROTOC --proto_path=src/proto/math \
        --php_out=src/php/tests/generated_code \
        --grpc_out=src/php/tests/generated_code \
-       --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
+       --plugin=$PLUGIN \
        src/proto/math/math.proto
 
 # replace the Empty message with EmptyMessage
@@ -32,10 +37,10 @@ sed 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
   src/proto/grpc/testing/test.proto > $output_file
 mv $output_file ./src/proto/grpc/testing/test.proto
 
-protoc --proto_path=. \
+$PROTOC --proto_path=. \
        --php_out=src/php/tests/interop \
        --grpc_out=src/php/tests/interop \
-       --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
+       --plugin=$PLUGIN \
        src/proto/grpc/testing/messages.proto \
        src/proto/grpc/testing/empty.proto \
        src/proto/grpc/testing/test.proto
