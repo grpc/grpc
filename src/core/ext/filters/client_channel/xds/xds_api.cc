@@ -1024,29 +1024,28 @@ grpc_error* RouteConfigParse(
     if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
       upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
       // Empty prefix "" is accepted.
-      if (prefix.size == 1) {
+      if (prefix.size > 0) {
         // Prefix "/" is accepted.
         if (prefix.data[0] != '/') {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Prefix is not empty and does starting with a /");
+              "Prefix does not start with a /");
         }
-      } else if (prefix.size > 1) {
-        if (prefix.data[0] != '/') {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Prefix is not starting with a /");
+        if (prefix.size > 1) {
+          std::vector<absl::string_view> prefix_elements = absl::StrSplit(
+              absl::string_view(prefix.data, prefix.size).substr(1),
+              absl::MaxSplits('/', 1));
+          if (prefix_elements.size() != 2) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Prefix not in the required format of /service/");
+          } else if (!prefix_elements[1].empty()) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Prefix does not end with a /");
+          } else if (prefix_elements[0].empty()) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Prefix contains empty service name");
+          }
+          rds_route.service = std::string(prefix_elements[0]);
         }
-        std::vector<absl::string_view> prefix_elements = absl::StrSplit(
-            absl::string_view(prefix.data, prefix.size).substr(1), '/');
-        if (prefix_elements.size() != 2) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Prefix not in the required format of /service/");
-        } else if (!prefix_elements[1].empty()) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Prefix is not ending with a /");
-        } else if (prefix_elements[0].empty()) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Prefix cannot be empty");
-        }
-        rds_route.service = std::string(prefix_elements[0]);
       }
     } else if (envoy_api_v2_route_RouteMatch_has_path(match)) {
       upb_strview path = envoy_api_v2_route_RouteMatch_path(match);
@@ -1056,7 +1055,7 @@ grpc_error* RouteConfigParse(
       }
       if (path.data[0] != '/') {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path is not starting with a /");
+            "Path does not start with a /");
       }
       std::vector<absl::string_view> path_elements = absl::StrSplit(
           absl::string_view(path.data, path.size).substr(1), '/');
@@ -1065,10 +1064,10 @@ grpc_error* RouteConfigParse(
             "Path not in the required format of /service/method");
       } else if (path_elements[0].empty()) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path service name cannot be empty");
+            "Path contains empty service name");
       } else if (path_elements[1].empty()) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path method name cannot be empty");
+            "Path contains empty method name");
       }
       rds_route.service = std::string(path_elements[0]);
       rds_route.method = std::string(path_elements[1]);
@@ -1092,7 +1091,7 @@ grpc_error* RouteConfigParse(
         envoy_api_v2_route_RouteAction_cluster(route_action);
     if (action.size == 0) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction has empty cluster.");
+          "RouteAction contains empty cluster.");
     }
     rds_route.cluster_name = std::string(action.data, action.size);
     rds_update->routes.emplace_back(std::move(rds_route));

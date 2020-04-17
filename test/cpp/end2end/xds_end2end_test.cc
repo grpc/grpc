@@ -1410,9 +1410,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
                        ClientContext* context, EchoRequest& request,
                        EchoResponse* response) {
-    context->set_deadline(
-        grpc_timeout_milliseconds_to_deadline(rpc_options.timeout_ms));
-    if (rpc_options.wait_for_ready) context->set_wait_for_ready(true);
     switch (rpc_options.method) {
       case METHOD_ECHO:
         return (*stub)->Echo(context, request, response);
@@ -1428,7 +1425,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
-    ClientContext* context = new ClientContext;
+    ClientContext context;
+    context.set_deadline(
+        grpc_timeout_milliseconds_to_deadline(rpc_options.timeout_ms));
+    if (rpc_options.wait_for_ready) context.set_wait_for_ready(true);
     request.set_message(kRequestMessage_);
     if (rpc_options.server_fail) {
       request.mutable_param()->mutable_expected_error()->set_code(
@@ -1437,18 +1437,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     Status status;
     switch (rpc_options.service) {
       case SERVICE_ECHO:
-        status = SendRpcMethod(&stub_, rpc_options, context, request, response);
+        status =
+            SendRpcMethod(&stub_, rpc_options, &context, request, response);
         break;
       case SERVICE_ECHO1:
         status =
-            SendRpcMethod(&stub1_, rpc_options, context, request, response);
+            SendRpcMethod(&stub1_, rpc_options, &context, request, response);
         break;
       case SERVICE_ECHO2:
         status =
-            SendRpcMethod(&stub2_, rpc_options, context, request, response);
+            SendRpcMethod(&stub2_, rpc_options, &context, request, response);
         break;
     }
-    delete context;
     if (local_response) delete response;
     return status;
   }
