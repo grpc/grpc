@@ -268,7 +268,7 @@ struct grpc_server {
   (((channel_data*)(elem)->channel_data)->server)
 
 namespace {
-void publish_new_rpc(void* calld, grpc_error* error);
+void publish_new_rpc(void* arg, grpc_error* error);
 void fail_call(grpc_server* server, size_t cq_idx, requested_call* rc,
                grpc_error* error);
 /* Before calling maybe_finish_shutdown, we must hold mu_global and not
