@@ -79,15 +79,11 @@ def to_status(status):
                                        status.SerializeToString()),))
 
 
+__all__ = [
+    'from_call',
+    'to_status',
+]
+
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     from . import _async as aio
-    __all__ = [
-        'from_call',
-        'to_status',
-        'aio',
-    ]
-else:
-    __all__ = [
-        'from_call',
-        'to_status',
-    ]
+    __all__.append('aio')

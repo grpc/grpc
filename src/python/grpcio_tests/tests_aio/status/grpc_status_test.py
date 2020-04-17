@@ -144,8 +144,8 @@ class StatusTest(AioTestBase):
         self.assertEqual(status.code, code_pb2.Code.Value('INTERNAL'))
 
         # Check if the underlying proto message is intact
-        self.assertEqual(
-            status.details[0].Is(error_details_pb2.DebugInfo.DESCRIPTOR), True)
+        self.assertTrue(status.details[0].Is(
+            error_details_pb2.DebugInfo.DESCRIPTOR))
         info = error_details_pb2.DebugInfo()
         status.details[0].Unpack(info)
         self.assertIn('_error_details_unary_unary', info.stack_entries[-1])
