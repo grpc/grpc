@@ -24,8 +24,8 @@ cd $(dirname $0)
 
 ROOT_DIR=../../..
 BAZEL=$ROOT_DIR/tools/bazel
-PROTOC=bazel-bin/external/com_google_protobuf/protoc
-PLUGIN=bazel-bin/src/compiler/grpc_objective_c_plugin
+PROTOC=$ROOT_DIR/bazel-bin/external/com_google_protobuf/protoc
+PLUGIN=$ROOT_DIR/bazel-bin/src/compiler/grpc_objective_c_plugin
 
 [ -f $PROTOC ] && [ -f $PLUGIN ] || {
     BAZEL build @com_google_protobuf//:protoc //src/compiler:grpc_objective_c_plugin
