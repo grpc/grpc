@@ -16,20 +16,20 @@
 set -e
 cd $(dirname $0)/../../..
 
-# protoc and grpc_*_plugin binaries can be obtained by running
-# $ bazel build @com_google_protobuf//:protoc //src/compiler:all
-PROTOC=bazel-bin/external/com_google_protobuf/protoc
-PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_php_plugin
-
-$PROTOC --proto_path=src/proto/math \
+# TODO(jtattermusch): unlike for e.g. ruby and csharp,
+# PHP runs the code generator as part of the build, so we cannot
+# easily use bazel-built "protoc" and "grpc_php_plugin" binaries.
+# TODO(jtattermusch): the generated code for qps tests
+# is actually checked into the repository, but for other tests
+# (e.g. interop or unit tests) it's not. This should made consistent.
+protoc --proto_path=src/proto/math \
        --php_out=src/php/tests/generated_code \
        --grpc_out=src/php/tests/generated_code \
-       --plugin=$PLUGIN \
+       --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
        src/proto/math/math.proto
 
 # replace the Empty message with EmptyMessage
 # because Empty is a PHP reserved word
-# See https://github.com/protocolbuffers/protobuf/issues/2124
 output_file=$(mktemp)
 sed 's/message Empty/message EmptyMessage/g' \
   src/proto/grpc/testing/empty.proto > $output_file
@@ -38,10 +38,10 @@ sed 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
   src/proto/grpc/testing/test.proto > $output_file
 mv $output_file ./src/proto/grpc/testing/test.proto
 
-$PROTOC --proto_path=. \
+protoc --proto_path=. \
        --php_out=src/php/tests/interop \
        --grpc_out=src/php/tests/interop \
-       --plugin=$PLUGIN \
+       --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
        src/proto/grpc/testing/messages.proto \
        src/proto/grpc/testing/empty.proto \
        src/proto/grpc/testing/test.proto
