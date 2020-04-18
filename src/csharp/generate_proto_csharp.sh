@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Regenerates gRPC service stubs from proto files.
-set +e
+set -e
 cd $(dirname $0)/../..
 
 # protoc and grpc_*_plugin binaries can be obtained by running
