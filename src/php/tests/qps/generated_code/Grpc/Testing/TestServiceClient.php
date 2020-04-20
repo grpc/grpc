@@ -38,15 +38,15 @@ class TestServiceClient extends \Grpc\BaseStub {
 
     /**
      * One empty request followed by one empty response.
-     * @param \Grpc\Testing\PBEmpty $argument input argument
+     * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function EmptyCall(\Grpc\Testing\PBEmpty $argument,
+    public function EmptyCall(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.TestService/EmptyCall',
         $argument,
-        ['\Grpc\Testing\PBEmpty', 'decode'],
+        ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 
@@ -137,15 +137,15 @@ class TestServiceClient extends \Grpc\BaseStub {
     /**
      * The test server will not implement this method. It will be used
      * to test the behavior when clients call unimplemented methods.
-     * @param \Grpc\Testing\PBEmpty $argument input argument
+     * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function UnimplementedCall(\Grpc\Testing\PBEmpty $argument,
+    public function UnimplementedCall(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.TestService/UnimplementedCall',
         $argument,
-        ['\Grpc\Testing\PBEmpty', 'decode'],
+        ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 

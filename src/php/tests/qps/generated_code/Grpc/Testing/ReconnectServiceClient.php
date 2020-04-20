@@ -44,16 +44,16 @@ class ReconnectServiceClient extends \Grpc\BaseStub {
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.ReconnectService/Start',
         $argument,
-        ['\Grpc\Testing\PBEmpty', 'decode'],
+        ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 
     /**
-     * @param \Grpc\Testing\PBEmpty $argument input argument
+     * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function Stop(\Grpc\Testing\PBEmpty $argument,
+    public function Stop(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.ReconnectService/Stop',
         $argument,

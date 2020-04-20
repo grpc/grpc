@@ -19,15 +19,25 @@ class EchoStatus extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>int32 code = 1;</code>
      */
-    private $code = 0;
+    protected $code = 0;
     /**
      * Generated from protobuf field <code>string message = 2;</code>
      */
-    private $message = '';
+    protected $message = '';
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type int $code
+     *     @type string $message
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

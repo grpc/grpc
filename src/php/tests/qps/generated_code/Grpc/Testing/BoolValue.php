@@ -22,11 +22,21 @@ class BoolValue extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>bool value = 1;</code>
      */
-    private $value = false;
+    protected $value = false;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type bool $value
+     *           The bool value.
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

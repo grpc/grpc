@@ -20,15 +20,25 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>bool passed = 1;</code>
      */
-    private $passed = false;
+    protected $passed = false;
     /**
      * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
      */
     private $backoff_ms;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type bool $passed
+     *     @type int[]|\Google\Protobuf\Internal\RepeatedField $backoff_ms
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

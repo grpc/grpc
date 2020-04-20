@@ -2,7 +2,7 @@
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
-// Copyright 2015 gRPC authors.
+// Copyright 2015-2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
+//
 namespace Grpc\Testing;
 
 /**
- * A service without any rpc defined to test coverage.
+ * A service used to obtain stats for verifying LB behavior.
  */
-class NoRpcServiceClient extends \Grpc\BaseStub {
+class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -30,6 +33,20 @@ class NoRpcServiceClient extends \Grpc\BaseStub {
      */
     public function __construct($hostname, $opts, $channel = null) {
         parent::__construct($hostname, $opts, $channel);
+    }
+
+    /**
+     * Gets the backend distribution for RPCs sent by a test client.
+     * @param \Grpc\Testing\LoadBalancerStatsRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     */
+    public function GetClientStats(\Grpc\Testing\LoadBalancerStatsRequest $argument,
+      $metadata = [], $options = []) {
+        return $this->_simpleRequest('/grpc.testing.LoadBalancerStatsService/GetClientStats',
+        $argument,
+        ['\Grpc\Testing\LoadBalancerStatsResponse', 'decode'],
+        $metadata, $options);
     }
 
 }
