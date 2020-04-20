@@ -1542,6 +1542,8 @@ src/core/lib/iomgr/error.h \
 src/core/lib/iomgr/error_cfstream.cc \
 src/core/lib/iomgr/error_cfstream.h \
 src/core/lib/iomgr/error_internal.h \
+src/core/lib/iomgr/ev_apple.cc \
+src/core/lib/iomgr/ev_apple.h \
 src/core/lib/iomgr/ev_epoll1_linux.cc \
 src/core/lib/iomgr/ev_epoll1_linux.h \
 src/core/lib/iomgr/ev_epollex_linux.cc \

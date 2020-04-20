@@ -559,6 +559,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_cfstream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_apple.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_apple.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollex_linux.cc" role="src" />
