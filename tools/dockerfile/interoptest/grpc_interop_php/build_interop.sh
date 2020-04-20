@@ -45,4 +45,3 @@ for ((i = 0; i < 5; i++)); do
 done
 [[ "$DONE" != 1 ]] && echo "Failed to do composer install" && exit 1
 
-./bin/generate_proto_php.sh
