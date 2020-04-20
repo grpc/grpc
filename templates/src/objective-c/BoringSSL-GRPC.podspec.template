@@ -7,14 +7,27 @@
     import subprocess
     boringssl_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd='third_party/boringssl-with-bazel').decode().strip()
 
-    import gzip, shutil, os, base64
+    # Compress src/boringssl/boringssl_prefix_symbols.h with gzip then encode
+    # with Base64. The result is put in variable prefix_gz_b64.
+    #
+    # Note that gRPC's template parser is still using Python 2, whose gzip
+    # module does not support directly compressing bytes into bytes. Instead,
+    # we have to write the compressed bytes into a intermediate file
+    # (src/boringssl/boringssl_prefix_symbols.h.gz), read the compressed
+    # bytes from this file, then delete the intermediate file.
+    #
     # TODO(mxyan): move to python3 style gzip compression when possible
-    with open('src/boringssl/boringssl_prefix_symbols.h', 'rb') as f_in, gzip.GzipFile('src/boringssl/boringssl_prefix_symbols.h.gz', 'w', mtime=0.0) as f_out:
-      shutil.copyfileobj(f_in, f_out)
-    with open('src/boringssl/boringssl_prefix_symbols.h.gz', 'rb') as f_in:
-      prefix_gz = f_in.read()
-    os.remove('src/boringssl/boringssl_prefix_symbols.h.gz')
-    prefix_gz_b64 = base64.b64encode(prefix_gz)
+    def compress_boringssl_prefix_header():
+      import gzip, shutil, os, base64
+      with open('src/boringssl/boringssl_prefix_symbols.h', 'rb') as f_in, gzip.GzipFile('src/boringssl/boringssl_prefix_symbols.h.gz', 'w', mtime=0.0) as f_out:
+        shutil.copyfileobj(f_in, f_out)
+      with open('src/boringssl/boringssl_prefix_symbols.h.gz', 'rb') as f_in:
+        prefix_gz = f_in.read()
+      os.remove('src/boringssl/boringssl_prefix_symbols.h.gz')
+      prefix_gz_b64 = base64.b64encode(prefix_gz)
+      WRAP_LENGTH=80
+      prefix_gz_b64_wrapped = [prefix_gz_b64[i:i+WRAP_LENGTH] for i in range(0, len(prefix_gz_b64), WRAP_LENGTH)]
+      return prefix_gz_b64_wrapped
   %>
 
   # This file has been automatically generated from a template file.
@@ -219,7 +232,7 @@
         }
       EOF
 
-      # To avoid symbol conflict with OpenSSL, gRPC needs to rename all the BoringSSL symbols with a 
+      # To avoid symbol conflict with OpenSSL, gRPC needs to rename all the BoringSSL symbols with a
       # prefix. This is done with BoringSSL's BORINGSSL_PREFIX mechanism
       # (https://github.com/google/boringssl/blob/75148d7abf12bdd1797fec3c5da9a21963703516/BUILDING.md#building-with-prefixed-symbols).
       # The required prefix header file boringssl_prefix_symbols.h is not part of BoringSSL repo at
@@ -230,12 +243,13 @@
       # /src/boringssl/boringssl_prefix_symbols.h. Here we decode the content and inject the header to
       # the correct location in BoringSSL.
       base64 -D <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
-        ${prefix_gz_b64}
+        % for line in compress_boringssl_prefix_header():
+        ${line}
+        % endfor
       EOF
 
       # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists
       find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
-      # BoringSSL include boringssl_prefix_symbols.h without any prefix, which does not match the
 
       # Include of boringssl_prefix_symbols.h does not follow Xcode import style. We add the package
       # name here so that Xcode knows where to find it.
