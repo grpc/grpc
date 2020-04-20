@@ -55,6 +55,9 @@ class _UnaryStreamInterceptorEmpty(aio.UnaryStreamClientInterceptor):
                                      request):
         return await continuation(client_call_details, request)
 
+    def assert_in_final_state(self, test: unittest.TestCase):
+        pass
+
 
 class _UnaryStreamInterceptorWithResponseIterator(
         aio.UnaryStreamClientInterceptor):
@@ -67,6 +70,10 @@ class _UnaryStreamInterceptorWithResponseIterator(
         call = await continuation(client_call_details, request)
         self.response_iterator = _CountingResponseIterator(call)
         return self.response_iterator
+
+    def assert_in_final_state(self, test: unittest.TestCase):
+        test.assertEqual(_NUM_STREAM_RESPONSES,
+                         self.response_iterator.response_cnt)
 
 
 class TestUnaryStreamClientInterceptor(AioTestBase):
@@ -114,9 +121,7 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
                 self.assertEqual(call.cancelled(), False)
                 self.assertEqual(call.done(), True)
 
-                if interceptor_class == _UnaryStreamInterceptorWithResponseIterator:
-                    self.assertEqual(interceptor.response_iterator.response_cnt,
-                                     _NUM_STREAM_RESPONSES)
+                interceptor.assert_in_final_state(self)
 
                 await channel.close()
 
