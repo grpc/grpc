@@ -903,7 +903,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"));
     if (lds_update->rds_update.has_value()) {
-      gpr_log(GPR_INFO, "  RouteConfiguration contains %lu routes",
+      gpr_log(GPR_INFO, "  RouteConfiguration contains %" PRIuPTR " routes",
               lds_update->rds_update.value().routes.size());
       for (const auto& route : lds_update->rds_update.value().routes) {
         gpr_log(GPR_INFO,
@@ -966,7 +966,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] RDS update received;  RouteConfiguration contains "
-            "%lu routes",
+            "%" PRIuPTR " routes",
             this, rds_update.value().routes.size());
     for (const auto& route : rds_update.value().routes) {
       gpr_log(GPR_INFO,
