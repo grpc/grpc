@@ -231,7 +231,7 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
          (path_elements[1] == route.matcher.method ||
           route.matcher.method.empty())) ||
         (route.matcher.service.empty() && route.matcher.method.empty())) {
-      return route.picker.get()->Pick(args);
+      return route.picker->Pick(args);
     }
   }
   PickResult result;
