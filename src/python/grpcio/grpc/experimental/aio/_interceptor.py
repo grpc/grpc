@@ -125,10 +125,11 @@ class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     """Affords intercepting unary-stream invocations."""
 
     @abstractmethod
-    async def intercept_unary_stream(self, continuation: Callable[[
-            ClientCallDetails, RequestType], UnaryStreamCall],
-            client_call_details: ClientCallDetails,
-            request: RequestType) -> Union[AsyncIterable[ResponseType], UnaryStreamCall]:
+    async def intercept_unary_stream(
+            self, continuation: Callable[[ClientCallDetails, RequestType],
+                                         UnaryStreamCall],
+            client_call_details: ClientCallDetails, request: RequestType
+    ) -> Union[AsyncIterable[ResponseType], UnaryStreamCall]:
         """Intercepts a unary-stream invocation asynchronously.
 
         Args:
@@ -186,8 +187,8 @@ class InterceptedCall:
         self.cancel()
 
     def _fire_or_add_pending_done_callbacks(self,
-                                                interceptors_task: asyncio.Task
-                                               ) -> None:
+                                            interceptors_task: asyncio.Task
+                                           ) -> None:
 
         if not self._pending_add_done_callbacks:
             return
@@ -449,7 +450,6 @@ class InterceptedUnaryStreamCall(InterceptedCall, _base_call.UnaryStreamCall):
                      ) -> UnaryStreamCall:
         """Run the RPC call wrapped in interceptors"""
 
-
         async def _run_interceptor(
                 interceptors: Iterator[UnaryStreamClientInterceptor],
                 client_call_details: ClientCallDetails,
@@ -464,12 +464,13 @@ class InterceptedUnaryStreamCall(InterceptedCall, _base_call.UnaryStreamCall):
                 call_or_response_iterator = await interceptor.intercept_unary_stream(
                     continuation, client_call_details, request)
 
-                if isinstance(call_or_response_iterator, _base_call.UnaryUnaryCall):
+                if isinstance(call_or_response_iterator,
+                              _base_call.UnaryUnaryCall):
                     self._last_returned_call_from_interceptors = call_or_response_iterator
                 else:
                     self._last_returned_call_from_interceptors = UnaryStreamCallResponseIterator(
-                            self._last_returned_call_from_interceptors,
-                            call_or_response_iterator)
+                        self._last_returned_call_from_interceptors,
+                        call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:
                 self._last_returned_call_from_interceptors = UnaryStreamCall(

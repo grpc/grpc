@@ -86,8 +86,8 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
                 request = messages_pb2.StreamingOutputCallRequest()
                 request.response_parameters.extend([
-                    messages_pb2.ResponseParameters(
-                        size=_RESPONSE_PAYLOAD_SIZE)] * _NUM_STREAM_RESPONSES)
+                    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+                ] * _NUM_STREAM_RESPONSES)
 
                 channel = aio.insecure_channel(self._server_target,
                                                interceptors=[interceptor])
@@ -116,7 +116,7 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
                 if interceptor_class == _UnaryStreamInterceptorWithResponseIterator:
                     self.assertEqual(interceptor.response_iterator.response_cnt,
-                                    _NUM_STREAM_RESPONSES)
+                                     _NUM_STREAM_RESPONSES)
 
                 await channel.close()
 
@@ -129,8 +129,8 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
                 request = messages_pb2.StreamingOutputCallRequest()
                 request.response_parameters.extend([
-                    messages_pb2.ResponseParameters(
-                        size=_RESPONSE_PAYLOAD_SIZE)] * _NUM_STREAM_RESPONSES)
+                    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+                ] * _NUM_STREAM_RESPONSES)
 
                 channel = aio.insecure_channel(self._server_target,
                                                interceptors=[interceptor])
@@ -155,8 +155,8 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
                 request = messages_pb2.StreamingOutputCallRequest()
                 request.response_parameters.extend([
-                    messages_pb2.ResponseParameters(
-                        size=_RESPONSE_PAYLOAD_SIZE)] * _NUM_STREAM_RESPONSES)
+                    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+                ] * _NUM_STREAM_RESPONSES)
 
                 channel = aio.insecure_channel(self._server_target,
                                                interceptors=[interceptor])
@@ -185,9 +185,9 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
         stub = test_pb2_grpc.TestServiceStub(channel)
 
         request = messages_pb2.StreamingOutputCallRequest()
-        request.response_parameters.extend([
-            messages_pb2.ResponseParameters(
-                size=_RESPONSE_PAYLOAD_SIZE)] * _NUM_STREAM_RESPONSES)
+        request.response_parameters.extend(
+            [messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)] *
+            _NUM_STREAM_RESPONSES)
 
         call = stub.StreamingOutputCall(request)
 
@@ -201,7 +201,7 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
         self.assertEqual(response_cnt, _NUM_STREAM_RESPONSES)
         self.assertEqual(interceptor.response_iterator.response_cnt,
-                        _NUM_STREAM_RESPONSES)
+                         _NUM_STREAM_RESPONSES)
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
         await channel.close()
@@ -220,8 +220,8 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
                 request = messages_pb2.StreamingOutputCallRequest()
                 request.response_parameters.extend([
-                    messages_pb2.ResponseParameters(
-                        size=_RESPONSE_PAYLOAD_SIZE)] * _NUM_STREAM_RESPONSES)
+                    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+                ] * _NUM_STREAM_RESPONSES)
 
                 call = stub.StreamingOutputCall(request)
 
@@ -334,9 +334,9 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
     async def test_cancel_consuming_response_iterator(self):
         request = messages_pb2.StreamingOutputCallRequest()
-        request.response_parameters.extend([
-            messages_pb2.ResponseParameters(
-                size=_RESPONSE_PAYLOAD_SIZE)] * _NUM_STREAM_RESPONSES)
+        request.response_parameters.extend(
+            [messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)] *
+            _NUM_STREAM_RESPONSES)
 
         channel = aio.insecure_channel(
             self._server_target,
@@ -400,7 +400,6 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
                 pass
 
         await channel.close()
-
 
 
 if __name__ == '__main__':

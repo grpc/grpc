@@ -36,6 +36,7 @@ async def block_until_certain_state(channel: aio.Channel,
         await channel.wait_for_state_change(state)
         state = channel.get_state()
 
+
 def inject_callbacks(call):
     first_callback_ran = asyncio.Event()
 

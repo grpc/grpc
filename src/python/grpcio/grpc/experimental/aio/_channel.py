@@ -224,16 +224,17 @@ class Channel(_base_channel.Channel):
         self._unary_stream_interceptors = []
 
         if interceptors:
-            attrs_and_interceptor_classes = (
-                (self._unary_unary_interceptors, UnaryUnaryClientInterceptor),
-                (self._unary_stream_interceptors, UnaryStreamClientInterceptor)
-            )
+            attrs_and_interceptor_classes = ((self._unary_unary_interceptors,
+                                              UnaryUnaryClientInterceptor),
+                                             (self._unary_stream_interceptors,
+                                              UnaryStreamClientInterceptor))
 
             # pylint: disable=cell-var-from-loop
             for attr, interceptor_class in attrs_and_interceptor_classes:
-                attr.extend(
-                    [interceptor for interceptor in interceptors if isinstance(interceptor, interceptor_class)]
-                )
+                attr.extend([
+                    interceptor for interceptor in interceptors
+                    if isinstance(interceptor, interceptor_class)
+                ])
 
             invalid_interceptors = set(interceptors) - set(
                 self._unary_unary_interceptors) - set(
