@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Iterable, Optional, Sequence, List
 
 import grpc
 from grpc import _common, _compression, _grpcio_metadata
@@ -202,8 +202,8 @@ class StreamStreamMultiCallable(_BaseMultiCallable,
 class Channel(_base_channel.Channel):
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _unary_unary_interceptors: Sequence[UnaryUnaryClientInterceptor]
-    _unary_stream_interceptors: Sequence[UnaryStreamClientInterceptor]
+    _unary_unary_interceptors: List[UnaryUnaryClientInterceptor]
+    _unary_stream_interceptors: List[UnaryStreamClientInterceptor]
 
     def __init__(self, target: str, options: ChannelArgumentType,
                  credentials: Optional[grpc.ChannelCredentials],
@@ -224,18 +224,16 @@ class Channel(_base_channel.Channel):
         self._unary_stream_interceptors = []
 
         if interceptors:
-            attrs_and_interceptor_classes = [
+            attrs_and_interceptor_classes = (
                 (self._unary_unary_interceptors, UnaryUnaryClientInterceptor),
                 (self._unary_stream_interceptors, UnaryStreamClientInterceptor)
-            ]
+            )
 
             # pylint: disable=cell-var-from-loop
             for attr, interceptor_class in attrs_and_interceptor_classes:
                 attr.extend(
-                    list(
-                        filter(
-                            lambda interceptor: isinstance(
-                                interceptor, interceptor_class), interceptors)))
+                    [interceptor for interceptor in interceptors if isinstance(interceptor, interceptor_class)]
+                )
 
             invalid_interceptors = set(interceptors) - set(
                 self._unary_unary_interceptors) - set(
@@ -245,7 +243,7 @@ class Channel(_base_channel.Channel):
                 raise ValueError(
                     "Interceptor must be "+\
                     "UnaryUnaryClientInterceptors or "+\
-                    "UnaryStreamClientInterceptors the following are invalid: {}"\
+                    "UnaryStreamClientInterceptors. The following are invalid: {}"\
                     .format(invalid_interceptors))
 
         self._loop = asyncio.get_event_loop()
@@ -402,7 +400,7 @@ def insecure_channel(
         target: str,
         options: Optional[ChannelArgumentType] = None,
         compression: Optional[grpc.Compression] = None,
-        interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]] = None):
+        interceptors: Optional[Sequence[ClientInterceptor]] = None):
     """Creates an insecure asynchronous Channel to a server.
 
     Args:

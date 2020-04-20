@@ -30,7 +30,8 @@ from ._base_channel import (Channel, StreamStreamMultiCallable,
                             StreamUnaryMultiCallable, UnaryStreamMultiCallable,
                             UnaryUnaryMultiCallable)
 from ._call import AioRpcError
-from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
+from ._interceptor import (ClientCallDetails, ClientInterceptor,
+                           InterceptedUnaryUnaryCall,
                            UnaryUnaryClientInterceptor,
                            UnaryStreamClientInterceptor, ServerInterceptor)
 from ._server import server
@@ -57,6 +58,8 @@ __all__ = (
     'StreamUnaryMultiCallable',
     'StreamStreamMultiCallable',
     'ClientCallDetails',
+    'ClientInterceptor',
+    'UnaryStreamClientInterceptor',
     'UnaryUnaryClientInterceptor',
     'InterceptedUnaryUnaryCall',
     'ServerInterceptor',
