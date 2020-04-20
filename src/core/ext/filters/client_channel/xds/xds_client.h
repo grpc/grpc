@@ -85,6 +85,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual void OnError(grpc_error* error) = 0;
   };
 
+  // Specify the configurations for the server.
+  struct XdsServerSpec {
+    envoy_api_v2_ConfigSource* config_source;
+    const grpc_channel_args* channel_args;
+  };
+
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
   XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
@@ -121,15 +127,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
                                EndpointWatcherInterface* watcher,
                                bool delay_unsubscription = false);
 
-  struct ApiConfigs {
-    StringView server_uri;
-    const grpc_channel_args* channel_args;
-    grpc_channel_credentials* channel_credentials;
-    grpc_call_credentials* call_credentials;
-  };
-
   void WatchSecretData(StringView secret_name,
-                       const ApiConfigs& api_configs,
+                       const XdsServerSpec& server_spec,
                        std::unique_ptr<SecretWatcherInterface> watcher);
 
   void CancelSecretDataWatch(StringView secret_name,
@@ -258,6 +257,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     absl::optional<XdsApi::SdsUpdate> update;
   };
 
+  /*
+  struct SdsServerState {
+    OrphanablePtr<ChannelState> chand;
+    std::map<std::string, SecretState> subscription_map;
+  };*/
+
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
@@ -293,7 +298,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // The channel for communicating with the sds server.
   OrphanablePtr<ChannelState> sds_chand_;
   // The API configurations for the sds channel.
-  ApiConfigs sds_api_configs_;
+  XdsServerSpec sds_api_configs_;
 
   absl::optional<XdsApi::LdsUpdate> lds_result_;
   absl::optional<XdsApi::RdsUpdate> rds_result_;

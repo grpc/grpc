@@ -24,6 +24,25 @@
 
 namespace grpc_core {
 
+grpc_error* ParseTargetUri(envoy_api_v2_ConfigSource* config_source, std::string* target_uri) {
+  if (!envoy_api_v2_ConfigSource_has_api_config_source(config_source)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "config source does not have api_config_source field.");
+  }
+  envoy_api_v2_ApiConfigSource* api_config_source = envoy_api_v2_ConfigSource_api_config_source(config_source);
+  size_t grpc_services_size;
+  envoy_api_v2_GrpcService* const* grpc_service = envoy_api_v2_ApiConfigSource_grpc_services(api_config_source, &size);
+  if (size == 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "api config source does not have a grpc_services config.");
+  }
+  // For now, support only using the first grpc service config
+  if (!evnoy_api_v2_GoogleGrpc_has_google_grpc(grpc_service)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "grpc service config does not have a google_grpc config.");
+  }
+}
+
 grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
   return args;
 }
@@ -38,6 +57,17 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
   }
   return grpc_insecure_channel_create(bootstrap.server().server_uri.c_str(),
                                       &args, nullptr);
+}
+
+grpc_channel* CreateSdsChannel(envoy_api_v2_ConfigSource* config_source,
+                               const grpc_channel_args& args,
+                               grpc_error** error) {
+  std::string parsed_target_uri;
+  *error = XdsParseConfigSource(config_source, &parsed_target_uri);
+  if (*error != GRPC_ERROR_NONE) {
+    return nullptr;
+  }
+  return grpc_insecure_channel_create(parsed_target_uri.c_str(), &args, nullptr);
 }
 
 }  // namespace grpc_core

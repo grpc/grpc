@@ -1260,7 +1260,7 @@ grpc_error* SdsResponseParse(XdsClient* client, TraceFlag* tracer,
     XdsApi::SdsUpdate sds_update;
     // Check type_url of the resource.
     const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
-    if (!upb_strview_eql(type_url, upb_strview_makez(XdsApi::kCdsTypeUrl))) {
+    if (!upb_strview_eql(type_url, upb_strview_makez(XdsApi::kSdsTypeUrl))) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not SDS.");
     }
     // Decode the secret.

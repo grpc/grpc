@@ -122,7 +122,6 @@ class XdsClient::ChannelState::AdsCallState
  public:
   struct Options {
     const grpc_slice* method = nullptr;
-    absl::optional<ApiConfigs> api_configs;
   };
 
   // The ctor and dtor should not be used directly.
@@ -2013,12 +2012,12 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
 }
 
 void XdsClient::WatchSecretData(StringView secret_name,
-                                const ApiConfigs& api_configs,
+                                const XdsServerSpec& server_spec,
                                 std::unique_ptr<SecretWatcherInterface> watcher) {
   // Create SDS channel if necessary
   if (sds_chand_ == nullptr) {
     grpc_error *error;
-    grpc_channel* channel = CreateSdsChannel(api_configs, &error);
+    grpc_channel* channel = CreateSdsChannel(server_spec.config_source, server_spec.channel_args, &error);
     if (error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "[xds_client %p] failed to create sds channel: %s", this,
               grpc_error_string(error));
@@ -2026,9 +2025,6 @@ void XdsClient::WatchSecretData(StringView secret_name,
       return;
     }
     sds_chand_ = MakeOrphanable<ChannelState>(Ref(DEBUG_LOCATION, "XdsClient+SDS ChannelState"), channel);
-    sds_api_configs_ = api_configs
-  } else {
-    GPR_ASSERT(sds_api_configs_ == api_configs);
   }
   std::string secret_name_str = std::string(secret_name);
   SecretState& secret_state = secret_map_[secret_name_str];

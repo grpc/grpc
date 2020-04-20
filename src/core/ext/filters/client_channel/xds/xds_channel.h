@@ -39,6 +39,9 @@ grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args);
 grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
                                const grpc_channel_args& args,
                                grpc_error** error);
+grpc_channel* CreateSdsChannel(envoy_api_v2_ConfigSource* config_source,
+                               const grpc_channel_args& args,
+                               grpc_error** error);
 
 }  // namespace grpc_core
 
