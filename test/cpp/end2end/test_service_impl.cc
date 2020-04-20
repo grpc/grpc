@@ -225,7 +225,6 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         FinishWhenCancelledAsync();
         return;
       }
-      gpr_log(GPR_DEBUG, "Request message was %s", req_->message().c_str());
       resp_->set_message(req_->message());
       internal::MaybeEchoDeadline(ctx_, req_, resp_);
       if (service_->host_) {
@@ -568,7 +567,6 @@ CallbackTestServiceImpl::BidiStream(
     void OnReadDone(bool ok) override {
       if (ok) {
         num_msgs_read_++;
-        gpr_log(GPR_INFO, "recv msg %s", request_.message().c_str());
         response_.set_message(request_.message());
         if (num_msgs_read_ == server_write_last_) {
           StartWriteLast(&response_, WriteOptions());
