@@ -31,7 +31,8 @@ from ._base_channel import (Channel, StreamStreamMultiCallable,
                             UnaryUnaryMultiCallable)
 from ._call import AioRpcError
 from ._interceptor import (ClientCallDetails, InterceptedUnaryUnaryCall,
-                           UnaryUnaryClientInterceptor, ServerInterceptor)
+                           UnaryUnaryClientInterceptor,
+                           UnaryStreamClientInterceptor, ServerInterceptor)
 from ._server import server
 from ._base_server import Server, ServicerContext
 from ._typing import ChannelArgumentType
