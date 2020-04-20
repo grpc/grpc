@@ -17,7 +17,7 @@ import logging
 import unittest
 
 import grpc
-from google.protobuf import descriptor_pb2, descriptor_pool
+from google.protobuf import descriptor_pb2
 from grpc.experimental import aio
 
 from grpc_reflection.v1alpha import (reflection, reflection_pb2,
