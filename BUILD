@@ -322,6 +322,7 @@ grpc_cc_library(
         "grpc_lb_policy_eds",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_lrs",
+        "grpc_lb_policy_xds_routing",
         "grpc_resolver_xds",
     ],
 )
@@ -341,6 +342,7 @@ grpc_cc_library(
         "grpc_lb_policy_eds_secure",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_lrs_secure",
+        "grpc_lb_policy_xds_routing",
         "grpc_resolver_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
@@ -724,7 +726,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.cc",
         "src/core/lib/iomgr/error.cc",
         "src/core/lib/iomgr/error_cfstream.cc",
-        "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
         "src/core/lib/iomgr/ev_epollex_linux.cc",
         "src/core/lib/iomgr/ev_poll_posix.cc",
@@ -886,7 +887,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_cfstream.h",
         "src/core/lib/iomgr/error_internal.h",
-        "src/core/lib/iomgr/ev_apple.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
@@ -991,6 +991,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
+    use_cfstream = True,
     deps = [
         "eventmanager_libuv",
         "gpr_base",
@@ -1194,11 +1195,13 @@ grpc_cc_library(
         "src/core/ext/filters/http/client/http_client_filter.cc",
         "src/core/ext/filters/http/http_filters_plugin.cc",
         "src/core/ext/filters/http/message_compress/message_compress_filter.cc",
+        "src/core/ext/filters/http/message_compress/message_decompress_filter.cc",
         "src/core/ext/filters/http/server/http_server_filter.cc",
     ],
     hdrs = [
         "src/core/ext/filters/http/client/http_client_filter.h",
         "src/core/ext/filters/http/message_compress/message_compress_filter.h",
+        "src/core/ext/filters/http/message_compress/message_decompress_filter.h",
         "src/core/ext/filters/http/server/http_server_filter.h",
     ],
     language = "c++",
@@ -1450,6 +1453,18 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_xds_routing",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
     ],
 )
 

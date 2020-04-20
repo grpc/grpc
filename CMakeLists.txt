@@ -1330,6 +1330,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
@@ -1369,6 +1370,7 @@ add_library(grpc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
+  src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
@@ -1512,7 +1514,6 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_windows.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/error_cfstream.cc
-  src/core/lib/iomgr/ev_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
@@ -1990,6 +1991,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/parse_address.cc
@@ -2029,6 +2031,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
+  src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
@@ -2166,7 +2169,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_windows.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/error_cfstream.cc
-  src/core/lib/iomgr/ev_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc

@@ -44,12 +44,22 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
-  struct RdsUpdate {
-    // The name to use in the CDS request.
+  struct RdsRoute {
+    std::string service;
+    std::string method;
     std::string cluster_name;
 
+    bool operator==(const RdsRoute& other) const {
+      return (service == other.service && method == other.method &&
+              cluster_name == other.cluster_name);
+    }
+  };
+
+  struct RdsUpdate {
+    std::vector<RdsRoute> routes;
+
     bool operator==(const RdsUpdate& other) const {
-      return cluster_name == other.cluster_name;
+      return routes == other.routes;
     }
   };
 
@@ -247,6 +257,7 @@ class XdsApi {
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
       const std::string& expected_route_config_name,
+      const bool xds_routing_enabled,
       const std::set<StringView>& expected_cluster_names,
       const std::set<StringView>& expected_eds_service_names,
       absl::optional<LdsUpdate>* lds_update,

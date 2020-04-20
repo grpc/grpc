@@ -174,6 +174,11 @@ typedef struct {
 /** Enable/disable support for per-message compression. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
+/** Experimental Arg. Enable/disable support for per-message decompression.
+   Defaults to 1. If disabled, decompression will not be performed and the
+   application will see the compressed message in the byte buffer. */
+#define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION \
+  "grpc.per_message_decompression"
 /** Enable/disable support for deadline checking. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
 #define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
@@ -354,6 +359,11 @@ typedef struct {
  * The default is 15 seconds. */
 #define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
   "grpc.xds_resource_does_not_exist_timeout_ms"
+/* If set, enable xds routing policy.  This boolean argument is currently
+ * disabled by default; however, it will be changed to enabled by default
+ * once the functionality proves stable.  This arg will eventually
+ * be removed completely. */
+#define GRPC_ARG_XDS_ROUTING_ENABLED "grpc.xds_routing_enabled"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
