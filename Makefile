@@ -3290,6 +3290,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/cancel_in_a_vacuum.cc \
     test/core/end2end/tests/cancel_with_status.cc \
     test/core/end2end/tests/channelz.cc \
+    test/core/end2end/tests/client_streaming.cc \
     test/core/end2end/tests/compressed_payload.cc \
     test/core/end2end/tests/connectivity.cc \
     test/core/end2end/tests/default_host.cc \
@@ -3402,6 +3403,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/cancel_in_a_vacuum.cc \
     test/core/end2end/tests/cancel_with_status.cc \
     test/core/end2end/tests/channelz.cc \
+    test/core/end2end/tests/client_streaming.cc \
     test/core/end2end/tests/compressed_payload.cc \
     test/core/end2end/tests/connectivity.cc \
     test/core/end2end/tests/default_host.cc \

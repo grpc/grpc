@@ -52,6 +52,7 @@ typedef struct expectation {
   int line;
   grpc_completion_type type;
   void* tag;
+  bool check_success;
   int success;
 } expectation;
 
@@ -220,7 +221,7 @@ static void verify_matches(expectation* e, grpc_event* ev) {
   GPR_ASSERT(e->type == ev->type);
   switch (e->type) {
     case GRPC_OP_COMPLETE:
-      if (e->success != ev->success) {
+      if (e->check_success && e->success != ev->success) {
         gpr_strvec expected;
         gpr_strvec_init(&expected);
         expectation_to_strvec(&expected, e);
@@ -299,12 +300,14 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
 void cq_verify_empty(cq_verifier* v) { cq_verify_empty_timeout(v, 1); }
 
 static void add(cq_verifier* v, const char* file, int line,
-                grpc_completion_type type, void* tag, bool success) {
+                grpc_completion_type type, void* tag, bool check_success,
+                bool success) {
   expectation* e = static_cast<expectation*>(gpr_malloc(sizeof(expectation)));
   e->type = type;
   e->file = file;
   e->line = line;
   e->tag = tag;
+  e->check_success = check_success;
   e->success = success;
   e->next = v->first_expectation;
   v->first_expectation = e;
@@ -312,5 +315,10 @@ static void add(cq_verifier* v, const char* file, int line,
 
 void cq_expect_completion(cq_verifier* v, const char* file, int line, void* tag,
                           bool success) {
-  add(v, file, line, GRPC_OP_COMPLETE, tag, success);
+  add(v, file, line, GRPC_OP_COMPLETE, tag, true, success);
+}
+
+void cq_expect_completion_any_status(cq_verifier* v, const char* file, int line,
+                                     void* tag) {
+  add(v, file, line, GRPC_OP_COMPLETE, tag, false, false);
 }

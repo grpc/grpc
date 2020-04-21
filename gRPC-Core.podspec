@@ -1487,6 +1487,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/cancel_test_helpers.h',
                       'test/core/end2end/tests/cancel_with_status.cc',
                       'test/core/end2end/tests/channelz.cc',
+                      'test/core/end2end/tests/client_streaming.cc',
                       'test/core/end2end/tests/compressed_payload.cc',
                       'test/core/end2end/tests/connectivity.cc',
                       'test/core/end2end/tests/default_host.cc',
