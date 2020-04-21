@@ -62,9 +62,6 @@ class _UnaryStreamInterceptorEmpty(aio.UnaryStreamClientInterceptor):
 class _UnaryStreamInterceptorWithResponseIterator(
         aio.UnaryStreamClientInterceptor):
 
-    def __init__(self):
-        self.response_iterator = None
-
     async def intercept_unary_stream(self, continuation, client_call_details,
                                      request):
         call = await continuation(client_call_details, request)
