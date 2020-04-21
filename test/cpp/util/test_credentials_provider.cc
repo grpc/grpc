@@ -31,7 +31,6 @@
 #include <unordered_map>
 
 #include "src/core/lib/iomgr/load_file.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
