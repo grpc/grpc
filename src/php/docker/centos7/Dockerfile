@@ -14,7 +14,6 @@
 
 FROM centos:centos7
 
-# Install PHP7.2
 RUN yum update -y && \
   yum install epel-release -y && \
   rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm && \
@@ -26,21 +25,14 @@ RUN yum update -y && \
 
 ARG MAKEFLAGS=-j8
 
-WORKDIR /tmp
 
-# Easy way to install gcc version 
-# devtoolset-3-toolchain(GCC-4)
-# devtoolset-4-toolchain(GCC-5)
-# devtoolset-6-toolchain(GCC-6)
-# devtoolset-7-toolchain(GCC-7)
-# etc
+WORKDIR /tmp
 
 RUN yum install -y centos-release-scl && \
   yum install -y devtoolset-4-gcc*
 
 SHELL [ "/usr/bin/scl", "enable", "devtoolset-4"]
 
-# Install phpunit
 RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
   mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
   chmod +x /usr/local/bin/phpunit
