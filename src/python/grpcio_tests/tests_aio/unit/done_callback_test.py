@@ -47,12 +47,12 @@ class TestDoneCallback(AioTestBase):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
-        validation = _inject_callbacks(call)
+        validation = inject_callbacks(call)
         await validation
 
     async def test_unary_unary(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-        validation = _inject_callbacks(call)
+        validation = inject_callbacks(call)
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
@@ -65,7 +65,7 @@ class TestDoneCallback(AioTestBase):
                 messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
 
         call = self._stub.StreamingOutputCall(request)
-        validation = _inject_callbacks(call)
+        validation = inject_callbacks(call)
 
         response_cnt = 0
         async for response in call:
@@ -88,7 +88,7 @@ class TestDoneCallback(AioTestBase):
                 yield request
 
         call = self._stub.StreamingInputCall(gen())
-        validation = _inject_callbacks(call)
+        validation = inject_callbacks(call)
 
         response = await call
         self.assertIsInstance(response, messages_pb2.StreamingInputCallResponse)
@@ -100,7 +100,7 @@ class TestDoneCallback(AioTestBase):
 
     async def test_stream_stream(self):
         call = self._stub.FullDuplexCall()
-        validation = _inject_callbacks(call)
+        validation = inject_callbacks(call)
 
         request = messages_pb2.StreamingOutputCallRequest()
         request.response_parameters.append(
