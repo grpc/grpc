@@ -65,6 +65,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
@@ -104,6 +105,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/message_compress/message_decompress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \

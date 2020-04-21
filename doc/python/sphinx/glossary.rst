@@ -14,3 +14,16 @@ Glossary
 
   metadata
     A sequence of metadatum.
+
+  serializer
+    A callable function that encodes an object into bytes. Applications are
+    allowed to provide any customized serializer, so there isn't a restriction
+    for the input object (i.e. even ``None``). On the server-side, the
+    serializer is invoked with server handler's return value; on the
+    client-side, the serializer is invoked with outbound message objects.
+
+  deserializer
+    A callable function that decodes bytes into an object. Same as serializer,
+    the returned object doesn't have restrictions (i.e. ``None`` allowed). The
+    deserializer is invoked with inbound message bytes on both the server side
+    and the client-side.

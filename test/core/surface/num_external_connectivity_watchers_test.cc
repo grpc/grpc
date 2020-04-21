@@ -26,9 +26,11 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 
 typedef struct test_fixture {
   const char* name;
@@ -162,8 +164,14 @@ static const test_fixture insecure_test = {
 };
 
 static grpc_channel* secure_test_create_channel(const char* addr) {
+  grpc_slice ca_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  const char* test_root_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr, nullptr);
+  grpc_slice_unref(ca_slice);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),

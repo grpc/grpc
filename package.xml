@@ -133,6 +133,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/eds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.h" role="src" />
@@ -203,6 +204,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/http/http_filters_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_decompress_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_decompress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.cc" role="src" />
