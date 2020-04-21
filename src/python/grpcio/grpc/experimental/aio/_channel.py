@@ -67,7 +67,7 @@ class _BaseMultiCallable:
     _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
-    _interceptors: Sequence[ClientInterceptor]
+    _interceptors: Optional[Sequence[ClientInterceptor]]
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -77,7 +77,7 @@ class _BaseMultiCallable:
             method: bytes,
             request_serializer: SerializingFunction,
             response_deserializer: DeserializingFunction,
-            interceptors: Sequence[ClientInterceptor],
+            interceptors: Optional[Sequence[ClientInterceptor]],
             loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
