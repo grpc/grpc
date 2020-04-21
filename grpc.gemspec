@@ -923,7 +923,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h )
   s.files += %w( src/core/tsi/fake_transport_security.cc )
   s.files += %w( src/core/tsi/fake_transport_security.h )
-  s.files += %w( src/core/tsi/grpc_shadow_boringssl.h )
   s.files += %w( src/core/tsi/local_transport_security.cc )
   s.files += %w( src/core/tsi/local_transport_security.h )
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session.h )

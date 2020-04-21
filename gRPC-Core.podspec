@@ -172,7 +172,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.7'
+    ss.dependency 'BoringSSL-GRPC', '0.0.8'
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
@@ -180,7 +180,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
-    ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
+    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/client_channel/backend_metric.cc',
@@ -1001,7 +1001,6 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                       'src/core/tsi/fake_transport_security.cc',
                       'src/core/tsi/fake_transport_security.h',
-                      'src/core/tsi/grpc_shadow_boringssl.h',
                       'src/core/tsi/local_transport_security.cc',
                       'src/core/tsi/local_transport_security.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
@@ -1409,7 +1408,6 @@ Pod::Spec.new do |s|
                               'src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h',
                               'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                               'src/core/tsi/fake_transport_security.h',
-                              'src/core/tsi/grpc_shadow_boringssl.h',
                               'src/core/tsi/local_transport_security.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
                               'src/core/tsi/ssl/session_cache/ssl_session_cache.h',

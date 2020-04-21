@@ -28,4 +28,4 @@
 - script: tools/distrib/yapf_code.sh --diff
   cpu_cost: 1000
 - script: tools/distrib/check_protobuf_pod_version.sh
-- script: tools/distrib/check_shadow_boringssl_symbol_list.sh
+- script: tools/distrib/check_boringssl_prefix_symbol.sh
