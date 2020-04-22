@@ -92,6 +92,10 @@ _EXEMPT = frozenset((
     # Designer-generated source
     'examples/csharp/HelloworldXamarin/Droid/Resources/Resource.designer.cs',
     'examples/csharp/HelloworldXamarin/iOS/ViewController.designer.cs',
+
+    # BoringSSL generated header. It has commit version information at the head
+    # of the file so we cannot check the license info.
+    'src/boringssl/boringssl_prefix_symbols.h',
 ))
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'

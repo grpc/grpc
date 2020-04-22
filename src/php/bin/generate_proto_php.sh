@@ -13,9 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set +e
+set -e
 cd $(dirname $0)/../../..
 
+# TODO(jtattermusch): unlike for e.g. ruby and csharp,
+# PHP runs the code generator as part of the build, so we cannot
+# easily use bazel-built "protoc" and "grpc_php_plugin" binaries.
+# TODO(jtattermusch): the generated code for qps tests
+# is actually checked into the repository, but for other tests
+# (e.g. interop or unit tests) it's not. This should made consistent.
 protoc --proto_path=src/proto/math \
        --php_out=src/php/tests/generated_code \
        --grpc_out=src/php/tests/generated_code \

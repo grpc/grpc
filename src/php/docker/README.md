@@ -95,6 +95,20 @@ Run image:
 ```sh
 $ docker run -it --rm grpc-php/alpine
 ```
+### `centos7`
+
+This image builds the `grpc` extension against the GCC version in Centos7 base image.
+
+Build `centos7` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-gcc5/centos -f ./src/php/docker/centos7/Dockerfile .
+```
+
+Run image:
+```sh
+$ docker run -it --rm grpc-gcc5/centos
+```
 
 ### `php-src`
 
