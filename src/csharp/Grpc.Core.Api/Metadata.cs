@@ -76,7 +76,7 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Gets the last metadata entry with the specified key. If no entries have the key then <c>null</c> is returned.
+        /// Gets the last metadata entry with the specified key. If there are no matching entries then <c>null</c> is returned.
         /// </summary>
         public Entry Get(string key)
         {
@@ -92,6 +92,22 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Gets the string value of the last metadata entry with the specified key. If there are no matching entries then <c>null</c> is returned.
+        /// </summary>
+        public string GetValue(string key)
+        {
+            return Get(key)?.Value;
+        }
+
+        /// <summary>
+        /// Gets the bytes value of the last metadata entry with the specified key. If there are no matching entries then <c>null</c> is returned.
+        /// </summary>
+        public byte[] GetValueBytes(string key)
+        {
+            return Get(key)?.ValueBytes;
+        }
+
+        /// <summary>
         /// Gets all metadata entries with the specified key.
         /// </summary>
         public IEnumerable<Entry> GetAll(string key)
@@ -103,22 +119,6 @@ namespace Grpc.Core
                     yield return entries[i];
                 }
             }
-        }
-
-        /// <summary>
-        /// Gets the last metadata entry string value with the specified key. If no entries have the key then <c>null</c> is returned.
-        /// </summary>
-        public string GetValue(string key)
-        {
-            return Get(key)?.Value;
-        }
-
-        /// <summary>
-        /// Gets the last metadata entry bytes value with the specified key. If no entries have the key then <c>null</c> is returned.
-        /// </summary>
-        public byte[] GetValueBytes(string key)
-        {
-            return Get(key)?.ValueBytes;
         }
 
         /// <summary>
