@@ -27,3 +27,15 @@ Glossary
     the returned object doesn't have restrictions (i.e. ``None`` allowed). The
     deserializer is invoked with inbound message bytes on both the server side
     and the client-side.
+
+  wait_for_ready
+    If an RPC is issued but the channel is in the TRANSIENT_FAILURE or SHUTDOWN
+    states, the library cannot transmit the RPC at the moment. By default, the
+    gRPC library will fail such RPCs immediately. This is known as "fail fast."
+    RPCs will not fail as a result of the channel being in other states
+    (CONNECTING, READY, or IDLE).
+
+    When the wait_for_ready option is specified, the library will queue RPCs
+    until the channel is READY. Any submitted RPCs may still fail before the
+    READY state is reached for other reasons, e.g., the client channel has been
+    shut down or the RPC's deadline has been reached.
