@@ -72,15 +72,39 @@ enum requested_call_type { BATCH_CALL, REGISTERED_CALL };
 struct registered_method;
 
 struct requested_call {
-  grpc_core::ManualConstructor<
-      grpc_core::MultiProducerSingleConsumerQueue::Node>
-      mpscq_node;
-  requested_call_type type;
-  void* tag;
-  grpc_completion_queue* cq_bound_to_call;
-  grpc_call** call;
+  requested_call(void* tag_arg, grpc_completion_queue* call_cq,
+                 grpc_call** call_arg, grpc_metadata_array* initial_md,
+                 grpc_call_details* details)
+      : type(BATCH_CALL),
+        tag(tag_arg),
+        cq_bound_to_call(call_cq),
+        call(call_arg),
+        initial_metadata(initial_md) {
+    details->reserved = nullptr;
+    data.batch.details = details;
+  }
+
+  requested_call(void* tag_arg, grpc_completion_queue* call_cq,
+                 grpc_call** call_arg, grpc_metadata_array* initial_md,
+                 registered_method* rm, gpr_timespec* deadline,
+                 grpc_byte_buffer** optional_payload)
+      : type(REGISTERED_CALL),
+        tag(tag_arg),
+        cq_bound_to_call(call_cq),
+        call(call_arg),
+        initial_metadata(initial_md) {
+    data.registered.method = rm;
+    data.registered.deadline = deadline;
+    data.registered.optional_payload = optional_payload;
+  }
+
+  grpc_core::MultiProducerSingleConsumerQueue::Node mpscq_node;
+  const requested_call_type type;
+  void* const tag;
+  grpc_completion_queue* const cq_bound_to_call;
+  grpc_call** const call;
   grpc_cq_completion completion;
-  grpc_metadata_array* initial_metadata;
+  grpc_metadata_array* const initial_metadata;
   union {
     struct {
       grpc_call_details* details;
@@ -133,6 +157,10 @@ enum call_state {
 };
 
 struct call_data;
+
+grpc_call_error ValidateServerRequest(
+    grpc_completion_queue* cq_for_notification, void* tag,
+    grpc_byte_buffer** optional_payload, registered_method* rm);
 
 // RPCs that come in from the transport must be matched against RPC requests
 // from the application. An incoming request from the application can be matched
@@ -242,14 +270,26 @@ struct call_data {
 };
 
 struct registered_method {
-  char* method;
-  char* host;
-  grpc_server_register_method_payload_handling payload_handling;
-  uint32_t flags;
+  registered_method(
+      const char* method_arg, const char* host_arg,
+      grpc_server_register_method_payload_handling payload_handling_arg,
+      uint32_t flags_arg)
+      : method(gpr_strdup(method_arg)),
+        host(gpr_strdup(host_arg)),
+        payload_handling(payload_handling_arg),
+        flags(flags_arg) {}
+
+  ~registered_method() {
+    gpr_free(method);
+    gpr_free(host);
+  }
+
+  char* const method;
+  char* const host;
+  const grpc_server_register_method_payload_handling payload_handling;
+  const uint32_t flags;
   /* one request matcher per method */
-  // TODO(vjpai): Move this to a unique_ptr once this has a real
-  // constructor/destructor
-  RequestMatcherInterface* matcher = nullptr;
+  std::unique_ptr<RequestMatcherInterface> matcher;
   registered_method* next;
 };
 
@@ -285,6 +325,8 @@ struct grpc_server {
   bool starting;
   gpr_cv starting_cv;
 
+  // TODO(vjpai): Convert from a linked-list head pointer to a std::vector once
+  // grpc_server has a real constructor/destructor
   registered_method* registered_methods;
   /** one request matcher for unregistered methods */
   // TODO(vjpai): Convert to a std::unique_ptr once grpc_server has a real
@@ -444,7 +486,7 @@ class RealRequestMatcher : public RequestMatcherInterface {
 
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       requested_call* call) override {
-    if (requests_per_cq_[request_queue_index].Push(call->mpscq_node.get())) {
+    if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
       /* this was the first queued request: we need to lock and start
          matching calls */
       gpr_mu_lock(&server_->mu_call);
@@ -530,6 +572,103 @@ class RealRequestMatcher : public RequestMatcherInterface {
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
 };
 
+// AllocatingRequestMatchers don't allow the application to request an RPC in
+// advance or queue up any incoming RPC for later match. Instead, MatchOrQueue
+// will call out to an allocation function passed in at the construction of the
+// object. These request matchers are designed for the C++ callback API, so they
+// only support 1 completion queue (passed in at the constructor).
+class AllocatingRequestMatcherBase : public RequestMatcherInterface {
+ public:
+  AllocatingRequestMatcherBase(grpc_server* server, grpc_completion_queue* cq)
+      : server_(server), cq_(cq) {
+    size_t idx;
+    for (idx = 0; idx < server->cq_count; idx++) {
+      if (server->cqs[idx] == cq) {
+        break;
+      }
+    }
+    GPR_ASSERT(idx < server->cq_count);
+    cq_idx_ = idx;
+  }
+
+  void ZombifyPending() override {}
+
+  void KillRequests(grpc_error* error) override { GRPC_ERROR_UNREF(error); }
+
+  size_t request_queue_count() const override { return 0; }
+
+  void RequestCallWithPossiblePublish(size_t /*request_queue_index*/,
+                                      requested_call* /*call*/) final {
+    GPR_ASSERT(false);
+  }
+
+  grpc_server* server() const override { return server_; }
+
+  // Supply the completion queue related to this request matcher
+  grpc_completion_queue* cq() const { return cq_; }
+
+  // Supply the completion queue's index relative to the server.
+  size_t cq_idx() const { return cq_idx_; }
+
+ private:
+  grpc_server* const server_;
+  grpc_completion_queue* const cq_;
+  size_t cq_idx_;
+};
+
+// An allocating request matcher for non-registered methods (used for generic
+// API and unimplemented RPCs).
+class AllocatingRequestMatcherBatch : public AllocatingRequestMatcherBase {
+ public:
+  AllocatingRequestMatcherBatch(
+      grpc_server* server, grpc_completion_queue* cq,
+      std::function<grpc_core::ServerBatchCallAllocation()> allocator)
+      : AllocatingRequestMatcherBase(server, cq),
+        allocator_(std::move(allocator)) {}
+  void MatchOrQueue(size_t /*start_request_queue_index*/,
+                    call_data* calld) override {
+    grpc_core::ServerBatchCallAllocation call_info = allocator_();
+    GPR_ASSERT(ValidateServerRequest(cq(), static_cast<void*>(call_info.tag),
+                                     nullptr, nullptr) == GRPC_CALL_OK);
+    requested_call* rc = new requested_call(
+        static_cast<void*>(call_info.tag), cq(), call_info.call,
+        call_info.initial_metadata, call_info.details);
+    gpr_atm_no_barrier_store(&calld->state, ACTIVATED);
+    publish_call(server(), calld, cq_idx(), rc);
+  }
+
+ private:
+  std::function<grpc_core::ServerBatchCallAllocation()> allocator_;
+};
+
+// An allocating request matcher for registered methods.
+class AllocatingRequestMatcherRegistered : public AllocatingRequestMatcherBase {
+ public:
+  AllocatingRequestMatcherRegistered(
+      grpc_server* server, grpc_completion_queue* cq, registered_method* rm,
+      std::function<grpc_core::ServerRegisteredCallAllocation()> allocator)
+      : AllocatingRequestMatcherBase(server, cq),
+        registered_method_(rm),
+        allocator_(std::move(allocator)) {}
+  void MatchOrQueue(size_t /*start_request_queue_index*/,
+                    call_data* calld) override {
+    grpc_core::ServerRegisteredCallAllocation call_info = allocator_();
+    GPR_ASSERT(ValidateServerRequest(cq(), static_cast<void*>(call_info.tag),
+                                     call_info.optional_payload,
+                                     registered_method_) == GRPC_CALL_OK);
+    requested_call* rc = new requested_call(
+        static_cast<void*>(call_info.tag), cq(), call_info.call,
+        call_info.initial_metadata, registered_method_, call_info.deadline,
+        call_info.optional_payload);
+    gpr_atm_no_barrier_store(&calld->state, ACTIVATED);
+    publish_call(server(), calld, cq_idx(), rc);
+  }
+
+ private:
+  registered_method* const registered_method_;
+  std::function<grpc_core::ServerRegisteredCallAllocation()> allocator_;
+};
+
 /*
  * server proper
  */
@@ -546,10 +685,7 @@ void server_delete(grpc_server* server) {
   gpr_cv_destroy(&server->starting_cv);
   while ((rm = server->registered_methods) != nullptr) {
     server->registered_methods = rm->next;
-    delete rm->matcher;
-    gpr_free(rm->method);
-    gpr_free(rm->host);
-    gpr_free(rm);
+    delete rm;
   }
   delete server->unregistered_request_matcher;
   for (i = 0; i < server->cq_count; i++) {
@@ -603,7 +739,9 @@ void destroy_channel(channel_data* chand) {
                        op);
 }
 
-void done_request_event(void* req, grpc_cq_completion* /*c*/) { gpr_free(req); }
+void done_request_event(void* req, grpc_cq_completion* /*c*/) {
+  delete static_cast<requested_call*>(req);
+}
 
 void publish_call(grpc_server* server, call_data* calld, size_t cq_idx,
                   requested_call* rc) {
@@ -718,7 +856,8 @@ void start_new_rpc(grpc_call_element* elem) {
                 GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST)) {
         continue;
       }
-      finish_start_new_rpc(server, elem, rm->server_registered_method->matcher,
+      finish_start_new_rpc(server, elem,
+                           rm->server_registered_method->matcher.get(),
                            rm->server_registered_method->payload_handling);
       return;
     }
@@ -735,7 +874,8 @@ void start_new_rpc(grpc_call_element* elem) {
                 GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST)) {
         continue;
       }
-      finish_start_new_rpc(server, elem, rm->server_registered_method->matcher,
+      finish_start_new_rpc(server, elem,
+                           rm->server_registered_method->matcher.get(),
                            rm->server_registered_method->payload_handling);
       return;
     }
@@ -1101,7 +1241,7 @@ grpc_call_error queue_call_request(grpc_server* server, size_t cq_idx,
       rm = server->unregistered_request_matcher;
       break;
     case REGISTERED_CALL:
-      rm = rc->data.registered.method->matcher;
+      rm = rc->data.registered.method->matcher.get();
       break;
   }
   rm->RequestCallWithPossiblePublish(cq_idx, rc);
@@ -1118,6 +1258,26 @@ void fail_call(grpc_server* server, size_t cq_idx, requested_call* rc,
                  &rc->completion);
 }
 }  // namespace
+
+namespace grpc_core {
+
+void SetServerRegisteredMethodAllocator(
+    grpc_server* server, grpc_completion_queue* cq, void* method_tag,
+    std::function<ServerRegisteredCallAllocation()> allocator) {
+  registered_method* rm = static_cast<registered_method*>(method_tag);
+  rm->matcher.reset(new AllocatingRequestMatcherRegistered(
+      server, cq, rm, std::move(allocator)));
+}
+
+void SetServerBatchMethodAllocator(
+    grpc_server* server, grpc_completion_queue* cq,
+    std::function<ServerBatchCallAllocation()> allocator) {
+  GPR_DEBUG_ASSERT(server->unregistered_request_matcher == nullptr);
+  server->unregistered_request_matcher =
+      new AllocatingRequestMatcherBatch(server, cq, std::move(allocator));
+}
+
+};  // namespace grpc_core
 
 const grpc_channel_filter grpc_server_top_filter = {
     server_start_transport_stream_op_batch,
@@ -1224,12 +1384,8 @@ void* grpc_server_register_method(
             flags);
     return nullptr;
   }
-  m = static_cast<registered_method*>(gpr_zalloc(sizeof(registered_method)));
-  m->method = gpr_strdup(method);
-  m->host = gpr_strdup(host);
+  m = new registered_method(method, host, payload_handling, flags);
   m->next = server->registered_methods;
-  m->payload_handling = payload_handling;
-  m->flags = flags;
   server->registered_methods = m;
   return m;
 }
@@ -1250,9 +1406,13 @@ void grpc_server_start(grpc_server* server) {
           grpc_cq_pollset(server->cqs[i]);
     }
   }
-  server->unregistered_request_matcher = new RealRequestMatcher(server);
+  if (server->unregistered_request_matcher == nullptr) {
+    server->unregistered_request_matcher = new RealRequestMatcher(server);
+  }
   for (registered_method* rm = server->registered_methods; rm; rm = rm->next) {
-    rm->matcher = new RealRequestMatcher(server);
+    if (rm->matcher == nullptr) {
+      rm->matcher.reset(new RealRequestMatcher(server));
+    }
   }
 
   gpr_mu_lock(&server->mu_global);
@@ -1523,15 +1683,51 @@ void grpc_server_add_listener(
   server->listeners = l;
 }
 
+namespace {
+grpc_call_error ValidateServerRequest(
+    grpc_completion_queue* cq_for_notification, void* tag,
+    grpc_byte_buffer** optional_payload, registered_method* rm) {
+  if ((rm == nullptr && optional_payload != nullptr) ||
+      ((rm != nullptr) && ((optional_payload == nullptr) !=
+                           (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE)))) {
+    return GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
+  }
+  if (grpc_cq_begin_op(cq_for_notification, tag) == false) {
+    return GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
+  }
+  return GRPC_CALL_OK;
+}
+grpc_call_error ValidateServerRequestAndCq(
+    size_t* cq_idx, grpc_server* server,
+    grpc_completion_queue* cq_for_notification, void* tag,
+    grpc_byte_buffer** optional_payload, registered_method* rm) {
+  size_t idx;
+  for (idx = 0; idx < server->cq_count; idx++) {
+    if (server->cqs[idx] == cq_for_notification) {
+      break;
+    }
+  }
+  if (idx == server->cq_count) {
+    return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
+  }
+  grpc_call_error error =
+      ValidateServerRequest(cq_for_notification, tag, optional_payload, rm);
+  if (error != GRPC_CALL_OK) {
+    return error;
+  }
+
+  *cq_idx = idx;
+  return GRPC_CALL_OK;
+}
+}  // namespace
+
 grpc_call_error grpc_server_request_call(
     grpc_server* server, grpc_call** call, grpc_call_details* details,
     grpc_metadata_array* initial_metadata,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag) {
-  grpc_call_error error;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  requested_call* rc = static_cast<requested_call*>(gpr_malloc(sizeof(*rc)));
   GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
   GRPC_API_TRACE(
       "grpc_server_request_call("
@@ -1540,33 +1736,17 @@ grpc_call_error grpc_server_request_call(
       7,
       (server, call, details, initial_metadata, cq_bound_to_call,
        cq_for_notification, tag));
-  size_t cq_idx;
-  for (cq_idx = 0; cq_idx < server->cq_count; cq_idx++) {
-    if (server->cqs[cq_idx] == cq_for_notification) {
-      break;
-    }
-  }
-  if (cq_idx == server->cq_count) {
-    gpr_free(rc);
-    error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
-    goto done;
-  }
-  if (grpc_cq_begin_op(cq_for_notification, tag) == false) {
-    gpr_free(rc);
-    error = GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
-    goto done;
-  }
-  details->reserved = nullptr;
-  rc->type = BATCH_CALL;
-  rc->tag = tag;
-  rc->cq_bound_to_call = cq_bound_to_call;
-  rc->call = call;
-  rc->data.batch.details = details;
-  rc->initial_metadata = initial_metadata;
-  error = queue_call_request(server, cq_idx, rc);
-done:
 
-  return error;
+  size_t cq_idx;
+  grpc_call_error error = ValidateServerRequestAndCq(
+      &cq_idx, server, cq_for_notification, tag, nullptr, nullptr);
+  if (error != GRPC_CALL_OK) {
+    return error;
+  }
+
+  requested_call* rc = new requested_call(tag, cq_bound_to_call, call,
+                                          initial_metadata, details);
+  return queue_call_request(server, cq_idx, rc);
 }
 
 grpc_call_error grpc_server_request_registered_call(
@@ -1577,7 +1757,6 @@ grpc_call_error grpc_server_request_registered_call(
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
-  requested_call* rc = static_cast<requested_call*>(gpr_malloc(sizeof(*rc)));
   registered_method* rm = static_cast<registered_method*>(rmp);
   GRPC_API_TRACE(
       "grpc_server_request_registered_call("
@@ -1589,33 +1768,15 @@ grpc_call_error grpc_server_request_registered_call(
        cq_bound_to_call, cq_for_notification, tag));
 
   size_t cq_idx;
-  for (cq_idx = 0; cq_idx < server->cq_count; cq_idx++) {
-    if (server->cqs[cq_idx] == cq_for_notification) {
-      break;
-    }
-  }
-  if (cq_idx == server->cq_count) {
-    gpr_free(rc);
-    return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
-  }
-  if ((optional_payload == nullptr) !=
-      (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE)) {
-    gpr_free(rc);
-    return GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
+  grpc_call_error error = ValidateServerRequestAndCq(
+      &cq_idx, server, cq_for_notification, tag, optional_payload, rm);
+  if (error != GRPC_CALL_OK) {
+    return error;
   }
 
-  if (grpc_cq_begin_op(cq_for_notification, tag) == false) {
-    gpr_free(rc);
-    return GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
-  }
-  rc->type = REGISTERED_CALL;
-  rc->tag = tag;
-  rc->cq_bound_to_call = cq_bound_to_call;
-  rc->call = call;
-  rc->data.registered.method = rm;
-  rc->data.registered.deadline = deadline;
-  rc->initial_metadata = initial_metadata;
-  rc->data.registered.optional_payload = optional_payload;
+  requested_call* rc =
+      new requested_call(tag, cq_bound_to_call, call, initial_metadata, rm,
+                         deadline, optional_payload);
   return queue_call_request(server, cq_idx, rc);
 }
 
