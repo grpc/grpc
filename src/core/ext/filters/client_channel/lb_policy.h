@@ -31,8 +31,8 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/string_view.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -72,7 +72,7 @@ extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 /// LoadBalacingPolicy API.
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
-/// combiner passed to the constructor.
+/// work_serializer passed to the constructor.
 ///
 /// Any I/O done by the LB policy should be done under the pollset_set
 /// returned by \a interested_parties().
@@ -242,7 +242,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// live in the LB policy object itself.
   ///
   /// Currently, pickers are always accessed from within the
-  /// client_channel data plane combiner, so they do not have to be
+  /// client_channel data plane mutex, so they do not have to be
   /// thread-safe.
   class SubchannelPicker {
    public:
@@ -309,12 +309,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Args used to instantiate an LB policy.
   struct Args {
-    /// The combiner under which all LB policy calls will be run.
-    /// Policy does NOT take ownership of the reference to the combiner.
-    // TODO(roth): Once we have a C++-like interface for combiners, this
-    // API should change to take a smart pointer that does pass ownership
-    // of a reference.
-    Combiner* combiner = nullptr;
+    /// The work_serializer under which all LB policy calls will be run.
+    std::shared_ptr<WorkSerializer> work_serializer;
     /// Channel control helper.
     /// Note: LB policies MUST NOT call any method on the helper from
     /// their constructor.
@@ -352,7 +348,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  // Note: This must be invoked while holding the combiner.
+  // Note: This must be invoked while holding the work_serializer.
   void Orphan() override;
 
   // A picker that returns PICK_QUEUE for all picks.
@@ -368,8 +364,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     PickResult Pick(PickArgs args) override;
 
    private:
-    static void CallExitIdle(void* arg, grpc_error* error);
-
     RefCountedPtr<LoadBalancingPolicy> parent_;
     bool exit_idle_called_ = false;
   };
@@ -387,7 +381,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
  protected:
-  Combiner* combiner() const { return combiner_; }
+  std::shared_ptr<WorkSerializer> work_serializer() const {
+    return work_serializer_;
+  }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
@@ -399,8 +395,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void ShutdownLocked() = 0;
 
  private:
-  /// Combiner under which LB policy actions take place.
-  Combiner* combiner_;
+  /// Work Serializer under which LB policy actions take place.
+  std::shared_ptr<WorkSerializer> work_serializer_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.

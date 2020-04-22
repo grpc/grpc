@@ -55,7 +55,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
       const std::string& delegate_policy_name, intptr_t initial_refcount = 1)
       : LoadBalancingPolicy(std::move(args), initial_refcount) {
     Args delegate_args;
-    delegate_args.combiner = combiner();
+    delegate_args.work_serializer = work_serializer();
     delegate_args.channel_control_helper = std::move(delegating_helper);
     delegate_args.args = args.args;
     delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(

@@ -251,7 +251,7 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
     const char* child_policy_name, const grpc_channel_args& args) {
   Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
   lb_policy_args.args = &args;

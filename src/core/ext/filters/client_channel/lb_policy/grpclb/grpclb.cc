@@ -91,7 +91,6 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -179,11 +178,11 @@ class GrpcLb : public LoadBalancingPolicy {
     static void OnBalancerMessageReceived(void* arg, grpc_error* error);
     static void OnBalancerStatusReceived(void* arg, grpc_error* error);
 
-    static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
-    static void ClientLoadReportDoneLocked(void* arg, grpc_error* error);
-    static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
-    static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
-    static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
+    void MaybeSendClientLoadReportLocked(grpc_error* error);
+    void ClientLoadReportDoneLocked(grpc_error* error);
+    void OnInitialRequestSentLocked();
+    void OnBalancerMessageReceivedLocked();
+    void OnBalancerStatusReceivedLocked(grpc_error* error);
 
     // The owning LB policy.
     RefCountedPtr<LoadBalancingPolicy> grpclb_policy_;
@@ -248,16 +247,16 @@ class GrpcLb : public LoadBalancingPolicy {
     // should not be dropped.
     //
     // Note: This is called from the picker, so it will be invoked in
-    // the channel's data plane combiner, NOT the control plane
-    // combiner.  It should not be accessed by any other part of the LB
+    // the channel's data plane mutex, NOT the control plane
+    // work_serializer.  It should not be accessed by any other part of the LB
     // policy.
     const char* ShouldDrop();
 
    private:
     std::vector<GrpcLbServer> serverlist_;
 
-    // Guarded by the channel's data plane combiner, NOT the control
-    // plane combiner.  It should not be accessed by anything but the
+    // Guarded by the channel's data plane mutex, NOT the control
+    // plane work_serializer.  It should not be accessed by anything but the
     // picker via the ShouldDrop() method.
     size_t drop_index_ = 0;
   };
@@ -305,7 +304,7 @@ class GrpcLb : public LoadBalancingPolicy {
   class StateWatcher : public AsyncConnectivityStateWatcherInterface {
    public:
     explicit StateWatcher(RefCountedPtr<GrpcLb> parent)
-        : AsyncConnectivityStateWatcherInterface(parent->combiner()),
+        : AsyncConnectivityStateWatcherInterface(parent->work_serializer()),
           parent_(std::move(parent)) {}
 
     ~StateWatcher() { parent_.reset(DEBUG_LOCATION, "StateWatcher"); }
@@ -340,18 +339,19 @@ class GrpcLb : public LoadBalancingPolicy {
   // Helper functions used in UpdateLocked().
   void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
                                             const grpc_channel_args& args);
+
   void CancelBalancerChannelConnectivityWatchLocked();
 
   // Methods for dealing with fallback state.
   void MaybeEnterFallbackModeAfterStartup();
   static void OnFallbackTimer(void* arg, grpc_error* error);
-  static void OnFallbackTimerLocked(void* arg, grpc_error* error);
+  void OnFallbackTimerLocked(grpc_error* error);
 
   // Methods for dealing with the balancer call.
   void StartBalancerCallLocked();
   void StartBalancerCallRetryTimerLocked();
   static void OnBalancerCallRetryTimer(void* arg, grpc_error* error);
-  static void OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error);
+  void OnBalancerCallRetryTimerLocked(grpc_error* error);
 
   // Methods for dealing with the child policy.
   grpc_channel_args* CreateChildPolicyArgsLocked(
@@ -739,6 +739,15 @@ GrpcLb::BalancerCallState::BalancerCallState(
   // the polling entities from client_channel.
   GPR_ASSERT(grpclb_policy()->server_name_ != nullptr);
   GPR_ASSERT(grpclb_policy()->server_name_[0] != '\0');
+  // Closure Initialization
+  GRPC_CLOSURE_INIT(&lb_on_initial_request_sent_, OnInitialRequestSent, this,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&lb_on_balancer_message_received_,
+                    OnBalancerMessageReceived, this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&lb_on_balancer_status_received_, OnBalancerStatusReceived,
+                    this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&client_load_report_closure_, MaybeSendClientLoadReport,
+                    this, grpc_schedule_on_exec_ctx);
   const grpc_millis deadline =
       grpclb_policy()->lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
@@ -815,8 +824,6 @@ void GrpcLb::BalancerCallState::StartQuery() {
   // with the callback.
   auto self = Ref(DEBUG_LOCATION, "on_initial_request_sent");
   self.release();
-  GRPC_CLOSURE_INIT(&lb_on_initial_request_sent_, OnInitialRequestSent, this,
-                    grpc_schedule_on_exec_ctx);
   call_error = grpc_call_start_batch_and_execute(
       lb_call_, ops, (size_t)(op - ops), &lb_on_initial_request_sent_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
@@ -839,8 +846,6 @@ void GrpcLb::BalancerCallState::StartQuery() {
   // with the callback.
   self = Ref(DEBUG_LOCATION, "on_message_received");
   self.release();
-  GRPC_CLOSURE_INIT(&lb_on_balancer_message_received_,
-                    OnBalancerMessageReceived, this, grpc_schedule_on_exec_ctx);
   call_error = grpc_call_start_batch_and_execute(
       lb_call_, ops, (size_t)(op - ops), &lb_on_balancer_message_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
@@ -857,8 +862,6 @@ void GrpcLb::BalancerCallState::StartQuery() {
   // This callback signals the end of the LB call, so it relies on the initial
   // ref instead of a new ref. When it's invoked, it's the initial ref that is
   // unreffed.
-  GRPC_CLOSURE_INIT(&lb_on_balancer_status_received_, OnBalancerStatusReceived,
-                    this, grpc_schedule_on_exec_ctx);
   call_error = grpc_call_start_batch_and_execute(
       lb_call_, ops, (size_t)(op - ops), &lb_on_balancer_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
@@ -877,28 +880,27 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(void* arg,
                                                           grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_calld->client_load_report_closure_,
-                        MaybeSendClientLoadReportLocked, lb_calld, nullptr),
-      GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  lb_calld->grpclb_policy()->work_serializer()->Run(
+      [lb_calld, error]() { lb_calld->MaybeSendClientLoadReportLocked(error); },
+      DEBUG_LOCATION);
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked(
-    void* arg, grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
-  lb_calld->client_load_report_timer_callback_pending_ = false;
-  if (error != GRPC_ERROR_NONE || lb_calld != grpclb_policy->lb_calld_.get()) {
-    lb_calld->Unref(DEBUG_LOCATION, "client_load_report");
+    grpc_error* error) {
+  client_load_report_timer_callback_pending_ = false;
+  if (error != GRPC_ERROR_NONE || this != grpclb_policy()->lb_calld_.get()) {
+    Unref(DEBUG_LOCATION, "client_load_report");
+    GRPC_ERROR_UNREF(error);
     return;
   }
   // If we've already sent the initial request, then we can go ahead and send
   // the load report. Otherwise, we need to wait until the initial request has
   // been sent to send this (see OnInitialRequestSentLocked()).
-  if (lb_calld->send_message_payload_ == nullptr) {
-    lb_calld->SendClientLoadReportLocked();
+  if (send_message_payload_ == nullptr) {
+    SendClientLoadReportLocked();
   } else {
-    lb_calld->client_load_report_is_due_ = true;
+    client_load_report_is_due_ = true;
   }
 }
 
@@ -957,110 +959,98 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
 void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
                                                      grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_calld->client_load_report_closure_,
-                        ClientLoadReportDoneLocked, lb_calld, nullptr),
-      GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  lb_calld->grpclb_policy()->work_serializer()->Run(
+      [lb_calld, error]() { lb_calld->ClientLoadReportDoneLocked(error); },
+      DEBUG_LOCATION);
 }
 
-void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(void* arg,
-                                                           grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
-  grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
-  lb_calld->send_message_payload_ = nullptr;
-  if (error != GRPC_ERROR_NONE || lb_calld != grpclb_policy->lb_calld_.get()) {
-    lb_calld->Unref(DEBUG_LOCATION, "client_load_report");
+void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(grpc_error* error) {
+  grpc_byte_buffer_destroy(send_message_payload_);
+  send_message_payload_ = nullptr;
+  if (error != GRPC_ERROR_NONE || this != grpclb_policy()->lb_calld_.get()) {
+    Unref(DEBUG_LOCATION, "client_load_report");
+    GRPC_ERROR_UNREF(error);
     return;
   }
-  lb_calld->ScheduleNextClientLoadReportLocked();
+  ScheduleNextClientLoadReportLocked();
 }
 
 void GrpcLb::BalancerCallState::OnInitialRequestSent(void* arg,
-                                                     grpc_error* error) {
+                                                     grpc_error* /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_calld->lb_on_initial_request_sent_,
-                        OnInitialRequestSentLocked, lb_calld, nullptr),
-      GRPC_ERROR_REF(error));
+  lb_calld->grpclb_policy()->work_serializer()->Run(
+      [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); }, DEBUG_LOCATION);
 }
 
-void GrpcLb::BalancerCallState::OnInitialRequestSentLocked(
-    void* arg, grpc_error* /*error*/) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
-  lb_calld->send_message_payload_ = nullptr;
+void GrpcLb::BalancerCallState::OnInitialRequestSentLocked() {
+  grpc_byte_buffer_destroy(send_message_payload_);
+  send_message_payload_ = nullptr;
   // If we attempted to send a client load report before the initial request was
   // sent (and this lb_calld is still in use), send the load report now.
-  if (lb_calld->client_load_report_is_due_ &&
-      lb_calld == lb_calld->grpclb_policy()->lb_calld_.get()) {
-    lb_calld->SendClientLoadReportLocked();
-    lb_calld->client_load_report_is_due_ = false;
+  if (client_load_report_is_due_ && this == grpclb_policy()->lb_calld_.get()) {
+    SendClientLoadReportLocked();
+    client_load_report_is_due_ = false;
   }
-  lb_calld->Unref(DEBUG_LOCATION, "on_initial_request_sent");
+  Unref(DEBUG_LOCATION, "on_initial_request_sent");
 }
 
-void GrpcLb::BalancerCallState::OnBalancerMessageReceived(void* arg,
-                                                          grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_calld->lb_on_balancer_message_received_,
-                        OnBalancerMessageReceivedLocked, lb_calld, nullptr),
-      GRPC_ERROR_REF(error));
-}
-
-void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
+void GrpcLb::BalancerCallState::OnBalancerMessageReceived(
     void* arg, grpc_error* /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
+  lb_calld->grpclb_policy()->work_serializer()->Run(
+      [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); },
+      DEBUG_LOCATION);
+}
+
+void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   // Null payload means the LB call was cancelled.
-  if (lb_calld != grpclb_policy->lb_calld_.get() ||
-      lb_calld->recv_message_payload_ == nullptr) {
-    lb_calld->Unref(DEBUG_LOCATION, "on_message_received");
+  if (this != grpclb_policy()->lb_calld_.get() ||
+      recv_message_payload_ == nullptr) {
+    Unref(DEBUG_LOCATION, "on_message_received");
     return;
   }
   grpc_byte_buffer_reader bbr;
-  grpc_byte_buffer_reader_init(&bbr, lb_calld->recv_message_payload_);
+  grpc_byte_buffer_reader_init(&bbr, recv_message_payload_);
   grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
   grpc_byte_buffer_reader_destroy(&bbr);
-  grpc_byte_buffer_destroy(lb_calld->recv_message_payload_);
-  lb_calld->recv_message_payload_ = nullptr;
+  grpc_byte_buffer_destroy(recv_message_payload_);
+  recv_message_payload_ = nullptr;
   GrpcLbResponse response;
   upb::Arena arena;
   if (!GrpcLbResponseParse(response_slice, arena.ptr(), &response) ||
-      (response.type == response.INITIAL && lb_calld->seen_initial_response_)) {
+      (response.type == response.INITIAL && seen_initial_response_)) {
     char* response_slice_str =
         grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
             "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
             "Ignoring.",
-            grpclb_policy, lb_calld, response_slice_str);
+            grpclb_policy(), this, response_slice_str);
     gpr_free(response_slice_str);
   } else {
     switch (response.type) {
       case response.INITIAL: {
         if (response.client_stats_report_interval != 0) {
-          lb_calld->client_stats_report_interval_ =
+          client_stats_report_interval_ =
               GPR_MAX(GPR_MS_PER_SEC, response.client_stats_report_interval);
           if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
             gpr_log(GPR_INFO,
                     "[grpclb %p] lb_calld=%p: Received initial LB response "
                     "message; client load reporting interval = %" PRId64
                     " milliseconds",
-                    grpclb_policy, lb_calld,
-                    lb_calld->client_stats_report_interval_);
+                    grpclb_policy(), this, client_stats_report_interval_);
           }
         } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
           gpr_log(GPR_INFO,
                   "[grpclb %p] lb_calld=%p: Received initial LB response "
                   "message; client load reporting NOT enabled",
-                  grpclb_policy, lb_calld);
+                  grpclb_policy(), this);
         }
-        lb_calld->seen_initial_response_ = true;
+        seen_initial_response_ = true;
         break;
       }
       case response.SERVERLIST: {
-        GPR_ASSERT(lb_calld->lb_call_ != nullptr);
+        GPR_ASSERT(lb_call_ != nullptr);
         auto serverlist_wrapper =
             MakeRefCounted<Serverlist>(std::move(response.serverlist));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
@@ -1069,28 +1059,27 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
           gpr_log(GPR_INFO,
                   "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
                   " servers received:\n%s",
-                  grpclb_policy, lb_calld,
+                  grpclb_policy(), this,
                   serverlist_wrapper->serverlist().size(),
                   serverlist_text.get());
         }
-        lb_calld->seen_serverlist_ = true;
+        seen_serverlist_ = true;
         // Start sending client load report only after we start using the
         // serverlist returned from the current LB call.
-        if (lb_calld->client_stats_report_interval_ > 0 &&
-            lb_calld->client_stats_ == nullptr) {
-          lb_calld->client_stats_ = MakeRefCounted<GrpcLbClientStats>();
+        if (client_stats_report_interval_ > 0 && client_stats_ == nullptr) {
+          client_stats_ = MakeRefCounted<GrpcLbClientStats>();
           // Ref held by callback.
-          lb_calld->Ref(DEBUG_LOCATION, "client_load_report").release();
-          lb_calld->ScheduleNextClientLoadReportLocked();
+          Ref(DEBUG_LOCATION, "client_load_report").release();
+          ScheduleNextClientLoadReportLocked();
         }
         // Check if the serverlist differs from the previous one.
-        if (grpclb_policy->serverlist_ != nullptr &&
-            *grpclb_policy->serverlist_ == *serverlist_wrapper) {
+        if (grpclb_policy()->serverlist_ != nullptr &&
+            *grpclb_policy()->serverlist_ == *serverlist_wrapper) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
             gpr_log(GPR_INFO,
                     "[grpclb %p] lb_calld=%p: Incoming server list identical "
                     "to current, ignoring.",
-                    grpclb_policy, lb_calld);
+                    grpclb_policy(), this);
           }
         } else {  // New serverlist.
           // Dispose of the fallback.
@@ -1112,130 +1101,124 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
           // the grpclb implementation at this point, since we're deprecating
           // it in favor of the xds policy.  We will implement this the
           // right way in the xds policy instead.
-          if (grpclb_policy->fallback_mode_) {
+          if (grpclb_policy()->fallback_mode_) {
             gpr_log(GPR_INFO,
                     "[grpclb %p] Received response from balancer; exiting "
                     "fallback mode",
-                    grpclb_policy);
-            grpclb_policy->fallback_mode_ = false;
+                    grpclb_policy());
+            grpclb_policy()->fallback_mode_ = false;
           }
-          if (grpclb_policy->fallback_at_startup_checks_pending_) {
-            grpclb_policy->fallback_at_startup_checks_pending_ = false;
-            grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
-            grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
+          if (grpclb_policy()->fallback_at_startup_checks_pending_) {
+            grpclb_policy()->fallback_at_startup_checks_pending_ = false;
+            grpc_timer_cancel(&grpclb_policy()->lb_fallback_timer_);
+            grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
           }
           // Update the serverlist in the GrpcLb instance. This serverlist
           // instance will be destroyed either upon the next update or when the
           // GrpcLb instance is destroyed.
-          grpclb_policy->serverlist_ = std::move(serverlist_wrapper);
-          grpclb_policy->CreateOrUpdateChildPolicyLocked();
+          grpclb_policy()->serverlist_ = std::move(serverlist_wrapper);
+          grpclb_policy()->CreateOrUpdateChildPolicyLocked();
         }
         break;
       }
       case response.FALLBACK: {
-        if (!grpclb_policy->fallback_mode_) {
+        if (!grpclb_policy()->fallback_mode_) {
           gpr_log(GPR_INFO,
                   "[grpclb %p] Entering fallback mode as requested by balancer",
-                  grpclb_policy);
-          if (grpclb_policy->fallback_at_startup_checks_pending_) {
-            grpclb_policy->fallback_at_startup_checks_pending_ = false;
-            grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
-            grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
+                  grpclb_policy());
+          if (grpclb_policy()->fallback_at_startup_checks_pending_) {
+            grpclb_policy()->fallback_at_startup_checks_pending_ = false;
+            grpc_timer_cancel(&grpclb_policy()->lb_fallback_timer_);
+            grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
           }
-          grpclb_policy->fallback_mode_ = true;
-          grpclb_policy->CreateOrUpdateChildPolicyLocked();
+          grpclb_policy()->fallback_mode_ = true;
+          grpclb_policy()->CreateOrUpdateChildPolicyLocked();
           // Reset serverlist, so that if the balancer exits fallback
           // mode by sending the same serverlist we were previously
           // using, we don't incorrectly ignore it as a duplicate.
-          grpclb_policy->serverlist_.reset();
+          grpclb_policy()->serverlist_.reset();
         }
         break;
       }
     }
   }
   grpc_slice_unref_internal(response_slice);
-  if (!grpclb_policy->shutting_down_) {
+  if (!grpclb_policy()->shutting_down_) {
     // Keep listening for serverlist updates.
     grpc_op op;
     memset(&op, 0, sizeof(op));
     op.op = GRPC_OP_RECV_MESSAGE;
-    op.data.recv_message.recv_message = &lb_calld->recv_message_payload_;
+    op.data.recv_message.recv_message = &recv_message_payload_;
     op.flags = 0;
     op.reserved = nullptr;
     // Reuse the "OnBalancerMessageReceivedLocked" ref taken in StartQuery().
-    GRPC_CLOSURE_INIT(&lb_calld->lb_on_balancer_message_received_,
-                      GrpcLb::BalancerCallState::OnBalancerMessageReceived,
-                      lb_calld, grpc_schedule_on_exec_ctx);
     const grpc_call_error call_error = grpc_call_start_batch_and_execute(
-        lb_calld->lb_call_, &op, 1,
-        &lb_calld->lb_on_balancer_message_received_);
+        lb_call_, &op, 1, &lb_on_balancer_message_received_);
     GPR_ASSERT(GRPC_CALL_OK == call_error);
   } else {
-    lb_calld->Unref(DEBUG_LOCATION, "on_message_received+grpclb_shutdown");
+    Unref(DEBUG_LOCATION, "on_message_received+grpclb_shutdown");
   }
 }
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceived(void* arg,
                                                          grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_calld->lb_on_balancer_status_received_,
-                        OnBalancerStatusReceivedLocked, lb_calld, nullptr),
-      GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // owned by lambda
+  lb_calld->grpclb_policy()->work_serializer()->Run(
+      [lb_calld, error]() { lb_calld->OnBalancerStatusReceivedLocked(error); },
+      DEBUG_LOCATION);
 }
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
-    void* arg, grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
-  GPR_ASSERT(lb_calld->lb_call_ != nullptr);
+    grpc_error* error) {
+  GPR_ASSERT(lb_call_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-    char* status_details =
-        grpc_slice_to_c_string(lb_calld->lb_call_status_details_);
+    char* status_details = grpc_slice_to_c_string(lb_call_status_details_);
     gpr_log(GPR_INFO,
             "[grpclb %p] lb_calld=%p: Status from LB server received. "
             "Status = %d, details = '%s', (lb_call: %p), error '%s'",
-            grpclb_policy, lb_calld, lb_calld->lb_call_status_, status_details,
-            lb_calld->lb_call_, grpc_error_string(error));
+            grpclb_policy(), this, lb_call_status_, status_details, lb_call_,
+            grpc_error_string(error));
     gpr_free(status_details);
   }
+  GRPC_ERROR_UNREF(error);
   // If this lb_calld is still in use, this call ended because of a failure so
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
-  if (lb_calld == grpclb_policy->lb_calld_.get()) {
+  if (this == grpclb_policy()->lb_calld_.get()) {
     // If the fallback-at-startup checks are pending, go into fallback mode
     // immediately.  This short-circuits the timeout for the fallback-at-startup
     // case.
-    if (grpclb_policy->fallback_at_startup_checks_pending_) {
-      GPR_ASSERT(!lb_calld->seen_serverlist_);
+    if (grpclb_policy()->fallback_at_startup_checks_pending_) {
+      GPR_ASSERT(!seen_serverlist_);
       gpr_log(GPR_INFO,
               "[grpclb %p] Balancer call finished without receiving "
               "serverlist; entering fallback mode",
-              grpclb_policy);
-      grpclb_policy->fallback_at_startup_checks_pending_ = false;
-      grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
-      grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
-      grpclb_policy->fallback_mode_ = true;
-      grpclb_policy->CreateOrUpdateChildPolicyLocked();
+              grpclb_policy());
+      grpclb_policy()->fallback_at_startup_checks_pending_ = false;
+      grpc_timer_cancel(&grpclb_policy()->lb_fallback_timer_);
+      grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
+      grpclb_policy()->fallback_mode_ = true;
+      grpclb_policy()->CreateOrUpdateChildPolicyLocked();
     } else {
       // This handles the fallback-after-startup case.
-      grpclb_policy->MaybeEnterFallbackModeAfterStartup();
+      grpclb_policy()->MaybeEnterFallbackModeAfterStartup();
     }
-    grpclb_policy->lb_calld_.reset();
-    GPR_ASSERT(!grpclb_policy->shutting_down_);
-    grpclb_policy->channel_control_helper()->RequestReresolution();
-    if (lb_calld->seen_initial_response_) {
+    grpclb_policy()->lb_calld_.reset();
+    GPR_ASSERT(!grpclb_policy()->shutting_down_);
+    grpclb_policy()->channel_control_helper()->RequestReresolution();
+    if (seen_initial_response_) {
       // If we lose connection to the LB server, reset the backoff and restart
       // the LB call immediately.
-      grpclb_policy->lb_call_backoff_.Reset();
-      grpclb_policy->StartBalancerCallLocked();
+      grpclb_policy()->lb_call_backoff_.Reset();
+      grpclb_policy()->StartBalancerCallLocked();
     } else {
       // If this LB call fails establishing any connection to the LB server,
       // retry later.
-      grpclb_policy->StartBalancerCallRetryTimerLocked();
+      grpclb_policy()->StartBalancerCallRetryTimerLocked();
     }
   }
-  lb_calld->Unref(DEBUG_LOCATION, "lb_call_ended");
+  Unref(DEBUG_LOCATION, "lb_call_ended");
 }
 
 //
@@ -1332,6 +1315,11 @@ GrpcLb::GrpcLb(Args args)
               .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
               .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
+  // Closure Initialization
+  GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimer, this,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&lb_on_call_retry_, &GrpcLb::OnBalancerCallRetryTimer, this,
+                    grpc_schedule_on_exec_ctx);
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -1416,8 +1404,6 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start timer.
     grpc_millis deadline = ExecCtx::Get()->Now() + fallback_at_startup_timeout_;
     Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Ref for callback
-    GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimer, this,
-                      grpc_schedule_on_exec_ctx);
     grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
@@ -1529,33 +1515,30 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   // with the callback.
   auto self = Ref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
   self.release();
-  GRPC_CLOSURE_INIT(&lb_on_call_retry_, &GrpcLb::OnBalancerCallRetryTimer, this,
-                    grpc_schedule_on_exec_ctx);
   retry_timer_callback_pending_ = true;
   grpc_timer_init(&lb_call_retry_timer_, next_try, &lb_on_call_retry_);
 }
 
 void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  grpclb_policy->combiner()->Run(
-      GRPC_CLOSURE_INIT(&grpclb_policy->lb_on_call_retry_,
-                        &GrpcLb::OnBalancerCallRetryTimerLocked, grpclb_policy,
-                        nullptr),
-      GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  grpclb_policy->work_serializer()->Run(
+      [grpclb_policy, error]() {
+        grpclb_policy->OnBalancerCallRetryTimerLocked(error);
+      },
+      DEBUG_LOCATION);
 }
 
-void GrpcLb::OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error) {
-  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  grpclb_policy->retry_timer_callback_pending_ = false;
-  if (!grpclb_policy->shutting_down_ && error == GRPC_ERROR_NONE &&
-      grpclb_policy->lb_calld_ == nullptr) {
+void GrpcLb::OnBalancerCallRetryTimerLocked(grpc_error* error) {
+  retry_timer_callback_pending_ = false;
+  if (!shutting_down_ && error == GRPC_ERROR_NONE && lb_calld_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server",
-              grpclb_policy);
+      gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server", this);
     }
-    grpclb_policy->StartBalancerCallLocked();
+    StartBalancerCallLocked();
   }
-  grpclb_policy->Unref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
+  Unref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
+  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -1582,28 +1565,28 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
 
 void GrpcLb::OnFallbackTimer(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  grpclb_policy->combiner()->Run(
-      GRPC_CLOSURE_INIT(&grpclb_policy->lb_on_fallback_,
-                        &GrpcLb::OnFallbackTimerLocked, grpclb_policy, nullptr),
-      GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  grpclb_policy->work_serializer()->Run(
+      [grpclb_policy, error]() { grpclb_policy->OnFallbackTimerLocked(error); },
+      DEBUG_LOCATION);
 }
 
-void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
-  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
+void GrpcLb::OnFallbackTimerLocked(grpc_error* error) {
   // If we receive a serverlist after the timer fires but before this callback
   // actually runs, don't fall back.
-  if (grpclb_policy->fallback_at_startup_checks_pending_ &&
-      !grpclb_policy->shutting_down_ && error == GRPC_ERROR_NONE) {
+  if (fallback_at_startup_checks_pending_ && !shutting_down_ &&
+      error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO,
             "[grpclb %p] No response from balancer after fallback timeout; "
             "entering fallback mode",
-            grpclb_policy);
-    grpclb_policy->fallback_at_startup_checks_pending_ = false;
-    grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
-    grpclb_policy->fallback_mode_ = true;
-    grpclb_policy->CreateOrUpdateChildPolicyLocked();
+            this);
+    fallback_at_startup_checks_pending_ = false;
+    CancelBalancerChannelConnectivityWatchLocked();
+    fallback_mode_ = true;
+    CreateOrUpdateChildPolicyLocked();
   }
-  grpclb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
+  Unref(DEBUG_LOCATION, "on_fallback_timer");
+  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -1627,7 +1610,7 @@ grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked(
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper = absl::make_unique<Helper>(Ref());
   OrphanablePtr<LoadBalancingPolicy> lb_policy =

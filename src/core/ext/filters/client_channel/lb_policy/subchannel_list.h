@@ -62,7 +62,7 @@ class MySubchannelList
 };
 
 */
-// All methods will be called from within the client_channel combiner.
+// All methods will be called from within the client_channel work serializer.
 
 namespace grpc_core {
 
