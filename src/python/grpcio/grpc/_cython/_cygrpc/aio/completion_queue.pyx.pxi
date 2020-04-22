@@ -15,6 +15,7 @@
 import socket
 
 cdef gpr_timespec _GPR_INF_FUTURE = gpr_inf_future(GPR_CLOCK_REALTIME)
+cdef float _POLL_AWAKE_INTERVAL_S = 0.2
 
 
 IF UNAME_SYSNAME == "Windows":
@@ -58,8 +59,8 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
 
         while not self._shutdown:
             event = grpc_completion_queue_next(self._cq,
-                                                _GPR_INF_FUTURE,
-                                                NULL)
+                                               _GPR_INF_FUTURE,
+                                               NULL)
 
             if event.type == GRPC_QUEUE_TIMEOUT:
                 with gil:
@@ -80,6 +81,8 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         self._loop.remove_reader(self._read_socket)
         # TODO(https://github.com/grpc/grpc/issues/22365) perform graceful shutdown
         grpc_completion_queue_shutdown(self._cq)
+        while not self._shutdown:
+            self._poller_thread.join(timeout=_POLL_AWAKE_INTERVAL_S)
         grpc_completion_queue_destroy(self._cq)
 
     def _handle_events(self):
