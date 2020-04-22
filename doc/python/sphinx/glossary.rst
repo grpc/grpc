@@ -44,7 +44,6 @@ Glossary
     A list of key-value pairs to configure the underlying gRPC Core channel or
     server object. Channel arguments are meant for advanced usages. Full list
     channel arguments can be found under the "grpc_arg_keys" section of
-    `grpc_types.h
-    <https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h>`_
-    header file. For example, if you want to disable TCP port reuse, you may
-    construct channel arguments like: ``options = (('grpc.so_reuseport', 0),)``.
+    "grpc_types.h" header file (|grpc_types_link|). For example, if you want to disable TCP port
+    reuse, you may construct channel arguments like: ``options =
+    (('grpc.so_reuseport', 0),)``.
