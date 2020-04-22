@@ -28,6 +28,7 @@ from . import _base_call
 from ._typing import (DeserializingFunction, DoneCallbackType, MetadataType,
                       MetadatumType, RequestIterableType, RequestType,
                       ResponseType, SerializingFunction)
+from ._metadata import Metadata
 
 __all__ = 'AioRpcError', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
@@ -58,11 +59,6 @@ class AioRpcError(grpc.RpcError):
     determined. Hence, its methods no longer needs to be coroutines.
     """
 
-    # TODO(https://github.com/grpc/grpc/issues/20144) Metadata
-    # type returned by `initial_metadata` and `trailing_metadata`
-    # and also taken in the constructor needs to be revisit and make
-    # it more specific.
-
     _code: grpc.StatusCode
     _details: Optional[str]
     _initial_metadata: Optional[MetadataType]
@@ -88,8 +84,8 @@ class AioRpcError(grpc.RpcError):
         super().__init__(self)
         self._code = code
         self._details = details
-        self._initial_metadata = initial_metadata
-        self._trailing_metadata = trailing_metadata
+        self._initial_metadata = initial_metadata or Metadata()
+        self._trailing_metadata = trailing_metadata or Metadata()
         self._debug_error_string = debug_error_string
 
     def code(self) -> grpc.StatusCode:

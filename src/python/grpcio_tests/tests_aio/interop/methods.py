@@ -287,8 +287,10 @@ async def _unimplemented_service(stub: test_pb2_grpc.UnimplementedServiceStub):
 async def _custom_metadata(stub: test_pb2_grpc.TestServiceStub):
     initial_metadata_value = "test_initial_metadata_value"
     trailing_metadata_value = b"\x0a\x0b\x0a\x0b\x0a\x0b"
-    metadata = ((_INITIAL_METADATA_KEY, initial_metadata_value),
-                (_TRAILING_METADATA_KEY, trailing_metadata_value))
+    metadata = aio.Metadata(
+        (_INITIAL_METADATA_KEY, initial_metadata_value),
+        (_TRAILING_METADATA_KEY, trailing_metadata_value),
+    )
 
     async def _validate_metadata(call):
         initial_metadata = dict(await call.initial_metadata())

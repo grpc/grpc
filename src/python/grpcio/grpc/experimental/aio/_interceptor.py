@@ -248,7 +248,7 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
 
 
 class InterceptedCall:
-    """Base implementation for all intecepted call arities.
+    """Base implementation for all intercepted call arities.
 
     Interceptors might have some work to do before the RPC invocation with
     the capacity of changing the invocation parameters, and some work to do

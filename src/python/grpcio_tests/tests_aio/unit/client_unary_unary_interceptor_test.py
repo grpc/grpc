@@ -25,7 +25,7 @@ from tests_aio.unit._test_base import AioTestBase
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
-_INITIAL_METADATA_TO_INJECT = (
+_INITIAL_METADATA_TO_INJECT = aio.Metadata(
     (_INITIAL_METADATA_KEY, 'extra info'),
     (_TRAILING_METADATA_KEY, b'\x13\x37'),
 )
@@ -162,7 +162,7 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
     async def test_retry(self):
 
         class RetryInterceptor(aio.UnaryUnaryClientInterceptor):
-            """Simulates a Retry Interceptor which ends up by making 
+            """Simulates a Retry Interceptor which ends up by making
             two RPC calls."""
 
             def __init__(self):
@@ -550,11 +550,12 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             async def intercept_unary_unary(self, continuation,
                                             client_call_details, request):
+                new_metadata = aio.Metadata(*client_call_details.metadata,
+                                            *_INITIAL_METADATA_TO_INJECT)
                 new_details = aio.ClientCallDetails(
                     method=client_call_details.method,
                     timeout=client_call_details.timeout,
-                    metadata=client_call_details.metadata +
-                    _INITIAL_METADATA_TO_INJECT,
+                    metadata=new_metadata,
                     credentials=client_call_details.credentials,
                     wait_for_ready=client_call_details.wait_for_ready,
                 )
@@ -568,14 +569,20 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
             # Expected to see the echoed initial metadata
             self.assertTrue(
-                _common.seen_metadatum(_INITIAL_METADATA_TO_INJECT[0], await
-                                       call.initial_metadata()))
-
+                _common.seen_metadatum(
+                    expected_key=_INITIAL_METADATA_KEY,
+                    expected_value=_INITIAL_METADATA_TO_INJECT[
+                        _INITIAL_METADATA_KEY],
+                    actual=await call.initial_metadata(),
+                ))
             # Expected to see the echoed trailing metadata
             self.assertTrue(
-                _common.seen_metadatum(_INITIAL_METADATA_TO_INJECT[1], await
-                                       call.trailing_metadata()))
-
+                _common.seen_metadatum(
+                    expected_key=_TRAILING_METADATA_KEY,
+                    expected_value=_INITIAL_METADATA_TO_INJECT[
+                        _TRAILING_METADATA_KEY],
+                    actual=await call.trailing_metadata(),
+                ))
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
     async def test_add_done_callback_before_finishes(self):

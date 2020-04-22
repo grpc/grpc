@@ -16,18 +16,19 @@ import asyncio
 import grpc
 from typing import AsyncIterable
 from grpc.experimental import aio
-from grpc.experimental.aio._typing import MetadataType, MetadatumType
+from grpc.experimental.aio._typing import MetadataType, MetadatumType, MetadataKey, MetadataValue
 
 from tests.unit.framework.common import test_constants
 
 
 def seen_metadata(expected: MetadataType, actual: MetadataType):
-    return not bool(set(expected) - set(actual))
+    return not bool(set(tuple(expected)) - set(tuple(actual)))
 
 
-def seen_metadatum(expected: MetadatumType, actual: MetadataType):
-    metadata_dict = dict(actual)
-    return metadata_dict.get(expected[0]) == expected[1]
+def seen_metadatum(expected_key: MetadataKey, expected_value: MetadataValue,
+                   actual: MetadataType) -> bool:
+    obtained = actual[expected_key]
+    assert obtained == expected_value
 
 
 async def block_until_certain_state(channel: aio.Channel,
@@ -50,7 +51,7 @@ def inject_callbacks(call: aio.Call):
     second_callback_ran = asyncio.Event()
 
     def second_callback(call):
-        # Validate that all resopnses have been received
+        # Validate that all responses have been received
         # and the call is an end state.
         assert call.done()
         second_callback_ran.set()

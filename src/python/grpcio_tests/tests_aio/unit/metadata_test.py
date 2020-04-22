@@ -37,38 +37,33 @@ _TEST_STREAM_STREAM = '/test/TestStreamStream'
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
 
-_INITIAL_METADATA_FROM_CLIENT_TO_SERVER = (
+_INITIAL_METADATA_FROM_CLIENT_TO_SERVER = aio.Metadata(
     ('client-to-server', 'question'),
     ('client-to-server-bin', b'\x07\x07\x07'),
 )
-_INITIAL_METADATA_FROM_SERVER_TO_CLIENT = (
+_INITIAL_METADATA_FROM_SERVER_TO_CLIENT = aio.Metadata(
     ('server-to-client', 'answer'),
     ('server-to-client-bin', b'\x06\x06\x06'),
 )
-_TRAILING_METADATA = (('a-trailing-metadata', 'stack-trace'),
-                      ('a-trailing-metadata-bin', b'\x05\x05\x05'))
-_INITIAL_METADATA_FOR_GENERIC_HANDLER = (('a-must-have-key', 'secret'),)
+_TRAILING_METADATA = aio.Metadata(
+    ('a-trailing-metadata', 'stack-trace'),
+    ('a-trailing-metadata-bin', b'\x05\x05\x05'),
+)
+_INITIAL_METADATA_FOR_GENERIC_HANDLER = aio.Metadata(
+    ('a-must-have-key', 'secret'),)
 
 _INVALID_METADATA_TEST_CASES = (
     (
         TypeError,
-        ((42, 42),),
+        aio.Metadata((42, 42),),
     ),
     (
         TypeError,
-        (({}, {}),),
+        aio.Metadata(({}, {}),),
     ),
     (
         TypeError,
-        (('normal', object()),),
-    ),
-    (
-        TypeError,
-        object(),
-    ),
-    (
-        TypeError,
-        (object(),),
+        aio.Metadata(('normal', object()),),
     ),
 )
 
