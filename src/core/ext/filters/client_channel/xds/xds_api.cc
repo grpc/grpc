@@ -1107,6 +1107,12 @@ grpc_error* RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
+static grpc_error* ParseSecurityServiceConfig(
+    const envoy_api_v2_auth_UpstreamTlsContext* upstream_tls_context,
+    XdsApi::SecurityServiceConfig* parsed_config) {
+  return GRPC_ERROR_CANCELLED;
+}
+
 grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
                              const envoy_api_v2_DiscoveryResponse* response,
                              const std::string& expected_server_name,
@@ -1297,6 +1303,18 @@ grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
             "ConfigSource is not self.");
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
+    }
+    // Record SDS configuration (if any).
+    const envoy_api_v2_auth_UpstreamTlsContext* upstream_tls_context =
+        envoy_api_v2_Cluster_tls_context(cluster);
+    if (upstream_tls_context != nullptr) {
+      XdsApi::SecurityServiceConfig parsed_config;
+      grpc_error* error =
+          ParseSecurityServiceConfig(upstream_tls_context, &parsed_config);
+      if (error != GRPC_ERROR_NONE) {
+        return error;
+      }
+      cds_update.security_service_config = std::move(parsed_config);
     }
     cds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),
                             std::move(cds_update));

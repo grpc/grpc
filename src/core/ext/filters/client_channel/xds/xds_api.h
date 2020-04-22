@@ -45,6 +45,18 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
+  struct SecurityServiceConfig {
+    // To be elaborated in next PR.
+    int dummy = 0;
+
+    bool operator==(const SecurityServiceConfig& rhs) const;
+  };
+
+  class SecurityServiceConfigHasher {
+   public:
+    size_t operator()(const SecurityServiceConfig& key) const;
+  };
+
   struct RdsRoute {
     std::string service;
     std::string method;
@@ -92,6 +104,10 @@ class XdsApi {
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+    // The SDS configuration for credential reloading and peer validation.
+    // If the option is not set, the default gRPC channel credentials will be
+    // used.
+    absl::optional<SecurityServiceConfig> security_service_config;
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;

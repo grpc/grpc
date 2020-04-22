@@ -147,6 +147,7 @@ void grpc_init(void) {
     gpr_timers_global_init();
     grpc_core::HandshakerRegistry::Init();
     grpc_security_init();
+    grpc_core::TlsContextManager::Init();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();

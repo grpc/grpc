@@ -23,4 +23,11 @@
 // Pointer channel arg containing a ref to the XdsClient object.
 #define GRPC_ARG_XDS_CLIENT "grpc.xds_client"
 
+// Pointer to the global TlsContextManager object. Added to channel args by
+// XdsCredentials.
+#define GRPC_ARG_XDS_TLS_CONTEXT_MANAGER "grpc.xds_tls_context_manager"
+
+// Pointer to the SslContextProvider object for a subchannel.
+#define GRPC_ARG_XDS_SSL_CONTEXT_PROVIDER "grpc.xds_ssl_context_provider"
+
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CHANNEL_ARGS_H */

@@ -22,6 +22,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/filters/client_channel/xds/sds.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -105,6 +106,14 @@ class CdsLb : public LoadBalancingPolicy {
 
   // Internal state.
   bool shutting_down_ = false;
+
+  // The SslContextProvider cache.
+  TlsContextManager* tls_context_manager_;
+  // The vtable associated with tls_context_manager_.
+  grpc_arg_pointer_vtable tls_context_manager_vtable_;
+  // Reference to the SslContextProvider instance that fetches secrets for this
+  // cluster.
+  RefCountedPtr<SslContextProvider> ssl_context_provider_;
 };
 
 //
@@ -122,6 +131,13 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
                 ? cluster_data.lrs_load_reporting_server_name.value().c_str()
                 : "(unset)");
   }
+  // Configure remote credentials depending on whether XdsCredentials type
+  // channel credential is used and whether a TLS context is received from CDS
+  // response. When XdsCredentials type channel credential is used, the
+  // TlsContextManager instance must exist in the channel args and
+  // tls_context_manager_ is non-null.
+  XdsConfigureSslContextProvider(parent_->tls_context_manager_, cluster_data,
+                                 &parent_->ssl_context_provider_);
   // Construct config for child policy.
   Json::Object child_config = {
       {"clusterName", parent_->config_->cluster()},
@@ -169,11 +185,20 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   if (parent_->child_policy_ == nullptr) {
     LoadBalancingPolicy::Args args;
     args.work_serializer = parent_->work_serializer();
-    args.args = parent_->args_;
+    // Add SslContextProvider instance to the channel arg for security connector
+    // creation.
+    grpc_channel_args* new_args = XdsAppendChildPolicyArgs(
+        parent_->args_, parent_->ssl_context_provider_);
+    if (new_args == nullptr) {
+      args.args = parent_->args_;
+    } else {
+      args.args = new_args;
+    }
     args.channel_control_helper = absl::make_unique<Helper>(parent_->Ref());
     parent_->child_policy_ =
         LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(config->name(),
                                                                std::move(args));
+    grpc_channel_args_destroy(new_args);
     if (parent_->child_policy_ == nullptr) {
       OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "failed to create child policy"));
@@ -190,7 +215,13 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   // Update child policy.
   UpdateArgs args;
   args.config = std::move(config);
-  args.args = grpc_channel_args_copy(parent_->args_);
+  grpc_channel_args* new_args =
+      XdsAppendChildPolicyArgs(parent_->args_, parent_->ssl_context_provider_);
+  if (new_args == nullptr) {
+    args.args = grpc_channel_args_copy(parent_->args_);
+  } else {
+    args.args = new_args;
+  }
   parent_->child_policy_->UpdateLocked(std::move(args));
 }
 
@@ -302,6 +333,10 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
+  // If remote credentials is configured, get the corresponding context.
+  XdsExtractContextManager(args_, &tls_context_manager_,
+                           &tls_context_manager_vtable_,
+                           &ssl_context_provider_);
   // If cluster name changed, cancel watcher and restart.
   if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
     if (old_config != nullptr) {
