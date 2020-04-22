@@ -14,13 +14,13 @@
 
 FROM centos:centos7
 
-RUN yum install -y centos-release-scl && \
+RUN yum update -y && \
+  yum install -y centos-release-scl && \
   yum install -y devtoolset-7-gcc*
 
 SHELL [ "/usr/bin/scl", "enable", "devtoolset-7"]
 
-RUN yum update -y && \
-  yum install epel-release -y && \
+RUN yum install epel-release -y && \
   rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm && \
   rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm && \
   yum --enablerepo=remi-php72 install php -y && \
@@ -28,7 +28,7 @@ RUN yum update -y && \
   yum install -y make wget which \
     gmp-devel libmpc-devel mpfr-devel yum-utils \                                                            
     php-devel php-fpm php-pear && \                                                                          
- yum clean all -y  
+  yum clean all -y  
 
 ARG MAKEFLAGS=-j8
 
