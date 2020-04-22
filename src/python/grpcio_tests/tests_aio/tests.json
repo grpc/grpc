@@ -3,6 +3,7 @@
   "health_check.health_servicer_test.HealthServicerTest",
   "interop.local_interop_test.InsecureLocalInteropTest",
   "interop.local_interop_test.SecureLocalInteropTest",
+  "status.grpc_status_test.StatusTest",
   "unit._metadata_test.TestTypeMetadata",
   "unit.abort_test.TestAbort",
   "unit.aio_rpc_error_test.TestAioRpcError",
