@@ -400,6 +400,8 @@ XdsRoutingLb::XdsRoutingChild::XdsRoutingChild(
     gpr_log(GPR_INFO, "[xds_routing_lb %p] created XdsRoutingChild %p for %s",
             xds_routing_policy_.get(), this, name_.c_str());
   }
+  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
+                    grpc_schedule_on_exec_ctx);
 }
 
 XdsRoutingLb::XdsRoutingChild::~XdsRoutingChild() {
@@ -501,8 +503,6 @@ void XdsRoutingLb::XdsRoutingChild::DeactivateLocked() {
   // Set the child weight to 0 so that future picker won't contain this child.
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "XdsRoutingChild+timer").release();
-  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
-                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(
       &delayed_removal_timer_,
       ExecCtx::Get()->Now() + GRPC_XDS_ROUTING_CHILD_RETENTION_INTERVAL_MS,

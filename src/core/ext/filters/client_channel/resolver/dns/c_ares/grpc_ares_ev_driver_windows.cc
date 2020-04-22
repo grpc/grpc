@@ -100,13 +100,13 @@ class GrpcPolledFdWindows {
   GrpcPolledFdWindows(ares_socket_t as,
                       std::shared_ptr<WorkSerializer> work_serializer,
                       int address_family, int socket_type)
-      : read_buf_(grpc_empty_slice()),
+      : work_serializer_(std::move(work_serializer)),
+        read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
         tcp_write_state_(WRITE_IDLE),
         gotten_into_driver_list_(false),
         address_family_(address_family),
-        socket_type_(socket_type),
-        work_serializer_(std::move(work_serializer)) {
+        socket_type_(socket_type) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, as);
     // Closure Initialization
     GRPC_CLOSURE_INIT(&outer_read_closure_,
