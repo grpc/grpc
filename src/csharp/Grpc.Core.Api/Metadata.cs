@@ -75,7 +75,67 @@ namespace Grpc.Core
             return this;
         }
 
-        // TODO: add support for access by key
+        /// <summary>
+        /// Gets the last metadata entry with the specified key.
+        /// </summary>
+        public Entry Get(string key)
+        {
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                if (entries[i].Key == key)
+                {
+                    return entries[i];
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets all metadata entries with the specified key.
+        /// </summary>
+        public IEnumerable<Entry> GetAll(string key)
+        {
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (entries[i].Key == key)
+                {
+                    yield return entries[i];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the last metadata entry string value with the specified key.
+        /// </summary>
+        public string GetValue(string key)
+        {
+            return Get(key)?.Value;
+        }
+
+        /// <summary>
+        /// Gets the last metadata entry bytes value with the specified key.
+        /// </summary>
+        public byte[] GetValueBytes(string key)
+        {
+            return Get(key)?.ValueBytes;
+        }
+
+        /// <summary>
+        /// Adds a new ASCII-valued metadata entry. See <c>Metadata.Entry</c> constructor for params.
+        /// </summary>
+        public void Add(string key, string value)
+        {
+            Add(new Entry(key, value));
+        }
+
+        /// <summary>
+        /// Adds a new binary-valued metadata entry. See <c>Metadata.Entry</c> constructor for params.
+        /// </summary>
+        public void Add(string key, byte[] valueBytes)
+        {
+            Add(new Entry(key, valueBytes));
+        }
 
         #region IList members
 
@@ -133,22 +193,6 @@ namespace Grpc.Core
             GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
             entries.Add(item);
-        }
-
-        /// <summary>
-        /// Adds a new ASCII-valued metadata entry. See <c>Metadata.Entry</c> constructor for params.
-        /// </summary>
-        public void Add(string key, string value)
-        {
-            Add(new Entry(key, value));
-        }
-
-        /// <summary>
-        /// Adds a new binary-valued metadata entry. See <c>Metadata.Entry</c> constructor for params.
-        /// </summary>
-        public void Add(string key, byte[] valueBytes)
-        {
-            Add(new Entry(key, valueBytes));
         }
 
         /// <summary>
