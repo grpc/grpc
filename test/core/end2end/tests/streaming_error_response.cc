@@ -88,7 +88,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-/* Client sends a request with payload, server reads then returns status. */
+// Client sends a request with payload, server reads then returns status.
 static void test(grpc_end2end_test_config config, bool request_status_early,
                  bool recv_message_separately) {
   grpc_call* c;
@@ -200,8 +200,12 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+  // The success of the op depends on whether the payload is written before the
+  // transport sees the end of stream. If the stream has been write closed
+  // before the write completes, it would fail, otherwise it would succeed.
+  // Since this behavior is dependent on the transport implementation, we allow
+  // any success status with this op.
+  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(103));
 
   if (!request_status_early) {
     memset(ops, 0, sizeof(ops));

@@ -219,6 +219,7 @@ END2END_TESTS = {
     "cancel_before_invoke": _test_options(),
     "cancel_in_a_vacuum": _test_options(),
     "cancel_with_status": _test_options(),
+    "client_streaming": _test_options(),
     "compressed_payload": _test_options(proxyable = False, exclude_inproc = True),
     "connectivity": _test_options(
         needs_fullstack = True,

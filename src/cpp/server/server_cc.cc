@@ -47,6 +47,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 #include "src/cpp/server/health/default_health_check_service.h"
@@ -61,17 +62,6 @@ namespace {
 // server, pass a custom ResourceQuota object  (with the desired number of
 // max-threads set) to the server builder.
 #define DEFAULT_MAX_SYNC_SERVER_THREADS INT_MAX
-
-// How many callback requests of each method should we pre-register at start
-#define DEFAULT_CALLBACK_REQS_PER_METHOD 512
-
-// What is the (soft) limit for outstanding requests in the server
-#define SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING 30000
-
-// If the number of unmatched requests for a method drops below this amount, try
-// to allocate extra unless it pushes the total number of callbacks above the
-// soft maximum
-#define SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD 128
 
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
@@ -544,74 +534,61 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-class Server::CallbackRequestBase : public grpc::internal::CompletionQueueTag {
- public:
-  virtual ~CallbackRequestBase() {}
-  virtual bool Request() = 0;
-};
-
 template <class ServerContextType>
-class Server::CallbackRequest final : public Server::CallbackRequestBase {
+class Server::CallbackRequest final
+    : public grpc::internal::CompletionQueueTag {
  public:
   static_assert(
       std::is_base_of<grpc::CallbackServerContext, ServerContextType>::value,
       "ServerContextType must be derived from CallbackServerContext");
 
-  // The constructor needs to know the server for this callback request and its
-  // index in the server's request count array to allow for proper dynamic
-  // requesting of incoming RPCs. For codegen services, the values of method and
-  // method_tag represent the defined characteristics of the method being
-  // requested. For generic services, method and method_tag are nullptr since
-  // these services don't have pre-defined methods or method registration tags.
-  CallbackRequest(Server* server, size_t method_idx,
-                  grpc::internal::RpcServiceMethod* method, void* method_tag)
+  // For codegen services, the value of method represents the defined
+  // characteristics of the method being requested. For generic services, method
+  // is nullptr since these services don't have pre-defined methods.
+  CallbackRequest(Server* server, grpc::internal::RpcServiceMethod* method,
+                  grpc::CompletionQueue* cq,
+                  grpc_core::ServerRegisteredCallAllocation* data)
       : server_(server),
-        method_index_(method_idx),
         method_(method),
-        method_tag_(method_tag),
-        has_request_payload_(
-            method_ != nullptr &&
-            (method->method_type() == grpc::internal::RpcMethod::NORMAL_RPC ||
-             method->method_type() ==
-                 grpc::internal::RpcMethod::SERVER_STREAMING)),
-        cq_(server->CallbackCQ()),
+        has_request_payload_(method->method_type() ==
+                                 grpc::internal::RpcMethod::NORMAL_RPC ||
+                             method->method_type() ==
+                                 grpc::internal::RpcMethod::SERVER_STREAMING),
+        cq_(cq),
         tag_(this) {
-    server_->callback_reqs_outstanding_++;
+    server->Ref();
     Setup();
+    data->tag = &tag_;
+    data->call = &call_;
+    data->initial_metadata = &request_metadata_;
+    data->deadline = &deadline_;
+    data->optional_payload = has_request_payload_ ? &request_payload_ : nullptr;
+  }
+
+  // For generic services, method is nullptr since these services don't have
+  // pre-defined methods.
+  CallbackRequest(Server* server, grpc::CompletionQueue* cq,
+                  grpc_core::ServerBatchCallAllocation* data)
+      : server_(server),
+        method_(nullptr),
+        has_request_payload_(false),
+        cq_(cq),
+        tag_(this) {
+    server->Ref();
+    Setup();
+    data->tag = &tag_;
+    data->call = &call_;
+    data->initial_metadata = &request_metadata_;
+    if (!call_details_) {
+      call_details_ = new grpc_call_details;
+      grpc_call_details_init(call_details_);
+    }
+    data->details = call_details_;
   }
 
   ~CallbackRequest() {
     Clear();
-
-    // The counter of outstanding requests must be decremented
-    // under a lock in case it causes the server shutdown.
-    grpc::internal::MutexLock l(&server_->callback_reqs_mu_);
-    if (--server_->callback_reqs_outstanding_ == 0) {
-      server_->callback_reqs_done_cv_.Signal();
-    }
-  }
-
-  bool Request() override {
-    if (method_tag_) {
-      if (grpc_server_request_registered_call(
-              server_->c_server(), method_tag_, &call_, &deadline_,
-              &request_metadata_,
-              has_request_payload_ ? &request_payload_ : nullptr, cq_->cq(),
-              cq_->cq(), static_cast<void*>(&tag_)) != GRPC_CALL_OK) {
-        return false;
-      }
-    } else {
-      if (!call_details_) {
-        call_details_ = new grpc_call_details;
-        grpc_call_details_init(call_details_);
-      }
-      if (grpc_server_request_call(server_->c_server(), &call_, call_details_,
-                                   &request_metadata_, cq_->cq(), cq_->cq(),
-                                   static_cast<void*>(&tag_)) != GRPC_CALL_OK) {
-        return false;
-      }
-    }
-    return true;
+    server_->UnrefWithPossibleNotify();
   }
 
   // Needs specialization to account for different processing of metadata
@@ -655,35 +632,11 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
       GPR_ASSERT(!req_->FinalizeResult(&ignored, &new_ok));
       GPR_ASSERT(ignored == req_);
 
-      int count =
-          static_cast<int>(gpr_atm_no_barrier_fetch_add(
-              &req_->server_
-                   ->callback_unmatched_reqs_count_[req_->method_index_],
-              -1)) -
-          1;
       if (!ok) {
         // The call has been shutdown.
         // Delete its contents to free up the request.
         delete req_;
         return;
-      }
-
-      // If this was the last request in the list or it is below the soft
-      // minimum and there are spare requests available, set up a new one.
-      if (count == 0 || (count < SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD &&
-                         req_->server_->callback_reqs_outstanding_ <
-                             SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
-        auto* new_req = new CallbackRequest<ServerContextType>(
-            req_->server_, req_->method_index_, req_->method_,
-            req_->method_tag_);
-        if (!new_req->Request()) {
-          // The server must have just decided to shutdown.
-          gpr_atm_no_barrier_fetch_add(
-              &new_req->server_
-                   ->callback_unmatched_reqs_count_[new_req->method_index_],
-              -1);
-          delete new_req;
-        }
       }
 
       // Bind the call, deadline, and metadata from what we got
@@ -740,28 +693,7 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
                           : req_->server_->generic_handler_.get();
       handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
           call_, &req_->ctx_, req_->request_, req_->request_status_,
-          req_->handler_data_, [this] {
-            // Recycle this request if there aren't too many outstanding.
-            // Note that we don't have to worry about a case where there
-            // are no requests waiting to match for this method since that
-            // is already taken care of when binding a request to a call.
-            // TODO(vjpai): Also don't recycle this request if the dynamic
-            //              load no longer justifies it. Consider measuring
-            //              dynamic load and setting a target accordingly.
-            if (req_->server_->callback_reqs_outstanding_ <
-                SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING) {
-              req_->Clear();
-              req_->Setup();
-            } else {
-              // We can free up this request because there are too many
-              delete req_;
-              return;
-            }
-            if (!req_->Request()) {
-              // The server must have just decided to shutdown.
-              delete req_;
-            }
-          }));
+          req_->handler_data_, [this] { delete req_; }));
     }
   };
 
@@ -779,8 +711,6 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
   }
 
   void Setup() {
-    gpr_atm_no_barrier_fetch_add(
-        &server_->callback_unmatched_reqs_count_[method_index_], 1);
     grpc_metadata_array_init(&request_metadata_);
     ctx_.Setup(gpr_inf_future(GPR_CLOCK_REALTIME));
     request_payload_ = nullptr;
@@ -790,9 +720,7 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
   }
 
   Server* const server_;
-  const size_t method_index_;
   grpc::internal::RpcServiceMethod* const method_;
-  void* const method_tag_;
   const bool has_request_payload_;
   grpc_byte_buffer* request_payload_;
   void* request_;
@@ -1055,13 +983,6 @@ Server::~Server() {
   }
 
   grpc_server_destroy(server_);
-  for (auto& per_method_count : callback_unmatched_reqs_count_) {
-    // There should be no more unmatched callbacks for any method
-    // as each request is failed by Shutdown. Check that this actually
-    // happened
-    GPR_ASSERT(static_cast<int>(gpr_atm_no_barrier_load(&per_method_count)) ==
-               0);
-  }
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
@@ -1139,17 +1060,16 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
         value->AddSyncMethod(method.get(), method_registration_tag);
       }
     } else {
-      // a callback method. Register at least some callback requests
-      callback_unmatched_reqs_count_.push_back(0);
-      auto method_index = callback_unmatched_reqs_count_.size() - 1;
-      // TODO(vjpai): Register these dynamically based on need
-      for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
-        callback_reqs_to_start_.push_back(
-            new CallbackRequest<grpc::CallbackServerContext>(
-                this, method_index, method.get(), method_registration_tag));
-      }
-      // Enqueue it so that it will be Request'ed later after all request
-      // matchers are created at core server startup
+      has_callback_methods_ = true;
+      grpc::internal::RpcServiceMethod* method_value = method.get();
+      grpc::CompletionQueue* cq = CallbackCQ();
+      grpc_core::SetServerRegisteredMethodAllocator(
+          server_, cq->cq(), method_registration_tag, [this, cq, method_value] {
+            grpc_core::ServerRegisteredCallAllocation result;
+            new CallbackRequest<grpc::CallbackServerContext>(this, method_value,
+                                                             cq, &result);
+            return result;
+          });
     }
 
     method_name = method->name();
@@ -1183,14 +1103,12 @@ void Server::RegisterCallbackGenericService(
   has_callback_generic_service_ = true;
   generic_handler_.reset(service->Handler());
 
-  callback_unmatched_reqs_count_.push_back(0);
-  auto method_index = callback_unmatched_reqs_count_.size() - 1;
-  // TODO(vjpai): Register these dynamically based on need
-  for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
-    callback_reqs_to_start_.push_back(
-        new CallbackRequest<grpc::GenericCallbackServerContext>(
-            this, method_index, nullptr, nullptr));
-  }
+  grpc::CompletionQueue* cq = CallbackCQ();
+  grpc_core::SetServerBatchMethodAllocator(server_, cq->cq(), [this, cq] {
+    grpc_core::ServerBatchCallAllocation result;
+    new CallbackRequest<grpc::GenericCallbackServerContext>(this, cq, &result);
+    return result;
+  });
 }
 
 int Server::AddListeningPort(const grpc::string& addr,
@@ -1199,6 +1117,31 @@ int Server::AddListeningPort(const grpc::string& addr,
   int port = creds->AddPortToServer(addr, server_);
   global_callbacks_->AddPort(this, addr, creds, port);
   return port;
+}
+
+void Server::Ref() {
+  shutdown_refs_outstanding_.fetch_add(1, std::memory_order_relaxed);
+}
+
+void Server::UnrefWithPossibleNotify() {
+  if (GPR_UNLIKELY(shutdown_refs_outstanding_.fetch_sub(
+                       1, std::memory_order_acq_rel) == 1)) {
+    // No refs outstanding means that shutdown has been initiated and no more
+    // callback requests are outstanding.
+    grpc::internal::MutexLock lock(&mu_);
+    GPR_ASSERT(shutdown_);
+    shutdown_done_ = true;
+    shutdown_done_cv_.Signal();
+  }
+}
+
+void Server::UnrefAndWaitLocked() {
+  if (GPR_UNLIKELY(shutdown_refs_outstanding_.fetch_sub(
+                       1, std::memory_order_acq_rel) == 1)) {
+    shutdown_done_ = true;
+    return;  // no need to wait on CV since done condition already set
+  }
+  shutdown_done_cv_.WaitUntil(&mu_, [this] { return shutdown_done_; });
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
@@ -1236,7 +1179,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // If this server uses callback methods, then create a callback generic
   // service to handle any unimplemented methods using the default reactor
   // creator
-  if (!callback_reqs_to_start_.empty() && !has_callback_generic_service_) {
+  if (has_callback_methods_ && !has_callback_generic_service_) {
     unimplemented_service_.reset(new grpc::CallbackGenericService);
     RegisterCallbackGenericService(unimplemented_service_.get());
   }
@@ -1275,11 +1218,6 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   for (const auto& value : sync_req_mgrs_) {
     value->Start();
   }
-
-  for (auto* cbreq : callback_reqs_to_start_) {
-    GPR_ASSERT(cbreq->Request());
-  }
-  callback_reqs_to_start_.clear();
 
   if (default_health_check_service_impl != nullptr) {
     default_health_check_service_impl->StartServingThread();
@@ -1333,23 +1271,8 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     value->Wait();
   }
 
-  // Wait for all outstanding callback requests to complete
-  // (whether waiting for a match or already active).
-  // We know that no new requests will be created after this point
-  // because they are only created at server startup time or when
-  // we have a successful match on a request. During the shutdown phase,
-  // requests that have not yet matched will be failed rather than
-  // allowed to succeed, which will cause the server to delete the
-  // request and decrement the count. Possibly a request will match before
-  // the shutdown but then find that shutdown has already started by the
-  // time it tries to register a new request. In that case, the registration
-  // will report a failure, indicating a shutdown and again we won't end
-  // up incrementing the counter.
-  {
-    grpc::internal::MutexLock cblock(&callback_reqs_mu_);
-    callback_reqs_done_cv_.WaitUntil(
-        &callback_reqs_mu_, [this] { return callback_reqs_outstanding_ == 0; });
-  }
+  // Drop the shutdown ref and wait for all other refs to drop as well.
+  UnrefAndWaitLocked();
 
   // Shutdown the callback CQ. The CQ is owned by its own shutdown tag, so it
   // will delete itself at true shutdown.
@@ -1421,15 +1344,17 @@ grpc::CompletionQueue* Server::CallbackCQ() {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-server CQ registered
   grpc::internal::MutexLock l(&mu_);
-  if (callback_cq_ == nullptr) {
-    auto* shutdown_callback = new grpc::ShutdownCallback;
-    callback_cq_ = new grpc::CompletionQueue(grpc_completion_queue_attributes{
-        GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
-        shutdown_callback});
-
-    // Transfer ownership of the new cq to its own shutdown callback
-    shutdown_callback->TakeCQ(callback_cq_);
+  if (callback_cq_ != nullptr) {
+    return callback_cq_;
   }
+  auto* shutdown_callback = new grpc::ShutdownCallback;
+  callback_cq_ = new grpc::CompletionQueue(grpc_completion_queue_attributes{
+      GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
+      shutdown_callback});
+
+  // Transfer ownership of the new cq to its own shutdown callback
+  shutdown_callback->TakeCQ(callback_cq_);
+
   return callback_cq_;
 }
 

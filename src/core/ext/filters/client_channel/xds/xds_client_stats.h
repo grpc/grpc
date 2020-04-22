@@ -196,8 +196,8 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
 
   // Protects backend_metrics_. A mutex is necessary because the length of
   // backend_metrics_ can be accessed by both the callback intercepting the
-  // call's recv_trailing_metadata (not from the control plane combiner) and
-  // the load reporting thread (from the control plane combiner).
+  // call's recv_trailing_metadata (not from the control plane work serializer)
+  // and the load reporting thread (from the control plane work serializer).
   Mutex backend_metrics_mu_;
   std::map<std::string, BackendMetric> backend_metrics_;
 };

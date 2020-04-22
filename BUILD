@@ -726,6 +726,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.cc",
         "src/core/lib/iomgr/error.cc",
         "src/core/lib/iomgr/error_cfstream.cc",
+        "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
         "src/core/lib/iomgr/ev_epollex_linux.cc",
         "src/core/lib/iomgr/ev_poll_posix.cc",
@@ -887,6 +888,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_cfstream.h",
         "src/core/lib/iomgr/error_internal.h",
+        "src/core/lib/iomgr/ev_apple.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
@@ -991,7 +993,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    use_cfstream = True,
     deps = [
         "eventmanager_libuv",
         "gpr_base",
@@ -1861,7 +1862,6 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "grpc_base",
-        "grpc_shadow_boringssl",
         "grpc_transport_chttp2_alpn",
         "tsi",
     ],
@@ -2102,7 +2102,6 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_base",
-        "grpc_shadow_boringssl",
         "tsi_interface",
     ],
 )
@@ -2171,7 +2170,6 @@ grpc_cc_library(
         "alts_util",
         "gpr",
         "grpc_base",
-        "grpc_shadow_boringssl",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
     ],
@@ -2461,13 +2459,6 @@ grpc_cc_library(
     deps = [
         ":census",
         ":grpc++",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_shadow_boringssl",
-    hdrs = [
-        "src/core/tsi/grpc_shadow_boringssl.h",
     ],
 )
 

@@ -33,8 +33,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -163,7 +163,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
         std::unique_ptr<SubchannelPicker> picker);
 
     static void OnDelayedRemovalTimer(void* arg, grpc_error* error);
-    static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
+    void OnDelayedRemovalTimerLocked(grpc_error* error);
 
     // The owning LB policy.
     RefCountedPtr<WeightedTargetLb> weighted_target_policy_;
@@ -392,6 +392,8 @@ WeightedTargetLb::WeightedChild::WeightedChild(
     gpr_log(GPR_INFO, "[weighted_target_lb %p] created WeightedChild %p for %s",
             weighted_target_policy_.get(), this, name_.c_str());
   }
+  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
+                    grpc_schedule_on_exec_ctx);
 }
 
 WeightedTargetLb::WeightedChild::~WeightedChild() {
@@ -430,7 +432,7 @@ OrphanablePtr<LoadBalancingPolicy>
 WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = weighted_target_policy_->combiner();
+  lb_policy_args.work_serializer = weighted_target_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
@@ -536,8 +538,6 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
   weight_ = 0;
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "WeightedChild+timer").release();
-  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
-                    grpc_schedule_on_exec_ctx);
   delayed_removal_timer_callback_pending_ = true;
   grpc_timer_init(&delayed_removal_timer_,
                   ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
@@ -547,22 +547,21 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(void* arg,
                                                             grpc_error* error) {
   WeightedChild* self = static_cast<WeightedChild*>(arg);
-  self->weighted_target_policy_->combiner()->Run(
-      GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
-                        OnDelayedRemovalTimerLocked, self, nullptr),
-      GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  self->weighted_target_policy_->work_serializer()->Run(
+      [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
+      DEBUG_LOCATION);
 }
 
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimerLocked(
-    void* arg, grpc_error* error) {
-  WeightedChild* self = static_cast<WeightedChild*>(arg);
-  if (error == GRPC_ERROR_NONE &&
-      self->delayed_removal_timer_callback_pending_ && !self->shutdown_ &&
-      self->weight_ == 0) {
-    self->delayed_removal_timer_callback_pending_ = false;
-    self->weighted_target_policy_->targets_.erase(self->name_);
+    grpc_error* error) {
+  if (error == GRPC_ERROR_NONE && delayed_removal_timer_callback_pending_ &&
+      !shutdown_ && weight_ == 0) {
+    delayed_removal_timer_callback_pending_ = false;
+    weighted_target_policy_->targets_.erase(name_);
   }
-  self->Unref(DEBUG_LOCATION, "WeightedChild+timer");
+  Unref(DEBUG_LOCATION, "WeightedChild+timer");
+  GRPC_ERROR_UNREF(error);
 }
 
 //

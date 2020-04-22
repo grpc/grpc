@@ -33,7 +33,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/string_view.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -74,8 +74,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
-  XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
-            StringView server_name,
+  XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
+            grpc_pollset_set* interested_parties, StringView server_name,
             std::unique_ptr<ServiceConfigWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
@@ -243,7 +243,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   const bool xds_routing_enabled_;
 
-  Combiner* combiner_;
+  std::shared_ptr<WorkSerializer> work_serializer_;
   grpc_pollset_set* interested_parties_;
 
   std::unique_ptr<XdsBootstrap> bootstrap_;

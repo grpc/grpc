@@ -50,12 +50,12 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -193,7 +193,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_core::Combiner* lock;
+  std::shared_ptr<grpc_core::WorkSerializer> lock;
   grpc_channel_args* channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;
@@ -207,7 +207,7 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->lock = grpc_combiner_create();
+  args->lock = std::make_shared<grpc_core::WorkSerializer>();
   gpr_atm_rel_store(&args->done_atm, 0);
   args->channel_args = nullptr;
 }
@@ -227,7 +227,6 @@ void ArgsFinish(ArgsStruct* args) {
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
-  GRPC_COMBINER_UNREF(args->lock, nullptr);
 }
 
 gpr_timespec NSecondDeadline(int seconds) {
@@ -550,10 +549,7 @@ void InjectBrokenNameServerList(ares_channel channel) {
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-void StartResolvingLocked(void* arg, grpc_error* /*unused*/) {
-  grpc_core::Resolver* r = static_cast<grpc_core::Resolver*>(arg);
-  r->StartLocked();
-}
+void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }
 
 void RunResolvesRelevantRecordsTest(
     std::unique_ptr<grpc_core::Resolver::ResultHandler> (*CreateResultHandler)(
@@ -632,9 +628,9 @@ void RunResolvesRelevantRecordsTest(
                                                   CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
   gpr_free(whole_uri);
-  args.lock->Run(
-      GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(), nullptr),
-      GRPC_ERROR_NONE);
+  auto* resolver_ptr = resolver.get();
+  args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
+                 DEBUG_LOCATION);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);
