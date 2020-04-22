@@ -29,6 +29,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/tsi/grpc_shadow_boringssl.h"
+
 #include <openssl/ssl.h>
 
 #ifdef OPENSSL_IS_BORINGSSL
