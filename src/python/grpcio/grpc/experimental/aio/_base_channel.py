@@ -49,7 +49,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -87,7 +87,7 @@ class UnaryStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -125,7 +125,7 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -163,7 +163,7 @@ class StreamStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 

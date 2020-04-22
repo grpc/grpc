@@ -414,8 +414,8 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       metadata: Optional :term:`metadata` to be transmitted to
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t
-        enable wait for ready mechanism.
+      wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable :term:`wait_for_ready` mechanism.
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This is an EXPERIMENTAL option.
     """
@@ -690,7 +690,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -723,7 +723,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -756,7 +756,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -792,7 +792,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -828,7 +828,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -862,7 +862,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -895,7 +895,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -931,7 +931,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
