@@ -44,14 +44,36 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
+  struct RdsRouteWeightedClusterCluster {
+    std::string name;
+    uint32_t weight;
+
+    bool operator==(const RdsRouteWeightedClusterCluster& other) const {
+      return (name == other.name && weight == other.weight);
+    }
+  };
+
+  struct RdsRouteWeightedCluster {
+    std::string name;
+    std::vector<RdsRouteWeightedClusterCluster> clusters;
+    uint32_t total_weight;
+
+    bool operator==(const RdsRouteWeightedCluster& other) const {
+      return (name == other.name && clusters == other.clusters &&
+              total_weight == other.total_weight);
+    }
+  };
+
   struct RdsRoute {
     std::string service;
     std::string method;
     std::string cluster_name;
+    RdsRouteWeightedCluster weighted_cluster;
 
     bool operator==(const RdsRoute& other) const {
       return (service == other.service && method == other.method &&
-              cluster_name == other.cluster_name);
+              cluster_name == other.cluster_name &&
+              weighted_cluster == other.weighted_cluster);
     }
   };
 

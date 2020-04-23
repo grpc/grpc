@@ -1082,18 +1082,74 @@ grpc_error* RouteConfigParse(
     }
     const envoy_api_v2_route_RouteAction* route_action =
         envoy_api_v2_route_Route_route(route);
-    // Get the cluster in the RouteAction.
-    if (!envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
+    // Get the cluster or weighted_clusters in the RouteAction.
+    if (envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
+      const upb_strview cluster_name =
+          envoy_api_v2_route_RouteAction_cluster(route_action);
+      if (cluster_name.size == 0) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction cluster contains empty cluster name.");
+      }
+      rds_route.cluster_name =
+          std::string(cluster_name.data, cluster_name.size);
+    } else if (envoy_api_v2_route_RouteAction_has_weighted_clusters(
+                   route_action)) {
+      const envoy_api_v2_route_WeightedCluster* weighted_cluster =
+          envoy_api_v2_route_RouteAction_weighted_clusters(route_action);
+      const google_protobuf_UInt32Value* weight =
+          envoy_api_v2_route_WeightedCluster_total_weight(weighted_cluster);
+      if (weight == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction weighted_cluster missing total weight");
+      }
+      uint32_t total_weight = google_protobuf_UInt32Value_value(weight);
+      size_t clusters_size;
+      const envoy_api_v2_route_WeightedCluster_ClusterWeight* const* clusters =
+          envoy_api_v2_route_WeightedCluster_clusters(weighted_cluster,
+                                                      &clusters_size);
+      std::vector<std::string> cluster_name_parts;
+      uint32_t sum_of_weights = 0;
+      for (size_t j = 0; j < clusters_size; ++j) {
+        const envoy_api_v2_route_WeightedCluster_ClusterWeight*
+            cluster_cluster = clusters[j];
+        const upb_strview cluster_name =
+            envoy_api_v2_route_WeightedCluster_ClusterWeight_name(
+                cluster_cluster);
+        if (cluster_name.size == 0) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "RouteAction weighted_cluster cluster contains empty cluster "
+              "name.");
+        }
+        const google_protobuf_UInt32Value* weight =
+            envoy_api_v2_route_WeightedCluster_ClusterWeight_weight(
+                cluster_cluster);
+        if (weight == nullptr) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "RouteAction weighted_cluster cluster missing weight");
+        }
+        uint32_t cluster_weight = google_protobuf_UInt32Value_value(weight);
+        cluster_name_parts.push_back(
+            std::string(cluster_name.data, cluster_name.size));
+        sum_of_weights += cluster_weight;
+        XdsApi::RdsRouteWeightedClusterCluster cluster;
+        cluster.name = std::string(cluster_name.data, cluster_name.size);
+        cluster.weight = cluster_weight;
+        rds_route.weighted_cluster.clusters.emplace_back(std::move(cluster));
+      }
+      if (total_weight != sum_of_weights) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction weighted_cluster has incorrect total weight");
+      }
+      if (rds_route.weighted_cluster.clusters.empty()) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction weighted_cluster has no valid clusters specified.");
+      }
+      rds_route.weighted_cluster.total_weight = total_weight;
+      rds_route.weighted_cluster.name = absl::StrJoin(cluster_name_parts, "_");
+    } else {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No cluster found in RouteAction.");
+          "No cluster or weighted_clusters found in RouteAction.");
     }
-    const upb_strview action =
-        envoy_api_v2_route_RouteAction_cluster(route_action);
-    if (action.size == 0) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction contains empty cluster.");
-    }
-    rds_route.cluster_name = std::string(action.data, action.size);
     rds_update->routes.emplace_back(std::move(rds_route));
   }
   if (rds_update->routes.empty()) {

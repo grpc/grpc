@@ -2058,6 +2058,44 @@ void XdsClient::ResetBackoff() {
 }
 
 namespace {
+std::string CreateServiceConfigActionWeightedClusterCluster(
+    const XdsApi::RdsRouteWeightedClusterCluster& cluster) {
+  return absl::StrFormat(
+      "              \"%s\":{\n"
+      "                \"weight\":%d,\n"
+      "                \"childPolicy\":[ {\n"
+      "                  \"cds_experimental\":{\n"
+      "                    \"cluster\": \"%s\"\n"
+      "                  }\n"
+      "                } ]\n"
+      "               }",
+      cluster.name.c_str(), cluster.weight, cluster.name.c_str());
+}
+
+std::string CreateServiceConfigActionWeightedCluster(
+    const XdsApi::RdsRouteWeightedCluster& weighted_cluster) {
+  std::vector<std::string> config_parts;
+  config_parts.push_back(
+      absl::StrFormat("      \"weighted:%s\":{\n"
+                      "        \"child_policy\":[ {\n"
+                      "          \"weighted_target_experimental\":{\n"
+                      "            \"targets\":{\n",
+                      weighted_cluster.name));
+  std::vector<std::string> routes_vector;
+  for (size_t i = 0; i < weighted_cluster.clusters.size(); ++i) {
+    auto route_info = weighted_cluster.clusters[i];
+    routes_vector.push_back(
+        CreateServiceConfigActionWeightedClusterCluster(route_info));
+  }
+  config_parts.push_back(absl::StrJoin(routes_vector, ",\n"));
+  config_parts.push_back(
+      "            }\n"
+      "          }\n"
+      "        } ]\n"
+      "       }");
+  return absl::StrJoin(config_parts, "");
+}
+
 std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
   return absl::StrFormat(
       "      \"cds:%s\":{\n"
@@ -2070,7 +2108,7 @@ std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
       cluster_name.c_str(), cluster_name.c_str());
 }
 
-std::string CreateServiceConfigRoute(const std::string& cluster_name,
+std::string CreateServiceConfigRoute(const std::string cluster_name,
                                      const std::string& service,
                                      const std::string& method) {
   return absl::StrFormat(
@@ -2079,7 +2117,7 @@ std::string CreateServiceConfigRoute(const std::string& cluster_name,
       "           \"service\": \"%s\",\n"
       "           \"method\": \"%s\"\n"
       "        },\n"
-      "        \"action\": \"cds:%s\"\n"
+      "        \"action\": \"%s\"\n"
       "      }",
       service.c_str(), method.c_str(), cluster_name.c_str());
 }
@@ -2097,8 +2135,13 @@ grpc_error* XdsClient::CreateServiceConfig(
   std::vector<std::string> actions_vector;
   for (size_t i = 0; i < rds_update.routes.size(); ++i) {
     auto route = rds_update.routes[i];
-    actions_vector.push_back(
-        CreateServiceConfigActionCluster(route.cluster_name.c_str()));
+    if (!route.weighted_cluster.clusters.empty()) {
+      actions_vector.push_back(
+          CreateServiceConfigActionWeightedCluster(route.weighted_cluster));
+    } else {
+      actions_vector.push_back(
+          CreateServiceConfigActionCluster(route.cluster_name.c_str()));
+    }
   }
   config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
   config_parts.push_back(
@@ -2107,8 +2150,15 @@ grpc_error* XdsClient::CreateServiceConfig(
   std::vector<std::string> routes_vector;
   for (size_t i = 0; i < rds_update.routes.size(); ++i) {
     auto route_info = rds_update.routes[i];
+    std::string cluster_name;
+    if (!route_info.weighted_cluster.clusters.empty()) {
+      cluster_name = absl::StrFormat("weighted:%s",
+                                     route_info.weighted_cluster.name.c_str());
+    } else {
+      cluster_name = absl::StrFormat("cds:%s", route_info.cluster_name.c_str());
+    }
     routes_vector.push_back(CreateServiceConfigRoute(
-        route_info.cluster_name.c_str(), route_info.service.c_str(),
+        std::move(cluster_name), route_info.service.c_str(),
         route_info.method.c_str()));
   }
   config_parts.push_back(absl::StrJoin(routes_vector, ",\n"));
