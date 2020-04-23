@@ -21,8 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {
@@ -82,7 +83,7 @@ class ServerAddress {
 // ServerAddressList
 //
 
-typedef InlinedVector<ServerAddress, 1> ServerAddressList;
+typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
 
 }  // namespace grpc_core
 

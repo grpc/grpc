@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -249,7 +251,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     return "";
   }
   const Json* service_config = nullptr;
-  InlinedVector<grpc_error*, 4> error_list;
+  absl::InlinedVector<grpc_error*, 4> error_list;
   for (const Json& choice : json.array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -352,7 +354,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
             service_config_string, &result.service_config_error);
       }
     }
-    InlinedVector<grpc_arg, 1> new_args;
+    absl::InlinedVector<grpc_arg, 1> new_args;
     if (balancer_addresses_ != nullptr) {
       new_args.push_back(
           CreateGrpclbBalancerAddressesArg(balancer_addresses_.get()));

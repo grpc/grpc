@@ -96,19 +96,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "optional_test",
-    srcs = ["optional_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:optional",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "orphanable_test",
     srcs = ["orphanable_test.cc"],
     external_deps = [

@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -90,7 +92,7 @@ class RegistryState {
   // more factories are needed and the additional allocations are
   // hurting performance (which is unlikely, since these allocations
   // only occur at gRPC initialization time).
-  InlinedVector<std::unique_ptr<ResolverFactory>, 10> factories_;
+  absl::InlinedVector<std::unique_ptr<ResolverFactory>, 10> factories_;
   grpc_core::UniquePtr<char> default_prefix_;
 };
 

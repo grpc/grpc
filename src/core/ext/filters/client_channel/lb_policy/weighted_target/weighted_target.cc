@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
@@ -99,9 +100,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // ready state. The first element in the pair represents the end of a
     // range proportional to the child's weight. The start of the range
     // is the previous value in the vector and is 0 for the first element.
-    using PickerList =
-        InlinedVector<std::pair<uint32_t, RefCountedPtr<ChildPickerWrapper>>,
-                      1>;
+    using PickerList = absl::InlinedVector<
+        std::pair<uint32_t, RefCountedPtr<ChildPickerWrapper>>, 1>;
 
     explicit WeightedPicker(PickerList pickers)
         : pickers_(std::move(pickers)) {}

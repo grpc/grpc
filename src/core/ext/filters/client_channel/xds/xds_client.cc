@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
@@ -447,7 +448,7 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
       GRPC_ARG_KEEPALIVE_TIME_MS,
   };
   // Channel args to add.
-  InlinedVector<grpc_arg, 3> args_to_add;
+  absl::InlinedVector<grpc_arg, 3> args_to_add;
   // Keepalive interval.
   args_to_add.emplace_back(grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 5000));
