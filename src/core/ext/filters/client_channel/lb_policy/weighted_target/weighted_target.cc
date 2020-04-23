@@ -675,14 +675,15 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:weight error:must be of type number"));
     } else {
-      child_config->weight =
-          gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      if (child_config->weight == -1) {
+      int weight = gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      if (weight == -1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:weight error:unparseable value"));
-      } else if (child_config->weight == 0) {
+      } else if (weight == 0) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:weight error:value must be greater than zero"));
+      } else {
+        child_config->weight = weight;
       }
     }
     // Child policy.
