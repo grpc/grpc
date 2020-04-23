@@ -406,7 +406,7 @@ def insecure_channel(
 
     Args:
       target: The server address
-      options: An optional list of key-value pairs (channel args
+      options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel. This is an EXPERIMENTAL option.
@@ -430,7 +430,7 @@ def secure_channel(target: str,
     Args:
       target: The server address.
       credentials: A ChannelCredentials instance.
-      options: An optional list of key-value pairs (channel args
+      options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel. This is an EXPERIMENTAL option.
