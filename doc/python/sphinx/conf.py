@@ -58,7 +58,6 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.coverage',
     'sphinx.ext.autodoc.typehints',
-    'sphinx.ext.extlinks',
 ]
 
 napoleon_google_docstring = True
