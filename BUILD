@@ -619,37 +619,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "inlined_vector",
-    external_deps = [
-        "absl/container:inlined_vector",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/gprpp/inlined_vector.h",
-    ],
-    deps = [
-        "gpr_base",
-    ],
-)
-
-grpc_cc_library(
     name = "debug_location",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
-)
-
-grpc_cc_library(
-    name = "optional",
-    external_deps = [
-        "absl/types:optional",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/gprpp/optional.h",
-    ],
-    deps = [
-        "gpr_base",
-    ],
 )
 
 grpc_cc_library(
@@ -990,6 +962,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "madler_zlib",
+        "absl/container:inlined_vector",
+        "absl/types:optional",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -998,8 +972,6 @@ grpc_cc_library(
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
-        "inlined_vector",
-        "optional",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1107,6 +1079,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
     ],
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
     language = "c++",
     deps = [
         "gpr_base",
@@ -1114,7 +1089,6 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "grpc_health_upb",
-        "inlined_vector",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",

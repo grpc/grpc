@@ -34,8 +34,8 @@
 namespace grpc_core {
 
 namespace {
-typedef InlinedVector<std::unique_ptr<ServiceConfig::Parser>,
-                      ServiceConfig::kNumPreallocatedParsers>
+typedef absl::InlinedVector<std::unique_ptr<ServiceConfig::Parser>,
+                            ServiceConfig::kNumPreallocatedParsers>
     ServiceConfigParserList;
 ServiceConfigParserList* g_registered_parsers;
 }  // namespace
@@ -100,7 +100,7 @@ grpc_error* ServiceConfig::ParseGlobalParams() {
 grpc_error* ServiceConfig::ParseJsonMethodConfig(const Json& json) {
   // Parse method config with each registered parser.
   auto objs_vector = absl::make_unique<ParsedConfigVector>();
-  InlinedVector<grpc_error*, 4> error_list;
+  std::vector<grpc_error*> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
     grpc_error* parser_error = GRPC_ERROR_NONE;
     auto parsed_obj =

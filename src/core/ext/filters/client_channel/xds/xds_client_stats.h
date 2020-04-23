@@ -24,7 +24,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
