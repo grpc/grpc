@@ -189,9 +189,6 @@ cdef class _ServicerContext:
 
             raise self._rpc_state.abort_exception
 
-    async def abort_with_status(self, object status):
-        await self.abort(status.code, status.details, status.trailing_metadata)
-
     def set_trailing_metadata(self, tuple metadata):
         self._rpc_state.trailing_metadata = metadata
 
