@@ -305,8 +305,7 @@ class ChannelData {
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
   // Updates are queued here in the control plane work_serializer and then
   // applied in the data plane mutex when the picker is updated.
-  std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
-           RefCountedPtrLess<SubchannelWrapper>>
+  std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
       pending_subchannel_updates_;
 
   //
