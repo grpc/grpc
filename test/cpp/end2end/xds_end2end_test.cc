@@ -1805,7 +1805,16 @@ TEST_P(BasicTest, BackendsRestart) {
   WaitForAllBackends();
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  CheckRpcSendFailure();
+  // Sending multiple failed requests instead of just one to ensure that the
+  // client notices that all backends are down before we restart them. If we
+  // didn't do this, then a single RPC could fail here due to the race condition
+  // between the LB pick and the GOAWAY from the chosen backend being shut down,
+  // which would not actually prove that the client noticed that all of the
+  // backends are down. Then, when we send another request below (which we
+  // expect to succeed), if the callbacks happen in the wrong order, the same
+  // race condition could happen again due to the client not yet having noticed
+  // that the backends were all down.
+  CheckRpcSendFailure(num_backends_);
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(1, RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
