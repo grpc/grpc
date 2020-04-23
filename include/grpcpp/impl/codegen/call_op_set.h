@@ -421,17 +421,14 @@ Status CallOpSendMessage::SendMessagePtr(const M* message) {
 template <class R>
 class CallOpRecvMessage {
  public:
-  CallOpRecvMessage()
-      : got_message(false),
-        message_(nullptr),
-        allow_not_getting_message_(false) {}
+  CallOpRecvMessage() {}
 
   void RecvMessage(R* message) { message_ = message; }
 
   // Do not change status if no message is received.
   void AllowNoMessage() { allow_not_getting_message_ = true; }
 
-  bool got_message;
+  bool got_message = false;
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
@@ -444,7 +441,7 @@ class CallOpRecvMessage {
   }
 
   void FinishOp(bool* status) {
-    if (message_ == nullptr || hijacked_) return;
+    if (message_ == nullptr) return;
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = *status =
@@ -455,18 +452,20 @@ class CallOpRecvMessage {
         got_message = false;
         recv_buf_.Clear();
       }
-    } else {
-      got_message = false;
-      if (!allow_not_getting_message_) {
-        *status = false;
+    } else if (hijacked_) {
+      if (!hijacked_recv_message_status_) {
+        FinishOpRecvMessageFailureHandler(status);
       }
+    } else {
+      FinishOpRecvMessageFailureHandler(status);
     }
   }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (message_ == nullptr) return;
-    interceptor_methods->SetRecvMessage(message_, &got_message);
+    interceptor_methods->SetRecvMessage(message_,
+                                        &hijacked_recv_message_status_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -485,10 +484,19 @@ class CallOpRecvMessage {
   }
 
  private:
-  R* message_;
+  // Sets got_message and \a status for a failed recv message op
+  void FinishOpRecvMessageFailureHandler(bool* status) {
+    got_message = false;
+    if (!allow_not_getting_message_) {
+      *status = false;
+    }
+  }
+
+  R* message_ = nullptr;
   ByteBuffer recv_buf_;
-  bool allow_not_getting_message_;
+  bool allow_not_getting_message_ = false;
   bool hijacked_ = false;
+  bool hijacked_recv_message_status_ = true;
 };
 
 class DeserializeFunc {
@@ -513,8 +521,7 @@ class DeserializeFuncType final : public DeserializeFunc {
 
 class CallOpGenericRecvMessage {
  public:
-  CallOpGenericRecvMessage()
-      : got_message(false), allow_not_getting_message_(false) {}
+  CallOpGenericRecvMessage() {}
 
   template <class R>
   void RecvMessage(R* message) {
@@ -528,7 +535,7 @@ class CallOpGenericRecvMessage {
   // Do not change status if no message is received.
   void AllowNoMessage() { allow_not_getting_message_ = true; }
 
-  bool got_message;
+  bool got_message = false;
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
@@ -551,6 +558,10 @@ class CallOpGenericRecvMessage {
         got_message = false;
         recv_buf_.Clear();
       }
+    } else if (hijacked_) {
+      if (!hijacked_recv_message_status_) {
+        FinishOpRecvMessageFailureHandler(status);
+      }
     } else {
       got_message = false;
       if (!allow_not_getting_message_) {
@@ -562,7 +573,8 @@ class CallOpGenericRecvMessage {
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (!deserialize_) return;
-    interceptor_methods->SetRecvMessage(message_, &got_message);
+    interceptor_methods->SetRecvMessage(message_,
+                                        &hijacked_recv_message_status_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -582,11 +594,20 @@ class CallOpGenericRecvMessage {
   }
 
  private:
-  void* message_;
-  bool hijacked_ = false;
+  // Sets got_message and \a status for a failed recv message op
+  void FinishOpRecvMessageFailureHandler(bool* status) {
+    got_message = false;
+    if (!allow_not_getting_message_) {
+      *status = false;
+    }
+  }
+
+  void* message_ = nullptr;
   std::unique_ptr<DeserializeFunc> deserialize_;
   ByteBuffer recv_buf_;
-  bool allow_not_getting_message_;
+  bool allow_not_getting_message_ = false;
+  bool hijacked_ = false;
+  bool hijacked_recv_message_status_ = true;
 };
 
 class CallOpClientSendClose {
