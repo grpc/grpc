@@ -1808,11 +1808,10 @@ TEST_P(BasicTest, BackendsRestart) {
   WaitForAllBackends();
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  CheckRpcSendFailure();
+  CheckRpcSendFailure(num_backends_);
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
-  WaitForAllBackends();
-  CheckRpcSendOk();
+  CheckRpcSendOk(1, RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
 }
 
 using XdsResolverOnlyTest = BasicTest;
