@@ -3826,9 +3826,6 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
     EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
               backends_[i]->backend_service()->request_count());
   }
-  // The LRS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancers_[0]->lrs_service()->WaitForLoadReport();
@@ -3843,6 +3840,9 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(kNumFailuresPerAddress * num_backends_ + num_failure,
             client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
 }
 
 // Tests that we don't include stats for clusters that are not requested
@@ -3956,7 +3956,7 @@ class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
 TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 3000;
+  const size_t kNumRpcs = 5000;
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
