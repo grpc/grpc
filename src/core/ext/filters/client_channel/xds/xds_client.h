@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <set>
 
 #include "absl/types/optional.h"
@@ -27,7 +28,6 @@
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"

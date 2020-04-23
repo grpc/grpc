@@ -533,7 +533,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/host_port.cc )
   s.files += %w( src/core/lib/gprpp/host_port.h )
   s.files += %w( src/core/lib/gprpp/manual_constructor.h )
-  s.files += %w( src/core/lib/gprpp/map.h )
   s.files += %w( src/core/lib/gprpp/memory.h )
   s.files += %w( src/core/lib/gprpp/mpscq.cc )
   s.files += %w( src/core/lib/gprpp/mpscq.h )

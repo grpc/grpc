@@ -23,6 +23,7 @@
 
 #include <grpc/grpc.h>
 
+#include <map>
 #include <string>
 
 #include "absl/container/inlined_vector.h"
@@ -31,7 +32,6 @@
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
