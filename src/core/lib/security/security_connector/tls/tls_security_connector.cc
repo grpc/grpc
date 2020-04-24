@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -149,10 +150,10 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
                                   : gpr_strdup(overridden_target_name)) {
   key_materials_config_ = grpc_tls_key_materials_config_create()->Ref();
   check_arg_ = ServerAuthorizationCheckArgCreate(this);
-  grpc_core::StringView host;
-  grpc_core::StringView port;
+  absl::string_view host;
+  absl::string_view port;
   grpc_core::SplitHostPort(target_name, &host, &port);
-  target_name_ = grpc_core::StringViewToCString(host);
+  target_name_ = StringViewToCString(host);
 }
 
 TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
@@ -277,7 +278,7 @@ int TlsChannelSecurityConnector::cmp(
 }
 
 bool TlsChannelSecurityConnector::check_call_host(
-    grpc_core::StringView host, grpc_auth_context* auth_context,
+    absl::string_view host, grpc_auth_context* auth_context,
     grpc_closure* on_call_host_checked, grpc_error** error) {
   return grpc_ssl_check_call_host(host, target_name_.get(),
                                   overridden_target_name_.get(), auth_context,

@@ -20,7 +20,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
-#include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
 

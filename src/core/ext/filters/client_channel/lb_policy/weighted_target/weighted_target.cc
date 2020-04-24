@@ -148,7 +148,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       void UpdateState(grpc_connectivity_state state,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      void AddTraceEvent(TraceSeverity severity, StringView message) override;
+      void AddTraceEvent(TraceSeverity severity,
+                         absl::string_view message) override;
 
      private:
       RefCountedPtr<WeightedChild> weighted_child_;
@@ -589,7 +590,7 @@ void WeightedTargetLb::WeightedChild::Helper::RequestReresolution() {
 }
 
 void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
-    TraceSeverity severity, StringView message) {
+    TraceSeverity severity, absl::string_view message) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
   weighted_child_->weighted_target_policy_->channel_control_helper()
       ->AddTraceEvent(severity, message);

@@ -161,7 +161,8 @@ class XdsRoutingLb : public LoadBalancingPolicy {
       void UpdateState(grpc_connectivity_state state,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      void AddTraceEvent(TraceSeverity severity, StringView message) override;
+      void AddTraceEvent(TraceSeverity severity,
+                         absl::string_view message) override;
 
      private:
       RefCountedPtr<XdsRoutingChild> xds_routing_child_;
@@ -579,7 +580,7 @@ void XdsRoutingLb::XdsRoutingChild::Helper::RequestReresolution() {
 }
 
 void XdsRoutingLb::XdsRoutingChild::Helper::AddTraceEvent(
-    TraceSeverity severity, StringView message) {
+    TraceSeverity severity, absl::string_view message) {
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
   xds_routing_child_->xds_routing_policy_->channel_control_helper()
       ->AddTraceEvent(severity, message);

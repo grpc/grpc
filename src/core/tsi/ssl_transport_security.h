@@ -21,7 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/string_view.h"
+#include "absl/strings/string_view.h"
+
 #include "src/core/tsi/transport_security_interface.h"
 
 extern "C" {
@@ -317,7 +318,7 @@ void tsi_ssl_server_handshaker_factory_unref(
    - handle mixed case.
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
-int tsi_ssl_peer_matches_name(const tsi_peer* peer, grpc_core::StringView name);
+int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name);
 
 /* --- Testing support. ---
 

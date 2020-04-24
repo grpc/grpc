@@ -38,7 +38,8 @@ struct StringLess {
                   const grpc_core::UniquePtr<char>& b) const {
     return strcmp(a.get(), b.get()) < 0;
   }
-  bool operator()(const StringView& a, const StringView& b) const {
+  bool operator()(const absl::string_view& a,
+                  const absl::string_view& b) const {
     const size_t min_size = std::min(a.size(), b.size());
     int c = strncmp(a.data(), b.data(), min_size);
     if (c != 0) return c < 0;

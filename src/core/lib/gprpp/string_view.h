@@ -37,18 +37,10 @@
 
 namespace grpc_core {
 
-using StringView = absl::string_view;
-
-// Converts grpc_slice to StringView.
-inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
-  return absl::string_view(
-      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
-      GRPC_SLICE_LENGTH(slice));
-}
-
 // Creates a dup of the string viewed by this class.
 // Return value is null-terminated and never nullptr.
-inline grpc_core::UniquePtr<char> StringViewToCString(const StringView sv) {
+inline grpc_core::UniquePtr<char> StringViewToCString(
+    const absl::string_view sv) {
   char* str = static_cast<char*>(gpr_malloc(sv.size() + 1));
   if (sv.size() > 0) memcpy(str, sv.data(), sv.size());
   str[sv.size()] = '\0';

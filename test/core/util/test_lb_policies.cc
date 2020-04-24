@@ -161,7 +161,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       parent_->channel_control_helper()->RequestReresolution();
     }
 
-    void AddTraceEvent(TraceSeverity severity, StringView message) override {
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override {
       parent_->channel_control_helper()->AddTraceEvent(severity, message);
     }
 

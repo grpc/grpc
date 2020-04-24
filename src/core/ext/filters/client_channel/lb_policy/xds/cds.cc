@@ -79,7 +79,8 @@ class CdsLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity, StringView message) override;
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override;
 
    private:
     RefCountedPtr<CdsLb> parent_;
@@ -239,7 +240,8 @@ void CdsLb::Helper::RequestReresolution() {
   parent_->channel_control_helper()->RequestReresolution();
 }
 
-void CdsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
+void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                  absl::string_view message) {
   if (parent_->shutting_down_) return;
   parent_->channel_control_helper()->AddTraceEvent(severity, message);
 }
@@ -279,8 +281,7 @@ void CdsLb::ShutdownLocked() {
         gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
                 config_->cluster().c_str());
       }
-      xds_client_->CancelClusterDataWatch(
-          StringView(config_->cluster().c_str()), cluster_watcher_);
+      xds_client_->CancelClusterDataWatch(config_->cluster(), cluster_watcher_);
     }
     xds_client_.reset();
   }
@@ -309,9 +310,9 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
         gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
                 old_config->cluster().c_str());
       }
-      xds_client_->CancelClusterDataWatch(
-          StringView(old_config->cluster().c_str()), cluster_watcher_,
-          /*delay_unsubscription=*/true);
+      xds_client_->CancelClusterDataWatch(old_config->cluster(),
+                                          cluster_watcher_,
+                                          /*delay_unsubscription=*/true);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
@@ -319,8 +320,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
     }
     auto watcher = absl::make_unique<ClusterWatcher>(Ref());
     cluster_watcher_ = watcher.get();
-    xds_client_->WatchClusterData(StringView(config_->cluster().c_str()),
-                                  std::move(watcher));
+    xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
   }
 }
 
