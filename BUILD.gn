@@ -156,7 +156,6 @@ config("grpc_config") {
         "src/core/lib/gprpp/host_port.cc",
         "src/core/lib/gprpp/host_port.h",
         "src/core/lib/gprpp/manual_constructor.h",
-        "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/mpscq.h",
