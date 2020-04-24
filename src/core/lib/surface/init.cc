@@ -65,6 +65,8 @@ static int g_initializations;
 static gpr_cv* g_shutting_down_cv;
 static bool g_shutting_down;
 
+void grpc_maybe_wait_for_async_shutdown_locked(void);
+
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
   gpr_mu_init(&g_init_mu);

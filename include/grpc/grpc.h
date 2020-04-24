@@ -86,7 +86,10 @@ GRPCAPI void grpc_shutdown(void);
     https://github.com/grpc/grpc/issues/15334 */
 GRPCAPI int grpc_is_initialized(void);
 
-/** EXPERIMENTAL. Blocking shut down grpc library.
+/** EXPERIMENTAL. Blocking shut down grpc library. If the shutdown is the last
+    call, it will perform the clean-up and return; otherwise it will block until
+    the clean-up process is complete.
+
     This is only for wrapped language to use now. */
 GRPCAPI void grpc_shutdown_blocking(void);
 
