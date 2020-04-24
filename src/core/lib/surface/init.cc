@@ -225,10 +225,17 @@ void grpc_shutdown(void) {
 
 void grpc_shutdown_blocking(void) {
   GRPC_API_TRACE("grpc_shutdown_blocking(void)", 0, ());
-  grpc_core::MutexLock lock(&g_init_mu);
+  grpc_core::ReleasableMutexLock lock(&g_init_mu);
+  // it's ok to mark g_shutting_down at this time since the state only makes a
+  // difference in grpc_init when g_initializations is 0, at which time
+  // grpc_shutdown_internal_locked() must have already been called and hence
+  // g_shutting_down has been reset to false.
+  g_shutting_down = true;
   if (--g_initializations == 0) {
-    g_shutting_down = true;
     grpc_shutdown_internal_locked();
+  } else {
+    grpc_maybe_wait_for_async_shutdown_locked();
+    lock.Unlock();
   }
 }
 
@@ -240,11 +247,16 @@ int grpc_is_initialized(void) {
   return r;
 }
 
-void grpc_maybe_wait_for_async_shutdown(void) {
-  gpr_once_init(&g_basic_init, do_basic_init);
-  grpc_core::MutexLock lock(&g_init_mu);
+// Must be holding g_init_mu when calling this function.
+void grpc_maybe_wait_for_async_shutdown_locked(void) {
   while (g_shutting_down) {
     gpr_cv_wait(g_shutting_down_cv, &g_init_mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
   }
+}
+
+void grpc_maybe_wait_for_async_shutdown(void) {
+  gpr_once_init(&g_basic_init, do_basic_init);
+  grpc_core::MutexLock lock(&g_init_mu);
+  grpc_maybe_wait_for_async_shutdown_locked();
 }

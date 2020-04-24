@@ -20,6 +20,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include <thread>
+
 #include "src/core/lib/surface/init.h"
 #include "test/core/util/test_config.h"
 
@@ -38,12 +40,24 @@ static void test(int rounds) {
 
 static void test_blocking(int rounds) {
   int i;
+  // The actual shutdown happens in grpc_shutdown_blocking().
   for (i = 0; i < rounds; i++) {
     grpc_init();
   }
-  for (i = 0; i < rounds; i++) {
-    grpc_shutdown_blocking();
+  for (i = 0; i < rounds - 1; i++) {
+    grpc_shutdown();
   }
+  grpc_shutdown_blocking();
+
+  // The actual shutdown happens in grpc_shutdown().
+  for (i = 0; i < rounds; i++) {
+    grpc_init();
+  }
+  for (i = 0; i < rounds - 1; i++) {
+    std::thread shutdown_thread([](void) { grpc_shutdown(); });
+    shutdown_thread.detach();
+  }
+  grpc_shutdown_blocking();
 }
 
 static void test_mixed(void) {
