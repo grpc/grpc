@@ -199,6 +199,7 @@ _INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
 _WAIT_FOR_STATS_SEC = 180
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
+_CONNECTION_TIMEOUT_SEC = 60
 _GCP_API_RETRIES = 5
 _BOOTSTRAP_TEMPLATE = """
 {{
@@ -221,6 +222,10 @@ _BOOTSTRAP_TEMPLATE = """
     ]
   }}]
 }}""" % (args.network.split('/')[-1], args.zone, args.xds_server)
+_TESTS_TO_FAIL_ON_RPC_FAILURE = [
+    'change_backend_service', 'new_instance_group_receives_traffic',
+    'ping_pong', 'round_robin'
+]
 _TESTS_USING_SECONDARY_IG = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure'
@@ -249,15 +254,12 @@ def get_client_stats(num_rpcs, timeout_sec):
         request = messages_pb2.LoadBalancerStatsRequest()
         request.num_rpcs = num_rpcs
         request.timeout_sec = timeout_sec
-        rpc_timeout = timeout_sec * 2  # Allow time for connection establishment
-        try:
-            response = stub.GetClientStats(request,
-                                           wait_for_ready=True,
-                                           timeout=rpc_timeout)
-            logger.debug('Invoked GetClientStats RPC: %s', response)
-            return response
-        except grpc.RpcError as rpc_error:
-            logger.exception('GetClientStats RPC failed')
+        rpc_timeout = timeout_sec + _CONNECTION_TIMEOUT_SEC
+        response = stub.GetClientStats(request,
+                                       wait_for_ready=True,
+                                       timeout=rpc_timeout)
+        logger.debug('Invoked GetClientStats RPC: %s', response)
+        return response
 
 
 def _verify_rpcs_to_given_backends(backends, timeout_sec, num_rpcs,
@@ -1178,7 +1180,6 @@ try:
     wait_for_healthy_backends(gcp, backend_service, instance_group)
 
     if args.test_case:
-
         if gcp.service_port == _DEFAULT_SERVICE_PORT:
             server_uri = service_host_name
         else:
@@ -1192,10 +1193,6 @@ try:
                         node_id=socket.gethostname()).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
         client_env = dict(os.environ, GRPC_XDS_BOOTSTRAP=bootstrap_path)
-        client_cmd = shlex.split(
-            args.client_cmd.format(server_uri=server_uri,
-                                   stats_port=args.stats_port,
-                                   qps=args.qps))
 
         test_results = {}
         failed_tests = []
@@ -1207,6 +1204,15 @@ try:
             test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
             test_log_file = open(test_log_filename, 'w+')
             client_process = None
+            if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
+                fail_on_failed_rpc = '--fail_on_failed_rpc=true'
+            else:
+                fail_on_failed_rpc = '--fail_on_failed_rpc=false'
+            client_cmd = shlex.split(
+                args.client_cmd.format(server_uri=server_uri,
+                                       stats_port=args.stats_port,
+                                       qps=args.qps,
+                                       fail_on_failed_rpc=fail_on_failed_rpc))
             try:
                 client_process = subprocess.Popen(client_cmd,
                                                   env=client_env,
@@ -1242,6 +1248,10 @@ try:
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)
+                if client_process.poll() is not None:
+                    raise Exception(
+                        'Client process exited prematurely with exit code %d' %
+                        client_process.returncode)
                 result.state = 'PASSED'
                 result.returncode = 0
             except Exception as e:
@@ -1250,7 +1260,7 @@ try:
                 result.state = 'FAILED'
                 result.message = str(e)
             finally:
-                if client_process:
+                if client_process and not client_process.returncode:
                     client_process.terminate()
                 test_log_file.close()
                 # Workaround for Python 3, as report_utils will invoke decode() on
