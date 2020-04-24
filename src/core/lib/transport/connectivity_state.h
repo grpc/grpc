@@ -21,12 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
-
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

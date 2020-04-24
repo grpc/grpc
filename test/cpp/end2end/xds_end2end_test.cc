@@ -17,7 +17,6 @@
  */
 
 #include <deque>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <numeric>
@@ -48,6 +47,7 @@
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"

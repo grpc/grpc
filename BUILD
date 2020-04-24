@@ -551,6 +551,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/global_config_generic.h",
         "src/core/lib/gprpp/host_port.h",
         "src/core/lib/gprpp/manual_constructor.h",
+        "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/string_view.h",

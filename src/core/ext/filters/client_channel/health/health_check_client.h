@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 
@@ -46,7 +44,7 @@ namespace grpc_core {
 
 class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
  public:
-  HealthCheckClient(absl::string_view service_name,
+  HealthCheckClient(const char* service_name,
                     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
                     grpc_pollset_set* interested_parties,
                     RefCountedPtr<channelz::SubchannelNode> channelz_node,
@@ -152,7 +150,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   void SetHealthStatusLocked(grpc_connectivity_state state,
                              const char* reason);  // Requires holding mu_.
 
-  absl::string_view service_name_;
+  const char* service_name_;  // Do not own.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
