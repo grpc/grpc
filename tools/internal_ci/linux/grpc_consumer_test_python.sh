@@ -20,16 +20,20 @@ ROOT=$(pwd)
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-nighly_build_python_index=$(python3 tools/internal_ci/helper_scripts/fetch_python_nightyl_build_index.py)
+nighly_build_python_index=$(python3 tools/internal_ci/helper_scripts/fetch_python_nightly_build_index.py)
 
 python3 -m pip install -U nox virtualenv
 
 git clone https://github.com/googleapis/python-firestore
 cd python-firestore
-python3 -m nox --sessions unit-3.8
 
-source .nox/unit-3.8/bin/activate
-pip install -U --pre --extra-index-url=${nighly_build_python_index} grpcio
-deactivate
+# Run the unit tests and
+python3 -m nox --sessions unit
 
-python3 -m nox --reuse-existing-virtualenvs --sessions unit-3.8
+# Install nightly build gRPC Python
+for dir in .nox/*; do
+    ${dir}/bin/pip install --upgrade --force-reinstall --pre --extra-index-url=${nighly_build_python_index} grpcio
+done
+
+# Reuse the patched virtualenv to run the tests again
+python3 -m nox --reuse-existing-virtualenvs --sessions unit
