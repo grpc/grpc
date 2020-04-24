@@ -16,17 +16,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Contains the definitions for a metrics service and the type of metrics
-// exposed by the service.
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
 //
-// Currently, 'Gauge' (i.e a metric that represents the measured value of
-// something at an instant of time) is the only metric type supported by the
-// service.
 namespace Grpc\Testing;
 
 /**
+ * A service used to obtain stats for verifying LB behavior.
  */
-class MetricsServiceClient extends \Grpc\BaseStub {
+class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -38,31 +36,16 @@ class MetricsServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * Returns the values of all the gauges that are currently being maintained by
-     * the service
-     * @param \Grpc\Testing\EmptyMessage $argument input argument
+     * Gets the backend distribution for RPCs sent by a test client.
+     * @param \Grpc\Testing\LoadBalancerStatsRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function GetAllGauges(\Grpc\Testing\EmptyMessage $argument,
+    public function GetClientStats(\Grpc\Testing\LoadBalancerStatsRequest $argument,
       $metadata = [], $options = []) {
-        return $this->_serverStreamRequest('/grpc.testing.MetricsService/GetAllGauges',
+        return $this->_simpleRequest('/grpc.testing.LoadBalancerStatsService/GetClientStats',
         $argument,
-        ['\Grpc\Testing\GaugeResponse', 'decode'],
-        $metadata, $options);
-    }
-
-    /**
-     * Returns the value of one gauge
-     * @param \Grpc\Testing\GaugeRequest $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
-     */
-    public function GetGauge(\Grpc\Testing\GaugeRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.MetricsService/GetGauge',
-        $argument,
-        ['\Grpc\Testing\GaugeResponse', 'decode'],
+        ['\Grpc\Testing\LoadBalancerStatsResponse', 'decode'],
         $metadata, $options);
     }
 

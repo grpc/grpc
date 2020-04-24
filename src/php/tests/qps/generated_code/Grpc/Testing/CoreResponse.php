@@ -18,11 +18,21 @@ class CoreResponse extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>int32 cores = 1;</code>
      */
-    private $cores = 0;
+    protected $cores = 0;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type int $cores
+     *           Number of cores available on the server
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

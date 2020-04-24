@@ -16,11 +16,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-namespace Grpc\Testing;
+namespace Math;
 
 /**
  */
-class EchoTestServiceClient extends \Grpc\BaseStub {
+class MathClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -32,61 +32,59 @@ class EchoTestServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * @param \Grpc\Testing\EchoRequest $argument input argument
+     * Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+     * and remainder.
+     * @param \Math\DivArgs $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function Echo(\Grpc\Testing\EchoRequest $argument,
+    public function Div(\Math\DivArgs $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.EchoTestService/Echo',
+        return $this->_simpleRequest('/math.Math/Div',
         $argument,
-        ['\Grpc\Testing\EchoResponse', 'decode'],
+        ['\Math\DivReply', 'decode'],
         $metadata, $options);
     }
 
     /**
+     * DivMany accepts an arbitrary number of division args from the client stream
+     * and sends back the results in the reply stream.  The stream continues until
+     * the client closes its end; the server does the same after sending all the
+     * replies.  The stream ends immediately if either end aborts.
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function RequestStream($metadata = [], $options = []) {
-        return $this->_clientStreamRequest('/grpc.testing.EchoTestService/RequestStream',
-        ['\Grpc\Testing\EchoResponse','decode'],
+    public function DivMany($metadata = [], $options = []) {
+        return $this->_bidiRequest('/math.Math/DivMany',
+        ['\Math\DivReply','decode'],
         $metadata, $options);
     }
 
     /**
-     * @param \Grpc\Testing\EchoRequest $argument input argument
+     * Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
+     * generates up to limit numbers; otherwise it continues until the call is
+     * canceled.  Unlike Fib above, Fib has no final FibReply.
+     * @param \Math\FibArgs $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function ResponseStream(\Grpc\Testing\EchoRequest $argument,
+    public function Fib(\Math\FibArgs $argument,
       $metadata = [], $options = []) {
-        return $this->_serverStreamRequest('/grpc.testing.EchoTestService/ResponseStream',
+        return $this->_serverStreamRequest('/math.Math/Fib',
         $argument,
-        ['\Grpc\Testing\EchoResponse', 'decode'],
+        ['\Math\Num', 'decode'],
         $metadata, $options);
     }
 
     /**
+     * Sum sums a stream of numbers, returning the final result once the stream
+     * is closed.
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function BidiStream($metadata = [], $options = []) {
-        return $this->_bidiRequest('/grpc.testing.EchoTestService/BidiStream',
-        ['\Grpc\Testing\EchoResponse','decode'],
-        $metadata, $options);
-    }
-
-    /**
-     * @param \Grpc\Testing\EchoRequest $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
-     */
-    public function Unimplemented(\Grpc\Testing\EchoRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.EchoTestService/Unimplemented',
-        $argument,
-        ['\Grpc\Testing\EchoResponse', 'decode'],
+    public function Sum($metadata = [], $options = []) {
+        return $this->_clientStreamRequest('/math.Math/Sum',
+        ['\Math\Num','decode'],
         $metadata, $options);
     }
 

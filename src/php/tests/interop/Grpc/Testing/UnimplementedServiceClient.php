@@ -2,7 +2,7 @@
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
-// Copyright 2015 gRPC authors.
+// Copyright 2015-2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
+//
 namespace Grpc\Testing;
 
 /**
+ * A simple service NOT implemented at servers so clients can test for
+ * that case.
  */
-class UnimplementedEchoServiceClient extends \Grpc\BaseStub {
+class UnimplementedServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -32,15 +37,16 @@ class UnimplementedEchoServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * @param \Grpc\Testing\EchoRequest $argument input argument
+     * A call that no server should implement
+     * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function Unimplemented(\Grpc\Testing\EchoRequest $argument,
+    public function UnimplementedCall(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.UnimplementedEchoService/Unimplemented',
+        return $this->_simpleRequest('/grpc.testing.UnimplementedService/UnimplementedCall',
         $argument,
-        ['\Grpc\Testing\EchoResponse', 'decode'],
+        ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 

@@ -16,14 +16,22 @@ use Google\Protobuf\Internal\GPBUtil;
  *     rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
  *   };
  *
- * Generated from protobuf message <code>grpc.testing.Empty</code>
+ * Generated from protobuf message <code>grpc.testing.EmptyMessage</code>
  */
-class PBEmpty extends \Google\Protobuf\Internal\Message
+class EmptyMessage extends \Google\Protobuf\Internal\Message
 {
 
-    public function __construct() {
-        \GPBMetadata\Src\Proto\Grpc\Testing\GPBEmpty::initOnce();
-        parent::__construct();
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     * }
+     */
+    public function __construct($data = NULL) {
+        \GPBMetadata\Src\Proto\Grpc\Testing\PBEmpty::initOnce();
+        parent::__construct($data);
     }
 
 }

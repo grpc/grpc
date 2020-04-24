@@ -38,15 +38,15 @@ class UnimplementedServiceClient extends \Grpc\BaseStub {
 
     /**
      * A call that no server should implement
-     * @param \Grpc\Testing\PBEmpty $argument input argument
+     * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function UnimplementedCall(\Grpc\Testing\PBEmpty $argument,
+    public function UnimplementedCall(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.UnimplementedService/UnimplementedCall',
         $argument,
-        ['\Grpc\Testing\PBEmpty', 'decode'],
+        ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 

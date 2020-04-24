@@ -275,12 +275,8 @@ $ composer install
 
 ### Client Stub
 
-Generate client stub classes from `.proto` files
-
-```sh
-$ cd grpc/src/php
-$ ./bin/generate_proto_php.sh
-```
+The generate client stub classes have already been generated from `.proto` files
+by the `./bin/generate_proto_php.sh` script.
 
 ### Run test server
 

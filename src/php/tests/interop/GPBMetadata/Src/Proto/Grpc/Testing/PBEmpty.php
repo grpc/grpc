@@ -4,7 +4,7 @@
 
 namespace GPBMetadata\Src\Proto\Grpc\Testing;
 
-class GPBEmpty
+class PBEmpty
 {
     public static $is_initialized = false;
 
@@ -15,10 +15,10 @@ class GPBEmpty
           return;
         }
         $pool->internalAddGeneratedFile(hex2bin(
-            "0a430a227372632f70726f746f2f677270632f74657374696e672f656d70" .
-            "74792e70726f746f120c677270632e74657374696e6722070a05456d7074" .
-            "79620670726f746f33"
-        ));
+            "0a4a0a227372632f70726f746f2f677270632f74657374696e672f656d70" .
+            "74792e70726f746f120c677270632e74657374696e67220e0a0c456d7074" .
+            "794d657373616765620670726f746f33"
+        ), true);
 
         static::$is_initialized = true;
     }
