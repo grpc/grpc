@@ -44,7 +44,7 @@ TraceFlag grpc_health_check_client_trace(false, "health_check_client");
 //
 
 HealthCheckClient::HealthCheckClient(
-    absl::string_view service_name,
+    const char* service_name,
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
     grpc_pollset_set* interested_parties,
     RefCountedPtr<channelz::SubchannelNode> channelz_node,
@@ -171,14 +171,13 @@ void HealthCheckClient::OnRetryTimer(void* arg, grpc_error* error) {
 
 namespace {
 
-void EncodeRequest(absl::string_view service_name,
+void EncodeRequest(const char* service_name,
                    ManualConstructor<SliceBufferByteStream>* send_message) {
   upb::Arena arena;
   grpc_health_v1_HealthCheckRequest* request_struct =
       grpc_health_v1_HealthCheckRequest_new(arena.ptr());
   grpc_health_v1_HealthCheckRequest_set_service(
-      request_struct,
-      upb_strview_make(service_name.data(), service_name.size()));
+      request_struct, upb_strview_makez(service_name));
   size_t buf_length;
   char* buf = grpc_health_v1_HealthCheckRequest_serialize(
       request_struct, arena.ptr(), &buf_length);

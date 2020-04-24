@@ -21,14 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
-
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 

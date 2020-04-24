@@ -27,6 +27,7 @@
 
 #include <grpc/impl/codegen/slice.h>
 
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"

@@ -284,13 +284,13 @@ grpc_error* ParseRetryThrottling(
   return GRPC_ERROR_CREATE_FROM_VECTOR("retryPolicy", &error_list);
 }
 
-std::string ParseHealthCheckConfig(const Json& field, grpc_error** error) {
+const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-  std::string service_name;
+  const char* service_name = nullptr;
   if (field.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:healthCheckConfig error:should be of type object");
-    return service_name;
+    return nullptr;
   }
   std::vector<grpc_error*> error_list;
   auto it = field.object_value().find("serviceName");
@@ -299,8 +299,11 @@ std::string ParseHealthCheckConfig(const Json& field, grpc_error** error) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:serviceName error:should be of type string"));
     } else {
-      service_name = it->second.string_value();
+      service_name = it->second.string_value().c_str();
     }
+  }
+  if (!error_list.empty()) {
+    return nullptr;
   }
   *error =
       GRPC_ERROR_CREATE_FROM_VECTOR("field:healthCheckConfig", &error_list);
@@ -318,7 +321,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   std::string lb_policy_name;
   absl::optional<ClientChannelGlobalParsedConfig::RetryThrottling>
       retry_throttling;
-  std::string health_check_service_name;
+  const char* health_check_service_name = nullptr;
   // Parse LB config.
   auto it = json.object_value().find("loadBalancingConfig");
   if (it != json.object_value().end()) {
@@ -385,7 +388,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   if (*error == GRPC_ERROR_NONE) {
     return absl::make_unique<ClientChannelGlobalParsedConfig>(
         std::move(parsed_lb_config), std::move(lb_policy_name),
-        retry_throttling, std::move(health_check_service_name));
+        retry_throttling, health_check_service_name);
   }
   return nullptr;
 }

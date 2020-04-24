@@ -23,8 +23,6 @@
 
 #include <deque>
 
-#include "absl/strings/string_view.h"
-
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -32,6 +30,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -252,7 +251,7 @@ class Subchannel {
   // service name.
   // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
   grpc_connectivity_state CheckConnectivityState(
-      absl::string_view health_check_service_name,
+      const char* health_check_service_name,
       RefCountedPtr<ConnectedSubchannel>* connected_subchannel);
 
   // Starts watching the subchannel's connectivity state.
@@ -265,12 +264,12 @@ class Subchannel {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      absl::string_view health_check_service_name,
+      grpc_core::UniquePtr<char> health_check_service_name,
       RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
-  void CancelConnectivityStateWatch(absl::string_view health_check_service_name,
+  void CancelConnectivityStateWatch(const char* health_check_service_name,
                                     ConnectivityStateWatcherInterface* watcher);
 
   // Attempt to connect to the backend.  Has no effect if already connected.
@@ -334,24 +333,23 @@ class Subchannel {
    public:
     void AddWatcherLocked(
         Subchannel* subchannel, grpc_connectivity_state initial_state,
-        absl::string_view health_check_service_name,
+        grpc_core::UniquePtr<char> health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
-    void RemoveWatcherLocked(absl::string_view health_check_service_name,
+    void RemoveWatcherLocked(const char* health_check_service_name,
                              ConnectivityStateWatcherInterface* watcher);
 
     // Notifies the watcher when the subchannel's state changes.
     void NotifyLocked(grpc_connectivity_state state);
 
     grpc_connectivity_state CheckConnectivityStateLocked(
-        Subchannel* subchannel, absl::string_view health_check_service_name);
+        Subchannel* subchannel, const char* health_check_service_name);
 
     void ShutdownLocked();
 
    private:
     class HealthWatcher;
 
-    // Key points to the health_check_service_name_ field in the value object.
-    std::map<absl::string_view, OrphanablePtr<HealthWatcher>> map_;
+    std::map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
   };
 
   class ConnectedSubchannelStateWatcher;
