@@ -109,7 +109,6 @@ def py_proto_library(
         name = codegen_target,
         deps = deps,
         plugin = plugin,
-        **kwargs
     )
 
     native.py_library(
@@ -242,7 +241,6 @@ def py_grpc_library(
         deps = srcs,
         strip_prefixes = strip_prefixes,
         plugin = plugin,
-        **kwargs
     )
 
     native.py_library(
