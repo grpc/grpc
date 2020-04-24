@@ -274,18 +274,15 @@ struct registered_method {
       const char* method_arg, const char* host_arg,
       grpc_server_register_method_payload_handling payload_handling_arg,
       uint32_t flags_arg)
-      : method(gpr_strdup(method_arg)),
-        host(gpr_strdup(host_arg)),
+      : method(method_arg == nullptr ? "" : method_arg),
+        host(host_arg == nullptr ? "" : host_arg),
         payload_handling(payload_handling_arg),
         flags(flags_arg) {}
 
-  ~registered_method() {
-    gpr_free(method);
-    gpr_free(host);
-  }
+  ~registered_method() = default;
 
-  char* const method;
-  char* const host;
+  const std::string method;
+  const std::string host;
   const grpc_server_register_method_payload_handling payload_handling;
   const uint32_t flags;
   /* one request matcher per method */
@@ -1183,11 +1180,9 @@ void register_completion_queue(grpc_server* server, grpc_completion_queue* cq,
   server->cqs[n] = cq;
 }
 
-int streq(const char* a, const char* b) {
-  if (a == nullptr && b == nullptr) return 1;
-  if (a == nullptr) return 0;
-  if (b == nullptr) return 0;
-  return 0 == strcmp(a, b);
+bool streq(const std::string& a, const char* b) {
+  return (a.empty() && b == nullptr) ||
+         ((b != nullptr) && !strcmp(a.c_str(), b));
 }
 
 class ConnectivityWatcher
@@ -1491,10 +1486,10 @@ void grpc_server_setup_transport(
         static_cast<channel_registered_method*>(gpr_zalloc(alloc));
     for (rm = s->registered_methods; rm; rm = rm->next) {
       grpc_core::ExternallyManagedSlice host;
-      grpc_core::ExternallyManagedSlice method(rm->method);
-      const bool has_host = rm->host != nullptr;
+      grpc_core::ExternallyManagedSlice method(rm->method.c_str());
+      const bool has_host = !rm->host.empty();
       if (has_host) {
-        host = grpc_core::ExternallyManagedSlice(rm->host);
+        host = grpc_core::ExternallyManagedSlice(rm->host.c_str());
       }
       hash = GRPC_MDSTR_KV_HASH(has_host ? host.Hash() : 0, method.Hash());
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]

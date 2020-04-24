@@ -26,6 +26,8 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <ares.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -200,7 +202,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     }
     ServerAddressList& addresses = **address_list_ptr;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
-      grpc_core::InlinedVector<grpc_arg, 1> args_to_add;
+      absl::InlinedVector<grpc_arg, 1> args_to_add;
       if (hr->is_balancer) {
         args_to_add.emplace_back(
             grpc_core::CreateGrpclbBalancerNameArg(hr->host));

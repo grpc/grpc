@@ -18,9 +18,18 @@ class Histogram extends \Google\Protobuf\Internal\Message
      */
     private $buckets;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type \Grpc\Core\Bucket[]|\Google\Protobuf\Internal\RepeatedField $buckets
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Core\Stats::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

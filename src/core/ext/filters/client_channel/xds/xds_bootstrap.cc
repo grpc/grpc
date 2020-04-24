@@ -18,6 +18,8 @@
 
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 
+#include <vector>
+
 #include <errno.h>
 #include <stdlib.h>
 
@@ -128,7 +130,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
         "malformed JSON in bootstrap file");
     return;
   }
-  InlinedVector<grpc_error*, 1> error_list;
+  std::vector<grpc_error*> error_list;
   auto it = json.mutable_object()->find("xds_servers");
   if (it == json.mutable_object()->end()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -155,7 +157,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
 }
 
 grpc_error* XdsBootstrap::ParseXdsServerList(Json* json) {
-  InlinedVector<grpc_error*, 1> error_list;
+  std::vector<grpc_error*> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
@@ -173,7 +175,7 @@ grpc_error* XdsBootstrap::ParseXdsServerList(Json* json) {
 }
 
 grpc_error* XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
-  InlinedVector<grpc_error*, 1> error_list;
+  std::vector<grpc_error*> error_list;
   servers_.emplace_back();
   XdsServer& server = servers_[servers_.size() - 1];
   auto it = json->mutable_object()->find("server_uri");
@@ -211,7 +213,7 @@ grpc_error* XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
 
 grpc_error* XdsBootstrap::ParseChannelCredsArray(Json* json,
                                                  XdsServer* server) {
-  InlinedVector<grpc_error*, 1> error_list;
+  std::vector<grpc_error*> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
@@ -230,7 +232,7 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(Json* json,
 
 grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
                                             XdsServer* server) {
-  InlinedVector<grpc_error*, 1> error_list;
+  std::vector<grpc_error*> error_list;
   ChannelCreds channel_creds;
   auto it = json->mutable_object()->find("type");
   if (it == json->mutable_object()->end()) {
@@ -268,7 +270,7 @@ grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
 }
 
 grpc_error* XdsBootstrap::ParseNode(Json* json) {
-  InlinedVector<grpc_error*, 1> error_list;
+  std::vector<grpc_error*> error_list;
   node_ = absl::make_unique<Node>();
   auto it = json->mutable_object()->find("id");
   if (it != json->mutable_object()->end()) {
@@ -312,7 +314,7 @@ grpc_error* XdsBootstrap::ParseNode(Json* json) {
 }
 
 grpc_error* XdsBootstrap::ParseLocality(Json* json) {
-  InlinedVector<grpc_error*, 1> error_list;
+  std::vector<grpc_error*> error_list;
   auto it = json->mutable_object()->find("region");
   if (it != json->mutable_object()->end()) {
     if (it->second.type() != Json::Type::STRING) {

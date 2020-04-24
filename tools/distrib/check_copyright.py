@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import argparse
 import datetime
 import os
@@ -129,9 +130,9 @@ assert (re.search(RE_LICENSE['Makefile'], load('Makefile')))
 def log(cond, why, filename):
     if not cond: return
     if args.output == 'details':
-        print '%s: %s' % (why, filename)
+        print('%s: %s' % (why, filename))
     else:
-        print filename
+        print(filename)
 
 
 # scan files, validate the text

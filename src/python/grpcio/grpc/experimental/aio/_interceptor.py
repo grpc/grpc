@@ -73,8 +73,8 @@ class ClientCallDetails(
         metadata: Optional metadata to be transmitted to the service-side of
           the RPC.
         credentials: An optional CallCredentials for the RPC.
-        wait_for_ready: This is an EXPERIMENTAL argument. An optional flag to
-          enable wait for ready mechanism.
+        wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable :term:`wait_for_ready` mechanism.
     """
 
     method: str

@@ -4,7 +4,7 @@ package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "grpc_status",
-    srcs = glob(["*.py"]),
+    srcs = ["rpc_status.py"],
     imports = ["../"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",

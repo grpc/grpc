@@ -4,7 +4,6 @@
   "interop.local_interop_test.InsecureLocalInteropTest",
   "interop.local_interop_test.SecureLocalInteropTest",
   "reflection.reflection_servicer_test.ReflectionServicerTest",
-  "status.grpc_status_test.StatusTest",
   "unit._metadata_test.TestTypeMetadata",
   "unit.abort_test.TestAbort",
   "unit.aio_rpc_error_test.TestAioRpcError",

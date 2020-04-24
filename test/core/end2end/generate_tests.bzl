@@ -64,7 +64,6 @@ END2END_FIXTURES = {
         fullstack = False,
         client_channel = False,
         _platforms = ["linux", "mac", "posix"],
-        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_full": _fixture_options(),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
@@ -96,7 +95,6 @@ END2END_FIXTURES = {
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
-        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
@@ -104,7 +102,6 @@ END2END_FIXTURES = {
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
-        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "inproc": _fixture_options(
         secure = True,
@@ -133,7 +130,6 @@ END2END_NOSEC_FIXTURES = {
         secure = False,
         _platforms = ["linux", "mac", "posix"],
         supports_msvc = False,
-        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
     "h2_full": _fixture_options(secure = False),
     "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
@@ -168,7 +164,6 @@ END2END_NOSEC_FIXTURES = {
         _platforms = ["linux", "mac", "posix"],
         secure = False,
         supports_msvc = False,
-        flaky_tests = ["resource_quota_server"],  # TODO(b/151212019)
     ),
 }
 
@@ -184,7 +179,8 @@ def _test_options(
         needs_proxy_auth = False,
         needs_write_buffering = False,
         needs_client_channel = False,
-        short_name = None):
+        short_name = None,
+        exclude_pollers = []):
     return struct(
         needs_fullstack = needs_fullstack,
         needs_dns = needs_dns,
@@ -198,6 +194,7 @@ def _test_options(
         needs_write_buffering = needs_write_buffering,
         needs_client_channel = needs_client_channel,
         short_name = short_name,
+        exclude_pollers = exclude_pollers,
     )
 
 # maps test names to options
@@ -205,7 +202,11 @@ END2END_TESTS = {
     "bad_hostname": _test_options(needs_names = True),
     "bad_ping": _test_options(needs_fullstack = True, proxyable = False),
     "binary_metadata": _test_options(),
-    "resource_quota_server": _test_options(proxyable = False),
+    "resource_quota_server": _test_options(
+        proxyable = False,
+        # TODO(b/151212019): Test case known to be flaky under epoll1.
+        exclude_pollers = ["epoll1"],
+    ),
     "call_creds": _test_options(secure = True),
     "call_host_override": _test_options(
         needs_fullstack = True,
@@ -466,6 +467,8 @@ def grpc_end2end_tests():
             )
 
             for poller in POLLERS:
+                if poller in topt.exclude_pollers:
+                    continue
                 native.sh_test(
                     name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_test" % f],
@@ -542,6 +545,8 @@ def grpc_end2end_nosec_tests():
             )
 
             for poller in POLLERS:
+                if poller in topt.exclude_pollers:
+                    continue
                 native.sh_test(
                     name = "%s_nosec_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_nosec_test" % f],

@@ -399,8 +399,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   ssl_pair->cert_chain = gpr_strdup(test_cert_chain.c_str());
   ::grpc_core::PemKeyCertPair pem_key_cert_pair =
       ::grpc_core::PemKeyCertPair(ssl_pair);
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
-      pem_key_cert_pair_list;
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1> pem_key_cert_pair_list;
   pem_key_cert_pair_list.push_back(pem_key_cert_pair);
   grpc::string test_pem_root_certs = "pem_root_certs";
   c_key_materials.set_key_materials(test_pem_root_certs.c_str(),
@@ -417,7 +416,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   EXPECT_EQ(c_arg.cb_user_data, nullptr);
   EXPECT_STREQ(c_arg.key_materials_config->pem_root_certs(),
                "new_pem_root_certs");
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> pair_list =
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1> pair_list =
       c_arg.key_materials_config->pem_key_cert_pair_list();
   EXPECT_EQ(static_cast<int>(pair_list.size()), 2);
   EXPECT_STREQ(pair_list[0].private_key(), "private_key");
@@ -625,7 +624,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_EQ(c_credential_reload_arg.cb_user_data, nullptr);
   EXPECT_STREQ(c_credential_reload_arg.key_materials_config->pem_root_certs(),
                "new_pem_root_certs");
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> c_pair_list =
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1> c_pair_list =
       c_credential_reload_arg.key_materials_config->pem_key_cert_pair_list();
   EXPECT_EQ(static_cast<int>(c_pair_list.size()), 2);
   EXPECT_STREQ(c_pair_list[0].private_key(), "private_key");

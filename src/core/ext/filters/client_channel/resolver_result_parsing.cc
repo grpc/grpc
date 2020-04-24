@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/types/optional.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -35,7 +37,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
@@ -283,13 +284,13 @@ grpc_error* ParseRetryThrottling(
   return GRPC_ERROR_CREATE_FROM_VECTOR("retryPolicy", &error_list);
 }
 
-const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
+std::string ParseHealthCheckConfig(const Json& field, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-  const char* service_name = nullptr;
+  std::string service_name;
   if (field.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:healthCheckConfig error:should be of type object");
-    return nullptr;
+    return service_name;
   }
   std::vector<grpc_error*> error_list;
   auto it = field.object_value().find("serviceName");
@@ -298,11 +299,8 @@ const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:serviceName error:should be of type string"));
     } else {
-      service_name = it->second.string_value().c_str();
+      service_name = it->second.string_value();
     }
-  }
-  if (!error_list.empty()) {
-    return nullptr;
   }
   *error =
       GRPC_ERROR_CREATE_FROM_VECTOR("field:healthCheckConfig", &error_list);
@@ -318,8 +316,9 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   std::vector<grpc_error*> error_list;
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   std::string lb_policy_name;
-  Optional<ClientChannelGlobalParsedConfig::RetryThrottling> retry_throttling;
-  const char* health_check_service_name = nullptr;
+  absl::optional<ClientChannelGlobalParsedConfig::RetryThrottling>
+      retry_throttling;
+  std::string health_check_service_name;
   // Parse LB config.
   auto it = json.object_value().find("loadBalancingConfig");
   if (it != json.object_value().end()) {
@@ -386,7 +385,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   if (*error == GRPC_ERROR_NONE) {
     return absl::make_unique<ClientChannelGlobalParsedConfig>(
         std::move(parsed_lb_config), std::move(lb_policy_name),
-        retry_throttling, health_check_service_name);
+        retry_throttling, std::move(health_check_service_name));
   }
   return nullptr;
 }
@@ -396,7 +395,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const Json& json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
-  Optional<bool> wait_for_ready;
+  absl::optional<bool> wait_for_ready;
   grpc_millis timeout = 0;
   std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> retry_policy;
   // Parse waitForReady.
