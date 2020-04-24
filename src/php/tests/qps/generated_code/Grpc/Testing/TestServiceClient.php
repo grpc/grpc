@@ -41,6 +41,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\EmptyMessage
      */
     public function EmptyCall(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
@@ -55,6 +56,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\SimpleRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\SimpleResponse
      */
     public function UnaryCall(\Grpc\Testing\SimpleRequest $argument,
       $metadata = [], $options = []) {
@@ -71,6 +73,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\SimpleRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\SimpleResponse
      */
     public function CacheableUnaryCall(\Grpc\Testing\SimpleRequest $argument,
       $metadata = [], $options = []) {
@@ -86,6 +89,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\StreamingOutputCallRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\StreamingOutputCallResponse
      */
     public function StreamingOutputCall(\Grpc\Testing\StreamingOutputCallRequest $argument,
       $metadata = [], $options = []) {
@@ -100,6 +104,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * The server returns the aggregated size of client payload as the result.
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\StreamingInputCallResponse
      */
     public function StreamingInputCall($metadata = [], $options = []) {
         return $this->_clientStreamRequest('/grpc.testing.TestService/StreamingInputCall',
@@ -113,6 +118,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * demonstrates the idea of full duplexing.
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\StreamingOutputCallResponse
      */
     public function FullDuplexCall($metadata = [], $options = []) {
         return $this->_bidiRequest('/grpc.testing.TestService/FullDuplexCall',
@@ -127,6 +133,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * first request.
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\StreamingOutputCallResponse
      */
     public function HalfDuplexCall($metadata = [], $options = []) {
         return $this->_bidiRequest('/grpc.testing.TestService/HalfDuplexCall',
@@ -140,6 +147,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\EmptyMessage
      */
     public function UnimplementedCall(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {

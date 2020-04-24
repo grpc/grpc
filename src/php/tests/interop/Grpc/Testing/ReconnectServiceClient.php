@@ -39,6 +39,7 @@ class ReconnectServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\ReconnectParams $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\EmptyMessage
      */
     public function Start(\Grpc\Testing\ReconnectParams $argument,
       $metadata = [], $options = []) {
@@ -52,6 +53,7 @@ class ReconnectServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\ReconnectInfo
      */
     public function Stop(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
