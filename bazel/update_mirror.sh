@@ -1,8 +1,23 @@
 #!/bin/bash
+# Copyright 2020 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Script to upload github archives for bazel dependencies to GCS, creating a reliable mirror link.
 # Archives are copied to "grpc-bazel-mirror" GCS bucket (https://console.cloud.google.com/storage/browser/grpc-bazel-mirror?project=grpc-testing)
 # and will by downloadable with the https://storage.googleapis.com/grpc-bazel-mirror/ prefix.
+#
+# This script should be run each time bazel dependencies are updated.
 
 set -e
 
