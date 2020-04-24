@@ -57,7 +57,7 @@ to be overridden, but this functionality is strongly discouraged.
 gRPC does not go out of its way to break users that are using this kind
 of override, but we do not actively support it, and some functionality
 (e.g., service config support) will not work when the path is not of
-the form shown above.
+the form shown above. Also note that path is case-sensitive.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
