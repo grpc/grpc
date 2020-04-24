@@ -206,9 +206,8 @@ void postfork_child() {
   grpc_init();
   grpc_php_init_completion_queue(TSRMLS_C);
 
-  // re-create grpc_channel and point wrapped to it
-  // unlock wrapped grpc channel mutex
-  restart_channels();
+  // clean all channels in the persistent list
+  php_grpc_clean_persistent_list(TSRMLS_C);
 }
 
 void postfork_parent() {
