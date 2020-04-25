@@ -65,6 +65,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     if (!FLAGS_tls_cert_file.empty()) {
       custom_server_cert_ = ReadFile(FLAGS_tls_cert_file);
     }
+    test_root_cert_ = ReadFile(CA_CERT_PATH);
+    server_key_ = ReadFile(SERVER_KEY_PATH);
+    server_cert_ = ReadFile(SERVER_CERT_PATH);
   }
   ~DefaultCredentialsProvider() override {}
 
@@ -93,17 +96,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       grpc::experimental::AltsCredentialsOptions alts_opts;
       return grpc::experimental::AltsCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
-      grpc_slice ca_slice;
-      GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                   grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-      const char* test_root_cert =
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-      SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
+      SslCredentialsOptions ssl_opts = {test_root_cert_, "", ""};
       args->SetSslTargetNameOverride("foo.test.google.fr");
-      std::shared_ptr<grpc::ChannelCredentials> credential_ptr =
-          grpc::SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
-      grpc_slice_unref(ca_slice);
-      return credential_ptr;
+      return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
       return grpc::GoogleDefaultCredentials();
     } else {
@@ -133,26 +128,12 @@ class DefaultCredentialsProvider : public CredentialsProvider {
         SslServerCredentialsOptions::PemKeyCertPair pkcp = {
             custom_server_key_, custom_server_cert_};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-        return SslServerCredentials(ssl_opts);
       } else {
-        grpc_slice cert_slice, key_slice;
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-        const char* server_cert =
-            reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-        const char* server_key =
-            reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-        SslServerCredentialsOptions::PemKeyCertPair pkcp = {server_key,
-                                                            server_cert};
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {server_key_,
+                                                            server_cert_};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-        std::shared_ptr<ServerCredentials> credential_ptr =
-            SslServerCredentials(ssl_opts);
-        grpc_slice_unref(cert_slice);
-        grpc_slice_unref(key_slice);
-        return credential_ptr;
       }
+      return SslServerCredentials(ssl_opts);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
@@ -183,6 +164,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       added_secure_type_providers_;
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
+  grpc::string test_root_cert_;
+  grpc::string server_key_;
+  grpc::string server_cert_;
 };
 
 CredentialsProvider* g_provider = nullptr;

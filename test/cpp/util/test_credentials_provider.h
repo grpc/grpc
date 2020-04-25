@@ -19,10 +19,6 @@
 #ifndef GRPC_TEST_CPP_UTIL_TEST_CREDENTIALS_PROVIDER_H
 #define GRPC_TEST_CPP_UTIL_TEST_CREDENTIALS_PROVIDER_H
 
-extern const char test_root_cert[];
-extern const char server_cert[];
-extern const char server_key[];
-
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/support/channel_arguments.h>
