@@ -53,7 +53,7 @@ def _generate_py_impl(context):
 
     imports = []
     if out_dir.import_path:
-        imports.append("__main__/%s" % out_dir.import_path)
+        imports.append("%s/%s/%s" % (context.workspace_name, context.label.package, out_dir.import_path))
 
     return [
         DefaultInfo(files = depset(direct = out_files)),
@@ -166,6 +166,8 @@ def _generate_pb2_grpc_src_impl(context):
 
     imports = []
     if out_dir.import_path:
+        #TODO: I believe this can be deleted, the rule requires a py_proto_library, and that rule will
+        # properly update imports.
         imports.append("__main__/%s" % out_dir.import_path)
 
     return [
