@@ -46,14 +46,6 @@ struct StringLess {
   }
 };
 
-template <typename T>
-struct RefCountedPtrLess {
-  bool operator()(const RefCountedPtr<T>& p1,
-                  const RefCountedPtr<T>& p2) const {
-    return p1.get() < p2.get();
-  }
-};
-
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_MAP_H */

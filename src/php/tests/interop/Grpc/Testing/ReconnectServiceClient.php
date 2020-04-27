@@ -16,17 +16,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Contains the definitions for a metrics service and the type of metrics
-// exposed by the service.
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
 //
-// Currently, 'Gauge' (i.e a metric that represents the measured value of
-// something at an instant of time) is the only metric type supported by the
-// service.
 namespace Grpc\Testing;
 
 /**
+ * A service used to control reconnect server.
  */
-class MetricsServiceClient extends \Grpc\BaseStub {
+class ReconnectServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -38,31 +36,30 @@ class MetricsServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * Returns the values of all the gauges that are currently being maintained by
-     * the service
-     * @param \Grpc\Testing\EmptyMessage $argument input argument
+     * @param \Grpc\Testing\ReconnectParams $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\EmptyMessage
      */
-    public function GetAllGauges(\Grpc\Testing\EmptyMessage $argument,
+    public function Start(\Grpc\Testing\ReconnectParams $argument,
       $metadata = [], $options = []) {
-        return $this->_serverStreamRequest('/grpc.testing.MetricsService/GetAllGauges',
+        return $this->_simpleRequest('/grpc.testing.ReconnectService/Start',
         $argument,
-        ['\Grpc\Testing\GaugeResponse', 'decode'],
+        ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 
     /**
-     * Returns the value of one gauge
-     * @param \Grpc\Testing\GaugeRequest $argument input argument
+     * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\ReconnectInfo
      */
-    public function GetGauge(\Grpc\Testing\GaugeRequest $argument,
+    public function Stop(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.MetricsService/GetGauge',
+        return $this->_simpleRequest('/grpc.testing.ReconnectService/Stop',
         $argument,
-        ['\Grpc\Testing\GaugeResponse', 'decode'],
+        ['\Grpc\Testing\ReconnectInfo', 'decode'],
         $metadata, $options);
     }
 

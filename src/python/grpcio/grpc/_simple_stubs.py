@@ -196,7 +196,7 @@ def unary_unary(
         message. Request goes unserialized in case None is passed.
       response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials() or
@@ -267,7 +267,7 @@ def unary_stream(
         message. Request goes unserialized in case None is passed.
       response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
@@ -337,7 +337,7 @@ def stream_unary(
         message. Request goes unserialized in case None is passed.
       response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
@@ -407,7 +407,7 @@ def stream_stream(
         message. Request goes unserialized in case None is passed.
       response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().

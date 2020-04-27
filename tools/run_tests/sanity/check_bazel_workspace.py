@@ -109,7 +109,12 @@ class BazelEvalState(object):
         if args['name'] in _GRPC_BAZEL_ONLY_DEPS:
             self.names_and_urls[args['name']] = 'dont care'
             return
-        self.names_and_urls[args['name']] = args['url']
+        url = args.get('url', None)
+        if not url:
+            # we will only be looking for git commit hashes, so concatenating
+            # the urls is fine.
+            url = ' '.join(args['urls'])
+        self.names_and_urls[args['name']] = url
 
     def git_repository(self, **args):
         assert self.names_and_urls.get(args['name']) is None

@@ -21,12 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/string_util.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -146,7 +147,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   gpr_mu mu_;
   bool is_shutdown_ = false;
   // An array of handshakers added via grpc_handshake_manager_add().
-  InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE> handshakers_;
+  absl::InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE>
+      handshakers_;
   // The index of the handshaker to invoke next and closure to invoke it.
   size_t index_ = 0;
   grpc_closure call_next_handshaker_;

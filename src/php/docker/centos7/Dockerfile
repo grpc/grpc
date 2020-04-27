@@ -15,23 +15,25 @@
 FROM centos:centos7
 
 RUN yum update -y && \
-  yum install epel-release -y && \
+  yum install -y centos-release-scl && \
+  yum install -y devtoolset-7-gcc*
+
+SHELL [ "/usr/bin/scl", "enable", "devtoolset-7"]
+
+RUN yum install epel-release -y && \
   rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm && \
   rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm && \
   yum --enablerepo=remi-php72 install php -y && \
-  yum-config-manager --enable remi-php72 && \
-  yum install -y php-fpm php-pear make php-devel wget libmpc-devel mpfr-devel gmp-devel yum-utils && \
-  yum clean all -y
+  yum-config-manager --enable remi-php72 > /dev/null && \
+  yum install -y make wget which \
+    gmp-devel libmpc-devel mpfr-devel yum-utils \                                                            
+    php-devel php-fpm php-pear && \                                                                          
+  yum clean all -y  
 
 ARG MAKEFLAGS=-j8
 
 
 WORKDIR /tmp
-
-RUN yum install -y centos-release-scl && \
-  yum install -y devtoolset-4-gcc*
-
-SHELL [ "/usr/bin/scl", "enable", "devtoolset-4"]
 
 RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
   mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \

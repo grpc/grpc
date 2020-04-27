@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
@@ -99,9 +100,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // ready state. The first element in the pair represents the end of a
     // range proportional to the child's weight. The start of the range
     // is the previous value in the vector and is 0 for the first element.
-    using PickerList =
-        InlinedVector<std::pair<uint32_t, RefCountedPtr<ChildPickerWrapper>>,
-                      1>;
+    using PickerList = absl::InlinedVector<
+        std::pair<uint32_t, RefCountedPtr<ChildPickerWrapper>>, 1>;
 
     explicit WeightedPicker(PickerList pickers)
         : pickers_(std::move(pickers)) {}
@@ -675,14 +675,15 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:weight error:must be of type number"));
     } else {
-      child_config->weight =
-          gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      if (child_config->weight == -1) {
+      int weight = gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      if (weight == -1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:weight error:unparseable value"));
-      } else if (child_config->weight == 0) {
+      } else if (weight == 0) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:weight error:value must be greater than zero"));
+      } else {
+        child_config->weight = weight;
       }
     }
     // Child policy.

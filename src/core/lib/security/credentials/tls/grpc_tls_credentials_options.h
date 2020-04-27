@@ -23,7 +23,8 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
@@ -44,8 +45,7 @@ struct grpc_tls_error_details
 struct grpc_tls_key_materials_config
     : public grpc_core::RefCounted<grpc_tls_key_materials_config> {
  public:
-  typedef grpc_core::InlinedVector<grpc_core::PemKeyCertPair, 1>
-      PemKeyCertPairList;
+  typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
 
   /** Getters for member fields. **/
   const char* pem_root_certs() const { return pem_root_certs_.get(); }
