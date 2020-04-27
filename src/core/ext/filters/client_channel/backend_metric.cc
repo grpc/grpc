@@ -22,6 +22,8 @@
 
 #include "udpa/data/orca/v1/orca_load_report.upb.h"
 
+#include "src/core/lib/gprpp/map.h"
+
 namespace grpc_core {
 
 namespace {

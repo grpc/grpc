@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
@@ -29,9 +30,18 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
+
+std::string JoinHostPort(absl::string_view host, int port) {
+  if (host[0] != '[' && host.rfind(':') != host.npos) {
+    // IPv6 literals must be enclosed in brackets.
+    return absl::StrFormat("[%s]:%d", host, port);
+  }
+  // Ordinary non-bracketed host:port.
+  return absl::StrFormat("%s:%d", host, port);
+}
+
 int JoinHostPort(grpc_core::UniquePtr<char>* out, const char* host, int port) {
   char* tmp;
   int ret;
@@ -99,10 +109,10 @@ bool SplitHostPort(absl::string_view name, absl::string_view* host,
   return DoSplitHostPort(name, host, port, &unused);
 }
 
-bool SplitHostPort(absl::string_view name, grpc_core::UniquePtr<char>* host,
-                   grpc_core::UniquePtr<char>* port) {
-  GPR_DEBUG_ASSERT(host != nullptr && *host == nullptr);
-  GPR_DEBUG_ASSERT(port != nullptr && *port == nullptr);
+bool SplitHostPort(absl::string_view name, std::string* host,
+                   std::string* port) {
+  GPR_DEBUG_ASSERT(host != nullptr && host->empty());
+  GPR_DEBUG_ASSERT(port != nullptr && port->empty());
   absl::string_view host_view;
   absl::string_view port_view;
   bool has_port;
@@ -111,11 +121,12 @@ bool SplitHostPort(absl::string_view name, grpc_core::UniquePtr<char>* host,
     // We always set the host, but port is set only when DoSplitHostPort find a
     // port in the string, to remain backward compatible with the old
     // gpr_split_host_port API.
-    *host = StringViewToCString(host_view);
+    *host = std::string(host_view);
     if (has_port) {
-      *port = StringViewToCString(port_view);
+      *port = std::string(port_view);
     }
   }
   return ret;
 }
+
 }  // namespace grpc_core

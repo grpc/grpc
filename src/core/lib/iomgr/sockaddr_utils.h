@@ -68,6 +68,8 @@ int grpc_sockaddr_set_port(const grpc_resolved_address* addr, int port);
 
    In the unlikely event of an error, returns -1 and sets *out to NULL.
    The existing value of errno is always preserved. */
+// TODO(roth): Change this to return std::string as part of eliminating
+// the old API for JoinHostPort().
 int grpc_sockaddr_to_string(char** out, const grpc_resolved_address* addr,
                             int normalize);
 

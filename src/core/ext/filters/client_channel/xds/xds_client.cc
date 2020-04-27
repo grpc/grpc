@@ -25,6 +25,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -49,7 +50,6 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -1879,7 +1879,7 @@ void XdsClient::WatchClusterData(
   if (cluster_state.update.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] returning cached cluster data for %s",
-              this, StringViewToCString(cluster_name).get());
+              this, cluster_name_str.c_str());
     }
     w->OnClusterChanged(cluster_state.update.value());
   }
@@ -1915,7 +1915,7 @@ void XdsClient::WatchEndpointData(
   if (endpoint_state.update.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] returning cached endpoint data for %s",
-              this, StringViewToCString(eds_service_name).get());
+              this, eds_service_name_str.c_str());
     }
     w->OnEndpointChanged(endpoint_state.update.value());
   }
