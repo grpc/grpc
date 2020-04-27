@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -254,8 +255,8 @@ class XdsClient::ChannelState::AdsCallState
 
   bool IsCurrentCallOnChannel() const;
 
-  std::set<StringView> ClusterNamesForRequest();
-  std::set<StringView> EdsServiceNamesForRequest();
+  std::set<absl::string_view> ClusterNamesForRequest();
+  std::set<absl::string_view> EdsServiceNamesForRequest();
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -802,7 +803,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   auto& state = state_map_[type_url];
   grpc_slice request_payload_slice;
-  std::set<StringView> resource_names;
+  std::set<absl::string_view> resource_names;
   if (type_url == XdsApi::kLdsTypeUrl) {
     resource_names.insert(xds_client()->server_name_);
     request_payload_slice = xds_client()->api_.CreateLdsRequest(
@@ -1345,9 +1346,9 @@ bool XdsClient::ChannelState::AdsCallState::IsCurrentCallOnChannel() const {
   return this == chand()->ads_calld_->calld();
 }
 
-std::set<StringView>
+std::set<absl::string_view>
 XdsClient::ChannelState::AdsCallState::ClusterNamesForRequest() {
-  std::set<StringView> cluster_names;
+  std::set<absl::string_view> cluster_names;
   for (auto& p : state_map_[XdsApi::kCdsTypeUrl].subscribed_resources) {
     cluster_names.insert(p.first);
     OrphanablePtr<ResourceState>& state = p.second;
@@ -1356,9 +1357,9 @@ XdsClient::ChannelState::AdsCallState::ClusterNamesForRequest() {
   return cluster_names;
 }
 
-std::set<StringView>
+std::set<absl::string_view>
 XdsClient::ChannelState::AdsCallState::EdsServiceNamesForRequest() {
-  std::set<StringView> eds_names;
+  std::set<absl::string_view> eds_names;
   for (auto& p : state_map_[XdsApi::kEdsTypeUrl].subscribed_resources) {
     eds_names.insert(p.first);
     OrphanablePtr<ResourceState>& state = p.second;
@@ -1800,7 +1801,7 @@ bool GetXdsRoutingEnabled(const grpc_channel_args& args) {
 
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
                      grpc_pollset_set* interested_parties,
-                     StringView server_name,
+                     absl::string_view server_name,
                      std::unique_ptr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
@@ -1867,7 +1868,8 @@ void XdsClient::Orphan() {
 }
 
 void XdsClient::WatchClusterData(
-    StringView cluster_name, std::unique_ptr<ClusterWatcherInterface> watcher) {
+    absl::string_view cluster_name,
+    std::unique_ptr<ClusterWatcherInterface> watcher) {
   std::string cluster_name_str = std::string(cluster_name);
   ClusterState& cluster_state = cluster_map_[cluster_name_str];
   ClusterWatcherInterface* w = watcher.get();
@@ -1884,7 +1886,7 @@ void XdsClient::WatchClusterData(
   chand_->Subscribe(XdsApi::kCdsTypeUrl, cluster_name_str);
 }
 
-void XdsClient::CancelClusterDataWatch(StringView cluster_name,
+void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
                                        ClusterWatcherInterface* watcher,
                                        bool delay_unsubscription) {
   if (shutting_down_) return;
@@ -1902,7 +1904,7 @@ void XdsClient::CancelClusterDataWatch(StringView cluster_name,
 }
 
 void XdsClient::WatchEndpointData(
-    StringView eds_service_name,
+    absl::string_view eds_service_name,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
   std::string eds_service_name_str = std::string(eds_service_name);
   EndpointState& endpoint_state = endpoint_map_[eds_service_name_str];
@@ -1920,7 +1922,7 @@ void XdsClient::WatchEndpointData(
   chand_->Subscribe(XdsApi::kEdsTypeUrl, eds_service_name_str);
 }
 
-void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
+void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
                                         EndpointWatcherInterface* watcher,
                                         bool delay_unsubscription) {
   if (shutting_down_) return;
@@ -1938,13 +1940,13 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
 }
 
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
-    StringView lrs_server, StringView cluster_name,
-    StringView eds_service_name) {
+    absl::string_view lrs_server, absl::string_view cluster_name,
+    absl::string_view eds_service_name) {
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
-  // We jump through some hoops here to make sure that the StringViews
+  // We jump through some hoops here to make sure that the absl::string_views
   // stored in the XdsClusterDropStats object point to the strings
   // in the load_report_map_ key, so that they have the same lifetime.
   auto it = load_report_map_
@@ -1959,8 +1961,9 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
 }
 
 void XdsClient::RemoveClusterDropStats(
-    StringView /*lrs_server*/, StringView cluster_name,
-    StringView eds_service_name, XdsClusterDropStats* cluster_drop_stats) {
+    absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+    absl::string_view eds_service_name,
+    XdsClusterDropStats* cluster_drop_stats) {
   auto load_report_it = load_report_map_.find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
   if (load_report_it == load_report_map_.end()) return;
@@ -1979,13 +1982,14 @@ void XdsClient::RemoveClusterDropStats(
 }
 
 RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
-    StringView lrs_server, StringView cluster_name, StringView eds_service_name,
+    absl::string_view lrs_server, absl::string_view cluster_name,
+    absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> locality) {
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
-  // We jump through some hoops here to make sure that the StringViews
+  // We jump through some hoops here to make sure that the absl::string_views
   // stored in the XdsClusterLocalityStats object point to the strings
   // in the load_report_map_ key, so that they have the same lifetime.
   auto it = load_report_map_
@@ -2002,8 +2006,9 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
 }
 
 void XdsClient::RemoveClusterLocalityStats(
-    StringView /*lrs_server*/, StringView cluster_name,
-    StringView eds_service_name, const RefCountedPtr<XdsLocalityName>& locality,
+    absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+    absl::string_view eds_service_name,
+    const RefCountedPtr<XdsLocalityName>& locality,
     XdsClusterLocalityStats* cluster_locality_stats) {
   auto load_report_it = load_report_map_.find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));

@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
@@ -514,10 +515,10 @@ grpc_slice XdsApi::CreateRdsRequest(const std::string& route_config_name,
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
 
-grpc_slice XdsApi::CreateCdsRequest(const std::set<StringView>& cluster_names,
-                                    const std::string& version,
-                                    const std::string& nonce, grpc_error* error,
-                                    bool populate_node) {
+grpc_slice XdsApi::CreateCdsRequest(
+    const std::set<absl::string_view>& cluster_names,
+    const std::string& version, const std::string& nonce, grpc_error* error,
+    bool populate_node) {
   upb::Arena arena;
   envoy_api_v2_DiscoveryRequest* request =
       CreateDiscoveryRequest(arena.ptr(), kCdsTypeUrl, version, nonce, error);
@@ -539,8 +540,9 @@ grpc_slice XdsApi::CreateCdsRequest(const std::set<StringView>& cluster_names,
 }
 
 grpc_slice XdsApi::CreateEdsRequest(
-    const std::set<StringView>& eds_service_names, const std::string& version,
-    const std::string& nonce, grpc_error* error, bool populate_node) {
+    const std::set<absl::string_view>& eds_service_names,
+    const std::string& version, const std::string& nonce, grpc_error* error,
+    bool populate_node) {
   upb::Arena arena;
   envoy_api_v2_DiscoveryRequest* request =
       CreateDiscoveryRequest(arena.ptr(), kEdsTypeUrl, version, nonce, error);
@@ -923,16 +925,18 @@ bool DomainMatch(MatchType match_type, std::string domain_pattern,
   } else if (match_type == SUFFIX_MATCH) {
     // Asterisk must match at least one char.
     if (expected_host_name.size() < domain_pattern.size()) return false;
-    StringView pattern_suffix(domain_pattern.c_str() + 1);
-    StringView host_suffix(expected_host_name.c_str() +
-                           expected_host_name.size() - pattern_suffix.size());
+    absl::string_view pattern_suffix(domain_pattern.c_str() + 1);
+    absl::string_view host_suffix(expected_host_name.c_str() +
+                                  expected_host_name.size() -
+                                  pattern_suffix.size());
     return pattern_suffix == host_suffix;
   } else if (match_type == PREFIX_MATCH) {
     // Asterisk must match at least one char.
     if (expected_host_name.size() < domain_pattern.size()) return false;
-    StringView pattern_prefix(domain_pattern.c_str(),
-                              domain_pattern.size() - 1);
-    StringView host_prefix(expected_host_name.c_str(), pattern_prefix.size());
+    absl::string_view pattern_prefix(domain_pattern.c_str(),
+                                     domain_pattern.size() - 1);
+    absl::string_view host_prefix(expected_host_name.c_str(),
+                                  pattern_prefix.size());
     return pattern_prefix == host_prefix;
   } else {
     return match_type == UNIVERSE_MATCH;
@@ -1228,11 +1232,11 @@ grpc_error* RdsResponseParse(XdsClient* client, TraceFlag* tracer,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
-                             const envoy_api_v2_DiscoveryResponse* response,
-                             const std::set<StringView>& expected_cluster_names,
-                             XdsApi::CdsUpdateMap* cds_update_map,
-                             upb_arena* arena) {
+grpc_error* CdsResponseParse(
+    XdsClient* client, TraceFlag* tracer,
+    const envoy_api_v2_DiscoveryResponse* response,
+    const std::set<absl::string_view>& expected_cluster_names,
+    XdsApi::CdsUpdateMap* cds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1255,7 +1259,8 @@ grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
     MaybeLogCluster(client, tracer, cluster);
     // Ignore unexpected cluster names.
     upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
-    StringView cluster_name_strview(cluster_name.data, cluster_name.size);
+    absl::string_view cluster_name_strview(cluster_name.data,
+                                           cluster_name.size);
     if (expected_cluster_names.find(cluster_name_strview) ==
         expected_cluster_names.end()) {
       continue;
@@ -1418,7 +1423,7 @@ grpc_error* DropParseAndAppend(
 grpc_error* EdsResponseParse(
     XdsClient* client, TraceFlag* tracer,
     const envoy_api_v2_DiscoveryResponse* response,
-    const std::set<StringView>& expected_eds_service_names,
+    const std::set<absl::string_view>& expected_eds_service_names,
     XdsApi::EdsUpdateMap* eds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
@@ -1447,7 +1452,8 @@ grpc_error* EdsResponseParse(
     // unexpected names.
     upb_strview cluster_name = envoy_api_v2_ClusterLoadAssignment_cluster_name(
         cluster_load_assignment);
-    StringView cluster_name_strview(cluster_name.data, cluster_name.size);
+    absl::string_view cluster_name_strview(cluster_name.data,
+                                           cluster_name.size);
     if (expected_eds_service_names.find(cluster_name_strview) ==
         expected_eds_service_names.end()) {
       continue;
@@ -1501,8 +1507,8 @@ grpc_error* XdsApi::ParseAdsResponse(
     const grpc_slice& encoded_response, const std::string& expected_server_name,
     const std::string& expected_route_config_name,
     const bool xds_routing_enabled,
-    const std::set<StringView>& expected_cluster_names,
-    const std::set<StringView>& expected_eds_service_names,
+    const std::set<absl::string_view>& expected_cluster_names,
+    const std::set<absl::string_view>& expected_eds_service_names,
     absl::optional<LdsUpdate>* lds_update,
     absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
     EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,

@@ -21,8 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
 
@@ -41,7 +42,7 @@ int JoinHostPort(grpc_core::UniquePtr<char>* out, const char* host, int port);
    and port number.
 
    There are two variants of this method:
-   1) StringView output: port and host are returned as views on name.
+   1) absl::string_view output: port and host are returned as views on name.
    2) char* output: port and host are copied into newly allocated strings.
 
    Prefer variant (1) over (2), because no allocation or copy is performed in
@@ -50,8 +51,9 @@ int JoinHostPort(grpc_core::UniquePtr<char>* out, const char* host, int port);
 
    Return true on success, false on failure. Guarantees *host and *port are
    cleared on failure. */
-bool SplitHostPort(StringView name, StringView* host, StringView* port);
-bool SplitHostPort(StringView name, grpc_core::UniquePtr<char>* host,
+bool SplitHostPort(absl::string_view name, absl::string_view* host,
+                   absl::string_view* port);
+bool SplitHostPort(absl::string_view name, grpc_core::UniquePtr<char>* host,
                    grpc_core::UniquePtr<char>* port);
 
 }  // namespace grpc_core

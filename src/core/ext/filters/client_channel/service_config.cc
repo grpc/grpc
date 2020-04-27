@@ -40,8 +40,8 @@ typedef absl::InlinedVector<std::unique_ptr<ServiceConfig::Parser>,
 ServiceConfigParserList* g_registered_parsers;
 }  // namespace
 
-RefCountedPtr<ServiceConfig> ServiceConfig::Create(StringView json_string,
-                                                   grpc_error** error) {
+RefCountedPtr<ServiceConfig> ServiceConfig::Create(
+    absl::string_view json_string, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr);
   Json json = Json::Parse(json_string, error);
   if (*error != GRPC_ERROR_NONE) return nullptr;

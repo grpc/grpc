@@ -57,8 +57,7 @@ class TlsChannelSecurityConnector final
 
   int cmp(const grpc_security_connector* other_sc) const override;
 
-  bool check_call_host(grpc_core::StringView host,
-                       grpc_auth_context* auth_context,
+  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override;
 
