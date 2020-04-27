@@ -47,18 +47,49 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-typedef struct {
-  grpc_server* server;
-  grpc_tcp_server* tcp_server;
-  grpc_channel_args* args;
-  gpr_mu mu;
-  bool shutdown;
+namespace {
+
+struct server_state;
+
+class ListenerCallbacks : public grpc_core::ListenerCallbackInterface {
+ public:
+  explicit ListenerCallbacks(server_state* state) : state_(state) {}
+
+  // The following functions are implemented out-of-line since they need
+  // to access server_state's internals and other classes and free functions.
+  void OnStart(const std::vector<grpc_pollset*>* pollsets) override;
+  void OnDestroy(grpc_closure* destroy_done) override;
+
+ private:
+  server_state* const state_;
+};
+
+struct server_state {
+  grpc_server* server = nullptr;
+  grpc_tcp_server* tcp_server = nullptr;
+  grpc_channel_args* args = nullptr;
+  grpc_core::Mutex mu;
+  bool shutdown = false;
   grpc_closure tcp_server_shutdown_complete;
-  grpc_closure* server_destroy_listener_done;
-  grpc_core::HandshakeManager* pending_handshake_mgrs;
+  grpc_closure* server_destroy_listener_done = nullptr;
+  grpc_core::HandshakeManager* pending_handshake_mgrs = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode>
       channelz_listen_socket;
-} server_state;
+  ListenerCallbacks listener_callbacks{this};
+};
+
+void ListenerCallbacks::OnDestroy(grpc_closure* destroy_done) {
+  grpc_tcp_server* tcp_server;
+  {
+    grpc_core::MutexLock lock(&state_->mu);
+    state_->shutdown = true;
+    state_->server_destroy_listener_done = destroy_done;
+    tcp_server = state_->tcp_server;
+  }
+  // Stop listening and thus stop generating further callbacks
+  grpc_tcp_server_shutdown_listeners(tcp_server);
+  grpc_tcp_server_unref(tcp_server);
+};
 
 typedef struct {
   gpr_refcount refs;
@@ -75,8 +106,7 @@ typedef struct {
   grpc_pollset_set* interested_parties;
 } server_connection_state;
 
-static void server_connection_state_unref(
-    server_connection_state* connection_state) {
+void server_connection_state_unref(server_connection_state* connection_state) {
   if (gpr_unref(&connection_state->refs)) {
     if (connection_state->transport != nullptr) {
       GRPC_CHTTP2_UNREF_TRANSPORT(connection_state->transport,
@@ -89,7 +119,7 @@ static void server_connection_state_unref(
   }
 }
 
-static void on_timeout(void* arg, grpc_error* error) {
+void on_timeout(void* arg, grpc_error* error) {
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(arg);
   // Note that we may be called with GRPC_ERROR_NONE when the timer fires
@@ -103,7 +133,7 @@ static void on_timeout(void* arg, grpc_error* error) {
   server_connection_state_unref(connection_state);
 }
 
-static void on_receive_settings(void* arg, grpc_error* error) {
+void on_receive_settings(void* arg, grpc_error* error) {
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(arg);
   if (error == GRPC_ERROR_NONE) {
@@ -112,109 +142,113 @@ static void on_receive_settings(void* arg, grpc_error* error) {
   server_connection_state_unref(connection_state);
 }
 
-static void on_handshake_done(void* arg, grpc_error* error) {
+void on_handshake_done(void* arg, grpc_error* error) {
   auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(args->user_data);
-  gpr_mu_lock(&connection_state->svr_state->mu);
-  grpc_resource_user* resource_user = grpc_server_get_default_resource_user(
-      connection_state->svr_state->server);
-  if (error != GRPC_ERROR_NONE || connection_state->svr_state->shutdown) {
-    const char* error_str = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
+  {
+    grpc_core::MutexLock lock(&connection_state->svr_state->mu);
     grpc_resource_user* resource_user = grpc_server_get_default_resource_user(
         connection_state->svr_state->server);
-    if (resource_user != nullptr) {
-      grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
-    }
-    if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
-      // We were shut down after handshaking completed successfully, so
-      // destroy the endpoint here.
-      // TODO(ctiller): It is currently necessary to shutdown endpoints
-      // before destroying them, even if we know that there are no
-      // pending read/write callbacks.  This should be fixed, at which
-      // point this can be removed.
-      grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_NONE);
-      grpc_endpoint_destroy(args->endpoint);
-      grpc_channel_args_destroy(args->args);
-      grpc_slice_buffer_destroy_internal(args->read_buffer);
-      gpr_free(args->read_buffer);
-    }
-  } else {
-    // If the handshaking succeeded but there is no endpoint, then the
-    // handshaker may have handed off the connection to some external
-    // code, so we can just clean up here without creating a transport.
-    if (args->endpoint != nullptr) {
-      grpc_transport* transport = grpc_create_chttp2_transport(
-          args->args, args->endpoint, false, resource_user);
-      grpc_server_setup_transport(
-          connection_state->svr_state->server, transport,
-          connection_state->accepting_pollset, args->args,
-          grpc_chttp2_transport_get_socket_node(transport), resource_user);
-      // Use notify_on_receive_settings callback to enforce the
-      // handshake deadline.
-      connection_state->transport =
-          reinterpret_cast<grpc_chttp2_transport*>(transport);
-      gpr_ref(&connection_state->refs);
-      GRPC_CLOSURE_INIT(&connection_state->on_receive_settings,
-                        on_receive_settings, connection_state,
-                        grpc_schedule_on_exec_ctx);
-      grpc_chttp2_transport_start_reading(
-          transport, args->read_buffer, &connection_state->on_receive_settings);
-      grpc_channel_args_destroy(args->args);
-      gpr_ref(&connection_state->refs);
-      GRPC_CHTTP2_REF_TRANSPORT((grpc_chttp2_transport*)transport,
-                                "receive settings timeout");
-      GRPC_CLOSURE_INIT(&connection_state->on_timeout, on_timeout,
-                        connection_state, grpc_schedule_on_exec_ctx);
-      grpc_timer_init(&connection_state->timer, connection_state->deadline,
-                      &connection_state->on_timeout);
-    } else {
+    if (error != GRPC_ERROR_NONE || connection_state->svr_state->shutdown) {
+      const char* error_str = grpc_error_string(error);
+      gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
+      grpc_resource_user* resource_user = grpc_server_get_default_resource_user(
+          connection_state->svr_state->server);
       if (resource_user != nullptr) {
         grpc_resource_user_free(resource_user,
                                 GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
       }
+      if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
+        // We were shut down after handshaking completed successfully, so
+        // destroy the endpoint here.
+        // TODO(ctiller): It is currently necessary to shutdown endpoints
+        // before destroying them, even if we know that there are no
+        // pending read/write callbacks.  This should be fixed, at which
+        // point this can be removed.
+        grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_NONE);
+        grpc_endpoint_destroy(args->endpoint);
+        grpc_channel_args_destroy(args->args);
+        grpc_slice_buffer_destroy_internal(args->read_buffer);
+        gpr_free(args->read_buffer);
+      }
+    } else {
+      // If the handshaking succeeded but there is no endpoint, then the
+      // handshaker may have handed off the connection to some external
+      // code, so we can just clean up here without creating a transport.
+      if (args->endpoint != nullptr) {
+        grpc_transport* transport = grpc_create_chttp2_transport(
+            args->args, args->endpoint, false, resource_user);
+        grpc_server_setup_transport(
+            connection_state->svr_state->server, transport,
+            connection_state->accepting_pollset, args->args,
+            grpc_chttp2_transport_get_socket_node(transport), resource_user);
+        // Use notify_on_receive_settings callback to enforce the
+        // handshake deadline.
+        connection_state->transport =
+            reinterpret_cast<grpc_chttp2_transport*>(transport);
+        gpr_ref(&connection_state->refs);
+        GRPC_CLOSURE_INIT(&connection_state->on_receive_settings,
+                          on_receive_settings, connection_state,
+                          grpc_schedule_on_exec_ctx);
+        grpc_chttp2_transport_start_reading(
+            transport, args->read_buffer,
+            &connection_state->on_receive_settings);
+        grpc_channel_args_destroy(args->args);
+        gpr_ref(&connection_state->refs);
+        GRPC_CHTTP2_REF_TRANSPORT((grpc_chttp2_transport*)transport,
+                                  "receive settings timeout");
+        GRPC_CLOSURE_INIT(&connection_state->on_timeout, on_timeout,
+                          connection_state, grpc_schedule_on_exec_ctx);
+        grpc_timer_init(&connection_state->timer, connection_state->deadline,
+                        &connection_state->on_timeout);
+      } else {
+        if (resource_user != nullptr) {
+          grpc_resource_user_free(resource_user,
+                                  GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+        }
+      }
     }
+    connection_state->handshake_mgr->RemoveFromPendingMgrList(
+        &connection_state->svr_state->pending_handshake_mgrs);
   }
-  connection_state->handshake_mgr->RemoveFromPendingMgrList(
-      &connection_state->svr_state->pending_handshake_mgrs);
-  gpr_mu_unlock(&connection_state->svr_state->mu);
   connection_state->handshake_mgr.reset();
   gpr_free(connection_state->acceptor);
   grpc_tcp_server_unref(connection_state->svr_state->tcp_server);
   server_connection_state_unref(connection_state);
 }
 
-static void on_accept(void* arg, grpc_endpoint* tcp,
-                      grpc_pollset* accepting_pollset,
-                      grpc_tcp_server_acceptor* acceptor) {
+void on_accept(void* arg, grpc_endpoint* tcp, grpc_pollset* accepting_pollset,
+               grpc_tcp_server_acceptor* acceptor) {
   server_state* state = static_cast<server_state*>(arg);
-  gpr_mu_lock(&state->mu);
-  if (state->shutdown) {
-    gpr_mu_unlock(&state->mu);
-    grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
-    grpc_endpoint_destroy(tcp);
-    gpr_free(acceptor);
-    return;
+  grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
+  {
+    grpc_core::ReleasableMutexLock lock(&state->mu);
+    if (state->shutdown) {
+      lock.Unlock();
+      grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
+      grpc_endpoint_destroy(tcp);
+      gpr_free(acceptor);
+      return;
+    }
+    grpc_resource_user* resource_user =
+        grpc_server_get_default_resource_user(state->server);
+    if (resource_user != nullptr &&
+        !grpc_resource_user_safe_alloc(resource_user,
+                                       GRPC_RESOURCE_QUOTA_CHANNEL_SIZE)) {
+      gpr_log(
+          GPR_ERROR,
+          "Memory quota exhausted, rejecting the connection, no handshaking.");
+      lock.Unlock();
+      grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
+      grpc_endpoint_destroy(tcp);
+      gpr_free(acceptor);
+      return;
+    }
+    handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
+    handshake_mgr->AddToPendingMgrList(&state->pending_handshake_mgrs);
+    grpc_tcp_server_ref(state->tcp_server);
   }
-  grpc_resource_user* resource_user =
-      grpc_server_get_default_resource_user(state->server);
-  if (resource_user != nullptr &&
-      !grpc_resource_user_safe_alloc(resource_user,
-                                     GRPC_RESOURCE_QUOTA_CHANNEL_SIZE)) {
-    gpr_log(
-        GPR_ERROR,
-        "Memory quota exhausted, rejecting the connection, no handshaking.");
-    gpr_mu_unlock(&state->mu);
-    grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
-    grpc_endpoint_destroy(tcp);
-    gpr_free(acceptor);
-    return;
-  }
-  auto handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-  handshake_mgr->AddToPendingMgrList(&state->pending_handshake_mgrs);
-  grpc_tcp_server_ref(state->tcp_server);
-  gpr_mu_unlock(&state->mu);
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(
           gpr_zalloc(sizeof(*connection_state)));
@@ -241,29 +275,28 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
       connection_state);
 }
 
-/* Server callback: start listening on our ports */
-static void server_start_listener(grpc_server* /*server*/, void* arg,
-                                  grpc_pollset** pollsets,
-                                  size_t pollset_count) {
-  server_state* state = static_cast<server_state*>(arg);
-  gpr_mu_lock(&state->mu);
-  state->shutdown = false;
-  gpr_mu_unlock(&state->mu);
-  grpc_tcp_server_start(state->tcp_server, pollsets, pollset_count, on_accept,
-                        state);
-}
-
-static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
-  server_state* state = static_cast<server_state*>(arg);
-  /* ensure all threads have unlocked */
-  gpr_mu_lock(&state->mu);
-  grpc_closure* destroy_done = state->server_destroy_listener_done;
-  GPR_ASSERT(state->shutdown);
-  if (state->pending_handshake_mgrs != nullptr) {
-    state->pending_handshake_mgrs->ShutdownAllPending(GRPC_ERROR_REF(error));
+// Server callback: start listening on our ports.
+void ListenerCallbacks::OnStart(const std::vector<grpc_pollset*>* pollsets) {
+  {
+    grpc_core::MutexLock lock(&state_->mu);
+    state_->shutdown = false;
   }
-  state->channelz_listen_socket.reset();
-  gpr_mu_unlock(&state->mu);
+  grpc_tcp_server_start(state_->tcp_server, pollsets, on_accept, state_);
+};
+
+void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
+  server_state* state = static_cast<server_state*>(arg);
+  grpc_closure* destroy_done;
+  {
+    /* ensure all threads have unlocked */
+    grpc_core::MutexLock lock(&state->mu);
+    destroy_done = state->server_destroy_listener_done;
+    GPR_ASSERT(state->shutdown);
+    if (state->pending_handshake_mgrs != nullptr) {
+      state->pending_handshake_mgrs->ShutdownAllPending(GRPC_ERROR_REF(error));
+    }
+    state->channelz_listen_socket.reset();
+  }
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
   grpc_core::ExecCtx::Get()->Flush();
@@ -273,33 +306,16 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_channel_args_destroy(state->args);
-  gpr_mu_destroy(&state->mu);
-  gpr_free(state);
+  delete state;
 }
 
-/* Server callback: destroy the tcp listener (so we don't generate further
-   callbacks) */
-static void server_destroy_listener(grpc_server* /*server*/, void* arg,
-                                    grpc_closure* destroy_done) {
-  server_state* state = static_cast<server_state*>(arg);
-  gpr_mu_lock(&state->mu);
-  state->shutdown = true;
-  state->server_destroy_listener_done = destroy_done;
-  grpc_tcp_server* tcp_server = state->tcp_server;
-  gpr_mu_unlock(&state->mu);
-  grpc_tcp_server_shutdown_listeners(tcp_server);
-  grpc_tcp_server_unref(tcp_server);
-}
-
-static grpc_error* chttp2_server_add_acceptor(grpc_server* server,
-                                              const char* name,
-                                              grpc_channel_args* args) {
+grpc_error* chttp2_server_add_acceptor(grpc_server* server, const char* name,
+                                       grpc_channel_args* args) {
   grpc_tcp_server* tcp_server = nullptr;
   grpc_error* err = GRPC_ERROR_NONE;
-  server_state* state = nullptr;
+  server_state* state = new server_state;
   const grpc_arg* arg = nullptr;
   grpc_core::TcpServerFdHandler** arg_val = nullptr;
-  state = static_cast<server_state*>(gpr_zalloc(sizeof(*state)));
   GRPC_CLOSURE_INIT(&state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, state,
                     grpc_schedule_on_exec_ctx);
@@ -312,15 +328,14 @@ static grpc_error* chttp2_server_add_acceptor(grpc_server* server,
   state->tcp_server = tcp_server;
   state->args = args;
   state->shutdown = true;
-  gpr_mu_init(&state->mu);
   // TODO(yangg) channelz
   arg = grpc_channel_args_find(args, name);
   GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
   arg_val = static_cast<grpc_core::TcpServerFdHandler**>(arg->value.pointer.p);
   *arg_val = grpc_tcp_server_create_fd_handler(tcp_server);
 
-  grpc_server_add_listener(server, state, server_start_listener,
-                           server_destroy_listener, /* node */ nullptr);
+  grpc_server_add_listener(server, &state->listener_callbacks,
+                           /*node=*/nullptr);
   return err;
 
 /* Error path: cleanup and return */
@@ -330,10 +345,12 @@ error:
     grpc_tcp_server_unref(tcp_server);
   } else {
     grpc_channel_args_destroy(args);
-    gpr_free(state);
+    delete state;
   }
   return err;
 }
+
+}  // namespace
 
 grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
                                         grpc_channel_args* args,
@@ -360,7 +377,7 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
-  state = static_cast<server_state*>(gpr_zalloc(sizeof(*state)));
+  state = new server_state;
   GRPC_CLOSURE_INIT(&state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, state,
                     grpc_schedule_on_exec_ctx);
@@ -374,7 +391,6 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   state->tcp_server = tcp_server;
   state->args = args;
   state->shutdown = true;
-  gpr_mu_init(&state->mu);
 
   naddrs = resolved->naddrs;
   errors = static_cast<grpc_error**>(gpr_malloc(sizeof(*errors) * naddrs));
@@ -421,8 +437,7 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   }
 
   /* Register with the server only upon success */
-  grpc_server_add_listener(server, state, server_start_listener,
-                           server_destroy_listener,
+  grpc_server_add_listener(server, &state->listener_callbacks,
                            state->channelz_listen_socket);
   goto done;
 
@@ -436,7 +451,7 @@ error:
     grpc_tcp_server_unref(tcp_server);
   } else {
     grpc_channel_args_destroy(args);
-    gpr_free(state);
+    delete state;
   }
   *port_num = 0;
 

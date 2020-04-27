@@ -94,7 +94,7 @@ struct server_thread_args {
   char* addr;
   grpc_server* server;
   grpc_completion_queue* cq;
-  grpc_pollset* pollset;
+  std::vector<grpc_pollset*> pollset;
   gpr_mu* mu;
   gpr_event ready;
   gpr_atm stop;
@@ -121,7 +121,8 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(args->pollset[0], nullptr));
   gpr_mu_unlock(args->mu);
 }
 
@@ -143,7 +144,7 @@ void bad_server_thread(void* vargs) {
   GPR_ASSERT(port > 0);
   gpr_asprintf(&args->addr, "localhost:%d", port);
 
-  grpc_tcp_server_start(s, &args->pollset, 1, on_connect, args);
+  grpc_tcp_server_start(s, &args->pollset, on_connect, args);
   gpr_event_set(&args->ready, (void*)1);
 
   gpr_mu_lock(args->mu);
@@ -153,7 +154,7 @@ void bad_server_thread(void* vargs) {
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(args->pollset, &worker, deadline))) {
+            grpc_pollset_work(args->pollset[0], &worker, deadline))) {
       gpr_atm_rel_store(&args->stop, 1);
     }
     gpr_mu_unlock(args->mu);
@@ -225,8 +226,9 @@ int run_concurrent_connectivity_test() {
   {
     /* Third round, bogus tcp server */
     gpr_log(GPR_DEBUG, "Wave 3");
-    args.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-    grpc_pollset_init(args.pollset, &args.mu);
+    auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(pollset, &args.mu);
+    args.pollset.push_back(pollset);
     gpr_event_init(&args.ready);
     grpc_core::Thread server3("grpc_wave_3_server", bad_server_thread, &args);
     server3.Start();
@@ -246,8 +248,9 @@ int run_concurrent_connectivity_test() {
     {
       grpc_core::ExecCtx exec_ctx;
       grpc_pollset_shutdown(
-          args.pollset, GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
-                                            grpc_schedule_on_exec_ctx));
+          args.pollset[0],
+          GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset[0],
+                              grpc_schedule_on_exec_ctx));
     }
   }
 

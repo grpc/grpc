@@ -83,9 +83,7 @@ struct grpc_tcp_server {
   grpc_closure* shutdown_complete;
 
   /* all pollsets interested in new connections */
-  grpc_pollset** pollsets;
-  /* number of pollsets in the pollsets array */
-  size_t pollset_count;
+  const std::vector<grpc_pollset*>* pollsets;
 
   /* next pollset to assign a channel to */
   gpr_atm next_pollset_to_assign;

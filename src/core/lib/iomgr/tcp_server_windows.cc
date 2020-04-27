@@ -27,6 +27,8 @@
 #include <inttypes.h>
 #include <io.h>
 
+#include <vector>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -520,8 +522,8 @@ done:
   return error;
 }
 
-static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollset,
-                             size_t pollset_count,
+static void tcp_server_start(grpc_tcp_server* s,
+                             const std::vector<grpc_pollset*>* /*pollsets*/,
                              grpc_tcp_server_cb on_accept_cb,
                              void* on_accept_cb_arg) {
   grpc_tcp_listener* sp;

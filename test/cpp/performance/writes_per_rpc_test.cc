@@ -75,12 +75,9 @@ class EndpointPairFixture {
       grpc_transport* transport = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */);
 
-      grpc_pollset** pollsets;
-      size_t num_pollsets = 0;
-      grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
-
-      for (size_t i = 0; i < num_pollsets; i++) {
-        grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
+      for (grpc_pollset* pollset :
+           grpc_server_get_pollsets(server_->c_server())) {
+        grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
       grpc_server_setup_transport(server_->c_server(), transport, nullptr,
