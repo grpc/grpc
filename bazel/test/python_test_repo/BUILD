@@ -35,12 +35,14 @@ proto_library(
 
 py_proto_library(
     name = "helloworld_py_pb2",
+    tags = ["kwargs-tagged-target"],
     deps = [":helloworld_proto"],
 )
 
 py_grpc_library(
     name = "helloworld_py_pb2_grpc",
     srcs = [":helloworld_proto"],
+    tags = ["kwargs-tagged-target"],
     deps = [":helloworld_py_pb2"],
 )
 
@@ -110,5 +112,50 @@ py_binary(
     srcs = [":dummy_plugin.py"],
     deps = [
         "@com_google_protobuf//:protobuf_python",
+    ],
+)
+
+genrule(
+    name = "expected_kwargs-tagged-targets",
+    srcs = [],
+    outs = ["expected_kwargs-tagged-targets.txt"],
+    cmd = """echo "//:helloworld_py_pb2_grpc
+//:helloworld_py_pb2" > "$@"
+    """,
+)
+
+genrule(
+    name = "kwargs_passed_to_python_libs_sh",
+    outs = ["kwargs_passed_to_python_libs.sh"],
+    cmd = """echo "
+if cmp -s \"$$\\1\" \"$$\\2\" ; then
+    exit 0
+else
+    echo \"Tagged targets not found. Make sure kwargs gets passed to py_library from py_proto_library, and py_grpc_library\"
+    diff "$$\\1" "$$\\2"
+    exit 1;
+fi
+" > $@
+""",
+    executable = True,
+)
+
+# It doesn't matter which rule we use for searching, this query looks for everything in this file.
+genquery(
+    name = "kwargs-tagged-targets",
+    expression = "attr(tags, kwargs-tagged-target, siblings(//:dummy_plugin))",
+    scope = [":dummy_plugin"],
+)
+
+sh_test(
+    name = "kwargs_passed_to_python_libs",
+    srcs = ["kwargs_passed_to_python_libs_sh"],
+    args = [
+        "$(location :expected_kwargs-tagged-targets)",
+        "$(location :kwargs-tagged-targets)",
+    ],
+    data = [
+        ":expected_kwargs-tagged-targets",
+        ":kwargs-tagged-targets",
     ],
 )
