@@ -161,7 +161,7 @@ class SslContextProviderImpl
 };
 
 /// Extract the TlsContextManager instance from channel args.
-inline void XdsExtractContextManager(
+void XdsExtractContextManager(
     const grpc_channel_args* channel_args,
     TlsContextManager** tls_context_manager,
     grpc_arg_pointer_vtable* tls_context_manager_vtable,
@@ -172,7 +172,7 @@ inline void XdsExtractContextManager(
 /// If tls_context_manager is not null and cluster_data contains credential
 /// configurations, get a SslContextProvider corresponding to the credential
 /// configurations from tls_context_manager.
-inline void XdsConfigureSslContextProvider(
+void XdsConfigureSslContextProvider(
     TlsContextManager* tls_context_manager,
     const XdsApi::CdsUpdate& cluster_data,
     RefCountedPtr<SslContextProvider>* ssl_context_provider);
@@ -180,7 +180,7 @@ inline void XdsConfigureSslContextProvider(
 /// If ssl_context_provider is not null, add it's pointer as a channel arg to
 /// channel_args and return the result as a new grpc_channel_args object. If
 /// ssl_context_provider is null, return nullptr.
-inline grpc_channel_args* XdsAppendChildPolicyArgs(
+grpc_channel_args* XdsAppendChildPolicyArgs(
     const grpc_channel_args* channel_args,
     RefCountedPtr<SslContextProvider> ssl_context_provider);
 

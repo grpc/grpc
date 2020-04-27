@@ -53,6 +53,7 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
+#include "src/core/ext/filters/client_channel/xds/sds.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
