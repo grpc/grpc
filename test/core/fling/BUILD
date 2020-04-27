@@ -52,6 +52,9 @@ grpc_cc_test(
     data = [
         ":fling_client",
         ":fling_server",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
     ],
     tags = ["no_windows"],
     deps = [
@@ -68,6 +71,9 @@ grpc_cc_test(
     data = [
         ":fling_client",
         ":fling_server",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
     ],
     tags = ["no_windows"],
     deps = [

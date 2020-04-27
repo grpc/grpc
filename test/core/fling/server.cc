@@ -18,7 +18,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,12 +33,16 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/profiling/timers.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 static grpc_completion_queue* cq;
 static grpc_server* server;
@@ -205,9 +208,17 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
   cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_slice cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
   if (secure) {
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
-                                                    test_server1_cert};
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
     server = grpc_server_create(nullptr, nullptr);
@@ -323,5 +334,7 @@ int main(int argc, char** argv) {
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   grpc_shutdown();
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
   return 0;
 }
