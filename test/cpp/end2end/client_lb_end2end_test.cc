@@ -234,9 +234,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < servers_.size(); ++i) {
       servers_[i]->Shutdown();
     }
-    // Explicitly destroy all the members so that we can make sure grpc_shutdown
-    // has finished by the end of this function, and thus all the registered
-    // LB policy factories are removed.
     servers_.clear();
     creds_.reset();
     grpc_shutdown_blocking();
@@ -1640,11 +1637,18 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
  protected:
   void SetUp() override {
     ClientLbEnd2endTest::SetUp();
-    grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-        ReportTrailerIntercepted, this);
+    current_test_instance_ = this;
   }
 
   void TearDown() override { ClientLbEnd2endTest::TearDown(); }
+
+  static void SetUpTestCase() {
+    grpc_init();
+    grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+        ReportTrailerIntercepted, nullptr);
+  }
+
+  static void TearDownTestCase() { grpc_shutdown_blocking(); }
 
   int trailers_intercepted() {
     grpc::internal::MutexLock lock(&mu_);
@@ -1660,8 +1664,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   static void ReportTrailerIntercepted(
       void* arg, const grpc_core::LoadBalancingPolicy::BackendMetricData*
                      backend_metric_data) {
-    ClientLbInterceptTrailingMetadataTest* self =
-        static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
+    ClientLbInterceptTrailingMetadataTest* self = current_test_instance_;
     grpc::internal::MutexLock lock(&self->mu_);
     self->trailers_intercepted_++;
     if (backend_metric_data != nullptr) {
@@ -1684,10 +1687,14 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     }
   }
 
+  static ClientLbInterceptTrailingMetadataTest* current_test_instance_;
   grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
   std::unique_ptr<udpa::data::orca::v1::OrcaLoadReport> load_report_;
 };
+
+ClientLbInterceptTrailingMetadataTest*
+    ClientLbInterceptTrailingMetadataTest::current_test_instance_ = nullptr;
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   const int kNumServers = 1;
