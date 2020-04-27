@@ -76,7 +76,8 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Gets the last metadata entry with the specified key. If there are no matching entries then <c>null</c> is returned.
+        /// Gets the last metadata entry with the specified key.
+        /// If there are no matching entries then <c>null</c> is returned.
         /// </summary>
         public Entry Get(string key)
         {
@@ -92,7 +93,9 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Gets the string value of the last metadata entry with the specified key. If there are no matching entries then <c>null</c> is returned.
+        /// Gets the string value of the last metadata entry with the specified key.
+        /// If the metadata entry is binary then an exception is thrown.
+        /// If there are no matching entries then <c>null</c> is returned.
         /// </summary>
         public string GetValue(string key)
         {
@@ -100,7 +103,9 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Gets the bytes value of the last metadata entry with the specified key. If there are no matching entries then <c>null</c> is returned.
+        /// Gets the bytes value of the last metadata entry with the specified key.
+        /// If the metadata entry is not binary the string value will be returned as ASCII encoded bytes.
+        /// If there are no matching entries then <c>null</c> is returned.
         /// </summary>
         public byte[] GetValueBytes(string key)
         {
@@ -324,6 +329,7 @@ namespace Grpc.Core
 
             /// <summary>
             /// Gets the binary value of this metadata entry.
+            /// If the metadata entry is not binary the string value will be returned as ASCII encoded bytes.
             /// </summary>
             public byte[] ValueBytes
             {
@@ -343,13 +349,14 @@ namespace Grpc.Core
 
             /// <summary>
             /// Gets the string value of this metadata entry.
+            /// If the metadata entry is binary then an exception is thrown.
             /// </summary>
             public string Value
             {
                 get
                 {
                     GrpcPreconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
-                    return value ?? EncodingASCII.GetString(valueBytes);
+                    return value;
                 }
             }
 
