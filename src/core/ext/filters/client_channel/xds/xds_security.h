@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTER_CLIENT_CHANNEL_XDS_SDS_H
-#define GRPC_SRC_CORE_EXT_FILTER_CLIENT_CHANNEL_XDS_SDS_H
+#ifndef GRPC_SRC_CORE_EXT_FILTER_CLIENT_CHANNEL_XDS_XDS_SECURITY_H
+#define GRPC_SRC_CORE_EXT_FILTER_CLIENT_CHANNEL_XDS_XDS_SECURITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -186,4 +186,4 @@ grpc_channel_args* XdsAppendChildPolicyArgs(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTER_CLIENT_CHANNEL_XDS_SDS_H
+#endif  // GRPC_SRC_CORE_EXT_FILTER_CLIENT_CHANNEL_XDS_XDS_SECURITY_H

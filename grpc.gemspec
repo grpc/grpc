@@ -214,6 +214,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/xds/xds_client.h )
   s.files += %w( src/core/ext/filters/client_channel/xds/xds_client_stats.cc )
   s.files += %w( src/core/ext/filters/client_channel/xds/xds_client_stats.h )
+  s.files += %w( src/core/ext/filters/client_channel/xds/xds_security.h )
+  s.files += %w( src/core/ext/filters/client_channel/xds/xds_security_secure.cc )
   s.files += %w( src/core/ext/filters/client_idle/client_idle_filter.cc )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.cc )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )

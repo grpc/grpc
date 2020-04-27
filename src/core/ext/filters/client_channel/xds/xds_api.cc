@@ -1304,7 +1304,7 @@ grpc_error* CdsResponseParse(XdsClient* client, TraceFlag* tracer,
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
-    // Record SDS configuration (if any).
+    // Record security service configuration (if any).
     const envoy_api_v2_auth_UpstreamTlsContext* upstream_tls_context =
         envoy_api_v2_Cluster_tls_context(cluster);
     if (upstream_tls_context != nullptr) {

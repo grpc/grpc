@@ -77,6 +77,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/client_channel/xds/xds_channel_secure.cc',
     'src/core/ext/filters/client_channel/xds/xds_client.cc',
     'src/core/ext/filters/client_channel/xds/xds_client_stats.cc',
+    'src/core/ext/filters/client_channel/xds/xds_security_secure.cc',
     'src/core/ext/filters/client_idle/client_idle_filter.cc',
     'src/core/ext/filters/deadline/deadline_filter.cc',
     'src/core/ext/filters/http/client/http_client_filter.cc',

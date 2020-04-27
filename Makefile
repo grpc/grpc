@@ -3686,6 +3686,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
     src/core/ext/filters/client_channel/xds/xds_client.cc \
     src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
+    src/core/ext/filters/client_channel/xds/xds_security_secure.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -4322,6 +4323,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/xds/xds_channel.cc \
     src/core/ext/filters/client_channel/xds/xds_client.cc \
     src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
+    src/core/ext/filters/client_channel/xds/xds_security.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -20045,6 +20047,7 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/xds/xds_security_secure.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)

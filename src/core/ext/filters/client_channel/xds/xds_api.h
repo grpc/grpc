@@ -104,9 +104,9 @@ class XdsApi {
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
-    // The SDS configuration for credential reloading and peer validation.
-    // If the option is not set, the default gRPC channel credentials will be
-    // used.
+    // The security service configuration for credential reloading and peer
+    // validation. If the option is not set in a CDS response, the default gRPC
+    // channel credentials will be used.
     absl::optional<SecurityServiceConfig> security_service_config;
   };
 

@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/xds/sds.h"
+#include "src/core/ext/filters/client_channel/xds/xds_security.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
@@ -24,18 +24,18 @@ namespace grpc_core {
 
 void TlsContextManager::Init() {}
 
-void SdsExtractContextManager(
+void XdsExtractContextManager(
     const grpc_channel_args* channel_args,
     TlsContextManager** tls_context_manager,
     grpc_arg_pointer_vtable* tls_context_manager_vtable,
     RefCountedPtr<SslContextProvider> ssl_context_provider) {}
 
-void SdsConfigureSslContextProvider(
+void XdsConfigureSslContextProvider(
     const TlsContextManager* tls_context_manager,
     const XdsApi::CdsUpdate& cluster_data,
     RefCountedPtr<SslContextProvider>* ssl_context_provider) {}
 
-grpc_channel_args* SdsAppendChildPolicyArgs(
+grpc_channel_args* XdsAppendChildPolicyArgs(
     const grpc_channel_args* channel_args,
     RefCountedPtr<SslContextProvider> ssl_context_provider) {
   return nullptr;

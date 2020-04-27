@@ -18,8 +18,8 @@
 
 #include <memory>
 
-#include "src/core/ext/filters/client_channel/xds/sds.h"
 #include "src/core/ext/filters/client_channel/xds/xds_channel_args.h"
+#include "src/core/ext/filters/client_channel/xds/xds_security.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {

@@ -22,8 +22,8 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/xds/sds.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
+#include "src/core/ext/filters/client_channel/xds/xds_security.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -108,7 +108,7 @@ class CdsLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // The SslContextProvider cache.
-  TlsContextManager* tls_context_manager_;
+  TlsContextManager* tls_context_manager_ = nullptr;
   // The vtable associated with tls_context_manager_.
   grpc_arg_pointer_vtable tls_context_manager_vtable_;
   // Reference to the SslContextProvider instance that fetches secrets for this

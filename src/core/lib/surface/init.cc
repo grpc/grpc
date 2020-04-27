@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include "src/core/ext/filters/client_channel/xds/xds_security.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -53,7 +54,6 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
-#include "src/core/ext/filters/client_channel/xds/sds.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
