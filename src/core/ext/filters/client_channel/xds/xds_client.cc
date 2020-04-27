@@ -2068,10 +2068,14 @@ grpc_error* XdsClient::CreateServiceConfig(
       "    { \"xds_routing_experimental\":{\n"
       "      \"actions\":{\n");
   std::vector<std::string> actions_vector;
+  std::set<std::string> actions_set;
   for (size_t i = 0; i < rds_update.routes.size(); ++i) {
     auto route = rds_update.routes[i];
-    actions_vector.push_back(
-        CreateServiceConfigActionCluster(route.cluster_name.c_str()));
+    if (actions_set.find(route.cluster_name) == actions_set.end()) {
+      actions_vector.push_back(
+          CreateServiceConfigActionCluster(route.cluster_name.c_str()));
+      actions_set.emplace(route.cluster_name);
+    }
   }
   config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
   config_parts.push_back(
