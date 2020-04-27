@@ -63,7 +63,7 @@ esac
 filename="bazel-$VERSION-$suffix"
 
 if [ ! -x "$filename" ] ; then
-  curl -L "$BASEURL/$VERSION/$filename" > "$filename"
+  curl --fail -L "$BASEURL/$VERSION/$filename" > "$filename"
   chmod a+x "$filename"
 fi
 
