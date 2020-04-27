@@ -21,11 +21,21 @@ class PoissonParams extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>double offered_load = 1;</code>
      */
-    private $offered_load = 0.0;
+    protected $offered_load = 0.0;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type float $offered_load
+     *           The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

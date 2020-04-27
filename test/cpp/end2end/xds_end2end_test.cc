@@ -225,10 +225,8 @@ class CountedService : public ServiceType {
     response_count_ = 0;
   }
 
- protected:
-  grpc_core::Mutex mu_;
-
  private:
+  grpc_core::Mutex mu_;
   size_t request_count_ = 0;
   size_t response_count_ = 0;
 };
@@ -286,7 +284,6 @@ class BackendServiceImpl
     clients_.insert(client);
   }
 
-  grpc_core::Mutex mu_;
   grpc_core::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
@@ -1808,7 +1805,16 @@ TEST_P(BasicTest, BackendsRestart) {
   WaitForAllBackends();
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  CheckRpcSendFailure();
+  // Sending multiple failed requests instead of just one to ensure that the
+  // client notices that all backends are down before we restart them. If we
+  // didn't do this, then a single RPC could fail here due to the race condition
+  // between the LB pick and the GOAWAY from the chosen backend being shut down,
+  // which would not actually prove that the client noticed that all of the
+  // backends are down. Then, when we send another request below (which we
+  // expect to succeed), if the callbacks happen in the wrong order, the same
+  // race condition could happen again due to the client not yet having noticed
+  // that the backends were all down.
+  CheckRpcSendFailure(num_backends_);
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(1, RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
@@ -2706,6 +2712,9 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
   auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
+  auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route3->mutable_match()->set_path("/grpc.testing.EchoTest3Service/Echo3");
+  route3->mutable_route()->set_cluster(kDefaultResourceName);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
@@ -4055,9 +4064,6 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
     EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
               backends_[i]->backend_service()->request_count());
   }
-  // The LRS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancers_[0]->lrs_service()->WaitForLoadReport();
@@ -4072,6 +4078,9 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(kNumFailuresPerAddress * num_backends_ + num_failure,
             client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
 }
 
 // Tests that we don't include stats for clusters that are not requested

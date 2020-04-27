@@ -31,8 +31,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -169,9 +169,9 @@ class PriorityLb : public LoadBalancingPolicy {
     void StartFailoverTimerLocked();
 
     static void OnFailoverTimer(void* arg, grpc_error* error);
-    static void OnFailoverTimerLocked(void* arg, grpc_error* error);
+    void OnFailoverTimerLocked(grpc_error* error);
     static void OnDeactivationTimer(void* arg, grpc_error* error);
-    static void OnDeactivationTimerLocked(void* arg, grpc_error* error);
+    void OnDeactivationTimerLocked(grpc_error* error);
 
     RefCountedPtr<PriorityLb> priority_policy_;
     const std::string name_;
@@ -189,7 +189,6 @@ class PriorityLb : public LoadBalancingPolicy {
     // States of failover.
     grpc_timer failover_timer_;
     grpc_closure on_failover_timer_;
-    grpc_closure on_failover_timer_locked_;
     bool failover_timer_callback_pending_ = false;
   };
 
@@ -492,8 +491,8 @@ PriorityLb::ChildPriority::ChildPriority(
   }
   GRPC_CLOSURE_INIT(&on_failover_timer_, OnFailoverTimer, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_failover_timer_locked_, OnFailoverTimerLocked, this,
-                    nullptr);
+  GRPC_CLOSURE_INIT(&on_deactivation_timer_, OnDeactivationTimer, this,
+                    grpc_schedule_on_exec_ctx);
   // Start the failover timer.
   StartFailoverTimerLocked();
 }
@@ -550,7 +549,7 @@ OrphanablePtr<LoadBalancingPolicy>
 PriorityLb::ChildPriority::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = priority_policy_->combiner();
+  lb_policy_args.work_serializer = priority_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
@@ -631,26 +630,25 @@ void PriorityLb::ChildPriority::MaybeCancelFailoverTimerLocked() {
 
 void PriorityLb::ChildPriority::OnFailoverTimer(void* arg, grpc_error* error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
-  self->priority_policy_->combiner()->Run(&self->on_failover_timer_locked_,
-                                          GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  self->priority_policy_->work_serializer()->Run(
+      [self, error]() { self->OnFailoverTimerLocked(error); }, DEBUG_LOCATION);
 }
 
-void PriorityLb::ChildPriority::OnFailoverTimerLocked(void* arg,
-                                                      grpc_error* error) {
-  ChildPriority* self = static_cast<ChildPriority*>(arg);
-  if (error == GRPC_ERROR_NONE && self->failover_timer_callback_pending_ &&
-      !self->priority_policy_->shutting_down_) {
+void PriorityLb::ChildPriority::OnFailoverTimerLocked(grpc_error* error) {
+  if (error == GRPC_ERROR_NONE && failover_timer_callback_pending_ &&
+      !priority_policy_->shutting_down_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): failover timer fired, "
               "reporting TRANSIENT_FAILURE",
-              self->priority_policy_.get(), self->name_.c_str(), self);
+              priority_policy_.get(), name_.c_str(), this);
     }
-    self->failover_timer_callback_pending_ = false;
-    self->OnConnectivityStateUpdateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                          nullptr);
+    failover_timer_callback_pending_ = false;
+    OnConnectivityStateUpdateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, nullptr);
   }
-  self->Unref(DEBUG_LOCATION, "ChildPriority+OnFailoverTimerLocked");
+  Unref(DEBUG_LOCATION, "ChildPriority+OnFailoverTimerLocked");
+  GRPC_ERROR_UNREF(error);
 }
 
 void PriorityLb::ChildPriority::DeactivateLocked() {
@@ -666,8 +664,6 @@ void PriorityLb::ChildPriority::DeactivateLocked() {
   MaybeCancelFailoverTimerLocked();
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "ChildPriority+timer").release();
-  GRPC_CLOSURE_INIT(&on_deactivation_timer_, OnDeactivationTimer, this,
-                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(&deactivation_timer_,
                   ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
                   &on_deactivation_timer_);
@@ -688,27 +684,26 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 void PriorityLb::ChildPriority::OnDeactivationTimer(void* arg,
                                                     grpc_error* error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
-  self->priority_policy_->combiner()->Run(
-      GRPC_CLOSURE_INIT(&self->on_deactivation_timer_,
-                        OnDeactivationTimerLocked, self, nullptr),
-      GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  self->priority_policy_->work_serializer()->Run(
+      [self, error]() { self->OnDeactivationTimerLocked(error); },
+      DEBUG_LOCATION);
 }
 
-void PriorityLb::ChildPriority::OnDeactivationTimerLocked(void* arg,
-                                                          grpc_error* error) {
-  ChildPriority* self = static_cast<ChildPriority*>(arg);
-  if (error == GRPC_ERROR_NONE && self->deactivation_timer_callback_pending_ &&
-      !self->priority_policy_->shutting_down_) {
+void PriorityLb::ChildPriority::OnDeactivationTimerLocked(grpc_error* error) {
+  if (error == GRPC_ERROR_NONE && deactivation_timer_callback_pending_ &&
+      !priority_policy_->shutting_down_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): deactivation timer fired, "
               "deleting child",
-              self->priority_policy_.get(), self->name_.c_str(), self);
+              priority_policy_.get(), name_.c_str(), this);
     }
-    self->deactivation_timer_callback_pending_ = false;
-    self->priority_policy_->DeleteChild(self);
+    deactivation_timer_callback_pending_ = false;
+    priority_policy_->DeleteChild(this);
   }
-  self->Unref(DEBUG_LOCATION, "ChildPriority+timer");
+  Unref(DEBUG_LOCATION, "ChildPriority+timer");
+  GRPC_ERROR_UNREF(error);
 }
 
 //

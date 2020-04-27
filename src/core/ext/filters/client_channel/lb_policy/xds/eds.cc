@@ -37,8 +37,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
@@ -424,7 +424,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
     if (xds_client_from_channel_ == nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       xds_client_ = MakeOrphanable<XdsClient>(
-          combiner(), interested_parties(), GetEdsResourceName(),
+          work_serializer(), interested_parties(), GetEdsResourceName(),
           nullptr /* service config watcher */, *args_, &error);
       // TODO(roth): If we decide that we care about EDS-only mode, add
       // proper error handling here.
@@ -711,7 +711,7 @@ grpc_channel_args* EdsLb::CreateChildPolicyArgsLocked(
 OrphanablePtr<LoadBalancingPolicy> EdsLb::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));

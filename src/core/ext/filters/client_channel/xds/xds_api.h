@@ -25,6 +25,7 @@
 
 #include <set>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 
 #include <grpc/slice_buffer.h>
@@ -172,7 +173,7 @@ class XdsApi {
     }
 
    private:
-    InlinedVector<LocalityMap, 2> priorities_;
+    absl::InlinedVector<LocalityMap, 2> priorities_;
   };
 
   // There are two phases of accessing this class's content:
@@ -191,7 +192,7 @@ class XdsApi {
       const uint32_t parts_per_million;
     };
 
-    using DropCategoryList = InlinedVector<DropCategory, 2>;
+    using DropCategoryList = absl::InlinedVector<DropCategory, 2>;
 
     void AddCategory(std::string name, uint32_t parts_per_million) {
       drop_category_list_.emplace_back(

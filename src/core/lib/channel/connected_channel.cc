@@ -91,9 +91,12 @@ static callback_state* get_state_for_batch(
 /* We perform a small hack to locate transport data alongside the connected
    channel data in call allocations, to allow everything to be pulled in minimal
    cache line requests */
-#define TRANSPORT_STREAM_FROM_CALL_DATA(calld) ((grpc_stream*)((calld) + 1))
+#define TRANSPORT_STREAM_FROM_CALL_DATA(calld) \
+  ((grpc_stream*)(((char*)(calld)) +           \
+                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
 #define CALL_DATA_FROM_TRANSPORT_STREAM(transport_stream) \
-  (((call_data*)(transport_stream)) - 1)
+  ((call_data*)(((char*)(transport_stream)) -             \
+                GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */

@@ -31,7 +31,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 

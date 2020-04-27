@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -71,8 +73,8 @@ RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
 
 grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
     const ServerAddressList& addresses, grpc_channel_args* args) {
-  InlinedVector<const char*, 1> args_to_remove;
-  InlinedVector<grpc_arg, 2> args_to_add;
+  absl::InlinedVector<const char*, 1> args_to_remove;
+  absl::InlinedVector<grpc_arg, 2> args_to_add;
   // Add arg for targets info table.
   RefCountedPtr<TargetAuthorityTable> target_authority_table =
       CreateTargetAuthorityTable(addresses);

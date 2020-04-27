@@ -49,6 +49,7 @@ libs:
   - test/core/end2end/tests/cancel_in_a_vacuum.cc
   - test/core/end2end/tests/cancel_with_status.cc
   - test/core/end2end/tests/channelz.cc
+  - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
@@ -157,6 +158,7 @@ libs:
   - test/core/end2end/tests/cancel_in_a_vacuum.cc
   - test/core/end2end/tests/cancel_with_status.cc
   - test/core/end2end/tests/channelz.cc
+  - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
@@ -546,8 +548,6 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/inlined_vector.h
-  - src/core/lib/gprpp/optional.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -1449,8 +1449,6 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/inlined_vector.h
-  - src/core/lib/gprpp/optional.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -6536,19 +6534,6 @@ targets:
   - benchmark
   benchmark: true
   defaults: benchmark
-- name: optional_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/optional_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
 - name: orphanable_test
   gtest: true
   build: test

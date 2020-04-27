@@ -2,7 +2,7 @@
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
-// Copyright 2015 gRPC authors.
+// Copyright 2018 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@
 namespace Grpc\Testing;
 
 /**
+ * A service that has zero methods.
+ * See https://github.com/grpc/grpc/issues/15574
  */
-class UnimplementedEchoServiceClient extends \Grpc\BaseStub {
+class EmptyServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -29,19 +31,6 @@ class UnimplementedEchoServiceClient extends \Grpc\BaseStub {
      */
     public function __construct($hostname, $opts, $channel = null) {
         parent::__construct($hostname, $opts, $channel);
-    }
-
-    /**
-     * @param \Grpc\Testing\EchoRequest $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
-     */
-    public function Unimplemented(\Grpc\Testing\EchoRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.UnimplementedEchoService/Unimplemented',
-        $argument,
-        ['\Grpc\Testing\EchoResponse', 'decode'],
-        $metadata, $options);
     }
 
 }

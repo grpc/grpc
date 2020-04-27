@@ -27,7 +27,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -176,7 +176,7 @@ LoadBalancingPolicy::PickResult LrsLb::LoadReportingPicker::Pick(
         locality_stats_->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
     result.recv_trailing_metadata_ready =
         // Note: This callback does not run in either the control plane
-        // combiner or in the data plane mutex.
+        // work serializer or in the data plane mutex.
         [locality_stats](grpc_error* error, MetadataInterface* /*metadata*/,
                          CallState* /*call_state*/) {
           const bool call_failed = error != GRPC_ERROR_NONE;
@@ -273,7 +273,7 @@ void LrsLb::MaybeUpdatePickerLocked() {
 OrphanablePtr<LoadBalancingPolicy> LrsLb::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));

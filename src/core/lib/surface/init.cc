@@ -243,7 +243,7 @@ int grpc_is_initialized(void) {
 void grpc_maybe_wait_for_async_shutdown(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
   grpc_core::MutexLock lock(&g_init_mu);
-  while (g_shutting_down) {
+  while (g_shutting_down || g_initializations > 0) {
     gpr_cv_wait(g_shutting_down_cv, &g_init_mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
   }

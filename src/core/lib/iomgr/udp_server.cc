@@ -44,6 +44,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -52,7 +54,6 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -177,7 +178,7 @@ struct grpc_udp_server {
   int shutdown;
 
   /* An array of listeners */
-  grpc_core::InlinedVector<GrpcUdpListener, 16> listeners;
+  absl::InlinedVector<GrpcUdpListener, 16> listeners;
 
   /* factory for use to create udp listeners */
   GrpcUdpHandlerFactory* handler_factory;

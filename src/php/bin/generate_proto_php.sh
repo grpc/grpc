@@ -16,16 +16,15 @@
 set -e
 cd $(dirname $0)/../../..
 
-# TODO(jtattermusch): unlike for e.g. ruby and csharp,
-# PHP runs the code generator as part of the build, so we cannot
-# easily use bazel-built "protoc" and "grpc_php_plugin" binaries.
-# TODO(jtattermusch): the generated code for qps tests
-# is actually checked into the repository, but for other tests
-# (e.g. interop or unit tests) it's not. This should made consistent.
-protoc --proto_path=src/proto/math \
+# protoc and grpc_*_plugin binaries can be obtained by running
+# $ bazel build @com_google_protobuf//:protoc //src/compiler:all
+PROTOC=bazel-bin/external/com_google_protobuf/protoc
+PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_php_plugin
+
+$PROTOC --proto_path=src/proto/math \
        --php_out=src/php/tests/generated_code \
        --grpc_out=src/php/tests/generated_code \
-       --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
+       --plugin=$PLUGIN \
        src/proto/math/math.proto
 
 # replace the Empty message with EmptyMessage
@@ -38,13 +37,22 @@ sed 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
   src/proto/grpc/testing/test.proto > $output_file
 mv $output_file ./src/proto/grpc/testing/test.proto
 
-protoc --proto_path=. \
+# interop test protos
+$PROTOC --proto_path=. \
        --php_out=src/php/tests/interop \
        --grpc_out=src/php/tests/interop \
-       --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
+       --plugin=$PLUGIN \
        src/proto/grpc/testing/messages.proto \
        src/proto/grpc/testing/empty.proto \
        src/proto/grpc/testing/test.proto
+
+# qps test protos
+$PROTOC --proto_path=. \
+       --php_out=src/php/tests/qps/generated_code \
+       --grpc_out=src/php/tests/qps/generated_code \
+       --plugin=$PLUGIN \
+       src/proto/grpc/core/stats.proto \
+       src/proto/grpc/testing/{benchmark_service,compiler_test,control,echo_messages,empty,empty_service,messages,payloads,proxy-service,report_qps_scenario_service,stats,test,worker_service}.proto
 
 # change it back
 sed 's/message EmptyMessage/message Empty/g' \
@@ -53,4 +61,3 @@ mv $output_file ./src/proto/grpc/testing/empty.proto
 sed 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
   src/proto/grpc/testing/test.proto > $output_file
 mv $output_file ./src/proto/grpc/testing/test.proto
-
