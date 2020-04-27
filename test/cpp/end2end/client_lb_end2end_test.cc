@@ -48,7 +48,6 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -1672,14 +1671,14 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
           backend_metric_data->mem_utilization);
       self->load_report_->set_rps(backend_metric_data->requests_per_second);
       for (const auto& p : backend_metric_data->request_cost) {
-        grpc_core::UniquePtr<char> name =
-            grpc_core::StringViewToCString(p.first);
-        (*self->load_report_->mutable_request_cost())[name.get()] = p.second;
+        std::string name = std::string(p.first);
+        (*self->load_report_->mutable_request_cost())[std::move(name)] =
+            p.second;
       }
       for (const auto& p : backend_metric_data->utilization) {
-        grpc_core::UniquePtr<char> name =
-            grpc_core::StringViewToCString(p.first);
-        (*self->load_report_->mutable_utilization())[name.get()] = p.second;
+        std::string name = std::string(p.first);
+        (*self->load_report_->mutable_utilization())[std::move(name)] =
+            p.second;
       }
     }
   }

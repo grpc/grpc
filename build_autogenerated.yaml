@@ -302,7 +302,6 @@ libs:
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
-  - src/core/lib/gprpp/string_view.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
@@ -7241,19 +7240,6 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
-- name: string_view_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/string_view_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test

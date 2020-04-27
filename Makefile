@@ -1289,7 +1289,6 @@ status_metadata_test: $(BINDIR)/$(CONFIG)/status_metadata_test
 status_util_test: $(BINDIR)/$(CONFIG)/status_util_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 string_ref_test: $(BINDIR)/$(CONFIG)/string_ref_test
-string_view_test: $(BINDIR)/$(CONFIG)/string_view_test
 test_cpp_client_credentials_test: $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test
 test_cpp_util_slice_test: $(BINDIR)/$(CONFIG)/test_cpp_util_slice_test
 test_cpp_util_time_test: $(BINDIR)/$(CONFIG)/test_cpp_util_time_test
@@ -1649,7 +1648,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/status_util_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/string_ref_test \
-  $(BINDIR)/$(CONFIG)/string_view_test \
   $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test \
   $(BINDIR)/$(CONFIG)/test_cpp_util_slice_test \
   $(BINDIR)/$(CONFIG)/test_cpp_util_time_test \
@@ -1806,7 +1804,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/status_util_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/string_ref_test \
-  $(BINDIR)/$(CONFIG)/string_view_test \
   $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test \
   $(BINDIR)/$(CONFIG)/test_cpp_util_slice_test \
   $(BINDIR)/$(CONFIG)/test_cpp_util_time_test \
@@ -2335,8 +2332,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
 	$(E) "[RUN]     Testing string_ref_test"
 	$(Q) $(BINDIR)/$(CONFIG)/string_ref_test || ( echo test string_ref_test failed ; exit 1 )
-	$(E) "[RUN]     Testing string_view_test"
-	$(Q) $(BINDIR)/$(CONFIG)/string_view_test || ( echo test string_view_test failed ; exit 1 )
 	$(E) "[RUN]     Testing test_cpp_client_credentials_test"
 	$(Q) $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test || ( echo test test_cpp_client_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing test_cpp_util_slice_test"
@@ -18193,49 +18188,6 @@ deps_string_ref_test: $(STRING_REF_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(STRING_REF_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-STRING_VIEW_TEST_SRC = \
-    test/core/gprpp/string_view_test.cc \
-
-STRING_VIEW_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STRING_VIEW_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/string_view_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
-
-$(BINDIR)/$(CONFIG)/string_view_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/string_view_test: $(PROTOBUF_DEP) $(STRING_VIEW_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(STRING_VIEW_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/string_view_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/gprpp/string_view_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_string_view_test: $(STRING_VIEW_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(STRING_VIEW_TEST_OBJS:.o=.dep)
 endif
 endif
 

@@ -160,7 +160,6 @@ config("grpc_config") {
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/mpscq.h",
-        "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/gprpp/thd_posix.cc",

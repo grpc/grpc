@@ -34,6 +34,7 @@
 #endif
 
 #include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -53,7 +54,6 @@ extern "C" {
 }
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
@@ -1677,10 +1677,8 @@ static int does_entry_match_name(absl::string_view entry,
   entry.remove_prefix(2);                  /* Remove *. */
   size_t dot = name_subdomain.find('.');
   if (dot == absl::string_view::npos || dot == name_subdomain.size() - 1) {
-    grpc_core::UniquePtr<char> name_subdomain_cstr(
-        grpc_core::StringViewToCString(name_subdomain));
     gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s",
-            name_subdomain_cstr.get());
+            std::string(name_subdomain).c_str());
     return 0;
   }
   if (name_subdomain.back() == '.') {

@@ -62,17 +62,17 @@ static grpc_error* windows_blocking_resolve_address(
   grpc_error* error = GRPC_ERROR_NONE;
 
   /* parse name, splitting it into host and port parts */
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   grpc_core::SplitHostPort(name, &host, &port);
-  if (host == NULL) {
+  if (host.empty()) {
     char* msg;
     gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     goto done;
   }
-  if (port == NULL) {
+  if (port.empty()) {
     if (default_port == NULL) {
       char* msg;
       gpr_asprintf(&msg, "no port in name '%s'", name);
@@ -80,7 +80,7 @@ static grpc_error* windows_blocking_resolve_address(
       gpr_free(msg);
       goto done;
     }
-    port.reset(gpr_strdup(default_port));
+    port = default_port;
   }
 
   /* Call getaddrinfo */
@@ -90,7 +90,7 @@ static grpc_error* windows_blocking_resolve_address(
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  s = getaddrinfo(host.get(), port.get(), &hints, &result);
+  s = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "getaddrinfo");

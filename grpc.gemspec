@@ -540,7 +540,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )
-  s.files += %w( src/core/lib/gprpp/string_view.h )
   s.files += %w( src/core/lib/gprpp/sync.h )
   s.files += %w( src/core/lib/gprpp/thd.h )
   s.files += %w( src/core/lib/gprpp/thd_posix.cc )
