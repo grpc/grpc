@@ -51,7 +51,6 @@
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/surface/init.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
@@ -241,7 +240,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
     servers_.clear();
     creds_.reset();
     grpc_shutdown_blocking();
-    grpc_maybe_wait_for_async_shutdown();
   }
 
   void CreateServers(size_t num_servers,
