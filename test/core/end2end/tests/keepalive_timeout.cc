@@ -276,7 +276,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello you");
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = n_seconds_from_now(60);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
