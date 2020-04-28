@@ -166,9 +166,9 @@ class InterceptorBatchMethodsImpl
     send_trailing_metadata_ = metadata;
   }
 
-  void SetRecvMessage(void* message, bool* hijacked_recv_message_status) {
+  void SetRecvMessage(void* message, bool* hijacked_recv_message_failed) {
     recv_message_ = message;
-    hijacked_recv_message_status_ = hijacked_recv_message_status;
+    hijacked_recv_message_failed_ = hijacked_recv_message_failed;
   }
 
   void SetRecvInitialMetadata(MetadataMap* map) {
@@ -195,7 +195,7 @@ class InterceptorBatchMethodsImpl
   void FailHijackedRecvMessage() override {
     GPR_CODEGEN_ASSERT(hooks_[static_cast<size_t>(
         experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)]);
-    *hijacked_recv_message_status_ = false;
+    *hijacked_recv_message_failed_ = true;
   }
 
   // Clears all state
@@ -407,7 +407,7 @@ class InterceptorBatchMethodsImpl
   std::multimap<grpc::string, grpc::string>* send_trailing_metadata_ = nullptr;
 
   void* recv_message_ = nullptr;
-  bool* hijacked_recv_message_status_ = nullptr;
+  bool* hijacked_recv_message_failed_ = nullptr;
 
   MetadataMap* recv_initial_metadata_ = nullptr;
 

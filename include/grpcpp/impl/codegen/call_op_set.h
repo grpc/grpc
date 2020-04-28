@@ -453,8 +453,12 @@ class CallOpRecvMessage {
         recv_buf_.Clear();
       }
     } else if (hijacked_) {
-      if (!hijacked_recv_message_status_) {
+      if (hijacked_recv_message_failed_) {
         FinishOpRecvMessageFailureHandler(status);
+      } else {
+        // The op was hijacked and it was successful. There is no further action
+        // to be performed since the message is already in its non-serialized
+        // form.
       }
     } else {
       FinishOpRecvMessageFailureHandler(status);
@@ -465,7 +469,7 @@ class CallOpRecvMessage {
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (message_ == nullptr) return;
     interceptor_methods->SetRecvMessage(message_,
-                                        &hijacked_recv_message_status_);
+                                        &hijacked_recv_message_failed_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -496,7 +500,7 @@ class CallOpRecvMessage {
   ByteBuffer recv_buf_;
   bool allow_not_getting_message_ = false;
   bool hijacked_ = false;
-  bool hijacked_recv_message_status_ = true;
+  bool hijacked_recv_message_failed_ = false;
 };
 
 class DeserializeFunc {
@@ -559,8 +563,12 @@ class CallOpGenericRecvMessage {
         recv_buf_.Clear();
       }
     } else if (hijacked_) {
-      if (!hijacked_recv_message_status_) {
+      if (hijacked_recv_message_failed_) {
         FinishOpRecvMessageFailureHandler(status);
+      } else {
+        // The op was hijacked and it was successful. There is no further action
+        // to be performed since the message is already in its non-serialized
+        // form.
       }
     } else {
       got_message = false;
@@ -574,7 +582,7 @@ class CallOpGenericRecvMessage {
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (!deserialize_) return;
     interceptor_methods->SetRecvMessage(message_,
-                                        &hijacked_recv_message_status_);
+                                        &hijacked_recv_message_failed_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -607,7 +615,7 @@ class CallOpGenericRecvMessage {
   ByteBuffer recv_buf_;
   bool allow_not_getting_message_ = false;
   bool hijacked_ = false;
-  bool hijacked_recv_message_status_ = true;
+  bool hijacked_recv_message_failed_ = false;
 };
 
 class CallOpClientSendClose {
