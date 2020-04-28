@@ -1414,18 +1414,24 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
   src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c
   src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
@@ -1446,6 +1452,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c
+  src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c
   src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
   src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
   src/core/ext/upb-generated/envoy/type/http.upb.c
@@ -1474,6 +1481,7 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
+  src/core/ext/upb-generated/udpa/annotations/status.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/lib/avl/avl.cc
@@ -2074,18 +2082,24 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
   src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c
   src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
@@ -2106,6 +2120,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c
+  src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c
   src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
   src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
   src/core/ext/upb-generated/envoy/type/http.upb.c
@@ -2131,6 +2146,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
+  src/core/ext/upb-generated/udpa/annotations/status.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/lib/avl/avl.cc

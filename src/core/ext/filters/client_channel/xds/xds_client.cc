@@ -382,6 +382,7 @@ class XdsClient::ChannelState::LrsCallState
   grpc_closure on_status_received_;
 
   // Load reporting state.
+  bool send_all_clusters_ = false;
   std::set<std::string> cluster_names_;  // Asked for by the LRS server.
   grpc_millis load_reporting_interval_ = 0;
   OrphanablePtr<Reporter> reporter_;
@@ -1426,8 +1427,8 @@ bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
 
 void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   // Construct snapshot from all reported stats.
-  XdsApi::ClusterLoadReportMap snapshot =
-      xds_client()->BuildLoadReportSnapshot(parent_->cluster_names_);
+  XdsApi::ClusterLoadReportMap snapshot = xds_client()->BuildLoadReportSnapshot(
+      parent_->send_all_clusters_, parent_->cluster_names_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
@@ -1669,10 +1670,12 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
   // This anonymous lambda is a hack to avoid the usage of goto.
   [&]() {
     // Parse the response.
+    bool send_all_clusters = false;
     std::set<std::string> new_cluster_names;
     grpc_millis new_load_reporting_interval;
     grpc_error* parse_error = xds_client()->api_.ParseLrsResponse(
-        response_slice, &new_cluster_names, &new_load_reporting_interval);
+        response_slice, &send_all_clusters, &new_cluster_names,
+        &new_load_reporting_interval);
     if (parse_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
               "[xds_client %p] LRS response parsing failed. error=%s",
@@ -1682,11 +1685,13 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
     }
     seen_response_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] LRS response received, %" PRIuPTR
-              " cluster names, load_report_interval=%" PRId64 "ms",
-              xds_client(), new_cluster_names.size(),
-              new_load_reporting_interval);
+      gpr_log(
+          GPR_INFO,
+          "[xds_client %p] LRS response received, %" PRIuPTR
+          " cluster names, send_all_clusters=%d, load_report_interval=%" PRId64
+          "ms",
+          xds_client(), new_cluster_names.size(), send_all_clusters,
+          new_load_reporting_interval);
       size_t i = 0;
       for (const auto& name : new_cluster_names) {
         gpr_log(GPR_INFO, "[xds_client %p] cluster_name %" PRIuPTR ": %s",
@@ -1705,7 +1710,8 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
       }
     }
     // Ignore identical update.
-    if (cluster_names_ == new_cluster_names &&
+    if (send_all_clusters == send_all_clusters_ &&
+        cluster_names_ == new_cluster_names &&
         load_reporting_interval_ == new_load_reporting_interval) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
         gpr_log(GPR_INFO,
@@ -1718,6 +1724,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
     // Stop current load reporting (if any) to adopt the new config.
     reporter_.reset();
     // Record the new config.
+    send_all_clusters_ = send_all_clusters;
     cluster_names_ = std::move(new_cluster_names);
     load_reporting_interval_ = new_load_reporting_interval;
     // Try starting sending load report.
@@ -2106,7 +2113,7 @@ grpc_error* XdsClient::CreateServiceConfig(
 }
 
 XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot(
-    const std::set<std::string>& clusters) {
+    bool send_all_clusters, const std::set<std::string>& clusters) {
   XdsApi::ClusterLoadReportMap snapshot_map;
   for (auto load_report_it = load_report_map_.begin();
        load_report_it != load_report_map_.end();) {
@@ -2121,7 +2128,7 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot(
     // asking for the data in the future, we don't incorrectly include
     // data from previous reporting intervals in that future report.
     const bool record_stats =
-        clusters.find(cluster_key.first) != clusters.end();
+        send_all_clusters || clusters.find(cluster_key.first) != clusters.end();
     XdsApi::ClusterLoadReport snapshot;
     // Aggregate drop stats.
     snapshot.dropped_requests = std::move(load_report.deleted_drop_stats);

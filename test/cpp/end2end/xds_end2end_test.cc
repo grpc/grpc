@@ -985,10 +985,17 @@ class LrsServiceImpl : public LrsService,
           request.node().metadata().fields().find("PROXYLESS_CLIENT_HOSTNAME");
       GPR_ASSERT(it != request.node().metadata().fields().end());
       EXPECT_EQ(it->second.string_value(), kDefaultResourceName);
+      // Verify client features.
+      EXPECT_THAT(request.node().client_features(),
+                  ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
       // Send initial response.
       LoadStatsResponse response;
-      for (const std::string& cluster_name : cluster_names_) {
-        response.add_clusters(cluster_name);
+      if (send_all_clusters_) {
+        response.set_send_all_clusters(true);
+      } else {
+        for (const std::string& cluster_name : cluster_names_) {
+          response.add_clusters(cluster_name);
+        }
       }
       response.mutable_load_reporting_interval()->set_seconds(
           client_load_reporting_interval_seconds_);
@@ -1016,6 +1023,9 @@ class LrsServiceImpl : public LrsService,
   }
 
   // Must be called before the LRS call is started.
+  void set_send_all_clusters(bool send_all_clusters) {
+    send_all_clusters_ = send_all_clusters;
+  }
   void set_cluster_names(const std::set<std::string>& cluster_names) {
     cluster_names_ = cluster_names;
   }
@@ -1061,6 +1071,7 @@ class LrsServiceImpl : public LrsService,
   }
 
   const int client_load_reporting_interval_seconds_;
+  bool send_all_clusters_ = false;
   std::set<std::string> cluster_names_;
 
   grpc_core::CondVar lrs_cv_;
@@ -3804,6 +3815,53 @@ class ClientLoadReportingTest : public XdsEnd2endTest {
 
 // Tests that the load report received at the balancer is correct.
 TEST_P(ClientLoadReportingTest, Vanilla) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannel({balancers_[0]->port()});
+  const size_t kNumRpcsPerAddress = 10;
+  const size_t kNumFailuresPerAddress = 3;
+  // TODO(juanlishen): Partition the backends after multiple localities is
+  // tested.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // Wait until all backends are ready.
+  int num_ok = 0;
+  int num_failure = 0;
+  int num_drops = 0;
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  CheckRpcSendFailure(kNumFailuresPerAddress * num_backends_,
+                      /*server_fail=*/true);
+  // Check that each backend got the right number of requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
+              backends_[i]->backend_service()->request_count());
+  }
+  // The load report received at the balancer should be correct.
+  std::vector<ClientStats> load_report =
+      balancers_[0]->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(load_report.size(), 1UL);
+  ClientStats& client_stats = load_report.front();
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
+            client_stats.total_successful_requests());
+  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
+  EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * num_backends_ +
+                num_ok + num_failure,
+            client_stats.total_issued_requests());
+  EXPECT_EQ(kNumFailuresPerAddress * num_backends_ + num_failure,
+            client_stats.total_error_requests());
+  EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
+}
+
+// Tests send_all_clusters.
+TEST_P(ClientLoadReportingTest, SendAllClusters) {
+  balancers_[0]->lrs_service()->set_send_all_clusters(true);
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 10;
