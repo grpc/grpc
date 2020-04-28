@@ -19,22 +19,19 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+
+#include <mutex>
+#include <unordered_map>
+
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/security/server_credentials.h>
 
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-#include <mutex>
-#include <unordered_map>
-
-#include "src/core/lib/iomgr/load_file.h"
-
-#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
-#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#include "test/core/end2end/data/ssl_test_data.h"
 
 DEFINE_string(tls_cert_file, "", "The TLS cert file used when --use_tls=true");
 DEFINE_string(tls_key_file, "", "The TLS key file used when --use_tls=true");
@@ -65,9 +62,6 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     if (!FLAGS_tls_cert_file.empty()) {
       custom_server_cert_ = ReadFile(FLAGS_tls_cert_file);
     }
-    test_root_cert_ = ReadFile(CA_CERT_PATH);
-    server_key_ = ReadFile(SERVER_KEY_PATH);
-    server_cert_ = ReadFile(SERVER_CERT_PATH);
   }
   ~DefaultCredentialsProvider() override {}
 
@@ -96,7 +90,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       grpc::experimental::AltsCredentialsOptions alts_opts;
       return grpc::experimental::AltsCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
-      SslCredentialsOptions ssl_opts = {test_root_cert_, "", ""};
+      SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
@@ -129,8 +123,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
             custom_server_key_, custom_server_cert_};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       } else {
-        SslServerCredentialsOptions::PemKeyCertPair pkcp = {server_key_,
-                                                            server_cert_};
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+                                                            test_server1_cert};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       }
       return SslServerCredentials(ssl_opts);
@@ -164,9 +158,6 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       added_secure_type_providers_;
   grpc::string custom_server_key_;
   grpc::string custom_server_cert_;
-  grpc::string test_root_cert_;
-  grpc::string server_key_;
-  grpc::string server_cert_;
 };
 
 CredentialsProvider* g_provider = nullptr;

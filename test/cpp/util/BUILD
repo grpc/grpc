@@ -74,11 +74,6 @@ grpc_cc_library(
         "create_test_channel.h",
         "test_credentials_provider.h",
     ],
-    data = [
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
-    ],
     external_deps = [
         "gflags",
         "protobuf",
