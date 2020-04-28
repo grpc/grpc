@@ -28,10 +28,10 @@ void XdsExtractContextManager(
     const grpc_channel_args* channel_args,
     TlsContextManager** tls_context_manager,
     grpc_arg_pointer_vtable* tls_context_manager_vtable,
-    RefCountedPtr<SslContextProvider> ssl_context_provider) {}
+    RefCountedPtr<SslContextProvider>* ssl_context_provider) {}
 
 void XdsConfigureSslContextProvider(
-    const TlsContextManager* tls_context_manager,
+    TlsContextManager* tls_context_manager,
     const XdsApi::CdsUpdate& cluster_data,
     RefCountedPtr<SslContextProvider>* ssl_context_provider) {}
 
