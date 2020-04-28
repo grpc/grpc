@@ -222,9 +222,12 @@ _BOOTSTRAP_TEMPLATE = """
     ]
   }}]
 }}""" % (args.network.split('/')[-1], args.zone, args.xds_server)
+
+# TODO(ericgribkoff) Add change_backend_service to this list once TD no longer
+# sends an update with no localities when adding the MIG to the backend service
+# can race with the URL map patch.
 _TESTS_TO_FAIL_ON_RPC_FAILURE = [
-    'change_backend_service', 'new_instance_group_receives_traffic',
-    'ping_pong', 'round_robin'
+    'new_instance_group_receives_traffic', 'ping_pong', 'round_robin'
 ]
 _TESTS_USING_SECONDARY_IG = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
@@ -348,9 +351,6 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
                                              _WAIT_FOR_STATS_SEC)
     try:
         patch_url_map_backend_service(gcp, alternate_backend_service)
-        # TODO(ericgribkoff) Verify no RPCs fail during backend switch.
-        # Currently TD may briefly send an update with no localities if adding
-        # the MIG to the backend service above races with the URL map patch.
         wait_until_all_rpcs_go_to_given_backends(alternate_backend_instances,
                                                  _WAIT_FOR_URL_MAP_PATCH_SEC)
     finally:
