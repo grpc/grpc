@@ -24,7 +24,6 @@
   "testing._time_test.StrictFakeTimeTest",
   "testing._time_test.StrictRealTimeTest",
   "unit._abort_test.AbortTest",
-  "unit._alts_credentials_test.ALTSCredentialsTest",
   "unit._api_test.AllTest",
   "unit._api_test.ChannelConnectivityTest",
   "unit._api_test.ChannelTest",

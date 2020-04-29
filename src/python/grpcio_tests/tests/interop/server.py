@@ -54,8 +54,6 @@ def get_server_credentials(use_tls):
         return grpc.alts_server_credentials()
 
 
-
-
 def serve():
     args = parse_interop_server_arguments()
 
