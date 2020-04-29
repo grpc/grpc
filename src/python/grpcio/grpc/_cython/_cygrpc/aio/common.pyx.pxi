@@ -142,15 +142,14 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
         TypeError: StopIteration interacts badly with generators and cannot be
             raised into a Future
     """
-    queue = asyncio.Queue(loop=loop)
+    queue = asyncio.Queue(maxsize=1, loop=loop)
 
     def yield_to_queue():
         try:
             for item in gen:
-                # For an infinite sized queue, the put_nowait should always success
-                loop.call_soon_threadsafe(queue.put_nowait, item)
+                asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
         finally:
-            loop.call_soon_threadsafe(queue.put_nowait, EOF)
+            asyncio.run_coroutine_threadsafe(queue.put(EOF), loop).result()
 
     future = loop.run_in_executor(
         thread_pool,
@@ -165,4 +164,4 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
             yield response
 
     # Port the exception if there is any
-    future.result()
+    await future
