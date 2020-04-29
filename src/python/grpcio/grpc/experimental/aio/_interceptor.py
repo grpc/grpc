@@ -22,10 +22,13 @@ import grpc
 from grpc._cython import cygrpc
 
 from . import _base_call
-from ._call import UnaryUnaryCall, UnaryStreamCall, AioRpcError
+from ._call import UnaryUnaryCall, UnaryStreamCall, StreamUnaryCall, AioRpcError
+from ._call import _RPC_ALREADY_FINISHED_DETAILS, _RPC_HALF_CLOSED_DETAILS
+from ._call import _API_STYLE_ERROR
 from ._utils import _timeout_to_deadline
 from ._typing import (RequestType, SerializingFunction, DeserializingFunction,
-                      MetadataType, ResponseType, DoneCallbackType)
+                      MetadataType, ResponseType, DoneCallbackType,
+                      RequestIterableType)
 
 _LOCAL_CANCELLATION_DETAILS = 'Locally cancelled by application!'
 
@@ -132,18 +135,58 @@ class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     ) -> Union[AsyncIterable[ResponseType], UnaryStreamCall]:
         """Intercepts a unary-stream invocation asynchronously.
 
+        The function could return the call object or an asynchronous
+        iterator, in case of being an asyncrhonous iterator this will
+        become the source of the reads done by the caller.
+
         Args:
           continuation: A coroutine that proceeds with the invocation by
             executing the next interceptor in chain or invoking the
             actual RPC on the underlying Channel. It is the interceptor's
             responsibility to call it if it decides to move the RPC forward.
             The interceptor can use
-            `call = await continuation(client_call_details, request, response_iterator))`
+            `call = await continuation(client_call_details, request)`
             to continue with the RPC. `continuation` returns the call to the
             RPC.
           client_call_details: A ClientCallDetails object describing the
             outgoing RPC.
           request: The request value for the RPC.
+
+        Returns:
+          The RPC Call.
+
+        Raises:
+          AioRpcError: Indicating that the RPC terminated with non-OK status.
+          asyncio.CancelledError: Indicating that the RPC was canceled.
+        """
+
+
+class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
+    """Affords intercepting stream-unary invocations."""
+
+    @abstractmethod
+    async def intercept_stream_unary(
+            self,
+            continuation: Callable[[ClientCallDetails, RequestType],
+                                   UnaryStreamCall],
+            client_call_details: ClientCallDetails,
+            request_iterator: RequestIterableType,
+    ) -> StreamUnaryCall:
+        """Intercepts a stream-unary invocation asynchronously.
+
+        Args:
+          continuation: A coroutine that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `call = await continuation(client_call_details, request_iterator)`
+            to continue with the RPC. `continuation` returns the call to the
+            RPC.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request_iterator: The request iterator that will produce requests
+            for the RPC.
 
         Returns:
           The RPC Call.
@@ -332,7 +375,16 @@ class InterceptedCall:
         return await call.wait_for_connection()
 
 
-class InterceptedUnaryUnaryCall(InterceptedCall, _base_call.UnaryUnaryCall):
+class _InterceptedUnaryResponseMixin:
+
+    def __await__(self):
+        call = yield from self._interceptors_task.__await__()
+        response = yield from call.__await__()
+        return response
+
+
+class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
+                                _base_call.UnaryUnaryCall):
     """Used for running a `UnaryUnaryCall` wrapped by interceptors.
 
     For the `__await__` method is it is proxied to the intercepted call only when
@@ -401,11 +453,6 @@ class InterceptedUnaryUnaryCall(InterceptedCall, _base_call.UnaryUnaryCall):
                                                 credentials, wait_for_ready)
         return await _run_interceptor(iter(interceptors), client_call_details,
                                       request)
-
-    def __await__(self):
-        call = yield from self._interceptors_task.__await__()
-        response = yield from call.__await__()
-        return response
 
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
@@ -502,6 +549,152 @@ class InterceptedUnaryStreamCall(InterceptedCall, _base_call.UnaryStreamCall):
 
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
+
+
+class InterceptedStreamUnaryCall(_InterceptedUnaryResponseMixin,
+                                 InterceptedCall, _base_call.StreamUnaryCall):
+    """Used for running a `StreamUnaryCall` wrapped by interceptors.
+
+    For the `__await__` method is it is proxied to the intercepted call only when
+    the interceptor task is finished.
+    """
+
+    _loop: asyncio.AbstractEventLoop
+    _channel: cygrpc.AioChannel
+    _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
+    _write_to_iterator_queue: Optional[asyncio.Queue]
+
+    _FINISH_ITERATOR_SENTINEL = tuple()
+
+    # pylint: disable=too-many-arguments
+    def __init__(self, interceptors: Sequence[StreamUnaryClientInterceptor],
+                 request_iterator: Optional[RequestIterableType],
+                 timeout: Optional[float], metadata: MetadataType,
+                 credentials: Optional[grpc.CallCredentials],
+                 wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
+                 method: bytes, request_serializer: SerializingFunction,
+                 response_deserializer: DeserializingFunction,
+                 loop: asyncio.AbstractEventLoop) -> None:
+        self._loop = loop
+        self._channel = channel
+        if not request_iterator:
+            # We provide our own request iterator which is a proxy
+            # of the future wries done by the caller. This iterator
+            # will use internally a queue for consuming messages produced
+            # by the write method.
+            self._write_to_iterator_queue = asyncio.Queue(maxsize=1)
+            self._write_to_iterator_async_gen = self._proxies_writes_as_a_request_iteerator(
+            )
+            request_iterator = self._write_to_iterator_async_gen
+        else:
+            self._write_to_iterator_queue = None
+
+        interceptors_task = loop.create_task(
+            self._invoke(interceptors, method, timeout, metadata, credentials,
+                         wait_for_ready, request_iterator, request_serializer,
+                         response_deserializer))
+        super().__init__(interceptors_task)
+
+    # pylint: disable=too-many-arguments
+    async def _invoke(
+            self, interceptors: Sequence[StreamUnaryClientInterceptor],
+            method: bytes, timeout: Optional[float],
+            metadata: Optional[MetadataType],
+            credentials: Optional[grpc.CallCredentials],
+            wait_for_ready: Optional[bool],
+            request_iterator: RequestIterableType,
+            request_serializer: SerializingFunction,
+            response_deserializer: DeserializingFunction) -> StreamUnaryCall:
+        """Run the RPC call wrapped in interceptors"""
+
+        async def _run_interceptor(
+                interceptors: Iterator[UnaryUnaryClientInterceptor],
+                client_call_details: ClientCallDetails,
+                request_iterator: RequestIterableType
+        ) -> _base_call.StreamUnaryCall:
+
+            interceptor = next(interceptors, None)
+
+            if interceptor:
+                continuation = functools.partial(_run_interceptor, interceptors)
+
+                return await interceptor.intercept_stream_unary(
+                    continuation, client_call_details, request_iterator)
+            else:
+                return StreamUnaryCall(
+                    request_iterator,
+                    _timeout_to_deadline(client_call_details.timeout),
+                    client_call_details.metadata,
+                    client_call_details.credentials,
+                    client_call_details.wait_for_ready, self._channel,
+                    client_call_details.method, request_serializer,
+                    response_deserializer, self._loop)
+
+        client_call_details = ClientCallDetails(method, timeout, metadata,
+                                                credentials, wait_for_ready)
+        return await _run_interceptor(iter(interceptors), client_call_details,
+                                      request_iterator)
+
+    def time_remaining(self) -> Optional[float]:
+        raise NotImplementedError()
+
+    async def _proxies_writes_as_a_request_iteerator(self):
+        await self._interceptors_task
+
+        while True:
+            value = await self._write_to_iterator_queue.get()
+            if value is InterceptedStreamUnaryCall._FINISH_ITERATOR_SENTINEL:
+                break
+            yield value
+
+    async def write(self, request: RequestType) -> None:
+        # If no queue was created it means that requests
+        # should be expected through an iterators provided
+        # by the caller.
+        if self._write_to_iterator_queue is None:
+            raise cygrpc.UsageError(
+                'Please don\'t mix two styles of API for streaming requests')
+
+        try:
+            call = await self._interceptors_task
+        except (asyncio.CancelledError, AioRpcError):
+            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
+
+        if call.done():
+            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
+        elif call._done_writing_flag:
+            raise asyncio.InvalidStateError(_RPC_HALF_CLOSED_DETAILS)
+
+        # Write might never end up since the call could abrubtly finish,
+        # we give up on the first awaitable object that finishes..
+        _, _ = await asyncio.wait(
+            (self._write_to_iterator_queue.put(request), call),
+            return_when=asyncio.FIRST_COMPLETED)
+
+        if call.done():
+            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
+
+    async def done_writing(self) -> None:
+        """Signal peer that client is done writing.
+
+        This method is idempotent.
+        """
+        # If no queue was created it means that requests
+        # should be expected through an iterators provided
+        # by the caller.
+        if self._write_to_iterator_queue is None:
+            raise cygrpc.UsageError(_API_STYLE_ERROR)
+
+        try:
+            call = await self._interceptors_task
+        except asyncio.CancelledError:
+            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
+
+        # Write might never end up since the call could abrubtly finish,
+        # we give up on the first awaitable object that finishes.
+        _, _ = await asyncio.wait((self._write_to_iterator_queue.put(
+            InterceptedStreamUnaryCall._FINISH_ITERATOR_SENTINEL), call),
+                                  return_when=asyncio.FIRST_COMPLETED)
 
 
 class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):

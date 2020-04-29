@@ -35,6 +35,7 @@ _LOCAL_CANCELLATION_DETAILS = 'Locally cancelled by application!'
 _GC_CANCELLATION_DETAILS = 'Cancelled upon garbage collection!'
 _RPC_ALREADY_FINISHED_DETAILS = 'RPC already finished.'
 _RPC_HALF_CLOSED_DETAILS = 'RPC is half closed after calling "done_writing".'
+_API_STYLE_ERROR = 'Please don\'t mix two styles of API for streaming requests'
 
 _OK_CALL_REPRESENTATION = ('<{} of RPC that terminated with:\n'
                            '\tstatus = {}\n'
@@ -302,8 +303,7 @@ class _StreamResponseMixin(Call):
         if self._response_style is _APIStyle.UNKNOWN:
             self._response_style = style
         elif self._response_style is not style:
-            raise cygrpc.UsageError(
-                'Please don\'t mix two styles of API for streaming responses')
+            raise cygrpc.UsageError(_API_STYLE_ERROR)
 
     def cancel(self) -> bool:
         if super().cancel():
@@ -381,8 +381,7 @@ class _StreamRequestMixin(Call):
 
     def _raise_for_different_style(self, style: _APIStyle):
         if self._request_style is not style:
-            raise cygrpc.UsageError(
-                'Please don\'t mix two styles of API for streaming requests')
+            raise cygrpc.UsageError(_API_STYLE_ERROR)
 
     def cancel(self) -> bool:
         if super().cancel():
@@ -399,7 +398,8 @@ class _StreamRequestMixin(Call):
                                         request_iterator: RequestIterableType
                                        ) -> None:
         try:
-            if inspect.isasyncgen(request_iterator):
+            if inspect.isasyncgen(request_iterator) or hasattr(
+                    request_iterator, '__aiter__'):
                 async for request in request_iterator:
                     await self._write(request)
             else:
@@ -426,7 +426,6 @@ class _StreamRequestMixin(Call):
 
         serialized_request = _common.serialize(request,
                                                self._request_serializer)
-
         try:
             await self._cython_call.send_serialized_message(serialized_request)
         except asyncio.CancelledError:
