@@ -121,17 +121,12 @@ std::unique_ptr<ServerBuilderPlugin> CreateTestServerBuilderPlugin() {
   return std::unique_ptr<ServerBuilderPlugin>(new TestServerBuilderPlugin());
 }
 
-void AddTestServerBuilderPlugin() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  ::grpc::ServerBuilder::InternalAddPluginFactory(
-      &CreateTestServerBuilderPlugin);
-}
-
 // Force AddServerBuilderPlugin() to be called at static initialization time.
 struct StaticTestPluginInitializer {
-  StaticTestPluginInitializer() { AddTestServerBuilderPlugin(); }
+  StaticTestPluginInitializer() {
+    ::grpc::ServerBuilder::InternalAddPluginFactory(
+        &CreateTestServerBuilderPlugin);
+  }
 } static_plugin_initializer_test_;
 
 // When the param boolean is true, the ServerBuilder plugin will be added at the
