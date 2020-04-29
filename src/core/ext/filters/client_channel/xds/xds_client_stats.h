@@ -24,7 +24,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -100,8 +99,9 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   using DroppedRequestsMap = std::map<std::string /* category */, uint64_t>;
 
   XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
-                      StringView lrs_server_name, StringView cluster_name,
-                      StringView eds_service_name);
+                      absl::string_view lrs_server_name,
+                      absl::string_view cluster_name,
+                      absl::string_view eds_service_name);
   ~XdsClusterDropStats();
 
   // Returns a snapshot of this instance and resets all the counters.
@@ -111,9 +111,9 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
 
  private:
   RefCountedPtr<XdsClient> xds_client_;
-  StringView lrs_server_name_;
-  StringView cluster_name_;
-  StringView eds_service_name_;
+  absl::string_view lrs_server_name_;
+  absl::string_view cluster_name_;
+  absl::string_view eds_service_name_;
   // Protects dropped_requests_. A mutex is necessary because the length of
   // dropped_requests_ can be accessed by both the picker (from data plane
   // mutex) and the load reporting thread (from the control plane combiner).
@@ -171,8 +171,9 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   };
 
   XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client,
-                          StringView lrs_server_name, StringView cluster_name,
-                          StringView eds_service_name,
+                          absl::string_view lrs_server_name,
+                          absl::string_view cluster_name,
+                          absl::string_view eds_service_name,
                           RefCountedPtr<XdsLocalityName> name);
   ~XdsClusterLocalityStats();
 
@@ -184,9 +185,9 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
 
  private:
   RefCountedPtr<XdsClient> xds_client_;
-  StringView lrs_server_name_;
-  StringView cluster_name_;
-  StringView eds_service_name_;
+  absl::string_view lrs_server_name_;
+  absl::string_view cluster_name_;
+  absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;
 
   Atomic<uint64_t> total_successful_requests_{0};
@@ -196,8 +197,8 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
 
   // Protects backend_metrics_. A mutex is necessary because the length of
   // backend_metrics_ can be accessed by both the callback intercepting the
-  // call's recv_trailing_metadata (not from the control plane combiner) and
-  // the load reporting thread (from the control plane combiner).
+  // call's recv_trailing_metadata (not from the control plane work serializer)
+  // and the load reporting thread (from the control plane work serializer).
   Mutex backend_metrics_mu_;
   std::map<std::string, BackendMetric> backend_metrics_;
 };

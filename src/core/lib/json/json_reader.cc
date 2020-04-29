@@ -34,7 +34,7 @@ namespace {
 
 class JsonReader {
  public:
-  static grpc_error* Parse(StringView input, Json* output);
+  static grpc_error* Parse(absl::string_view input, Json* output);
 
  private:
   enum class Status {
@@ -80,7 +80,7 @@ class JsonReader {
    */
   static constexpr uint32_t GRPC_JSON_READ_CHAR_EOF = 0x7ffffff0;
 
-  explicit JsonReader(StringView input)
+  explicit JsonReader(absl::string_view input)
       : original_input_(reinterpret_cast<const uint8_t*>(input.data())),
         input_(original_input_),
         remaining_input_(input.size()) {}
@@ -815,7 +815,7 @@ JsonReader::Status JsonReader::Run() {
   GPR_UNREACHABLE_CODE(return Status::GRPC_JSON_INTERNAL_ERROR);
 }
 
-grpc_error* JsonReader::Parse(StringView input, Json* output) {
+grpc_error* JsonReader::Parse(absl::string_view input, Json* output) {
   JsonReader reader(input);
   Status status = reader.Run();
   if (reader.truncated_errors_) {
@@ -846,7 +846,7 @@ grpc_error* JsonReader::Parse(StringView input, Json* output) {
 
 }  // namespace
 
-Json Json::Parse(StringView json_str, grpc_error** error) {
+Json Json::Parse(absl::string_view json_str, grpc_error** error) {
   Json value;
   *error = JsonReader::Parse(json_str, &value);
   return value;

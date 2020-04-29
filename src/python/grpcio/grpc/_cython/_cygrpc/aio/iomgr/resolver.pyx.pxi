@@ -48,7 +48,7 @@ cdef class _AsyncioResolver:
                 <grpc_error*>0
             )
 
-    cdef void resolve(self, char* host, char* port):
+    cdef void resolve(self, const char* host, const char* port):
         assert not self._task_resolve
 
         self._task_resolve = self._loop.create_task(

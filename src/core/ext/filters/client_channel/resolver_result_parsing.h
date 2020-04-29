@@ -21,13 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/types/optional.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
@@ -47,14 +48,14 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
   ClientChannelGlobalParsedConfig(
       RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config,
       std::string parsed_deprecated_lb_policy,
-      const Optional<RetryThrottling>& retry_throttling,
+      const absl::optional<RetryThrottling>& retry_throttling,
       const char* health_check_service_name)
       : parsed_lb_config_(std::move(parsed_lb_config)),
         parsed_deprecated_lb_policy_(std::move(parsed_deprecated_lb_policy)),
         retry_throttling_(retry_throttling),
         health_check_service_name_(health_check_service_name) {}
 
-  Optional<RetryThrottling> retry_throttling() const {
+  absl::optional<RetryThrottling> retry_throttling() const {
     return retry_throttling_;
   }
 
@@ -73,7 +74,7 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
   std::string parsed_deprecated_lb_policy_;
-  Optional<RetryThrottling> retry_throttling_;
+  absl::optional<RetryThrottling> retry_throttling_;
   const char* health_check_service_name_;
 };
 
@@ -88,7 +89,7 @@ class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
   };
 
   ClientChannelMethodParsedConfig(grpc_millis timeout,
-                                  const Optional<bool>& wait_for_ready,
+                                  const absl::optional<bool>& wait_for_ready,
                                   std::unique_ptr<RetryPolicy> retry_policy)
       : timeout_(timeout),
         wait_for_ready_(wait_for_ready),
@@ -96,13 +97,13 @@ class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
 
   grpc_millis timeout() const { return timeout_; }
 
-  Optional<bool> wait_for_ready() const { return wait_for_ready_; }
+  absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
 
   const RetryPolicy* retry_policy() const { return retry_policy_.get(); }
 
  private:
   grpc_millis timeout_ = 0;
-  Optional<bool> wait_for_ready_;
+  absl::optional<bool> wait_for_ready_;
   std::unique_ptr<RetryPolicy> retry_policy_;
 };
 

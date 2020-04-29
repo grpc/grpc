@@ -23,12 +23,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -42,7 +43,7 @@
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
-typedef grpc_core::InlinedVector<grpc_core::Thread, 1> ThreadList;
+typedef absl::InlinedVector<grpc_core::Thread, 1> ThreadList;
 
 struct fullstack_secure_fixture_data {
   ~fullstack_secure_fixture_data() {

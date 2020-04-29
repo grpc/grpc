@@ -56,4 +56,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,eds_lb,priority_l
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
-    --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps}'
+    --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc}'

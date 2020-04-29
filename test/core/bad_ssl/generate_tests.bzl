@@ -45,6 +45,9 @@ def grpc_bad_ssl_tests():
                 ":bad_ssl_%s_server" % t,
                 "//src/core/tsi/test_creds:badserver.key",
                 "//src/core/tsi/test_creds:badserver.pem",
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
             ],
             deps = [
                 "//test/core/util:grpc_test_util",

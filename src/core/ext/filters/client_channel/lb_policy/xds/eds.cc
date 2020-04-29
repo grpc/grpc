@@ -37,8 +37,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
@@ -137,7 +137,8 @@ class EdsLb : public LoadBalancingPolicy {
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
     void RequestReresolution() override {}
-    void AddTraceEvent(TraceSeverity severity, StringView message) override;
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override;
 
    private:
     RefCountedPtr<EdsLb> eds_policy_;
@@ -158,7 +159,7 @@ class EdsLb : public LoadBalancingPolicy {
   void MaybeUpdateDropPickerLocked();
 
   // Caller must ensure that config_ is set before calling.
-  const StringView GetEdsResourceName() const {
+  const absl::string_view GetEdsResourceName() const {
     if (xds_client_from_channel_ == nullptr) return server_name_;
     if (!config_->eds_service_name().empty()) {
       return config_->eds_service_name();
@@ -169,7 +170,7 @@ class EdsLb : public LoadBalancingPolicy {
   // Returns a pair containing the cluster and eds_service_name to use
   // for LRS load reporting.
   // Caller must ensure that config_ is set before calling.
-  std::pair<StringView, StringView> GetLrsClusterKey() const {
+  std::pair<absl::string_view, absl::string_view> GetLrsClusterKey() const {
     if (xds_client_from_channel_ == nullptr) return {server_name_, nullptr};
     return {config_->cluster_name(), config_->eds_service_name()};
   }
@@ -275,7 +276,8 @@ void EdsLb::Helper::UpdateState(grpc_connectivity_state state,
   eds_policy_->MaybeUpdateDropPickerLocked();
 }
 
-void EdsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
+void EdsLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                  absl::string_view message) {
   if (eds_policy_->shutting_down_) return;
   eds_policy_->channel_control_helper()->AddTraceEvent(severity, message);
 }
@@ -424,7 +426,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
     if (xds_client_from_channel_ == nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       xds_client_ = MakeOrphanable<XdsClient>(
-          combiner(), interested_parties(), GetEdsResourceName(),
+          work_serializer(), interested_parties(), GetEdsResourceName(),
           nullptr /* service config watcher */, *args_, &error);
       // TODO(roth): If we decide that we care about EDS-only mode, add
       // proper error handling here.
@@ -711,7 +713,7 @@ grpc_channel_args* EdsLb::CreateChildPolicyArgsLocked(
 OrphanablePtr<LoadBalancingPolicy> EdsLb::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));

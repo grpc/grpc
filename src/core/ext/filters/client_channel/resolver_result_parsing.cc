@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/types/optional.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -35,7 +37,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
@@ -318,7 +319,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   std::vector<grpc_error*> error_list;
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   std::string lb_policy_name;
-  Optional<ClientChannelGlobalParsedConfig::RetryThrottling> retry_throttling;
+  absl::optional<ClientChannelGlobalParsedConfig::RetryThrottling>
+      retry_throttling;
   const char* health_check_service_name = nullptr;
   // Parse LB config.
   auto it = json.object_value().find("loadBalancingConfig");
@@ -396,7 +398,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const Json& json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
-  Optional<bool> wait_for_ready;
+  absl::optional<bool> wait_for_ready;
   grpc_millis timeout = 0;
   std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> retry_policy;
   // Parse waitForReady.

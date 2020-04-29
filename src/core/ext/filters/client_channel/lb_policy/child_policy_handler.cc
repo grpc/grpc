@@ -86,7 +86,8 @@ class ChildPolicyHandler::Helper
     parent_->channel_control_helper()->RequestReresolution();
   }
 
-  void AddTraceEvent(TraceSeverity severity, StringView message) override {
+  void AddTraceEvent(TraceSeverity severity,
+                     absl::string_view message) override {
     if (parent_->shutting_down_) return;
     if (!CalledByPendingChild() && !CalledByCurrentChild()) return;
     parent_->channel_control_helper()->AddTraceEvent(severity, message);
@@ -251,7 +252,7 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
     const char* child_policy_name, const grpc_channel_args& args) {
   Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
   lb_policy_args.args = &args;
