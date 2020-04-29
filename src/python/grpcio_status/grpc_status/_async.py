@@ -13,12 +13,14 @@
 # limitations under the License.
 """Reference implementation for status mapping in gRPC Python."""
 
+from grpc.experimental import aio
+
 from google.rpc import status_pb2
 
 from ._common import code_to_grpc_status_code, GRPC_DETAILS_METADATA_KEY
 
 
-async def from_call(call):
+async def from_call(call: aio.Call):
     """Returns a google.rpc.status.Status message from a given grpc.aio.Call.
 
     This is an EXPERIMENTAL API.
