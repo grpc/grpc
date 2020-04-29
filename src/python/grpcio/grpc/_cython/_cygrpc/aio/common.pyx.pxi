@@ -112,3 +112,57 @@ def schedule_coro_threadsafe(object coro, object loop):
             )
         else:
             raise
+
+
+def async_generator_to_generator(object agen, object loop):
+    """Converts an async generator into generator."""
+    try:
+        while True:
+            future = asyncio.run_coroutine_threadsafe(
+                agen.__anext__(),
+                loop
+            )
+            response = future.result()
+            if response is EOF:
+                break
+            else:
+                yield response
+    except StopAsyncIteration:
+        # If StopAsyncIteration is raised, end this generator.
+        pass
+
+
+async def generator_to_async_generator(object gen, object loop, object thread_pool):
+    """Converts a generator into async generator.
+
+    The generator might block, so we need to delegate the iteration to thread
+    pool. Also, we can't simply delegate __next__ to the thread pool, otherwise
+    we will see following error:
+
+        TypeError: StopIteration interacts badly with generators and cannot be
+            raised into a Future
+    """
+    queue = asyncio.Queue(loop=loop)
+
+    def yield_to_queue():
+        try:
+            for item in gen:
+                # For an infinite sized queue, the put_nowait should always success
+                loop.call_soon_threadsafe(queue.put_nowait, item)
+        finally:
+            loop.call_soon_threadsafe(queue.put_nowait, EOF)
+
+    future = loop.run_in_executor(
+        thread_pool,
+        yield_to_queue,
+    )
+
+    while True:
+        response = await queue.get()
+        if response is EOF:
+            break
+        else:
+            yield response
+
+    # Port the exception if there is any
+    future.result()
