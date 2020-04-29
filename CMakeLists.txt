@@ -895,6 +895,10 @@ if(gRPC_BUILD_TESTS)
 
 add_library(end2end_nosec_tests
   test/core/end2end/cq_verifier.cc
+  test/core/end2end/data/client_certs.cc
+  test/core/end2end/data/server1_cert.cc
+  test/core/end2end/data/server1_key.cc
+  test/core/end2end/data/test_root_cert.cc
   test/core/end2end/end2end_nosec_tests.cc
   test/core/end2end/end2end_test_utils.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -1022,6 +1026,10 @@ if(gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
   test/core/end2end/cq_verifier.cc
+  test/core/end2end/data/client_certs.cc
+  test/core/end2end/data/server1_cert.cc
+  test/core/end2end/data/server1_key.cc
+  test/core/end2end/data/test_root_cert.cc
   test/core/end2end/end2end_test_utils.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc

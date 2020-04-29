@@ -3258,6 +3258,10 @@ endif
 
 LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/cq_verifier.cc \
+    test/core/end2end/data/client_certs.cc \
+    test/core/end2end/data/server1_cert.cc \
+    test/core/end2end/data/server1_key.cc \
+    test/core/end2end/data/test_root_cert.cc \
     test/core/end2end/end2end_nosec_tests.cc \
     test/core/end2end/end2end_test_utils.cc \
     test/core/end2end/fixtures/http_proxy_fixture.cc \
@@ -3366,6 +3370,10 @@ endif
 
 LIBEND2END_TESTS_SRC = \
     test/core/end2end/cq_verifier.cc \
+    test/core/end2end/data/client_certs.cc \
+    test/core/end2end/data/server1_cert.cc \
+    test/core/end2end/data/server1_key.cc \
+    test/core/end2end/data/test_root_cert.cc \
     test/core/end2end/end2end_test_utils.cc \
     test/core/end2end/end2end_tests.cc \
     test/core/end2end/fixtures/http_proxy_fixture.cc \
@@ -20023,10 +20031,6 @@ src/cpp/server/channelz/channelz_service_plugin.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/util/error_details.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
-test/core/end2end/data/client_certs.cc: $(OPENSSL_DEP)
-test/core/end2end/data/server1_cert.cc: $(OPENSSL_DEP)
-test/core/end2end/data/server1_key.cc: $(OPENSSL_DEP)
-test/core/end2end/data/test_root_cert.cc: $(OPENSSL_DEP)
 test/core/end2end/end2end_tests.cc: $(OPENSSL_DEP)
 test/core/end2end/tests/call_creds.cc: $(OPENSSL_DEP)
 test/cpp/microbenchmarks/helpers.cc: $(OPENSSL_DEP)

@@ -422,6 +422,7 @@ def grpc_end2end_tests():
         language = "C++",
         deps = [
             ":cq_verifier",
+            ":ssl_test_data",
             ":http_proxy",
             ":proxy",
             ":local_util",
@@ -496,6 +497,7 @@ def grpc_end2end_nosec_tests():
         language = "C++",
         deps = [
             ":cq_verifier",
+            ":ssl_test_data",
             ":http_proxy",
             ":proxy",
             ":local_util",
