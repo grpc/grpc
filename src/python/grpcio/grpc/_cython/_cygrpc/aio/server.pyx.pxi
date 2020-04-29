@@ -962,4 +962,5 @@ cdef class AioServer:
         if self._thread_pool:
             return self._thread_pool
         else:
-            raise UsageError('Please provide an Executor upon server creation.')
+            # Use the event loop's default executor
+            return None
