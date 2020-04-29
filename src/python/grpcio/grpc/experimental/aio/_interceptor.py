@@ -650,8 +650,7 @@ class InterceptedStreamUnaryCall(_InterceptedUnaryResponseMixin,
         # should be expected through an iterators provided
         # by the caller.
         if self._write_to_iterator_queue is None:
-            raise cygrpc.UsageError(
-                'Please don\'t mix two styles of API for streaming requests')
+            raise cygrpc.UsageError(_API_STYLE_ERROR)
 
         try:
             call = await self._interceptors_task
