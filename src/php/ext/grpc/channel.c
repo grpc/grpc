@@ -586,13 +586,6 @@ void php_grpc_delete_persistent_list_entry(char *key, php_grpc_int key_len
   gpr_mu_unlock(&global_persistent_list_mu);
 }
 
-// Clean all channels in the persistent list
-// Called at post fork
-void php_grpc_clean_persistent_list(TSRMLS_D) {
-  zend_hash_clean(&grpc_persistent_list);
-  zend_hash_clean(&grpc_target_upper_bound_map);
-}
-
 // A destructor associated with each list entry from the persistent list
 static void php_grpc_channel_plink_dtor(php_grpc_zend_resource *rsrc
                                         TSRMLS_DC) {
@@ -622,11 +615,12 @@ static void php_grpc_target_bound_dtor(php_grpc_zend_resource *rsrc
 #ifdef GRPC_PHP_DEBUG
 
 /**
-* Clean all channels in the persistent
+* Clean all channels in the persistent. Test only.
 * @return void
 */
 PHP_METHOD(Channel, cleanPersistentList) {
-  php_grpc_clean_persistent_list(TSRMLS_C);
+  zend_hash_clean(&grpc_persistent_list);
+  zend_hash_clean(&grpc_target_upper_bound_map);
 }
 
 char *grpc_connectivity_state_name(grpc_connectivity_state state) {
