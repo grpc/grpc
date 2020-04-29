@@ -202,7 +202,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
-        "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
 )

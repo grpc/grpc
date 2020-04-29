@@ -6767,10 +6767,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sequential_connectivity_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/surface/sequential_connectivity_test.cc
 )
 
@@ -11073,10 +11069,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_credentials_options_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/security/grpc_tls_credentials_options_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -14067,10 +14059,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(tls_security_connector_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/security/tls_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -14962,10 +14950,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ssl_server_fuzzer_one_entry
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/security/ssl_server_fuzzer.cc
   test/core/util/one_corpus_entry_fuzzer.cc
   third_party/googletest/googletest/src/gtest-all.cc
