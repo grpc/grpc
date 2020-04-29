@@ -19,7 +19,6 @@ libs:
   public_headers: []
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -27,10 +26,6 @@ libs:
   - test/core/end2end/tests/cancel_test_helpers.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/end2end/end2end_nosec_tests.cc
   - test/core/end2end/end2end_test_utils.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -127,7 +122,6 @@ libs:
   public_headers: []
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -135,10 +129,6 @@ libs:
   - test/core/end2end/tests/cancel_test_helpers.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/end2end/end2end_test_utils.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -4086,13 +4076,8 @@ targets:
   build: test
   run: false
   language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/surface/sequential_connectivity_test.cc
   deps:
   - grpc_test_util
@@ -5989,13 +5974,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/security/grpc_tls_credentials_options_test.cc
   deps:
   - grpc_test_util
@@ -7128,13 +7108,8 @@ targets:
 - name: ssl_server_fuzzer
   build: fuzzer
   language: c++
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/security/ssl_server_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
@@ -7362,13 +7337,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/security/tls_security_connector_test.cc
   deps:
   - grpc_test_util
