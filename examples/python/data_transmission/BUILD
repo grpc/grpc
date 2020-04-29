@@ -16,17 +16,17 @@ licenses(["notice"])  # 3-clause BSD
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
-py_binary( 
+py_binary(
     name = "alts_server",
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
-    main = "alts_server.py",
     srcs = [
         "alts_server.py",
         "demo_pb2.py",
         "demo_pb2_grpc.py",
         "server.py",
     ],
+    main = "alts_server.py",
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
     ],
@@ -34,15 +34,15 @@ py_binary(
 
 py_binary(
     name = "alts_client",
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
-    main = "alts_client.py",
     srcs = [
         "alts_client.py",
         "client.py",
         "demo_pb2.py",
         "demo_pb2_grpc.py",
     ],
+    main = "alts_client.py",
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
     ],

@@ -23,7 +23,8 @@ import demo_pb2_grpc
 SERVER_ADDRESS = "localhost:23333"
 
 def main():
-    with grpc.secure_channel(SERVER_ADDRESS, credentials=grpc.alts_channel_credentials()) as channel:
+    with grpc.secure_channel(
+            SERVER_ADDRESS, credentials=grpc.alts_channel_credentials()) as channel:
         stub = demo_pb2_grpc.GRPCDemoStub(channel)
         client.simple_method(stub)
         client.client_streaming_method(stub)
