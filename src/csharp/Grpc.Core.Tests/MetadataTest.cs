@@ -295,11 +295,11 @@ namespace Grpc.Core.Tests
                 { "xyz-bin", Encoding.ASCII.GetBytes("xyz-value1") },
             };
 
-            var abcEntry = metadata.GetValue("abc");
-            Assert.AreEqual("abc-value2", abcEntry);
+            var abcValue = metadata.GetValue("abc");
+            Assert.AreEqual("abc-value2", abcValue);
 
-            var xyzEntry = metadata.GetValue("xyz");
-            Assert.AreEqual("xyz-value1", xyzEntry);
+            var xyzValue = metadata.GetValue("xyz");
+            Assert.AreEqual("xyz-value1", xyzValue);
 
             var notFound = metadata.GetValue("not-found");
             Assert.AreEqual(null, notFound);
@@ -326,11 +326,11 @@ namespace Grpc.Core.Tests
                 { "xyz-bin", Encoding.ASCII.GetBytes("xyz-value1") },
             };
 
-            var abcEntry = metadata.GetValueBytes("abc-bin");
-            Assert.AreEqual(Encoding.ASCII.GetBytes("abc-value2"), abcEntry);
+            var abcValue = metadata.GetValueBytes("abc-bin");
+            Assert.AreEqual(Encoding.ASCII.GetBytes("abc-value2"), abcValue);
 
-            var xyzEntry = metadata.GetValueBytes("xyz-bin");
-            Assert.AreEqual(Encoding.ASCII.GetBytes("xyz-value1"), xyzEntry);
+            var xyzValue = metadata.GetValueBytes("xyz-bin");
+            Assert.AreEqual(Encoding.ASCII.GetBytes("xyz-value1"), xyzValue);
 
             var notFound = metadata.GetValueBytes("not-found");
             Assert.AreEqual(null, notFound);
@@ -344,8 +344,8 @@ namespace Grpc.Core.Tests
                 { "xyz", "xyz-value1" },
             };
 
-            var xyzEntry = metadata.GetValueBytes("xyz");
-            Assert.AreEqual(Encoding.ASCII.GetBytes("xyz-value1"), xyzEntry);
+            var xyzValue = metadata.GetValueBytes("xyz");
+            Assert.AreEqual(Encoding.ASCII.GetBytes("xyz-value1"), xyzValue);
         }
 
         private Metadata CreateMetadata()
