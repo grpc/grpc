@@ -467,8 +467,7 @@ static bool inner_resolve_as_ip_literal_locked(
     const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs, std::string* host,
     std::string* port, std::string* hostport) {
-  grpc_core::SplitHostPort(name, host, port);
-  if (host->empty()) {
+  if (!grpc_core::SplitHostPort(name, host, port)) {
     gpr_log(GPR_ERROR,
             "Failed to parse %s to host:port while attempting to resolve as ip "
             "literal.",
