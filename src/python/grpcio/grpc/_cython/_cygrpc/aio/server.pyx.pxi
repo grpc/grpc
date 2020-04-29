@@ -220,18 +220,6 @@ cdef class _SyncServicerContext:
         self._callbacks = []
         self._loop = context._loop
 
-    def read(self):
-        future = asyncio.run_coroutine_threadsafe(
-            self._context.read(),
-            self._loop)
-        return future.result()
-
-    def write(self, object message):
-        future = asyncio.run_coroutine_threadsafe(
-            self._context.write(message),
-            self._loop)
-        future.result()
-
     def abort(self,
               object code,
               str details='',
@@ -959,8 +947,4 @@ cdef class AioServer:
 
     cdef thread_pool(self):
         """Access the thread pool instance."""
-        if self._thread_pool:
-            return self._thread_pool
-        else:
-            # Use the event loop's default executor
-            return None
+        return self._thread_pool
