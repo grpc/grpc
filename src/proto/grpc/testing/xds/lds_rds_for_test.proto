@@ -40,11 +40,11 @@ message RouteMatch {
 }
 
 message WeightedCluster {
-  message Cluster {
+  message ClusterWeight {
     string name = 1;
     google.protobuf.UInt32Value weight = 2;
   }
-  repeated Cluster clusters = 1;
+  repeated ClusterWeight clusters = 1;
   google.protobuf.UInt32Value  total_weight = 3;
 }
 

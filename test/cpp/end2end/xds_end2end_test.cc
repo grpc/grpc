@@ -2829,7 +2829,6 @@ TEST_P(LdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 1000;
-  const size_t kNumEcho2Rpcs = 20;
   const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
@@ -2888,16 +2887,12 @@ TEST_P(LdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
   CheckRpcSendOk(
       kNumEcho1Rpcs,
       RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
-  CheckRpcSendOk(
-      kNumEcho2Rpcs,
-      RpcOptions().set_rpc_service(SERVICE_ECHO2).set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_EQ(kNumEchoRpcs / 2,
               backends_[i]->backend_service()->request_count());
     EXPECT_EQ(0, backends_[i]->backend_service1()->request_count());
-    EXPECT_EQ(kNumEcho2Rpcs / 2,
-              backends_[i]->backend_service2()->request_count());
+    EXPECT_EQ(0, backends_[i]->backend_service2()->request_count());
   }
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
@@ -3029,7 +3024,7 @@ TEST_P(RdsTest, RouteHasNoRouteAction) {
 
 // Tests that RDS client should send a NACK if RouteAction has a
 // cluster_specifier other than cluster in the RDS response.
-TEST_P(RdsTest, RouteActionHasNoCluster) {
+TEST_P(RdsTest, RouteActionHasUnsupportedClusterSpecifier) {
   balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();

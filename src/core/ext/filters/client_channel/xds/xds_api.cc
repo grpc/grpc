@@ -1109,42 +1109,43 @@ grpc_error* RouteConfigParse(
       std::vector<std::string> cluster_name_parts;
       uint32_t sum_of_weights = 0;
       for (size_t j = 0; j < clusters_size; ++j) {
-        const envoy_api_v2_route_WeightedCluster_ClusterWeight*
-            cluster_cluster = clusters[j];
-        const upb_strview cluster_name =
-            envoy_api_v2_route_WeightedCluster_ClusterWeight_name(
-                cluster_cluster);
-        if (cluster_name.size == 0) {
+        const envoy_api_v2_route_WeightedCluster_ClusterWeight* cluster_weight =
+            clusters[j];
+        XdsApi::RdsRoute::XdsClusterWeight cluster;
+        cluster.name =
+            std::string(envoy_api_v2_route_WeightedCluster_ClusterWeight_name(
+                            cluster_weight)
+                            .data,
+                        envoy_api_v2_route_WeightedCluster_ClusterWeight_name(
+                            cluster_weight)
+                            .size);
+        if (cluster.name.empty()) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "RouteAction weighted_cluster cluster contains empty cluster "
               "name.");
         }
         const google_protobuf_UInt32Value* weight =
             envoy_api_v2_route_WeightedCluster_ClusterWeight_weight(
-                cluster_cluster);
+                cluster_weight);
         if (weight == nullptr) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "RouteAction weighted_cluster cluster missing weight");
         }
-        uint32_t cluster_weight = google_protobuf_UInt32Value_value(weight);
-        cluster_name_parts.push_back(
-            std::string(cluster_name.data, cluster_name.size));
-        sum_of_weights += cluster_weight;
-        XdsApi::RdsRouteWeightedClusterCluster cluster;
-        cluster.name = std::string(cluster_name.data, cluster_name.size);
-        cluster.weight = cluster_weight;
-        rds_route.weighted_cluster.clusters.emplace_back(std::move(cluster));
+        cluster.weight = google_protobuf_UInt32Value_value(weight);
+        cluster_name_parts.push_back(cluster.name);
+        sum_of_weights += cluster.weight;
+        rds_route.weighted_clusters.emplace_back(std::move(cluster));
       }
       if (total_weight != sum_of_weights) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "RouteAction weighted_cluster has incorrect total weight");
       }
-      if (rds_route.weighted_cluster.clusters.empty()) {
+      if (rds_route.weighted_clusters.empty()) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "RouteAction weighted_cluster has no valid clusters specified.");
       }
-      rds_route.weighted_cluster.total_weight = total_weight;
-      rds_route.weighted_cluster.name = absl::StrJoin(cluster_name_parts, "_");
+      gpr_log(GPR_INFO, "donna to remove later %d and %s", total_weight,
+              absl::StrJoin(cluster_name_parts, "_").c_str());
     } else {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No cluster or weighted_clusters found in RouteAction.");

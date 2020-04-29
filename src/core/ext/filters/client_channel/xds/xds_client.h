@@ -268,6 +268,14 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       LoadReportState>
       load_report_map_;
 
+  // 2-level map containing final actions included in the service config;
+  // top level map is keyed by cluster names without weight like a_b_c; second
+  // level map is keyed by cluster names + weights like a10_b50_c40
+  using TwoLevelMap = std::map<std::string /*cluster names*/,
+                               std::map<std::string /*cluster names + weights*/,
+                                        uint64_t /*policy index number*/>>;
+  TwoLevelMap final_actions_;
+
   bool shutting_down_ = false;
 };
 
