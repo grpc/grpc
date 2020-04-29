@@ -579,9 +579,7 @@ class InterceptedStreamUnaryCall(_InterceptedUnaryResponseMixin,
         self._channel = channel
         if not request_iterator:
             # We provide our own request iterator which is a proxy
-            # of the future wries done by the caller. This iterator
-            # will use internally a queue for consuming messages produced
-            # by the write method.
+            # of the futures writes that will be done by the caller.
             self._write_to_iterator_queue = asyncio.Queue(maxsize=1)
             self._write_to_iterator_async_gen = self._proxies_writes_as_a_request_iteerator(
             )
