@@ -493,6 +493,10 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                       ? ACKED
                       : NACKED;
             }
+            if (request.has_error_detail()) {
+              resource_type_response_error_message_[request.type_url()] =
+                  request.error_detail().message();
+            }
             // As long as the test did not tell us to ignore this type of
             // request, we will loop through all resources to:
             // 1. subscribe if necessary
@@ -651,6 +655,26 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     return resource_type_response_state_[kEdsTypeUrl];
   }
 
+  const std::string& lds_response_error_message() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    return resource_type_response_error_message_[kLdsTypeUrl];
+  }
+
+  const std::string& rds_response_error_message() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    return resource_type_response_error_message_[kRdsTypeUrl];
+  }
+
+  const std::string& cds_response_error_message() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    return resource_type_response_error_message_[kCdsTypeUrl];
+  }
+
+  const std::string& eds_response_error_message() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    return resource_type_response_error_message_[kEdsTypeUrl];
+  }
+
   void SetResourceIgnore(const std::string& type_url) {
     grpc_core::MutexLock lock(&ads_mu_);
     resource_types_to_ignore_.emplace(type_url);
@@ -737,6 +761,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       grpc_core::MutexLock lock(&ads_mu_);
       NotifyDoneWithAdsCallLocked();
       resource_type_response_state_.clear();
+      resource_type_response_error_message_.clear();
     }
     gpr_log(GPR_INFO, "ADS[%p]: shut down", this);
   }
@@ -951,6 +976,8 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   Cluster default_cluster_;
   std::map<std::string /*resource type*/, ResponseState>
       resource_type_response_state_;
+  std::map<std::string /*resource type*/, std::string /*error message*/>
+      resource_type_response_error_message_;
   std::set<std::string /*resource_type*/> resource_types_to_ignore_;
   // An instance data member containing the current state of all resources.
   // Note that an entry will exist whenever either of the following is true:
@@ -2149,6 +2176,8 @@ TEST_P(LdsTest, NoApiListener) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Listener doesn\'t have ApiListener.",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if the route_specifier in the
@@ -2165,6 +2194,8 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("HttpConnectionManager neither has inlined route_config nor RDS.",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if matching domain can't be found in
@@ -2181,6 +2212,8 @@ TEST_P(LdsTest, NoMatchedDomain) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("No matched virtual host found in the route config.",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should choose the virtual host with matching domain if
@@ -2240,6 +2273,8 @@ TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Prefix does not start with a /",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
@@ -2263,6 +2298,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Prefix does not start with a /",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
@@ -2283,6 +2320,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoEndingSlash) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Prefix not in the required format of /service/",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
@@ -2303,6 +2342,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Prefix does not start with a /",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
@@ -2323,6 +2364,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Prefix does not end with a /",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
@@ -2343,6 +2386,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoContent) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Prefix contains empty service name",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has path
@@ -2366,6 +2411,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathEmptyPath) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Path if set cannot be empty",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has path
@@ -2389,6 +2436,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Path does not start with a /",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has path
@@ -2412,6 +2461,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Path not in the required format of /service/method",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has path
@@ -2435,6 +2486,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Path not in the required format of /service/method",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has path
@@ -2458,6 +2511,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathMissingService) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Path contains empty service name",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route match has path
@@ -2481,6 +2536,8 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathMissingMethod) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Path contains empty method name",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
@@ -2496,6 +2553,8 @@ TEST_P(LdsTest, RouteHasNoRouteAction) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("No RouteAction found in route.",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // TODO@donnadionne: Add more invalid config tests to cover all errors in
@@ -2517,6 +2576,8 @@ TEST_P(LdsTest, RouteActionHasNoCluster) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("No cluster found in RouteAction.",
+            balancers_[0]->ads_service()->lds_response_error_message());
 }
 
 // Tests that LDS client times out when no response received.
@@ -2712,6 +2773,8 @@ TEST_P(RdsTest, NoMatchedDomain) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("No matched virtual host found in the route config.",
+            balancers_[0]->ads_service()->rds_response_error_message());
 }
 
 // Tests that RDS client should choose the virtual host with matching domain if
@@ -2774,6 +2837,8 @@ TEST_P(RdsTest, RouteMatchHasNonemptyPrefix) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("Default route must have empty service and method",
+            balancers_[0]->ads_service()->rds_response_error_message());
 }
 
 // Tests that RDS client should send a NACK if route has an action other than
@@ -2790,6 +2855,8 @@ TEST_P(RdsTest, RouteHasNoRouteAction) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("No RouteAction found in route.",
+            balancers_[0]->ads_service()->rds_response_error_message());
 }
 
 // Tests that RDS client should send a NACK if RouteAction has a
@@ -2809,6 +2876,8 @@ TEST_P(RdsTest, RouteActionHasNoCluster) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("No cluster found in RouteAction.",
+            balancers_[0]->ads_service()->rds_response_error_message());
 }
 
 // Tests that RDS client times out when no response received.
@@ -2843,6 +2912,8 @@ TEST_P(CdsTest, WrongClusterType) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("DiscoveryType is not EDS.",
+            balancers_[0]->ads_service()->cds_response_error_message());
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response is
@@ -2856,6 +2927,8 @@ TEST_P(CdsTest, WrongEdsConfig) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("ConfigSource is not ADS.",
+            balancers_[0]->ads_service()->cds_response_error_message());
 }
 
 // Tests that CDS client should send a NACK if the lb_policy in CDS response is
@@ -2869,6 +2942,8 @@ TEST_P(CdsTest, WrongLbPolicy) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("LB policy is not ROUND_ROBIN.",
+            balancers_[0]->ads_service()->cds_response_error_message());
 }
 
 // Tests that CDS client should send a NACK if the lrs_server in CDS response is
@@ -2882,6 +2957,8 @@ TEST_P(CdsTest, WrongLrsServer) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("ConfigSource is not self.",
+            balancers_[0]->ads_service()->cds_response_error_message());
 }
 
 // Tests that CDS client times out when no response received.
@@ -2916,6 +2993,8 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
             AdsServiceImpl::NACKED);
+  EXPECT_EQ("EDS update includes sparse priority list",
+            balancers_[0]->ads_service()->eds_response_error_message());
 }
 
 using LocalityMapTest = BasicTest;
