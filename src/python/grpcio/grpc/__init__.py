@@ -1861,7 +1861,7 @@ def alts_server_credentials():
     ALTS credentials API can only be used in GCP environment as it relies on
     handshaker service being available. For more info about ALTS see
     https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
- 
+
     Returns:
       A ServerCredentials for use with an ALTS-enabled Server
     """
