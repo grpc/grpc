@@ -35,7 +35,7 @@ _LOCAL_CANCELLATION_DETAILS = 'Locally cancelled by application!'
 _GC_CANCELLATION_DETAILS = 'Cancelled upon garbage collection!'
 _RPC_ALREADY_FINISHED_DETAILS = 'RPC already finished.'
 _RPC_HALF_CLOSED_DETAILS = 'RPC is half closed after calling "done_writing".'
-_API_STYLE_ERROR = 'Please don\'t mix two styles of API for streaming requests'
+_API_STYLE_ERROR = 'The iterator and read/write APIs may not be mixed on a single RPC.'
 
 _OK_CALL_REPRESENTATION = ('<{} of RPC that terminated with:\n'
                            '\tstatus = {}\n'

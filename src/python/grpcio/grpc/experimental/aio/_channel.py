@@ -256,11 +256,12 @@ class Channel(_base_channel.Channel):
 
             if invalid_interceptors:
                 raise ValueError(
-                    "Interceptor must be "+\
-                    "UnaryUnaryClientInterceptors or "+\
-                    "UnaryUnaryClientInterceptors or "+\
-                    "StreamUnaryClientInterceptors. The following are invalid: {}"\
-                    .format(invalid_interceptors))
+                    "Interceptor must be " +
+                    "{} or ".format(UnaryUnaryClientInterceptor.__name__) +
+                    "{} or ".format(UnaryStreamClientInterceptor.__name__) +
+                    "{}. ".format(StreamUnaryClientInterceptor.__name__) +
+                    "The following are invalid: {}".format(invalid_interceptors)
+                )
 
         self._loop = asyncio.get_event_loop()
         self._channel = cygrpc.AioChannel(
