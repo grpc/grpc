@@ -28,6 +28,8 @@
 
 #include <set>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -372,7 +374,7 @@ class CallData {
     Metadata(CallData* calld, grpc_metadata_batch* batch)
         : calld_(calld), batch_(batch) {}
 
-    void Add(StringView key, StringView value) override {
+    void Add(absl::string_view key, absl::string_view value) override {
       grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
           calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
       linked_mdelem->md = grpc_mdelem_from_slices(
@@ -407,7 +409,7 @@ class CallData {
           reinterpret_cast<grpc_linked_mdelem*>(handle);
       return reinterpret_cast<intptr_t>(linked_mdelem->next);
     }
-    std::pair<StringView, StringView> IteratorHandleGet(
+    std::pair<absl::string_view, absl::string_view> IteratorHandleGet(
         intptr_t handle) const override {
       grpc_linked_mdelem* linked_mdelem =
           reinterpret_cast<grpc_linked_mdelem*>(handle);
@@ -1306,7 +1308,8 @@ class ChannelData::ClientChannelControlHelper
   // No-op -- we should never get this from ResolvingLoadBalancingPolicy.
   void RequestReresolution() override {}
 
-  void AddTraceEvent(TraceSeverity severity, StringView message) override {
+  void AddTraceEvent(TraceSeverity severity,
+                     absl::string_view message) override {
     if (chand_->channelz_node_ != nullptr) {
       chand_->channelz_node_->AddTraceEvent(
           ConvertSeverityEnum(severity),

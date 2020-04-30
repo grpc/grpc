@@ -129,7 +129,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(StringView json_string,
+  static RefCountedPtr<ServiceConfig> Create(absl::string_view json_string,
                                              grpc_error** error);
 
   ServiceConfig(std::string json_string, Json json, grpc_error** error);

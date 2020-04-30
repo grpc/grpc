@@ -73,8 +73,8 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors) {
   bool success = false;
   // Split host and port.
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   if (!grpc_core::SplitHostPort(hostport, &host, &port)) {
     if (log_errors) {
       gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
@@ -86,21 +86,21 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
   grpc_sockaddr_in* in = reinterpret_cast<grpc_sockaddr_in*>(addr->addr);
   in->sin_family = GRPC_AF_INET;
-  if (grpc_inet_pton(GRPC_AF_INET, host.get(), &in->sin_addr) == 0) {
+  if (grpc_inet_pton(GRPC_AF_INET, host.c_str(), &in->sin_addr) == 0) {
     if (log_errors) {
-      gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host.get());
+      gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host.c_str());
     }
     goto done;
   }
   // Parse port.
-  if (port == nullptr) {
+  if (port.empty()) {
     if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
     goto done;
   }
   int port_num;
-  if (sscanf(port.get(), "%d", &port_num) != 1 || port_num < 0 ||
+  if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
       port_num > 65535) {
-    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port.get());
+    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port.c_str());
     goto done;
   }
   in->sin_port = grpc_htons(static_cast<uint16_t>(port_num));
@@ -125,8 +125,8 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors) {
   bool success = false;
   // Split host and port.
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   if (!grpc_core::SplitHostPort(hostport, &host, &port)) {
     if (log_errors) {
       gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
@@ -140,11 +140,12 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
   in6->sin6_family = GRPC_AF_INET6;
   // Handle the RFC6874 syntax for IPv6 zone identifiers.
   char* host_end =
-      static_cast<char*>(gpr_memrchr(host.get(), '%', strlen(host.get())));
+      static_cast<char*>(gpr_memrchr(host.c_str(), '%', host.size()));
   if (host_end != nullptr) {
-    GPR_ASSERT(host_end >= host.get());
+    GPR_ASSERT(host_end >= host.c_str());
     char host_without_scope[GRPC_INET6_ADDRSTRLEN + 1];
-    size_t host_without_scope_len = static_cast<size_t>(host_end - host.get());
+    size_t host_without_scope_len =
+        static_cast<size_t>(host_end - host.c_str());
     uint32_t sin6_scope_id = 0;
     if (host_without_scope_len > GRPC_INET6_ADDRSTRLEN) {
       if (log_errors) {
@@ -156,7 +157,7 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
       }
       goto done;
     }
-    strncpy(host_without_scope, host.get(), host_without_scope_len);
+    strncpy(host_without_scope, host.c_str(), host_without_scope_len);
     host_without_scope[host_without_scope_len] = '\0';
     if (grpc_inet_pton(GRPC_AF_INET6, host_without_scope, &in6->sin6_addr) ==
         0) {
@@ -165,9 +166,9 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
       }
       goto done;
     }
-    if (gpr_parse_bytes_to_uint32(
-            host_end + 1, strlen(host.get()) - host_without_scope_len - 1,
-            &sin6_scope_id) == 0) {
+    if (gpr_parse_bytes_to_uint32(host_end + 1,
+                                  host.size() - host_without_scope_len - 1,
+                                  &sin6_scope_id) == 0) {
       if ((sin6_scope_id = grpc_if_nametoindex(host_end + 1)) == 0) {
         gpr_log(GPR_ERROR,
                 "Invalid interface name: '%s'. "
@@ -179,22 +180,22 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
     // Handle "sin6_scope_id" being type "u_long". See grpc issue #10027.
     in6->sin6_scope_id = sin6_scope_id;
   } else {
-    if (grpc_inet_pton(GRPC_AF_INET6, host.get(), &in6->sin6_addr) == 0) {
+    if (grpc_inet_pton(GRPC_AF_INET6, host.c_str(), &in6->sin6_addr) == 0) {
       if (log_errors) {
-        gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host.get());
+        gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host.c_str());
       }
       goto done;
     }
   }
   // Parse port.
-  if (port == nullptr) {
+  if (port.empty()) {
     if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
     goto done;
   }
   int port_num;
-  if (sscanf(port.get(), "%d", &port_num) != 1 || port_num < 0 ||
+  if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
       port_num > 65535) {
-    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port.get());
+    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port.c_str());
     goto done;
   }
   in6->sin6_port = grpc_htons(static_cast<uint16_t>(port_num));

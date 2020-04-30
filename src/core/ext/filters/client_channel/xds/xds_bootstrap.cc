@@ -23,9 +23,12 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -96,11 +99,10 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
   grpc_slice contents;
   *error = grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
   if (*error != GRPC_ERROR_NONE) return nullptr;
-  StringView contents_str_view = StringViewFromSlice(contents);
+  absl::string_view contents_str_view = StringViewFromSlice(contents);
   if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-    UniquePtr<char> str = StringViewToCString(contents_str_view);
     gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
-            str.get());
+            std::string(contents_str_view).c_str());
   }
   Json json = Json::Parse(contents_str_view, error);
   grpc_slice_unref_internal(contents);

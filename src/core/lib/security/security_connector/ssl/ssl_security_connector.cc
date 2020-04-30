@@ -22,6 +22,8 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -72,14 +74,13 @@ class grpc_ssl_channel_security_connector final
       : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
-        overridden_target_name_(overridden_target_name == nullptr
-                                    ? nullptr
-                                    : gpr_strdup(overridden_target_name)),
+        overridden_target_name_(
+            overridden_target_name == nullptr ? "" : overridden_target_name),
         verify_options_(&config->verify_options) {
-    grpc_core::StringView host;
-    grpc_core::StringView port;
+    absl::string_view host;
+    absl::string_view port;
     grpc_core::SplitHostPort(target_name, &host, &port);
-    target_name_ = grpc_core::StringViewToCString(host);
+    target_name_ = std::string(host);
   }
 
   ~grpc_ssl_channel_security_connector() override {
@@ -124,8 +125,8 @@ class grpc_ssl_channel_security_connector final
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_,
-        overridden_target_name_ != nullptr ? overridden_target_name_.get()
-                                           : target_name_.get(),
+        overridden_target_name_.empty() ? target_name_.c_str()
+                                        : overridden_target_name_.c_str(),
         &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -139,9 +140,9 @@ class grpc_ssl_channel_security_connector final
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    const char* target_name = overridden_target_name_ != nullptr
-                                  ? overridden_target_name_.get()
-                                  : target_name_.get();
+    const char* target_name = overridden_target_name_.empty()
+                                  ? target_name_.c_str()
+                                  : overridden_target_name_.c_str();
     grpc_error* error = ssl_check_peer(target_name, &peer, auth_context);
     if (error == GRPC_ERROR_NONE &&
         verify_options_->verify_peer_callback != nullptr) {
@@ -176,24 +177,17 @@ class grpc_ssl_channel_security_connector final
         reinterpret_cast<const grpc_ssl_channel_security_connector*>(other_sc);
     int c = channel_security_connector_cmp(other);
     if (c != 0) return c;
-    c = strcmp(target_name_.get(), other->target_name_.get());
+    c = target_name_.compare(other->target_name_);
     if (c != 0) return c;
-    return (overridden_target_name_ == nullptr ||
-            other->overridden_target_name_ == nullptr)
-               ? GPR_ICMP(overridden_target_name_.get(),
-                          other->overridden_target_name_.get())
-               : strcmp(overridden_target_name_.get(),
-                        other->overridden_target_name_.get());
+    return overridden_target_name_.compare(other->overridden_target_name_);
   }
 
-  bool check_call_host(grpc_core::StringView host,
-                       grpc_auth_context* auth_context,
+  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
                        grpc_closure* /*on_call_host_checked*/,
                        grpc_error** error) override {
-    return grpc_ssl_check_call_host(
-        host, target_name_.get(),
-        overridden_target_name_ != nullptr ? overridden_target_name_.get() : "",
-        auth_context, error);
+    return grpc_ssl_check_call_host(host, target_name_.c_str(),
+                                    overridden_target_name_.c_str(),
+                                    auth_context, error);
   }
 
   void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
@@ -203,8 +197,8 @@ class grpc_ssl_channel_security_connector final
 
  private:
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
-  grpc_core::UniquePtr<char> target_name_;
-  grpc_core::UniquePtr<char> overridden_target_name_;
+  std::string target_name_;
+  std::string overridden_target_name_;
   const verify_peer_options* verify_options_;
 };
 

@@ -167,8 +167,8 @@ cdef void asyncio_socket_accept(
 
 
 cdef grpc_error* asyncio_resolve(
-        char* host,
-        char* port,
+        const char* host,
+        const char* port,
         grpc_resolved_addresses** res) with gil:
     result = native_socket.getaddrinfo(host, port)
     res[0] = tuples_to_resolvaddr(result)
@@ -176,8 +176,8 @@ cdef grpc_error* asyncio_resolve(
 
 cdef void asyncio_resolve_async(
         grpc_custom_resolver* grpc_resolver,
-        char* host,
-        char* port) with gil:
+        const char* host,
+        const char* port) with gil:
     resolver = _AsyncioResolver.create(grpc_resolver)
     resolver.resolve(host, port)
 
