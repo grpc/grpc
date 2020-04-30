@@ -618,11 +618,17 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
-                 bool wait_for_ready = false) {
+                 bool wait_for_ready = false,
+                 const Status& expected_status = Status::OK) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
+    if (!expected_status.ok()) {
+      auto* error = request.mutable_param()->mutable_expected_error();
+      error->set_code(expected_status.error_code());
+      error->set_error_message(expected_status.error_message());
+    }
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     if (wait_for_ready) context.set_wait_for_ready(true);
@@ -749,6 +755,22 @@ TEST_F(SingleBalancerTest, Vanilla) {
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, ReturnServerStatus) {
+  SetNextResolutionAllBalancers();
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Send a request that the backend will fail, and make sure we get
+  // back the right status.
+  Status expected(StatusCode::INVALID_ARGUMENT, "He's dead, Jim!");
+  Status actual = SendRpc(/*response=*/nullptr, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, expected);
+  EXPECT_EQ(actual.error_code(), expected.error_code());
+  EXPECT_EQ(actual.error_message(), expected.error_message());
 }
 
 TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
