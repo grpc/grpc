@@ -278,19 +278,29 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
       child->DeactivateLocked();
     }
   }
-  // Add or update the targets in the new config.
-  HierarchicalAddressMap address_map =
-      MakeHierarchicalAddressMap(args.addresses);
+  // Create any children that don't already exist.
+  // Note that we add all children before updating any of them, because
+  // an update may trigger a child to immediately update its
+  // connectivity state (e.g., reporting TRANSIENT_FAILURE immediately when
+  // receiving an empty address list), and we don't want to return an
+  // overall state with incomplete data.
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
-    const WeightedTargetLbConfig::ChildConfig& config = p.second;
     auto it = targets_.find(name);
     if (it == targets_.end()) {
       it = targets_.emplace(std::make_pair(name, nullptr)).first;
       it->second = MakeOrphanable<WeightedChild>(
           Ref(DEBUG_LOCATION, "WeightedChild"), it->first);
     }
-    it->second->UpdateLocked(config, std::move(address_map[name]), args.args);
+  }
+  // Update all children.
+  HierarchicalAddressMap address_map =
+      MakeHierarchicalAddressMap(args.addresses);
+  for (const auto& p : config_->target_map()) {
+    const std::string& name = p.first;
+    const WeightedTargetLbConfig::ChildConfig& config = p.second;
+    targets_[name]->UpdateLocked(config, std::move(address_map[name]),
+                                 args.args);
   }
 }
 

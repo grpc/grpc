@@ -3196,6 +3196,22 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
   }
 }
 
+// Does not choose locality with no endpoints.
+TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", {}, kDefaultLocalityWeight, 0},
+      {"locality1", GetBackendPorts(), kDefaultLocalityWeight, 0},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // Wait for all backends to be used.
+  std::tuple<int, int, int> counts = WaitForAllBackends();
+  // Make sure no RPCs failed in the transition.
+  EXPECT_EQ(0, std::get<1>(counts));
+}
+
 // If the higher priority localities are not reachable, failover to the highest
 // priority among the rest.
 TEST_P(FailoverTest, Failover) {
