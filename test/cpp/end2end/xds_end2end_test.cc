@@ -2265,7 +2265,7 @@ TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_match()
-      ->set_prefix("nonempty_prefix");
+      ->set_prefix("/nonempty_prefix/");
   balancers_[0]->ads_service()->SetLdsResource(
       AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
   SetNextResolution({});
@@ -2273,7 +2273,7 @@ TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
             AdsServiceImpl::NACKED);
-  EXPECT_EQ("Prefix does not start with a /",
+  EXPECT_EQ("Default route must have empty service and method",
             balancers_[0]->ads_service()->lds_response_error_message());
 }
 
