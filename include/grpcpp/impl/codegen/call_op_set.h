@@ -421,8 +421,6 @@ Status CallOpSendMessage::SendMessagePtr(const M* message) {
 template <class R>
 class CallOpRecvMessage {
  public:
-  CallOpRecvMessage() {}
-
   void RecvMessage(R* message) { message_ = message; }
 
   // Do not change status if no message is received.
@@ -525,8 +523,6 @@ class DeserializeFuncType final : public DeserializeFunc {
 
 class CallOpGenericRecvMessage {
  public:
-  CallOpGenericRecvMessage() {}
-
   template <class R>
   void RecvMessage(R* message) {
     // Use an explicit base class pointer to avoid resolution error in the
