@@ -2927,7 +2927,7 @@ TEST_P(CdsTest, WrongEdsConfig) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
-  EXPECT_EQ("ConfigSource is not ADS.",
+  EXPECT_EQ("EDS ConfigSource is not ADS.",
             balancers_[0]->ads_service()->cds_response_error_message());
 }
 
@@ -2957,7 +2957,7 @@ TEST_P(CdsTest, WrongLrsServer) {
   CheckRpcSendFailure();
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
             AdsServiceImpl::NACKED);
-  EXPECT_EQ("ConfigSource is not self.",
+  EXPECT_EQ("LRS ConfigSource is not self.",
             balancers_[0]->ads_service()->cds_response_error_message());
 }
 

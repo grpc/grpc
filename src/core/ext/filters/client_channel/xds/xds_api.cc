@@ -1278,7 +1278,8 @@ grpc_error* CdsResponseParse(
     const envoy_api_v2_core_ConfigSource* eds_config =
         envoy_api_v2_Cluster_EdsClusterConfig_eds_config(eds_cluster_config);
     if (!envoy_api_v2_core_ConfigSource_has_ads(eds_config)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("ConfigSource is not ADS.");
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "EDS ConfigSource is not ADS.");
     }
     // Record EDS service_name (if any).
     upb_strview service_name =
@@ -1299,7 +1300,7 @@ grpc_error* CdsResponseParse(
     if (lrs_server != nullptr) {
       if (!envoy_api_v2_core_ConfigSource_has_self(lrs_server)) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "ConfigSource is not self.");
+            "LRS ConfigSource is not self.");
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
