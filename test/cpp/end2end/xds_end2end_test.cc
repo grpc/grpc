@@ -1139,7 +1139,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                        : 0));
       balancers_.back()->Start();
       if (GetParam().enable_rds_testing()) {
-        balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
+        balancers_[i]->ads_service()->SetLdsToUseDynamicRds();
       }
     }
     ResetStub();
