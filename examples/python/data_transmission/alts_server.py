@@ -18,15 +18,16 @@ The example would only successfully run in GCP environment."""
 from concurrent import futures
 
 import grpc
+
 import demo_pb2_grpc
-import server
+from server import DemoServer
 
 SERVER_ADDRESS = 'localhost:23333'
 
 
 def main():
     svr = grpc.server(futures.ThreadPoolExecutor())
-    demo_pb2_grpc.add_GRPCDemoServicer_to_server(server.DemoServer(), svr)
+    demo_pb2_grpc.add_GRPCDemoServicer_to_server(DemoServer(), svr)
     svr.add_secure_port(SERVER_ADDRESS,
                         server_credentials=grpc.alts_server_credentials())
     print("------------------start Python GRPC server with ALTS encryption")

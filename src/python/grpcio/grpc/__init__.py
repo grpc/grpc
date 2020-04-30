@@ -1833,7 +1833,7 @@ def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
         _cygrpc.server_credentials_local(local_connect_type.value))
 
 
-def alts_channel_credentials(service_accounts=[]):
+def alts_channel_credentials(service_accounts=None):
     """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
 
     This is an EXPERIMENTAL API.
@@ -1851,7 +1851,7 @@ def alts_channel_credentials(service_accounts=[]):
       A ChannelCredentials for use with an ALTS-enabled Channel
     """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_alts(service_accounts))
+        _cygrpc.channel_credentials_alts(service_accounts or []))
 
 
 def alts_server_credentials():

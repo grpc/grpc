@@ -17,8 +17,9 @@ The example would only successfully run in GCP environment."""
 
 import grpc
 
-import client
 import demo_pb2_grpc
+from client import (bidirectional_streaming_method, client_streaming_method,
+                    server_streaming_method, simple_method)
 
 SERVER_ADDRESS = "localhost:23333"
 
@@ -28,10 +29,10 @@ def main():
             SERVER_ADDRESS,
             credentials=grpc.alts_channel_credentials()) as channel:
         stub = demo_pb2_grpc.GRPCDemoStub(channel)
-        client.simple_method(stub)
-        client.client_streaming_method(stub)
-        client.server_streaming_method(stub)
-        client.bidirectional_streaming_method(stub)
+        simple_method(stub)
+        client_streaming_method(stub)
+        server_streaming_method(stub)
+        bidirectional_streaming_method(stub)
 
 
 if __name__ == '__main__':
