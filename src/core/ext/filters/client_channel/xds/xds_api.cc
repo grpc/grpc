@@ -1174,10 +1174,22 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "HttpConnectionManager neither has inlined route_config nor RDS.");
     }
-    // Get the route_config_name.
     const envoy_config_filter_network_http_connection_manager_v2_Rds* rds =
         envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_rds(
             http_connection_manager);
+    // Check that the ConfigSource specifies ADS.
+    const envoy_api_v2_core_ConfigSource* config_source =
+        envoy_config_filter_network_http_connection_manager_v2_Rds_config_source(
+            rds);
+    if (config_source == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "HttpConnectionManager missing config_source for RDS.");
+    }
+    if (!envoy_api_v2_core_ConfigSource_has_ads(config_source)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+    }
+    // Get the route_config_name.
     const upb_strview route_config_name =
         envoy_config_filter_network_http_connection_manager_v2_Rds_route_config_name(
             rds);

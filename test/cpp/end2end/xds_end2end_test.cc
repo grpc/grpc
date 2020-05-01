@@ -713,8 +713,9 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   void SetLdsToUseDynamicRds() {
     auto listener = default_listener_;
     HttpConnectionManager http_connection_manager;
-    http_connection_manager.mutable_rds()->set_route_config_name(
-        kDefaultResourceName);
+    auto* rds = http_connection_manager.mutable_rds();
+    rds->set_route_config_name(kDefaultResourceName);
+    rds->mutable_config_source()->mutable_ads();
     listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
         http_connection_manager);
     SetLdsResource(listener, kDefaultResourceName);
@@ -2189,6 +2190,47 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "HttpConnectionManager neither has inlined route_config nor RDS.");
+}
+
+// Tests that LDS client should send a NACK if the rds message in the
+// http_connection_manager is missing the config_source field.
+TEST_P(LdsTest, RdsMissingConfigSource) {
+  auto listener = balancers_[0]->ads_service()->default_listener();
+  HttpConnectionManager http_connection_manager;
+  http_connection_manager.mutable_rds()->set_route_config_name(
+      kDefaultResourceName);
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "HttpConnectionManager missing config_source for RDS.");
+}
+
+// Tests that LDS client should send a NACK if the rds message in the
+// http_connection_manager has a config_source field that does not specify ADS.
+TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
+  auto listener = balancers_[0]->ads_service()->default_listener();
+  HttpConnectionManager http_connection_manager;
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kDefaultResourceName);
+  rds->mutable_config_source()->mutable_self();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
 }
 
 using LdsRdsTest = BasicTest;
