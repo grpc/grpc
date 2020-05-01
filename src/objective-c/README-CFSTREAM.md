@@ -23,8 +23,18 @@ platforms, you can turn it on with macro `GRPC_CFSTREAM=1` for the pod 'gRPC-Cor
 case of problem and you want to disable CFStream on iOS, you can set environment variable
 "grpc\_cfstream=0".
 
+## Caveats
+It is known to us that the CFStream API has some bug which will cause gRPC's CFStream networking
+layer to stall occasionally. The issue mostly occur on MacOS systems (including iOS simulators on
+MacOS); iOS may be affected too but we have not seen issue there. gRPC provides a workaround to this
+problem with an alternative poller based on CFRunLoop. The poller can be enabled by setting
+environment variable `GRPC_CFSTREAM_RUN_LOOP=1`. Note that the poller is a client side only poller
+that does not support running a server on it. That means if an app opts in to the CFRunLoop-based
+poller, the app cannot host a gRPC server (gRPC Objective-C does not support running a server but
+other languages running on iOS do support it).
+
 ## Notes
 
 - Currently we do not support platforms other than iOS, although it is likely that this integration
   can run on MacOS targets with Apple's compiler.
-- Let us know if you meet any issue by filing issue and ping @muxi.
+- Let us know if you meet any issue by filing issue and ping @stanleycheung.
