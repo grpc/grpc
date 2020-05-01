@@ -2552,10 +2552,11 @@ TEST_P(LdsRdsTest, RouteActionHasNoCluster) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No cluster or weighted_clusters found in RouteAction.");
+  EXPECT_EQ(response_state.error_message,
+            "No cluster or weighted_clusters found in RouteAction.");
 }
 
-TEST_P(LdsTest, RouteActionClusterHasEmptyClusterName) {
+TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2568,16 +2569,17 @@ TEST_P(LdsTest, RouteActionClusterHasEmptyClusterName) {
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::ResponseState::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction cluster contains empty cluster name.");
 }
 
-TEST_P(LdsTest, RouteActionWeightedTargetHasNoTargets) {
+TEST_P(LdsRdsTest, RouteActionWeightedTargetHasNoTargets) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2591,16 +2593,18 @@ TEST_P(LdsTest, RouteActionWeightedTargetHasNoTargets) {
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  // TODO(@donnadionne): this may not be accurate.
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction weighted_cluster missing total weight");
 }
 
-TEST_P(LdsTest, RouteActionWeightedTargetHasIncorrectTotalWeight) {
+TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeight) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2622,16 +2626,17 @@ TEST_P(LdsTest, RouteActionWeightedTargetHasIncorrectTotalWeight) {
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction weighted_cluster has incorrect total weight");
 }
 
-TEST_P(LdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
+TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2652,16 +2657,18 @@ TEST_P(LdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(
+      response_state.error_message,
+      "RouteAction weighted_cluster cluster contains empty cluster name.");
 }
 
-TEST_P(LdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
+TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2682,13 +2689,14 @@ TEST_P(LdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction weighted_cluster cluster missing weight");
 }
 
 // Tests that LDS client times out when no response received.
@@ -2857,7 +2865,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
 }
 
-TEST_P(LdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
+TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2915,9 +2923,7 @@ TEST_P(LdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  Listener listener =
-      balancers_[0]->ads_service()->BuildListener(new_route_config);
-  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(
