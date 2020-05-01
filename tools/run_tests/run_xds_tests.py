@@ -226,9 +226,9 @@ _BOOTSTRAP_TEMPLATE = """
 # TODO(ericgribkoff) Add change_backend_service to this list once TD no longer
 # sends an update with no localities when adding the MIG to the backend service
 # can race with the URL map patch.
-_TESTS_TO_FAIL_ON_RPC_FAILURE = [
-    'new_instance_group_receives_traffic', 'ping_pong', 'round_robin'
-]
+# TODO(ericgribkoff) Add new_instance_group_receives_traffic, ping_pong, and
+# round_robin when empty update issue is resolved.
+_TESTS_TO_FAIL_ON_RPC_FAILURE = []
 _TESTS_USING_SECONDARY_IG = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure'

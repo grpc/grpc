@@ -375,11 +375,10 @@ class ClientStats {
 class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                        public std::enable_shared_from_this<AdsServiceImpl> {
  public:
-  enum ResponseState {
-    NOT_SENT,
-    SENT,
-    ACKED,
-    NACKED,
+  struct ResponseState {
+    enum State { NOT_SENT, SENT, ACKED, NACKED };
+    State state = NOT_SENT;
+    std::string error_message;
   };
 
   struct EdsResourceArgs {
@@ -487,11 +486,15 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
             // comparing it to nonce (this server ensures they are always set to
             // the same in a response.)
             if (!request.response_nonce().empty()) {
-              resource_type_response_state_[request.type_url()] =
+              resource_type_response_state_[request.type_url()].state =
                   (!request.version_info().empty() &&
                    request.version_info() == request.response_nonce())
-                      ? ACKED
-                      : NACKED;
+                      ? ResponseState::ACKED
+                      : ResponseState::NACKED;
+            }
+            if (request.has_error_detail()) {
+              resource_type_response_state_[request.type_url()].error_message =
+                  request.error_detail().message();
             }
             // As long as the test did not tell us to ignore this type of
             // request, we will loop through all resources to:
@@ -920,7 +923,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       const SubscriptionNameMap& subscription_name_map,
       const std::set<std::string>& resources_added_to_response,
       DiscoveryResponse* response) {
-    resource_type_response_state_[resource_type] = SENT;
+    resource_type_response_state_[resource_type].state = ResponseState::SENT;
     response->set_type_url(resource_type);
     response->set_version_info(absl::StrCat(version));
     response->set_nonce(absl::StrCat(version));
@@ -949,7 +952,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   Listener default_listener_;
   RouteConfiguration default_route_config_;
   Cluster default_cluster_;
-  std::map<std::string /*resource type*/, ResponseState>
+  std::map<std::string /* type_url */, ResponseState>
       resource_type_response_state_;
   std::set<std::string /*resource_type*/> resource_types_to_ignore_;
   // An instance data member containing the current state of all resources.
@@ -1074,22 +1077,27 @@ class LrsServiceImpl : public LrsService,
 
 class TestType {
  public:
-  TestType(bool use_xds_resolver, bool enable_load_reporting)
+  TestType(bool use_xds_resolver, bool enable_load_reporting,
+           bool enable_rds_testing = false)
       : use_xds_resolver_(use_xds_resolver),
-        enable_load_reporting_(enable_load_reporting) {}
+        enable_load_reporting_(enable_load_reporting),
+        enable_rds_testing_(enable_rds_testing) {}
 
   bool use_xds_resolver() const { return use_xds_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
+  bool enable_rds_testing() const { return enable_rds_testing_; }
 
   grpc::string AsString() const {
     grpc::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
     if (enable_load_reporting_) retval += "WithLoadReporting";
+    if (enable_rds_testing_) retval += "Rds";
     return retval;
   }
 
  private:
   const bool use_xds_resolver_;
   const bool enable_load_reporting_;
+  const bool enable_rds_testing_;
 };
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
@@ -1133,6 +1141,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                        ? client_load_reporting_interval_seconds_
                                        : 0));
       balancers_.back()->Start();
+      if (GetParam().enable_rds_testing()) {
+        balancers_[i]->ads_service()->SetLdsToUseDynamicRds();
+      }
     }
     ResetStub();
   }
@@ -1466,6 +1477,24 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       const Status status = SendRpc(RpcOptions().set_server_fail(server_fail));
       EXPECT_FALSE(status.ok());
     }
+  }
+
+  void SetRouteConfiguration(int idx, const RouteConfiguration& route_config) {
+    if (GetParam().enable_rds_testing()) {
+      balancers_[idx]->ads_service()->SetRdsResource(route_config,
+                                                     kDefaultResourceName);
+    } else {
+      balancers_[idx]->ads_service()->SetLdsResource(
+          AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+    }
+  }
+
+  AdsServiceImpl::ResponseState RouteConfigurationResponseState(int idx) const {
+    AdsServiceImpl* ads_service = balancers_[idx]->ads_service();
+    if (GetParam().enable_rds_testing()) {
+      return ads_service->rds_response_state();
+    }
+    return ads_service->lds_response_state();
   }
 
  public:
@@ -1878,8 +1907,8 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   // Make sure RPCs are still succeeding.
   CheckRpcSendOk(100 * num_backends_);
   // Make sure we ACK'ed the update.
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
-            AdsServiceImpl::ACKED);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that we restart all xDS requests when we reestablish the ADS call.
@@ -2128,16 +2157,6 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
 
 using LdsTest = BasicTest;
 
-// Tests that LDS client should send an ACK upon correct LDS response (with
-// inlined RDS result).
-TEST_P(LdsTest, Vanilla) {
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::ACKED);
-}
-
 // Tests that LDS client should send a NACK if there is no API listener in the
 // Listener in the LDS response.
 TEST_P(LdsTest, NoApiListener) {
@@ -2147,8 +2166,10 @@ TEST_P(LdsTest, NoApiListener) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Listener has no ApiListener.");
 }
 
 // Tests that LDS client should send a NACK if the route_specifier in the
@@ -2163,29 +2184,45 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "HttpConnectionManager neither has inlined route_config nor RDS.");
+}
+
+using LdsRdsTest = BasicTest;
+
+// Tests that LDS client should send an ACK upon correct LDS response (with
+// inlined RDS result).
+TEST_P(LdsRdsTest, Vanilla) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  (void)SendRpc();
+  EXPECT_EQ(RouteConfigurationResponseState(0).state,
+            AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should send a NACK if matching domain can't be found in
 // the LDS response.
-TEST_P(LdsTest, NoMatchedDomain) {
+TEST_P(LdsRdsTest, NoMatchedDomain) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "No matched virtual host found in the route config.");
 }
 
 // Tests that LDS client should choose the virtual host with matching domain if
 // multiple virtual hosts exist in the LDS response.
-TEST_P(LdsTest, ChooseMatchedDomain) {
+TEST_P(LdsRdsTest, ChooseMatchedDomain) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
@@ -2195,18 +2232,17 @@ TEST_P(LdsTest, ChooseMatchedDomain) {
       ->mutable_routes(0)
       ->mutable_route()
       ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::ACKED);
+  EXPECT_EQ(RouteConfigurationResponseState(0).state,
+            AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should choose the last route in the virtual host if
 // multiple routes exist in the LDS response.
-TEST_P(LdsTest, ChooseLastRoute) {
+TEST_P(LdsRdsTest, ChooseLastRoute) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   *(route_config.mutable_virtual_hosts(0)->add_routes()) =
@@ -2215,36 +2251,37 @@ TEST_P(LdsTest, ChooseLastRoute) {
       ->mutable_routes(0)
       ->mutable_route()
       ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::ACKED);
+  EXPECT_EQ(RouteConfigurationResponseState(0).state,
+            AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should send a NACK if route match has non-empty prefix
 // as the only route (default) in the LDS response.
-TEST_P(LdsTest, RouteMatchHasNonemptyPrefix) {
+TEST_P(LdsRdsTest, RouteMatchHasNonemptyPrefix) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_match()
-      ->set_prefix("nonempty_prefix");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+      ->set_prefix("/nonempty_prefix/");
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Default route must have empty service and method");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string with no "/".
-TEST_P(LdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2256,18 +2293,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Prefix does not start with a /");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string does not end with "/".
-TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoEndingSlash) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoEndingSlash) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2276,18 +2313,19 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoEndingSlash) {
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Prefix not in the required format of /service/");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string does not start with "/".
-TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2296,18 +2334,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service/");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Prefix does not start with a /");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string with extra content outside of "/service/".
-TEST_P(LdsTest, RouteMatchHasInvalidPrefixExtraContent) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2316,18 +2354,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixExtraContent) {
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/Echo1");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Prefix does not end with a /");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string "//".
-TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoContent) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoContent) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2336,18 +2374,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPrefixNoContent) {
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("//");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Prefix contains empty service name");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // but it's empty.
-TEST_P(LdsTest, RouteMatchHasInvalidPathEmptyPath) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2359,18 +2397,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathEmptyPath) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Path if set cannot be empty");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string does not start with "/".
-TEST_P(LdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2382,18 +2420,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("grpc.testing.EchoTest1Service/Echo1");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Path does not start with a /");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string that ends with "/".
-TEST_P(LdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2405,18 +2443,19 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1/");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Path not in the required format of /service/method");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string that misses "/" between service and method.
-TEST_P(LdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2428,18 +2467,19 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service.Echo1");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Path not in the required format of /service/method");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string that is missing service.
-TEST_P(LdsTest, RouteMatchHasInvalidPathMissingService) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2451,18 +2491,18 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathMissingService) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("//Echo1");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Path contains empty service name");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string that is missing method.
-TEST_P(LdsTest, RouteMatchHasInvalidPathMissingMethod) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2474,49 +2514,45 @@ TEST_P(LdsTest, RouteMatchHasInvalidPathMissingMethod) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/");
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Path contains empty method name");
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
 // RouteAction in the LDS response.
-TEST_P(LdsTest, RouteHasNoRouteAction) {
+TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_redirect();
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "No RouteAction found in route.");
 }
 
-// TODO@donnadionne: Add more invalid config tests to cover all errors in
-// xds_api.cc
-
-// Tests that LDS client should send a NACK if RouteAction has a
-// cluster_specifier cluster_header in the LDS response.
-TEST_P(LdsTest, RouteActionHasUnsupportedClusterSpecifier) {
+// cluster_specifier other than cluster in the LDS response.
+TEST_P(LdsRdsTest, RouteActionHasNoCluster) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
       ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config), kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "No cluster or weighted_clusters found in RouteAction.");
 }
 
 TEST_P(LdsTest, RouteActionClusterHasEmptyClusterName) {
@@ -2537,8 +2573,8 @@ TEST_P(LdsTest, RouteActionClusterHasEmptyClusterName) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
+            AdsServiceImpl::ResponseState::ResponseState::NACKED);
 }
 
 TEST_P(LdsTest, RouteActionWeightedTargetHasNoTargets) {
@@ -2560,8 +2596,8 @@ TEST_P(LdsTest, RouteActionWeightedTargetHasNoTargets) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
+            AdsServiceImpl::ResponseState::NACKED);
 }
 
 TEST_P(LdsTest, RouteActionWeightedTargetHasIncorrectTotalWeight) {
@@ -2591,8 +2627,8 @@ TEST_P(LdsTest, RouteActionWeightedTargetHasIncorrectTotalWeight) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
+            AdsServiceImpl::ResponseState::NACKED);
 }
 
 TEST_P(LdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
@@ -2621,8 +2657,8 @@ TEST_P(LdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
+            AdsServiceImpl::ResponseState::NACKED);
 }
 
 TEST_P(LdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
@@ -2651,14 +2687,18 @@ TEST_P(LdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state(),
-            AdsServiceImpl::NACKED);
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
+            AdsServiceImpl::ResponseState::NACKED);
 }
 
 // Tests that LDS client times out when no response received.
-TEST_P(LdsTest, Timeout) {
+TEST_P(LdsRdsTest, Timeout) {
   ResetStub(0, "", 500);
-  balancers_[0]->ads_service()->SetResourceIgnore(kLdsTypeUrl);
+  if (GetParam().enable_rds_testing()) {
+    balancers_[0]->ads_service()->SetResourceIgnore(kRdsTypeUrl);
+  } else {
+    balancers_[0]->ads_service()->SetResourceIgnore(kLdsTypeUrl);
+  }
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
@@ -2666,7 +2706,7 @@ TEST_P(LdsTest, Timeout) {
 
 // Tests that LDS client should choose the default route (with no matching
 // specified) after unable to find a match with previous routes.
-TEST_P(LdsTest, XdsRoutingPathMatching) {
+TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2718,9 +2758,7 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  Listener listener =
-      balancers_[0]->ads_service()->BuildListener(new_route_config);
-  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
@@ -2746,7 +2784,7 @@ TEST_P(LdsTest, XdsRoutingPathMatching) {
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
 }
 
-TEST_P(LdsTest, XdsRoutingPrefixMatching) {
+TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2795,9 +2833,7 @@ TEST_P(LdsTest, XdsRoutingPrefixMatching) {
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  Listener listener =
-      balancers_[0]->ads_service()->BuildListener(new_route_config);
-  balancers_[0]->ads_service()->SetLdsResource(listener, kDefaultResourceName);
+  SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(
@@ -2915,142 +2951,6 @@ TEST_P(LdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
                                              (1 + kErrorTolerance))));
 }
 
-using RdsTest = BasicTest;
-
-// Tests that RDS client should send an ACK upon correct RDS response.
-TEST_P(RdsTest, Vanilla) {
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::ACKED);
-}
-
-// Tests that RDS client should send a NACK if matching domain can't be found in
-// the RDS response.
-TEST_P(RdsTest, NoMatchedDomain) {
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)->clear_domains();
-  route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
-  balancers_[0]->ads_service()->SetRdsResource(route_config,
-                                               kDefaultResourceName);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::NACKED);
-}
-
-// Tests that RDS client should choose the virtual host with matching domain if
-// multiple virtual hosts exist in the RDS response.
-TEST_P(RdsTest, ChooseMatchedDomain) {
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
-  route_config.mutable_virtual_hosts(0)->clear_domains();
-  route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetRdsResource(route_config,
-                                               kDefaultResourceName);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::ACKED);
-}
-
-// Tests that RDS client should choose the last route in the virtual host if
-// multiple routes exist in the RDS response.
-TEST_P(RdsTest, ChooseLastRoute) {
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  *(route_config.mutable_virtual_hosts(0)->add_routes()) =
-      route_config.virtual_hosts(0).routes(0);
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetRdsResource(route_config,
-                                               kDefaultResourceName);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::ACKED);
-}
-
-// Tests that RDS client should send a NACK if route match has non-empty prefix
-// as the only route (default) in the RDS response.
-TEST_P(RdsTest, RouteMatchHasNonemptyPrefix) {
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_match()
-      ->set_prefix("/nonempty_prefix/");
-  balancers_[0]->ads_service()->SetRdsResource(route_config,
-                                               kDefaultResourceName);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::NACKED);
-}
-
-// Tests that RDS client should send a NACK if route has an action other than
-// RouteAction in the RDS response.
-TEST_P(RdsTest, RouteHasNoRouteAction) {
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_redirect();
-  balancers_[0]->ads_service()->SetRdsResource(route_config,
-                                               kDefaultResourceName);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::NACKED);
-}
-
-// Tests that RDS client should send a NACK if RouteAction has a
-// cluster_specifier other than cluster in the RDS response.
-TEST_P(RdsTest, RouteActionHasUnsupportedClusterSpecifier) {
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_cluster_header();
-  balancers_[0]->ads_service()->SetRdsResource(route_config,
-                                               kDefaultResourceName);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->rds_response_state(),
-            AdsServiceImpl::NACKED);
-}
-
-// Tests that RDS client times out when no response received.
-TEST_P(RdsTest, Timeout) {
-  ResetStub(0, "", 500);
-  balancers_[0]->ads_service()->SetResourceIgnore(kRdsTypeUrl);
-  balancers_[0]->ads_service()->SetLdsToUseDynamicRds();
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-}
-
 using CdsTest = BasicTest;
 
 // Tests that CDS client should send an ACK upon correct CDS response.
@@ -3058,8 +2958,8 @@ TEST_P(CdsTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
-            AdsServiceImpl::ACKED);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that CDS client should send a NACK if the cluster type in CDS response
@@ -3071,8 +2971,10 @@ TEST_P(CdsTest, WrongClusterType) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "DiscoveryType is not EDS.");
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response is
@@ -3084,8 +2986,10 @@ TEST_P(CdsTest, WrongEdsConfig) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "EDS ConfigSource is not ADS.");
 }
 
 // Tests that CDS client should send a NACK if the lb_policy in CDS response is
@@ -3097,8 +3001,10 @@ TEST_P(CdsTest, WrongLbPolicy) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "LB policy is not ROUND_ROBIN.");
 }
 
 // Tests that CDS client should send a NACK if the lrs_server in CDS response is
@@ -3110,8 +3016,10 @@ TEST_P(CdsTest, WrongLrsServer) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "LRS ConfigSource is not self.");
 }
 
 // Tests that CDS client times out when no response received.
@@ -3144,8 +3052,11 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
   CheckRpcSendFailure();
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NACKED);
+  const auto& response_state =
+      balancers_[0]->ads_service()->eds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "EDS update includes sparse priority list");
 }
 
 using LocalityMapTest = BasicTest;
@@ -3426,6 +3337,22 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
   }
 }
 
+// Does not choose locality with no endpoints.
+TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", {}, kDefaultLocalityWeight, 0},
+      {"locality1", GetBackendPorts(), kDefaultLocalityWeight, 0},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+  // Wait for all backends to be used.
+  std::tuple<int, int, int> counts = WaitForAllBackends();
+  // Make sure no RPCs failed in the transition.
+  EXPECT_EQ(0, std::get<1>(counts));
+}
+
 // If the higher priority localities are not reachable, failover to the highest
 // priority among the rest.
 TEST_P(FailoverTest, Failover) {
@@ -3578,8 +3505,8 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // When backend 3 gets traffic, we know the second update has been seen.
   WaitForBackend(3);
   // The ADS service of balancer 0 got at least 1 response.
-  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
   delayed_resource_setter.join();
 }
 
@@ -3852,12 +3779,12 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
   // The ADS service of balancer 0 sent at least 1 response.
-  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -3872,12 +3799,12 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // first balancer, which doesn't assign the second backend.
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of balancer 0 sent at least 1 response.
-  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
 }
 
 // Tests that the old LB call is still used after multiple balancer address
@@ -3907,12 +3834,12 @@ TEST_P(BalancerUpdateTest, Repeated) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
   // The ADS service of balancer 0 sent at least 1 response.
-  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
   std::vector<int> ports;
   ports.emplace_back(balancers_[0]->port());
   ports.emplace_back(balancers_[1]->port());
@@ -3971,12 +3898,12 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
   // The ADS service of balancer 0 sent at least 1 response.
-  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
+  EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
   // Kill balancer 0
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
   balancers_[0]->Shutdown();
@@ -3989,12 +3916,12 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   EXPECT_EQ(20U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of no balancers sent anything
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
+  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -4011,12 +3938,12 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backends_[1]->backend_service()->request_count());
   // The ADS service of balancer 1 sent at least 1 response.
-  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_GT(balancers_[1]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
-  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state(),
-            AdsServiceImpl::NOT_SENT);
+  EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_GT(balancers_[1]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
+            AdsServiceImpl::ResponseState::NOT_SENT);
 }
 
 // The re-resolution tests are deferred because they rely on the fallback mode,
@@ -4274,10 +4201,12 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest,
                                            TestType(true, true)),
                          &TestTypeName);
 
-// RDS depends on XdsResolver.
-INSTANTIATE_TEST_SUITE_P(XdsTest, RdsTest,
+// LDS RDS Commmon tests  depends on XdsResolver.
+INSTANTIATE_TEST_SUITE_P(XdsTest, LdsRdsTest,
                          ::testing::Values(TestType(true, false),
-                                           TestType(true, true)),
+                                           TestType(true, true),
+                                           TestType(true, false, true),
+                                           TestType(true, true, true)),
                          &TestTypeName);
 
 // CDS depends on XdsResolver.
