@@ -18,6 +18,7 @@
 
 #include "test/core/util/test_config.h"
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -402,13 +403,12 @@ TestEnvironment::TestEnvironment(int argc, char** argv) {
 TestEnvironment::~TestEnvironment() {
   // This will wait until gRPC shutdown has actually happened to make sure
   // no gRPC resources (such as thread) are active. (timeout = 10s)
-  gpr_timespec timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                      gpr_time_from_seconds(10, GPR_TIMESPAN));
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   while (grpc_is_initialized()) {
     grpc_maybe_wait_for_async_shutdown();
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_millis(1, GPR_TIMESPAN)));
-    if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), timeout) > 0) {
+    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) > 0) {
       gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
       break;
     }
