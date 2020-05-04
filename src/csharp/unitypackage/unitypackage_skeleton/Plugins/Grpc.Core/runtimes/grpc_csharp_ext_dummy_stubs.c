@@ -434,3 +434,16 @@ void grpcsharp_test_call_start_unary_echo() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void dlopen() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void dlerror() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void dlsym() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+
