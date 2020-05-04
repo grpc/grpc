@@ -71,6 +71,7 @@ class XdsResolver : public Resolver {
     void OnServiceConfigChanged(
         RefCountedPtr<ServiceConfig> service_config) override;
     void OnError(grpc_error* error) override;
+    void OnResourceDoesNotExist() override;
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
@@ -106,6 +107,20 @@ void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
   result.args =
       grpc_channel_args_copy_and_add(resolver_->args_, &xds_client_arg, 1);
   result.service_config_error = error;
+  resolver_->result_handler()->ReturnResult(std::move(result));
+}
+
+void XdsResolver::ServiceConfigWatcher::OnResourceDoesNotExist() {
+  if (resolver_->xds_client_ == nullptr) return;
+  gpr_log(GPR_ERROR,
+          "[xds_resolver %p] LDS/RDS resource does not exist -- returning "
+          "empty service config",
+          resolver_.get());
+  Result result;
+  result.service_config =
+      ServiceConfig::Create("{}", &result.service_config_error);
+  GPR_ASSERT(result.service_config != nullptr);
+  result.args = grpc_channel_args_copy(resolver_->args_);
   resolver_->result_handler()->ReturnResult(std::move(result));
 }
 
