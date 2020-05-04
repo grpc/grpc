@@ -2036,39 +2036,6 @@ void XdsClient::ResetBackoff() {
 }
 
 namespace {
-std::string CreateServiceConfigActionWeightedCluster(
-    const std::vector<XdsApi::RdsRoute::XdsClusterWeight>& clusters) {
-  std::vector<std::string> config_parts;
-  config_parts.push_back(
-      absl::StrFormat("      \"weighted:%s\":{\n"
-                      "        \"child_policy\":[ {\n"
-                      "          \"weighted_target_experimental\":{\n"
-                      "            \"targets\":{\n",
-                      "blah"));
-  std::vector<std::string> weighted_targets;
-  for (size_t i = 0; i < clusters.size(); ++i) {
-    auto cluster_weight = clusters[i];
-    weighted_targets.push_back(
-        absl::StrFormat("              \"%s\":{\n"
-                        "                \"weight\":%d,\n"
-                        "                \"childPolicy\":[ {\n"
-                        "                  \"cds_experimental\":{\n"
-                        "                    \"cluster\": \"%s\"\n"
-                        "                  }\n"
-                        "                } ]\n"
-                        "               }",
-                        cluster_weight.name.c_str(), cluster_weight.weight,
-                        cluster_weight.name.c_str()));
-  }
-  config_parts.push_back(absl::StrJoin(weighted_targets, ",\n"));
-  config_parts.push_back(
-      "            }\n"
-      "          }\n"
-      "        } ]\n"
-      "       }");
-  return absl::StrJoin(config_parts, "");
-}
-
 std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
   return absl::StrFormat(
       "      \"cds:%s\":{\n"
@@ -2094,11 +2061,156 @@ std::string CreateServiceConfigRoute(const std::string cluster_name,
       "      }",
       service.c_str(), method.c_str(), cluster_name.c_str());
 }
+
+struct ActionEntry {
+  std::string service;
+  std::string method;
+  std::string action;
+};
+
+struct RouteWithKeys {
+  XdsApi::RdsRoute route;
+  std::string top_level_key;
+  std::string bottom_level_key;
+};
+
+using TwoLevelActionMap =
+    std::map<std::string /*cluster names*/,
+             std::map<std::string /*cluster names + weights*/, ActionEntry>>;
+
+using RoutesWithKeys = std::vector<RouteWithKeys>;
+
+void CreateClusterWeightMapFromRdsUpdate(
+    const std::vector<XdsApi::RdsRoute>& routes, TwoLevelActionMap* actions,
+    RoutesWithKeys* update) {
+  for (const auto& route : routes) {
+    RouteWithKeys route_with_keys;
+    route_with_keys.route = route;
+    if (!route.weighted_clusters.empty()) {
+      std::set<std::string> cluster_names;
+      std::set<std::string> cluster_weight_names;
+      std::vector<std::string> weighted_targets;
+      for (const auto& cluster : route.weighted_clusters) {
+        // put names in std::set to be sorted.
+        cluster_names.emplace(cluster.name);
+        cluster_weight_names.emplace(
+            absl::StrFormat("%s_%d", cluster.name, cluster.weight));
+        weighted_targets.push_back(absl::StrFormat(
+            "              \"%s\":{\n"
+            "                \"weight\":%d,\n"
+            "                \"childPolicy\":[ {\n"
+            "                  \"cds_experimental\":{\n"
+            "                    \"cluster\": \"%s\"\n"
+            "                  }\n"
+            "                } ]\n"
+            "               }",
+            cluster.name.c_str(), cluster.weight, cluster.name.c_str()));
+      }
+      route_with_keys.top_level_key = absl::StrJoin(cluster_names, "_");
+      route_with_keys.bottom_level_key =
+          absl::StrJoin(cluster_weight_names, "_");
+      if ((*actions)[route_with_keys.top_level_key].find(
+              route_with_keys.bottom_level_key) ==
+          (*actions)[route_with_keys.top_level_key].end()) {
+        ActionEntry action;
+        action.service = route.service;
+        action.method = route.method;
+        action.action = absl::StrJoin(weighted_targets, ",\n");
+        (*actions)[route_with_keys.top_level_key].emplace(
+            route_with_keys.bottom_level_key, std::move(action));
+      }
+    }
+    update->emplace_back(route_with_keys);
+  }
+}
+
+XdsClient::TwoLevelMap FindActionsToRemove(
+    const XdsClient::TwoLevelMap& old_actions,
+    const TwoLevelActionMap& actions) {
+  XdsClient::TwoLevelMap actions_to_remove = old_actions;
+  for (const auto& one : old_actions) {
+    gpr_log(GPR_INFO, "donna FindActionsToRemove level 1 %s",
+            one.first.c_str());
+    for (const auto& two : one.second) {
+      gpr_log(GPR_INFO, "donna FindActionsToRemove leve 2 %s and %lu",
+              two.first.c_str(), two.second);
+      auto result = actions.find(one.first);
+      if (result != actions.end() &&
+          result->second.find(two.first) != result->second.end()) {
+        actions_to_remove[one.first].erase(two.first);
+      }
+      if (actions_to_remove[one.first].empty()) {
+        actions_to_remove.erase(one.first);
+      }
+    }
+  }
+  return actions_to_remove;
+}
+
 }  // namespace
+
+std::string XdsClient::CreateServiceConfigActionWeightedCluster(
+    const std::string name,
+    const std::vector<XdsApi::RdsRoute::XdsClusterWeight>& clusters) {
+  std::vector<std::string> config_parts;
+  config_parts.push_back(
+      absl::StrFormat("      \"weighted:%s\":{\n"
+                      "        \"child_policy\":[ {\n"
+                      "          \"weighted_target_experimental\":{\n"
+                      "            \"targets\":{\n",
+                      name));
+  std::vector<std::string> weighted_targets;
+  for (size_t i = 0; i < clusters.size(); ++i) {
+    auto cluster_weight = clusters[i];
+    weighted_targets.push_back(
+        absl::StrFormat("              \"%s\":{\n"
+                        "                \"weight\":%d,\n"
+                        "                \"childPolicy\":[ {\n"
+                        "                  \"cds_experimental\":{\n"
+                        "                    \"cluster\": \"%s\"\n"
+                        "                  }\n"
+                        "                } ]\n"
+                        "               }",
+                        cluster_weight.name.c_str(), cluster_weight.weight,
+                        cluster_weight.name.c_str()));
+  }
+  config_parts.push_back(absl::StrJoin(weighted_targets, ",\n"));
+  config_parts.push_back(
+      "            }\n"
+      "          }\n"
+      "        } ]\n"
+      "       }");
+  return absl::StrJoin(config_parts, "");
+}
 
 grpc_error* XdsClient::CreateServiceConfig(
     const XdsApi::RdsUpdate& rds_update,
-    RefCountedPtr<ServiceConfig>* service_config) const {
+    RefCountedPtr<ServiceConfig>* service_config) {
+  TwoLevelActionMap actions;
+  RoutesWithKeys update_with_keys;
+  CreateClusterWeightMapFromRdsUpdate(rds_update.routes, &actions,
+                                      &update_with_keys);
+  gpr_log(GPR_INFO, "donna new actions: ");
+  for (const auto& one : actions) {
+    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
+    for (const auto& two : one.second) {
+      gpr_log(GPR_INFO, "donna leve 2 %s and %s", two.first.c_str(),
+              two.second.action.c_str());
+    }
+  }
+  for (const auto& key : update_with_keys) {
+    gpr_log(GPR_INFO, "donna keys %s %s", key.top_level_key.c_str(),
+            key.bottom_level_key.c_str());
+  }
+  gpr_log(GPR_INFO, "donna after find action to remove:");
+  auto actions_to_remove = FindActionsToRemove(final_actions_, actions);
+  for (const auto& one : actions_to_remove) {
+    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
+    for (const auto& two : one.second) {
+      gpr_log(GPR_INFO, "donna leve 2 %s and %lu", two.first.c_str(),
+              two.second);
+    }
+  }
   std::vector<std::string> config_parts;
   config_parts.push_back(
       "{\n"
@@ -2106,34 +2218,91 @@ grpc_error* XdsClient::CreateServiceConfig(
       "    { \"xds_routing_experimental\":{\n"
       "      \"actions\":{\n");
   std::vector<std::string> actions_vector;
+  std::vector<std::string> weighted_targets;
+  // cluster name for regular cluster or cluster + weight combined name string
+  // for weighted cluster (not actual name in service config)
   std::set<std::string> actions_set;
-  for (const auto& route : rds_update.routes) {
-    if (!route.weighted_clusters.empty()) {
-      actions_vector.push_back(
-          CreateServiceConfigActionWeightedCluster(route.weighted_clusters));
-    } else {
-      if (actions_set.find(route.cluster_name) == actions_set.end()) {
+  for (const auto& route : update_with_keys) {
+    if (route.route.weighted_clusters.empty()) {
+      // cluster cases:
+      if (actions_set.find(route.route.cluster_name) == actions_set.end()) {
         actions_vector.push_back(
-            CreateServiceConfigActionCluster(route.cluster_name.c_str()));
-        actions_set.emplace(route.cluster_name);
+            CreateServiceConfigActionCluster(route.route.cluster_name.c_str()));
+        actions_set.emplace(route.route.cluster_name);
       }
+      weighted_targets.push_back(CreateServiceConfigRoute(
+          absl::StrFormat("cds:%s", route.route.cluster_name.c_str()),
+          route.route.service.c_str(), route.route.method.c_str()));
+    } else {
+      // weighted cluster cases:
+      std::string cluster_name;
+      if (actions_set.find(route.bottom_level_key) != actions_set.end()) {
+        // The same action has already been added, just need to get the name for
+        // route.
+        cluster_name = cluster_name = absl::StrFormat(
+            "%s_%d", route.top_level_key,
+            final_actions_[route.top_level_key][route.bottom_level_key]);
+      } else {
+        auto old_result = final_actions_.find(route.top_level_key);
+        if (old_result != final_actions_.end() &&
+            old_result->second.find(route.bottom_level_key) !=
+                old_result->second.end()) {
+          // This action is exact the same as an action from previous update,
+          // let us reuse name
+          cluster_name = absl::StrFormat(
+              "%s_%d", route.top_level_key,
+              final_actions_[route.top_level_key][route.bottom_level_key]);
+        } else {
+          // This action is not exactly the same as an action from previous
+          // update, let us see if we can reuse a name or get a new name.
+          auto top_element = actions_to_remove.find(route.top_level_key);
+          if (top_element != actions_to_remove.end()) {
+            // There is something to reuse.
+            auto first_element = top_element->second.begin();
+            final_actions_[route.top_level_key][route.bottom_level_key] =
+                first_element->second;
+            cluster_name = absl::StrFormat("%s_%d", route.top_level_key,
+                                           first_element->second);
+            gpr_log(GPR_INFO, "donna not exactly the same reuse something %s",
+                    cluster_name.c_str());
+            final_actions_[route.top_level_key].erase(first_element->first);
+            top_element->second.erase(first_element);
+            if (top_element->second.empty()) {
+              actions_to_remove.erase(route.top_level_key);
+            }
+          } else {
+            // There is nothing to reuse as all names the the same set of
+            // cluters are already removed.
+            size_t next_index = 0;
+            if (old_result != final_actions_.end()) {
+              auto next_index_element = old_result->second.find("nextindex");
+              next_index = next_index_element->second;
+              ++next_index_element->second;
+            } else {
+              final_actions_[route.top_level_key]["nextindex"] = 0;
+            }
+            final_actions_[route.top_level_key][route.bottom_level_key] =
+                next_index;
+            cluster_name =
+                absl::StrFormat("%s_%d", route.top_level_key, next_index);
+            gpr_log(GPR_INFO, "donna brand new %s", cluster_name.c_str());
+          }
+          actions_set.emplace(route.bottom_level_key);
+        }
+        actions_vector.push_back(CreateServiceConfigActionWeightedCluster(
+            cluster_name, route.route.weighted_clusters));
+        actions_set.emplace(cluster_name);
+      }
+      weighted_targets.push_back(CreateServiceConfigRoute(
+          absl::StrFormat("weighted:%s", cluster_name),
+          route.route.service.c_str(), route.route.method.c_str()));
     }
   }
+  // remove remaining to be removed actions
   config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
   config_parts.push_back(
       "    },\n"
       "      \"routes\":[\n");
-  std::vector<std::string> weighted_targets;
-  for (const auto& route : rds_update.routes) {
-    std::string cluster_name;
-    if (!route.weighted_clusters.empty()) {
-      cluster_name = absl::StrFormat("weighted:%s", "blah");
-    } else {
-      cluster_name = absl::StrFormat("cds:%s", route.cluster_name.c_str());
-    }
-    weighted_targets.push_back(CreateServiceConfigRoute(
-        std::move(cluster_name), route.service.c_str(), route.method.c_str()));
-  }
   config_parts.push_back(absl::StrJoin(weighted_targets, ",\n"));
   config_parts.push_back(
       "    ]\n"

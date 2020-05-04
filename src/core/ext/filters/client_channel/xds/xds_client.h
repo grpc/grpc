@@ -137,6 +137,13 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
       const grpc_channel_args& args);
 
+  // 2-level map containing final actions included in the service config;
+  // top level map is keyed by cluster names without weight like a_b_c; second
+  // level map is keyed by cluster names + weights like a10_b50_c40
+  using TwoLevelMap = std::map<std::string /*cluster names*/,
+                               std::map<std::string /*cluster names + weights*/,
+                                        uint64_t /*policy index number*/>>;
+
  private:
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
@@ -226,9 +233,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
-  grpc_error* CreateServiceConfig(
-      const XdsApi::RdsUpdate& rds_update,
-      RefCountedPtr<ServiceConfig>* service_config) const;
+  std::string CreateServiceConfigActionWeightedCluster(
+      const std::string name,
+      const std::vector<XdsApi::RdsRoute::XdsClusterWeight>&);
+
+  grpc_error* CreateServiceConfig(const XdsApi::RdsUpdate& rds_update,
+                                  RefCountedPtr<ServiceConfig>* service_config);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot(
       const std::set<std::string>& clusters);
@@ -269,12 +279,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       LoadReportState>
       load_report_map_;
 
-  // 2-level map containing final actions included in the service config;
-  // top level map is keyed by cluster names without weight like a_b_c; second
-  // level map is keyed by cluster names + weights like a10_b50_c40
-  using TwoLevelMap = std::map<std::string /*cluster names*/,
-                               std::map<std::string /*cluster names + weights*/,
-                                        uint64_t /*policy index number*/>>;
   TwoLevelMap final_actions_;
 
   bool shutting_down_ = false;
