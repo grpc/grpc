@@ -206,84 +206,6 @@ class ChannelzServicerTest(AioTestBase):
         self.assertEqual(resp.channel.data.calls_succeeded, k_success)
         self.assertEqual(resp.channel.data.calls_failed, k_failed)
 
-    async def test_many_requests_many_channel(self):
-        k_channels = 4
-        idx = await _generate_channel_server_pairs(k_channels)
-        k_success = 11
-        k_failed = 13
-        for i in range(k_success):
-            await self._send_successful_unary_unary(idx[0])
-            await self._send_successful_unary_unary(idx[2])
-        for i in range(k_failed):
-            await self._send_failed_unary_unary(idx[1])
-            await self._send_failed_unary_unary(idx[2])
-
-        # The first channel saw only successes
-        resp = await self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(
-                channel_id=await self._get_channel_id(idx[0])))
-        self.assertEqual(resp.channel.data.calls_started, k_success)
-        self.assertEqual(resp.channel.data.calls_succeeded, k_success)
-        self.assertEqual(resp.channel.data.calls_failed, 0)
-
-        # The second channel saw only failures
-        resp = await self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(
-                channel_id=await self._get_channel_id(idx[1])))
-        self.assertEqual(resp.channel.data.calls_started, k_failed)
-        self.assertEqual(resp.channel.data.calls_succeeded, 0)
-        self.assertEqual(resp.channel.data.calls_failed, k_failed)
-
-        # The third channel saw both successes and failures
-        resp = await self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(
-                channel_id=await self._get_channel_id(idx[2])))
-        self.assertEqual(resp.channel.data.calls_started, k_success + k_failed)
-        self.assertEqual(resp.channel.data.calls_succeeded, k_success)
-        self.assertEqual(resp.channel.data.calls_failed, k_failed)
-
-        # The fourth channel saw nothing
-        resp = await self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(
-                channel_id=await self._get_channel_id(idx[3])))
-        self.assertEqual(resp.channel.data.calls_started, 0)
-        self.assertEqual(resp.channel.data.calls_succeeded, 0)
-        self.assertEqual(resp.channel.data.calls_failed, 0)
-
-    async def test_many_subchannels(self):
-        k_channels = 4
-        idx = await _generate_channel_server_pairs(k_channels)
-        k_success = 17
-        k_failed = 19
-        for i in range(k_success):
-            await self._send_successful_unary_unary(idx[0])
-            await self._send_successful_unary_unary(idx[2])
-        for i in range(k_failed):
-            await self._send_failed_unary_unary(idx[1])
-            await self._send_failed_unary_unary(idx[2])
-
-        for i in range(k_channels):
-            gc_resp = await self._channelz_stub.GetChannel(
-                channelz_pb2.GetChannelRequest(
-                    channel_id=await self._get_channel_id(idx[i])))
-            # If no call performed in the channel, there shouldn't be any subchannel
-            if gc_resp.channel.data.calls_started == 0:
-                self.assertEqual(len(gc_resp.channel.subchannel_ref), 0)
-                continue
-
-            # Otherwise, the subchannel should exist
-            self.assertGreater(len(gc_resp.channel.subchannel_ref), 0)
-            gsc_resp = await self._channelz_stub.GetSubchannel(
-                channelz_pb2.GetSubchannelRequest(
-                    subchannel_id=gc_resp.channel.subchannel_ref[0].
-                    subchannel_id))
-            self.assertEqual(gc_resp.channel.data.calls_started,
-                             gsc_resp.subchannel.data.calls_started)
-            self.assertEqual(gc_resp.channel.data.calls_succeeded,
-                             gsc_resp.subchannel.data.calls_succeeded)
-            self.assertEqual(gc_resp.channel.data.calls_failed,
-                             gsc_resp.subchannel.data.calls_failed)
-
     async def test_server_call(self):
         idx = await _generate_channel_server_pairs(1)
         k_success = 23
@@ -297,47 +219,6 @@ class ChannelzServicerTest(AioTestBase):
         self.assertEqual(resp.data.calls_started, k_success + k_failed)
         self.assertEqual(resp.data.calls_succeeded, k_success)
         self.assertEqual(resp.data.calls_failed, k_failed)
-
-    async def test_many_subchannels_and_sockets(self):
-        k_channels = 4
-        idx = await _generate_channel_server_pairs(k_channels)
-        k_success = 3
-        k_failed = 5
-        for i in range(k_success):
-            await self._send_successful_unary_unary(idx[0])
-            await self._send_successful_unary_unary(idx[2])
-        for i in range(k_failed):
-            await self._send_failed_unary_unary(idx[1])
-            await self._send_failed_unary_unary(idx[2])
-
-        for i in range(k_channels):
-            gc_resp = await self._channelz_stub.GetChannel(
-                channelz_pb2.GetChannelRequest(
-                    channel_id=await self._get_channel_id(idx[i])))
-
-            # If no call performed in the channel, there shouldn't be any subchannel
-            if gc_resp.channel.data.calls_started == 0:
-                self.assertEqual(len(gc_resp.channel.subchannel_ref), 0)
-                continue
-
-            # Otherwise, the subchannel should exist
-            self.assertGreater(len(gc_resp.channel.subchannel_ref), 0)
-            gsc_resp = await self._channelz_stub.GetSubchannel(
-                channelz_pb2.GetSubchannelRequest(
-                    subchannel_id=gc_resp.channel.subchannel_ref[0].
-                    subchannel_id))
-            self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
-
-            gs_resp = await self._channelz_stub.GetSocket(
-                channelz_pb2.GetSocketRequest(
-                    socket_id=gsc_resp.subchannel.socket_ref[0].socket_id))
-            self.assertEqual(gsc_resp.subchannel.data.calls_started,
-                             gs_resp.socket.data.streams_started)
-            self.assertEqual(gsc_resp.subchannel.data.calls_started,
-                             gs_resp.socket.data.streams_succeeded)
-            # Calls started == messages sent, only valid for unary calls
-            self.assertEqual(gsc_resp.subchannel.data.calls_started,
-                             gs_resp.socket.data.messages_sent)
 
     async def test_streaming_rpc(self):
         idx = await _generate_channel_server_pairs(1)
