@@ -1833,6 +1833,41 @@ def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
         _cygrpc.server_credentials_local(local_connect_type.value))
 
 
+def alts_channel_credentials(service_accounts=None):
+    """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
+
+    This is an EXPERIMENTAL API.
+    ALTS credentials API can only be used in GCP environment as it relies on
+    handshaker service being available. For more info about ALTS see
+    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
+
+    Args:
+      service_accounts: A list of server identities accepted by the client.
+        If target service accounts are provided and none of them matches the
+        peer identity of the server, handshake will fail. The arg can be empty
+        if the client does not have any information about trusted server
+        identity.
+    Returns:
+      A ChannelCredentials for use with an ALTS-enabled Channel
+    """
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_alts(service_accounts or []))
+
+
+def alts_server_credentials():
+    """Creates a ServerCredentials for use with an ALTS-enabled connection.
+
+    This is an EXPERIMENTAL API.
+    ALTS credentials API can only be used in GCP environment as it relies on
+    handshaker service being available. For more info about ALTS see
+    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
+
+    Returns:
+      A ServerCredentials for use with an ALTS-enabled Server
+    """
+    return ServerCredentials(_cygrpc.server_credentials_alts())
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 
@@ -2036,6 +2071,8 @@ __all__ = (
     'composite_channel_credentials',
     'local_channel_credentials',
     'local_server_credentials',
+    'alts_channel_credentials',
+    'alts_server_credentials',
     'ssl_server_credentials',
     'ssl_server_certificate_configuration',
     'dynamic_ssl_server_credentials',
