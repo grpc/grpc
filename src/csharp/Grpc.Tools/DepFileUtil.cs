@@ -175,6 +175,17 @@ namespace Grpc.Tools
             return Path.Combine(protoDepDir, $"{dirhash}_{filename}.protodep");
         }
 
+        public static string GetOutputDirWithHash(string outputDir, string proto)
+        {
+            string dirname = Path.GetDirectoryName(proto);
+            if (Platform.IsFsCaseInsensitive)
+            {
+                dirname = dirname.ToLowerInvariant();
+            }
+            string dirhash = HashString64Hex(dirname);
+            return Path.Combine(outputDir, dirhash);
+        }
+
         // Get a 64-bit hash for a directory string. We treat it as if it were
         // unique, since there are not so many distinct proto paths in a project.
         // We take the first 64 bit of the string SHA1.
