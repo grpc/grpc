@@ -2991,7 +2991,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
       AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name),
       kNewCluster2Name);
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args3, kNewCluster2Name),
+      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name),
       kNewCluster3Name);
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
@@ -3136,7 +3136,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChange) {
       AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name),
       kNewCluster2Name);
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args3, kNewCluster2Name),
+      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name),
       kNewCluster3Name);
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
@@ -3225,17 +3225,17 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChange) {
       backends_[1]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
-  //const int weight_50_request_count_2 =
-  //    backends_[2]->backend_service1()->request_count();
+  const int old_request_count_2 =
+      backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   const int weight_50_request_count_3 =
       backends_[3]->backend_service1()->request_count();
-  //EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
+  // EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
-  gpr_log(GPR_INFO, "donna numbers %d %d and %d", kNumEcho1Rpcs,
-          weight_50_request_count_1, weight_50_request_count_3);
+  gpr_log(GPR_INFO, "donna numbers %d %d and %d and %d", kNumEcho1Rpcs,
+          weight_50_request_count_1, weight_50_request_count_3,
+          old_request_count_2);
   EXPECT_THAT(weight_50_request_count_1,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 - kErrorTolerance)),
@@ -3246,6 +3246,8 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChange) {
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 + kErrorTolerance))));
+  // Allow 1% of traffic to temporarily still go to the old cluster
+  EXPECT_LT(old_request_count_2, kNumEcho1Rpcs * 1 / 100);
 }
 
 using CdsTest = BasicTest;

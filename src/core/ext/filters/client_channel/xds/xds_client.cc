@@ -2071,8 +2071,8 @@ struct RouteWithKeys {
 using RoutesWithKeys = std::vector<RouteWithKeys>;
 
 void CreateClusterWeightMapFromRdsUpdate(
-    const std::vector<XdsApi::RdsRoute>& routes, XdsClient::TwoLevelMap* actions,
-    RoutesWithKeys* update) {
+    const std::vector<XdsApi::RdsRoute>& routes,
+    XdsClient::TwoLevelMap* actions, RoutesWithKeys* update) {
   for (const auto& route : routes) {
     RouteWithKeys route_with_keys;
     route_with_keys.route = route;
