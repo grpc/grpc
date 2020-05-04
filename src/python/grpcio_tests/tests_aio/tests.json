@@ -14,6 +14,7 @@
   "unit.channel_argument_test.TestChannelArgument",
   "unit.channel_ready_test.TestChannelReady",
   "unit.channel_test.TestChannel",
+  "unit.client_stream_unary_interceptor_test.TestStreamUnaryClientInterceptor",
   "unit.client_unary_stream_interceptor_test.TestUnaryStreamClientInterceptor",
   "unit.client_unary_unary_interceptor_test.TestInterceptedUnaryUnaryCall",
   "unit.client_unary_unary_interceptor_test.TestUnaryUnaryClientInterceptor",
