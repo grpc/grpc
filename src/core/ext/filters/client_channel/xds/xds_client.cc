@@ -2062,26 +2062,16 @@ std::string CreateServiceConfigRoute(const std::string cluster_name,
       service.c_str(), method.c_str(), cluster_name.c_str());
 }
 
-struct ActionEntry {
-  std::string service;
-  std::string method;
-  std::string action;
-};
-
 struct RouteWithKeys {
   XdsApi::RdsRoute route;
   std::string top_level_key;
   std::string bottom_level_key;
 };
 
-using TwoLevelActionMap =
-    std::map<std::string /*cluster names*/,
-             std::map<std::string /*cluster names + weights*/, ActionEntry>>;
-
 using RoutesWithKeys = std::vector<RouteWithKeys>;
 
 void CreateClusterWeightMapFromRdsUpdate(
-    const std::vector<XdsApi::RdsRoute>& routes, TwoLevelActionMap* actions,
+    const std::vector<XdsApi::RdsRoute>& routes, XdsClient::TwoLevelMap* actions,
     RoutesWithKeys* update) {
   for (const auto& route : routes) {
     RouteWithKeys route_with_keys;
@@ -2112,12 +2102,8 @@ void CreateClusterWeightMapFromRdsUpdate(
       if ((*actions)[route_with_keys.top_level_key].find(
               route_with_keys.bottom_level_key) ==
           (*actions)[route_with_keys.top_level_key].end()) {
-        ActionEntry action;
-        action.service = route.service;
-        action.method = route.method;
-        action.action = absl::StrJoin(weighted_targets, ",\n");
         (*actions)[route_with_keys.top_level_key].emplace(
-            route_with_keys.bottom_level_key, std::move(action));
+            route_with_keys.bottom_level_key, 0);
       }
     }
     update->emplace_back(route_with_keys);
@@ -2126,7 +2112,7 @@ void CreateClusterWeightMapFromRdsUpdate(
 
 XdsClient::TwoLevelMap FindActionsToRemove(
     const XdsClient::TwoLevelMap& old_actions,
-    const TwoLevelActionMap& actions) {
+    const XdsClient::TwoLevelMap& actions) {
   XdsClient::TwoLevelMap actions_to_remove = old_actions;
   for (const auto& one : old_actions) {
     gpr_log(GPR_INFO, "donna FindActionsToRemove level 1 %s",
@@ -2186,7 +2172,7 @@ std::string XdsClient::CreateServiceConfigActionWeightedCluster(
 grpc_error* XdsClient::CreateServiceConfig(
     const XdsApi::RdsUpdate& rds_update,
     RefCountedPtr<ServiceConfig>* service_config) {
-  TwoLevelActionMap actions;
+  TwoLevelMap actions;
   RoutesWithKeys update_with_keys;
   CreateClusterWeightMapFromRdsUpdate(rds_update.routes, &actions,
                                       &update_with_keys);
@@ -2194,8 +2180,8 @@ grpc_error* XdsClient::CreateServiceConfig(
   for (const auto& one : actions) {
     gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
     for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "donna leve 2 %s and %s", two.first.c_str(),
-              two.second.action.c_str());
+      gpr_log(GPR_INFO, "donna leve 2 %s and %d", two.first.c_str(),
+              two.second);
     }
   }
   for (const auto& key : update_with_keys) {
