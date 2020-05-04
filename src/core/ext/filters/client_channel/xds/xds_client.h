@@ -233,6 +233,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
+  void UpdateFinalActions(const TwoLevelMap& actions_to_remove);
+
   std::string CreateServiceConfigActionWeightedCluster(
       const std::string name,
       const std::vector<XdsApi::RdsRoute::XdsClusterWeight>&);

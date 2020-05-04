@@ -2135,6 +2135,24 @@ XdsClient::TwoLevelMap FindActionsToRemove(
 
 }  // namespace
 
+void XdsClient::UpdateFinalActions(const TwoLevelMap& actions_to_remove) {
+  for (const auto& one : actions_to_remove) {
+    gpr_log(GPR_INFO, "donna UpdateFinalActions level 1 %s", one.first.c_str());
+    for (const auto& two : one.second) {
+      gpr_log(GPR_INFO, "donna UpdateFinalActions leve 2 %s and %lu",
+              two.first.c_str(), two.second);
+      auto top_result = final_actions_.find(one.first);
+      GPR_ASSERT(top_result != final_actions_.end());
+      auto bottom_result = top_result->second.find(two.first);
+      GPR_ASSERT(bottom_result != top_result->second.end());
+      top_result->second.erase(bottom_result);
+      if (top_result->second.empty()) {
+        final_actions_.erase(top_result);
+      }
+    }
+  }
+}
+
 std::string XdsClient::CreateServiceConfigActionWeightedCluster(
     const std::string name,
     const std::vector<XdsApi::RdsRoute::XdsClusterWeight>& clusters) {
@@ -2285,6 +2303,7 @@ grpc_error* XdsClient::CreateServiceConfig(
     }
   }
   // remove remaining to be removed actions
+  UpdateFinalActions(actions_to_remove);
   config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
   config_parts.push_back(
       "    },\n"

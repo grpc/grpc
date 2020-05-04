@@ -1099,13 +1099,12 @@ grpc_error* RouteConfigParse(
                    route_action)) {
       const envoy_api_v2_route_WeightedCluster* weighted_cluster =
           envoy_api_v2_route_RouteAction_weighted_clusters(route_action);
+      uint32_t total_weight = 100;
       const google_protobuf_UInt32Value* weight =
           envoy_api_v2_route_WeightedCluster_total_weight(weighted_cluster);
-      if (weight == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "RouteAction weighted_cluster missing total weight");
+      if (weight != nullptr) {
+        total_weight = google_protobuf_UInt32Value_value(weight);
       }
-      uint32_t total_weight = google_protobuf_UInt32Value_value(weight);
       size_t clusters_size;
       const envoy_api_v2_route_WeightedCluster_ClusterWeight* const* clusters =
           envoy_api_v2_route_WeightedCluster_clusters(weighted_cluster,

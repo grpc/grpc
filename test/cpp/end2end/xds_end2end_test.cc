@@ -2604,7 +2604,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasNoTargets) {
             "RouteAction weighted_cluster missing total weight");
 }
 
-TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeight) {
+TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -3065,7 +3065,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
   backends_[2]->backend_service1()->ResetCounters();
   backends_[3]->backend_service1()->ResetCounters();
   WaitForAllBackends(0, 1);
-  gpr_log(GPR_INFO, "donna sending new traffic");
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(
       kNumEcho1Rpcs,
@@ -3099,7 +3098,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
                                              (1 + kErrorTolerance))));
 }
 
-TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChange) {
+TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -3179,11 +3178,11 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChange) {
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  const int weight_75_request_count =
+  int weight_75_request_count =
       backends_[1]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  const int weight_25_request_count =
+  int weight_25_request_count =
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
@@ -3202,7 +3201,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChange) {
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
                                              (1 + kErrorTolerance))));
-  // Change Route Configurations: same clusters different weights.
+  // Change Route Configurations: new set of clusters with different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->set_name(kNewCluster3Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
@@ -3211,7 +3210,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChange) {
   backends_[2]->backend_service1()->ResetCounters();
   backends_[3]->backend_service1()->ResetCounters();
   WaitForAllBackends(0, 1);
-  gpr_log(GPR_INFO, "donna sending new traffic");
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(
       kNumEcho1Rpcs,
@@ -3248,6 +3246,48 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChange) {
                                              (1 + kErrorTolerance))));
   // Allow 1% of traffic to temporarily still go to the old cluster
   EXPECT_LT(old_request_count_2, kNumEcho1Rpcs * 1 / 100);
+  // Change Route Configurations: Back to original set of clusters, but name
+  // will change.
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  SetRouteConfiguration(0, new_route_config);
+  backends_[1]->backend_service1()->ResetCounters();
+  backends_[2]->backend_service1()->ResetCounters();
+  backends_[3]->backend_service1()->ResetCounters();
+  WaitForAllBackends(0, 1);
+  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(
+      kNumEcho1Rpcs,
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  weight_75_request_count = backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  weight_25_request_count = backends_[2]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
+  const int old_request_count_3 =
+      backends_[3]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
+  gpr_log(GPR_INFO, "donna numbers %d %d and %d", kNumEcho1Rpcs,
+          weight_75_request_count, weight_25_request_count);
+  EXPECT_THAT(weight_75_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_25_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 + kErrorTolerance))));
+  // Allow 1% of traffic to temporarily still go to the old cluster
+  EXPECT_LT(old_request_count_3, kNumEcho1Rpcs * 1 / 100);
 }
 
 using CdsTest = BasicTest;
