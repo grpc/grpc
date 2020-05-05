@@ -145,6 +145,21 @@ namespace Grpc.Tools
         /// <returns>
         /// Directory hash based on the file name, e. g. "deadbeef12345678"
         /// </returns>
+        /// <remarks>
+        /// Since a project may contain proto files with the same filename but in different
+        /// directories, a unique directory for the generated files is constructed based on the
+        /// proto file names directory. The directory path can be arbitrary, for example,
+        /// it can be outside of the project, or an absolute path including a drive letter,
+        /// or a UNC network path. A name constructed from such a path by, for example,
+        /// replacing disallowed name characters with an underscore, may well be over
+        /// filesystem's allowed path length, since it will be located under the project
+        /// and solution directories, which are also some level deep from the root.
+        /// Instead of creating long and unwieldy names for these proto sources, we cache
+        /// the full path of the name without the filename, as in e. g. "foo/file.proto"
+        /// will yield the name "deadbeef12345678", where that is a presumed hash value
+        /// of the string "foo". This allows the path to be short, unique (up to a hash
+        /// collision), and still allowing the user to guess their provenance.
+        /// </remarks>
         private static string GetDirectoryHash(string proto)
         {
             string dirname = Path.GetDirectoryName(proto);
@@ -163,29 +178,16 @@ namespace Grpc.Tools
         /// <param name="proto">Relative path to the proto item, e. g. "foo/file.proto"</param>
         /// <returns>
         /// Full relative path to the dependency file, e. g.
-        /// "out/deadbeef12345678/file.protodep"
+        /// "out/deadbeef12345678_file.protodep"
         /// </returns>
         /// <remarks>
-        /// Since a project may contain proto files with the same filename but in different
-        /// directories, a unique filename for the dependency file is constructed based on the
-        /// proto file name both name and directory. The directory path can be arbitrary,
-        /// for example, it can be outside of the project, or an absolute path including
-        /// a drive letter, or a UNC network path. A name constructed from such a path by,
-        /// for example, replacing disallowed name characters with an underscore, may well
-        /// be over filesystem's allowed path length, since it will be located under the
-        /// project and solution directories, which are also some level deep from the root.
-        /// Instead of creating long and unwieldy names for these proto sources, we cache
-        /// the full path of the name without the filename, and append the filename to it,
-        /// as in e. g. "foo/file.proto" will yield the name "deadbeef12345678/file", where
-        /// "deadbeef12345678" is a presumed hash value of the string "foo". This allows
-        /// the file names be short, unique (up to a hash collision), and still allowing
-        /// the user to guess their provenance.
+        /// See <see cref="GetDirectoryHash"/> for notes on directory hash.
         /// </remarks>
         public static string GetDepFilenameForProto(string protoDepDir, string proto)
         {
-            string outdir = GetOutputDirWithHash(protoDepDir, proto);
+            string dirhash = GetDirectoryHash(proto);
             string filename = Path.GetFileNameWithoutExtension(proto);
-            return Path.Combine(outdir, $"{filename}.protodep");
+            return Path.Combine(protoDepDir, $"{dirhash}_{filename}.protodep");
         }
 
         /// <summary>
@@ -197,23 +199,11 @@ namespace Grpc.Tools
         /// Full relative path to the directory, e. g. "out/deadbeef12345678"
         /// </returns>
         /// <remarks>
-        /// Since a project may contain proto files with the same filename but in different
-        /// directories, a unique directory for the generated files is constructed based on the
-        /// proto file names directory. The directory path can be arbitrary, for example,
-        /// it can be outside of the project, or an absolute path including a drive letter,
-        /// or a UNC network path. A name constructed from such a path by, for example,
-        /// replacing disallowed name characters with an underscore, may well be over
-        /// filesystem's allowed path length, since it will be located under the project
-        /// and solution directories, which are also some level deep from the root.
-        /// Instead of creating long and unwieldy names for these proto sources, we cache
-        /// the full path of the name without the filename, as in e. g. "foo/file.proto"
-        /// will yield the name "deadbeef12345678", where that is a presumed hash value
-        /// of the string "foo". This allows the path to be short, unique (up to a hash
-        /// collision), and still allowing the user to guess their provenance.
+        /// See <see cref="GetDirectoryHash"/> for notes on directory hash.
         /// </remarks>
         public static string GetOutputDirWithHash(string outputDir, string proto)
         {
-            var dirhash = GetDirectoryHash(proto);
+            string dirhash = GetDirectoryHash(proto);
             return Path.Combine(outputDir, dirhash);
         }
 

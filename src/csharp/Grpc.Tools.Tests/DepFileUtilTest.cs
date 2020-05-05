@@ -41,9 +41,9 @@ namespace Grpc.Tools.Tests
         [Test]
         public void GetDepFilenameForProto_IsSane()
         {
-            StringAssert.IsMatch(@"^out[\\/][a-f0-9]{16}[\\/]foo.protodep$",
+            StringAssert.IsMatch(@"^out[\\/][a-f0-9]{16}_foo.protodep$",
                 DepFileUtil.GetDepFilenameForProto("out", "foo.proto"));
-            StringAssert.IsMatch(@"^[a-f0-9]{16}[\\/]foo.protodep$",
+            StringAssert.IsMatch(@"^[a-f0-9]{16}_foo.protodep$",
                 DepFileUtil.GetDepFilenameForProto("", "foo.proto"));
         }
 
