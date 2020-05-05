@@ -1147,8 +1147,6 @@ grpc_error* RouteConfigParse(
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "RouteAction weighted_cluster has no valid clusters specified.");
       }
-      gpr_log(GPR_INFO, "donna to remove later %d and %s", total_weight,
-              absl::StrJoin(cluster_name_parts, "_").c_str());
     } else {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No cluster or weighted_clusters found in RouteAction.");
