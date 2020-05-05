@@ -71,6 +71,13 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 class _ChannelServerPair:
 
+    def __init__(self):
+        self.address = ''
+        self.server = None
+        self.channel = None
+        self.server_ref_id = None
+        self.channel_ref_id = None
+
     async def start(self):
         # Server will enable channelz service
         self.server = aio.server(options=_DISABLE_REUSE_PORT + _ENABLE_CHANNELZ)
@@ -348,8 +355,7 @@ class ChannelzServicerTest(AioTestBase):
                     socket_id=gsc_resp.subchannel.socket_ref[0].socket_id))
             self.assertEqual(gsc_resp.subchannel.data.calls_started,
                              gs_resp.socket.data.streams_started)
-            self.assertEqual(gsc_resp.subchannel.data.calls_started,
-                             gs_resp.socket.data.streams_succeeded)
+            self.assertEqual(0, gs_resp.socket.data.streams_failed)
             # Calls started == messages sent, only valid for unary calls
             self.assertEqual(gsc_resp.subchannel.data.calls_started,
                              gs_resp.socket.data.messages_sent)
