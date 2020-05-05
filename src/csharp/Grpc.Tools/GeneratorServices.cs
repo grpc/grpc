@@ -67,19 +67,20 @@ namespace Grpc.Tools
         {
             bool doGrpc = GrpcOutputPossible(protoItem);
             var outputs = new string[doGrpc ? 2 : 1];
-            string basename = Path.GetFileNameWithoutExtension(protoItem.ItemSpec);
+            var itemSpec = protoItem.ItemSpec;
+            string basename = Path.GetFileNameWithoutExtension(itemSpec);
 
-            string outdir = protoItem.GetMetadata(Metadata.OutputDir);
+            string outdir = DepFileUtil.GetOutputDirWithHash(protoItem.GetMetadata(Metadata.OutputDir), itemSpec);
             string filename = LowerUnderscoreToUpperCamelProtocWay(basename);
             outputs[0] = Path.Combine(outdir, filename) + ".cs";
 
             if (doGrpc)
             {
-                // Override outdir if kGrpcOutputDir present, default to proto output.
+                // Override outdir if GrpcOutputDir present, default to proto output.
                 string grpcdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
+                grpcdir = grpcdir == "" ? outdir : DepFileUtil.GetOutputDirWithHash(grpcdir, itemSpec);
                 filename = LowerUnderscoreToUpperCamelGrpcWay(basename);
-                outputs[1] = Path.Combine(
-                    grpcdir != "" ? grpcdir : outdir, filename) + "Grpc.cs";
+                outputs[1] = Path.Combine(grpcdir, filename) + "Grpc.cs";
             }
             return outputs;
         }

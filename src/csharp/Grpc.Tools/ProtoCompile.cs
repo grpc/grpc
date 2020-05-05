@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Build.Framework;
@@ -413,16 +414,21 @@ namespace Grpc.Tools
         // Called by the base ToolTask to get response file contents.
         protected override string GenerateResponseFileCommands()
         {
+            var outDir = TrimEndSlash(MaybeEnhanceOutputDir(OutputDir, Protobuf));
+            var grpcOutDir = TrimEndSlash(MaybeEnhanceOutputDir(GrpcOutputDir, Protobuf));
+
             var cmd = new ProtocResponseFileBuilder();
-            cmd.AddSwitchMaybe(Generator + "_out", TrimEndSlash(OutputDir));
+            cmd.AddSwitchMaybe(Generator + "_out", outDir);
             cmd.AddSwitchMaybe(Generator + "_opt", OutputOptions);
             cmd.AddSwitchMaybe("plugin=protoc-gen-grpc", GrpcPluginExe);
-            cmd.AddSwitchMaybe("grpc_out", TrimEndSlash(GrpcOutputDir));
+            cmd.AddSwitchMaybe("grpc_out", grpcOutDir);
             cmd.AddSwitchMaybe("grpc_opt", GrpcOutputOptions);
             if (ProtoPath != null)
             {
                 foreach (string path in ProtoPath)
+                {
                     cmd.AddSwitchMaybe("proto_path", TrimEndSlash(path));
+                }
             }
             cmd.AddSwitchMaybe("dependency_out", DependencyOut);
             cmd.AddSwitchMaybe("error_format", "msvs");
@@ -431,6 +437,18 @@ namespace Grpc.Tools
                 cmd.AddArg(proto.ItemSpec);
             }
             return cmd.ToString();
+        }
+
+        // If possible, disambiguate output dir by adding a hash of the proto file's path
+        static string MaybeEnhanceOutputDir(string outputDir, ITaskItem[] protobufs)
+        {
+            if (protobufs.Length != 1)
+            {
+                return outputDir;
+            }
+
+            var protoFile = protobufs[0].ItemSpec;
+            return DepFileUtil.GetOutputDirWithHash(outputDir, protoFile);
         }
 
         // Protoc cannot digest trailing slashes in directory names,
