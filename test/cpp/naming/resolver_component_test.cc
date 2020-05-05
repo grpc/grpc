@@ -521,8 +521,8 @@ int g_fake_non_responsive_dns_server_port = -1;
 void InjectBrokenNameServerList(ares_channel channel) {
   struct ares_addr_port_node dns_server_addrs[2];
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
-  grpc_core::UniquePtr<char> unused_host;
-  grpc_core::UniquePtr<char> local_dns_server_port;
+  std::string unused_host;
+  std::string local_dns_server_port;
   GPR_ASSERT(grpc_core::SplitHostPort(FLAGS_local_dns_server_address.c_str(),
                                       &unused_host, &local_dns_server_port));
   gpr_log(GPR_DEBUG,
@@ -543,8 +543,8 @@ void InjectBrokenNameServerList(ares_channel channel) {
   dns_server_addrs[1].family = AF_INET;
   ((char*)&dns_server_addrs[1].addr.addr4)[0] = 0x7f;
   ((char*)&dns_server_addrs[1].addr.addr4)[3] = 0x1;
-  dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.get());
-  dns_server_addrs[1].udp_port = atoi(local_dns_server_port.get());
+  dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
+  dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }

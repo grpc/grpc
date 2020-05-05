@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.name          = 'grpc'
   s.version       = GRPC::VERSION
   s.authors       = ['gRPC Authors']
-  s.email         = 'temiola@google.com'
+  s.email         = 'grpc-io@googlegroups.com'
   s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
   s.summary       = 'GRPC system in Ruby'
   s.description   = 'Send RPCs from Ruby using GRPC'
@@ -540,7 +540,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )
-  s.files += %w( src/core/lib/gprpp/string_view.h )
   s.files += %w( src/core/lib/gprpp/sync.h )
   s.files += %w( src/core/lib/gprpp/thd.h )
   s.files += %w( src/core/lib/gprpp/thd_posix.cc )

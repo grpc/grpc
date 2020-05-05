@@ -64,25 +64,25 @@ struct TestAddress {
 };
 
 grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   grpc_resolved_address resolved_addr;
   grpc_core::SplitHostPort(test_addr.dest_addr.c_str(), &host, &port);
   if (test_addr.family == AF_INET) {
     sockaddr_in in_dest;
     memset(&in_dest, 0, sizeof(sockaddr_in));
-    in_dest.sin_port = htons(atoi(port.get()));
+    in_dest.sin_port = htons(atoi(port.c_str()));
     in_dest.sin_family = AF_INET;
-    GPR_ASSERT(inet_pton(AF_INET, host.get(), &in_dest.sin_addr) == 1);
+    GPR_ASSERT(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr) == 1);
     memcpy(&resolved_addr.addr, &in_dest, sizeof(sockaddr_in));
     resolved_addr.len = sizeof(sockaddr_in);
   } else {
     GPR_ASSERT(test_addr.family == AF_INET6);
     sockaddr_in6 in6_dest;
     memset(&in6_dest, 0, sizeof(sockaddr_in6));
-    in6_dest.sin6_port = htons(atoi(port.get()));
+    in6_dest.sin6_port = htons(atoi(port.c_str()));
     in6_dest.sin6_family = AF_INET6;
-    GPR_ASSERT(inet_pton(AF_INET6, host.get(), &in6_dest.sin6_addr) == 1);
+    GPR_ASSERT(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr) == 1);
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
   }

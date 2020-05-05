@@ -297,7 +297,8 @@ class GrpcLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity, StringView message) override;
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override;
 
    private:
     RefCountedPtr<GrpcLb> parent_;
@@ -628,7 +629,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // how to interpret it.
       args.initial_metadata->Add(
           kGrpcLbClientStatsMetadataKey,
-          StringView(reinterpret_cast<const char*>(client_stats), 0));
+          absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
       // Update calls-started.
       client_stats->AddCallStarted();
     }
@@ -721,7 +722,8 @@ void GrpcLb::Helper::RequestReresolution() {
   }
 }
 
-void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
+void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                   absl::string_view message) {
   if (parent_->shutting_down_) return;
   parent_->channel_control_helper()->AddTraceEvent(severity, message);
 }

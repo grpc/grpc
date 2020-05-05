@@ -75,11 +75,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "gringotts"
+g_stands_for = "gradius"
 
 core_version = "10.0.0"
 
-version = "1.29.0-dev"
+version = "1.30.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -554,7 +554,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
-        "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",

@@ -387,15 +387,14 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
                            (strcmp(uri->scheme, "ipv6") == 0))) {
     const char* host_port = uri->path;
     if (*host_port == '/') ++host_port;
-    grpc_core::UniquePtr<char> host;
-    grpc_core::UniquePtr<char> port;
+    std::string host;
+    std::string port;
     GPR_ASSERT(SplitHostPort(host_port, &host, &port));
     int port_num = -1;
-    if (port != nullptr) {
-      port_num = atoi(port.get());
+    if (!port.empty()) {
+      port_num = atoi(port.data());
     }
-    char* b64_host =
-        grpc_base64_encode(host.get(), strlen(host.get()), false, false);
+    char* b64_host = grpc_base64_encode(host.data(), host.size(), false, false);
     data["tcpip_address"] = Json::Object{
         {"port", port_num},
         {"ip_address", b64_host},

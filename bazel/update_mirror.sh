@@ -51,6 +51,11 @@ function upload {
 # A specific link can be upload manually by running e.g.
 # upload "github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz"
 
+# bazel binaries used by the tools/bazel wrapper script
+upload github.com/bazelbuild/bazel/releases/download/1.0.0/bazel-1.0.0-linux-x86_64
+upload github.com/bazelbuild/bazel/releases/download/1.0.0/bazel-1.0.0-darwin-x86_64
+upload github.com/bazelbuild/bazel/releases/download/1.0.0/bazel-1.0.0-windows-x86_64.exe
+
 # Collect the github archives to mirror from grpc_deps.bzl
 grep -o '"https://github.com/[^"]*"' bazel/grpc_deps.bzl | sed 's/^"https:\/\///' | sed 's/"$//' | while read -r line ; do
     echo "Updating mirror for ${line}"

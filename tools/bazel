@@ -43,7 +43,9 @@ fi
 VERSION=1.0.0
 echo "INFO: Running bazel wrapper (see //tools/bazel for details), bazel version $VERSION will be used instead of system-wide bazel installation." >&2
 
-BASEURL=https://github.com/bazelbuild/bazel/releases/download/
+# update tools/update_mirror.sh to populate the mirror with new bazel archives
+BASEURL_MIRROR="https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/bazel/releases/download"
+BASEURL="https://github.com/bazelbuild/bazel/releases/download"
 pushd "$(dirname "$0")" >/dev/null
 TOOLDIR=$(pwd)
 
@@ -63,7 +65,9 @@ esac
 filename="bazel-$VERSION-$suffix"
 
 if [ ! -x "$filename" ] ; then
-  curl -L "$BASEURL/$VERSION/$filename" > "$filename"
+  # first try to download using mirror, fallback to download from github
+  echo "Downloading bazel, will try URLs: ${BASEURL_MIRROR}/${VERSION}/${filename} ${BASEURL}/${VERSION}/${filename}" >&2
+  curl --fail -L --output "${filename}" "${BASEURL_MIRROR}/${VERSION}/${filename}" || curl --fail -L --output "${filename}" "${BASEURL}/${VERSION}/${filename}"
   chmod a+x "$filename"
 fi
 

@@ -46,8 +46,8 @@ cdef extern from "src/core/lib/iomgr/resolve_address_custom.h":
     pass
 
   struct grpc_custom_resolver_vtable:
-    grpc_error* (*resolve)(char* host, char* port, grpc_resolved_addresses** res);
-    void (*resolve_async)(grpc_custom_resolver* resolver, char* host, char* port);
+    grpc_error* (*resolve)(const char* host, const char* port, grpc_resolved_addresses** res);
+    void (*resolve_async)(grpc_custom_resolver* resolver, const char* host, const char* port);
 
   void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                     grpc_resolved_addresses* result,

@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.29.0-dev")
+set(PACKAGE_VERSION       "1.30.0-dev")
 set(gRPC_CORE_VERSION     "10.0.0")
 set(gRPC_CORE_SOVERSION   "10")
-set(gRPC_CPP_VERSION      "1.29.0-dev")
+set(gRPC_CPP_VERSION      "1.30.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.29.0-dev")
+set(gRPC_CSHARP_VERSION   "2.30.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -798,7 +798,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx streaming_throughput_test)
   endif()
   add_dependencies(buildtests_cxx string_ref_test)
-  add_dependencies(buildtests_cxx string_view_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
   add_dependencies(buildtests_cxx test_cpp_util_time_test)
@@ -6768,10 +6767,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sequential_connectivity_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/surface/sequential_connectivity_test.cc
 )
 
@@ -11074,10 +11069,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_credentials_options_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/security/grpc_tls_credentials_options_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -13769,44 +13760,6 @@ target_link_libraries(string_ref_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(string_view_test
-  test/core/gprpp/string_view_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(string_view_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(string_view_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(test_cpp_client_credentials_test
   test/cpp/client/credentials_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14106,10 +14059,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(tls_security_connector_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/security/tls_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15001,10 +14950,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ssl_server_fuzzer_one_entry
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/security/ssl_server_fuzzer.cc
   test/core/util/one_corpus_entry_fuzzer.cc
   third_party/googletest/googletest/src/gtest-all.cc
