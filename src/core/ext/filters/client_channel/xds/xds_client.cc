@@ -2149,6 +2149,7 @@ XdsClient::TwoLevelMap FindActionsToReuse(
 void XdsClient::UpdateFinalActions(const TwoLevelMap& actions_to_remove) {
   for (const auto& one : actions_to_remove) {
     for (const auto& two : one.second) {
+      if (two.first == "nextindex") continue;
       auto top_result = final_actions_.find(one.first);
       GPR_ASSERT(top_result != final_actions_.end());
       auto bottom_result = top_result->second.find(two.first);
@@ -2305,7 +2306,7 @@ grpc_error* XdsClient::CreateServiceConfig(
               next_index = next_index_element->second;
               ++next_index_element->second;
             } else {
-              final_actions_[route.top_level_key]["nextindex"] = 0;
+              final_actions_[route.top_level_key]["nextindex"] = 1;
             }
             final_actions_[route.top_level_key][route.bottom_level_key] =
                 next_index;

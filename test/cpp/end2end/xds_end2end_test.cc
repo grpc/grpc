@@ -2876,7 +2876,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
             /*xds_resource_does_not_exist_timeout*/ 0,
             /*xds_routing_enabled=*/true);
   const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewCluster2Name = "anew_cluster_2";
+  const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 1000;
   const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
@@ -2885,29 +2885,27 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", GetBackendPorts(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", GetBackendPorts(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(3, 4)},
+      {"locality0", GetBackendPorts(2, 3)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+      AdsServiceImpl::BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name),
-      kNewCluster1Name);
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name),
-      kNewCluster2Name);
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
   new_cluster1.set_name(kNewCluster1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1, kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
   Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
   new_cluster2.set_name(kNewCluster2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Populating Route Configurations for LDS.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2929,23 +2927,23 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, new_route_config);
-  WaitForAllBackends(1, 2);
+  WaitForAllBackends(0, 1);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(
       kNumEcho1Rpcs,
       RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  const int weight_75_request_count =
+      backends_[1]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
-  const int weight_75_request_count =
-      backends_[2]->backend_service1()->request_count();
   const int weight_25_request_count =
-      backends_[3]->backend_service1()->request_count();
+      backends_[2]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   const double kErrorTolerance = 0.2;
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
@@ -2988,27 +2986,24 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
       {"locality0", GetBackendPorts(3, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+      AdsServiceImpl::BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name),
-      kNewCluster1Name);
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name),
-      kNewCluster2Name);
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name),
-      kNewCluster3Name);
+      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name));
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
   new_cluster1.set_name(kNewCluster1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1, kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
   Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
   new_cluster2.set_name(kNewCluster2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   Cluster new_cluster3 = balancers_[0]->ads_service()->default_cluster();
   new_cluster3.set_name(kNewCluster3Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster3, kNewCluster3Name);
-  // Populating Route Configurations for LDS.
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
+  // Populating Route Configurations.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -3049,8 +3044,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
-  gpr_log(GPR_INFO, "donna numbers %d %d and %d", kNumEcho1Rpcs,
-          weight_75_request_count, weight_25_request_count);
   const double kErrorTolerance = 0.2;
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
@@ -3089,8 +3082,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
-  gpr_log(GPR_INFO, "donna numbers %d %d and %d", kNumEcho1Rpcs,
-          weight_50_request_count_1, weight_50_request_count_2);
   EXPECT_THAT(weight_50_request_count_1,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 - kErrorTolerance)),
@@ -3132,27 +3123,24 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
       {"locality0", GetBackendPorts(3, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args), kDefaultResourceName);
+      AdsServiceImpl::BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name),
-      kNewCluster1Name);
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name),
-      kNewCluster2Name);
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
   balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name),
-      kNewCluster3Name);
+      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name));
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
   new_cluster1.set_name(kNewCluster1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1, kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
   Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
   new_cluster2.set_name(kNewCluster2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2, kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   Cluster new_cluster3 = balancers_[0]->ads_service()->default_cluster();
   new_cluster3.set_name(kNewCluster3Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster3, kNewCluster3Name);
-  // Populating Route Configurations for LDS.
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
+  // Populating Route Configurations.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -3193,8 +3181,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
-  gpr_log(GPR_INFO, "donna numbers %d %d and %d", kNumEcho1Rpcs,
-          weight_75_request_count, weight_25_request_count);
   const double kErrorTolerance = 0.2;
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
@@ -3234,11 +3220,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   const int weight_50_request_count_3 =
       backends_[3]->backend_service1()->request_count();
-  // EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
-  gpr_log(GPR_INFO, "donna numbers %d %d and %d and %d", kNumEcho1Rpcs,
-          weight_50_request_count_1, weight_50_request_count_3,
-          old_request_count_2);
   EXPECT_THAT(weight_50_request_count_1,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 - kErrorTolerance)),
@@ -3251,8 +3233,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
                                              (1 + kErrorTolerance))));
   // Allow 1% of traffic to temporarily still go to the old cluster
   EXPECT_LT(old_request_count_2, kNumEcho1Rpcs * 1 / 100);
-  // Change Route Configurations: Back to original set of clusters, but name
-  // will change.
+  // Change Route Configurations: Back to original set of clusters.
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
@@ -3279,8 +3260,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
   const int old_request_count_3 =
       backends_[3]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
-  gpr_log(GPR_INFO, "donna numbers %d %d and %d", kNumEcho1Rpcs,
-          weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
                                              (1 - kErrorTolerance)),
