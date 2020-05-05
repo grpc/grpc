@@ -2048,7 +2048,7 @@ std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
       cluster_name.c_str(), cluster_name.c_str());
 }
 
-std::string CreateServiceConfigRoute(const std::string cluster_name,
+std::string CreateServiceConfigRoute(const std::string& cluster_name,
                                      const std::string& service,
                                      const std::string& method) {
   return absl::StrFormat(
@@ -2163,7 +2163,7 @@ void XdsClient::UpdateFinalActions(const TwoLevelMap& actions_to_remove) {
 }
 
 std::string XdsClient::CreateServiceConfigActionWeightedCluster(
-    const std::string name,
+    const std::string& name,
     const std::vector<XdsApi::RdsRoute::XdsClusterWeight>& clusters) {
   std::vector<std::string> config_parts;
   config_parts.push_back(
@@ -2204,34 +2204,6 @@ grpc_error* XdsClient::CreateServiceConfig(
   CreateWeightedClustersMapAndKeysFromRdsUpdate(rds_update.routes, &actions,
                                                 &weighted_clusters_with_keys);
   auto actions_to_reuse = FindActionsToReuse(final_actions_, actions);
-  gpr_log(GPR_INFO, "donna old actions: ");
-  for (const auto& one : final_actions_) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
-  gpr_log(GPR_INFO, "donna new actions: ");
-  for (const auto& one : actions) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
-  for (const auto& key : weighted_clusters_with_keys) {
-    gpr_log(GPR_INFO, "donna keys %s %s", key.top_level_key.c_str(),
-            key.bottom_level_key.c_str());
-  }
-  gpr_log(GPR_INFO, "donna after find action to reuse:");
-  for (const auto& one : actions_to_reuse) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
   std::vector<std::string> config_parts;
   config_parts.push_back(
       "{\n"
@@ -2339,15 +2311,6 @@ grpc_error* XdsClient::CreateServiceConfig(
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json.c_str(), &error);
-  gpr_log(GPR_INFO, "donna final actions: ");
-  for (const auto& one : final_actions_) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
-  gpr_log(GPR_INFO, "donna look at the service config %s", json.c_str());
   return error;
 }
 

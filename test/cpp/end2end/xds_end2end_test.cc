@@ -2923,6 +2923,20 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(kWeight75 + kWeight25);
+  auto route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route2->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
+  auto* weighted_cluster3 =
+      route2->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster3->set_name(kNewCluster1Name);
+  weighted_cluster3->mutable_weight()->set_value(kWeight75);
+  auto* weighted_cluster4 =
+      route2->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster4->set_name(kNewCluster2Name);
+  weighted_cluster4->mutable_weight()->set_value(kWeight25);
+  route2->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75 + kWeight25);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
