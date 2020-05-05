@@ -2579,31 +2579,6 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
             "RouteAction cluster contains empty cluster name.");
 }
 
-TEST_P(LdsRdsTest, RouteActionWeightedTargetHasNoTargets) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_weighted_clusters();
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  // TODO(@donnadionne): this may not be accurate.
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction weighted_cluster missing total weight");
-}
-
 TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
