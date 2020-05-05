@@ -21,7 +21,10 @@ We will make our best effort to support them, and we welcome patches for such pl
 |------------------|---------------|----------|---------------|
 | Linux            | x86, x64      | clang 3.4+, GCC 4.9+ | Supported |
 | Windows 7+       | x86, x64      | Visual Studio 2015+  | Supported |
-| MacOS            | x86, x64      | clang 3.4+, XCode 7.2+ | Supported |
+| MacOS            | x86, x64      | XCode 7.2+           | Supported |
+| Linux            | ARM           |                        | Best Effort |
+| iOS              |               |                        | Best Effort |
+| Android          |               |                        | Best Effort |
 
 ## Bazel
 
