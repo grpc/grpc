@@ -27,8 +27,6 @@ from grpc_channelz.v1 import channelz_pb2_grpc
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
 
-aio.shutdown_grpc_aio()
-
 _SUCCESSFUL_UNARY_UNARY = '/test/SuccessfulUnaryUnary'
 _FAILED_UNARY_UNARY = '/test/FailedUnaryUnary'
 _SUCCESSFUL_STREAM_STREAM = '/test/SuccessfulStreamStream'
@@ -39,6 +37,8 @@ _RESPONSE = b'\x01\x01\x01'
 _DISABLE_REUSE_PORT = (('grpc.so_reuseport', 0),)
 _ENABLE_CHANNELZ = (('grpc.enable_channelz', 1),)
 _DISABLE_CHANNELZ = (('grpc.enable_channelz', 0),)
+
+_LARGE_UNASSIGNED_ID = 10000
 
 
 async def _successful_unary_unary(request, servicer_context):
@@ -167,7 +167,8 @@ class ChannelzServicerTest(AioTestBase):
     async def test_get_top_channels_high_start_id(self):
         await _generate_channel_server_pairs(1)
         resp = await self._channelz_stub.GetTopChannels(
-            channelz_pb2.GetTopChannelsRequest(start_channel_id=10000))
+            channelz_pb2.GetTopChannelsRequest(
+                start_channel_id=_LARGE_UNASSIGNED_ID))
         self.assertEqual(len(resp.channel), 0)
         self.assertEqual(resp.end, True)
 
@@ -286,28 +287,29 @@ class ChannelzServicerTest(AioTestBase):
     async def test_invalid_query_get_server(self):
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await self._channelz_stub.GetServer(
-                channelz_pb2.GetServerRequest(server_id=10000))
+                channelz_pb2.GetServerRequest(server_id=_LARGE_UNASSIGNED_ID))
         self.assertEqual(grpc.StatusCode.NOT_FOUND,
                          exception_context.exception.code())
 
     async def test_invalid_query_get_channel(self):
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await self._channelz_stub.GetChannel(
-                channelz_pb2.GetChannelRequest(channel_id=10000))
+                channelz_pb2.GetChannelRequest(channel_id=_LARGE_UNASSIGNED_ID))
         self.assertEqual(grpc.StatusCode.NOT_FOUND,
                          exception_context.exception.code())
 
     async def test_invalid_query_get_subchannel(self):
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await self._channelz_stub.GetSubchannel(
-                channelz_pb2.GetSubchannelRequest(subchannel_id=10000))
+                channelz_pb2.GetSubchannelRequest(
+                    subchannel_id=_LARGE_UNASSIGNED_ID))
         self.assertEqual(grpc.StatusCode.NOT_FOUND,
                          exception_context.exception.code())
 
     async def test_invalid_query_get_socket(self):
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await self._channelz_stub.GetSocket(
-                channelz_pb2.GetSocketRequest(socket_id=10000))
+                channelz_pb2.GetSocketRequest(socket_id=_LARGE_UNASSIGNED_ID))
         self.assertEqual(grpc.StatusCode.NOT_FOUND,
                          exception_context.exception.code())
 
@@ -315,7 +317,7 @@ class ChannelzServicerTest(AioTestBase):
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await self._channelz_stub.GetServerSockets(
                 channelz_pb2.GetServerSocketsRequest(
-                    server_id=10000,
+                    server_id=_LARGE_UNASSIGNED_ID,
                     start_socket_id=0,
                 ))
         self.assertEqual(grpc.StatusCode.NOT_FOUND,
