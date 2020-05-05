@@ -786,9 +786,9 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
     'java', 'go', 'python', 'c++'
 ]
 
-_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
-_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
 _TRANSPORT_SECURITY_OPTIONS = ['tls', 'alts', 'insecure']
 

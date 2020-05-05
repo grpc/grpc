@@ -1145,7 +1145,7 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
         envoy_api_v2_Listener_api_listener(listener);
     if (api_listener == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Listener doesn't have ApiListener.");
+          "Listener has no ApiListener.");
     }
     const upb_strview encoded_api_listener = google_protobuf_Any_value(
         envoy_config_listener_v2_ApiListener_api_listener(api_listener));
@@ -1174,10 +1174,22 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "HttpConnectionManager neither has inlined route_config nor RDS.");
     }
-    // Get the route_config_name.
     const envoy_config_filter_network_http_connection_manager_v2_Rds* rds =
         envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_rds(
             http_connection_manager);
+    // Check that the ConfigSource specifies ADS.
+    const envoy_api_v2_core_ConfigSource* config_source =
+        envoy_config_filter_network_http_connection_manager_v2_Rds_config_source(
+            rds);
+    if (config_source == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "HttpConnectionManager missing config_source for RDS.");
+    }
+    if (!envoy_api_v2_core_ConfigSource_has_ads(config_source)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+    }
+    // Get the route_config_name.
     const upb_strview route_config_name =
         envoy_config_filter_network_http_connection_manager_v2_Rds_route_config_name(
             rds);
@@ -1278,7 +1290,8 @@ grpc_error* CdsResponseParse(
     const envoy_api_v2_core_ConfigSource* eds_config =
         envoy_api_v2_Cluster_EdsClusterConfig_eds_config(eds_cluster_config);
     if (!envoy_api_v2_core_ConfigSource_has_ads(eds_config)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("ConfigSource is not ADS.");
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "EDS ConfigSource is not ADS.");
     }
     // Record EDS service_name (if any).
     upb_strview service_name =
@@ -1299,7 +1312,7 @@ grpc_error* CdsResponseParse(
     if (lrs_server != nullptr) {
       if (!envoy_api_v2_core_ConfigSource_has_self(lrs_server)) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "ConfigSource is not self.");
+            "LRS ConfigSource is not self.");
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }

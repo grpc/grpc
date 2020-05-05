@@ -29,7 +29,6 @@ def grpc_bad_ssl_tests():
         deps = [
             "//test/core/util:grpc_test_util",
             "//:grpc",
-            "//test/core/end2end:ssl_test_data",
         ],
     )
     for t in BAD_SSL_TESTS:

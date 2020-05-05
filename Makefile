@@ -470,8 +470,8 @@ Q = @
 endif
 
 CORE_VERSION = 10.0.0
-CPP_VERSION = 1.29.0-dev
-CSHARP_VERSION = 2.29.0-dev
+CPP_VERSION = 1.30.0-dev
+CSHARP_VERSION = 2.30.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -9999,10 +9999,6 @@ endif
 
 
 SEQUENTIAL_CONNECTIVITY_TEST_SRC = \
-    test/core/end2end/data/client_certs.cc \
-    test/core/end2end/data/server1_cert.cc \
-    test/core/end2end/data/server1_key.cc \
-    test/core/end2end/data/test_root_cert.cc \
     test/core/surface/sequential_connectivity_test.cc \
 
 SEQUENTIAL_CONNECTIVITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SEQUENTIAL_CONNECTIVITY_TEST_SRC))))
@@ -10022,14 +10018,6 @@ $(BINDIR)/$(CONFIG)/sequential_connectivity_test: $(SEQUENTIAL_CONNECTIVITY_TEST
 	$(Q) $(LDXX) $(LDFLAGS) $(SEQUENTIAL_CONNECTIVITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/sequential_connectivity_test
 
 endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/core/surface/sequential_connectivity_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
@@ -14701,10 +14689,6 @@ endif
 
 
 GRPC_TLS_CREDENTIALS_OPTIONS_TEST_SRC = \
-    test/core/end2end/data/client_certs.cc \
-    test/core/end2end/data/server1_cert.cc \
-    test/core/end2end/data/server1_key.cc \
-    test/core/end2end/data/test_root_cert.cc \
     test/core/security/grpc_tls_credentials_options_test.cc \
 
 GRPC_TLS_CREDENTIALS_OPTIONS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_TLS_CREDENTIALS_OPTIONS_TEST_SRC))))
@@ -14735,14 +14719,6 @@ $(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test: $(PROTOBUF_DEP) $(GRPC_TL
 endif
 
 endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/core/security/grpc_tls_credentials_options_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
@@ -17864,10 +17840,6 @@ endif
 
 
 SSL_SERVER_FUZZER_SRC = \
-    test/core/end2end/data/client_certs.cc \
-    test/core/end2end/data/server1_cert.cc \
-    test/core/end2end/data/server1_key.cc \
-    test/core/end2end/data/test_root_cert.cc \
     test/core/security/ssl_server_fuzzer.cc \
     test/core/util/fuzzer_corpus_test.cc \
 
@@ -17899,14 +17871,6 @@ $(BINDIR)/$(CONFIG)/ssl_server_fuzzer: $(PROTOBUF_DEP) $(SSL_SERVER_FUZZER_OBJS)
 endif
 
 endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/core/security/ssl_server_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
@@ -18507,10 +18471,6 @@ endif
 
 
 TLS_SECURITY_CONNECTOR_TEST_SRC = \
-    test/core/end2end/data/client_certs.cc \
-    test/core/end2end/data/server1_cert.cc \
-    test/core/end2end/data/server1_key.cc \
-    test/core/end2end/data/test_root_cert.cc \
     test/core/security/tls_security_connector_test.cc \
 
 TLS_SECURITY_CONNECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TLS_SECURITY_CONNECTOR_TEST_SRC))))
@@ -18541,14 +18501,6 @@ $(BINDIR)/$(CONFIG)/tls_security_connector_test: $(PROTOBUF_DEP) $(TLS_SECURITY_
 endif
 
 endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/core/security/tls_security_connector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
@@ -19884,10 +19836,6 @@ endif
 
 
 SSL_SERVER_FUZZER_ONE_ENTRY_SRC = \
-    test/core/end2end/data/client_certs.cc \
-    test/core/end2end/data/server1_cert.cc \
-    test/core/end2end/data/server1_key.cc \
-    test/core/end2end/data/test_root_cert.cc \
     test/core/security/ssl_server_fuzzer.cc \
     test/core/util/one_corpus_entry_fuzzer.cc \
 
@@ -19919,14 +19867,6 @@ $(BINDIR)/$(CONFIG)/ssl_server_fuzzer_one_entry: $(PROTOBUF_DEP) $(SSL_SERVER_FU
 endif
 
 endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/client_certs.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/core/security/ssl_server_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
