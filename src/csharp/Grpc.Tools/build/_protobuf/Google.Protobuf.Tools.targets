@@ -261,6 +261,7 @@
     <!-- Ensure output directories. -->
     <MakeDir Directories="%(_Protobuf_OutOfDateProto.OutputDir)" />
     <MakeDir Directories="%(_Protobuf_OutOfDateProto.GrpcOutputDir)" />
+    <MakeDir Directories="%(Protobuf_ExpectedOutputs.RelativeDir)" />
     <MakeDir Directories="$(Protobuf_DepFilesPath)" />
 
     <!-- Force output to the current directory if the user has set it to empty. -->
