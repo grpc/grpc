@@ -232,8 +232,8 @@ class MetadataFlagsTest(unittest.TestCase):
         test_threads = []
         for perform_call in _ALL_CALL_CASES:
             test_thread = threading.Thread(target=test_call,
-                                           args=(perform_call,),
-                                           daemon=True)
+                                           args=(perform_call,))
+            test_thread.daemon = True
             test_thread.exception = None
             test_thread.start()
             test_threads.append(test_thread)
