@@ -256,7 +256,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       transport_security_type);
   const char* spiffe_data = nullptr;
-  size_t spiffe_length;
+  size_t spiffe_length = 0;
   int spiffe_id_count = 0;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
@@ -352,6 +352,9 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
                  0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_PEM_CERT_CHAIN_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_URI_PEER_PROPERTY);
       }
     }
   }
