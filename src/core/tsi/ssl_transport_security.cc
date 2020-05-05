@@ -33,15 +33,15 @@
 #include <sys/socket.h>
 #endif
 
-#include "absl/strings/match.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
+
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 
 extern "C" {
 #include <openssl/bio.h>
@@ -378,6 +378,12 @@ static tsi_result add_subject_alt_names_properties_to_peer(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
           reinterpret_cast<const char*>(name), static_cast<size_t>(name_size),
           &peer->properties[peer->property_count++]);
+      if (subject_alt_name->type == GEN_URI) {
+        result = tsi_construct_string_peer_property(
+            TSI_X509_URI_PEER_PROPERTY, reinterpret_cast<const char*>(name),
+            static_cast<size_t>(name_size),
+            &peer->properties[peer->property_count++]);
+      }
       OPENSSL_free(name);
     } else if (subject_alt_name->type == GEN_IPADD) {
       char ntop_buf[INET6_ADDRSTRLEN];

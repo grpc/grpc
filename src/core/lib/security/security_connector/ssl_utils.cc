@@ -25,6 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include <vector>
+
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -220,6 +222,27 @@ int grpc_ssl_cmp_target_name(absl::string_view target_name,
   return overridden_target_name.compare(other_overridden_target_name);
 }
 
+bool isSpiffeID(absl::string_view spiffe_uri) {
+  if (spiffe_uri.size() > 2048) {
+    gpr_log(GPR_INFO, "Invalid SPIFFE ID: ID longer than 2048 bytes.");
+    return false;
+  }
+  std::vector<absl::string_view> splits = absl::StrSplit(spiffe_uri, '/');
+  if (splits.size() < 4 || splits[0] != "spiffe:" || splits[1] != "") {
+    gpr_log(GPR_INFO, "Invalid SPIFFE ID: invalid format.");
+    return false;
+  }
+  if (splits[3] == "") {
+    gpr_log(GPR_INFO, "Invalid SPIFFE ID: workload id is empty.");
+    return false;
+  }
+  if (splits[2].size() > 255) {
+    gpr_log(GPR_INFO, "Invalid SPIFFE ID: domain longer than 255 characters.");
+    return false;
+  }
+  return true;
+}
+
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     const tsi_peer* peer, const char* transport_security_type) {
   size_t i;
@@ -232,6 +255,9 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       transport_security_type);
+  const char* spiffe_data = nullptr;
+  size_t spiffe_length;
+  int spiffe_id_count = 0;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;
@@ -263,11 +289,23 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
           prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      absl::string_view spiffe_id(prop->value.data, prop->value.length);
+      if (isSpiffeID(spiffe_id)) {
+        spiffe_data = prop->value.data;
+        spiffe_length = prop->value.length;
+        spiffe_id_count += 1;
+      }
     }
   }
   if (peer_identity_property_name != nullptr) {
     GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
                    ctx.get(), peer_identity_property_name) == 1);
+  }
+  // SPIFFE ID should be unique.
+  if (spiffe_id_count == 1 && spiffe_length > 0 && spiffe_data != nullptr) {
+    grpc_auth_context_add_property(ctx.get(), GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
+                                   spiffe_data, spiffe_length);
   }
   return ctx;
 }

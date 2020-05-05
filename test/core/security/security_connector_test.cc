@@ -16,19 +16,19 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
+#include "src/core/lib/security/security_connector/security_connector.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -217,6 +217,35 @@ static int check_x509_pem_cert_chain(const grpc_auth_context* ctx,
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
     gpr_log(GPR_ERROR, "Expected only one property for pem cert chain.");
+    return 0;
+  }
+  return 1;
+}
+
+static int check_spiffe_id(const grpc_auth_context* ctx,
+                           const char* expected_spiffe_id,
+                           bool expect_spiffe_id) {
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      ctx, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop == nullptr && !expect_spiffe_id) {
+    return 1;
+  }
+  if (prop != nullptr && !expect_spiffe_id) {
+    gpr_log(GPR_ERROR, "SPIFFE ID not expected, but got %s.", prop->value);
+    return 0;
+  }
+  if (prop == nullptr && expect_spiffe_id) {
+    gpr_log(GPR_ERROR, "SPIFFE ID expected, but got nullptr.");
+    return 0;
+  }
+  if (strncmp(prop->value, expected_spiffe_id, prop->value_length) != 0) {
+    gpr_log(GPR_ERROR, "Expected SPIFFE ID %s but got %s.", expected_spiffe_id,
+            prop->value);
+    return 0;
+  }
+  if (grpc_auth_property_iterator_next(&it) != nullptr) {
+    gpr_log(GPR_ERROR, "Expected only one property for SPIFFE ID.");
     return 0;
   }
   return 1;
@@ -415,6 +444,71 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
+static void test_spiffe_id_peer_to_auth_context(void) {
+  // Invalid SPIFFE IDs should not be plumbed.
+  std::string long_id(2050, 'x');
+  std::string long_domain(256, 'x');
+  tsi_peer invalid_peer;
+  std::vector<std::string> invalid_spiffe_id = {
+      "",
+      "spi://",
+      "sfiffe://domain/wl",
+      "spiffe://domain",
+      "spiffe://domain/",
+      long_id,
+      "spiffe://" + long_domain + "/wl"};
+  size_t i;
+  GPR_ASSERT(tsi_construct_peer(invalid_spiffe_id.size(), &invalid_peer) ==
+             TSI_OK);
+  for (i = 0; i < invalid_spiffe_id.size(); i++) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_URI_PEER_PROPERTY, invalid_spiffe_id[i].c_str(),
+                   &invalid_peer.properties[i]) == TSI_OK);
+  }
+  grpc_core::RefCountedPtr<grpc_auth_context> invalid_ctx =
+      grpc_ssl_peer_to_auth_context(&invalid_peer,
+                                    GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(invalid_ctx != nullptr);
+  GPR_ASSERT(check_spiffe_id(invalid_ctx.get(), "", false));
+  tsi_peer_destruct(&invalid_peer);
+  invalid_ctx.reset(DEBUG_LOCATION, "test");
+  // A valid SPIFFE ID with other URI fields should be plumbed.
+  tsi_peer valid_peer;
+  std::vector<std::string> valid_spiffe_id = {"spiffe://foo.bar.com/wl",
+                                              "https://xyz"};
+  GPR_ASSERT(tsi_construct_peer(valid_spiffe_id.size(), &valid_peer) == TSI_OK);
+  for (i = 0; i < valid_spiffe_id.size(); i++) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_URI_PEER_PROPERTY, valid_spiffe_id[i].c_str(),
+                   &valid_peer.properties[i]) == TSI_OK);
+  }
+  grpc_core::RefCountedPtr<grpc_auth_context> valid_ctx =
+      grpc_ssl_peer_to_auth_context(&valid_peer,
+                                    GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(valid_ctx != nullptr);
+  GPR_ASSERT(check_spiffe_id(valid_ctx.get(), "spiffe://foo.bar.com/wl", true));
+  tsi_peer_destruct(&valid_peer);
+  valid_ctx.reset(DEBUG_LOCATION, "test");
+  // Multiple SPIFFE IDs should not be plumbed.
+  tsi_peer multiple_peer;
+  std::vector<std::string> multiple_spiffe_id = {
+      "spiffe://foo.bar.com/wl", "https://xyz", "spiffe://foo.bar.com/wl2"};
+  GPR_ASSERT(tsi_construct_peer(multiple_spiffe_id.size(), &multiple_peer) ==
+             TSI_OK);
+  for (i = 0; i < multiple_spiffe_id.size(); i++) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_URI_PEER_PROPERTY, multiple_spiffe_id[i].c_str(),
+                   &multiple_peer.properties[i]) == TSI_OK);
+  }
+  grpc_core::RefCountedPtr<grpc_auth_context> multiple_ctx =
+      grpc_ssl_peer_to_auth_context(&multiple_peer,
+                                    GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(multiple_ctx != nullptr);
+  GPR_ASSERT(check_spiffe_id(multiple_ctx.get(), "", false));
+  tsi_peer_destruct(&multiple_peer);
+  multiple_ctx.reset(DEBUG_LOCATION, "test");
+}
+
 static const char* roots_for_override_api = "roots for override api";
 
 static grpc_ssl_roots_override_result override_roots_success(
@@ -562,6 +656,7 @@ int main(int argc, char** argv) {
   test_cn_and_one_san_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
+  test_spiffe_id_peer_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();
   test_peer_alpn_check();
