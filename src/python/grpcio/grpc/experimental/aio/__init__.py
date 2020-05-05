@@ -33,7 +33,8 @@ from ._call import AioRpcError
 from ._interceptor import (ClientCallDetails, ClientInterceptor,
                            InterceptedUnaryUnaryCall,
                            UnaryUnaryClientInterceptor,
-                           UnaryStreamClientInterceptor, ServerInterceptor)
+                           UnaryStreamClientInterceptor,
+                           StreamUnaryClientInterceptor, ServerInterceptor)
 from ._server import server
 from ._base_server import Server, ServicerContext
 from ._typing import ChannelArgumentType
@@ -61,6 +62,7 @@ __all__ = (
     'ClientInterceptor',
     'UnaryStreamClientInterceptor',
     'UnaryUnaryClientInterceptor',
+    'StreamUnaryClientInterceptor',
     'InterceptedUnaryUnaryCall',
     'ServerInterceptor',
     'insecure_channel',
