@@ -265,8 +265,8 @@
           Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' "
           DependsOnTargets="Protobuf_PrepareCompileOptions;_Protobuf_GatherStaleFiles">
     <!-- Ensure output directories. -->
-	<MakeDir Directories="%(_Protobuf_OutOfDateProto.OutputDir)" />
-	<MakeDir Directories="%(_Protobuf_OutOfDateProto.GrpcOutputDir)" />
+    <MakeDir Directories="%(_Protobuf_OutOfDateProto.OutputDir)" />
+    <MakeDir Directories="%(_Protobuf_OutOfDateProto.GrpcOutputDir)" />
     <MakeDir Directories="$(Protobuf_DepFilesPath)" />
 
     <!-- Force output to the current directory if the user has set it to empty. -->
