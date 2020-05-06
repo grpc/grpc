@@ -32,6 +32,7 @@ struct envoy_api_v2_Cluster_OriginalDstLbConfig;
 struct envoy_api_v2_Cluster_CommonLbConfig;
 struct envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig;
 struct envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig;
+struct envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig;
 struct envoy_api_v2_Cluster_RefreshRate;
 struct envoy_api_v2_Cluster_ExtensionProtocolOptionsEntry;
 struct envoy_api_v2_Cluster_TypedExtensionProtocolOptionsEntry;
@@ -51,6 +52,7 @@ typedef struct envoy_api_v2_Cluster_OriginalDstLbConfig envoy_api_v2_Cluster_Ori
 typedef struct envoy_api_v2_Cluster_CommonLbConfig envoy_api_v2_Cluster_CommonLbConfig;
 typedef struct envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig;
 typedef struct envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig;
+typedef struct envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig;
 typedef struct envoy_api_v2_Cluster_RefreshRate envoy_api_v2_Cluster_RefreshRate;
 typedef struct envoy_api_v2_Cluster_ExtensionProtocolOptionsEntry envoy_api_v2_Cluster_ExtensionProtocolOptionsEntry;
 typedef struct envoy_api_v2_Cluster_TypedExtensionProtocolOptionsEntry envoy_api_v2_Cluster_TypedExtensionProtocolOptionsEntry;
@@ -70,6 +72,7 @@ extern const upb_msglayout envoy_api_v2_Cluster_OriginalDstLbConfig_msginit;
 extern const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_msginit;
 extern const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig_msginit;
 extern const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig_msginit;
+extern const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit;
 extern const upb_msglayout envoy_api_v2_Cluster_RefreshRate_msginit;
 extern const upb_msglayout envoy_api_v2_Cluster_ExtensionProtocolOptionsEntry_msginit;
 extern const upb_msglayout envoy_api_v2_Cluster_TypedExtensionProtocolOptionsEntry_msginit;
@@ -1032,16 +1035,17 @@ typedef enum {
   envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_locality_weighted_lb_config = 3,
   envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_NOT_SET = 0
 } envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_oneofcases;
-UPB_INLINE envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_oneofcases envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_case(const envoy_api_v2_Cluster_CommonLbConfig* msg) { return (envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(16, 32)); }
+UPB_INLINE envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_oneofcases envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_case(const envoy_api_v2_Cluster_CommonLbConfig* msg) { return (envoy_api_v2_Cluster_CommonLbConfig_locality_config_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(20, 40)); }
 
 UPB_INLINE const struct envoy_type_Percent* envoy_api_v2_Cluster_CommonLbConfig_healthy_panic_threshold(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_Percent*, UPB_SIZE(4, 8)); }
-UPB_INLINE bool envoy_api_v2_Cluster_CommonLbConfig_has_zone_aware_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(16, 32), 2); }
-UPB_INLINE const envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig* envoy_api_v2_Cluster_CommonLbConfig_zone_aware_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig*, UPB_SIZE(12, 24), UPB_SIZE(16, 32), 2, NULL); }
-UPB_INLINE bool envoy_api_v2_Cluster_CommonLbConfig_has_locality_weighted_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(16, 32), 3); }
-UPB_INLINE const envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig* envoy_api_v2_Cluster_CommonLbConfig_locality_weighted_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig*, UPB_SIZE(12, 24), UPB_SIZE(16, 32), 3, NULL); }
+UPB_INLINE bool envoy_api_v2_Cluster_CommonLbConfig_has_zone_aware_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(20, 40), 2); }
+UPB_INLINE const envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig* envoy_api_v2_Cluster_CommonLbConfig_zone_aware_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig*, UPB_SIZE(16, 32), UPB_SIZE(20, 40), 2, NULL); }
+UPB_INLINE bool envoy_api_v2_Cluster_CommonLbConfig_has_locality_weighted_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(20, 40), 3); }
+UPB_INLINE const envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig* envoy_api_v2_Cluster_CommonLbConfig_locality_weighted_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig*, UPB_SIZE(16, 32), UPB_SIZE(20, 40), 3, NULL); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_Cluster_CommonLbConfig_update_merge_window(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(8, 16)); }
 UPB_INLINE bool envoy_api_v2_Cluster_CommonLbConfig_ignore_new_hosts_until_first_hc(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
 UPB_INLINE bool envoy_api_v2_Cluster_CommonLbConfig_close_connections_on_host_set_change(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)); }
+UPB_INLINE const envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig* envoy_api_v2_Cluster_CommonLbConfig_consistent_hashing_lb_config(const envoy_api_v2_Cluster_CommonLbConfig *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig*, UPB_SIZE(12, 24)); }
 
 UPB_INLINE void envoy_api_v2_Cluster_CommonLbConfig_set_healthy_panic_threshold(envoy_api_v2_Cluster_CommonLbConfig *msg, struct envoy_type_Percent* value) {
   UPB_FIELD_AT(msg, struct envoy_type_Percent*, UPB_SIZE(4, 8)) = value;
@@ -1056,7 +1060,7 @@ UPB_INLINE struct envoy_type_Percent* envoy_api_v2_Cluster_CommonLbConfig_mutabl
   return sub;
 }
 UPB_INLINE void envoy_api_v2_Cluster_CommonLbConfig_set_zone_aware_lb_config(envoy_api_v2_Cluster_CommonLbConfig *msg, envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig* value) {
-  UPB_WRITE_ONEOF(msg, envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig*, UPB_SIZE(12, 24), value, UPB_SIZE(16, 32), 2);
+  UPB_WRITE_ONEOF(msg, envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig*, UPB_SIZE(16, 32), value, UPB_SIZE(20, 40), 2);
 }
 UPB_INLINE struct envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig* envoy_api_v2_Cluster_CommonLbConfig_mutable_zone_aware_lb_config(envoy_api_v2_Cluster_CommonLbConfig *msg, upb_arena *arena) {
   struct envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig* sub = (struct envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig*)envoy_api_v2_Cluster_CommonLbConfig_zone_aware_lb_config(msg);
@@ -1068,7 +1072,7 @@ UPB_INLINE struct envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig* envoy_a
   return sub;
 }
 UPB_INLINE void envoy_api_v2_Cluster_CommonLbConfig_set_locality_weighted_lb_config(envoy_api_v2_Cluster_CommonLbConfig *msg, envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig* value) {
-  UPB_WRITE_ONEOF(msg, envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig*, UPB_SIZE(12, 24), value, UPB_SIZE(16, 32), 3);
+  UPB_WRITE_ONEOF(msg, envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig*, UPB_SIZE(16, 32), value, UPB_SIZE(20, 40), 3);
 }
 UPB_INLINE struct envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig* envoy_api_v2_Cluster_CommonLbConfig_mutable_locality_weighted_lb_config(envoy_api_v2_Cluster_CommonLbConfig *msg, upb_arena *arena) {
   struct envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig* sub = (struct envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig*)envoy_api_v2_Cluster_CommonLbConfig_locality_weighted_lb_config(msg);
@@ -1096,6 +1100,18 @@ UPB_INLINE void envoy_api_v2_Cluster_CommonLbConfig_set_ignore_new_hosts_until_f
 }
 UPB_INLINE void envoy_api_v2_Cluster_CommonLbConfig_set_close_connections_on_host_set_change(envoy_api_v2_Cluster_CommonLbConfig *msg, bool value) {
   UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)) = value;
+}
+UPB_INLINE void envoy_api_v2_Cluster_CommonLbConfig_set_consistent_hashing_lb_config(envoy_api_v2_Cluster_CommonLbConfig *msg, envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig* value) {
+  UPB_FIELD_AT(msg, envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig*, UPB_SIZE(12, 24)) = value;
+}
+UPB_INLINE struct envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig* envoy_api_v2_Cluster_CommonLbConfig_mutable_consistent_hashing_lb_config(envoy_api_v2_Cluster_CommonLbConfig *msg, upb_arena *arena) {
+  struct envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig* sub = (struct envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig*)envoy_api_v2_Cluster_CommonLbConfig_consistent_hashing_lb_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig*)upb_msg_new(&envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_Cluster_CommonLbConfig_set_consistent_hashing_lb_config(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.api.v2.Cluster.CommonLbConfig.ZoneAwareLbConfig */
@@ -1159,6 +1175,26 @@ UPB_INLINE char *envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig_se
 }
 
 
+
+/* envoy.api.v2.Cluster.CommonLbConfig.ConsistentHashingLbConfig */
+
+UPB_INLINE envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig *envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_new(upb_arena *arena) {
+  return (envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig *)upb_msg_new(&envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig *envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig *ret = envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_serialize(const envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit, arena, len);
+}
+
+UPB_INLINE bool envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_use_hostname_for_hashing(const envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
+
+UPB_INLINE void envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_set_use_hostname_for_hashing(envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig *msg, bool value) {
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
+}
 
 /* envoy.api.v2.Cluster.RefreshRate */
 

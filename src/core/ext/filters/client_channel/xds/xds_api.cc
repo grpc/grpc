@@ -1708,6 +1708,9 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
                                                                 arena.ptr());
   PopulateNode(arena.ptr(), node_, build_version_, user_agent_name_,
                server_name, node_msg);
+  envoy_api_v2_core_Node_add_client_features(
+      node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
+      arena.ptr());
   MaybeLogLrsRequest(client_, tracer_, request);
   return SerializeLrsRequest(request, arena.ptr());
 }
@@ -1826,6 +1829,7 @@ grpc_slice XdsApi::CreateLrsRequest(
 }
 
 grpc_error* XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
+                                     bool* send_all_clusters,
                                      std::set<std::string>* cluster_names,
                                      grpc_millis* load_reporting_interval) {
   upb::Arena arena;
@@ -1838,13 +1842,19 @@ grpc_error* XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
   if (decoded_response == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode response.");
   }
-  // Store the cluster names.
-  size_t size;
-  const upb_strview* clusters =
-      envoy_service_load_stats_v2_LoadStatsResponse_clusters(decoded_response,
-                                                             &size);
-  for (size_t i = 0; i < size; ++i) {
-    cluster_names->emplace(clusters[i].data, clusters[i].size);
+  // Check send_all_clusters.
+  if (envoy_service_load_stats_v2_LoadStatsResponse_send_all_clusters(
+          decoded_response)) {
+    *send_all_clusters = true;
+  } else {
+    // Store the cluster names.
+    size_t size;
+    const upb_strview* clusters =
+        envoy_service_load_stats_v2_LoadStatsResponse_clusters(decoded_response,
+                                                               &size);
+    for (size_t i = 0; i < size; ++i) {
+      cluster_names->emplace(clusters[i].data, clusters[i].size);
+    }
   }
   // Get the load report interval.
   const google_protobuf_Duration* load_reporting_interval_duration =

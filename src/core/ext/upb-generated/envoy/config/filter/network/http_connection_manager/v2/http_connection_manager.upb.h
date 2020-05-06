@@ -34,6 +34,7 @@ struct envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes_Scope
 struct envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement;
 struct envoy_config_filter_network_http_connection_manager_v2_ScopedRds;
 struct envoy_config_filter_network_http_connection_manager_v2_HttpFilter;
+struct envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension;
 typedef struct envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager;
 typedef struct envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing;
 typedef struct envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_InternalAddressConfig envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_InternalAddressConfig;
@@ -48,6 +49,7 @@ typedef struct envoy_config_filter_network_http_connection_manager_v2_ScopedRout
 typedef struct envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement;
 typedef struct envoy_config_filter_network_http_connection_manager_v2_ScopedRds envoy_config_filter_network_http_connection_manager_v2_ScopedRds;
 typedef struct envoy_config_filter_network_http_connection_manager_v2_HttpFilter envoy_config_filter_network_http_connection_manager_v2_HttpFilter;
+typedef struct envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension;
 extern const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_msginit;
 extern const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_msginit;
 extern const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_InternalAddressConfig_msginit;
@@ -62,6 +64,7 @@ extern const upb_msglayout envoy_config_filter_network_http_connection_manager_v
 extern const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit;
 extern const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_ScopedRds_msginit;
 extern const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_HttpFilter_msginit;
+extern const upb_msglayout envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_msginit;
 struct envoy_api_v2_RouteConfiguration;
 struct envoy_api_v2_ScopedRouteConfiguration;
 struct envoy_api_v2_core_ConfigSource;
@@ -69,6 +72,7 @@ struct envoy_api_v2_core_Http1ProtocolOptions;
 struct envoy_api_v2_core_Http2ProtocolOptions;
 struct envoy_api_v2_core_HttpProtocolOptions;
 struct envoy_config_filter_accesslog_v2_AccessLog;
+struct envoy_config_trace_v2_Tracing_Http;
 struct envoy_type_Percent;
 struct envoy_type_tracing_v2_CustomTag;
 struct google_protobuf_Any;
@@ -83,6 +87,7 @@ extern const upb_msglayout envoy_api_v2_core_Http1ProtocolOptions_msginit;
 extern const upb_msglayout envoy_api_v2_core_Http2ProtocolOptions_msginit;
 extern const upb_msglayout envoy_api_v2_core_HttpProtocolOptions_msginit;
 extern const upb_msglayout envoy_config_filter_accesslog_v2_AccessLog_msginit;
+extern const upb_msglayout envoy_config_trace_v2_Tracing_Http_msginit;
 extern const upb_msglayout envoy_type_Percent_msginit;
 extern const upb_msglayout envoy_type_tracing_v2_CustomTag_msginit;
 extern const upb_msglayout google_protobuf_Any_msginit;
@@ -138,15 +143,15 @@ typedef enum {
   envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_scoped_routes = 31,
   envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_NOT_SET = 0
 } envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_oneofcases;
-UPB_INLINE envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_oneofcases envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_case(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager* msg) { return (envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(140, 248)); }
+UPB_INLINE envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_oneofcases envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_case(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager* msg) { return (envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(144, 256)); }
 
 UPB_INLINE int32_t envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_codec_type(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
 UPB_INLINE upb_strview envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_stat_prefix(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(36, 40)); }
-UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_has_rds(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(140, 248), 3); }
-UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_Rds* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_rds(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_READ_ONEOF(msg, const envoy_config_filter_network_http_connection_manager_v2_Rds*, UPB_SIZE(136, 240), UPB_SIZE(140, 248), 3, NULL); }
-UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_has_route_config(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(140, 248), 4); }
-UPB_INLINE const struct envoy_api_v2_RouteConfiguration* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_config(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_READ_ONEOF(msg, const struct envoy_api_v2_RouteConfiguration*, UPB_SIZE(136, 240), UPB_SIZE(140, 248), 4, NULL); }
-UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_HttpFilter* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_http_filters(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) { return (const envoy_config_filter_network_http_connection_manager_v2_HttpFilter* const*)_upb_array_accessor(msg, UPB_SIZE(124, 216), len); }
+UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_has_rds(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(144, 256), 3); }
+UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_Rds* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_rds(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_READ_ONEOF(msg, const envoy_config_filter_network_http_connection_manager_v2_Rds*, UPB_SIZE(140, 248), UPB_SIZE(144, 256), 3, NULL); }
+UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_has_route_config(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(144, 256), 4); }
+UPB_INLINE const struct envoy_api_v2_RouteConfiguration* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_config(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_READ_ONEOF(msg, const struct envoy_api_v2_RouteConfiguration*, UPB_SIZE(140, 248), UPB_SIZE(144, 256), 4, NULL); }
+UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_HttpFilter* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_http_filters(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) { return (const envoy_config_filter_network_http_connection_manager_v2_HttpFilter* const*)_upb_array_accessor(msg, UPB_SIZE(128, 224), len); }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_add_user_agent(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(60, 88)); }
 UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_tracing(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing*, UPB_SIZE(64, 96)); }
 UPB_INLINE const struct envoy_api_v2_core_Http1ProtocolOptions* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_http_protocol_options(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_Http1ProtocolOptions*, UPB_SIZE(68, 104)); }
@@ -154,7 +159,7 @@ UPB_INLINE const struct envoy_api_v2_core_Http2ProtocolOptions* envoy_config_fil
 UPB_INLINE upb_strview envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_server_name(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(44, 56)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_idle_timeout(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(76, 120)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_drain_timeout(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(80, 128)); }
-UPB_INLINE const struct envoy_config_filter_accesslog_v2_AccessLog* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_access_log(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) { return (const struct envoy_config_filter_accesslog_v2_AccessLog* const*)_upb_array_accessor(msg, UPB_SIZE(128, 224), len); }
+UPB_INLINE const struct envoy_config_filter_accesslog_v2_AccessLog* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_access_log(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) { return (const struct envoy_config_filter_accesslog_v2_AccessLog* const*)_upb_array_accessor(msg, UPB_SIZE(132, 232), len); }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_use_remote_address(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(84, 136)); }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_generate_request_id(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(88, 144)); }
 UPB_INLINE int32_t envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_forward_client_cert_details(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(8, 8)); }
@@ -164,19 +169,20 @@ UPB_INLINE uint32_t envoy_config_filter_network_http_connection_manager_v2_HttpC
 UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_represent_ipv4_remote_address_as_ipv4_mapped_ipv6(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(29, 29)); }
 UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_skip_xff_append(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(30, 30)); }
 UPB_INLINE upb_strview envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_via(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(52, 72)); }
-UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_upgrade_configs(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) { return (const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig* const*)_upb_array_accessor(msg, UPB_SIZE(132, 232), len); }
+UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_upgrade_configs(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) { return (const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig* const*)_upb_array_accessor(msg, UPB_SIZE(136, 240), len); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_stream_idle_timeout(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(96, 160)); }
 UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_InternalAddressConfig* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_internal_address_config(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_InternalAddressConfig*, UPB_SIZE(100, 168)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_delayed_close_timeout(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(104, 176)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_request_timeout(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(108, 184)); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_max_request_headers_kb(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(112, 192)); }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_normalize_path(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(116, 200)); }
-UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_has_scoped_routes(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(140, 248), 31); }
-UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_scoped_routes(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_READ_ONEOF(msg, const envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes*, UPB_SIZE(136, 240), UPB_SIZE(140, 248), 31, NULL); }
+UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_has_scoped_routes(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(144, 256), 31); }
+UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_scoped_routes(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_READ_ONEOF(msg, const envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes*, UPB_SIZE(140, 248), UPB_SIZE(144, 256), 31, NULL); }
 UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_preserve_external_request_id(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(31, 31)); }
 UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_merge_slashes(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(32, 32)); }
 UPB_INLINE int32_t envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_server_header_transformation(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(16, 16)); }
 UPB_INLINE const struct envoy_api_v2_core_HttpProtocolOptions* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_common_http_protocol_options(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_HttpProtocolOptions*, UPB_SIZE(120, 208)); }
+UPB_INLINE const envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_request_id_extension(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg) { return UPB_FIELD_AT(msg, const envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension*, UPB_SIZE(124, 216)); }
 
 UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_set_codec_type(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, int32_t value) {
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
@@ -185,7 +191,7 @@ UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConne
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(36, 40)) = value;
 }
 UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_set_rds(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, envoy_config_filter_network_http_connection_manager_v2_Rds* value) {
-  UPB_WRITE_ONEOF(msg, envoy_config_filter_network_http_connection_manager_v2_Rds*, UPB_SIZE(136, 240), value, UPB_SIZE(140, 248), 3);
+  UPB_WRITE_ONEOF(msg, envoy_config_filter_network_http_connection_manager_v2_Rds*, UPB_SIZE(140, 248), value, UPB_SIZE(144, 256), 3);
 }
 UPB_INLINE struct envoy_config_filter_network_http_connection_manager_v2_Rds* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_mutable_rds(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, upb_arena *arena) {
   struct envoy_config_filter_network_http_connection_manager_v2_Rds* sub = (struct envoy_config_filter_network_http_connection_manager_v2_Rds*)envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_rds(msg);
@@ -197,7 +203,7 @@ UPB_INLINE struct envoy_config_filter_network_http_connection_manager_v2_Rds* en
   return sub;
 }
 UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_set_route_config(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, struct envoy_api_v2_RouteConfiguration* value) {
-  UPB_WRITE_ONEOF(msg, struct envoy_api_v2_RouteConfiguration*, UPB_SIZE(136, 240), value, UPB_SIZE(140, 248), 4);
+  UPB_WRITE_ONEOF(msg, struct envoy_api_v2_RouteConfiguration*, UPB_SIZE(140, 248), value, UPB_SIZE(144, 256), 4);
 }
 UPB_INLINE struct envoy_api_v2_RouteConfiguration* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_mutable_route_config(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, upb_arena *arena) {
   struct envoy_api_v2_RouteConfiguration* sub = (struct envoy_api_v2_RouteConfiguration*)envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_config(msg);
@@ -209,15 +215,15 @@ UPB_INLINE struct envoy_api_v2_RouteConfiguration* envoy_config_filter_network_h
   return sub;
 }
 UPB_INLINE envoy_config_filter_network_http_connection_manager_v2_HttpFilter** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_mutable_http_filters(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) {
-  return (envoy_config_filter_network_http_connection_manager_v2_HttpFilter**)_upb_array_mutable_accessor(msg, UPB_SIZE(124, 216), len);
+  return (envoy_config_filter_network_http_connection_manager_v2_HttpFilter**)_upb_array_mutable_accessor(msg, UPB_SIZE(128, 224), len);
 }
 UPB_INLINE envoy_config_filter_network_http_connection_manager_v2_HttpFilter** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_resize_http_filters(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t len, upb_arena *arena) {
-  return (envoy_config_filter_network_http_connection_manager_v2_HttpFilter**)_upb_array_resize_accessor(msg, UPB_SIZE(124, 216), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_config_filter_network_http_connection_manager_v2_HttpFilter**)_upb_array_resize_accessor(msg, UPB_SIZE(128, 224), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_config_filter_network_http_connection_manager_v2_HttpFilter* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_add_http_filters(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, upb_arena *arena) {
   struct envoy_config_filter_network_http_connection_manager_v2_HttpFilter* sub = (struct envoy_config_filter_network_http_connection_manager_v2_HttpFilter*)upb_msg_new(&envoy_config_filter_network_http_connection_manager_v2_HttpFilter_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(124, 216), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(128, 224), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -297,15 +303,15 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_filter_network_http_con
   return sub;
 }
 UPB_INLINE struct envoy_config_filter_accesslog_v2_AccessLog** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_mutable_access_log(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) {
-  return (struct envoy_config_filter_accesslog_v2_AccessLog**)_upb_array_mutable_accessor(msg, UPB_SIZE(128, 224), len);
+  return (struct envoy_config_filter_accesslog_v2_AccessLog**)_upb_array_mutable_accessor(msg, UPB_SIZE(132, 232), len);
 }
 UPB_INLINE struct envoy_config_filter_accesslog_v2_AccessLog** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_resize_access_log(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_config_filter_accesslog_v2_AccessLog**)_upb_array_resize_accessor(msg, UPB_SIZE(128, 224), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_config_filter_accesslog_v2_AccessLog**)_upb_array_resize_accessor(msg, UPB_SIZE(132, 232), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_config_filter_accesslog_v2_AccessLog* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_add_access_log(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, upb_arena *arena) {
   struct envoy_config_filter_accesslog_v2_AccessLog* sub = (struct envoy_config_filter_accesslog_v2_AccessLog*)upb_msg_new(&envoy_config_filter_accesslog_v2_AccessLog_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(128, 224), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(132, 232), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -364,15 +370,15 @@ UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConne
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(52, 72)) = value;
 }
 UPB_INLINE envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_mutable_upgrade_configs(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t *len) {
-  return (envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(132, 232), len);
+  return (envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(136, 240), len);
 }
 UPB_INLINE envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_resize_upgrade_configs(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, size_t len, upb_arena *arena) {
-  return (envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig**)_upb_array_resize_accessor(msg, UPB_SIZE(132, 232), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig**)_upb_array_resize_accessor(msg, UPB_SIZE(136, 240), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_add_upgrade_configs(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, upb_arena *arena) {
   struct envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig* sub = (struct envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig*)upb_msg_new(&envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_UpgradeConfig_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(132, 232), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(136, 240), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -449,7 +455,7 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_filter_network_http_co
   return sub;
 }
 UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_set_scoped_routes(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes* value) {
-  UPB_WRITE_ONEOF(msg, envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes*, UPB_SIZE(136, 240), value, UPB_SIZE(140, 248), 31);
+  UPB_WRITE_ONEOF(msg, envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes*, UPB_SIZE(140, 248), value, UPB_SIZE(144, 256), 31);
 }
 UPB_INLINE struct envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_mutable_scoped_routes(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, upb_arena *arena) {
   struct envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes* sub = (struct envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes*)envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_scoped_routes(msg);
@@ -481,6 +487,18 @@ UPB_INLINE struct envoy_api_v2_core_HttpProtocolOptions* envoy_config_filter_net
   }
   return sub;
 }
+UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_set_request_id_extension(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension* value) {
+  UPB_FIELD_AT(msg, envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension*, UPB_SIZE(124, 216)) = value;
+}
+UPB_INLINE struct envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_mutable_request_id_extension(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager *msg, upb_arena *arena) {
+  struct envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension* sub = (struct envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension*)envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_request_id_extension(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension*)upb_msg_new(&envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_set_request_id_extension(msg, sub);
+  }
+  return sub;
+}
 
 /* envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager.Tracing */
 
@@ -497,26 +515,27 @@ UPB_INLINE char *envoy_config_filter_network_http_connection_manager_v2_HttpConn
 }
 
 UPB_INLINE int32_t envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_operation_name(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_request_headers_for_tags(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(28, 48), len); }
+UPB_INLINE upb_strview const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_request_headers_for_tags(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(32, 56), len); }
 UPB_INLINE const struct envoy_type_Percent* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_client_sampling(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_Percent*, UPB_SIZE(12, 16)); }
 UPB_INLINE const struct envoy_type_Percent* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_random_sampling(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_Percent*, UPB_SIZE(16, 24)); }
 UPB_INLINE const struct envoy_type_Percent* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_overall_sampling(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_Percent*, UPB_SIZE(20, 32)); }
 UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_verbose(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_max_path_tag_length(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(24, 40)); }
-UPB_INLINE const struct envoy_type_tracing_v2_CustomTag* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_custom_tags(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t *len) { return (const struct envoy_type_tracing_v2_CustomTag* const*)_upb_array_accessor(msg, UPB_SIZE(32, 56), len); }
+UPB_INLINE const struct envoy_type_tracing_v2_CustomTag* const* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_custom_tags(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t *len) { return (const struct envoy_type_tracing_v2_CustomTag* const*)_upb_array_accessor(msg, UPB_SIZE(36, 64), len); }
+UPB_INLINE const struct envoy_config_trace_v2_Tracing_Http* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_provider(const envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg) { return UPB_FIELD_AT(msg, const struct envoy_config_trace_v2_Tracing_Http*, UPB_SIZE(28, 48)); }
 
 UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_set_operation_name(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, int32_t value) {
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
 }
 UPB_INLINE upb_strview* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_mutable_request_headers_for_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 48), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 56), len);
 }
 UPB_INLINE upb_strview* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_resize_request_headers_for_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(28, 48), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(32, 56), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_add_request_headers_for_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(28, 48), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(32, 56), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_set_client_sampling(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, struct envoy_type_Percent* value) {
   UPB_FIELD_AT(msg, struct envoy_type_Percent*, UPB_SIZE(12, 16)) = value;
@@ -570,16 +589,28 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_filter_network_http_
   return sub;
 }
 UPB_INLINE struct envoy_type_tracing_v2_CustomTag** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_mutable_custom_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t *len) {
-  return (struct envoy_type_tracing_v2_CustomTag**)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 56), len);
+  return (struct envoy_type_tracing_v2_CustomTag**)_upb_array_mutable_accessor(msg, UPB_SIZE(36, 64), len);
 }
 UPB_INLINE struct envoy_type_tracing_v2_CustomTag** envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_resize_custom_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_type_tracing_v2_CustomTag**)_upb_array_resize_accessor(msg, UPB_SIZE(32, 56), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_type_tracing_v2_CustomTag**)_upb_array_resize_accessor(msg, UPB_SIZE(36, 64), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_type_tracing_v2_CustomTag* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_add_custom_tags(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, upb_arena *arena) {
   struct envoy_type_tracing_v2_CustomTag* sub = (struct envoy_type_tracing_v2_CustomTag*)upb_msg_new(&envoy_type_tracing_v2_CustomTag_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(32, 56), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(36, 64), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
+  return sub;
+}
+UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_set_provider(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, struct envoy_config_trace_v2_Tracing_Http* value) {
+  UPB_FIELD_AT(msg, struct envoy_config_trace_v2_Tracing_Http*, UPB_SIZE(28, 48)) = value;
+}
+UPB_INLINE struct envoy_config_trace_v2_Tracing_Http* envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_mutable_provider(envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing *msg, upb_arena *arena) {
+  struct envoy_config_trace_v2_Tracing_Http* sub = (struct envoy_config_trace_v2_Tracing_Http*)envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_provider(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_trace_v2_Tracing_Http*)upb_msg_new(&envoy_config_trace_v2_Tracing_Http_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_Tracing_set_provider(msg, sub);
+  }
   return sub;
 }
 
@@ -1059,6 +1090,35 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_filter_network_http_connecti
     sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
     if (!sub) return NULL;
     envoy_config_filter_network_http_connection_manager_v2_HttpFilter_set_typed_config(msg, sub);
+  }
+  return sub;
+}
+
+/* envoy.config.filter.network.http_connection_manager.v2.RequestIDExtension */
+
+UPB_INLINE envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension *envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_new(upb_arena *arena) {
+  return (envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension *)upb_msg_new(&envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_msginit, arena);
+}
+UPB_INLINE envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension *envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension *ret = envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_serialize(const envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_msginit, arena, len);
+}
+
+UPB_INLINE const struct google_protobuf_Any* envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_typed_config(const envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Any*, UPB_SIZE(0, 0)); }
+
+UPB_INLINE void envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_set_typed_config(envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension *msg, struct google_protobuf_Any* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_Any*, UPB_SIZE(0, 0)) = value;
+}
+UPB_INLINE struct google_protobuf_Any* envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_mutable_typed_config(envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension *msg, upb_arena *arena) {
+  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_typed_config(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_set_typed_config(msg, sub);
   }
   return sub;
 }
