@@ -167,7 +167,13 @@
                           Protobuf="@(Protobuf_Compile)"
                           Generator="$(Protobuf_Generator)">
       <Output TaskParameter="PossibleOutputs" ItemName="Protobuf_ExpectedOutputs" />
+      <Output TaskParameter="PatchedProtobuf" ItemName="_PatchedProtobuf" />
     </ProtoCompilerOutputs>
+	<!-- Replace Protobuf_Compile with PatchedProtobuf. -->
+	<ItemGroup>
+       <Protobuf_Compile Remove="@(_PatchedProtobuf)"/>
+       <Protobuf_Compile Include ="@(_PatchedProtobuf)"/>
+	</ItemGroup>
     <!-- Read any dependency files from previous compiles. -->
     <ProtoReadDependencies Condition=" '$(Protobuf_DepFilesPath)' != '' and '$(DisableProtobufDesignTimeBuild)' != 'true' "
                            Protobuf="@(Protobuf_Compile)"
@@ -259,11 +265,8 @@
           Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' "
           DependsOnTargets="Protobuf_PrepareCompileOptions;_Protobuf_GatherStaleFiles">
     <!-- Ensure output directories. -->
-    <ItemGroup>
-      <_Protobuf_ExpectedGenerated Include="@(Protobuf_ExpectedOutputs)"
-				Condition = " '%(Source)' != '' and '@(_Protobuf_OutOfDateProto)' != '' " />
-    </ItemGroup>
-    <MakeDir Directories="%(_Protobuf_ExpectedGenerated.RelativeDir)" />
+	<MakeDir Directories="%(_Protobuf_OutOfDateProto.OutputDir)" />
+	<MakeDir Directories="%(_Protobuf_OutOfDateProto.GrpcOutputDir)" />
     <MakeDir Directories="$(Protobuf_DepFilesPath)" />
 
     <!-- Force output to the current directory if the user has set it to empty. -->

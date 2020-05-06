@@ -17,6 +17,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -39,6 +40,14 @@ namespace Grpc.Tools
         /// </summary>
         [Required]
         public ITaskItem[] Protobuf { get; set; }
+
+        /// <summary>
+        /// All Proto files in the project. A patched copy of all items from
+        /// Protobuf that might contain updated OutputDir and GrpcOutputDir
+        /// attributes.
+        /// </summary>
+        [Output]
+        public ITaskItem[] PatchedProtobuf { get; set; }
 
         /// <summary>
         /// Output items per each potential output. We do not look at existing
@@ -68,8 +77,13 @@ namespace Grpc.Tools
             // Get language-specific possible output. The generator expects certain
             // metadata be set on the proto item.
             var possible = new List<ITaskItem>();
+            var patched = new List<ITaskItem>();
             foreach (var proto in Protobuf)
             {
+                // This operates on a local copy and has no effect on the MSBuild instance!
+                generator.PatchOutputDirectory(proto);
+                patched.Add(proto);
+
                 var outputs = generator.GetPossibleOutputs(proto);
                 foreach (string output in outputs)
                 {
@@ -78,6 +92,8 @@ namespace Grpc.Tools
                     possible.Add(ti);
                 }
             }
+
+            PatchedProtobuf = patched.ToArray();
             PossibleOutputs = possible.ToArray();
 
             return !Log.HasLoggedErrors;

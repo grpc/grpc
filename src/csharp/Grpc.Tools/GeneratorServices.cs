@@ -55,7 +55,15 @@ namespace Grpc.Tools
                 && !gsm.EqualNoCase("false");
         }
 
-        public abstract string[] GetPossibleOutputs(ITaskItem proto);
+        // Update OutputDir and GrpcOutputDir for the item and all subsequent
+        // targets using this item. This should only be done if the real
+        // output directories for protoc should be modified.
+        public virtual void PatchOutputDirectory(ITaskItem protoItem)
+        {
+            // Nothing to do
+        }
+
+        public abstract string[] GetPossibleOutputs(ITaskItem protoItem);
     };
 
     // C# generator services.
@@ -63,22 +71,40 @@ namespace Grpc.Tools
     {
         public CSharpGeneratorServices(TaskLoggingHelper log) : base(log) { }
 
+        public override void PatchOutputDirectory(ITaskItem protoItem)
+        {
+            string root = protoItem.GetMetadata(Metadata.ProtoRoot);
+            string proto = protoItem.ItemSpec;
+            string relative = DepFileUtil.GetRelativeDir(root, proto, Log);
+
+            string outdir = protoItem.GetMetadata(Metadata.OutputDir);
+            string pathStem = Path.Combine(outdir, relative);
+            protoItem.SetMetadata(Metadata.OutputDir, pathStem);
+
+            // Override outdir if GrpcOutputDir present, default to proto output.
+            string grpcdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
+            if (grpcdir != "")
+            {
+                pathStem = Path.Combine(grpcdir, relative);
+            }
+            protoItem.SetMetadata(Metadata.GrpcOutputDir, pathStem);
+        }
+
         public override string[] GetPossibleOutputs(ITaskItem protoItem)
         {
             bool doGrpc = GrpcOutputPossible(protoItem);
-            var outputs = new string[doGrpc ? 2 : 1];
-            var itemSpec = protoItem.ItemSpec;
-            string basename = Path.GetFileNameWithoutExtension(itemSpec);
+            string proto = protoItem.ItemSpec;
+            string basename = Path.GetFileNameWithoutExtension(proto);
 
-            string outdir = DepFileUtil.GetOutputDirWithHash(protoItem.GetMetadata(Metadata.OutputDir), itemSpec);
+            var outputs = new string[doGrpc ? 2 : 1];
+            string outdir = protoItem.GetMetadata(Metadata.OutputDir);
+
             string filename = LowerUnderscoreToUpperCamelProtocWay(basename);
             outputs[0] = Path.Combine(outdir, filename) + ".cs";
 
             if (doGrpc)
             {
-                // Override outdir if GrpcOutputDir present, default to proto output.
                 string grpcdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
-                grpcdir = grpcdir == "" ? outdir : DepFileUtil.GetOutputDirWithHash(grpcdir, itemSpec);
                 filename = LowerUnderscoreToUpperCamelGrpcWay(basename);
                 outputs[1] = Path.Combine(grpcdir, filename) + "Grpc.cs";
             }
@@ -143,7 +169,7 @@ namespace Grpc.Tools
             string proto = protoItem.ItemSpec;
             string filename = Path.GetFileNameWithoutExtension(proto);
             // E. g., ("foo/", "foo/bar/x.proto") => "bar"
-            string relative = GetRelativeDir(root, proto);
+            string relative = DepFileUtil.GetRelativeDir(root, proto, Log);
 
             var outputs = new string[doGrpc ? 4 : 2];
             string outdir = protoItem.GetMetadata(Metadata.OutputDir);
@@ -152,7 +178,7 @@ namespace Grpc.Tools
             outputs[1] = fileStem + ".pb.h";
             if (doGrpc)
             {
-                // Override outdir if kGrpcOutputDir present, default to proto output.
+                // Override outdir if GrpcOutputDir present, default to proto output.
                 outdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
                 if (outdir != "")
                 {
@@ -163,52 +189,5 @@ namespace Grpc.Tools
             }
             return outputs;
         }
-
-        // Calculate part of proto path relative to root. Protoc is very picky
-        // about them matching exactly, so can be we. Expect root be exact prefix
-        // to proto, minus some slash normalization.
-        string GetRelativeDir(string root, string proto)
-        {
-            string protoDir = Path.GetDirectoryName(proto);
-            string rootDir = EndWithSlash(Path.GetDirectoryName(EndWithSlash(root)));
-            if (rootDir == s_dotSlash)
-            {
-                // Special case, otherwise we can return "./" instead of "" below!
-                return protoDir;
-            }
-            if (Platform.IsFsCaseInsensitive)
-            {
-                protoDir = protoDir.ToLowerInvariant();
-                rootDir = rootDir.ToLowerInvariant();
-            }
-            protoDir = EndWithSlash(protoDir);
-            if (!protoDir.StartsWith(rootDir))
-            {
-                Log.LogWarning("Protobuf item '{0}' has the ProtoRoot metadata '{1}' " +
-                  "which is not prefix to its path. Cannot compute relative path.",
-                  proto, root);
-                return "";
-            }
-            return protoDir.Substring(rootDir.Length);
-        }
-
-        // './' or '.\', normalized per system.
-        static string s_dotSlash = "." + Path.DirectorySeparatorChar;
-
-        static string EndWithSlash(string str)
-        {
-            if (str == "")
-            {
-                return s_dotSlash;
-            }
-            else if (str[str.Length - 1] != '\\' && str[str.Length - 1] != '/')
-            {
-                return str + Path.DirectorySeparatorChar;
-            }
-            else
-            {
-                return str;
-            }
-        }
-    };
+    }
 }

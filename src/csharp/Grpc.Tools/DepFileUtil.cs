@@ -301,5 +301,51 @@ namespace Grpc.Tools
                 return new string[0];
             }
         }
+
+        // Calculate part of proto path relative to root. Protoc is very picky
+        // about them matching exactly, so can be we. Expect root be exact prefix
+        // to proto, minus some slash normalization.
+        internal static string GetRelativeDir(string root, string proto, TaskLoggingHelper log)
+        {
+            string protoDir = Path.GetDirectoryName(proto);
+            string rootDir = EndWithSlash(Path.GetDirectoryName(EndWithSlash(root)));
+            if (rootDir == s_dotSlash)
+            {
+                // Special case, otherwise we can return "./" instead of "" below!
+                return protoDir;
+            }
+            if (Platform.IsFsCaseInsensitive)
+            {
+                protoDir = protoDir.ToLowerInvariant();
+                rootDir = rootDir.ToLowerInvariant();
+            }
+            protoDir = EndWithSlash(protoDir);
+            if (!protoDir.StartsWith(rootDir))
+            {
+                log.LogWarning("Protobuf item '{0}' has the ProtoRoot metadata '{1}' " +
+                               "which is not prefix to its path. Cannot compute relative path.",
+                    proto, root);
+                return "";
+            }
+            return protoDir.Substring(rootDir.Length);
+        }
+
+        // './' or '.\', normalized per system.
+        internal static string s_dotSlash = "." + Path.DirectorySeparatorChar;
+
+        internal static string EndWithSlash(string str)
+        {
+            if (str == "")
+            {
+                return s_dotSlash;
+            }
+
+            if (str[str.Length - 1] != '\\' && str[str.Length - 1] != '/')
+            {
+                return str + Path.DirectorySeparatorChar;
+            }
+
+            return str;
+        }
     };
 }
