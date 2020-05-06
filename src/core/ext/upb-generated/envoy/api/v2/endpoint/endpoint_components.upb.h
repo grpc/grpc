@@ -56,11 +56,12 @@ UPB_INLINE char *envoy_api_v2_endpoint_Endpoint_serialize(const envoy_api_v2_end
   return upb_encode(msg, &envoy_api_v2_endpoint_Endpoint_msginit, arena, len);
 }
 
-UPB_INLINE const struct envoy_api_v2_core_Address* envoy_api_v2_endpoint_Endpoint_address(const envoy_api_v2_endpoint_Endpoint *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_Address*, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* envoy_api_v2_endpoint_Endpoint_health_check_config(const envoy_api_v2_endpoint_Endpoint *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_endpoint_Endpoint_HealthCheckConfig*, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct envoy_api_v2_core_Address* envoy_api_v2_endpoint_Endpoint_address(const envoy_api_v2_endpoint_Endpoint *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_Address*, UPB_SIZE(8, 16)); }
+UPB_INLINE const envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* envoy_api_v2_endpoint_Endpoint_health_check_config(const envoy_api_v2_endpoint_Endpoint *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_endpoint_Endpoint_HealthCheckConfig*, UPB_SIZE(12, 24)); }
+UPB_INLINE upb_strview envoy_api_v2_endpoint_Endpoint_hostname(const envoy_api_v2_endpoint_Endpoint *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
 
 UPB_INLINE void envoy_api_v2_endpoint_Endpoint_set_address(envoy_api_v2_endpoint_Endpoint *msg, struct envoy_api_v2_core_Address* value) {
-  UPB_FIELD_AT(msg, struct envoy_api_v2_core_Address*, UPB_SIZE(0, 0)) = value;
+  UPB_FIELD_AT(msg, struct envoy_api_v2_core_Address*, UPB_SIZE(8, 16)) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_Address* envoy_api_v2_endpoint_Endpoint_mutable_address(envoy_api_v2_endpoint_Endpoint *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Address* sub = (struct envoy_api_v2_core_Address*)envoy_api_v2_endpoint_Endpoint_address(msg);
@@ -72,7 +73,7 @@ UPB_INLINE struct envoy_api_v2_core_Address* envoy_api_v2_endpoint_Endpoint_muta
   return sub;
 }
 UPB_INLINE void envoy_api_v2_endpoint_Endpoint_set_health_check_config(envoy_api_v2_endpoint_Endpoint *msg, envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_endpoint_Endpoint_HealthCheckConfig*, UPB_SIZE(4, 8)) = value;
+  UPB_FIELD_AT(msg, envoy_api_v2_endpoint_Endpoint_HealthCheckConfig*, UPB_SIZE(12, 24)) = value;
 }
 UPB_INLINE struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* envoy_api_v2_endpoint_Endpoint_mutable_health_check_config(envoy_api_v2_endpoint_Endpoint *msg, upb_arena *arena) {
   struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* sub = (struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig*)envoy_api_v2_endpoint_Endpoint_health_check_config(msg);
@@ -82,6 +83,9 @@ UPB_INLINE struct envoy_api_v2_endpoint_Endpoint_HealthCheckConfig* envoy_api_v2
     envoy_api_v2_endpoint_Endpoint_set_health_check_config(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_api_v2_endpoint_Endpoint_set_hostname(envoy_api_v2_endpoint_Endpoint *msg, upb_strview value) {
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
 }
 
 /* envoy.api.v2.endpoint.Endpoint.HealthCheckConfig */
@@ -99,9 +103,13 @@ UPB_INLINE char *envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_serialize(cons
 }
 
 UPB_INLINE uint32_t envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_port_value(const envoy_api_v2_endpoint_Endpoint_HealthCheckConfig *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_hostname(const envoy_api_v2_endpoint_Endpoint_HealthCheckConfig *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
 
 UPB_INLINE void envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_set_port_value(envoy_api_v2_endpoint_Endpoint_HealthCheckConfig *msg, uint32_t value) {
   UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)) = value;
+}
+UPB_INLINE void envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_set_hostname(envoy_api_v2_endpoint_Endpoint_HealthCheckConfig *msg, upb_strview value) {
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
 }
 
 /* envoy.api.v2.endpoint.LbEndpoint */

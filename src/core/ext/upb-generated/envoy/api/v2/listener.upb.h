@@ -38,6 +38,7 @@ struct envoy_api_v2_core_SocketOption;
 struct envoy_api_v2_listener_FilterChain;
 struct envoy_api_v2_listener_ListenerFilter;
 struct envoy_api_v2_listener_UdpListenerConfig;
+struct envoy_config_filter_accesslog_v2_AccessLog;
 struct envoy_config_listener_v2_ApiListener;
 struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
@@ -48,6 +49,7 @@ extern const upb_msglayout envoy_api_v2_core_SocketOption_msginit;
 extern const upb_msglayout envoy_api_v2_listener_FilterChain_msginit;
 extern const upb_msglayout envoy_api_v2_listener_ListenerFilter_msginit;
 extern const upb_msglayout envoy_api_v2_listener_UdpListenerConfig_msginit;
+extern const upb_msglayout envoy_config_filter_accesslog_v2_AccessLog_msginit;
 extern const upb_msglayout envoy_config_listener_v2_ApiListener_msginit;
 extern const upb_msglayout google_protobuf_BoolValue_msginit;
 extern const upb_msglayout google_protobuf_Duration_msginit;
@@ -93,6 +95,7 @@ UPB_INLINE const struct envoy_api_v2_listener_UdpListenerConfig* envoy_api_v2_Li
 UPB_INLINE const struct envoy_config_listener_v2_ApiListener* envoy_api_v2_Listener_api_listener(const envoy_api_v2_Listener *msg) { return UPB_FIELD_AT(msg, const struct envoy_config_listener_v2_ApiListener*, UPB_SIZE(68, 120)); }
 UPB_INLINE const envoy_api_v2_Listener_ConnectionBalanceConfig* envoy_api_v2_Listener_connection_balance_config(const envoy_api_v2_Listener *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_Listener_ConnectionBalanceConfig*, UPB_SIZE(72, 128)); }
 UPB_INLINE bool envoy_api_v2_Listener_reuse_port(const envoy_api_v2_Listener *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(17, 17)); }
+UPB_INLINE const struct envoy_config_filter_accesslog_v2_AccessLog* const* envoy_api_v2_Listener_access_log(const envoy_api_v2_Listener *msg, size_t *len) { return (const struct envoy_config_filter_accesslog_v2_AccessLog* const*)_upb_array_accessor(msg, UPB_SIZE(88, 160), len); }
 
 UPB_INLINE void envoy_api_v2_Listener_set_name(envoy_api_v2_Listener *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 24)) = value;
@@ -291,6 +294,19 @@ UPB_INLINE struct envoy_api_v2_Listener_ConnectionBalanceConfig* envoy_api_v2_Li
 }
 UPB_INLINE void envoy_api_v2_Listener_set_reuse_port(envoy_api_v2_Listener *msg, bool value) {
   UPB_FIELD_AT(msg, bool, UPB_SIZE(17, 17)) = value;
+}
+UPB_INLINE struct envoy_config_filter_accesslog_v2_AccessLog** envoy_api_v2_Listener_mutable_access_log(envoy_api_v2_Listener *msg, size_t *len) {
+  return (struct envoy_config_filter_accesslog_v2_AccessLog**)_upb_array_mutable_accessor(msg, UPB_SIZE(88, 160), len);
+}
+UPB_INLINE struct envoy_config_filter_accesslog_v2_AccessLog** envoy_api_v2_Listener_resize_access_log(envoy_api_v2_Listener *msg, size_t len, upb_arena *arena) {
+  return (struct envoy_config_filter_accesslog_v2_AccessLog**)_upb_array_resize_accessor(msg, UPB_SIZE(88, 160), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+}
+UPB_INLINE struct envoy_config_filter_accesslog_v2_AccessLog* envoy_api_v2_Listener_add_access_log(envoy_api_v2_Listener *msg, upb_arena *arena) {
+  struct envoy_config_filter_accesslog_v2_AccessLog* sub = (struct envoy_config_filter_accesslog_v2_AccessLog*)upb_msg_new(&envoy_config_filter_accesslog_v2_AccessLog_msginit, arena);
+  bool ok = _upb_array_append_accessor(
+      msg, UPB_SIZE(88, 160), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  if (!ok) return NULL;
+  return sub;
 }
 
 /* envoy.api.v2.Listener.DeprecatedV1 */
