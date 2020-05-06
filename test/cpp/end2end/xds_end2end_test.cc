@@ -1215,21 +1215,101 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
   }
 
-  void ResetBackendCounters() {
-    for (auto& backend : backends_) backend->backend_service()->ResetCounters();
+  enum RpcService {
+    SERVICE_ECHO,
+    SERVICE_ECHO1,
+    SERVICE_ECHO2,
+  };
+
+  enum RpcMethod {
+    METHOD_ECHO,
+    METHOD_ECHO1,
+    METHOD_ECHO2,
+  };
+
+  struct RpcOptions {
+    RpcService service = SERVICE_ECHO;
+    RpcMethod method = METHOD_ECHO;
+    int timeout_ms = 1000;
+    bool wait_for_ready = false;
+    bool server_fail = false;
+
+    RpcOptions() {}
+
+    RpcOptions& set_rpc_service(RpcService rpc_service) {
+      service = rpc_service;
+      return *this;
+    }
+
+    RpcOptions& set_rpc_method(RpcMethod rpc_method) {
+      method = rpc_method;
+      return *this;
+    }
+
+    RpcOptions& set_timeout_ms(int rpc_timeout_ms) {
+      timeout_ms = rpc_timeout_ms;
+      return *this;
+    }
+
+    RpcOptions& set_wait_for_ready(bool rpc_wait_for_ready) {
+      wait_for_ready = rpc_wait_for_ready;
+      return *this;
+    }
+
+    RpcOptions& set_server_fail(bool rpc_server_fail) {
+      server_fail = rpc_server_fail;
+      return *this;
+    }
+  };
+
+  template <typename Stub>
+  Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
+                       ClientContext* context, EchoRequest& request,
+                       EchoResponse* response) {
+    switch (rpc_options.method) {
+      case METHOD_ECHO:
+        return (*stub)->Echo(context, request, response);
+      case METHOD_ECHO1:
+        return (*stub)->Echo1(context, request, response);
+      case METHOD_ECHO2:
+        return (*stub)->Echo2(context, request, response);
+    }
   }
 
-  bool SeenAllBackends(size_t start_index = 0, size_t stop_index = 0) {
+  void ResetBackendCounters() {
+    for (auto& backend : backends_) {
+      backend->backend_service()->ResetCounters();
+      backend->backend_service2()->ResetCounters();
+      backend->backend_service2()->ResetCounters();
+    }
+  }
+
+  bool SeenAllBackends(size_t start_index = 0, size_t stop_index = 0,
+                       const RpcOptions& rpc_options = RpcOptions()) {
     if (stop_index == 0) stop_index = backends_.size();
     for (size_t i = start_index; i < stop_index; ++i) {
-      if (backends_[i]->backend_service()->request_count() == 0) return false;
+      switch (rpc_options.service) {
+        case SERVICE_ECHO:
+          if (backends_[i]->backend_service()->request_count() == 0)
+            return false;
+          break;
+        case SERVICE_ECHO1:
+          if (backends_[i]->backend_service1()->request_count() == 0)
+            return false;
+          break;
+        case SERVICE_ECHO2:
+          if (backends_[i]->backend_service2()->request_count() == 0)
+            return false;
+          break;
+      }
     }
     return true;
   }
 
   void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
-                       int* num_drops) {
-    const Status status = SendRpc();
+                       int* num_drops,
+                       const RpcOptions& rpc_options = RpcOptions()) {
+    const Status status = SendRpc(rpc_options);
     if (status.ok()) {
       ++*num_ok;
     } else {
@@ -1242,15 +1322,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ++*num_total;
   }
 
-  std::tuple<int, int, int> WaitForAllBackends(size_t start_index = 0,
-                                               size_t stop_index = 0,
-                                               bool reset_counters = true) {
+  std::tuple<int, int, int> WaitForAllBackends(
+      size_t start_index = 0, size_t stop_index = 0, bool reset_counters = true,
+      const RpcOptions& rpc_options = RpcOptions()) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
     int num_total = 0;
-    while (!SeenAllBackends(start_index, stop_index)) {
-      SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
+    while (!SeenAllBackends(start_index, stop_index, rpc_options)) {
+      SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops,
+                      rpc_options);
     }
     if (reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO,
@@ -1364,67 +1445,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       backend_ports.push_back(backends_[i]->port());
     }
     return backend_ports;
-  }
-
-  enum RpcService {
-    SERVICE_ECHO,
-    SERVICE_ECHO1,
-    SERVICE_ECHO2,
-  };
-
-  enum RpcMethod {
-    METHOD_ECHO,
-    METHOD_ECHO1,
-    METHOD_ECHO2,
-  };
-
-  struct RpcOptions {
-    RpcService service = SERVICE_ECHO;
-    RpcMethod method = METHOD_ECHO;
-    int timeout_ms = 1000;
-    bool wait_for_ready = false;
-    bool server_fail = false;
-
-    RpcOptions() {}
-
-    RpcOptions& set_rpc_service(RpcService rpc_service) {
-      service = rpc_service;
-      return *this;
-    }
-
-    RpcOptions& set_rpc_method(RpcMethod rpc_method) {
-      method = rpc_method;
-      return *this;
-    }
-
-    RpcOptions& set_timeout_ms(int rpc_timeout_ms) {
-      timeout_ms = rpc_timeout_ms;
-      return *this;
-    }
-
-    RpcOptions& set_wait_for_ready(bool rpc_wait_for_ready) {
-      wait_for_ready = rpc_wait_for_ready;
-      return *this;
-    }
-
-    RpcOptions& set_server_fail(bool rpc_server_fail) {
-      server_fail = rpc_server_fail;
-      return *this;
-    }
-  };
-
-  template <typename Stub>
-  Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
-                       ClientContext* context, EchoRequest& request,
-                       EchoResponse* response) {
-    switch (rpc_options.method) {
-      case METHOD_ECHO:
-        return (*stub)->Echo(context, request, response);
-      case METHOD_ECHO1:
-        return (*stub)->Echo1(context, request, response);
-      case METHOD_ECHO2:
-        return (*stub)->Echo2(context, request, response);
-    }
   }
 
   Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
@@ -2942,7 +2962,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(
       kNumEcho1Rpcs,
       RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
@@ -3039,7 +3059,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(
       kNumEcho1Rpcs,
       RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
@@ -3077,10 +3097,9 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
   backends_[2]->backend_service1()->ResetCounters();
   backends_[3]->backend_service1()->ResetCounters();
   WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(
-      kNumEcho1Rpcs,
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -3215,10 +3234,10 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
   backends_[2]->backend_service1()->ResetCounters();
   backends_[3]->backend_service1()->ResetCounters();
   WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(
-      kNumEcho1Rpcs,
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -3256,10 +3275,9 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
   backends_[2]->backend_service1()->ResetCounters();
   backends_[3]->backend_service1()->ResetCounters();
   WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(
-      kNumEcho1Rpcs,
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
